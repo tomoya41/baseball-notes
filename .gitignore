@@ -1,0 +1,53 @@
+# dependencies
+node_modules/
+
+# builds / caches
+dist/
+build/
+coverage/
+.cache/
+.vite/
+.next/
+out/
+.vercel/
+
+# environment / secrets
+.env
+.env.*
+!.env.example
+
+# logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# editors / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Android / Gradle
+.gradle/
+**/build/
+local.properties
+*.jks
+*.keystore
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Capacitor generated/runtime artifacts where appropriate
+android/.idea/
+ios/Pods/
+ios/App/Pods/
+
+# temporary / local-only
+tmp/
+temp/
+*.tmp
+*.bak
+*.swp
