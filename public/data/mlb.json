@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "league": "MLB",
+  "updated_at": "2026-09-23T00:00:00Z",
+  "revision": "sample-1",
+  "season": 2026,
+  "clubs": [{ "code": "harbor", "label": "Harbor Club（架空）" }],
+  "players": [
+    {
+      "key": "alex",
+      "label": "Alex Sample",
+      "aliases": ["アレックス サンプル"],
+      "club": "harbor",
+      "position": "外野手",
+      "bats": "右",
+      "throws": "右",
+      "number": "24",
+      "batting": {
+        "ab": 150,
+        "hits": 42,
+        "hr": 8,
+        "obp": 0.36,
+        "slg": 0.54,
+        "barrelRate": 0.125
+      },
+      "pitching": null
+    },
+    {
+      "key": "casey",
+      "label": "Casey Demo",
+      "aliases": ["ケイシー デモ"],
+      "club": null,
+      "position": "投手・打者",
+      "bats": "左",
+      "throws": "右",
+      "number": null,
+      "batting": {
+        "ab": 0,
+        "hits": 0,
+        "hr": 0,
+        "obp": null,
+        "slg": null,
+        "barrelRate": null
+      },
+      "pitching": { "outs": 19, "earnedRuns": 2 }
+    }
+  ]
+}

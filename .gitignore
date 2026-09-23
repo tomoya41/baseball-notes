@@ -51,3 +51,7 @@ temp/
 *.tmp
 *.bak
 *.swp
+
+# Native credentials / machine tooling
+google-services.json
+*.hprof

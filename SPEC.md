@@ -1,6 +1,6 @@
 # Baseball Data App — Product Specification
 
-Status: Product direction approved; architecture to be finalized before implementation.
+Status: Architecture selected; Phase 0 vertical proof and Analysis A foundation. Live data providers remain subject to the documented adoption gate.
 
 ---
 
@@ -887,3 +887,126 @@ It should:
 8. stop and report what is ready for the next small task.
 
 The foundation should make later phases easy to add without forcing a rewrite.
+
+---
+
+## 30. Analysis — approved product scope
+
+Added 2026-09-23. This section extends the roadmap; it does not authorize implementing all analysis phases at once. Analysis explains why a player is performing well, their strengths, and their tendencies to ordinary fans. Rich metrics remain welcome; each displayed metric must expose its meaning, interpretation, denominator, limitations, and a league/player baseline when a reliable comparison exists. AI is not required.
+
+### 30.1 League and provider capabilities
+
+Separate common analysis contracts, MLB advanced analysis, and feasible NPB analysis. Do not implement league checks throughout the UI. An `AnalysisCapability` manifest per provider/league governs controls and availability. Track data access (`available`, `conditional`, `unavailable`, `prohibited`, `research`) separately from implementation (`implemented`, `not-implemented`). Conditional or unverified permission is not permission to fetch.
+
+The source-backed feasibility matrix is in `docs/analysis-capabilities.md`. Review each metric/filter against actual provider documentation, coverage years, authentication, quota, caching and redistribution rights before enabling it. Missing observations, zero observations, unsupported capabilities, unverified rights, and unimplemented features are different states.
+
+Common candidates: AVG, OBP, SLG, OPS, HR, RBI, BB, SO, K%, BB%, ERA, WHIP, K/9, BB/9; handedness, home/away, inning, count, base state, RISP, outs, monthly and recent splits where licensed data supports them. A historical release is not a source of yesterday's current-season statistics.
+
+NPB uses only permitted basic statistics and available recent/handedness/monthly/situation splits. Pitch-level and Hawk-Eye data remain disabled unless machine access, storage, aggregation and reuse are explicitly permitted. Do not infer missing NPB tracking data. MLB can expose richer licensed data independently.
+
+### 30.2 Daily data and time semantics
+
+Analysis uses completed games through the previous day, normally refreshed at most once per day. It is not an in-game feed. Every result must expose:
+
+- source update time, fetch time, aggregation time and revision;
+- the actual complete-through baseball date and its named IANA timezone;
+- the resolved inclusive date interval, completeness, freshness and warnings;
+- an understandable label such as 「分析データは前日終了時点」, plus the actual cutoff when delayed.
+
+Use provider game dates, not the device's timezone, for baseball grouping. Date windows must survive timezone/DST, month/year boundaries and leap days. Never pull today's incomplete games into a trailing window. If the first day of a month has no completed days for that month, show an empty period, not last month's totals. Date-only month/year arithmetic must not be implemented with local-hour subtraction.
+
+Daily aggregation/scheduling is a future implementation task. Do not add paid Cron infrastructure. Corrected data replaces the same aggregate's revision. Fetching old source data must not reset its source-age warning.
+
+### 30.3 Shared AnalysisQuery
+
+One query contract and validator must be used across screens and future adapters. Include league, subject (batter/pitcher/matchup), reference date/timezone, season type, requested metric IDs, grouping, and filters:
+
+| Dimension | Options |
+|---|---|
+| Period | Season, last 7/14/30 calendar days, current month, previous month, custom inclusive dates |
+| Opponent | All, vs RHP/LHP or RHB/LHB, specific pitcher, specific batter |
+| Base state | All, empty, runners on, RISP, loaded |
+| Outs | All, 0, 1, 2 |
+| Count | All, first pitch, pitcher ahead, batter ahead, two strikes, full count, exact balls/strikes |
+| Pitch | All, pitch type, configurable velocity interval |
+| Context | Home/away, inning or inning band, lead/tied/behind, catcher when supported |
+
+Provider Capability must cover every selected filter, grouping, metric, period and their combination. An unsupported filter must not be ignored or silently widened to All. Unsupported inputs are disabled with a reason. Velocity intervals use explicit units and non-overlapping lower-inclusive / upper-exclusive bounds. Preset thresholds can change without changing stored metric meanings.
+
+### 30.4 Pitcher analysis
+
+When permitted: handedness, recent and monthly form, innings, situations, 7/14/30 days and season baseline comparison.
+
+MLB Pitch Arsenal, per pitch type: Usage%, average/max velocity, spin, vertical/horizontal movement, Zone%, Swing%, Whiff%, Chase%, Called Strike%, CSW%, opponent AVG/SLG, xBA/xSLG/xwOBA and Run Value where available. Retain useful licensed aggregates and their definitions; do not invent a field not provided by the source.
+
+Default inning groups are 1–3, 4–6 and 7+, with individual innings in detail. Representative count groups are first pitch, pitcher ahead, batter ahead, two strikes and full count; exact 0-0 through 3-2 in detail. These groups overlap and must not be summed as a partition. Count is **pre-pitch**. Include handedness, base state, outs and score state only where observed.
+
+### 30.5 Batter analysis and count semantics
+
+Pitch-type candidates: PA, pitches, AVG, SLG, OPS, HR, K%, Whiff%, xBA/xSLG/xwOBA, exit velocity, Hard-Hit%, Barrel%. Do not label strengths/weaknesses from AVG alone. Later deterministic rules must consider league baseline, player baseline and sample size, with a visible rule version.
+
+Count analysis has two distinct populations:
+
+1. `plate-appearance-reached-count`: final outcomes of distinct plate appearances that reached the count, counted once per PA even if multiple foul balls occur at that count.
+2. `pitch-at-count`: responses to pitches thrown at that pre-pitch count, counted per pitch.
+
+Never compute the former by treating each pitch row as a PA. Pitch-type batting-result aggregates require an explicit PA attribution rule (for example terminal pitch) and separate pitch-response populations. Combined filters are enabled only when the adapter defines their meaning. RISP, outs, home/away, innings, handedness and lead/tied/behind require the relevant pre-event context.
+
+### 30.6 Velocity and zone
+
+Velocity-band analysis is configurable. Initial UI candidates for four-seam pitches: below 92, [92,95), [95,97), [97,99), 99+ mph. These are examples, not domain constants. Batter/pitcher results may include AVG, xwOBA and Whiff% when valid.
+
+Later heatmaps may show pitch location/usage, Whiff%, opponent xwOBA; batter AVG/xwOBA/Whiff%/Swing%/HR/exit velocity. Keep coordinate system ID/version, units, viewpoint, measurement plane, strike-zone definition and season coverage. Savant's 2026 location/zone changes require a validated conversion or separate comparisons. Do not combine pitch coordinates and batted-ball plot coordinates. Model the coordinate definition now; defer grids, rendering and transforms.
+
+### 30.7 MATCHUP
+
+Future entry points: today's games, player pages, manual pitcher/batter selection. Direct matchups show PA, AB, H, HR, SO, BB, AVG, OPS with a small-sample warning. Separately align the pitcher's actual arsenal usage with the batter's performance against those pitch types; this is contextual comparison, not direct head-to-head evidence.
+
+Support later comparisons of counts (e.g. 0-2 arsenal and batter Whiff%), locations and velocity bands. Show population, date window and baseline on each side. Similar pitch shape based on velocity/movement rather than pitch-name alone belongs to a late phase; do not implement now. Do not interpret matchup analysis as certainty about a game's result.
+
+### 30.8 Catcher / battery
+
+Name the feature **「捕手別バッテリー配球傾向」**. When observed catcher ID is available, group pitcher × catcher: usage, first pitch, two-strike counts, hitter handedness, innings, RISP and results. Do not state that the catcher requested a pitch; observed pairing does not identify decision-making causality. Leave room for Framing, Blocking, Pop Time, Arm Strength and other licensed catcher-defense metrics.
+
+### 30.9 Watch integration
+
+Use previous-day analysis to support watching, without pitch-by-pitch速報: today's starter × lineup, next batter candidates when today's lineup is legitimately available, next three hitters, times through order (1st/2nd/3rd+), bullpen prior appearance dates/pitch counts/consecutive days. Today's schedule/lineup is separate from the analysis cutoff and must have its own freshness. Do not assert that a reliever will pitch today.
+
+### 30.10 Recent change
+
+Later compare last 30 days vs season, current vs previous month, recent vs previous 30 days. Batter candidates: AVG/OPS/K%/BB%/Hard-Hit%/Barrel%, pitch-type and velocity-band performance. Pitcher candidates: velocity, usage, Whiff%/K%/BB%/xwOBA, movement and pitch-type results. Use configurable deterministic rules, comparison scope and denominator; no AI requirement. Period overlap (last 30 vs season) must be disclosed.
+
+### 30.11 Sample size and metric definitions
+
+Every split/result retains denominators: PA, AB, BF, pitches, swings, outside-zone pitches, BBE, outs/innings, matchups as applicable. Unknown is not zero. Every derived percentage must retain its denominator population and definition version. League-relative values must identify the comparable baseline and its sample size.
+
+Initial configurable warning candidates:
+
+| Context | Warn below |
+|---|---|
+| batting split | 20 PA |
+| pitch-level | 50 pitches |
+| batted-ball | 20 BBE |
+| pitcher × catcher | 100 pitches |
+
+Show 「サンプルが少ないため参考値」 below the selected threshold; unknown sample size gets a distinct message. Warnings do not automatically remove data. Ranking qualification is a separate policy. Do not mix denominator thresholds with eligibility rules.
+
+### 30.12 Storage and extension contracts
+
+Prefer permitted raw data → bounded aggregation → needed aggregate cache. Do not permanently mirror every MLB pitch into a cloud database. Future aggregates include PitchMix, CountSplit, Batter/PitcherPitchTypeSplit, BatterySplit, ZoneSplit, VelocitySplit and MatchupSplit.
+
+Cache identity must include provider and source revision, schema and aggregation/metric-definition versions, canonical query with all filters, daily reference date, resolved interval, source cutoff, and coordinate definition when applicable. Retention follows the license; enforce a size/entry bound before enabling an analysis cache. Retain counts needed to recompute rates; never average split rates without their proper denominators.
+
+Now implement only AnalysisQuery, AnalysisCapability, AnalysisResult, Split, SampleSize, shared freshness, minimal CountState/BaseState and coordinate metadata needed to make these contracts precise. Defer full PitchEvent/BattedBallEvent, detailed PitchMetrics/PitchMix/Battery/Zone/Velocity models until an actual adapter and calculation require them. Use separate AnalysisProvider and player-directory contracts; no destructive migration of existing favorites/catalog caches.
+
+### 30.13 Implementation sequence and stop rule
+
+- **Analysis A**: feasibility matrix, Query, Capability, Split, SampleSize, freshness and validation. No real-data access without permission.
+- **Analysis B**: pitcher pitch mix/results, inning/count/handedness.
+- **Analysis C**: batter pitch-type/count/handedness/situation.
+- **Analysis D**: direct matchup, arsenal vs batter, count and velocity.
+- **Analysis E**: heatmap, trends, recent changes and percentiles.
+- **Analysis F**: catcher/battery and defense.
+- **Analysis G**: watching integration.
+
+This order guides analysis work inside the existing product roadmap; it does not replace prior features or authorize automatic phase advancement. This task stops after architecture review, source matrix, formal specification/decisions, minimum Analysis A contracts and regression checks. Analysis A is not a claim that daily acquisition or all analysis screens are implemented.

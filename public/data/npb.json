@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "league": "NPB",
+  "updated_at": "2026-09-23T00:00:00Z",
+  "revision": "sample-1",
+  "season": 2026,
+  "clubs": [{ "code": "aoba", "label": "青葉クラブ（架空）" }],
+  "players": [
+    {
+      "key": "aoi",
+      "label": "青葉 蒼",
+      "aliases": ["あおば あおい", "Aoi Aoba"],
+      "club": "aoba",
+      "position": "外野手",
+      "bats": "左",
+      "throws": "右",
+      "number": "8",
+      "batting": {
+        "ab": 120,
+        "hits": 36,
+        "hr": 5,
+        "obp": 0.38,
+        "slg": 0.5,
+        "barrelRate": null
+      },
+      "pitching": null
+    },
+    {
+      "key": "ren",
+      "label": "東雲 蓮",
+      "aliases": ["しののめ れん", "Ren Shinonome"],
+      "club": "aoba",
+      "position": "投手",
+      "bats": "右",
+      "throws": "右",
+      "number": "18",
+      "batting": null,
+      "pitching": { "outs": 109, "earnedRuns": 12 }
+    }
+  ]
+}

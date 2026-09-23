@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Baseball Notes</string>
+    <string name="title_activity_main">Baseball Notes</string>
+    <string name="package_name">jp.baseballdata.app</string>
+    <string name="custom_url_scheme">jp.baseballdata.app</string>
+</resources>
