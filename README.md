@@ -72,6 +72,8 @@ JDKの場所を `JAVA_HOME` に、SDKの場所をAndroid Studioまたは `androi
 `src/domain/analysis-query.ts`：前日までの暦日窓、Capability admission、query identity。
 `src/app/analysis-policy.ts`：母数警告値と現在のProviderの無効化manifest。
 
+日本向けの表示ルールは `SPEC.md` §31。`src/presentation/formatters.ts` が数字・単位・日本時間・名前・母数の表示を担当し、`src/domain/metrics.ts` と `src/domain/baseball-terms.ts` が指標・守備位置・球種の定義を持ちます。高度指標の説明は画面のⓘで任意表示。サンプルの検索用別名は検証済み日本語表示名として扱いません。
+
 Capabilityはリーグ名のif文ではなく、データ条件・実装状態・対象期間・主体・season type・指標・フィルターの組み合わせを検証します。未確認なら無効。AnalysisProviderは契約のみで実データの実装はありません。現在の選手サンプルを分析データの存在証明には使いません。
 
 次の小タスクは、架空の集計結果だけを返す契約テスト用AnalysisProviderを1つ作り、`AnalysisQuery → admission → result validation` の経路を検証することです。日時/母数/empty/unavailableを確認し、実API接続やAnalysis Bへは広げません。

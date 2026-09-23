@@ -4,7 +4,7 @@ import type { CatalogResult, League } from "../domain/models";
 import type { CacheStore, PlayerProvider } from "./ports";
 
 const entrySchema = z.object({
-  version: z.literal(1),
+  version: z.literal(2),
   data: catalogSchema,
   fetchedAt: timestampSchema,
   expiresAt: timestampSchema,
@@ -29,7 +29,7 @@ export class PlayerRepository {
     return request;
   }
   private async read(league: League, force: boolean): Promise<CatalogResult> {
-    const key = `catalog:v1:${this.provider.id}:${league}`;
+    const key = `catalog:v2:${this.provider.id}:${league}`;
     const warnings: string[] = [];
     let cached: Entry | null = null;
     if (this.provider.policy.allowPersistence) {
@@ -97,7 +97,7 @@ export class PlayerRepository {
         throw new Error("Invalid source metadata");
       const fetchedAt = new Date(this.now()).toISOString();
       const entry: Entry = {
-        version: 1,
+        version: 2,
         data,
         fetchedAt,
         expiresAt: new Date(

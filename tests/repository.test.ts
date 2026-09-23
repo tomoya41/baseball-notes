@@ -72,7 +72,7 @@ describe("repository freshness and failures", () => {
     ).rejects.toThrow("取得できません");
   });
   it("recovers from incompatible/corrupted cache and reports it", async () => {
-    values.set("catalog:v1:sample-v1:NPB", { version: 999 });
+    values.set("catalog:v2:sample-v1:NPB", { version: 999 });
     const result = await new PlayerRepository(provider, cache, () => now).load(
       "NPB",
     );

@@ -34,7 +34,7 @@ export const sampleWireSchema = z.object({
       label: z.string().min(1),
       aliases: z.array(z.string()),
       club: z.string().nullable(),
-      position: z.string().nullable(),
+      position: z.enum(["外野手", "投手", "投手・打者"]).nullable(),
       bats: z.enum(["右", "左", "両"]).nullable(),
       throws: z.enum(["右", "左"]).nullable(),
       number: z.string().nullable(),
@@ -113,16 +113,27 @@ export function normalizeSample(input: unknown, league: League): PlayerCatalog {
     teams: wire.clubs.map((t) => ({
       id: identity("team", t.code),
       league,
-      name: t.label,
+      names: {
+        canonical: t.label,
+        japaneseFull: league === "NPB" ? t.label : null,
+        japaneseShort: null,
+        abbreviation: null,
+      },
     })),
     profiles: wire.players.map((p) => ({
       player: {
         id: identity("player", p.key),
         league,
-        name: p.label,
+        names: {
+          canonical: p.label,
+          japanese: league === "NPB" ? p.label : null,
+          english: league === "MLB" ? p.label : null,
+        },
         searchNames: p.aliases,
         teamId: p.club === null ? null : identity("team", p.club),
-        position: p.position,
+        // The sample's generic "外野手" does not identify LF/CF/RF.
+        // "投手・打者" is not evidence of a DH fielding designation.
+        positions: p.position === "外野手" ? ["OF"] : p.position === null ? [] : ["P"],
         sourceIds: { "sample-v1": p.key },
       },
       bats: p.bats,

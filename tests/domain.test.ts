@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import npb from "../public/data/npb.json";
 import mlb from "../public/data/mlb.json";
 import { normalizeSample } from "../src/infrastructure/providers/sample-provider";
-import { formatMetric, metrics, ratio } from "../src/domain/metrics";
+import { metrics, ratio } from "../src/domain/metrics";
+import { formatMetric } from "../src/presentation/formatters";
 
 describe("validation and normalization boundary", () => {
   it("normalizes identities, team relations and statistics before exposing data", () => {

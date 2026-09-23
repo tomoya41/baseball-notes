@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { positionCodeSchema } from "./baseball-terms";
 
 export const leagueSchema = z.enum(["NPB", "MLB"]);
 export type League = z.infer<typeof leagueSchema>;
@@ -13,15 +14,28 @@ export const sourceSchema = z.object({
   updatedAt: timestampSchema,
 });
 export type SourceMetadata = z.infer<typeof sourceSchema>;
-export const teamSchema = z.object({ id, league: leagueSchema, name: id });
+export const teamSchema = z.object({
+  id,
+  league: leagueSchema,
+  names: z.object({
+    canonical: id,
+    japaneseFull: id.nullable(),
+    japaneseShort: id.nullable(),
+    abbreviation: id.nullable(),
+  }),
+});
 export type Team = z.infer<typeof teamSchema>;
 export const playerSchema = z.object({
   id,
   league: leagueSchema,
-  name: id,
+  names: z.object({
+    canonical: id,
+    japanese: id.nullable(),
+    english: id.nullable(),
+  }),
   searchNames: z.array(z.string()),
   teamId: id.nullable(),
-  position: z.string().nullable(),
+  positions: z.array(positionCodeSchema),
   sourceIds: z.record(z.string(), z.string()),
 });
 export type Player = z.infer<typeof playerSchema>;
@@ -70,13 +84,18 @@ export interface RecentForm {
 }
 export interface MetricDefinition {
   id: string;
+  version: string;
   name: string;
   fullName: string;
-  description: string;
+  category: "basic-hitting" | "basic-pitching" | "batted-ball" | "sabermetrics" | "pitching-analysis" | "defense" | "running";
+  description: string; // Short glossary/info text, never shown by default.
   interpretation: string;
-  caveat: string;
+  caveat?: string;
   advanced: boolean;
   format: "rate" | "decimal" | "count" | "percent" | "outs";
+  precision: number;
+  percentileBasis?: "performance" | "raw-value";
+  higherIsBetter?: boolean;
 }
 export const favoriteSchema = z.object({
   kind: z.enum(["player", "team"]),

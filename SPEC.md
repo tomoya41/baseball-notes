@@ -892,7 +892,7 @@ The foundation should make later phases easy to add without forcing a rewrite.
 
 ## 30. Analysis — approved product scope
 
-Added 2026-09-23. This section extends the roadmap; it does not authorize implementing all analysis phases at once. Analysis explains why a player is performing well, their strengths, and their tendencies to ordinary fans. Rich metrics remain welcome; each displayed metric must expose its meaning, interpretation, denominator, limitations, and a league/player baseline when a reliable comparison exists. AI is not required.
+Added 2026-09-23. This section extends the roadmap; it does not authorize implementing all analysis phases at once. Analysis explains why a player is performing well, their strengths, and their tendencies to ordinary fans. Rich metrics remain welcome; unfamiliar metrics expose meaning and interpretation on demand, while all analysis values retain denominators, limitations, and a league/player baseline when a reliable comparison exists. AI is not required.
 
 ### 30.1 League and provider capabilities
 
@@ -1010,3 +1010,35 @@ Now implement only AnalysisQuery, AnalysisCapability, AnalysisResult, Split, Sam
 - **Analysis G**: watching integration.
 
 This order guides analysis work inside the existing product roadmap; it does not replace prior features or authorize automatic phase advancement. This task stops after architecture review, source matrix, formal specification/decisions, minimum Analysis A contracts and regression checks. Analysis A is not a claim that daily acquisition or all analysis screens are implemented.
+
+---
+
+## 31. Japanese-first terminology and presentation
+
+### 31.1 Language and explanation density
+
+Japanese is the default UI language. Prefer terms natural to Japanese baseball fans; keep familiar abbreviations such as AVG, OBP, SLG, OPS, ERA, WHIP, WAR, K%, BB%, xwOBA and OAA. Do not translate established abbreviations merely to make every label Japanese. Compact cards emphasize value, short label and trustworthy context. They must not repeat paragraphs explaining AVG, HR, RBI, OPS, ERA, WHIP, strikeouts, wins or saves.
+
+Unfamiliar metrics (for example xBA, xSLG, xwOBA, wOBA, wRC+, Barrel%, Hard-Hit%, Whiff%, Chase%, CSW%, OAA, Run Value, Framing and Sprint Speed) offer a small optional `ⓘ` action. On a phone it opens a short accessible dialog/sheet with Japanese name, what it measures, how to read high/low, and only essential caveats. Do not expand explanations by default. Detailed formulas belong in a later searchable glossary, backed by the same versioned MetricDefinition catalogue. No per-metric AI explanation button; later AI may synthesize a player's traits, recent changes or a MATCHUP, but fixed metric definitions work offline.
+
+When legally available and comparable, place rank, top percentage, league average, positional average or period delta near the value before adding prose. Every comparison names its population, period, season and relevant baseline. Never invent a rank or percentile without a defined comparable population. Convert a percentile to `MLB 上位8%` only after confirming whether its source percentile ranks raw values or performance and whether high/low is favorable. Otherwise show the source's verified label or omit the relative claim.
+
+### 31.2 Units, precision, dates
+
+Keep each provider's original value and unit in domain/source provenance. Presentation converts velocity to km/h (usually one decimal), distance to m or cm, height to cm and weight to kg. Show mph/feet/inches/pounds secondarily only when useful. A shared formatter owns constants, rounding and missing-value behavior. Never overwrite a source mph value with a derived km/h value. AVG/OBP/SLG/OPS normally use three decimals without leading zero (`.318`); ERA two decimals (`2.35`); percentages normally one (`18.2%`); integer counts no decimals. MetricDefinition can set precision for detailed analysis. Missing/unsupported is `—`, not `null`, `undefined`, `NaN` or zero.
+
+Internally distinguish an absolute timestamp from a baseball calendar date and its source time zone. Japanese UI normally displays instants in Asia/Tokyo: `2026年9月23日`, `9月23日`, `18:00`; label local MLB time explicitly if shown. Date-only values do not shift between time zones. Render innings as `1回表`, `1回裏` and so forth, retaining provider top/bottom codes internally.
+
+### 31.3 Names, teams, positions, pitch types
+
+Player identity is stable and distinct from canonical source name, verified Japanese display name and English display name. NPB Japanese names are primary. For MLB, prefer a trusted curated Japanese name where explicitly available; otherwise use the source English name. Search aliases alone do not license an automatically generated katakana display name. Preserve both scripts for profile/search where supported.
+
+Keep team canonical name, Japanese full name, short name and abbreviation/code as separate fields. Use Japanese NPB names and trusted Japanese MLB names when available; fall back without inventing a translation. Full names fit profiles; short names fit compact cards; codes fit dense comparisons.
+
+Normalize provider positions to canonical codes before UI. Use P/C/1B/2B/3B/SS/LF/CF/RF/DH on compact screens, adding OF only when a source says merely “outfielder”. Detail can show `P 投手`, `SS 遊撃手`, etc. SP/RP/CP are roles only when the provider definition supports them, not substitutes for a fielding position. A two-way hitter/pitcher must not be inferred to be DH. Pitch types likewise have canonical identities distinct from source codes and Japanese display names (フォーシーム, シンカー, スライダー, スイーパー, カーブ, チェンジアップ, スプリット, カットボール). Future adapters map provider-specific codes; UI does not display raw provider labels.
+
+### 31.4 Analysis context and scope
+
+Every Analysis/Split value retains its denominator and definition. Show a concise sample next to granular results (`.667 · 3打数2安打`, `Barrel% 18.2% · 87計測打球`) when available. Small samples receive `参考値` or `サンプル少`; unknown denominators are distinct from small denominators. Tapping can reveal the policy threshold and reason. These configurable warnings remain separate from ranking eligibility. Labels such as `得意`, `苦手`, `好相性` or `苦戦` require a documented deterministic rule using a relevant metric, league baseline, player baseline and sufficient sample size; otherwise use neutral wording or `参考値`. AI impression alone is insufficient.
+
+Centralize locale, numbers, units, dates, names, positions, pitch types and metric definitions. Do not hardcode each screen. This task only aligns current Player/Stats UI and the shared presentation contracts. It does not build a glossary screen, analysis layouts, MATCHUP/heatmap design, a design system, icons, typography, animation or later Analysis phases.

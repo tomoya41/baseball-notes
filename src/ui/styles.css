@@ -380,11 +380,38 @@ details[open] summary {
 .metric .eyebrow {
   letter-spacing: 0.05em;
 }
-.metric .eyebrow span {
-  display: block;
-  font-size: 0.66rem;
+.metric-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.metric-info-button {
+  background: transparent;
+  color: var(--green);
+  font-size: 1rem;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+}
+.metric-dialog {
+  width: min(90vw, 430px);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 24px;
+  color: var(--text);
+  background: var(--surface);
   font-weight: 400;
-  margin-top: 2px;
+  letter-spacing: normal;
+}
+.metric-dialog::backdrop {
+  background: rgb(0 0 0 / 50%);
+}
+.metric-dialog h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+.metric-dialog p {
+  line-height: 1.6;
 }
 .metric-value {
   font-size: 1.9rem;
@@ -395,10 +422,6 @@ details[open] summary {
 .metric > .muted {
   font-size: 0.75rem;
   margin: 7px 0;
-}
-.metric details {
-  border-top: 1px solid var(--line);
-  margin-top: 10px;
 }
 .advanced {
   margin-top: 16px;

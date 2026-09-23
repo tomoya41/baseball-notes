@@ -82,3 +82,11 @@ Separate final outcomes of PAs reaching a count from per-pitch responses at that
 Savant documents a 2026 change in plate-location/zone conventions. Coordinate definition, version, units, viewpoint and measurement plane must match for direct comparisons. Transformation requires a later verified implementation.
 
 Persist bounded aggregates only where permitted. No permanent all-pitch cloud mirror. Analysis A introduces contracts and guards; collection, daily scheduling, aggregate cache eviction, advanced analysis screens and phases B–G are not implemented now. `SPEC.md` section 30 is the formal analysis product scope.
+
+## 2026-09-23 — Japanese-first baseball presentation
+
+Japanese is the default UI, while familiar baseball abbreviations remain in English. Show basic metrics compactly; advanced metrics have an optional short `ⓘ` explanation backed by MetricDefinition for later glossary reuse. When a reliable comparable population exists, show relative position and its scope before lengthy explanation. Percentile conversion must know source ranking semantics and metric direction; no inferred top-% claim.
+
+Store provider values and units unchanged; convert mph/imperial units to metric at presentation, with explicit JST formatting for timestamps and date-only calendar values kept separate. Keep canonical, verified Japanese and English player names separate, likewise team full/short/code, canonical positions and pitch types. Search aliases are not verified Japanese display names. Provider adapters normalize these identities before UI.
+
+The disposable player catalog cache moves to v2 because its normalized name/position schema changed. Favorite entity IDs and their storage are unchanged. Old v1 cache remains untouched and is refetched; revert by restoring the prior domain/provider/UI and v1 key together. No design-system change or real data-provider adoption is implied.

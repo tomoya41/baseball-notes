@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import {
   Link,
   NavLink,
@@ -16,10 +16,32 @@ import type {
   Player,
   PlayerCatalog,
   Statistics,
+  MetricDefinition,
 } from "../domain/models";
-import { formatMetric, metrics } from "../domain/metrics";
+import { metrics } from "../domain/metrics";
+import { positionDefinitions } from "../domain/baseball-terms";
+import {
+  formatDateTime, formatMetric, formatPlayerName, formatPositions, formatTeamName,
+} from "../presentation/formatters";
 
-const date = (value: string) => new Date(value).toLocaleString("ja-JP");
+function MetricInfo({ definition }: { definition: MetricDefinition }) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
+  return (
+    <>
+      <button className="metric-info-button" type="button"
+        aria-label={`${definition.name}の説明`}
+        onClick={() => dialog.current?.showModal()}>ⓘ</button>
+      <dialog className="metric-dialog" ref={dialog} aria-labelledby={titleId}>
+        <h2 id={titleId}>{definition.name}（{definition.fullName}）</h2>
+        <p>{definition.description}</p>
+        <p>{definition.interpretation}</p>
+        {definition.caveat && <p className="muted">{definition.caveat}</p>}
+        <form method="dialog"><button className="button">閉じる</button></form>
+      </dialog>
+    </>
+  );
+}
 function MetricCards({
   stats,
   advanced,
@@ -34,8 +56,8 @@ function MetricCards({
         if (!definition || definition.advanced !== advanced) return null;
         return (
           <article className="metric" key={id}>
-            <div className="eyebrow">
-              {definition.name} <span>{definition.fullName}</span>
+            <div className="eyebrow metric-label">
+              {definition.name}{definition.advanced && <MetricInfo definition={definition} />}
             </div>
             <strong className="metric-value">
               {formatMetric(value, definition)}
@@ -43,12 +65,6 @@ function MetricCards({
             {value.status !== "available" && (
               <p className="muted">{value.reason}</p>
             )}
-            <details>
-              <summary>{definition.name}の意味</summary>
-              <p>{definition.description}</p>
-              <p>{definition.interpretation}</p>
-              <p className="muted">{definition.caveat}</p>
-            </details>
           </article>
         );
       })}
@@ -75,10 +91,16 @@ function PlayerList({
           (f) => f.kind === "player" && f.entityId === player.id,
         )) &&
       [
-        player.name,
+        player.names.canonical,
+        player.names.japanese ?? "",
+        player.names.english ?? "",
         ...player.searchNames,
-        player.position ?? "",
-        team?.name ?? "",
+        ...player.positions,
+        ...player.positions.map((code) => positionDefinitions[code]),
+        team?.names.canonical ?? "",
+        team?.names.japaneseFull ?? "",
+        team?.names.japaneseShort ?? "",
+        team?.names.abbreviation ?? "",
       ]
         .join(" ")
         .normalize("NFKC")
@@ -91,7 +113,7 @@ function PlayerList({
       <div className="section-heading">
         <div>
           <p className="eyebrow">
-            {onlyFavorites ? "MY BASEBALL" : "PLAYER DIRECTORY"}
+            {onlyFavorites ? "お気に入り" : "選手名鑑"}
           </p>
           <h1>{onlyFavorites ? "お気に入り" : "選手を探す"}</h1>
         </div>
@@ -125,11 +147,10 @@ function PlayerList({
               {String(index + 1).padStart(2, "0")}
             </span>
             <span className="player-info">
-              <strong>{player.name}</strong>
+              <strong>{formatPlayerName(player)}</strong>
               <span>
-                {catalog.teams.find((t) => t.id === player.teamId)?.name ??
-                  "所属情報なし"}{" "}
-                · {player.position ?? "守備位置不明"}
+                {formatTeamName(catalog.teams.find((t) => t.id === player.teamId), "short")}{" "}
+                · {formatPositions(player.positions)}
               </span>
             </span>
             <span
@@ -204,12 +225,13 @@ function PlayerDetail({
         ← 選手一覧
       </Link>
       <section className="profile-header">
-        <p className="eyebrow">{catalog.league} / PLAYER PROFILE</p>
-        <h1>{player.name}</h1>
+        <p className="eyebrow">{catalog.league} / 選手プロフィール</p>
+        <h1>{formatPlayerName(player)}</h1>
+        {player.names.japanese && player.names.english &&
+          <p className="muted">{player.names.english}</p>}
         <p>
-          {catalog.teams.find((t) => t.id === player.teamId)?.name ??
-            "所属情報なし"}{" "}
-          · {player.position ?? "守備位置不明"}
+          {formatTeamName(catalog.teams.find((t) => t.id === player.teamId))}{" "}
+          · {formatPositions(player.positions, true)}
         </p>
         <div className="profile-meta">
           <span>背番号 {profile.jersey ?? "不明"}</span>
@@ -361,7 +383,7 @@ function LeagueView({
               path="home"
               element={
                 <section className="hero">
-                  <p className="eyebrow">BASEBALL, A LITTLE CLOSER.</p>
+                  <p className="eyebrow">数字から見る野球</p>
                   <h1>
                     数字の先に、
                     <br />
@@ -440,9 +462,9 @@ function LeagueView({
                 : "提供元から取得"}
             </p>
             <p>
-              データ更新：{date(result.data.source.updatedAt)}
+              データ更新：{formatDateTime(result.data.source.updatedAt)}
               <br />
-              取得：{date(result.freshness.fetchedAt)}
+              取得：{formatDateTime(result.freshness.fetchedAt)}
             </p>
             {result.warnings.map((warning) => (
               <p className="warning" role="status" key={warning}>
@@ -534,7 +556,7 @@ export function App({ services }: { services: Services }) {
             <b>NOTES</b>
           </span>
         </Link>
-        <span className="preview-badge">PREVIEW</span>
+        <span className="preview-badge">プレビュー</span>
       </header>
       <div className="league-bar">
         <nav className="league-switch" aria-label="リーグ切替">
