@@ -90,3 +90,9 @@ Japanese is the default UI, while familiar baseball abbreviations remain in Engl
 Store provider values and units unchanged; convert mph/imperial units to metric at presentation, with explicit JST formatting for timestamps and date-only calendar values kept separate. Keep canonical, verified Japanese and English player names separate, likewise team full/short/code, canonical positions and pitch types. Search aliases are not verified Japanese display names. Provider adapters normalize these identities before UI.
 
 The disposable player catalog cache moves to v2 because its normalized name/position schema changed. Favorite entity IDs and their storage are unchanged. Old v1 cache remains untouched and is refetched; revert by restoring the prior domain/provider/UI and v1 key together. No design-system change or real data-provider adoption is implied.
+
+## 2026-09-24 — Android-first design system and navigation
+
+Use a restrained navy/blue token system with device-following light/dark themes, tabular numerals, system Japanese fonts, 4–32px spacing scale, 8–16px radius and approximately 48px touch targets. Lucide is the only general icon set; baseball-specific SVGs are original. Team and league marks default to text/monogram because official logo reuse is unlicensed. A reviewed license record is required before registering an official asset.
+
+Bottom navigation is ホーム / 検索 / 分析 / 記録 / マイ. The existing player detail URL persists; old directory/favorite routes redirect. Home is a short vertical feed and never manufactures unavailable schedule/HOT/record data. Search supports both player and team. Player uses four in-page tabs. Ranking is a synthetic preview list only while real qualification inputs are absent, with visible nonofficial wording. These choices preserve provider/domain/favorite storage and can be reverted as one UI change. `SPEC.md` section 32 and `docs/design-system.md` define the product boundary.

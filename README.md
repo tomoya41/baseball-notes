@@ -4,13 +4,14 @@ Androidを主対象とする野球データアプリ。製品仕様は [SPEC.md]
 
 ## 現在できること
 
-React + TypeScript strict + Vite + Capacitor Androidの最小構成。Home / Players / 選手詳細 / お気に入り、NPB・MLB切替、名前・読み・チーム・守備位置の検索、指標説明、保存済みデータの再利用とstale表示を実装。
+React + TypeScript strict + Vite + Capacitor Androidの構成。ホーム / 検索 / 分析 / 記録 / マイの5項目ナビ、NPB・MLB切替、選手・球団検索、選手詳細、端末保存のお気に入り、指標説明、stale表示を実装。Home / Player / 参考ランキングにLight/Dark対応のデザインシステムを適用しています。
 
-**現在はすべて架空のサンプルデータです。実選手・今季成績・ライブAPIは接続していません。** 実データへの利用許諾が未確定のまま取得しないための意図的な境界です。AnalysisはAの仕様・型・Capability判定・期間/母数検証まで。分析画面・集計・日次取得は未実装です。
+**現在はすべて架空のサンプルデータです。実選手・今季成績・ライブAPIは接続していません。** 実データへの利用許諾が未確定のまま取得しないための意図的な境界です。ランキングはサンプル内の参考表示で、規定条件や公式順位ではありません。AnalysisはAの仕様・型・Capability判定・期間/母数検証まで。分析画面・集計・日次取得は未実装です。
 
 - [アーキテクチャ](docs/architecture.md)
 - [データ取得元の調査](docs/data-sources.md)
 - [MLB / NPB Capability Matrix](docs/analysis-capabilities.md)
+- [デザインシステム](docs/design-system.md)
 - [検証・整理記録](docs/verification.md)
 
 ## ブラウザで開発
@@ -88,4 +89,4 @@ Vercelは必須ではありません。必要な場合だけ個人・非商用Ho
 
 ## 今回の停止位置
 
-Phase 0の骨格＋縦方向実装、Analysis Aの仕様・モデル・検証まで。Hot、記録、ドラフト、FA、Prospect、通知、AI、Analysis B–Gは未実装です。次Phaseへ自動的に進みません。
+Phase 0の骨格＋縦方向実装、Analysis Aの仕様・モデル・検証、Design AとHome / Player / 参考Rankingの代表UIまで。Hot、正式な記録・ランキング、ドラフト、FA、Prospect、通知、AI、Analysis B–GおよびMATCHUP/WATCHは未実装です。次Phaseへ自動的に進みません。

@@ -1,621 +1,405 @@
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
-  Link,
-  NavLink,
-  Navigate,
-  Route,
-  Routes,
-  useLocation,
-  useParams,
-} from "react-router-dom";
+  ArrowLeft, ChartNoAxesCombined, ChevronRight, House, RefreshCw,
+  Search, SlidersHorizontal, Trophy, UserRound,
+} from "lucide-react";
+import { Link, Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
 import type { Services } from "../app/services";
-import type {
-  CatalogResult,
-  Favorite,
-  League,
-  Player,
-  PlayerCatalog,
-  Statistics,
-  MetricDefinition,
-} from "../domain/models";
+import { foundationAnalysisCapabilities } from "../app/analysis-policy";
+import type { CatalogResult, Favorite, League, PlayerCatalog, Statistics } from "../domain/models";
 import { metrics } from "../domain/metrics";
 import { positionDefinitions } from "../domain/baseball-terms";
+import { formatDate, formatDateTime, formatMetric, formatPlayerName, formatPositions, formatTeamName } from "../presentation/formatters";
+import { sampleRanking } from "../presentation/sample-ranking";
+import type { SampleRankingMetric } from "../presentation/sample-ranking";
+import { BaseballIcon, BatIcon, HomePlateIcon } from "./baseball-icons";
+import { LeagueBadge, TeamBrand } from "./branding";
 import {
-  formatDateTime, formatMetric, formatPlayerName, formatPositions, formatTeamName,
-} from "../presentation/formatters";
+  DataState, FavoriteButton, LoadingSkeleton, MetricGrid, PageHeading,
+  PlayerAvatar, PlayerRow, SectionHeader, TeamRow,
+} from "./components";
 
-function MetricInfo({ definition }: { definition: MetricDefinition }) {
-  const dialog = useRef<HTMLDialogElement>(null);
-  const titleId = useId();
-  return (
-    <>
-      <button className="metric-info-button" type="button"
-        aria-label={`${definition.name}の説明`}
-        onClick={() => dialog.current?.showModal()}>ⓘ</button>
-      <dialog className="metric-dialog" ref={dialog} aria-labelledby={titleId}>
-        <h2 id={titleId}>{definition.name}（{definition.fullName}）</h2>
-        <p>{definition.description}</p>
-        <p>{definition.interpretation}</p>
-        {definition.caveat && <p className="muted">{definition.caveat}</p>}
-        <form method="dialog"><button className="button">閉じる</button></form>
-      </dialog>
-    </>
-  );
+type FavoriteTarget = Pick<Favorite, "kind" | "entityId" | "league">;
+
+function AnalysisState({ league }: { league: League }) {
+  const capability = foundationAnalysisCapabilities(league).features.basicStats;
+  if (!capability) return <DataState kind="not-implemented" title="分析画面は準備中です" />;
+  const titles = {
+    available: "分析画面は準備中です",
+    conditional: "利用条件を確認中です",
+    unavailable: "この提供元では分析データがありません",
+    prohibited: "この分析データは利用できません",
+    research: "データ取得方法を調査中です",
+  } as const;
+  return <DataState kind={capability.status === "available" ? "not-implemented" : "unsupported"}
+    title={titles[capability.status]} detail={capability.reason} />;
 }
-function MetricCards({
-  stats,
-  advanced,
-}: {
-  stats: Statistics;
-  advanced: boolean;
-}) {
-  return (
-    <div className="metrics">
-      {Object.entries(stats.metrics).map(([id, value]) => {
-        const definition = metrics[id];
-        if (!definition || definition.advanced !== advanced) return null;
-        return (
-          <article className="metric" key={id}>
-            <div className="eyebrow metric-label">
-              {definition.name}{definition.advanced && <MetricInfo definition={definition} />}
-            </div>
-            <strong className="metric-value">
-              {formatMetric(value, definition)}
-            </strong>
-            {value.status !== "available" && (
-              <p className="muted">{value.reason}</p>
-            )}
-          </article>
-        );
-      })}
+
+function HomeScreen({ catalog, favorites }: { catalog: PlayerCatalog; favorites: Favorite[] }) {
+  const league = catalog.league;
+  const saved = catalog.profiles.filter(({ player }) => favorites.some((favorite) =>
+    favorite.kind === "player" && favorite.entityId === player.id));
+  return <div className="screen home-screen">
+    <div className="home-intro">
+      <div><p className="eyebrow">{formatDate(new Date().toISOString())}</p><h1>今日の野球</h1></div>
+      <LeagueBadge league={league} />
     </div>
-  );
+    <section className="home-section">
+      <SectionHeader title="今日の試合" />
+      <div className="feature-panel feature-panel--game">
+        <HomePlateIcon className="feature-icon" />
+        <DataState kind="unsupported" title="試合情報は未接続です" detail="現在の提供元に日程データはありません。" />
+      </div>
+    </section>
+    <section className="home-section">
+      <SectionHeader title="お気に入り" action={saved.length > 2 ? "もっと見る" : undefined} to={`/${league}/my`} />
+      {saved.length ? <div className="row-list">{saved.slice(0, 2).map(({ player }) =>
+        <PlayerRow key={player.id} player={player} catalog={catalog} favorites={favorites} />)}</div>
+        : <DataState kind="no-data" title="お気に入りはまだありません" action="選手を探す" to={`/${league}/search`} />}
+    </section>
+    <section className="home-section">
+      <SectionHeader title="サンプル選手" action="もっと見る" to={`/${league}/search`} />
+      <div className="feature-panel feature-panel--players">
+        <div className="feature-panel__title"><BatIcon className="feature-icon" /><span>選手データを見てみる</span></div>
+        <div className="row-list">{catalog.profiles.slice(0, 2).map(({ player }) =>
+          <PlayerRow key={player.id} player={player} catalog={catalog} favorites={favorites} />)}</div>
+      </div>
+    </section>
+    <section className="home-section home-section--compact">
+      <SectionHeader title="HOT" action="参考順位" to={`/${league}/ranking`} />
+      <DataState kind="unsupported" title="直近成績は未接続です" detail="HOT判定に必要な期間別データがありません。" />
+    </section>
+    <section className="home-section home-section--compact">
+      <SectionHeader title="今日の注目" />
+      <DataState kind="unsupported" title="注目情報は未接続です" />
+    </section>
+    <section className="home-section home-section--compact">
+      <SectionHeader title="記録目前" />
+      <DataState kind="unsupported" title="記録目前のデータは未接続です" />
+    </section>
+    <section className="home-section home-section--compact">
+      <SectionHeader title="シーズン" />
+      <DataState kind="unsupported" title="シーズン情報は未接続です" />
+    </section>
+  </div>;
 }
 
-function PlayerList({
-  catalog,
-  favorites,
-  onlyFavorites = false,
-}: {
-  catalog: PlayerCatalog;
-  favorites: Favorite[];
-  onlyFavorites?: boolean;
+function SearchScreen({ catalog, favorites, query, setQuery, scope, setScope }: {
+  catalog: PlayerCatalog; favorites: Favorite[]; query: string; setQuery: (value: string) => void;
+  scope: "players" | "teams"; setScope: (value: "players" | "teams") => void;
 }) {
-  const [query, setQuery] = useState("");
-  const normalizedQuery = query.normalize("NFKC").toLocaleLowerCase().trim();
-  const shown = catalog.profiles.filter(({ player }) => {
-    const team = catalog.teams.find((t) => t.id === player.teamId);
-    return (
-      (!onlyFavorites ||
-        favorites.some(
-          (f) => f.kind === "player" && f.entityId === player.id,
-        )) &&
-      [
-        player.names.canonical,
-        player.names.japanese ?? "",
-        player.names.english ?? "",
-        ...player.searchNames,
-        ...player.positions,
-        ...player.positions.map((code) => positionDefinitions[code]),
-        team?.names.canonical ?? "",
-        team?.names.japaneseFull ?? "",
-        team?.names.japaneseShort ?? "",
-        team?.names.abbreviation ?? "",
-      ]
-        .join(" ")
-        .normalize("NFKC")
-        .toLocaleLowerCase()
-        .includes(normalizedQuery)
-    );
+  const needle = query.normalize("NFKC").toLocaleLowerCase("ja-JP").trim();
+  const players = catalog.profiles.filter(({ player }) => {
+    const team = catalog.teams.find((item) => item.id === player.teamId);
+    return [player.names.canonical, player.names.japanese, player.names.english,
+      ...player.searchNames, ...player.positions,
+      ...player.positions.map((code) => positionDefinitions[code]),
+      team?.names.canonical, team?.names.japaneseFull, team?.names.japaneseShort,
+    ].filter(Boolean).join(" ").normalize("NFKC").toLocaleLowerCase("ja-JP").includes(needle);
   });
-  return (
-    <>
-      <div className="section-heading">
-        <div>
-          <p className="eyebrow">
-            {onlyFavorites ? "お気に入り" : "選手名鑑"}
-          </p>
-          <h1>{onlyFavorites ? "お気に入り" : "選手を探す"}</h1>
-        </div>
-        <span className="count">{shown.length}人</span>
-      </div>
-      <p className="muted">
-        {onlyFavorites
-          ? "気になる選手を、いつでも手元に。"
-          : "名前、読み方、チーム、守備位置から。"}
-      </p>
-      <label className="search-label" htmlFor="player-search">
-        選手検索
-      </label>
-      <input
-        id="player-search"
-        type="search"
-        placeholder="名前・チーム・守備位置"
-        value={query}
-        onChange={(event) => {
-          setQuery(event.target.value);
-        }}
-      />
-      <div className="player-list">
-        {shown.map(({ player }, index) => (
-          <Link
-            className="player-card"
-            key={player.id}
-            to={`/${catalog.league}/players/${encodeURIComponent(player.id)}`}
-          >
-            <span className="avatar" aria-hidden="true">
-              {String(index + 1).padStart(2, "0")}
-            </span>
-            <span className="player-info">
-              <strong>{formatPlayerName(player)}</strong>
-              <span>
-                {formatTeamName(catalog.teams.find((t) => t.id === player.teamId), "short")}{" "}
-                · {formatPositions(player.positions)}
-              </span>
-            </span>
-            <span
-              className="card-arrow"
-              aria-label={
-                favorites.some(
-                  (f) => f.kind === "player" && f.entityId === player.id,
-                )
-                  ? "お気に入り登録済み"
-                  : undefined
-              }
-            >
-              {favorites.some(
-                (f) => f.kind === "player" && f.entityId === player.id,
-              )
-                ? "★"
-                : "↗"}
-            </span>
-          </Link>
-        ))}
-      </div>
-      {shown.length === 0 && (
-        <p className="empty">
-          {onlyFavorites
-            ? "登録した選手がここに表示されます。選手詳細の「お気に入りに追加」から登録できます。"
-            : "一致する選手はいません。検索語を変えてお試しください。"}
-        </p>
-      )}
-      {onlyFavorites &&
-        favorites.some(
-          (f) =>
-            f.league === catalog.league &&
-            f.kind === "player" &&
-            !catalog.profiles.some((p) => p.player.id === f.entityId),
-        ) && (
-          <p className="notice">
-            このデータに含まれない登録選手がいます。お気に入りの記録は端末に保持しています。
-          </p>
-        )}
-    </>
-  );
+  const teams = catalog.teams.filter((team) => [
+    team.names.canonical, team.names.japaneseFull, team.names.japaneseShort, team.names.abbreviation,
+  ].filter(Boolean).join(" ").normalize("NFKC").toLocaleLowerCase("ja-JP").includes(needle));
+  const count = scope === "players" ? players.length : teams.length;
+  return <div className="screen">
+    <PageHeading eyebrow={`${catalog.league} / 検索`} title="探す" />
+    <label className="search-field"><Search size={20} aria-hidden="true" />
+      <span className="sr-only">選手・球団検索</span>
+      <input type="search" placeholder="選手名・球団名・守備位置" value={query}
+        onChange={(event) => setQuery(event.target.value)} />
+    </label>
+    <div className="segmented" role="group" aria-label="検索対象">
+      <button type="button" aria-pressed={scope === "players"} onClick={() => setScope("players")}>選手</button>
+      <button type="button" aria-pressed={scope === "teams"} onClick={() => setScope("teams")}>球団</button>
+    </div>
+    <div className="list-heading"><strong>{scope === "players" ? "選手" : "球団"}</strong><span>{count}件</span></div>
+    {count ? <div className="row-list">
+      {scope === "players" ? players.map(({ player }) => <PlayerRow key={player.id}
+        player={player} catalog={catalog} favorites={favorites} />)
+        : teams.map((team) => <TeamRow key={team.id} team={team} catalog={catalog} />)}
+    </div> : <DataState kind="no-data" title="一致する結果がありません" detail="別の名前や略称をお試しください。" />}
+    <Link className="ranking-entry" to={`/${catalog.league}/ranking`}>
+      <Trophy size={20} aria-hidden="true" /><span><strong>ランキング</strong><small>サンプル内の参考順位を見る</small></span>
+      <ChevronRight size={19} aria-hidden="true" />
+    </Link>
+  </div>;
 }
 
-function PlayerDetail({
-  catalog,
-  favorites,
-  toggle,
-  saving,
-}: {
-  catalog: PlayerCatalog;
-  favorites: Favorite[];
-  toggle: (player: Player) => void;
-  saving: boolean;
+function RankingScreen({ catalog }: { catalog: PlayerCatalog }) {
+  const [metricId, setMetricId] = useState<SampleRankingMetric>("avg");
+  const rows = sampleRanking(catalog, metricId);
+  return <div className="screen">
+    <PageHeading eyebrow={`${catalog.league} / 比較`} title="ランキング" detail="架空データのサンプル内で並べた参考表示" />
+    <div className="chip-list" role="group" aria-label="指標">
+      {(["avg", "hr", "ops", "era"] as const).map((id) => <button key={id}
+        className="filter-chip" type="button" aria-pressed={metricId === id} onClick={() => setMetricId(id)}>
+        {metrics[id]?.name}
+      </button>)}
+    </div>
+    <p className="qualification-note"><SlidersHorizontal size={16} aria-hidden="true" />規定打席・投球回は未判定。公式順位ではありません。</p>
+    {rows.length ? <div className="rank-list">
+      <div className="rank-list__head"><span>順位</span><span>選手</span><span>{metrics[metricId]?.name}</span></div>
+      {rows.map(({ rank, player, value }) => {
+        const team = catalog.teams.find((item) => item.id === player.teamId);
+        return <Link className="rank-row" key={player.id}
+          to={`/${catalog.league}/players/${encodeURIComponent(player.id)}`}>
+          <strong className="rank-number">{rank}</strong>
+          <span className="rank-person"><TeamBrand team={team} size="xs" /><span>
+            <strong>{formatPlayerName(player)}</strong><small>{formatTeamName(team, "short")} · {formatPositions(player.positions)}</small>
+          </span></span>
+          <strong className="rank-value">{formatMetric({ status: "available", value }, metrics[metricId]!)}</strong>
+        </Link>;
+      })}
+    </div> : <DataState kind={catalog.source.kind === "sample" ? "no-data" : "not-implemented"}
+      title={catalog.source.kind === "sample" ? "この指標の値はありません" : "正式な順位は準備中です"} />}
+  </div>;
+}
+
+function StatsSection({ stats }: { stats: Statistics }) {
+  return <section className="stats-section">
+    <div className="section-header"><h2>{stats.season}年 · {stats.group === "hitting" ? "打撃" : "投球"}</h2>
+      <span className="subtle-label">{stats.seasonType === "regular" ? "公式戦" : stats.seasonType === "preseason" ? "オープン戦" : "ポストシーズン"}</span>
+    </div>
+    {stats.completeness === "partial" && <p className="inline-note">一部の指標は未提供です</p>}
+    <MetricGrid stats={stats} />
+    {Object.keys(stats.metrics).some((id) => metrics[id]?.advanced) && <details className="advanced-disclosure">
+      <summary>高度な指標<ChevronRight size={18} aria-hidden="true" /></summary>
+      <MetricGrid stats={stats} advanced />
+    </details>}
+  </section>;
+}
+
+function PlayerScreen({ catalog, favorites, toggle, saving }: {
+  catalog: PlayerCatalog; favorites: Favorite[]; toggle: (target: FavoriteTarget) => void; saving: boolean;
 }) {
-  const { playerId } = useParams();
-  const profile = catalog.profiles.find((p) => p.player.id === playerId);
-  if (!profile)
-    return (
-      <>
-        <h1>選手が見つかりません</h1>
-        <Link to={`/${catalog.league}/players`}>選手一覧へ戻る</Link>
-      </>
-    );
+  const { playerId, section } = useParams();
+  const profile = catalog.profiles.find((item) => item.player.id === playerId);
+  if (!profile) return <div className="screen"><DataState kind="no-data" title="選手が見つかりません"
+    action="検索に戻る" to={`/${catalog.league}/search`} /></div>;
+  if (section && !["stats", "analysis", "more"].includes(section)) {
+    return <Navigate to={`/${catalog.league}/players/${encodeURIComponent(profile.player.id)}`} replace />;
+  }
   const { player } = profile;
-  const isFavorite = favorites.some(
-    (f) => f.kind === "player" && f.entityId === player.id,
-  );
-  const stats = catalog.statistics.filter((s) => s.playerId === player.id);
-  return (
-    <>
-      <Link className="back-link" to={`/${catalog.league}/players`}>
-        ← 選手一覧
-      </Link>
-      <section className="profile-header">
-        <p className="eyebrow">{catalog.league} / 選手プロフィール</p>
-        <h1>{formatPlayerName(player)}</h1>
-        {player.names.japanese && player.names.english &&
-          <p className="muted">{player.names.english}</p>}
-        <p>
-          {formatTeamName(catalog.teams.find((t) => t.id === player.teamId))}{" "}
-          · {formatPositions(player.positions, true)}
-        </p>
-        <div className="profile-meta">
-          <span>背番号 {profile.jersey ?? "不明"}</span>
-          <span>
-            {profile.throws ?? "不明"}投 / {profile.bats ?? "不明"}打
-          </span>
+  const team = catalog.teams.find((item) => item.id === player.teamId);
+  const isFavorite = favorites.some((favorite) => favorite.kind === "player" && favorite.entityId === player.id);
+  const stats = catalog.statistics.filter((item) => item.playerId === player.id);
+  const base = `/${catalog.league}/players/${encodeURIComponent(player.id)}`;
+  return <div className="screen">
+    <Link className="back-link" to={`/${catalog.league}/search`}><ArrowLeft size={18} />検索に戻る</Link>
+    <header className="profile-header">
+      <PlayerAvatar player={player} team={team} jersey={profile.jersey} size="lg" />
+      <div className="profile-header__body">
+        <div className="profile-header__top"><LeagueBadge league={catalog.league} />
+          <FavoriteButton active={isFavorite} saving={saving} label={formatPlayerName(player)}
+            onClick={() => toggle({ kind: "player", entityId: player.id, league: catalog.league })} />
         </div>
-        <button
-          className={isFavorite ? "button favorited" : "button"}
-          aria-pressed={isFavorite}
-          disabled={saving}
-          onClick={() => {
-            toggle(player);
-          }}
-        >
-          {saving
-            ? "保存中…"
-            : isFavorite
-              ? "★ お気に入り登録済み"
-              : "☆ お気に入りに追加"}
-        </button>
-      </section>
-      {catalog.source.kind === "sample" && (
-        <p className="notice">
-          この選手・チーム・成績はすべて架空のサンプルです。
-        </p>
-      )}
-      {stats.length === 0 && (
-        <p className="empty">成績はまだ提供されていません。</p>
-      )}
-      {stats.map((stat) => (
-        <section className="stats-section" key={`${stat.group}:${stat.season}`}>
-          <div className="section-heading">
-            <h2>
-              {stat.season} · {stat.group === "hitting" ? "打撃" : "投球"}
-            </h2>
-            <span className="tag">
-              {stat.seasonType === "regular"
-                ? "公式戦"
-                : stat.seasonType === "preseason"
-                  ? "オープン戦"
-                  : "ポストシーズン"}
-              {stat.source.kind === "sample" ? "の形式 / サンプル" : ""}
-            </span>
-          </div>
-          {stat.completeness === "partial" && (
-            <p className="muted">一部の項目は未提供です。</p>
-          )}
-          <MetricCards stats={stat} advanced={false} />
-          {Object.keys(stat.metrics).some((id) => metrics[id]?.advanced) && (
-            <details className="advanced">
-              <summary>詳しい指標を見る</summary>
-              <MetricCards stats={stat} advanced />
-            </details>
-          )}
-        </section>
-      ))}
-    </>
-  );
+        <h1>{formatPlayerName(player)}</h1>
+        {player.names.japanese && player.names.english && <p className="secondary-name">{player.names.english}</p>}
+        <p>{formatTeamName(team)} · {formatPositions(player.positions)}</p>
+      </div>
+    </header>
+    <div className="profile-facts"><span>{formatPositions(player.positions, true)}</span>
+      <span>背番号 {profile.jersey ?? "—"}</span><span>{profile.throws ?? "—"}投 / {profile.bats ?? "—"}打</span>
+    </div>
+    <nav className="profile-tabs" aria-label="選手ページ">
+      {[{ label: "概要", path: base }, { label: "成績", path: `${base}/stats` },
+        { label: "分析", path: `${base}/analysis` }, { label: "その他", path: `${base}/more` }].map((tab, index) =>
+        <Link key={tab.label} to={tab.path} aria-current={section === undefined ? index === 0 ? "page" : undefined
+          : tab.path.endsWith(`/${section}`) ? "page" : undefined}>{tab.label}</Link>)}
+    </nav>
+    {!section && <div className="profile-content">
+      {stats.length ? stats.map((item) => <section className="stats-section" key={`${item.group}:${item.season}`}>
+        <SectionHeader title={`${item.season}年 · ${item.group === "hitting" ? "打撃" : "投球"}`}
+          action="成績を見る" to={`${base}/stats`} />
+        <MetricGrid stats={item} />
+      </section>) : <DataState kind="no-data" title="成績はまだありません" />}
+    </div>}
+    {section === "stats" && <div className="profile-content">{stats.length
+      ? stats.map((item) => <StatsSection key={`${item.group}:${item.season}`} stats={item} />)
+      : <DataState kind="no-data" title="成績はまだありません" />}</div>}
+    {section === "analysis" && <div className="profile-content"><PageHeading title="分析" />
+      <AnalysisState league={catalog.league} /></div>}
+    {section === "more" && <div className="profile-content"><PageHeading title="その他" />
+      <SectionHeader title="記録" /><DataState kind="not-implemented" title="記録は準備中です" />
+      <SectionHeader title="経歴" /><DataState kind="not-implemented" title="経歴は準備中です" />
+    </div>}
+  </div>;
 }
 
-function LeagueView({
-  league,
-  services,
-  favorites,
-  toggle,
-  saving,
-}: {
-  league: League;
-  services: Services;
-  favorites: Favorite[];
-  toggle: (player: Player) => void;
-  saving: boolean;
+function TeamScreen({ catalog, favorites, toggle, saving }: {
+  catalog: PlayerCatalog; favorites: Favorite[]; toggle: (target: FavoriteTarget) => void; saving: boolean;
+}) {
+  const { teamId } = useParams();
+  const team = catalog.teams.find((item) => item.id === teamId);
+  if (!team) return <div className="screen"><DataState kind="no-data" title="球団が見つかりません"
+    action="検索に戻る" to={`/${catalog.league}/search`} /></div>;
+  const members = catalog.profiles.filter(({ player }) => player.teamId === team.id);
+  const active = favorites.some((favorite) => favorite.kind === "team" && favorite.entityId === team.id);
+  return <div className="screen">
+    <Link className="back-link" to={`/${catalog.league}/search`}><ArrowLeft size={18} />検索に戻る</Link>
+    <header className="team-header"><TeamBrand team={team} size="lg" /><div>
+      <LeagueBadge league={catalog.league} /><h1>{formatTeamName(team)}</h1>
+      {team.names.japaneseShort && <p>{team.names.japaneseShort}</p>}
+    </div><FavoriteButton active={active} saving={saving} label={formatTeamName(team)}
+      onClick={() => toggle({ kind: "team", entityId: team.id, league: catalog.league })} /></header>
+    <SectionHeader title="登録選手" />
+    {members.length ? <div className="row-list">{members.map(({ player }) =>
+      <PlayerRow key={player.id} player={player} catalog={catalog} favorites={favorites} />)}</div>
+      : <DataState kind="no-data" title="登録選手はいません" />}
+  </div>;
+}
+
+function MyScreen({ catalog, favorites }: { catalog: PlayerCatalog; favorites: Favorite[] }) {
+  const players = catalog.profiles.filter(({ player }) => favorites.some((favorite) =>
+    favorite.kind === "player" && favorite.entityId === player.id));
+  const teams = catalog.teams.filter((team) => favorites.some((favorite) =>
+    favorite.kind === "team" && favorite.entityId === team.id));
+  const missing = favorites.some((favorite) => favorite.league === catalog.league &&
+    (favorite.kind === "player" ? !catalog.profiles.some(({ player }) => player.id === favorite.entityId)
+      : !catalog.teams.some((team) => team.id === favorite.entityId)));
+  return <div className="screen">
+    <PageHeading eyebrow={`${catalog.league} / マイ`} title="お気に入り" />
+    <SectionHeader title="選手" />
+    {players.length ? <div className="row-list">{players.map(({ player }) =>
+      <PlayerRow key={player.id} player={player} catalog={catalog} favorites={favorites} />)}</div>
+      : <DataState kind="no-data" title="選手はまだ登録されていません" action="選手を探す" to={`/${catalog.league}/search`} />}
+    <section className="my-teams"><SectionHeader title="球団" />
+      {teams.length ? <div className="row-list">{teams.map((team) => <TeamRow key={team.id} team={team} catalog={catalog} />)}</div>
+        : <DataState kind="no-data" title="球団はまだ登録されていません" action="球団を探す" to={`/${catalog.league}/search`} />}
+    </section>
+    {missing && <p className="inline-note">このデータに含まれないお気に入りも端末に保持しています。</p>}
+  </div>;
+}
+
+function DataNote({ result, clock, loading, refresh }: {
+  result: CatalogResult; clock: number; loading: boolean; refresh: () => void;
+}) {
+  const stale = result.freshness.state === "stale" || clock >= Date.parse(result.freshness.expiresAt);
+  return <aside className="data-note" aria-label="データの状態">
+    <div className="data-note__top"><strong>{stale ? "更新確認が必要" : "データ更新情報"}</strong>
+      <button className="text-button" disabled={loading} onClick={refresh}><RefreshCw size={15} />{loading ? "確認中" : "更新を確認"}</button></div>
+    <p>{result.data.source.label} · {result.freshness.origin === "cache" ? "端末キャッシュ" : "提供元から取得"}</p>
+    <p>データ更新：{formatDateTime(result.data.source.updatedAt)}<br />取得：{formatDateTime(result.freshness.fetchedAt)}</p>
+    {result.warnings.map((warning) => <p className="warning" role="status" key={warning}>{warning}</p>)}
+  </aside>;
+}
+
+function LeagueView({ league, services, favorites, toggle, saving }: {
+  league: League; services: Services; favorites: Favorite[];
+  toggle: (target: FavoriteTarget) => void; saving: boolean;
 }) {
   const [result, setResult] = useState<CatalogResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [clock, setClock] = useState(Date.now);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchScope, setSearchScope] = useState<"players" | "teams">("players");
   useEffect(() => {
     let active = true;
-    void services.players
-      .load(league)
-      .then((value) => {
-        if (active) setResult(value);
-      })
-      .catch(() => {
-        if (active)
-          setError(
-            "選手データを取得できません。接続を確認して再試行してください。",
-          );
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    const timer = setInterval(() => {
-      setClock(Date.now());
-    }, 30_000);
-    return () => {
-      active = false;
-      clearInterval(timer);
-    };
+    void services.players.load(league).then((value) => { if (active) setResult(value); })
+      .catch(() => { if (active) setError("選手データを取得できません。接続を確認してください。"); })
+      .finally(() => { if (active) setLoading(false); });
+    const timer = setInterval(() => setClock(Date.now()), 30_000);
+    return () => { active = false; clearInterval(timer); };
   }, [league, services]);
   async function refresh() {
-    setLoading(true);
-    setError(null);
-    try {
-      setResult(await services.players.load(league, true));
-      setClock(Date.now());
-    } catch {
-      setError(
-        "選手データを取得できません。接続を確認して再試行してください。",
-      );
-    } finally {
-      setLoading(false);
-    }
+    setLoading(true); setError(null);
+    try { setResult(await services.players.load(league, true)); setClock(Date.now()); }
+    catch { setError("選手データを取得できません。接続を確認してください。"); }
+    finally { setLoading(false); }
   }
-  return (
-    <>
-      {error && (
-        <p className="notice error" role="alert">
-          {error}
-        </p>
-      )}
-      {loading && (
-        <p role="status" className="muted">
-          選手データを読み込み中…
-        </p>
-      )}
-      {!result && !loading && (
-        <button
-          className="button"
-          onClick={() => {
-            void refresh();
-          }}
-        >
-          再試行
-        </button>
-      )}
-      {result && (
-        <>
-          {result.data.source.kind === "sample" && (
-            <div className="sample-banner">
-              <span aria-hidden="true">◈</span> サンプルモード ·
-              実在の選手・成績ではありません
-            </div>
-          )}
-          <Routes>
-            <Route
-              path="home"
-              element={
-                <section className="hero">
-                  <p className="eyebrow">数字から見る野球</p>
-                  <h1>
-                    数字の先に、
-                    <br />
-                    選手が見える。
-                  </h1>
-                  <p>
-                    いつもの野球に、もうひとつの視点を。
-                    <br />
-                    選手の成績と、数字の意味を見てみよう。
-                  </p>
-                  <Link className="button" to={`/${league}/players`}>
-                    選手を探す →
-                  </Link>
-                  {result.data.source.kind === "sample" && (
-                    <p className="muted">
-                      現在は架空選手によるプレビューです。
-                    </p>
-                  )}
-                </section>
-              }
-            />
-            <Route
-              path="players"
-              element={
-                <PlayerList catalog={result.data} favorites={favorites} />
-              }
-            />
-            <Route
-              path="players/:playerId"
-              element={
-                <PlayerDetail
-                  catalog={result.data}
-                  favorites={favorites}
-                  toggle={toggle}
-                  saving={saving}
-                />
-              }
-            />
-            <Route
-              path="favorites"
-              element={
-                <PlayerList
-                  catalog={result.data}
-                  favorites={favorites}
-                  onlyFavorites
-                />
-              }
-            />
-            <Route
-              path="*"
-              element={<Navigate to={`/${league}/players`} replace />}
-            />
-          </Routes>
-          <aside className="data-note" aria-label="データの状態">
-            <div className="section-heading">
-              <strong>
-                {result.freshness.state === "stale" ||
-                clock >= Date.parse(result.freshness.expiresAt)
-                  ? "更新確認が必要なデータ"
-                  : "保存期間内のデータ"}
-              </strong>
-              <button
-                className="text-button"
-                disabled={loading}
-                onClick={() => {
-                  void refresh();
-                }}
-              >
-                {loading ? "確認中…" : "更新を確認"}
-              </button>
-            </div>
-            <p>
-              {result.data.source.label} ·{" "}
-              {result.freshness.origin === "cache"
-                ? "端末キャッシュ"
-                : "提供元から取得"}
-            </p>
-            <p>
-              データ更新：{formatDateTime(result.data.source.updatedAt)}
-              <br />
-              取得：{formatDateTime(result.freshness.fetchedAt)}
-            </p>
-            {result.warnings.map((warning) => (
-              <p className="warning" role="status" key={warning}>
-                {warning}
-              </p>
-            ))}
-          </aside>
-        </>
-      )}
-    </>
-  );
+  return <>
+    {error && <div className="screen"><DataState kind="source-unavailable" title={error} />
+      {!result && <button className="button" onClick={() => void refresh()}>再試行</button>}</div>}
+    {!result && loading && <LoadingSkeleton />}
+    {result && <>
+      {result.data.source.kind === "sample" && <div className="sample-banner">
+        <span>サンプル</span> 架空の選手・球団・成績を表示しています
+      </div>}
+      <Routes>
+        <Route path="home" element={<HomeScreen catalog={result.data} favorites={favorites} />} />
+        <Route path="search" element={<SearchScreen catalog={result.data} favorites={favorites}
+          query={searchQuery} setQuery={setSearchQuery} scope={searchScope} setScope={setSearchScope} />} />
+        <Route path="ranking" element={<RankingScreen catalog={result.data} />} />
+        <Route path="players/:playerId/:section?" element={<PlayerScreen catalog={result.data}
+          favorites={favorites} toggle={toggle} saving={saving} />} />
+        <Route path="teams/:teamId" element={<TeamScreen catalog={result.data}
+          favorites={favorites} toggle={toggle} saving={saving} />} />
+        <Route path="analysis" element={<div className="screen"><PageHeading eyebrow={`${league} / 分析`} title="分析" />
+          <AnalysisState league={league} /></div>} />
+        <Route path="records" element={<div className="screen"><PageHeading eyebrow={`${league} / 記録`} title="記録" />
+          <DataState kind="not-implemented" title="記録データは未接続です" />
+          <Link className="ranking-entry" to={`/${league}/ranking`}><Trophy size={20} />
+            <span><strong>参考ランキング</strong><small>架空サンプル内の表示順</small></span><ChevronRight size={19} /></Link>
+        </div>} />
+        <Route path="my" element={<MyScreen catalog={result.data} favorites={favorites} />} />
+        <Route path="players" element={<Navigate to={`/${league}/search`} replace />} />
+        <Route path="favorites" element={<Navigate to={`/${league}/my`} replace />} />
+        <Route path="*" element={<Navigate to={`/${league}/home`} replace />} />
+      </Routes>
+      <DataNote result={result} clock={clock} loading={loading} refresh={() => void refresh()} />
+    </>}
+  </>;
 }
+
+const navItems = [
+  { label: "ホーム", segment: "home", icon: House },
+  { label: "検索", segment: "search", icon: Search },
+  { label: "分析", segment: "analysis", icon: ChartNoAxesCombined },
+  { label: "記録", segment: "records", icon: Trophy },
+  { label: "マイ", segment: "my", icon: UserRound },
+] as const;
 
 export function App({ services }: { services: Services }) {
   const location = useLocation();
-  const league: League =
-    location.pathname.split("/")[1] === "MLB" ? "MLB" : "NPB";
+  useEffect(() => { window.scrollTo(0, 0); }, [location.pathname]);
+  const league: League = location.pathname.split("/")[1] === "MLB" ? "MLB" : "NPB";
+  const section = location.pathname.split("/")[2] ?? "home";
+  const currentNav = section === "players" || section === "teams" || section === "ranking" ? "search"
+    : section === "favorites" ? "my" : section;
   const [favorites, setFavorites] = useState<Favorite[]>([]);
   const [saving, setSaving] = useState(false);
   const [favoriteMessage, setFavoriteMessage] = useState("");
   const [favoriteError, setFavoriteError] = useState(false);
   useEffect(() => {
     let active = true;
-    void services.favorites
-      .list()
-      .then((items) => {
-        if (active) setFavorites(items);
-      })
-      .catch(() => {
-        if (active) {
-          setFavoriteMessage(
-            "お気に入りを読み込めません。保存データは保持しています。",
-          );
-          setFavoriteError(true);
-        }
-      });
-    return () => {
-      active = false;
-    };
+    void services.favorites.list().then((items) => { if (active) setFavorites(items); })
+      .catch(() => { if (active) { setFavoriteMessage("お気に入りを読み込めません。保存データは保持しています。"); setFavoriteError(true); } });
+    return () => { active = false; };
   }, [services]);
-  const toggle = useCallback(
-    (player: Player) => {
-      setSaving(true);
-      void services.favorites
-        .toggle({ kind: "player", entityId: player.id, league: player.league })
-        .then((items) => {
-          setFavorites(items);
-          setFavoriteError(false);
-          setFavoriteMessage(
-            items.some((item) => item.entityId === player.id)
-              ? "お気に入りを端末に保存しました。"
-              : "お気に入りから削除しました。",
-          );
-        })
-        .catch(() => {
-          setFavoriteError(true);
-          setFavoriteMessage(
-            "お気に入りを保存できません。端末の保存領域を確認してください。",
-          );
-        })
-        .finally(() => {
-          setSaving(false);
-        });
-    },
-    [services],
-  );
-  const switchPath = (next: League) =>
-    `/${next}/${location.pathname.endsWith("/favorites") ? "favorites" : location.pathname.endsWith("/home") ? "home" : "players"}`;
-  return (
-    <div className="app-shell">
-      <a
-        className="skip-link"
-        href="#main-content"
-        onClick={(event) => {
-          event.preventDefault();
-          document.getElementById("main-content")?.focus();
-        }}
-      >
-        本文へ移動
-      </a>
-      <header className="app-header">
-        <Link className="brand" to={`/${league}/home`}>
-          <span className="brand-mark" aria-hidden="true">
-            BN
-          </span>
-          <span>
-            BASEBALL
-            <br />
-            <b>NOTES</b>
-          </span>
-        </Link>
-        <span className="preview-badge">プレビュー</span>
-      </header>
-      <div className="league-bar">
-        <nav className="league-switch" aria-label="リーグ切替">
-          {(["NPB", "MLB"] as const).map((item) => (
-            <Link
-              key={item}
-              aria-current={league === item ? "true" : undefined}
-              to={switchPath(item)}
-            >
-              {item}
-            </Link>
-          ))}
-        </nav>
-        <span className="muted">野球の数字を、身近に。</span>
-      </div>
-      {favoriteMessage && (
-        <p
-          className={favoriteError ? "notice error" : "notice"}
-          role={favoriteError ? "alert" : "status"}
-        >
-          {favoriteMessage}
-        </p>
-      )}
-      <main id="main-content" tabIndex={-1}>
-        <Routes>
-          <Route
-            path="/NPB/*"
-            element={
-              <LeagueView
-                key="NPB"
-                league="NPB"
-                services={services}
-                favorites={favorites}
-                toggle={toggle}
-                saving={saving}
-              />
-            }
-          />
-          <Route
-            path="/MLB/*"
-            element={
-              <LeagueView
-                key="MLB"
-                league="MLB"
-                services={services}
-                favorites={favorites}
-                toggle={toggle}
-                saving={saving}
-              />
-            }
-          />
-          <Route path="*" element={<Navigate to="/NPB/home" replace />} />
-        </Routes>
-      </main>
-      <nav className="bottom-nav" aria-label="基本ナビゲーション">
-        <NavLink to={`/${league}/home`}>ホーム</NavLink>
-        <NavLink to={`/${league}/players`}>選手</NavLink>
-        <NavLink to={`/${league}/favorites`}>お気に入り</NavLink>
-      </nav>
-    </div>
-  );
+  const toggle = useCallback((target: FavoriteTarget) => {
+    setSaving(true);
+    void services.favorites.toggle(target).then((items) => {
+      setFavorites(items); setFavoriteError(false);
+      setFavoriteMessage(items.some((item) => item.kind === target.kind && item.entityId === target.entityId)
+        ? "お気に入りを保存しました。" : "お気に入りから削除しました。");
+    }).catch(() => { setFavoriteError(true); setFavoriteMessage("お気に入りを保存できません。端末の保存領域を確認してください。"); })
+      .finally(() => setSaving(false));
+  }, [services]);
+  const switchPath = (next: League) => `/${next}/${["home", "analysis", "records", "my", "ranking"].includes(section) ? section : "search"}`;
+  return <div className="app-shell">
+    <a className="skip-link" href="#main-content" onClick={(event) => {
+      event.preventDefault(); document.getElementById("main-content")?.focus();
+    }}>本文へ移動</a>
+    <header className="app-header"><Link className="brand" to={`/${league}/home`} aria-label="Baseball Notes ホーム">
+      <span className="brand-mark"><BaseballIcon /></span><span><strong>BASEBALL</strong><small>NOTES</small></span>
+    </Link><span className="preview-badge">プレビュー</span></header>
+    <nav className="league-switch" aria-label="リーグ切替">
+      {(["NPB", "MLB"] as const).map((item) => <Link key={item} to={switchPath(item)}
+        aria-current={league === item ? "true" : undefined}><LeagueBadge league={item} /><span>{item}</span></Link>)}
+    </nav>
+    {favoriteMessage && <p className={`toast${favoriteError ? " toast--error" : ""}`}
+      role={favoriteError ? "alert" : "status"}>{favoriteMessage}</p>}
+    <main id="main-content" tabIndex={-1}><Routes>
+      <Route path="/NPB/*" element={<LeagueView key="NPB" league="NPB" services={services}
+        favorites={favorites} toggle={toggle} saving={saving} />} />
+      <Route path="/MLB/*" element={<LeagueView key="MLB" league="MLB" services={services}
+        favorites={favorites} toggle={toggle} saving={saving} />} />
+      <Route path="*" element={<Navigate to="/NPB/home" replace />} />
+    </Routes></main>
+    <nav className="bottom-nav" aria-label="基本ナビゲーション">{navItems.map(({ label, segment, icon: Icon }) =>
+      <Link key={segment} to={`/${league}/${segment}`} aria-current={currentNav === segment ? "page" : undefined}>
+        <Icon size={21} strokeWidth={1.9} aria-hidden="true" /><span>{label}</span>
+      </Link>)}</nav>
+  </div>;
 }

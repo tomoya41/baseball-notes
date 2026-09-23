@@ -29,9 +29,9 @@ flowchart LR
 - `src/infrastructure/providers`: `unknown`レスポンス → wire schema → normalization → domain validation。UIは外部のフィールド名を知らない。
 - `src/infrastructure/storage.ts`: Android Preferences / Web localStorageとIndexedDBの実装。
 - `src/app`: 具体的なProviderとstorageを接続。差替え箇所はここ。
-- `src/ui`: Home、Players、詳細、Myの最小UI。ESLintでUIからinfrastructureへの直接importを禁止。
+- `src/ui`: Home、選手・球団検索、Player、参考Ranking、Myと共通コンポーネント。デザイントークン・Light/Darkは`styles.css`、球団/リーグの権利確認済み表示登録点は`branding.tsx`。ESLintでUIからinfrastructureへの直接importを禁止。
 
-League / Team / Player / PlayerProfile / SeasonStats / HitterStats / PitcherStats / RecentForm / TimeWindow / MetricDefinition / Favorite / SourceMetadata / DataFreshnessを定義。RecentFormは型だけで、ランキング・期間集計は未実装。
+League / Team / Player / PlayerProfile / SeasonStats / HitterStats / PitcherStats / RecentForm / TimeWindow / MetricDefinition / Favorite / SourceMetadata / DataFreshnessを定義。RecentFormは型だけで、正式なランキング・期間集計は未実装。画面確認用の参考順位は架空カタログ内に限定する。
 
 ## IDと部分データ
 
