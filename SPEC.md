@@ -997,7 +997,7 @@ Prefer permitted raw data → bounded aggregation → needed aggregate cache. Do
 
 Cache identity must include provider and source revision, schema and aggregation/metric-definition versions, canonical query with all filters, daily reference date, resolved interval, source cutoff, and coordinate definition when applicable. Retention follows the license; enforce a size/entry bound before enabling an analysis cache. Retain counts needed to recompute rates; never average split rates without their proper denominators.
 
-Now implement only AnalysisQuery, AnalysisCapability, AnalysisResult, Split, SampleSize, shared freshness, minimal CountState/BaseState and coordinate metadata needed to make these contracts precise. Defer full PitchEvent/BattedBallEvent, detailed PitchMetrics/PitchMix/Battery/Zone/Velocity models until an actual adapter and calculation require them. Use separate AnalysisProvider and player-directory contracts; no destructive migration of existing favorites/catalog caches.
+Analysis A originally introduced AnalysisQuery, AnalysisCapability, AnalysisResult, Split, SampleSize, shared freshness, minimal CountState/BaseState and coordinate metadata. Full PitchEvent/BattedBallEvent and detailed PitchMetrics/PitchMix/Battery/Zone/Velocity models still wait for an actual adapter and calculation. Use separate AnalysisProvider and player-directory contracts; no destructive migration of existing favorites/catalog caches.
 
 ### 30.13 Implementation sequence and stop rule
 
@@ -1009,7 +1009,7 @@ Now implement only AnalysisQuery, AnalysisCapability, AnalysisResult, Split, Sam
 - **Analysis F**: catcher/battery and defense.
 - **Analysis G**: watching integration.
 
-This order guides analysis work inside the existing product roadmap; it does not replace prior features or authorize automatic phase advancement. This task stops after architecture review, source matrix, formal specification/decisions, minimum Analysis A contracts and regression checks. Analysis A is not a claim that daily acquisition or all analysis screens are implemented.
+This order guides analysis work inside the existing product roadmap; it does not replace prior features or authorize automatic phase advancement. The initial Analysis A task stopped after architecture review, source matrix, contracts and regression checks. Analysis A was not a claim that daily acquisition or all analysis screens were implemented.
 
 ---
 
@@ -1053,4 +1053,16 @@ The design token layer defines light/dark backgrounds, surfaces, borders, text, 
 
 Home is a short vertical feed: today's games, favorites, a small relevant discovery set, HOT, Now/Record Watch and season information. Each section exposes only a few items and a clear destination. When a data source is absent, show the correct unavailable state instead of invented games, trends or records. Search finds players and teams; results favor simple rows with name, team, position and league context. Ranking uses a readable list/table with rank, person, value and qualification note, not many cards. Current synthetic ranking is labeled as a sample-only reference; no official/qualified ranking is claimed until denominators and qualification rules exist.
 
-State UI distinguishes loading, empty results, not supported by a provider, source error, feature not implemented and small sample. A displayed zero remains a value. Use Skeleton for structural loading, concise empty copy with one action, and text plus icon/position rather than color alone. Components use normalized domain data and shared Japanese Formatters. Metric explanations remain optional for advanced metrics; comparison bars and detailed Analysis, MATCHUP, WATCH and charts remain future work. See `docs/design-system.md` for tokens and implemented component rules.
+State UI distinguishes loading, empty results, not supported by a provider, source error, feature not implemented and small sample. A displayed zero remains a value. Use Skeleton for structural loading, concise empty copy with one action, and text plus icon/position rather than color alone. Components use normalized domain data and shared Japanese Formatters. Metric explanations remain optional for advanced metrics. Section 33 adds the Analysis UI foundation; MATCHUP, WATCH and full charts remain future work. See `docs/design-system.md` for tokens and implemented component rules.
+
+---
+
+## 33. Analysis UI — Summary, category, detail
+
+Analysis reuses the section-32 tokens, Japanese Formatters, MetricDefinition, navigation and data states. On Player, show a small summary first, then a limited set of category chips and one detail category at a time. Batters use 概要 / 球種 / カウント / 状況 / 打球・コース / 変化; pitchers use 概要 / 球種 / 配球 / 状況 / コース / 変化. Handedness, base/outs, batting order, score differential, game inning and appearance inning belong under 状況, not top-level tabs. Ball-in-play and recent-change categories are links/sections only when a compatible provider supplies validated aggregates. Never derive a trait claim such as 「得意」「苦戦」「接戦に強い」 from a single rate or a small sample.
+
+Each split shows its sample and a configurable small-sample badge. Granular rows open on demand; pitcher pitch mix uses horizontal usage bars and named, theme-aware pitch colors. Count views keep **PA final outcome after reaching a pre-pitch count** separate from **response to pitches thrown at that count**. Show representative count groups first and exact counts in detail. Relative comparisons require a named population/season, a verified metric direction and source-provided baseline; missing comparison is omitted, never estimated. A 3×3 zone view requires coordinate provenance compatible with the aggregation and shows no fabricated cells.
+
+AnalysisQuery v2 keeps `battingOrder` (1–9), `scoreDifferential` (signed raw runs or named display bucket at PA start), `gameInning` (actual game inning) and `appearanceInning` (the pitcher's nth inning in that appearance) distinct. Times through the batting order is a separate future dimension. Adapters must preserve the raw game inning and pre-event score, identify the pitcher appearance before deriving appearance inning, and record missing/deduced coverage. Capability and validated feature combinations gate each grouping/filter for each provider, league, period, subject and metric. A documented historical MLB field does not enable current-season or NPB UI. Analysis retains the previous-day cutoff, source update time, stale state and sample policy; it does not require live pitches or a cloud raw-pitch archive.
+
+This phase supplies contract-ready UI and an honest unavailable adapter for the current synthetic catalog. Real event-level data, MATCHUP, WATCH, battery defense and AI explanation remain separate work.

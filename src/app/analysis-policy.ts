@@ -10,6 +10,8 @@ export const samplePolicy = samplePolicySchema.parse({
   revision: "sample-warning-v1",
   rules: {
     battingSplit: { unit: "PA", warnBelow: 20 },
+    pitcherSplit: { unit: "BF", warnBelow: 20 },
+    appearanceSplit: { unit: "appearances", warnBelow: 5 },
     pitchLevel: { unit: "pitches", warnBelow: 50 },
     battedBall: { unit: "BBE", warnBelow: 20 },
     battery: { unit: "pitches", warnBelow: 100 },

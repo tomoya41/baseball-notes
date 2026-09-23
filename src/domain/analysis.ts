@@ -62,6 +62,29 @@ export const velocityBandSchema = z
         b.minInclusive < b.maxExclusive),
     "Invalid velocity band",
   );
+export const inningRangeSchema = z.strictObject({
+  from: z.number().int().positive(),
+  through: z.number().int().positive().nullable(),
+}).refine((value) => value.through === null || value.from <= value.through, "Reversed innings");
+export const scoreDifferentialSchema = z.discriminatedUnion("kind", [
+  z.strictObject({ kind: z.literal("all") }),
+  z.strictObject({ kind: z.literal("bucket"), value: z.enum([
+    "lead-3-plus", "lead-1-2", "tied", "trail-1-2", "trail-3-plus",
+  ]) }),
+  // Runs from the subject team's perspective at the start of the PA.
+  z.strictObject({ kind: z.literal("exact"), runs: z.number().int() }),
+]);
+// Adapter output for one observed PA context. Raw game inning, the pitcher's
+// inning within this appearance, and times through order are never aliases.
+export const gameSituationSchema = z.strictObject({
+  gameInning: z.number().int().positive(),
+  appearanceInning: z.number().int().positive().nullable(),
+  battingOrder: z.number().int().min(1).max(9).nullable(),
+  scoreDifferentialRuns: z.number().int().nullable(),
+  scorePerspective: z.enum(["batting-team", "pitching-team"]),
+  observedAt: z.literal("plate-appearance-start"),
+});
+export type GameSituation = z.infer<typeof gameSituationSchema>;
 const countFilterSchema = z.discriminatedUnion("kind", [
   z.strictObject({
     kind: z.enum([
@@ -77,7 +100,7 @@ const countFilterSchema = z.discriminatedUnion("kind", [
 ]);
 export const analysisQuerySchema = z
   .strictObject({
-    version: z.literal(1),
+    version: z.literal(2),
     league: leagueSchema,
     subject: z.discriminatedUnion("kind", [
       z.strictObject({ kind: z.enum(["batter", "pitcher"]), playerId: id }),
@@ -94,6 +117,7 @@ export const analysisQuerySchema = z
     seasonType: z.enum(["regular", "postseason", "preseason"]),
     population: z.enum([
       "plate-appearances",
+      "batters-faced",
       "plate-appearance-reached-count",
       "pitch-at-count",
     ]),
@@ -105,7 +129,10 @@ export const analysisQuerySchema = z
       "none",
       "handedness",
       "home-away",
-      "inning",
+      "batting-order",
+      "score-differential",
+      "game-inning",
+      "appearance-inning",
       "count",
       "bases",
       "outs",
@@ -113,6 +140,7 @@ export const analysisQuerySchema = z
       "catcher",
       "velocity",
       "zone",
+      "batted-ball",
     ]),
     filters: z.strictObject({
       opponent: z.discriminatedUnion("kind", [
@@ -130,26 +158,19 @@ export const analysisQuerySchema = z
       velocity: velocityBandSchema.nullable(),
       catcherId: id.nullable(),
       homeAway: z.enum(["all", "home", "away"]),
-      score: z.enum(["all", "leading", "tied", "trailing"]),
-      inning: z
-        .strictObject({
-          from: z.number().int().positive(),
-          through: z.number().int().positive().nullable(),
-        })
-        .refine(
-          (i) => i.through === null || i.from <= i.through,
-          "Reversed innings",
-        )
-        .nullable(),
+      battingOrder: z.number().int().min(1).max(9).nullable(),
+      scoreDifferential: scoreDifferentialSchema,
+      gameInning: inningRangeSchema.nullable(),
+      appearanceInning: inningRangeSchema.nullable(),
     }),
   })
   .superRefine((q, ctx) => {
-    if (q.filters.count.kind !== "all" && q.population === "plate-appearances")
+    if (q.filters.count.kind !== "all" && !["plate-appearance-reached-count", "pitch-at-count"].includes(q.population))
       ctx.addIssue({
         code: "custom",
         message: "Count requires explicit reached-PA or pitch population",
       });
-    if (q.groupBy === "count" && q.population === "plate-appearances")
+    if (q.groupBy === "count" && !["plate-appearance-reached-count", "pitch-at-count"].includes(q.population))
       ctx.addIssue({
         code: "custom",
         message: "Count grouping requires explicit population",
@@ -163,6 +184,14 @@ export const analysisQuerySchema = z
         code: "custom",
         message: "Matchup already specifies both opponents",
       });
+    if (q.subject.kind === "batter" && q.filters.appearanceInning !== null)
+      ctx.addIssue({ code: "custom", message: "Appearance inning is pitcher-only" });
+    if (q.subject.kind === "pitcher" && q.filters.battingOrder !== null)
+      ctx.addIssue({ code: "custom", message: "Batting order is batter-only" });
+    if (q.subject.kind !== "matchup" && q.groupBy === "appearance-inning" && q.subject.kind !== "pitcher")
+      ctx.addIssue({ code: "custom", message: "Appearance inning is pitcher-only" });
+    if (q.groupBy === "batting-order" && q.subject.kind === "pitcher")
+      ctx.addIssue({ code: "custom", message: "Batting order is batter-only" });
   });
 export type AnalysisQuery = z.infer<typeof analysisQuerySchema>;
 
@@ -173,11 +202,14 @@ export const capabilityIds = [
   "dateRange",
   "handednessSplit",
   "homeAwaySplit",
-  "inningSplit",
+  "battingOrderSplit",
+  "scoreDifferentialSplit",
+  "gameInningSplit",
+  "appearanceInningSplit",
   "countSplit",
   "baseSplit",
   "outsSplit",
-  "scoreSplit",
+  "pitchTypeSplit",
   "matchup",
   "pitchMix",
   "pitchVelocity",
@@ -232,6 +264,7 @@ export const capabilityManifestSchema = z.object({
   populations: z.array(
     z.enum([
       "plate-appearances",
+      "batters-faced",
       "plate-appearance-reached-count",
       "pitch-at-count",
     ]),
@@ -250,6 +283,7 @@ export const sampleUnitSchema = z.enum([
   "BBE",
   "outs",
   "matchups",
+  "appearances",
 ]);
 export const sampleSizeSchema = z.partialRecord(
   sampleUnitSchema,
@@ -316,6 +350,15 @@ export const splitSchema = z.object({
         count: z.number().int().nonnegative().nullable(),
         population: id,
       }),
+      sourceUnit: z.enum(["mph", "km/h", "rpm", "in", "cm", "ft", "m"]).optional(),
+      comparison: z.object({
+        population: id,
+        season: z.number().int().min(1800).max(2200),
+        sampleSize: sampleSizeSchema,
+        // Same definition and sourceUnit as the measured metric.
+        leagueAverage: z.number().finite().nullable(),
+        percentile: z.number().min(0).max(100).nullable(),
+      }).nullable().optional(),
     }),
   ),
   warnings: z.array(z.string()),

@@ -26,7 +26,7 @@ import {
 const now = Date.parse("2026-09-23T10:00:00Z");
 function query(): AnalysisQuery {
   return analysisQuerySchema.parse({
-    version: 1,
+    version: 2,
     league: "MLB",
     subject: { kind: "batter", playerId: "player-1" },
     asOfDate: "2026-09-23",
@@ -45,8 +45,10 @@ function query(): AnalysisQuery {
       velocity: null,
       catcherId: null,
       homeAway: "all",
-      score: "all",
-      inning: null,
+      battingOrder: null,
+      scoreDifferential: { kind: "all" },
+      gameInning: null,
+      appearanceInning: null,
     },
   });
 }

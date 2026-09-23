@@ -60,14 +60,18 @@ const groupRequirements: Record<AnalysisQuery["groupBy"], CapabilityId[]> = {
   none: [],
   handedness: ["handednessSplit"],
   "home-away": ["homeAwaySplit"],
-  inning: ["inningSplit"],
+  "batting-order": ["battingOrderSplit"],
+  "score-differential": ["scoreDifferentialSplit"],
+  "game-inning": ["gameInningSplit"],
+  "appearance-inning": ["appearanceInningSplit"],
   count: ["countSplit"],
   bases: ["baseSplit"],
   outs: ["outsSplit"],
-  "pitch-type": ["pitchMix"],
+  "pitch-type": [],
   catcher: ["catcherSplit"],
   velocity: ["pitchVelocity"],
   zone: ["heatmap"],
+  "batted-ball": ["battedBall"],
 };
 export function requiredCapabilities(q: AnalysisQuery): CapabilityId[] {
   const result: CapabilityId[] = [
@@ -75,6 +79,7 @@ export function requiredCapabilities(q: AnalysisQuery): CapabilityId[] {
     ...groupRequirements[q.groupBy],
   ];
   const f = q.filters;
+  if (q.groupBy === "pitch-type") result.push(q.subject.kind === "batter" ? "pitchTypeSplit" : "pitchMix");
   if (q.period.kind === "last-days") result.push("recentForm");
   if (q.period.kind === "current-month" || q.period.kind === "previous-month")
     result.push("monthlySplit");
@@ -88,14 +93,16 @@ export function requiredCapabilities(q: AnalysisQuery): CapabilityId[] {
   if (f.opponent.kind === "handedness") result.push("handednessSplit");
   if (f.bases !== "all") result.push("baseSplit");
   if (f.outs !== null) result.push("outsSplit");
-  if (f.count.kind !== "all" || q.population !== "plate-appearances")
+  if (f.count.kind !== "all" || ["plate-appearance-reached-count", "pitch-at-count"].includes(q.population))
     result.push("countSplit");
-  if (f.pitchType !== null) result.push("pitchMix");
+  if (f.pitchType !== null) result.push(q.subject.kind === "batter" ? "pitchTypeSplit" : "pitchMix");
   if (f.velocity !== null) result.push("pitchVelocity");
   if (f.catcherId !== null) result.push("catcherSplit");
   if (f.homeAway !== "all") result.push("homeAwaySplit");
-  if (f.score !== "all") result.push("scoreSplit");
-  if (f.inning !== null) result.push("inningSplit");
+  if (f.battingOrder !== null) result.push("battingOrderSplit");
+  if (f.scoreDifferential.kind !== "all") result.push("scoreDifferentialSplit");
+  if (f.gameInning !== null) result.push("gameInningSplit");
+  if (f.appearanceInning !== null) result.push("appearanceInningSplit");
   return [...new Set(result)].sort();
 }
 export type QueryAssessment =

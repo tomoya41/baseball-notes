@@ -14,10 +14,10 @@ export function SectionHeader({ title, action, to }: { title: string; action?: s
   </div>;
 }
 
-export function PageHeading({ eyebrow, title, detail }: { eyebrow?: string; title: string; detail?: string }) {
+export function PageHeading({ eyebrow, title, detail, level = 1 }: { eyebrow?: string; title: string; detail?: string; level?: 1 | 2 }) {
   return <div className="page-heading">
     {eyebrow && <p className="eyebrow">{eyebrow}</p>}
-    <h1>{title}</h1>
+    {level === 1 ? <h1>{title}</h1> : <h2>{title}</h2>}
     {detail && <p className="muted">{detail}</p>}
   </div>;
 }
@@ -32,13 +32,13 @@ export function PlayerAvatar({ player, team, jersey, size = "sm" }: {
   </span>;
 }
 
-export function PlayerRow({ player, catalog, favorites, trailing }: {
-  player: Player; catalog: PlayerCatalog; favorites?: Favorite[]; trailing?: ReactNode;
+export function PlayerRow({ player, catalog, favorites, trailing, to }: {
+  player: Player; catalog: PlayerCatalog; favorites?: Favorite[]; trailing?: ReactNode; to?: string;
 }) {
   const team = catalog.teams.find((item) => item.id === player.teamId);
   const profile = catalog.profiles.find((item) => item.player.id === player.id);
   const isFavorite = favorites?.some((item) => item.kind === "player" && item.entityId === player.id);
-  return <Link className="player-row" to={`/${catalog.league}/players/${encodeURIComponent(player.id)}`}>
+  return <Link className="player-row" to={to ?? `/${catalog.league}/players/${encodeURIComponent(player.id)}`}>
     <PlayerAvatar player={player} team={team} jersey={profile?.jersey} />
     <span className="player-row__body">
       <strong>{formatPlayerName(player)}</strong>
@@ -68,7 +68,7 @@ export function FavoriteButton({ active, saving, onClick, label }: {
   </button>;
 }
 
-function MetricInfo({ definition }: { definition: MetricDefinition }) {
+export function MetricInfo({ definition }: { definition: MetricDefinition }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   return <>

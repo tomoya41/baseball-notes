@@ -42,6 +42,10 @@ export function formatVelocity(
   return showOriginal && unit === "mph" ? `${primary}（${number(value, 1)} mph）` : primary;
 }
 
+export function formatMovement(value: number | null | undefined, unit: "in" | "cm"): string {
+  return valid(value) ? `${number(unit === "in" ? value * 2.54 : value, 1)} cm` : missing;
+}
+
 export function formatDistance(
   value: number | null | undefined,
   unit: "m" | "ft",
@@ -127,6 +131,7 @@ export function formatSample(size: SampleSize, unit: keyof SampleSize): string {
   const labels: Record<keyof SampleSize, string> = {
     PA: "打席", AB: "打数", BF: "対戦打者", pitches: "球", swings: "スイング",
     "outside-zone-pitches": "ゾーン外投球", BBE: "計測打球", outs: "アウト", matchups: "対戦",
+    appearances: "登板",
   };
   return `${number(count, 0)}${labels[unit]}`;
 }

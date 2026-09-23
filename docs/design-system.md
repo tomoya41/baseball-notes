@@ -43,8 +43,8 @@ Positive、negative、warning、neutral、chart primary/secondary/gridも両テ�
 
 Loadingはページ骨格を残すSkeleton。No data、Provider非対応、取得失敗、未実装、少サンプルは別の文言と視覚状態にする。0は欠損ではない。Sample bannerとstale/更新時刻は通常画面から見つけられる位置に保持する。
 
-Analysisは `AnalysisCapability` の `status` と `implementation` を見て表示を決める。リーグ名だけで高度UIを決めない。将来の構成はSummary→詳細で、球種割合は横棒、percentileは細い横棒、順位は行、splitは表、zoneは3×3を基本候補とする。比較値には母集団、期間、サンプル数を伴わせる。今回、実分析・MATCHUP・WATCH・ヒートマップを描画していない。
+Analysisは `AnalysisCapability` の `status` と `implementation` を見て表示を決める。リーグ名だけで高度UIを決めない。`src/ui/analysis.tsx` は概要→カテゴリー→詳細を一画面ずつ描き、球種割合を横棒、percentileを細い横棒、splitを行、zoneを座標由来の3×3として表示する。比較値には母集団、期間、サンプル数を伴わせる。現行サンプルにはAnalysis観測値がないため、実数値・ヒートマップセルは描画しない。MATCHUPとWATCHは未実装。
 
 ## 次の最小タスク
 
-Design Cへ進む前に、契約テスト用AnalysisProviderの架空集計結果1件を使い、Capability→Summary→未提供/少サンプル表示の1経路を確認する。実API、球種別全画面、MATCHUPには広げない。
+次は許諾済み履歴データから、特定選手の限定期間・1種類のsplitを作る小さなProvider adapterを検証する。現在のサンプル名鑑に実データを紛れ込ませない。

@@ -5,7 +5,6 @@ import {
 } from "lucide-react";
 import { Link, Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
 import type { Services } from "../app/services";
-import { foundationAnalysisCapabilities } from "../app/analysis-policy";
 import type { CatalogResult, Favorite, League, PlayerCatalog, Statistics } from "../domain/models";
 import { metrics } from "../domain/metrics";
 import { positionDefinitions } from "../domain/baseball-terms";
@@ -13,6 +12,7 @@ import { formatDate, formatDateTime, formatMetric, formatPlayerName, formatPosit
 import { sampleRanking } from "../presentation/sample-ranking";
 import type { SampleRankingMetric } from "../presentation/sample-ranking";
 import { BaseballIcon, BatIcon, HomePlateIcon } from "./baseball-icons";
+import { AnalysisDirectory, AnalysisScreen } from "./analysis";
 import { LeagueBadge, TeamBrand } from "./branding";
 import {
   DataState, FavoriteButton, LoadingSkeleton, MetricGrid, PageHeading,
@@ -20,20 +20,6 @@ import {
 } from "./components";
 
 type FavoriteTarget = Pick<Favorite, "kind" | "entityId" | "league">;
-
-function AnalysisState({ league }: { league: League }) {
-  const capability = foundationAnalysisCapabilities(league).features.basicStats;
-  if (!capability) return <DataState kind="not-implemented" title="分析画面は準備中です" />;
-  const titles = {
-    available: "分析画面は準備中です",
-    conditional: "利用条件を確認中です",
-    unavailable: "この提供元では分析データがありません",
-    prohibited: "この分析データは利用できません",
-    research: "データ取得方法を調査中です",
-  } as const;
-  return <DataState kind={capability.status === "available" ? "not-implemented" : "unsupported"}
-    title={titles[capability.status]} detail={capability.reason} />;
-}
 
 function HomeScreen({ catalog, favorites }: { catalog: PlayerCatalog; favorites: Favorite[] }) {
   const league = catalog.league;
@@ -169,8 +155,9 @@ function StatsSection({ stats }: { stats: Statistics }) {
   </section>;
 }
 
-function PlayerScreen({ catalog, favorites, toggle, saving }: {
+function PlayerScreen({ catalog, favorites, toggle, saving, services }: {
   catalog: PlayerCatalog; favorites: Favorite[]; toggle: (target: FavoriteTarget) => void; saving: boolean;
+  services: Services;
 }) {
   const { playerId, section } = useParams();
   const profile = catalog.profiles.find((item) => item.player.id === playerId);
@@ -186,8 +173,8 @@ function PlayerScreen({ catalog, favorites, toggle, saving }: {
   const base = `/${catalog.league}/players/${encodeURIComponent(player.id)}`;
   return <div className="screen">
     <Link className="back-link" to={`/${catalog.league}/search`}><ArrowLeft size={18} />検索に戻る</Link>
-    <header className="profile-header">
-      <PlayerAvatar player={player} team={team} jersey={profile.jersey} size="lg" />
+    <header className={`profile-header${section === "analysis" ? " profile-header--compact" : ""}`}>
+      <PlayerAvatar player={player} team={team} jersey={profile.jersey} size={section === "analysis" ? "sm" : "lg"} />
       <div className="profile-header__body">
         <div className="profile-header__top"><LeagueBadge league={catalog.league} />
           <FavoriteButton active={isFavorite} saving={saving} label={formatPlayerName(player)}
@@ -198,9 +185,9 @@ function PlayerScreen({ catalog, favorites, toggle, saving }: {
         <p>{formatTeamName(team)} · {formatPositions(player.positions)}</p>
       </div>
     </header>
-    <div className="profile-facts"><span>{formatPositions(player.positions, true)}</span>
+    {section !== "analysis" && <div className="profile-facts"><span>{formatPositions(player.positions, true)}</span>
       <span>背番号 {profile.jersey ?? "—"}</span><span>{profile.throws ?? "—"}投 / {profile.bats ?? "—"}打</span>
-    </div>
+    </div>}
     <nav className="profile-tabs" aria-label="選手ページ">
       {[{ label: "概要", path: base }, { label: "成績", path: `${base}/stats` },
         { label: "分析", path: `${base}/analysis` }, { label: "その他", path: `${base}/more` }].map((tab, index) =>
@@ -217,8 +204,8 @@ function PlayerScreen({ catalog, favorites, toggle, saving }: {
     {section === "stats" && <div className="profile-content">{stats.length
       ? stats.map((item) => <StatsSection key={`${item.group}:${item.season}`} stats={item} />)
       : <DataState kind="no-data" title="成績はまだありません" />}</div>}
-    {section === "analysis" && <div className="profile-content"><PageHeading title="分析" />
-      <AnalysisState league={catalog.league} /></div>}
+    {section === "analysis" && <div className="profile-content profile-content--analysis"><AnalysisScreen key={player.id}
+      catalog={catalog} player={player} provider={services.analysis} /></div>}
     {section === "more" && <div className="profile-content"><PageHeading title="その他" />
       <SectionHeader title="記録" /><DataState kind="not-implemented" title="記録は準備中です" />
       <SectionHeader title="経歴" /><DataState kind="not-implemented" title="経歴は準備中です" />
@@ -322,11 +309,11 @@ function LeagueView({ league, services, favorites, toggle, saving }: {
           query={searchQuery} setQuery={setSearchQuery} scope={searchScope} setScope={setSearchScope} />} />
         <Route path="ranking" element={<RankingScreen catalog={result.data} />} />
         <Route path="players/:playerId/:section?" element={<PlayerScreen catalog={result.data}
-          favorites={favorites} toggle={toggle} saving={saving} />} />
+          favorites={favorites} toggle={toggle} saving={saving} services={services} />} />
         <Route path="teams/:teamId" element={<TeamScreen catalog={result.data}
           favorites={favorites} toggle={toggle} saving={saving} />} />
-        <Route path="analysis" element={<div className="screen"><PageHeading eyebrow={`${league} / 分析`} title="分析" />
-          <AnalysisState league={league} /></div>} />
+        <Route path="analysis" element={<AnalysisDirectory catalog={result.data}
+          provider={services.analysis} favorites={favorites} />} />
         <Route path="records" element={<div className="screen"><PageHeading eyebrow={`${league} / 記録`} title="記録" />
           <DataState kind="not-implemented" title="記録データは未接続です" />
           <Link className="ranking-entry" to={`/${league}/ranking`}><Trophy size={20} />
@@ -355,7 +342,8 @@ export function App({ services }: { services: Services }) {
   useEffect(() => { window.scrollTo(0, 0); }, [location.pathname]);
   const league: League = location.pathname.split("/")[1] === "MLB" ? "MLB" : "NPB";
   const section = location.pathname.split("/")[2] ?? "home";
-  const currentNav = section === "players" || section === "teams" || section === "ranking" ? "search"
+  const currentNav = section === "players" && location.pathname.endsWith("/analysis") ? "analysis"
+    : section === "players" || section === "teams" || section === "ranking" ? "search"
     : section === "favorites" ? "my" : section;
   const [favorites, setFavorites] = useState<Favorite[]>([]);
   const [saving, setSaving] = useState(false);
