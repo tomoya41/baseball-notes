@@ -29,7 +29,7 @@ flowchart LR
 - `src/infrastructure/providers`: `unknown`レスポンス → wire schema → normalization → domain validation。UIは外部のフィールド名を知らない。
 - `src/infrastructure/storage.ts`: Android Preferences / Web localStorageとIndexedDBの実装。
 - `src/app`: 具体的なProviderとstorageを接続。差替え箇所はここ。
-- `src/ui`: Home、選手・球団検索、Player、参考Ranking、My、Capability連動Analysis Shellと共通コンポーネント。デザイントークン・Light/Darkは`styles.css`、球団/リーグの権利確認済み表示登録点は`branding.tsx`。ESLintでUIからinfrastructureへの直接importを禁止。
+- `src/ui`: Home、選手・球団検索、Player、参考Ranking、My、Capability連動Analysis/MATCHUP/WATCH Shellと共通コンポーネント。デザイントークン・Light/Darkは`styles.css`、球団/リーグの権利確認済み表示登録点は`branding.tsx`。ESLintでUIからinfrastructureへの直接importを禁止。
 
 League / Team / Player / PlayerProfile / SeasonStats / HitterStats / PitcherStats / RecentForm / TimeWindow / MetricDefinition / Favorite / SourceMetadata / DataFreshnessを定義。RecentFormは型だけで、正式なランキング・期間集計は未実装。画面確認用の参考順位は架空カタログ内に限定する。
 
@@ -57,6 +57,8 @@ AndroidはWeb assets同梱のためネットワークなしで起動可能な構
 ランキング・記録・通知などはそれぞれ必要時にapplication moduleを追加し、決定論的な計算をdomainでテストする。巨大な万能Providerや全Phase分の空フォルダーは作らない。MLB高度指標は説明定義と値を追加可能。NPBへ架空の同等指標を作らない。
 
 Analysis追加レビュー：現在の分離で対応可能。選手catalogに投球イベントを混ぜず、別のAnalysisProvider portと集計結果契約を追加する。お気に入り・既存cacheの破壊的移行は不要。Analysis Aでは日時・Query・Capability・母数を検証し、raw event取り込みや本格分析UIは後続タスクに残す。
+
+MATCHUPは既存AnalysisProviderへオンデマンドの投手×打者Queryを送り、直接対戦・投手球種・打者球種・カウント・期間比較を独立取得する。画面は結果を検証してから表示し、1節の失敗で全体を消さない。WatchProviderは日程・打順・ブルペンの別portで、各機能の許諾と鮮度を独立管理する。双方とも現行実装はunavailable adapterであり、架空の試合・投球観測値は本番コードへ入れない。保存形式の変更はない。将来の集計cacheはprovider/revision/Query/基準日/定義版を含む有界キーとライセンス許可を条件に追加する。
 
 ## コスト・公開
 

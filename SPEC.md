@@ -960,9 +960,9 @@ Later heatmaps may show pitch location/usage, Whiff%, opponent xwOBA; batter AVG
 
 ### 30.7 MATCHUP
 
-Future entry points: today's games, player pages, manual pitcher/batter selection. Direct matchups show PA, AB, H, HR, SO, BB, AVG, OPS with a small-sample warning. Separately align the pitcher's actual arsenal usage with the batter's performance against those pitch types; this is contextual comparison, not direct head-to-head evidence.
+Entry points: today's games when a permitted schedule/lineup provider exists, player pages, and manual pitcher/batter selection. Direct matchups show PA, AB, H, HR, SO, BB, AVG, OPS when supplied, with a small-sample warning. Separately align the pitcher's actual arsenal usage with the batter's performance against those pitch types; this is contextual comparison, not direct head-to-head evidence.
 
-Support later comparisons of counts (e.g. 0-2 arsenal and batter Whiff%), locations and velocity bands. Show population, date window and baseline on each side. Similar pitch shape based on velocity/movement rather than pitch-name alone belongs to a late phase; do not implement now. Do not interpret matchup analysis as certainty about a game's result.
+The basic count UI compares responses to pitches at a pre-pitch count, separately for pitcher and batter; it never calls these final PA outcomes. Later location and velocity-band overlays require aligned coordinates/units and adequate samples. Show population, date window and baseline on each side. Similar pitch shape based on velocity/movement rather than pitch-name alone belongs to a late phase. Do not interpret matchup analysis as certainty about a game's result.
 
 ### 30.8 Catcher / battery
 
@@ -970,7 +970,7 @@ Name the feature **「捕手別バッテリー配球傾向」**. When observed c
 
 ### 30.9 Watch integration
 
-Use previous-day analysis to support watching, without pitch-by-pitch速報: today's starter × lineup, next batter candidates when today's lineup is legitimately available, next three hitters, times through order (1st/2nd/3rd+), bullpen prior appearance dates/pitch counts/consecutive days. Today's schedule/lineup is separate from the analysis cutoff and must have its own freshness. Do not assert that a reliever will pitch today.
+Use previous-day analysis to support watching, without pitch-by-pitch速報: today's starter × lineup, three hitters selected from the known batting order, later times through order (1st/2nd/3rd+), and bullpen prior appearance dates/pitch counts/consecutive days. A lineup is labelled confirmed or planned; the app does not infer the live next batter. Today's schedule/lineup is separate from the analysis cutoff and has its own freshness. Do not assert that a reliever will pitch today.
 
 ### 30.10 Recent change
 
@@ -1041,7 +1041,7 @@ Normalize provider positions to canonical codes before UI. Use P/C/1B/2B/3B/SS/L
 
 Every Analysis/Split value retains its denominator and definition. Show a concise sample next to granular results (`.667 · 3打数2安打`, `Barrel% 18.2% · 87計測打球`) when available. Small samples receive `参考値` or `サンプル少`; unknown denominators are distinct from small denominators. Tapping can reveal the policy threshold and reason. These configurable warnings remain separate from ranking eligibility. Labels such as `得意`, `苦手`, `好相性` or `苦戦` require a documented deterministic rule using a relevant metric, league baseline, player baseline and sufficient sample size; otherwise use neutral wording or `参考値`. AI impression alone is insufficient.
 
-Centralize locale, numbers, units, dates, names, positions, pitch types and metric definitions. Do not hardcode each screen. The Japanese presentation foundation preceded the representative design work in section 32. A glossary screen, full analysis layouts, MATCHUP/heatmap design and later Analysis phases remain separate work.
+Centralize locale, numbers, units, dates, names, positions, pitch types and metric definitions. Do not hardcode each screen. The Japanese presentation foundation preceded the representative design work in section 32. A glossary screen and the advanced MATCHUP/heatmap phases remain separate work; the MATCHUP/WATCH shell is in section 34.
 
 ---
 
@@ -1053,7 +1053,7 @@ The design token layer defines light/dark backgrounds, surfaces, borders, text, 
 
 Home is a short vertical feed: today's games, favorites, a small relevant discovery set, HOT, Now/Record Watch and season information. Each section exposes only a few items and a clear destination. When a data source is absent, show the correct unavailable state instead of invented games, trends or records. Search finds players and teams; results favor simple rows with name, team, position and league context. Ranking uses a readable list/table with rank, person, value and qualification note, not many cards. Current synthetic ranking is labeled as a sample-only reference; no official/qualified ranking is claimed until denominators and qualification rules exist.
 
-State UI distinguishes loading, empty results, not supported by a provider, source error, feature not implemented and small sample. A displayed zero remains a value. Use Skeleton for structural loading, concise empty copy with one action, and text plus icon/position rather than color alone. Components use normalized domain data and shared Japanese Formatters. Metric explanations remain optional for advanced metrics. Section 33 adds the Analysis UI foundation; MATCHUP, WATCH and full charts remain future work. See `docs/design-system.md` for tokens and implemented component rules.
+State UI distinguishes loading, empty results, not supported by a provider, source error, feature not implemented and small sample. A displayed zero remains a value. Use Skeleton for structural loading, concise empty copy with one action, and text plus icon/position rather than color alone. Components use normalized domain data and shared Japanese Formatters. Metric explanations remain optional for advanced metrics. Section 33 adds the Analysis UI foundation; section 34 adds the MATCHUP/WATCH shell. Full charts remain future work. See `docs/design-system.md` for tokens and implemented component rules.
 
 ---
 
@@ -1065,4 +1065,16 @@ Each split shows its sample and a configurable small-sample badge. Granular rows
 
 AnalysisQuery v2 keeps `battingOrder` (1–9), `scoreDifferential` (signed raw runs or named display bucket at PA start), `gameInning` (actual game inning) and `appearanceInning` (the pitcher's nth inning in that appearance) distinct. Times through the batting order is a separate future dimension. Adapters must preserve the raw game inning and pre-event score, identify the pitcher appearance before deriving appearance inning, and record missing/deduced coverage. Capability and validated feature combinations gate each grouping/filter for each provider, league, period, subject and metric. A documented historical MLB field does not enable current-season or NPB UI. Analysis retains the previous-day cutoff, source update time, stale state and sample policy; it does not require live pitches or a cloud raw-pitch archive.
 
-This phase supplies contract-ready UI and an honest unavailable adapter for the current synthetic catalog. Real event-level data, MATCHUP, WATCH, battery defense and AI explanation remain separate work.
+This phase supplies contract-ready UI and an honest unavailable adapter for the current synthetic catalog. Real event-level data, battery defense and AI explanation remain separate work. Section 34 defines the later MATCHUP/WATCH UI task.
+
+---
+
+## 34. MATCHUP / WATCH UI — previous-day context, no live feed
+
+MATCHUP reuses Analysis Query, Result, MetricDefinition, SampleBadge, metric display, pitch color, capability gates and freshness. Routes accept an optional pitcher and batter ID, so player pages can preselect either side; manual search selects the other. A future permitted game/lineup provider can link to the same route. The first view shows the players, direct history and a deterministic attention pitch only when both pitch-type aggregates have at least 50 pitches. It makes no `得意`/`苦戦` claim without a separately documented baseline rule. Direct PA below 20 is labelled `参考値` rather than hidden.
+
+Direct history, pitcher arsenal, batter pitch-type response, count and recent comparisons are independently gated and loaded only for the selected view. The arsenal pairs canonical pitch-type IDs, not name strings, and does not treat each side's season sample as head-to-head evidence. Count means pitch-at-count response; reached-PA outcome remains a distinct Analysis population. Relative values appear only with supplied comparison scope. When one source section fails, available sections remain visible. `AnalysisQuery` and daily cutoff form the future on-demand aggregate/cache key; no all-pairs precomputation or raw-pitch cloud mirror is introduced.
+
+WATCH enters from Home's `今日の試合`, never a sixth bottom tab. A separate WatchProvider supplies schedule, each team's lineup and bullpen usage with separate capabilities/freshness. `今日` uses Japan calendar time; MLB's local game date is retained independently. A game page shows teams, planned starters, a lineup when supplied, a selectable three-hitter window in batting order, links to MATCHUP/Analysis, and prior-day bullpen facts. It does not identify the live next batter, current count, fatigue, or today's reliever availability. Bullpen `completeThrough` must precede today. Missing schedule, lineup and bullpen are separate states, never fictional data.
+
+The current sample source has no real schedule, lineup, appearance log or matchup/pitch observations. Both leagues' live capability flags therefore remain unavailable. MLB public historical Retrosheet files may support bounded retrospective direct matchups and bullpen logs through their released seasons, with required attribution and coverage checks; they do not establish current-day feed rights. MLB.com automated collection is not an adopted path. NPB machine-readable reuse permission remains unverified. The fixture-only test data never reaches production UI. Similar pitch quality, complete location/velocity overlays, times-through-order, live play-by-play, predictions, battery matchup and notifications are out of this phase.

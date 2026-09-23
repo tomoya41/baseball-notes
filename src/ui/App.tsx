@@ -13,6 +13,8 @@ import { sampleRanking } from "../presentation/sample-ranking";
 import type { SampleRankingMetric } from "../presentation/sample-ranking";
 import { BaseballIcon, BatIcon, HomePlateIcon } from "./baseball-icons";
 import { AnalysisDirectory, AnalysisScreen } from "./analysis";
+import { MatchupScreen } from "./matchup";
+import { WatchGameScreen, WatchToday } from "./watch";
 import { LeagueBadge, TeamBrand } from "./branding";
 import {
   DataState, FavoriteButton, LoadingSkeleton, MetricGrid, PageHeading,
@@ -21,7 +23,7 @@ import {
 
 type FavoriteTarget = Pick<Favorite, "kind" | "entityId" | "league">;
 
-function HomeScreen({ catalog, favorites }: { catalog: PlayerCatalog; favorites: Favorite[] }) {
+function HomeScreen({ catalog, favorites, services }: { catalog: PlayerCatalog; favorites: Favorite[]; services: Services }) {
   const league = catalog.league;
   const saved = catalog.profiles.filter(({ player }) => favorites.some((favorite) =>
     favorite.kind === "player" && favorite.entityId === player.id));
@@ -34,7 +36,7 @@ function HomeScreen({ catalog, favorites }: { catalog: PlayerCatalog; favorites:
       <SectionHeader title="今日の試合" />
       <div className="feature-panel feature-panel--game">
         <HomePlateIcon className="feature-icon" />
-        <DataState kind="unsupported" title="試合情報は未接続です" detail="現在の提供元に日程データはありません。" />
+        <WatchToday catalog={catalog} provider={services.watch} />
       </div>
     </section>
     <section className="home-section">
@@ -194,6 +196,12 @@ function PlayerScreen({ catalog, favorites, toggle, saving, services }: {
         <Link key={tab.label} to={tab.path} aria-current={section === undefined ? index === 0 ? "page" : undefined
           : tab.path.endsWith(`/${section}`) ? "page" : undefined}>{tab.label}</Link>)}
     </nav>
+    <div className="matchup-entry">
+      {stats.some((item) => item.group === "hitting") && <Link className="text-link"
+        to={`/${catalog.league}/matchup?batter=${encodeURIComponent(player.id)}`}>投手との相性を見る<ChevronRight size={16} /></Link>}
+      {stats.some((item) => item.group === "pitching") && <Link className="text-link"
+        to={`/${catalog.league}/matchup?pitcher=${encodeURIComponent(player.id)}`}>打者との相性を見る<ChevronRight size={16} /></Link>}
+    </div>
     {!section && <div className="profile-content">
       {stats.length ? stats.map((item) => <section className="stats-section" key={`${item.group}:${item.season}`}>
         <SectionHeader title={`${item.season}年 · ${item.group === "hitting" ? "打撃" : "投球"}`}
@@ -304,7 +312,7 @@ function LeagueView({ league, services, favorites, toggle, saving }: {
         <span>サンプル</span> 架空の選手・球団・成績を表示しています
       </div>}
       <Routes>
-        <Route path="home" element={<HomeScreen catalog={result.data} favorites={favorites} />} />
+        <Route path="home" element={<HomeScreen catalog={result.data} favorites={favorites} services={services} />} />
         <Route path="search" element={<SearchScreen catalog={result.data} favorites={favorites}
           query={searchQuery} setQuery={setSearchQuery} scope={searchScope} setScope={setSearchScope} />} />
         <Route path="ranking" element={<RankingScreen catalog={result.data} />} />
@@ -314,6 +322,8 @@ function LeagueView({ league, services, favorites, toggle, saving }: {
           favorites={favorites} toggle={toggle} saving={saving} />} />
         <Route path="analysis" element={<AnalysisDirectory catalog={result.data}
           provider={services.analysis} favorites={favorites} />} />
+        <Route path="matchup" element={<MatchupScreen catalog={result.data} provider={services.analysis} />} />
+        <Route path="watch/:gameId" element={<WatchGameScreen catalog={result.data} provider={services.watch} />} />
         <Route path="records" element={<div className="screen"><PageHeading eyebrow={`${league} / 記録`} title="記録" />
           <DataState kind="not-implemented" title="記録データは未接続です" />
           <Link className="ranking-entry" to={`/${league}/ranking`}><Trophy size={20} />
@@ -342,7 +352,8 @@ export function App({ services }: { services: Services }) {
   useEffect(() => { window.scrollTo(0, 0); }, [location.pathname]);
   const league: League = location.pathname.split("/")[1] === "MLB" ? "MLB" : "NPB";
   const section = location.pathname.split("/")[2] ?? "home";
-  const currentNav = section === "players" && location.pathname.endsWith("/analysis") ? "analysis"
+  const currentNav = section === "matchup" ? "analysis" : section === "watch" ? "home"
+    : section === "players" && location.pathname.endsWith("/analysis") ? "analysis"
     : section === "players" || section === "teams" || section === "ranking" ? "search"
     : section === "favorites" ? "my" : section;
   const [favorites, setFavorites] = useState<Favorite[]>([]);
@@ -364,7 +375,8 @@ export function App({ services }: { services: Services }) {
     }).catch(() => { setFavoriteError(true); setFavoriteMessage("お気に入りを保存できません。端末の保存領域を確認してください。"); })
       .finally(() => setSaving(false));
   }, [services]);
-  const switchPath = (next: League) => `/${next}/${["home", "analysis", "records", "my", "ranking"].includes(section) ? section : "search"}`;
+  const switchPath = (next: League) => `/${next}/${section === "matchup" ? "matchup"
+    : ["home", "analysis", "records", "my", "ranking"].includes(section) ? section : "search"}`;
   return <div className="app-shell">
     <a className="skip-link" href="#main-content" onClick={(event) => {
       event.preventDefault(); document.getElementById("main-content")?.focus();

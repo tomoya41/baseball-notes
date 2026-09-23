@@ -4,6 +4,7 @@ import type {
   AnalysisQuery,
   AnalysisResult,
 } from "../domain/analysis";
+import type { WatchBullpenResult, WatchCapabilities, WatchLineupResult, WatchScheduleResult } from "../domain/watch";
 
 // Added without expanding the player-directory provider. Implement only after
 // the adoption gate; every response must pass analysisResultSchema validation.
@@ -11,6 +12,14 @@ export interface AnalysisProvider {
   readonly id: string;
   capabilities(league: League): AnalysisCapabilities;
   analyze(query: AnalysisQuery, signal: AbortSignal): Promise<AnalysisResult>;
+}
+
+export interface WatchProvider {
+  readonly id: string;
+  capabilities(league: League): WatchCapabilities;
+  schedule(league: League, date: string, signal: AbortSignal): Promise<WatchScheduleResult>;
+  lineup(league: League, gameId: string, teamId: string, signal: AbortSignal): Promise<WatchLineupResult>;
+  bullpen(league: League, gameId: string, teamId: string, signal: AbortSignal): Promise<WatchBullpenResult>;
 }
 
 export interface PlayerProvider {

@@ -90,6 +90,7 @@ export function requiredCapabilities(q: AnalysisQuery): CapabilityId[] {
     f.opponent.kind === "batter"
   )
     result.push("matchup");
+  if (q.subject.kind === "matchup" && q.groupBy === "none") result.push("directMatchup");
   if (f.opponent.kind === "handedness") result.push("handednessSplit");
   if (f.bases !== "all") result.push("baseSplit");
   if (f.outs !== null) result.push("outsSplit");

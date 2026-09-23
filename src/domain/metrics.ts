@@ -1,6 +1,12 @@
 import type { MetricDefinition, MetricValue } from "./models";
 
 export const metrics: Record<string, MetricDefinition> = {
+  hits: { id: "hits", version: "1", name: "安打", fullName: "安打数", category: "basic-hitting",
+    description: "安打の数。", interpretation: "対戦した打席数と合わせて確認します。", advanced: false, format: "count", precision: 0 },
+  so: { id: "so", version: "1", name: "三振", fullName: "三振数", category: "basic-hitting",
+    description: "三振の数。", interpretation: "打席数と合わせて確認します。", advanced: false, format: "count", precision: 0 },
+  bb: { id: "bb", version: "1", name: "四球", fullName: "四球数", category: "basic-hitting",
+    description: "四球の数。", interpretation: "打席数と合わせて確認します。", advanced: false, format: "count", precision: 0 },
   avg: {
     id: "avg",
     version: "1",

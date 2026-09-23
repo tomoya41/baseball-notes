@@ -6,7 +6,7 @@ Androidを主対象とする野球データアプリ。製品仕様は [SPEC.md]
 
 React + TypeScript strict + Vite + Capacitor Androidの構成。ホーム / 検索 / 分析 / 記録 / マイの5項目ナビ、NPB・MLB切替、選手・球団検索、選手詳細、端末保存のお気に入り、指標説明、stale表示を実装。Home / Player / 参考ランキングにLight/Dark対応のデザインシステムを適用しています。
 
-**現在はすべて架空のサンプルデータです。実選手・今季成績・ライブAPIは接続していません。** 実データへの利用許諾が未確定のまま取得しないための意図的な境界です。ランキングはサンプル内の参考表示で、規定条件や公式順位ではありません。Analysis画面は共通フィルター・カテゴリー・詳細・状態表示を実装しましたが、現在のProviderには試合別/投球別観測値がなく、実数値・日次取得は未接続です。
+**現在はすべて架空のサンプルデータです。実選手・今季成績・ライブAPIは接続していません。** 実データへの利用許諾が未確定のまま取得しないための意図的な境界です。ランキングはサンプル内の参考表示で、規定条件や公式順位ではありません。Analysis画面には共通フィルター・カテゴリー・詳細・状態表示を実装。MATCHUPは投手/打者の手動選択と対戦分析UI、WATCHはHomeの今日の試合から進むUI契約を実装しました。現行Providerには試合別/投球別・日程・打順・登板履歴がなく、実数値や今日の試合は未接続です。
 
 - [アーキテクチャ](docs/architecture.md)
 - [データ取得元の調査](docs/data-sources.md)
@@ -89,4 +89,4 @@ Vercelは必須ではありません。必要な場合だけ個人・非商用Ho
 
 ## 今回の停止位置
 
-Phase 0の骨格＋縦方向実装、Analysis Aの契約、Design Aと代表画面、Capabilityに従うAnalysis UIまで。Hot、正式な記録・ランキング、ドラフト、FA、Prospect、通知、AI、実データのAnalysis集計およびMATCHUP/WATCHは未実装です。次Phaseへ自動的に進みません。
+Phase 0の骨格＋縦方向実装、Analysis Aの契約、Design Aと代表画面、Capabilityに従うAnalysis / MATCHUP / WATCH UIまで。Hot、正式な記録・ランキング、ドラフト、FA、Prospect、通知、AI、実データのAnalysis/MATCHUP集計および今日の日程/打順取得は未実装です。次Phaseへ自動的に進みません。

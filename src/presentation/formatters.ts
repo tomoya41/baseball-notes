@@ -85,6 +85,13 @@ export function formatDateTime(value: string | null | undefined): string {
   }).format(new Date(value));
 }
 
+export function formatTime(value: string | null | undefined): string {
+  if (!value || !Number.isFinite(Date.parse(value))) return missing;
+  return new Intl.DateTimeFormat("ja-JP", {
+    timeZone: "Asia/Tokyo", hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+  }).format(new Date(value));
+}
+
 export function formatDate(value: string | null | undefined, short = false): string {
   if (!value) return missing;
   // A date-only baseball business date must not shift with the viewer's timezone.

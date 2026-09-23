@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { ArrowRight, ChevronRight, SlidersHorizontal } from "lucide-react";
+import { Link } from "react-router-dom";
 import type { AnalysisProvider } from "../application/ports";
 import { samplePolicy } from "../app/analysis-policy";
-import { analysisResultSchema, capabilityManifestSchema } from "../domain/analysis";
+import { capabilityManifestSchema, sampleWarning } from "../domain/analysis";
 import type { AnalysisCapabilities, AnalysisQuery, AnalysisResult, CapabilityId, Split } from "../domain/analysis";
-import { analysisQueryKey, assessAnalysisQuery } from "../domain/analysis-query";
+import { assessAnalysisQuery } from "../domain/analysis-query";
 import { pitchTypeDefinitions } from "../domain/baseball-terms";
 import { metrics } from "../domain/metrics";
 import type { Player, PlayerCatalog } from "../domain/models";
@@ -15,33 +16,18 @@ import {
 import type { AnalysisCategory, AnalysisSubject, CountMode, SituationGroup } from "../presentation/analysis";
 import { formatDate, formatPitchType } from "../presentation/formatters";
 import { DataState, LoadingSkeleton, MetricInfo, PageHeading, PlayerRow, SectionHeader } from "./components";
+import { useAnalysisData } from "./use-analysis-data";
 
 function canUse(manifest: AnalysisCapabilities, id: CapabilityId): boolean {
   const feature = manifest.features[id];
   return feature.status === "available" && feature.implementation === "implemented";
 }
 
-function useAnalysisData(provider: AnalysisProvider, query: AnalysisQuery, enabled: boolean) {
-  const key = analysisQueryKey(query);
-  const [state, setState] = useState<{ key: string; result: AnalysisResult | null; error: string | null }>({
-    key: "", result: null, error: null,
-  });
-  useEffect(() => {
-    if (!enabled) return;
-    const controller = new AbortController();
-    void provider.analyze(query, controller.signal).then((raw) => {
-      if (controller.signal.aborted) return;
-      const result = analysisResultSchema.parse(raw);
-      if (analysisQueryKey(result.query) !== key) throw new Error("Mismatched analysis query");
-      setState({ key, result, error: null });
-    }).catch(() => { if (!controller.signal.aborted) setState({ key, result: null, error: "分析データを取得できませんでした" }); });
-    return () => controller.abort();
-  }, [provider, query, key, enabled]);
-  return state.key === key ? state : { key, result: null, error: null };
-}
-
-function SampleBadge({ split, subject, group }: { split: Split; subject: AnalysisSubject; group: AnalysisQuery["groupBy"] }) {
-  const warning = splitWarning(split, subject, group, samplePolicy);
+export function SampleBadge({ split, subject, group, warningContext }: {
+  split: Split; subject: AnalysisSubject; group: AnalysisQuery["groupBy"]; warningContext?: "directMatchup";
+}) {
+  const warning = warningContext ? sampleWarning(split.sampleSize, warningContext, samplePolicy)
+    : splitWarning(split, subject, group, samplePolicy);
   return <span className="analysis-sample">{splitSample(split, subject, group)}
     {warning && <span className="sample-warning" title={warning}>{warning.includes("不明") ? "母数不明" : "参考値"}</span>}
   </span>;
@@ -62,7 +48,7 @@ function PercentileBar({ metric, league }: { metric: Split["metrics"][number]; l
   </div>;
 }
 
-function SplitMetrics({ split, league, compact = false }: { split: Split; league: PlayerCatalog["league"]; compact?: boolean }) {
+export function SplitMetrics({ split, league, compact = false }: { split: Split; league: PlayerCatalog["league"]; compact?: boolean }) {
   const visible = split.metrics.filter((item) => metrics[item.definitionId]);
   return <div className={compact ? "analysis-metrics analysis-metrics--compact" : "analysis-metrics"}>
     {(compact ? visible.slice(0, 2) : visible).map((item) => {
@@ -259,7 +245,7 @@ function AnalysisFilter({ manifest, subject, period, setPeriod, filters, setFilt
   </div>;
 }
 
-function RecentChange({ provider, query, manifest, subject }: {
+export function RecentChange({ provider, query, manifest, subject }: {
   provider: AnalysisProvider; query: AnalysisQuery; manifest: AnalysisCapabilities;
   subject: AnalysisSubject;
 }) {
@@ -377,6 +363,8 @@ export function AnalysisDirectory({ catalog, provider, favorites }: {
   const manifest = capabilityManifestSchema.parse(provider.capabilities(catalog.league));
   const supported = manifest.subjects.length > 0 && canUse(manifest, "basicStats");
   return <div className="screen"><PageHeading eyebrow={`${catalog.league} / 分析`} title="分析" detail="選手を選んで、特徴を詳しく見る" />
+    <Link className="ranking-entry" to={`/${catalog.league}/matchup`}><span><strong>投手 × 打者 MATCHUP</strong>
+      <small>2人を選んで対戦の傾向を見る</small></span><ChevronRight size={19} /></Link>
     {!supported && <DataState kind="unsupported" title="現在の提供元に分析データはありません"
       detail={manifest.features.basicStats.reason} />}
     <SectionHeader title="選手を選ぶ" />

@@ -114,3 +114,19 @@ Savantの項目説明は、機械取得・再配布の許諾とは別。以下�
 共通化できるのはQuery、期間、状況、母数、欠測/少標本表示、取得契約、結果/説明の構造。MLB高度分析は許諾済みProviderのCapabilityが揃った時だけ開放する。NPBは基礎成績と許諾確認できたsplitを順次開放する。
 
 現行`sample-v1`は試合別/投球別の実データを持たないため、Analysisの全機能を`data=unavailable, implementation=not-implemented`として登録。選手画面のサンプル成績表示は継続する。「この条件では0件」「提供元にデータなし」「規約未確認」「機能未実装」を分離する。Matrixの歴史データ評価だけで本番Capabilityをtrueにしない。
+
+## MATCHUP / WATCH追加確認（2026-09-24）
+
+下表のMLB「条件」はRetrosheet公開済み履歴（現時点のCSVは1897–2025年）で、**今日の試合の提供ではない**。列があるだけで利用可能とせず、ID対応、欠測、適用年、Retrosheet指定の著作権表示を検証する。MLB.comの[利用規約](https://www.mlb.com/official-information/terms-of-use)は自動スクリプトによるサイト収集を禁じているため、公式Web画面をスクレイピングして日程/打順/投球を埋めない。[Retrosheet CSV範囲](https://www.retrosheet.org/downloads/csvdownloads.html)、[列定義](https://www.retrosheet.org/downloads/csvcontents.html)、[利用条件](https://www.retrosheet.org/notice.txt)。
+
+| 項目 | MLB | NPB | 現行Provider | 根拠・代替 |
+|---|---|---|---|---|
+| 直接対戦 | 条件（履歴R） | 調査 | 不可 | R playsの投手・打者IDと打席結果を結合。欠測年は除外。許諾済みNPB feedを待つ |
+| Pitch Arsenal × 打者球種 | 調査（S） | 不可 | 不可 | 投手/打者それぞれのpitch-level許諾と共通球種分類が必要 |
+| カウント対戦 | 条件（履歴R）/調査（S） | 不可 | 不可 | pitch-at-countと到達PAを分離。Rのpitch列coverageを検証 |
+| 直近30日対戦 | 条件（公開済み履歴） | 調査 | 不可 | 今季の日次feedではない。期間と対象試合のcoverage必須 |
+| 今日の日程・先発予定 | 調査 | 調査 | 不可 | 当日再利用可能な契約/認証/更新頻度は未確定。Web表示の転用は禁止 |
+| 今日の打順 | 調査 | 調査 | 不可 | 予定/発表済みを区別。Rの履歴lineupは今日の打順に代用不可 |
+| ブルペン直近登板 | 条件（履歴R）/今季調査 | 調査 | 不可 | Rのpitching/game logで履歴導出可能。前日終了までの今季feed未確認 |
+
+UIは`directMatchup`、`pitchTypeMatchup`、`countMatchup`、`recentMatchup`および独立したWatch `schedule`、`lineup`、`bullpenUsage` capabilityを見る。現行サンプルは両リーグともすべてunavailable。許諾済みfeedがない節は隠すか短い未提供表示にし、架空値や「MLBだから利用可能」の分岐は置かない。

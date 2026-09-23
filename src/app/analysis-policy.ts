@@ -15,6 +15,7 @@ export const samplePolicy = samplePolicySchema.parse({
     pitchLevel: { unit: "pitches", warnBelow: 50 },
     battedBall: { unit: "BBE", warnBelow: 20 },
     battery: { unit: "pitches", warnBelow: 100 },
+    directMatchup: { unit: "PA", warnBelow: 20 },
   },
 });
 export function foundationAnalysisCapabilities(

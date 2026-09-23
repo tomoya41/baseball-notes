@@ -4,7 +4,7 @@
 
 方針は **Modern / Sports / Data / Clean**。最初の画面で「今見るもの」を示し、一覧は行、数値は小さな指標群、詳細は選手内タブへ進む。操作方法の長文は置かず、ラベル・Chevron・選択状態・48px以上の操作領域で伝える。色は情報を補助し、状態は必ず文字でも示す。
 
-現在の実データProviderは未採用。Homeの日程・HOT・記録・シーズン、Analysis/Recordsは状態を明示しており、架空データから事実を推測しない。Rankingは**同梱サンプル内の参考表示**で、規定条件未判定を常時表示する。実データ用のランキング資格判定は後続タスク。
+現在の実データProviderは未採用。Homeの日程・HOT・記録・シーズン、Analysis/Records/MATCHUP/WATCHは状態を明示しており、架空データから事実を推測しない。Rankingは**同梱サンプル内の参考表示**で、規定条件未判定を常時表示する。実データ用のランキング資格判定は後続タスク。
 
 ## トークン
 
@@ -43,7 +43,9 @@ Positive、negative、warning、neutral、chart primary/secondary/gridも両テ�
 
 Loadingはページ骨格を残すSkeleton。No data、Provider非対応、取得失敗、未実装、少サンプルは別の文言と視覚状態にする。0は欠損ではない。Sample bannerとstale/更新時刻は通常画面から見つけられる位置に保持する。
 
-Analysisは `AnalysisCapability` の `status` と `implementation` を見て表示を決める。リーグ名だけで高度UIを決めない。`src/ui/analysis.tsx` は概要→カテゴリー→詳細を一画面ずつ描き、球種割合を横棒、percentileを細い横棒、splitを行、zoneを座標由来の3×3として表示する。比較値には母集団、期間、サンプル数を伴わせる。現行サンプルにはAnalysis観測値がないため、実数値・ヒートマップセルは描画しない。MATCHUPとWATCHは未実装。
+Analysisは `AnalysisCapability` の `status` と `implementation` を見て表示を決める。リーグ名だけで高度UIを決めない。`src/ui/analysis.tsx` は概要→カテゴリー→詳細を一画面ずつ描き、球種割合を横棒、percentileを細い横棒、splitを行、zoneを座標由来の3×3として表示する。比較値には母集団、期間、サンプル数を伴わせる。現行サンプルにはAnalysis観測値がないため、実数値・ヒートマップセルは描画しない。
+
+MATCHUPは同じchip/行/指標/母数/球種色を使用し、投手・打者のペアを選択した後、概要→直接対戦/球種/カウント/変化へ段階的に表示。データのあるセクションだけを描画する。WATCHはHomeの「今日の試合」から入る縦スクロールで、チームカード・打順行・選択式の3打者・ブルペン事実値を表示。今日の次打者や登板可否は推測しない。実Providerがない現在、両画面は未提供状態と手動選択導線を示す。
 
 ## 次の最小タスク
 

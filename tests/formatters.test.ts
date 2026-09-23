@@ -6,7 +6,7 @@ import { normalizeSample } from "../src/infrastructure/providers/sample-provider
 import {
   formatDate, formatDateTime, formatDistance, formatHeight, formatInning,
   formatMetric, formatPitchType, formatPlayerName, formatPositions,
-  formatSample, formatSampleWarning, formatTeamName, formatTopPercentile,
+  formatSample, formatSampleWarning, formatTeamName, formatTime, formatTopPercentile,
   formatVelocity, formatWeight,
 } from "../src/presentation/formatters";
 
@@ -24,6 +24,7 @@ describe("Japanese presentation", () => {
 
   it("uses JST for instants and does not shift date-only values", () => {
     expect(formatDateTime("2026-09-22T23:00:00Z")).toBe("2026年9月23日 08:00");
+    expect(formatTime("2026-09-22T23:00:00Z")).toBe("08:00");
     expect(formatDate("2026-09-23")).toBe("2026年9月23日");
     expect(formatDate("2026-09-23", true)).toBe("9月23日");
     expect(formatDate("2026-02-30")).toBe("—");
