@@ -24,6 +24,7 @@
     "collector:npb:game": "tsx scripts/collect-npb-game.ts",
     "backup:npb:drill": "tsx scripts/backup-npb.ts",
     "backup:npb:restore": "tsx scripts/restore-npb-backup.ts",
+    "db:npb:migrate": "tsx scripts/migrate-npb.ts",
     "collector:npb:day:dry-run": "tsx scripts/dry-run-npb-day.ts",
     "collector:npb:day": "tsx scripts/collect-npb-day.ts",
     "verify:npb:day": "tsx scripts/verify-npb-day.ts",

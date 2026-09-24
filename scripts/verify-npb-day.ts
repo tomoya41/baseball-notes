@@ -1,4 +1,5 @@
 import { openDataClient } from "../src/data/database";
+import { readFile } from "node:fs/promises";
 import { NpbRepository } from "../src/data/npb-repository";
 import { previousJstDate } from "../src/data/npb-day-collector";
 
@@ -19,9 +20,22 @@ try {
       expectedPitchers:report?.expectedPitchers??null});
   }
   const mappings=await client.execute("SELECT COUNT(*) AS n FROM source_entity_mappings WHERE source_key='nf3' AND entity_kind='player'");
+  const tableNames=["standings_daily","npb_games","player_game_batting","player_game_pitching","source_entity_mappings"] as const;
+  const totals:Record<string,number>={};
+  for(const table of tableNames) {
+    const count=await client.execute(`SELECT COUNT(*) AS n FROM ${table}`);
+    totals[table]=Number(count.rows[0]?.n??0);
+  }
   const result={targetDate:date,finalGames:games.length,batters:details.reduce((sum,row)=>sum+row.batters,0),
-    pitchers:details.reduce((sum,row)=>sum+row.pitchers,0),playerMappings:Number(mappings.rows[0]?.n??0),games:details};
+    pitchers:details.reduce((sum,row)=>sum+row.pitchers,0),playerMappings:Number(mappings.rows[0]?.n??0),
+    totals,games:details};
   process.stdout.write(`${JSON.stringify(result,null,2)}\n`);
+  const baselinePath=process.argv.find((arg)=>arg.startsWith("--baseline="))?.slice(11);
+  if(baselinePath) {
+    const baseline=JSON.parse(await readFile(baselinePath,"utf8")) as {totals:Record<string,number>};
+    for(const table of tableNames) if(result.totals[table]!<baseline.totals[table]!)
+      throw new Error(`Permanent table lost rows: ${table}`);
+  }
   if(process.argv.includes("--require-complete") && details.some((game)=>game.status!=="complete"||
     game.batters!==game.expectedBatters||game.pitchers!==game.expectedPitchers)) process.exitCode=1;
 } finally {client.close();}

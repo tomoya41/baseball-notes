@@ -13,8 +13,9 @@
 ## オペレーター手順
 
 1. ローカルdry-run：`npm run collector:npb:day -- --date=2026-09-23 --dry-run --controlled-history --reuse-local-raw`。将来の日付では`--controlled-history`を外し、先にGames Stageを完成させる。
+   既存ローカルDBをBackup drillへ使用する場合は先に`npm run db:npb:migrate`でmigration 004を適用する。Remoteの実投入CLIはmigrationを自動適用する。
 2. `Manual NPB full-day facts verification` Actionを`dry-run`でdispatchし、Game/Day complete、Source request/retry、未解決0を確認。DB書込なし。
-3. 同Actionを`ingest`でdispatch。TursoへGame単位commitし、Repository readback、Export→Scratch Restore、暗号化Artifactの順で実施。暗号化鍵はGitHub Actions Secret `NPB_BACKUP_ENCRYPTION_KEY`（32 byteをbase64化した値）。DB秘密情報と同様、Git/ログへ置かない。
+3. 同Actionを`ingest`でdispatch。Tursoの重要Table件数を保存前・保存後に比較し、Game単位commit、Repository readback、Export→Scratch Restore、暗号化Artifactの順で実施。暗号化鍵はGitHub Actions Secret `NPB_BACKUP_ENCRYPTION_KEY`（32 byteをbase64化した値）。DB秘密情報と同様、Git/ログへ置かない。
 4. 同じ`ingest` Action内で保存済みRawを再利用して同日再投入する。Repositoryの1回目・2回目のJSONを照合し、件数増殖がないことを確認する。Run全体を再dispatchする必要がある場合も同じ対象日を指定する。
 5. 必要なら既存`Daily NPB collector and Pages delivery`の`publish` manual modeで**最新日付**のPayloadを再公開し、effectiveDateを確認。過去日のGame FactをPagesへ公開しない。
 6. 上記が通ってから、既存03:37 JST日次WorkflowへDay Factsを統合する。失敗時は`NPB_NF3_ENABLED=false`でSource取得を止め、対象日をmanual repairする。Game単位の既存controlled Collectorも残す。
@@ -24,6 +25,9 @@ public repositoryのActions Artifactはread accessのある人がダウンロー
 Backup Exportだけ失敗してもGame FactはRollbackしない。`npb_day_runs.operational_status=completed_with_warning`、`backup_status=failed`を記録してActionを失敗させる。公開Payloadは従来の順位・必要最小限のJSONだけ。全Player FactやRawはPagesへ置かない。
 
 ## 負荷と容量
+
+第6弾の[GitHub Actions manual dry-run #1](https://github.com/tomoya41/baseball-notes/actions/runs/36073742099)は2026-09-23をRemote Repositoryから列挙し、6 final/6 complete、打者185/185、投手65/65、mapping候補78、HTTP 286、unique page 286、retry 0、処理218.521秒でPASS。Fact書込なし。Local Raw再利用dry-runも6 complete、HTTP 96、retry 0、73.438秒。これらは同じDateのデータ品質確認であり、Remote実投入の証拠ではない。
+Migration 004適用後のLocal Portable Backup/Scratch Restore drillもschema v4、圧縮合計180,160 byteでPASS。
 
 第5弾の6試合実測は286ユニークページ。通常新規runnerでは数分の逐次取得を許容し、750ms間隔、最大1 retry、15秒timeout、500KB上限を維持する。Run内URL cacheで重複fetchしない。GitHub SecretsのDB credentialはAndroid/Webに渡さない。Fact数とmapping増加は`npb_day_runs`とRepository readbackで追う。DB容量はTurso dashboardまたは管理CLIで定期確認し、70/80/90%で確認・警告・再生成可能cache整理を検討する。Fact/順位履歴は削除しない。
 
