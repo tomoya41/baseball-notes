@@ -13,7 +13,7 @@ export async function buildNpbStandingsPayload(repository: NpbRepository, genera
   return npbLatestStandingsSchema.parse({
     schemaVersion: 1, league: "NPB", throughDate, effectiveDate: throughDate,
     generatedAt, collectedAt: first.collectedAt, sourceUpdatedAt: null,
-    sourceKey: "nf3", attribution: "出典：ヌルデータ置き場f3（公開情報の独自集計。NPB公式データではありません）",
+    sourceKey: "nf3", attribution: "出典：nf3（公開情報の独自集計。NPB公式データではありません）",
     teams: Object.fromEntries(teams.map((team) => [team.id, { name: team.names.japaneseFull, short: team.names.japaneseShort }])),
     standings,
   });

@@ -13,7 +13,7 @@ import type { PlayerGameBatting, PlayerGamePitching } from "../domain/game-facts
 import type { NpbLogRow } from "./npb-nf3";
 
 const ROOT = "https://nf3.sakura.ne.jp/";
-const HEADERS = { "User-Agent": "BaseballDataAppCollector/0.1 (daily NPB public-data check; local development)" };
+const HEADERS = { "User-Agent": "BaseballDataAppCollector/0.1 (daily NPB public-data check)" };
 export const curatedNpbPlayers = [
   { sourceId: "2026:T:f:1", name: "森下翔太", teamCode: "T", number: "1", kind: "batting" },
   { sourceId: "2026:T:f:5", name: "近本光司", teamCode: "T", number: "5", kind: "batting" },

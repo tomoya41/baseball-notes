@@ -7,7 +7,7 @@ on:
       mode:
         description: "Check source without DB writes, or ingest and publish"
         type: choice
-        options: [dry-run, ingest]
+        options: [dry-run, ingest, publish]
         default: dry-run
         required: true
       target_date:
@@ -66,23 +66,34 @@ jobs:
             cmp .data/remote-before.json .data/remote-after.json
           fi
           cat .data/remote-before.json
+      - name: Republish from verified remote data without source access
+        if: github.event_name == 'workflow_dispatch' && inputs.mode == 'publish'
+        shell: bash
+        env:
+          TARGET_DATE: ${{ inputs.target_date }}
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+        run: |
+          args=()
+          if [[ -n "$TARGET_DATE" ]]; then args+=(--date "$TARGET_DATE"); fi
+          npm run publish:npb:remote -- --payload-root .data/publish "${args[@]}"
       - name: Build Web app with the same-origin validated JSON
-        if: github.event_name == 'schedule' || inputs.mode == 'ingest'
+        if: github.event_name == 'schedule' || inputs.mode == 'ingest' || inputs.mode == 'publish'
         shell: bash
         run: |
           npm run build
           mkdir -p dist/data/standings/npb
           cp .data/publish/data/standings/npb/latest.json dist/data/standings/npb/latest.json
       - name: Configure GitHub Pages
-        if: github.event_name == 'schedule' || inputs.mode == 'ingest'
+        if: github.event_name == 'schedule' || inputs.mode == 'ingest' || inputs.mode == 'publish'
         uses: actions/configure-pages@v5
       - name: Upload complete site as one Pages artifact
-        if: github.event_name == 'schedule' || inputs.mode == 'ingest'
+        if: github.event_name == 'schedule' || inputs.mode == 'ingest' || inputs.mode == 'publish'
         uses: actions/upload-pages-artifact@v4
         with:
           path: dist
   deploy:
-    if: github.event.repository.private == false && (github.event_name == 'schedule' || inputs.mode == 'ingest')
+    if: github.event.repository.private == false && (github.event_name == 'schedule' || inputs.mode == 'ingest' || inputs.mode == 'publish')
     needs: collect
     runs-on: ubuntu-latest
     permissions:

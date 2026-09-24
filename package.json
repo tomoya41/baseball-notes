@@ -21,7 +21,8 @@
     "collector:daily": "tsx scripts/collect-standings.ts --daily",
     "collector:npb": "tsx scripts/collect-npb.ts",
     "collector:npb:daily": "tsx scripts/collect-npb.ts --fetch",
-    "verify:npb:remote": "tsx scripts/verify-npb-database.ts"
+    "verify:npb:remote": "tsx scripts/verify-npb-database.ts",
+    "publish:npb:remote": "tsx scripts/publish-npb-payload.ts"
   },
   "dependencies": {
     "@capacitor/android": "8.4.3",
