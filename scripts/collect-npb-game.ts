@@ -3,12 +3,16 @@ import { gunzipSync } from "node:zlib";
 import { mkdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { migrateData, openDataClient } from "../src/data/database";
-import { runNpbGameProof } from "../src/data/npb-game-collector";
+import { controlledGameTargets, runNpbGameProof, type ControlledGameTarget } from "../src/data/npb-game-collector";
 import { NpbRepository } from "../src/data/npb-repository";
 
-const date = "2026-09-23";
-const gameId = "npb:game:31c350227cecf978f3e8";
 const args = new Set(process.argv.slice(2));
+const targetArg = [...args].find((arg) => arg.startsWith("--target="));
+const targetKey = targetArg?.slice("--target=".length) ?? "baseline";
+if (!(targetKey in controlledGameTargets)) throw new Error(`Unknown controlled target: ${targetKey}`);
+const target = controlledGameTargets[targetKey as ControlledGameTarget];
+const date = target.date;
+const gameId = target.id;
 const verifyOnly = args.has("--verify-only");
 const dryRun = args.has("--dry-run");
 const offlineRaw = args.has("--offline-raw");
@@ -26,7 +30,7 @@ try {
     const report = await repository.findGameCompleteness(gameId);
     const batting = await repository.findBattingByGame(gameId);
     const pitching = await repository.findPitchingByGame(gameId);
-    const teamTotals = ["npb:team:marines", "npb:team:buffaloes"].map((teamId) => {
+    const teamTotals = [target.home, target.away].map((teamId) => {
       const hitters = batting.filter((fact) => fact.teamId === teamId);
       const pitchers = pitching.filter((fact) => fact.teamId === teamId);
       const sum = (values: readonly (number | null | undefined)[]) => values.reduce<number>((total, value) => total + (value ?? 0),0);

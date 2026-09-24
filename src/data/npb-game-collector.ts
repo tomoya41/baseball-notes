@@ -37,9 +37,19 @@ export interface NpbGameProofResult {
   insertedPitching: number;
 }
 
+export const controlledGameTargets = {
+  baseline: { id: "npb:game:31c350227cecf978f3e8", date: "2026-09-23",
+    home: "npb:team:marines", away: "npb:team:buffaloes", homeScore: 0, awayScore: 1,
+    homePitchingOuts: 27, awayPitchingOuts: 27 },
+  edge: { id: "npb:game:7625951a1eb2412e96c1", date: "2026-09-23",
+    home: "npb:team:hawks", away: "npb:team:lions", homeScore: 10, awayScore: 3,
+    homePitchingOuts: 27, awayPitchingOuts: 24 },
+} as const;
+export type ControlledGameTarget = keyof typeof controlledGameTargets;
+
 export function validateNpbGameFacts(game: NpbGame, expectedBatters: number, batting: readonly PlayerGameBatting[],
   expectedPitchers: number, pitching: readonly PlayerGamePitching[], mappedBatters: number, mappedPitchers: number,
-  issues: string[] = []): GameCompleteness {
+  issues: string[] = [], expectedPitchingOuts?: Readonly<Record<string, number>>): GameCompleteness {
   const checks: Record<string, boolean> = {
     finalGame: game.status === "final" && game.homeScore !== null && game.awayScore !== null,
     batterCoverage: expectedBatters >= 18 && batting.length === expectedBatters && mappedBatters === expectedBatters,
@@ -60,12 +70,15 @@ export function validateNpbGameFacts(game: NpbGame, expectedBatters: number, bat
     checks[`battingOrder:${key}`] = new Set(hitters.filter((row) => row.starter).map((row) => row.battingOrder)).size === 9 &&
       hitters.every((row) => row.battingOrder !== null);
     checks[`battingRuns:${key}`] = total(hitters.map((row) => row.runs)) === score;
+    checks[`extraBaseComposition:${key}`] = hitters.every((row) => row.hits !== null && row.doubles !== null &&
+      row.triples !== null && row.homeRuns !== null && row.doubles + row.triples + row.homeRuns <= row.hits);
     checks[`pitchingRuns:${key}`] = total(pitchers.map((row) => row.runs)) === allowed;
     checks[`hits:${key}`] = total(hitters.map((row) => row.hits)) === total(opposingPitchers.map((row) => row.hits));
     checks[`homeRuns:${key}`] = total(hitters.map((row) => row.homeRuns)) === total(opposingPitchers.map((row) => row.homeRuns));
     checks[`plateAppearances:${key}`] = total(hitters.map((row) => row.pa)) === total(opposingPitchers.map((row) => row.battersFaced));
-    // The controlled 2026-09-23 target ended after nine complete innings, with no walk-off.
-    checks[`pitchingOuts:${key}`] = total(pitchers.map((row) => row.inningsPitchedOuts)) === 27;
+    // A home win without a bottom ninth gives the visiting staff only 24 defensive outs.
+    checks[`pitchingOuts:${key}`] = total(pitchers.map((row) => row.inningsPitchedOuts)) ===
+      (expectedPitchingOuts?.[key] ?? 27);
     checks[`oneStarter:${key}`] = pitchers.filter((row) => row.starter).length === 1;
     checks[`opponents:${key}`] = hitters.every((row) => row.opponentTeamId === opponentId) &&
       pitchers.every((row) => row.opponentTeamId === opponentId);
@@ -73,7 +86,7 @@ export function validateNpbGameFacts(game: NpbGame, expectedBatters: number, bat
   const failedChecks = Object.entries(checks).filter(([,ok]) => !ok).map(([name]) => name);
   const allIssues = [...issues,...failedChecks.map((name) => `Check failed: ${name}`)];
   const battingStatus = !checks.batterCoverage || !checks.uniqueBatters || !checks.plateAppearancesKnown ||
-    Object.entries(checks).some(([key,ok]) => (key.startsWith("battingRuns:") || key.startsWith("battingStarters:") ||
+    Object.entries(checks).some(([key,ok]) => (key.startsWith("battingRuns:") || key.startsWith("extraBaseComposition:") || key.startsWith("battingStarters:") ||
       key.startsWith("battingOrder:")) && !ok) ? "partial" : "complete";
   const pitchingStatus = !checks.pitcherCoverage || !checks.uniquePitchers ||
     Object.entries(checks).some(([key,ok]) => (key.startsWith("pitchingRuns:") || key.startsWith("pitchingOuts:") || key.startsWith("oneStarter:")) && !ok)
@@ -86,17 +99,18 @@ export function validateNpbGameFacts(game: NpbGame, expectedBatters: number, bat
 
 export async function runNpbGameProof(client: DataClient, options: NpbGameProofOptions): Promise<NpbGameProofResult> {
   const { targetDate, gameId, dryRun = false, rawRoot = ".data/raw", delayMs = 750, persistRawManifest = true } = options;
-  if (targetDate !== "2026-09-23" || targetDate > addDays(jstToday(),-1))
-    throw new Error("This controlled proof is limited to completed 2026-09-23 games");
+  const target = Object.values(controlledGameTargets).find((candidate) => candidate.id === gameId && candidate.date === targetDate);
+  if (!target || targetDate > addDays(jstToday(),-1))
+    throw new Error("This controlled proof is limited to the two reviewed 2026-09-23 games");
   if (sourceRegistry.find((source) => source.key === "nf3")?.status !== "enabled-limited-public")
     throw new Error("nf3 provider is disabled in Source Registry");
   const repository = new NpbRepository(client);
   const games = await repository.findGamesByDate(targetDate);
   const game = games.find((item) => item.id === gameId);
   if (!game || game.status !== "final") throw new Error(`Missing final game: ${gameId}`);
-  // Restrict this proof to the deliberately selected, ordinary nine-inning DH game.
-  if (game.homeTeamId !== "npb:team:marines" || game.awayTeamId !== "npb:team:buffaloes" ||
-    game.homeScore !== 0 || game.awayScore !== 1) throw new Error("Unexpected controlled game identity/score");
+  if (game.homeTeamId !== target.home || game.awayTeamId !== target.away ||
+    game.homeScore !== target.homeScore || game.awayScore !== target.awayScore)
+    throw new Error("Unexpected controlled game identity/score");
   const teams = [game.homeTeamId,game.awayTeamId].map((id) => npbTeams.find((team) => team.id === id)!);
   const at = new Date().toISOString();
   let lastRequest = 0;
@@ -202,7 +216,8 @@ export async function runNpbGameProof(client: DataClient, options: NpbGameProofO
     }
   }
   const report = validateNpbGameFacts(game,expectedBatters,batting.map((row) => row.fact),expectedPitchers,
-    pitching.map((row) => row.fact),mappedBatters,mappedPitchers,issues);
+    pitching.map((row) => row.fact),mappedBatters,mappedPitchers,issues,
+    { [target.home]: target.homePitchingOuts, [target.away]: target.awayPitchingOuts });
   if (dryRun || report.gameStatus !== "complete") {
     if (!dryRun) {
       const previous = await repository.findGameCompleteness(game.id);

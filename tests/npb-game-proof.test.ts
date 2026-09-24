@@ -7,7 +7,7 @@ import { NpbRepository } from "../src/data/npb-repository";
 import { parseInningsOuts, type NpbGame } from "../src/data/npb-nf3";
 import { findRosterPlayer, parseNf3BattingRoster, parseNf3GameBattingRow,
   parseNf3GamePitchingRow, parseNf3PitchUsage, parseNf3StartingLineup } from "../src/data/npb-game-source";
-import { validateNpbGameFacts } from "../src/data/npb-game-collector";
+import { controlledGameTargets, validateNpbGameFacts } from "../src/data/npb-game-collector";
 import { playerGameBattingSchema, playerGamePitchingSchema } from "../src/domain/game-facts";
 
 const date = "2026-09-23";
@@ -101,8 +101,9 @@ describe("2026-09-23 controlled NPB game proof", () => {
     await repository.saveBatting([row],date,false,false);
     await repository.saveBatting([row],date,false,false);
     expect(await repository.findBattingByGame(gameId)).toHaveLength(1);
-    await repository.saveBatting([{ ...row, fact: { ...row.fact, rbi: (row.fact.rbi ?? 0)+1 } }],date,false,false);
-    expect((await repository.findBattingByGame(gameId))[0]?.rbi).toBe((row.fact.rbi ?? 0)+1);
+    await repository.saveBatting([{ ...row, fact: { ...row.fact,
+      hits: (row.fact.hits ?? 0)+1, doubles: (row.fact.doubles ?? 0)+1 } }],date,false,false);
+    expect((await repository.findBattingByGame(gameId))[0]).toMatchObject({ hits: 1, doubles: 1 });
     const otherPlayer = await repository.resolveVerifiedPlayer("2026:B:uniform:8","麦谷祐介",game.sourceUrl,game.awayTeamId,at,false);
     expect(otherPlayer).not.toBe(playerId);
     const pitcherId = await repository.resolveVerifiedPlayer("2026:M:uniform:18","石垣元気",game.sourceUrl,game.homeTeamId,at,false);
@@ -113,5 +114,77 @@ describe("2026-09-23 controlled NPB game proof", () => {
     expect(await repository.findPitchingByGame(gameId)).toHaveLength(1);
     await repository.savePitching([{ ...pitchingRow, fact: { ...pitchingRow.fact, pitches: (pitchingRow.fact.pitches ?? 0)+1 } }],date,false,false);
     expect((await repository.findPitchingByGame(gameId))[0]?.pitches).toBe((pitchingRow.fact.pitches ?? 0)+1);
+  });
+});
+
+describe("Hawks 10–3 Lions edge-game regression", () => {
+  const edge = controlledGameTargets.edge;
+  const batting = (name: string, team: "H" | "L") => parseNf3GameBattingRow(
+    fixture(name),date,team,`player-${name}`,`source-${name}`,game.sourceUrl,at).row.fact;
+  const pitching = (name: string, team: "H" | "L") => parseNf3GamePitchingRow(
+    fixture(name),date,team,`player-${name}`,`source-${name}`,game.sourceUrl,at).fact;
+
+  it("counts real nonzero doubles from explicit plate-appearance tokens and reconciles PA with walks", () => {
+    expect(batting("edge-batting-h32","H")).toMatchObject({ ab: 5, hits: 3, doubles: 1, triples: 0, pa: 5 });
+    expect(batting("edge-batting-l39","L")).toMatchObject({ ab: 4, hits: 1, doubles: 1, triples: 0, pa: 4 });
+    expect(batting("edge-batting-h3","H")).toMatchObject({ ab: 4, walks: 1, hbp: 0, pa: 5 });
+    expect(batting("edge-batting-h44","H")).toMatchObject({ ab: 0, walks: 1, pa: 1 });
+    expect(batting("edge-batting-l68","L")).toMatchObject({ ab: 0, pa: 0, runs: 1 });
+  });
+
+  it("rejects uncertain PA or extra-base decomposition, while preserving synthetic HBP/SH/SF parsing", () => {
+    const $ = load(fixture("edge-batting-h44"));
+    const cells = $("tr[onmouseover]").first().children("td");
+    cells.eq(16).text("1");
+    cells.eq(25).text("死球");
+    expect(parseNf3GameBattingRow($.html(),date,"H","p","s",game.sourceUrl,at).row.fact)
+      .toMatchObject({ pa: 1, ab: 0, walks: 0, hbp: 1 });
+    cells.eq(16).text("0");
+    cells.eq(25).text("犠打 犠飛");
+    expect(parseNf3GameBattingRow($.html(),date,"H","p","s",game.sourceUrl,at).row.fact)
+      .toMatchObject({ pa: 2, sacrificeHits: 1, sacrificeFlies: 1 });
+    cells.eq(25).text("不明");
+    expect(parseNf3GameBattingRow($.html(),date,"H","p","s",game.sourceUrl,at).row.fact.pa).toBeNull();
+  });
+
+  it("preserves real relief use, W/L and combined pitcher four-dead-ball count", () => {
+    expect(pitching("edge-pitching-h10","H")).toMatchObject({ role: "starter", inningsPitchedOuts: 18,
+      battersFaced: 22, pitches: 91, decision: "win", walks: null, hitBatters: null, walksAndHitBatters: 2,
+      appearanceOrder: null });
+    expect(pitching("edge-pitching-l21","L")).toMatchObject({ role: "starter", inningsPitchedOuts: 12,
+      pitches: 88, decision: "loss", walks: null, hitBatters: null, walksAndHitBatters: 1 });
+    const $ = load(fixture("edge-pitching-h10"));
+    const cells = $("tr[onmouseover]").first().children("td");
+    cells.eq(8).text("Ｈ");
+    expect(parseNf3GamePitchingRow($.html(),date,"H","p","s",game.sourceUrl,at).fact.decision).toBe("hold");
+    cells.eq(8).text("Ｓ");
+    expect(parseNf3GamePitchingRow($.html(),date,"H","p","s",game.sourceUrl,at).fact.decision).toBe("save");
+    expect(parseInningsOuts("0.1")).toBe(1);
+    expect(parseInningsOuts("0.2")).toBe(2);
+  });
+
+  it("accepts the reviewed home-win 27/24-out shape and rejects missing facts", () => {
+    const edgeGame: NpbGame = { ...game, id: edge.id, homeTeamId: edge.home, awayTeamId: edge.away,
+      homeScore: edge.homeScore, awayScore: edge.awayScore };
+    const batters = [edge.home,edge.away].flatMap((teamId) => Array.from({ length: 9 }, (_, index) =>
+      playerGameBattingSchema.parse({ gameId: edge.id, playerId: `${teamId}:${index}`, teamId,
+        opponentTeamId: teamId === edge.home ? edge.away : edge.home,
+        battingOrder: index+1, starter: true, pa: teamId === edge.home && index < 6 ? 5 : 4,
+        ab: teamId === edge.home && index < 6 ? 5 : 4, hits: 0, doubles: 0, triples: 0,
+        homeRuns: 0, runs: teamId === edge.home && index === 0 ? 10 : teamId === edge.away && index === 0 ? 3 : 0,
+        rbi: 0, walks: 0, strikeouts: 0, hbp: 0, stolenBases: 0, caughtStealing: 0,
+        sourceKey: "nf3", sourceRecordId: `${teamId}:${index}`, collectedAt: at })));
+    const pitchers = [edge.home,edge.away].map((teamId) => playerGamePitchingSchema.parse({
+      id: `${teamId}:pitcher`, gameId: edge.id, playerId: `${teamId}:pitcher`, teamId,
+      opponentTeamId: teamId === edge.home ? edge.away : edge.home,
+      role: "starter", starter: true, appearanceOrder: null,
+      inningsPitchedOuts: teamId === edge.home ? 27 : 24,
+      battersFaced: teamId === edge.home ? 36 : 42, hits: 0, homeRuns: 0,
+      runs: teamId === edge.home ? 3 : 10, earnedRuns: 0, walks: null, strikeouts: 0,
+      pitches: 90, catcherId: null, sourceKey: "nf3", sourceRecordId: `${teamId}:pitcher`, collectedAt: at }));
+    const outs = { [edge.home]: 27, [edge.away]: 24 };
+    expect(validateNpbGameFacts(edgeGame,18,batters,2,pitchers,18,2,[],outs).gameStatus).toBe("complete");
+    expect(validateNpbGameFacts(edgeGame,18,batters.slice(1),2,pitchers,17,2,[],outs).gameStatus).toBe("partial");
+    expect(validateNpbGameFacts(edgeGame,18,batters,2,pitchers.slice(1),18,1,[],outs).gameStatus).toBe("partial");
   });
 });
