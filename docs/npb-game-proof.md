@@ -8,6 +8,8 @@ Source URL patternは各球団の月間スタメン `stat_disp.php?y=0&leg=1&mon
 
 2026-09-24のローカル実証では**打者23/23・投手6/6、マッピング23/23・6/6**。ロッテは打者10・投手3、オリックスは打者13・投手3。ロッテ打撃は30 PA、28 AB、3 H、0 R、投手27 outs・32 BF・4 H・1 R。オリックス打撃は32 PA、31 AB、4 H、1 HR、1 R、投手27 outs・30 BF・3 H・0 R。両軍のPAは相手投手BFと一致し、H/HR/R/27 outs/先発各1人・打順1～9の照合も通った。交代出場はロッテ1人、オリックス4人を辿った。これはnf3ページ間の照合であり、公式Box Scoreへの独立照合ではない。
 
+GitHub Actionsの[手動dry-run](https://github.com/tomoya41/baseball-notes/actions/runs/35962178762)は成功。[Remote ingest・再投入Run](https://github.com/tomoya41/baseball-notes/actions/runs/35962349218)ではMigration 003をTursoへ適用し、初回に打撃Fact 23件・投手Fact 6件を挿入。Turso Repository再読込で23/6、distinct 23/6、全チェックtrue、`gameStatus=complete`を確認した。同一Rawの再投入では新規挿入0/0、その後のRepository照合も成功。ローカルでも同一Rawで新規挿入0/0。日次Collectorの初回schedule実行は2026-09-24 15:00 JST時点でまだ到来していない（既存の手動Runのみ）。
+
 PAは打席内容の各トークンが `AB+BB+HBP+SH+SF` と一致し、四死の合算列とBB/HBPの内訳も一致する行でのみ導出した。妨害出塁など未対応の要素がある場合はnullにし、completeを拒否する。2B/3Bは打席結果トークンから明示的に数えるが、この試合の合計は両方0で、非ゼロ例の回帰検証は残る。投手の元欄は「四死」の合算だけなので、`walks`/`hitBatters`はnull、`walksAndHitBatters`のみ保存。投球回はアウト数整数、投球数と先発/救援・勝敗/セーブ/ホールド記号を保持する。投手の登板順と捕手はSourceから確定できずnull。交代選手の打順は元スタメンの枠を保持する。
 
 `npb_game_completeness`はexpected/collected/mappedの打者・投手件数、各種検算、status、issues、検証日時を保持する。事前検証に失敗したRawからFactsを書かない。保存開始時はpending、全Fact保存・Repository再読込が成功するとcomplete。失敗時はfailed。完了済みFactは後日のSource訂正をupsert可能で、同一Raw再投入では行数が増えない。非対象試合や当日未終了試合を受け付けない。Source構造が変わればParser failureとし、0件を正常扱いしない。
