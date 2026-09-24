@@ -1,6 +1,6 @@
 import { mkdir, mkdtemp } from "node:fs/promises";
 import { join } from "node:path";
-import { migrateData, openDataClient } from "../src/data/database";
+import { openDataClient } from "../src/data/database";
 import { backupSizeBytes, exportNpbBackup, restoreNpbBackup, verifyRestoredNpbRepository } from "../src/data/npb-backup";
 
 const args = new Set(process.argv.slice(2));
@@ -11,7 +11,6 @@ await mkdir(".data",{ recursive:true });
 const root = await mkdtemp(join(".data","backup-drill-"));
 const source = openDataClient(url,process.env.TURSO_AUTH_TOKEN);
 try {
-  await migrateData(source);
   const backup = join(root,"export");
   const manifest = await exportNpbBackup(source,backup,url.startsWith("file:") ? "local" : "turso-remote");
   const scratch = openDataClient(`file:${join(root,"scratch.db")}`);

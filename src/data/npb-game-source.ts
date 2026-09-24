@@ -8,6 +8,22 @@ export interface Nf3BattingParticipant extends Nf3Participant { battingOrder: nu
 
 const ROOT = "https://nf3.sakura.ne.jp/";
 const dayLabel = (date: string) => `${Number(date.slice(5, 7))}/${Number(date.slice(8, 10))}`;
+export function nf3ProfileParameter(profileUrl: string, teamCode: string, number: string): string {
+  const url = new URL(profileUrl);
+  const match = new RegExp(`^/(?:Central|Pacific)/${teamCode}/[fp]/(${number}[a-z]{0,3})_stat\\.htm$`).exec(url.pathname);
+  if (url.origin !== new URL(ROOT).origin || !match) throw new Error(`Unexpected nf3 player profile ID: ${profileUrl}`);
+  return match[1]!;
+}
+export function hasNf3BattingGameRow(html: string, date: string): boolean {
+  const $ = load(html);
+  const table = $("table.Base").filter((_, element) => $(element).find("caption").text().includes("全打席成績")).first();
+  const header = table.find("tr").first().text();
+  if (!table.length || !header.includes("日付") || !header.includes("打数") || !header.includes("詳細"))
+    throw new Error("nf3 batting game schema changed");
+  const rows = table.find("tr[onmouseover]").toArray().filter((row) => $(row).children("td").first().text().trim() === dayLabel(date));
+  if (rows.length > 1) throw new Error(`Ambiguous nf3 batting game row: ${date}`);
+  return rows.length === 1;
+}
 function profile(link: string | undefined, teamCode: string): string {
   if (!link || !new RegExp(`^\\./(?:Central|Pacific)/${teamCode}/[fp]/\\d+[a-z]{0,3}_stat\\.htm$`).test(link))
     throw new Error(`Unexpected nf3 player profile: ${link}`);
@@ -83,7 +99,8 @@ function gameCells(html: string, date: string, caption: string): string[] {
   return $(rows[0]).children("td").toArray().map((cell) => $(cell).text().trim());
 }
 
-export interface Nf3GameBattingRow { row: NpbLogRow<PlayerGameBatting>; substitutions: string[]; detail: string[] }
+export interface Nf3GameBattingRow { row: NpbLogRow<PlayerGameBatting>; substitutions: string[]; detail: string[];
+  unsupportedPaEvents: string[] }
 export function parseNf3GameBattingRow(html: string, date: string, teamCode: string, playerId: string,
   sourceId: string, sourceUrl: string, at: string): Nf3GameBattingRow {
   const rows = parseNf3BattingLogs(html,2026,teamCode,playerId,sourceUrl,at).filter((row) => row.date === date);
@@ -91,13 +108,14 @@ export function parseNf3GameBattingRow(html: string, date: string, teamCode: str
   const cells = gameCells(html,date,"全打席成績");
   if (cells.length < 26) throw new Error("nf3 batting game column count changed");
   const detail = (cells[25] ?? "").split(/\s+/).filter(Boolean);
+  const unsupportedPaEvents = detail.filter((token) => /妨害|反則|不明/.test(token));
   const ab = rows[0]!.fact.ab!;
   const walks = rows[0]!.fact.walks;
   const hbp = rows[0]!.fact.hbp;
   const sacrificeHits = detail.filter((token) => /犠打|犠バント/.test(token)).length;
   const sacrificeFlies = detail.filter((token) => /犠飛/.test(token)).length;
   const expectedPa = walks === null || hbp === null ? null : ab + walks + hbp + sacrificeHits + sacrificeFlies;
-  const pa = expectedPa !== null && detail.length === expectedPa ? expectedPa : null;
+  const pa = expectedPa !== null && !unsupportedPaEvents.length && detail.length === expectedPa ? expectedPa : null;
   const hitsInDetail = detail.filter((token) => /安|２|３|本\(/.test(token)).length;
   const extraBaseVerified = hitsInDetail === rows[0]!.fact.hits;
   const doubles = extraBaseVerified ? detail.filter((token) => /２/.test(token)).length : null;
@@ -105,7 +123,7 @@ export function parseNf3GameBattingRow(html: string, date: string, teamCode: str
   const fact = playerGameBattingSchema.parse({ ...rows[0]!.fact, sourceRecordId: `${date}:${sourceId}`,
     pa, doubles, triples, sacrificeHits, sacrificeFlies });
   const substitutions = [cells[7],cells[9]].filter((value): value is string => !!value && value !== "-");
-  return { row: { ...rows[0]!, fact }, substitutions, detail };
+  return { row: { ...rows[0]!, fact }, substitutions, detail, unsupportedPaEvents };
 }
 
 export function parseNf3GamePitchingRow(html: string, date: string, teamCode: string, playerId: string,

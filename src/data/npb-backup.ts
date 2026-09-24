@@ -35,6 +35,8 @@ export async function exportNpbBackup(client: DataClient, outputDir: string, sou
   const objects = await client.execute("SELECT type,name,sql FROM sqlite_master WHERE type IN ('table','index') AND sql IS NOT NULL AND name NOT LIKE 'sqlite_%' ORDER BY CASE type WHEN 'table' THEN 0 ELSE 1 END,name");
   const names = new Set(objects.rows.filter((row) => row.type === "table").map((row) => String(row.name)));
   for (const table of [...protectedTables,...regenerateTables]) if (!names.has(table)) throw new Error(`Missing schema table: ${table}`);
+  const unexpected=[...names].filter((name)=>![...protectedTables,...regenerateTables].some((known)=>known===name));
+  if (unexpected.length) throw new Error(`Unclassified backup tables: ${unexpected.join(",")}`);
   const schemaSql = objects.rows.map((row) => `${String(row.sql)};`).join("\n") + "\n";
   const schemaBytes = Buffer.from(schemaSql);
   await writeFile(join(outputDir,"schema.sql"),schemaBytes);

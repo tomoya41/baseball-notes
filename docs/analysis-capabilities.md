@@ -53,6 +53,17 @@
 | appearanceOrder | 投手使用表は背番号順。全登板順の明示がない | **unavailable from current source**。null |
 | 終了形 | 27/27、36/33アウトの通常/延長ホーム勝利形 | **verified for selected games**。独立した最終回欄は未取得、コールド等は未確認 |
 
+### 第5弾：1日6試合のmanual dry-run（製品Analysis Capabilityは未開放）
+
+2026-09-23のfinal全6試合で打者185/185・投手65/65をSource・Mapping・Game Gateで照合し、全GameとDayが`complete`。TursoへのFact投入は行っていない。[Backup/全日実証](npb-backup-day-proof.md)。第4弾までの各行は当時の実測記録として残し、今回新たに非ゼロで確認した項目だけ以下に記す。
+
+| 項目 | 実測 | 判定 |
+|---|---|---|
+| SF | 楽天–日本ハム戦で非ゼロ計1。打席詳細から数え、ABには含めずPA/BFが一致 | **verified for selected game** |
+| `x.2`投球回 | 当日5投手。元表記を3で割り切れる整数outsへ正規化 | **verified for selected games** |
+| Player Game Facts全試合 | 6試合、打者185・投手65、未解決0、6/6 Game complete | **verified for this date only**。日次自動収集・Analysis UIは未開放 |
+| 投手BB/HBP単独、appearanceOrder、独立Team 2B/3B総計 | 今回も元Source上で確定不能 | **source-combined-only / unavailable** を維持 |
+
 以下の第1弾表は当時の限定範囲の記録であり、第2弾の実証後も全リーグ対応を意味しない。
 
 | 項目 | 2026-09-23 nf3 Parser結果 | 製品Capability |

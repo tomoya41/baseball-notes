@@ -6,7 +6,8 @@ import { openDataClient, migrateData, type DataClient } from "../src/data/databa
 import { NpbRepository } from "../src/data/npb-repository";
 import { parseInningsOuts, type NpbGame } from "../src/data/npb-nf3";
 import { findRosterPlayer, parseNf3BattingRoster, parseNf3GameBattingRow,
-  parseNf3GamePitchingRow, parseNf3PitchUsage, parseNf3StartingLineup } from "../src/data/npb-game-source";
+  parseNf3GamePitchingRow, parseNf3PitchUsage, parseNf3StartingLineup,
+  hasNf3BattingGameRow,nf3ProfileParameter } from "../src/data/npb-game-source";
 import { controlledGameTargets, hasPlausibleFinalOuts, validateNpbGameFacts } from "../src/data/npb-game-collector";
 import { playerGameBattingSchema, playerGamePitchingSchema } from "../src/domain/game-facts";
 
@@ -47,7 +48,9 @@ describe("2026-09-23 controlled NPB game proof", () => {
     expect(zeroAb.row.fact.pa).toBe(0);
     const $ = load(fixture("batting-m10"));
     $("tr[onmouseover]").first().children("td").eq(25).append(" 不明");
-    expect(parseNf3GameBattingRow($.html(),date,"M","player-10","source-10",game.sourceUrl,at).row.fact.pa).toBeNull();
+    const unknown=parseNf3GameBattingRow($.html(),date,"M","player-10","source-10",game.sourceUrl,at);
+    expect(unknown.row.fact.pa).toBeNull();
+    expect(unknown.unsupportedPaEvents).toContain("不明");
   });
 
   it("preserves combined pitcher walks+HBP without inventing separate counts", () => {
@@ -58,6 +61,12 @@ describe("2026-09-23 controlled NPB game proof", () => {
     expect(starter.role).toBe("starter");
     expect(parseInningsOuts("0.1")).toBe(1);
     expect(parseInningsOuts("0.2")).toBe(2);
+    const $ = load(fixture("primary-pitching-g41"));
+    $("table.Base").filter((_,element)=>$(element).find("caption").text().includes("全投球成績"))
+      .find("tr[onmouseover]").filter((_,element)=>$(element).children("td").first().text().trim()==="9/23")
+      .first().children("td").eq(8).text("?");
+    expect(()=>parseNf3GamePitchingRow($.html(),date,"G","pitcher","source",game.sourceUrl,at))
+      .toThrow(/Unknown nf3 pitcher result marker/);
   });
 
   it("requires independent roster and box-score checks before declaring complete", () => {
@@ -240,6 +249,34 @@ describe("2026-09-23 additional controlled game edge cases", () => {
     const html = fixture("roster-m").replace(/\/f\/(\d+)_stat\.htm/, "/f/$1ff_stat.htm");
     expect(parseNf3BattingRoster(html,"M")).toHaveLength(parseNf3BattingRoster(fixture("roster-m"),"M").length);
     expect(() => parseNf3BattingRoster(html,"B")).toThrow(/Unexpected nf3 player profile/);
+    expect(nf3ProfileParameter("https://nf3.sakura.ne.jp/Central/S/f/13ff_stat.htm","S","13")).toBe("13ff");
+    expect(() => nf3ProfileParameter("https://nf3.sakura.ne.jp/Central/S/f/13ff_stat.htm","T","13"))
+      .toThrow(/Unexpected nf3 player profile ID/);
+    expect(hasNf3BattingGameRow(fixture("primary-batting-c19"),date)).toBe(true);
+    expect(hasNf3BattingGameRow(fixture("primary-batting-c19"),"2026-09-22")).toBe(false);
+  });
+
+  it("resolves a same-team curated role ID as a verified uniform alias without merging homonyms",async()=>{
+    const client=await db(); const repository=new NpbRepository(client);
+    await client.batch([
+      {sql:"INSERT INTO source_entity_mappings VALUES ('nf3','player',?,?,?,?,?)",
+        args:["2026:T:f:5","known-player","https://nf3.sakura.ne.jp/php/stat_disp/stat_disp.php?y=0&leg=0&fpnum=5&tm=T&mon=9&vst=all",at,at]},
+      {sql:"INSERT INTO master_history VALUES (?,?,?,?,?,?,?)",args:["player","known-player","2026-01-01",
+        JSON.stringify({name:"近本光司",teamId:"npb:team:tigers"}),"nf3","2026:T:f:5",at]},
+    ],"write");
+    const alias="2026:T:uniform:5";
+    const profile="https://nf3.sakura.ne.jp/Central/T/f/5_stat.htm";
+    let aliasCandidates=0;
+    expect(await repository.resolveVerifiedPlayer(alias,"近本光司",profile,"npb:team:tigers",at,true,
+      ()=>{aliasCandidates++;})).toBe("known-player");
+    expect(aliasCandidates).toBe(1);
+    expect(await client.execute({sql:"SELECT * FROM source_entity_mappings WHERE source_entity_id=?",args:[alias]}))
+      .toMatchObject({rows:[]});
+    await expect(repository.resolveVerifiedPlayer(alias,"同名別人",profile,"npb:team:tigers",at,true))
+      .rejects.toThrow(/Unverified existing player alias/);
+    expect(await repository.resolveVerifiedPlayer(alias,"近本光司",profile,"npb:team:tigers",at,false)).toBe("known-player");
+    const rows=await client.execute({sql:"SELECT * FROM source_entity_mappings WHERE source_entity_id=?",args:[alias]});
+    expect(rows.rows).toHaveLength(1);
   });
 
   it("corrects observed edge fields by upsert without duplicate facts", async () => {

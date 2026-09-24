@@ -35,3 +35,5 @@ Retentionは設定値`src/data/retention.ts`に置く。Fact、順位履歴、�
 `.github/workflows/daily-collector.yml`はUTC 18:37（JST 03:37）の1日1回予定。公開repoかつ`NPB_COLLECTOR_ENABLED=true`の時のみNPB限定Collectorを開始する。手動dry-run、Remote ingest/replay、Pagesの公開JSON読出しを確認して2026-09-24に有効化した。初回の自動schedule実行結果は未確認。オフマシンFact backupは未実装の運用リスクとして監視する。従来の`collector:daily`はRetrosheet履歴用のskipped経路として残す。GitHubは[公開repoの標準runnerを無料](https://docs.github.com/en/actions/concepts/billing-and-usage)とする一方、[scheduleの遅延/不実行や60日非アクティブ停止](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows)があり、厳密な時刻保証はない。private repoのrunnerは既定で使わない。
 
 DBを替える際はMigrationと`StandingsRepository`を保持してSQL adapterを交換する。GameFactの出典/一意キーを維持して再投入し、SnapshotとPayloadを再生成する。古いDBからの退避はFactのJSON.gz exportとMigrationを一緒に保管する方針だが、現時点のlocal archiveは自動オフサイトbackupではない。オフマシンのFact backup/リストア演習は今後の運用課題。
+
+2026-09-25に既存SchemaのPortable DDL + Table別JSONL.gz Manifest Exportを追加し、Tursoから新規SQLiteへのRestoreとRepository読戻しを演習済み。[手順・対象Table・検証結果](npb-backup-day-proof.md)。Manifestに件数・schema/migration version・SHA-256を入れ、未知の新Tableが増えた場合はExportを失敗させて保全漏れを防ぐ。持続的な非公開オフプロバイダー保管と定期実行は未構築で、引き続き運用上の課題。

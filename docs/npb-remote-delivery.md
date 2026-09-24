@@ -55,6 +55,8 @@ Turso dashboardでstorage、月間rows read/write、Overages設定を週次確�
 ## 残る運用リスク
 
 - GitHub scheduleは遅延・欠落、公開repoの無活動停止があり得る。`NPB_COLLECTOR_ENABLED`を有効化した後もRunとStageの日次確認が必要。
-- Remote Rawの復旧可能な非公開保管先と、Turso Freeの1日PITRを補うFact backup/restoreは未整備。TursoのSQLite exportは可能だが、手動ダウンロードは自動バックアップではない。
+- Remote Rawの復旧可能な非公開保管先と、Turso Freeの1日PITRを補うFact Exportの持続的な非公開保管・自動化は未整備。Portable Export/Restoreは実証済みだが、runner内の一時ファイルは自動バックアップではない。
+
+2026-09-25にPortable JSONL.gz + schema/manifest Exportと、新規SQLiteへのRestore drillを[手動Action](https://github.com/tomoya41/baseball-notes/actions/runs/36066538301)で実証した。Repository読戻しまでPASS。運用手順と件数は[第5弾記録](npb-backup-day-proof.md)。上記の残課題は「**持続的な非公開オフプロバイダー保管と自動実行**」に縮小した。Runner内Exportは終了時に消え、永続Backupではない。
 - nf3公開再配布の利用条件・継続性。Source Registryを無効化すればCollectorを停止できる。ソースが更新されない日に当日分として古い順位を記録する可能性は、提供元更新日時がないため監視で補う。
 - Androidの公開URL・CORSは確認したが、署名付きAPKの実機通信は未試験。必要なら別のAndroid検証タスクで行う。

@@ -178,7 +178,12 @@ export function parseNf3PitchingLogs(html: string, season: number, teamCode: str
     if (cells.length < 28) throw new Error("nf3 pitching column count changed");
     const date = sourceDate(cells[0] ?? "", season);
     const opponent = resolveNpbTeam(cells[3] ?? "");
-    const role = cells[5] === "先発" ? "starter" : "reliever";
+    const role = cells[5] === "先発" ? "starter" : cells[5] === "救援" ? "reliever" : null;
+    if (!role) throw new Error(`Unknown nf3 pitcher role marker: ${cells[5]}`);
+    const marker = cells[8] ?? "";
+    const decision = marker === "○" ? "win" : marker === "●" ? "loss" : ["Ｓ","S"].includes(marker) ? "save" :
+      ["Ｈ","H"].includes(marker) ? "hold" : ["","-"].includes(marker) ? "none" : null;
+    if (!decision) throw new Error(`Unknown nf3 pitcher result marker: ${marker}`);
     const fact = playerGamePitchingSchema.parse({ id: `npb:pitching:${date}:${teamCode}:${playerId}`,
       gameId: "unresolved", playerId, teamId: team.id, opponentTeamId: opponent.id,
       role, appearanceOrder: null, inningsPitchedOuts: parseInningsOuts(cells[9] ?? ""),
@@ -186,7 +191,7 @@ export function parseNf3PitchingLogs(html: string, season: number, teamCode: str
       hits: integer(cells[12] ?? "", "H"), homeRuns: integer(cells[13] ?? "", "HR"),
       walks: null, strikeouts: integer(cells[14] ?? "", "SO"), runs: integer(cells[16] ?? "", "runs"),
       earnedRuns: integer(cells[17] ?? "", "ER"), catcherId: null, starter: role === "starter",
-      decision: cells[8] === "○" ? "win" : cells[8] === "●" ? "loss" : ["Ｓ","S"].includes(cells[8] ?? "") ? "save" : ["Ｈ","H"].includes(cells[8] ?? "") ? "hold" : "none",
+      decision,
       sourceUrl,
       sourceKey: "nf3", sourceRecordId: `${date}:${teamCode}:${playerId}`, collectedAt });
     return { date, opponentTeamId: opponent.id, scheduledTime: cells[2] || null, fact };

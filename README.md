@@ -74,7 +74,18 @@ npm run collector:npb -- --fetch --date 2026-09-23
 npm run collector:npb -- --offline-raw --date 2026-09-23 --dry-run
 ```
 
-通常は `npm run collector:npb:daily` が日本時間の前日を対象にします。Raw HTMLは`.data/raw/nf3/`にgzipで14日保存し、DB・生成PayloadとともにGit対象外です。ローカル生成Payloadは`public/data/standings/npb/latest.json`です。本番WebはGitHub Pagesの同一Origin、Androidは公開Pages URLをRepository経由で参照します。公開URLは`VITE_NPB_DATA_BASE_URL`で上書きできます。GitHub Actionsの定期実行は手動のdry-run・remote ingest・Pages配信を検証後、2026-09-24に`NPB_COLLECTOR_ENABLED=true`で有効化しました。初回の自動schedule実行結果は未確認です。過去日の順位は当日のRaw Captureなしに再構築できないため、現在ページを過去日に偽装するBackfillを拒否します。
+通常は `npm run collector:npb:daily` が日本時間の前日を対象にします。Raw HTMLは`.data/raw/nf3/`にgzipで14日保存し、DB・生成PayloadとともにGit対象外です。ローカル生成Payloadは`public/data/standings/npb/latest.json`です。本番WebはGitHub Pagesの同一Origin、Androidは公開Pages URLをRepository経由で参照します。公開URLは`VITE_NPB_DATA_BASE_URL`で上書きできます。GitHub Actionsの定期実行は手動のdry-run・remote ingest・Pages配信を検証後、2026-09-24に`NPB_COLLECTOR_ENABLED=true`で有効化しました。初回の自動scheduleは約3時間遅延したものの収集・Pages公開まで成功しています。過去日の順位は当日のRaw Captureなしに再構築できないため、現在ページを過去日に偽装するBackfillを拒否します。
+
+重要FactのPortable Export/Restoreと、全試合へのSchedule切替前の1日限定manual dry-run：
+
+```powershell
+npm run backup:npb:drill
+$npbBackupDir = (Get-ChildItem .data -Directory -Filter 'backup-drill-*' | Sort-Object LastWriteTime -Descending | Select-Object -First 1).FullName
+npm run backup:npb:restore -- "--from=$npbBackupDir/export" --to=.data/new-scratch.db
+npm run collector:npb:day:dry-run -- --date=2026-09-23 --reuse-local-raw
+```
+
+TursoのExport drillはGitHub Actionsの`NPB portable backup restore drill`を手動起動し、SecretsでRemote DBへ接続する。Backup本体はrunner終了時に消え、Pages/Gitには出さない。復元先は必ず新規SQLiteファイル。全試合dry-runはRepositoryから対象Gameを列挙してFact書込みをしない。詳しい結果・限界・次のGateは[第5弾記録](docs/npb-backup-day-proof.md)。
 
 ```powershell
 npm run collector:import -- --date 2025-06-01 --fetch --dry-run

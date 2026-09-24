@@ -55,3 +55,9 @@ test("restore rejects tampered backup before creating a schema",async () => {
   const tables = await scratch.execute("SELECT name FROM sqlite_master WHERE type='table'");
   expect(tables.rows).toHaveLength(0);
 });
+
+test("export stops when a new migration adds an unclassified table",async()=>{
+  const {dir,client}=await fresh();
+  await client.execute("CREATE TABLE new_permanent_fact (id TEXT PRIMARY KEY)");
+  await expect(exportNpbBackup(client,join(dir,"backup"))).rejects.toThrow("Unclassified backup tables");
+});

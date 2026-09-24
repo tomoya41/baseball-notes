@@ -49,7 +49,8 @@ export class NpbRepository {
     return id;
   }
 
-  async resolveVerifiedPlayer(sourceId: string, name: string, sourceUrl: string, teamId: string, at: string, dryRun: boolean): Promise<string> {
+  async resolveVerifiedPlayer(sourceId: string, name: string, sourceUrl: string, teamId: string, at: string,
+    dryRun: boolean, onWouldCreateAlias?: () => void): Promise<string> {
     const mapped = await this.client.execute({ sql: `SELECT m.internal_entity_id,h.payload_json FROM source_entity_mappings m
       LEFT JOIN master_history h ON h.entity_kind='player' AND h.entity_id=m.internal_entity_id
       WHERE m.source_key='nf3' AND m.entity_kind='player' AND m.source_entity_id=?
@@ -59,6 +60,32 @@ export class NpbRepository {
       if (payload?.name && normalizeNpbName(payload.name) !== normalizeNpbName(name))
         throw new Error(`Player identity changed for ${sourceId}: ${name}`);
       return String(mapped.rows[0].internal_entity_id);
+    }
+    // The first bounded collector used role-specific IDs. A same-season/team/uniform
+    // alias is safe only when the stored name, team and source query identity agree.
+    const parts = /^(\d{4}):([A-Z]{1,2}):uniform:(\d+)$/.exec(sourceId);
+    if (parts) {
+      const aliases = await this.client.execute({ sql:`SELECT m.internal_entity_id,m.source_url,h.payload_json FROM source_entity_mappings m
+        LEFT JOIN master_history h ON h.entity_kind='player' AND h.entity_id=m.internal_entity_id
+        WHERE m.source_key='nf3' AND m.entity_kind='player' AND m.source_entity_id IN (?,?)
+        ORDER BY h.valid_from DESC`,args:[`${parts[1]}:${parts[2]}:f:${parts[3]}`,`${parts[1]}:${parts[2]}:p:${parts[3]}`] });
+      const ids = new Set(aliases.rows.map((row)=>String(row.internal_entity_id)));
+      if (ids.size>1) throw new Error(`Conflicting existing player aliases: ${sourceId}`);
+      const alias = aliases.rows[0];
+      if (alias) {
+        const payload = alias.payload_json ? JSON.parse(String(alias.payload_json)) as {name?:string;teamId?:string} : null;
+        const priorUrl = new URL(String(alias.source_url));
+        const priorNumber = priorUrl.searchParams.get("fpnum") ?? priorUrl.searchParams.get("pcnum");
+        if (!payload || normalizeNpbName(payload.name ?? "") !== normalizeNpbName(name) ||
+          payload.teamId !== teamId || priorUrl.hostname !== "nf3.sakura.ne.jp" ||
+          priorUrl.searchParams.get("tm") !== parts[2] || priorNumber !== parts[3])
+          throw new Error(`Unverified existing player alias: ${sourceId} ${name}`);
+        const id = String(alias.internal_entity_id);
+        if (dryRun) onWouldCreateAlias?.();
+        else await this.client.execute({sql:`INSERT INTO source_entity_mappings VALUES ('nf3','player',?,?,?,?,?)`,
+          args:[sourceId,id,sourceUrl,at,at]});
+        return id;
+      }
     }
     // A new team/number alias is not proof of a new person. Stop on a possible transfer
     // or homonym until a stable identity is verified and mapped explicitly.
