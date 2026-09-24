@@ -15,7 +15,7 @@
 1. ローカルdry-run：`npm run collector:npb:day -- --date=2026-09-23 --dry-run --controlled-history --reuse-local-raw`。将来の日付では`--controlled-history`を外し、先にGames Stageを完成させる。
 2. `Manual NPB full-day facts verification` Actionを`dry-run`でdispatchし、Game/Day complete、Source request/retry、未解決0を確認。DB書込なし。
 3. 同Actionを`ingest`でdispatch。TursoへGame単位commitし、Repository readback、Export→Scratch Restore、暗号化Artifactの順で実施。暗号化鍵はGitHub Actions Secret `NPB_BACKUP_ENCRYPTION_KEY`（32 byteをbase64化した値）。DB秘密情報と同様、Git/ログへ置かない。
-4. 同日`ingest`を再dispatch。Repository countの増殖がないことと、元の順位/試合/Factの保持を確認。
+4. 同じ`ingest` Action内で保存済みRawを再利用して同日再投入する。Repositoryの1回目・2回目のJSONを照合し、件数増殖がないことを確認する。Run全体を再dispatchする必要がある場合も同じ対象日を指定する。
 5. 必要なら既存`Daily NPB collector and Pages delivery`の`publish` manual modeで**最新日付**のPayloadを再公開し、effectiveDateを確認。過去日のGame FactをPagesへ公開しない。
 6. 上記が通ってから、既存03:37 JST日次WorkflowへDay Factsを統合する。失敗時は`NPB_NF3_ENABLED=false`でSource取得を止め、対象日をmanual repairする。Game単位の既存controlled Collectorも残す。
 

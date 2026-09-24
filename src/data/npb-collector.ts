@@ -145,9 +145,9 @@ export async function runNpbCollector(client: DataClient, options: NpbCollectorO
     gameMap.set(game.id,game);
   }
   const games = [...gameMap.values()];
-  const incompleteTargetGames = games.some((game) => game.date === targetDate && game.status === "scheduled");
-  if (incompleteTargetGames) errors.push(`games: incomplete results on ${targetDate}`);
-  if (standingsRows && !incompleteTargetGames) {
+  // A postponed or still-scheduled row is not a final Game and must not block
+  // the completed Games or the independently sourced standings snapshot.
+  if (standingsRows) {
     try {
       if (!dryRun) {
         const changes = await repository.saveStandings(standingsRows,false);

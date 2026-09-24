@@ -8,11 +8,14 @@ const args=new Set(process.argv.slice(2));
 const value=(key:string)=>[...args].find((arg)=>arg.startsWith(`${key}=`))?.slice(key.length+1);
 const targetDate=value("--date")??previousJstDate();
 const dryRun=args.has("--dry-run");
+const skipBackup=args.has("--skip-backup");
 const controlledHistory=args.has("--controlled-history");
 if(controlledHistory && targetDate!=="2026-09-23") throw new Error("Controlled-history bypass only permits 2026-09-23");
 if(!dryRun && !args.has("--fetch")) throw new Error("Real ingestion requires --fetch");
 const trigger=value("--trigger")??"manual";
 if(trigger!=="manual" && trigger!=="scheduled" && trigger!=="repair") throw new Error("Invalid trigger");
+if(skipBackup && (!args.has("--reuse-local-raw") || trigger!=="manual"))
+  throw new Error("Backup may be skipped only for a manual replay of captured Raw");
 const url=process.env.TURSO_DATABASE_URL??"file:.data/baseball.db";
 if(args.has("--require-remote") && (url.startsWith("file:") || !process.env.TURSO_AUTH_TOKEN))
   throw new Error("Remote Turso URL and token required");
@@ -25,7 +28,9 @@ try {
     requireCompleteGameStage:!controlledHistory});
   process.stdout.write(`${JSON.stringify(result,null,2)}\n`);
   if(result.status==="partial" || result.status==="failed") process.exitCode=1;
-  if(!dryRun && result.completeGames>0) {
+  if(!dryRun && skipBackup) {
+    await client.execute({sql:"UPDATE npb_day_runs SET backup_status='replay-skipped' WHERE run_id=?",args:[result.runId]});
+  } else if(!dryRun && result.completeGames>0) {
     const root=value("--backup-root")??join(".data",`npb-day-backup-${targetDate}-${result.runId}`);
     try {
       await mkdir(root,{recursive:true});

@@ -43,7 +43,7 @@ async function main(): Promise<void> {
       await writeNpbPayloadAtomically(path,payload);
     }
     process.stdout.write(`${JSON.stringify(result,null,2)}\n`);
-    if (result.standings !== 12 || result.games === 0) process.exitCode = 1;
+    if (result.standings !== 12 || result.errors.some((error)=>error.startsWith("games/"))) process.exitCode = 1;
   } finally { client.close(); }
 }
 await main();

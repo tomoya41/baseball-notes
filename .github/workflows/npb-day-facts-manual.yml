@@ -55,7 +55,11 @@ jobs:
           args=()
           if [[ "$TARGET_DATE" == "2026-09-23" ]]; then args+=(--controlled-history); fi
           npm run collector:npb:day -- --date="$TARGET_DATE" --trigger=manual --fetch --require-remote --backup-root=.data/day-backup "${args[@]}"
-          npm run verify:npb:day -- --date="$TARGET_DATE" --require-remote --require-complete
+          npm run -s verify:npb:day -- --date="$TARGET_DATE" --require-remote --require-complete > .data/day-after-first.json
+          npm run collector:npb:day -- --date="$TARGET_DATE" --trigger=manual --fetch --require-remote --reuse-local-raw --skip-backup "${args[@]}"
+          npm run -s verify:npb:day -- --date="$TARGET_DATE" --require-remote --require-complete > .data/day-after-replay.json
+          cmp .data/day-after-first.json .data/day-after-replay.json
+          cat .data/day-after-replay.json
       - name: Encrypt validated portable Export
         if: inputs.mode == 'ingest'
         env:

@@ -66,6 +66,40 @@ jobs:
             cmp .data/remote-before.json .data/remote-after.json
           fi
           cat .data/remote-before.json
+      - name: Collect all final Games for the preceding JST day
+        if: vars.NPB_DAY_FACTS_ENABLED == 'true' && (github.event_name == 'schedule' || inputs.mode == 'ingest')
+        shell: bash
+        env:
+          TARGET_DATE: ${{ inputs.target_date }}
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          NPB_NF3_ENABLED: ${{ vars.NPB_NF3_ENABLED }}
+        run: |
+          args=()
+          if [[ -n "$TARGET_DATE" ]]; then args+=(--date="$TARGET_DATE"); fi
+          trigger=manual
+          if [[ "$GITHUB_EVENT_NAME" == "schedule" ]]; then trigger=scheduled; fi
+          npm run collector:npb:day -- --fetch --require-remote --trigger="$trigger" --backup-root=.data/day-backup "${args[@]}"
+          npm run verify:npb:day -- --require-remote --require-complete "${args[@]}"
+      - name: Encrypt and upload short-retention Fact backup
+        if: vars.NPB_DAY_FACTS_ENABLED == 'true' && (github.event_name == 'schedule' || inputs.mode == 'ingest')
+        shell: bash
+        env:
+          NPB_BACKUP_ENCRYPTION_KEY: ${{ secrets.NPB_BACKUP_ENCRYPTION_KEY }}
+        run: |
+          if [[ -d .data/day-backup/export ]]; then
+            tar -C .data/day-backup -czf .data/npb-backup.tar.gz export
+            npx tsx scripts/crypt-npb-backup.ts encrypt .data/npb-backup.tar.gz .data/npb-backup.tar.gz.enc
+            rm .data/npb-backup.tar.gz
+          fi
+      - name: Store encrypted Fact backup for seven days
+        if: vars.NPB_DAY_FACTS_ENABLED == 'true' && (github.event_name == 'schedule' || inputs.mode == 'ingest')
+        uses: actions/upload-artifact@v4
+        with:
+          name: npb-facts-encrypted-${{ github.run_id }}
+          path: .data/npb-backup.tar.gz.enc
+          retention-days: 7
+          if-no-files-found: ignore
       - name: Republish from verified remote data without source access
         if: github.event_name == 'workflow_dispatch' && inputs.mode == 'publish'
         shell: bash
