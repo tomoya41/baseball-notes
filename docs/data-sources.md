@@ -107,6 +107,8 @@ nf3更新時刻の保証や公式API SLAはない。CollectorはJST前日を対�
 
 同じnf3のURL patternを2026-09-23ソフトバンク対西武の**別の1試合**にも手動適用し、二塁打の非ゼロ実例と全出場者を検証した。Source、利用条件、更新頻度、停止条件、日次Scheduleの収集範囲は変更しない。[第3弾の検証記録](npb-game-edge-proof.md)を参照。
 
+同じSourceとURL patternを広島対巨人およびDeNA対中日の**追加2試合だけ**へ手動適用した。非ゼロ三塁打・死球・犠打、端数投球回、ホールド、セーブの実例と延長ホーム勝利のアウト形を確認した。Sourceの利用許諾・更新保証が増えたという意味ではなく、Source Registryの停止条件と日次Collectorの限定対象はそのまま。[第4弾の検証記録](npb-game-phase4-proof.md)を参照。
+
 ## 実Providerを採用する前の確認
 
 対象league/year/metricのレスポンス例、欠測定義、機械取得と保存・集計・再配布の許諾、認証/無料quota、更新周期、CORS/Android通信、ID対応を揃える。利用条件が未確定のProviderはコード上でも無効にし、「無料で取れた」だけで既定Providerにしない。

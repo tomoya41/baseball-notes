@@ -34,7 +34,11 @@ Local開発は引き続き`file:.data/baseball.db`。Collectorは`TURSO_DATABASE
 - 同Runで検証済みPayloadとWeb buildを単一artifactとして[GitHub Pages](https://tomoya41.github.io/baseball-notes/#/NPB/home)へデプロイ。公開JSONは2026-09-23終了時点、12球団（セ・パ各6）、首位ゲーム差0。ブラウザのNPB HomeがこのJSONを読み、勝敗・ゲーム差を表示した。PagesのJSONレスポンスは`Access-Control-Allow-Origin: *`で、Android WebViewの公開URL読出しに必要なCORSヘッダを確認した。APK実機試験は未実施。
 - Pagesの`github-pages` environmentは`main`のみデプロイ許可。Repository secretsは`TURSO_DATABASE_URL`/`TURSO_AUTH_TOKEN`の2つ。トークンはDB限定・read/writeで、Gitとクライアント配布物には含めない。
 - UI・出典表記のみの更新は`workflow_dispatch`の`publish`を選ぶ。最新Remote SnapshotとStageを再検証してPayload/Webを再公開し、nf3へはアクセスしない。指定日が最新Snapshotと違えば停止する。
-- 2026-09-24にRepository variable`NPB_COLLECTOR_ENABLED=true`を設定し、JST 03:37の日次scheduleを有効化した。初回の自動schedule実行結果はまだ確認していない。
+- 2026-09-24にRepository variable`NPB_COLLECTOR_ENABLED=true`を設定し、JST 03:37の日次scheduleを有効化した。初回実行結果は次節に記録する。
+
+## 2026-09-25初回Scheduled Run
+
+[Run #4](https://github.com/tomoya41/baseball-notes/actions/runs/36063406351)は`event=schedule`として06:44 JSTに開始し、CollectorとPages deployが成功。03:37 JSTの予定から約3時間7分遅れた。GitHub上のworkflow stateはactiveで、Repository variable`NPB_COLLECTOR_ENABLED=true`。対象日2026-09-24のCollector結果は順位12・対象範囲の試合24・打撃6・投手3、エラー0。Stageはstandings/gamesがcomplete、限定選手ログは意図どおりpartial。Turso Repository読戻しは順位12・累積Game30・打撃Fact58・投手Fact17、Migration 001/002/003適用済み。公開JSONの`effectiveDate=2026-09-24`、`generatedAt=2026-09-24T21:45:36Z`と12球団を確認した。定刻にRunが見つからない場合でも、遅延中の可能性を考慮して重複手動実行の前に再確認する。GitHubのscheduleは定刻実行を保証しないため、日付欠落の検知と必要時の手動`ingest`を運用手順とする。
 
 ## Payload、障害、鮮度
 

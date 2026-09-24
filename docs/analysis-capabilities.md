@@ -33,6 +33,26 @@
 | 投手BB/HBP | Sourceは「四死」合算 | **source-combined-only**。単独値はnull |
 | appearanceOrder | 使用表は背番号順で登板時系列を確定できない | **unavailable from current source**。null |
 
+### 第4弾：手動2試合の実記録Edge Case
+
+2026-09-23の広島1–2巨人とDeNA4–3中日を同じGame完全性Pipelineで検証した。順に打者33/33・投手9/9と打者40/40・投手16/16、両試合ともmapping/打撃/投手/Gameの状態は`complete`。以下の`verified`は**選択した実試合での非ゼロ確認**を意味し、全試合日次収集やAnalysis UIのCapabilityを開放しない。[詳細な検算と限界](npb-game-phase4-proof.md)。
+
+| 項目 | 今回の実測 | 判定 |
+|---|---|---|
+| 2B | 巨人1、DeNA3、中日2。各打席の「２」トークンを直接計数 | **verified for selected games**。独立Team 2B総計は未取得 |
+| 3B | DeNA・林琢真の「中３」1本。選手Factと同軍の選手別合計1 | **verified for selected game**。独立Team 3B総計は未取得 |
+| 打者BB | Primaryで広島3・巨人2、SupplementalでDeNA3・中日6 | **verified for selected games**。四死合算列とトークンを照合 |
+| 打者HBP | 筒香嘉智と石伊雄太が各1死球、各PAに含める | **verified for selected game** |
+| SH | 床田寛樹と竹丸和幸が各1犠打。ABに含めずPAに含める | **verified for selected game** |
+| SF | 対象2試合は0。合成変更によるParser testのみ | **unverified for nonzero** |
+| PA | 全73打者の確定PAが相手投手BF合計と一致。未解釈打席はnull/partial | **verified for selected games** |
+| 0 AB・途中出場 | 対象試合に存在し、元の打順枠へ対応付けた | **verified for selected games** |
+| 端数投球回 | 竹丸5.2→17 outs、中川0.1→1 out。0アウト投手も保持 | **verified for selected game**。0.2の非ゼロ実例は未確認 |
+| 救援・W/L・HLD・SV | 巨人・竹丸の勝、広島・床田の敗、巨人の複数HLD、マルティネスSVを実測。DeNA–中日は両軍8投手 | **verified for selected games** |
+| 投手四死合算 | 床田2、竹丸2、堀田1ほか。BB/HBP単独は分離できない | **source-combined-only**。単独値はnull |
+| appearanceOrder | 投手使用表は背番号順。全登板順の明示がない | **unavailable from current source**。null |
+| 終了形 | 27/27、36/33アウトの通常/延長ホーム勝利形 | **verified for selected games**。独立した最終回欄は未取得、コールド等は未確認 |
+
 以下の第1弾表は当時の限定範囲の記録であり、第2弾の実証後も全リーグ対応を意味しない。
 
 | 項目 | 2026-09-23 nf3 Parser結果 | 製品Capability |
