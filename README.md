@@ -114,6 +114,8 @@ Analysis基盤の次の候補タスクは、架空の集計結果だけを返す
 
 ## GitHub / プレビュー / 0円制約
 
+NPBの前日全試合Fact収集・manual検証・復旧手順は[docs/npb-day-operations.md](docs/npb-day-operations.md)を参照してください。日次Workflowの対象拡張は、Remote手動dry-run・実投入・再投入・暗号化Backup・公開検証後に行います。
+
 ローカルGitと作業ブランチを作成済み。公開GitHubリポジトリへpushしました。GitHubリポジトリへ追加する際は、既存ブランチをレビューし `npm run check` を通してください。
 
 `.github/workflows/check.yml` はpublicリポジトリの標準無料runnerでlint/typecheck/test/build/Capacitor syncを行います。privateではjobをskipします。private CIはアカウントの無料枠と課金停止設定を確認するまでローカルチェックを使います。公開repoのFoundation checksは成功しました。

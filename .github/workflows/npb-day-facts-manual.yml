@@ -1,0 +1,74 @@
+name: Manual NPB full-day facts verification
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Run dry-run before ingest"
+        type: choice
+        options: [dry-run, ingest]
+        default: dry-run
+        required: true
+      target_date:
+        description: "Completed JST date"
+        type: string
+        default: "2026-09-23"
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: daily-npb-collector-and-pages
+  cancel-in-progress: false
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Full-day source dry-run with no DB writes
+        if: inputs.mode == 'dry-run'
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          TARGET_DATE: ${{ inputs.target_date }}
+          NPB_NF3_ENABLED: ${{ vars.NPB_NF3_ENABLED }}
+        shell: bash
+        run: |
+          args=()
+          if [[ "$TARGET_DATE" == "2026-09-23" ]]; then args+=(--controlled-history); fi
+          npm run collector:npb:day -- --date="$TARGET_DATE" --trigger=manual --dry-run --require-remote "${args[@]}"
+      - name: Ingest and Repository readback
+        if: inputs.mode == 'ingest'
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          TARGET_DATE: ${{ inputs.target_date }}
+          NPB_NF3_ENABLED: ${{ vars.NPB_NF3_ENABLED }}
+        shell: bash
+        run: |
+          args=()
+          if [[ "$TARGET_DATE" == "2026-09-23" ]]; then args+=(--controlled-history); fi
+          npm run collector:npb:day -- --date="$TARGET_DATE" --trigger=manual --fetch --require-remote --backup-root=.data/day-backup "${args[@]}"
+          npm run verify:npb:day -- --date="$TARGET_DATE" --require-remote --require-complete
+      - name: Encrypt validated portable Export
+        if: inputs.mode == 'ingest'
+        env:
+          NPB_BACKUP_ENCRYPTION_KEY: ${{ secrets.NPB_BACKUP_ENCRYPTION_KEY }}
+        run: |
+          tar -C .data/day-backup -czf .data/npb-backup.tar.gz export
+          npx tsx scripts/crypt-npb-backup.ts encrypt .data/npb-backup.tar.gz .data/npb-backup.tar.gz.enc
+          rm .data/npb-backup.tar.gz
+      - name: Upload encrypted backup only
+        if: inputs.mode == 'ingest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: npb-facts-encrypted-${{ inputs.target_date }}-${{ github.run_id }}
+          path: .data/npb-backup.tar.gz.enc
+          retention-days: 7
+          if-no-files-found: error

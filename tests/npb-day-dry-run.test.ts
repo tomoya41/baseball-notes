@@ -57,9 +57,9 @@ test("parser failure is distinct from zero participants and processing continues
 
 test("unresolved player and duplicate mapping candidates are surfaced",()=>{
   const first=result("game-a","partial",["Unresolved possible existing/transferred player"]);
-  first.wouldCreateMappings=[{sourceId:"one",name:"同名 選手",teamId:"one"}];
+  first.wouldCreateMappings=[{sourceId:"one",name:"同名 選手",teamId:"one",sourceUrl:"https://nf3.sakura.ne.jp/one"}];
   const second=result("game-b","complete");
-  second.wouldCreateMappings=[{sourceId:"two",name:"同名選手",teamId:"two"}];
+  second.wouldCreateMappings=[{sourceId:"two",name:"同名選手",teamId:"two",sourceUrl:"https://nf3.sakura.ne.jp/two"}];
   const game=(value:NpbGameProofResult)=>({gameId:value.report.gameId,matchup:"A–B",...value,
     expectedMutations:{batting:20,pitching:5,mapping:1,completeness:1,ingestion:1}});
   const day=summarizeNpbDay(date,[game(first),game(second)],2,{httpRequests:50,uniquePages:48,retries:2},1000,true);

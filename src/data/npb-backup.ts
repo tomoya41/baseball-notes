@@ -9,7 +9,7 @@ export const protectedTables = [
   "schema_migrations", "data_sources", "ingestion_runs", "game_facts", "standings_daily",
   "player_game_batting", "player_game_pitching", "pitcher_appearances", "plate_appearances",
   "master_history", "permanent_events", "season_finals", "source_entity_mappings",
-  "npb_games", "npb_ingestion_stages", "npb_game_completeness",
+  "npb_games", "npb_ingestion_stages", "npb_game_completeness", "npb_day_runs",
 ] as const;
 export const regenerateTables = ["derived_payloads", "display_cache", "raw_response_manifest"] as const;
 type TableName = typeof protectedTables[number];

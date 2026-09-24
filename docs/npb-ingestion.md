@@ -1,5 +1,7 @@
 # NPB実データ収集 第1弾（2026-09-24）
 
+> 第6弾の前日全試合Fact手順・Day completeness・repair・Backup・失敗時対応は[日次運用手順](npb-day-operations.md)を参照。本稿の少数選手Collectorの説明は第1弾時点の履歴である。
+
 ## Source・範囲
 
 NPB公式Webページは二次利用・無断転載の明示的禁止があるため取得・保存しない。使用するのは公開HTMLの[nf3順位表](https://nf3.sakura.ne.jp/Stats/Standing.htm)と球団別日程・選手別月間試合行。確認したページには明示的な機械取得/再利用禁止を見つけず、robots.txtは404だった。ただしnf3は公式APIではなく、作者が複数媒体から集計・再計算した二次Source。保存/公開の権利を法的に保証するものではない。利用条件変更時は`src/data/source-registry.ts`のstatusを無効化すればCollectorを停止できる。作者の[お知らせ](https://note.com/nulspo/n/n039a116e6dfc)では2028年1月24日の終了予定が記載されている。

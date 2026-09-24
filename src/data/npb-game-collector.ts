@@ -28,7 +28,7 @@ export interface NpbGameProofOptions {
   request?: (url: string) => Promise<string>;
   delayMs?: number;
   persistRawManifest?: boolean;
-  scope?: "controlled" | "day-dry-run";
+  scope?: "controlled" | "day-dry-run" | "day-ingest";
 }
 export interface NpbGameProofResult {
   report: GameCompleteness;
@@ -37,7 +37,7 @@ export interface NpbGameProofResult {
   pitchingFacts: number;
   insertedBatting: number;
   insertedPitching: number;
-  wouldCreateMappings: { sourceId: string; name: string; teamId: string }[];
+  wouldCreateMappings: { sourceId: string; name: string; teamId: string; sourceUrl: string }[];
   observed: { sacrificeFlies: number; fractionalTwoOutPitchers: number };
   nonBattingSubstitutes: { sourceId: string; name: string }[];
 }
@@ -119,9 +119,11 @@ export async function runNpbGameProof(client: DataClient, options: NpbGameProofO
     scope = "controlled" } = options;
   const target = Object.values(controlledGameTargets).find((candidate) => candidate.id === gameId && candidate.date === targetDate);
   if ((scope === "controlled" && !target) || (scope === "day-dry-run" && (!dryRun || targetDate !== "2026-09-23")) ||
+    (scope === "day-ingest" && !/^2026-\d{2}-\d{2}$/.test(targetDate)) ||
     targetDate > addDays(jstToday(),-1))
     throw new Error("This controlled proof is limited to reviewed 2026-09-23 games");
-  if (sourceRegistry.find((source) => source.key === "nf3")?.status !== "enabled-limited-public")
+  if (process.env.NPB_NF3_ENABLED === "false" ||
+    sourceRegistry.find((source) => source.key === "nf3")?.status !== "enabled-limited-public")
     throw new Error("nf3 provider is disabled in Source Registry");
   const repository = new NpbRepository(client);
   const games = await repository.findGamesByDate(targetDate);
@@ -171,16 +173,17 @@ export async function runNpbGameProof(client: DataClient, options: NpbGameProofO
   const pitching: NpbLogRow<PlayerGamePitching>[] = [];
   const issues: string[] = [];
   const wouldCreateMappings: NpbGameProofResult["wouldCreateMappings"] = [];
-  const recordMapping = (sourceId: string, name: string, teamId: string) => {
+  const recordMapping = (sourceId: string, name: string, teamId: string, sourceUrl: string) => {
     if (!wouldCreateMappings.some((item) => item.sourceId === sourceId))
-      wouldCreateMappings.push({sourceId,name,teamId});
+      wouldCreateMappings.push({sourceId,name,teamId,sourceUrl});
   };
   const nonBattingSubstitutes: NpbGameProofResult["nonBattingSubstitutes"] = [];
   let expectedBatters = 0, expectedPitchers = 0, mappedBatters = 0, mappedPitchers = 0;
   for (const team of teams) {
     const opponent = teams.find((item) => item.id !== team.id)!;
     const leg = team.group === "Central" ? 0 : 1;
-    const lineupPath = `php/stat_disp/stat_disp.php?y=0&leg=${leg}&mon=9&tm=${team.code}&stvst=all`;
+    const month = Number(targetDate.slice(5,7));
+    const lineupPath = `php/stat_disp/stat_disp.php?y=0&leg=${leg}&mon=${month}&tm=${team.code}&stvst=all`;
     const rosterPath = `php/stat_disp/stat_disp.php?y=0&leg=${leg}&tm=${team.code}&fp=0&dn=1&dk=0`;
     const usagePath = `${team.group}/${team.code}/t/pc_all_data_last2w_pn.htm`;
     const starters = parseNf3StartingLineup(await get(lineupPath),targetDate,team.code);
@@ -208,7 +211,7 @@ export async function runNpbGameProof(client: DataClient, options: NpbGameProofO
       expectedBatters++;
       const sourceId = `2026:${team.code}:uniform:${participant.number}`;
       const profileId = nf3ProfileParameter(participant.profileUrl,team.code,participant.number);
-      const path = `php/stat_disp/stat_disp.php?y=0&leg=${leg}&fpnum=${profileId}&tm=${team.code}&mon=9&vst=all`;
+      const path = `php/stat_disp/stat_disp.php?y=0&leg=${leg}&fpnum=${profileId}&tm=${team.code}&mon=${month}&vst=all`;
       try {
         const html = await get(path);
         const $ = load(html);
@@ -220,9 +223,9 @@ export async function runNpbGameProof(client: DataClient, options: NpbGameProofO
           nonBattingSubstitutes.push({sourceId,name:participant.name});
           continue;
         }
-        const playerId = await repository.resolveVerifiedPlayer(sourceId,participant.name,participant.profileUrl,team.id,at,dryRun,
-          () => recordMapping(sourceId,participant.name,team.id));
-        if (playerId.startsWith("dry:")) recordMapping(sourceId,participant.name,team.id);
+        const playerId = await repository.resolveVerifiedPlayer(sourceId,participant.name,participant.profileUrl,team.id,at,true,
+          () => recordMapping(sourceId,participant.name,team.id,participant.profileUrl));
+        if (playerId.startsWith("dry:")) recordMapping(sourceId,participant.name,team.id,participant.profileUrl);
         mappedBatters++;
         const parsed = parseNf3GameBattingRow(html,targetDate,team.code,playerId,sourceId,new URL(path,ROOT).toString(),at);
         if (parsed.unsupportedPaEvents.length)
@@ -244,16 +247,16 @@ export async function runNpbGameProof(client: DataClient, options: NpbGameProofO
       expectedPitchers++;
       const sourceId = `2026:${team.code}:uniform:${pitcher.number}`;
       const profileId = nf3ProfileParameter(pitcher.profileUrl,team.code,pitcher.number);
-      const path = `php/stat_disp/stat_disp.php?y=0&leg=${leg}&pcnum=${profileId}&tm=${team.code}&mon=9&vst=all`;
+      const path = `php/stat_disp/stat_disp.php?y=0&leg=${leg}&pcnum=${profileId}&tm=${team.code}&mon=${month}&vst=all`;
       try {
         const html = await get(path);
         const $ = load(html);
         const identity = $("span[style*='font-size:24px']").filter((_, element) => $(element).text().includes(`#${pitcher.number}`)).first().text();
         if (!identity.includes(`#${pitcher.number}`) || !normalizeNpbName(identity).includes(normalizeNpbName(pitcher.name)))
           throw new Error(`Pitcher identity mismatch: ${sourceId}`);
-        const playerId = await repository.resolveVerifiedPlayer(sourceId,pitcher.name,pitcher.profileUrl,team.id,at,dryRun,
-          () => recordMapping(sourceId,pitcher.name,team.id));
-        if (playerId.startsWith("dry:")) recordMapping(sourceId,pitcher.name,team.id);
+        const playerId = await repository.resolveVerifiedPlayer(sourceId,pitcher.name,pitcher.profileUrl,team.id,at,true,
+          () => recordMapping(sourceId,pitcher.name,team.id,pitcher.profileUrl));
+        if (playerId.startsWith("dry:")) recordMapping(sourceId,pitcher.name,team.id,pitcher.profileUrl);
         mappedPitchers++;
         const row = parseNf3GamePitchingRow(html,targetDate,team.code,playerId,sourceId,new URL(path,ROOT).toString(),at);
         if (row.opponentTeamId !== opponent.id || (game.scheduledTime && row.scheduledTime !== game.scheduledTime))
@@ -276,26 +279,46 @@ export async function runNpbGameProof(client: DataClient, options: NpbGameProofO
       insertedBatting:0,insertedPitching:0,wouldCreateMappings,observed,nonBattingSubstitutes };
   }
   const runId = randomUUID();
-  await client.execute({ sql: "INSERT INTO ingestion_runs (run_id,source_key,target_date,started_at,status) VALUES (?,'nf3',?,?,'running')",
-    args: [runId,targetDate,at] });
+  const transaction = await client.transaction("write");
   try {
-    await repository.saveGameCompleteness({ ...report, gameStatus: "pending" });
-    const b = await repository.saveBatting(batting,targetDate,false,false);
-    const p = await repository.savePitching(pitching,targetDate,false,false);
-    const savedBatting = await repository.findBattingByGame(game.id);
-    const savedPitching = await repository.findPitchingByGame(game.id);
+    // All new identities and both kinds of facts commit together for one verified game.
+    const inTransaction = new NpbRepository(transaction as unknown as DataClient);
+    const resolved = new Map<string,string>();
+    for (const candidate of wouldCreateMappings) {
+      resolved.set(candidate.sourceId,await inTransaction.resolveVerifiedPlayer(candidate.sourceId,
+        candidate.name,candidate.sourceUrl,candidate.teamId,at,false));
+    }
+    const canonical = (id:string) => id.startsWith("dry:") ? (resolved.get(id.slice(4)) ??
+      (() => { throw new Error(`Missing canonical player mapping: ${id}`); })()) : id;
+    const committedBatting = batting.map((row) => ({...row,fact:{...row.fact,playerId:canonical(row.fact.playerId)}}));
+    const committedPitching = pitching.map((row) => {
+      const playerId = canonical(row.fact.playerId);
+      return {...row,fact:{...row.fact,playerId,id:row.fact.id.replace(row.fact.playerId,playerId)}};
+    });
+    await transaction.execute({ sql: "INSERT INTO ingestion_runs (run_id,source_key,target_date,started_at,status) VALUES (?,'nf3',?,?,'running')",
+      args: [runId,targetDate,at] });
+    const b = await inTransaction.saveBatting(committedBatting,targetDate,false,false);
+    const p = await inTransaction.savePitching(committedPitching,targetDate,false,false);
+    const savedBatting = await inTransaction.findBattingByGame(game.id);
+    const savedPitching = await inTransaction.findPitchingByGame(game.id);
     if (savedBatting.length !== batting.length || savedPitching.length !== pitching.length)
       throw new Error("Saved game facts do not match verified participant counts");
-    await repository.saveGameCompleteness(report);
-    await client.execute({ sql: `UPDATE ingestion_runs SET finished_at=?,status='succeeded',fetched_count=?,
+    await inTransaction.saveGameCompleteness(report);
+    await transaction.execute({ sql: `UPDATE ingestion_runs SET finished_at=?,status='succeeded',fetched_count=?,
       inserted_count=?,updated_count=?,error_count=0 WHERE run_id=?`, args: [new Date().toISOString(),fetchedPages,
       b.inserted+p.inserted,b.updated+p.updated,runId] });
+    await transaction.commit();
     return { report,fetchedPages,battingFacts:savedBatting.length,pitchingFacts:savedPitching.length,
       insertedBatting:b.inserted,insertedPitching:p.inserted,wouldCreateMappings,observed,nonBattingSubstitutes };
   } catch (error) {
-    await repository.saveGameCompleteness({ ...report, gameStatus: "failed", issues: [...report.issues, String(error).slice(0,300)] });
-    await client.execute({ sql: `UPDATE ingestion_runs SET finished_at=?,status='failed',error_count=1,error_summary=? WHERE run_id=?`,
-      args: [new Date().toISOString(),String(error).slice(0,500),runId] });
+    await transaction.rollback();
+    const previous = await repository.findGameCompleteness(game.id);
+    if (previous?.gameStatus !== "complete") await repository.saveGameCompleteness(
+      { ...report, gameStatus: "failed", issues: [...report.issues, String(error).slice(0,300)] });
+    await client.execute({ sql: "INSERT INTO ingestion_runs (run_id,source_key,target_date,started_at,finished_at,status,error_count,error_summary) VALUES (?,'nf3',?,?,?,'failed',1,?)",
+      args: [runId,targetDate,at,new Date().toISOString(),String(error).slice(0,500)] });
     throw error;
+  } finally {
+    transaction.close();
   }
 }

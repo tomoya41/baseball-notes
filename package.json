@@ -25,6 +25,8 @@
     "backup:npb:drill": "tsx scripts/backup-npb.ts",
     "backup:npb:restore": "tsx scripts/restore-npb-backup.ts",
     "collector:npb:day:dry-run": "tsx scripts/dry-run-npb-day.ts",
+    "collector:npb:day": "tsx scripts/collect-npb-day.ts",
+    "verify:npb:day": "tsx scripts/verify-npb-day.ts",
     "verify:npb:remote": "tsx scripts/verify-npb-database.ts",
     "publish:npb:remote": "tsx scripts/publish-npb-payload.ts"
   },

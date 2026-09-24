@@ -32,7 +32,7 @@ test("portable export restores protected rows, migration state and Repository re
   const manifest = await exportNpbBackup(client,backup,"test-local");
   expect(manifest.tables.map((table) => table.name)).toEqual([...protectedTables]);
   expect(manifest.tables.find((table) => table.name === "player_game_batting")?.rows).toBe(1);
-  expect(manifest.schemaVersion).toBe(3);
+  expect(manifest.schemaVersion).toBe(4);
   expect(JSON.stringify(manifest)).not.toContain("token-secret");
   const scratch = openDataClient(`file:${join(dir,"scratch.db")}`); clients.push(scratch);
   await restoreNpbBackup(scratch,backup);

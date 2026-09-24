@@ -49,7 +49,8 @@ export async function runNpbCollector(client: DataClient, options: NpbCollectorO
   const { targetDate, dryRun = false, rawRoot = ".data/raw", delayMs = 750, persistRawManifest = true } = options;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(targetDate) || Number(targetDate.slice(0,4)) !== 2026)
     throw new Error("nf3 current-season collector supports verified 2026 pages only");
-  if (sourceRegistry.find((source) => source.key === "nf3")?.status !== "enabled-limited-public")
+  if (process.env.NPB_NF3_ENABLED === "false" ||
+    sourceRegistry.find((source) => source.key === "nf3")?.status !== "enabled-limited-public")
     throw new Error("nf3 provider is disabled in Source Registry");
   if (targetDate > addDays(jstToday(), -1)) throw new Error("Target date must be a completed JST day");
   if (targetDate !== addDays(jstToday(),-1) && !options.archivedCapture)

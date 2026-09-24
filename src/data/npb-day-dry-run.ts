@@ -50,7 +50,7 @@ export function createNf3DryRunSession(delayMs = 750, provided?: (url: string) =
       if (pause>0) await wait(pause);
       last = Date.now(); metrics.httpRequests++;
       try {
-        const response = await fetch(url,{ headers:{"User-Agent":"BaseballDataAppCollector/0.1 (manual NPB day dry-run)"},
+        const response = await fetch(url,{ headers:{"User-Agent":"BaseballDataAppCollector/0.1 (NPB daily game facts)"},
           signal:AbortSignal.timeout(15_000) });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const bytes = new Uint8Array(await response.arrayBuffer());
