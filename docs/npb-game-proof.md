@@ -1,5 +1,7 @@
 # NPB 1試合全出場者収集の検証
 
+この文書は第2弾の初回試合の記録。第3弾では同じPipelineを[ソフトバンク対西武の別試合](npb-game-edge-proof.md)へ手動適用した。
+
 対象：2026-09-23、千葉ロッテ（ホーム）0–1オリックス（ビジター）、内部Game ID `npb:game:31c350227cecf978f3e8`。9回終了・DH制の標準的な1試合を選び、投手の打席と複雑な代打連鎖を最初の検証から外した。Sourceは第1弾と同じ公開nf3のみ。nf3は公式APIではなく、公開ページに明示禁止を確認できなかった状態であり、再利用の包括許諾を意味しない。[data-sources.md](data-sources.md)の停止条件を維持する。
 
 `npm run collector:npb:game -- --fetch --dry-run`でSourceから再検証、`--fetch`でローカル書込み、`--offline-raw`で保存Raw再投入、`--verify-only`でRepositoryから永続結果を照会する。RemoteではGitHub Actionsの`Controlled NPB game completeness proof`を手動起動し、dry-run後にingestを選ぶ。日次Scheduleには組み込まない。`--require-remote`はローカルDBへの誤投入を拒否する。

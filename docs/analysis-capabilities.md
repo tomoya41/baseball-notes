@@ -1,6 +1,6 @@
 # Analysis Data Capability Matrix
 
-確認日：2026-09-24（NPBの実Parser結果を追加）。対象は「月額0円で、本アプリが機械取得・集計・保存・再表示できるデータ」。Web画面で見える項目を、そのまま本アプリで取得可能とは判定しない。選手・Analysis UIは引き続き架空サンプルで、NPB Homeの順位表のみローカル収集の実データを表示する。
+確認日：2026-09-24（NPBの実Parser結果を追加）。対象は「月額0円で、本アプリが機械取得・集計・保存・再表示できるデータ」。Web画面で見える項目を、そのまま本アプリで取得可能とは判定しない。選手・Analysis UIは引き続き架空サンプルで、NPB Homeの順位表のみ検証済み静的JSONから実データを表示する。
 
 ## NPB実収集で検証した範囲
 
@@ -16,6 +16,22 @@
 | playerGamePitching、outs、BF、投球数、先発/救援 | 6人、両軍各27 outs、BF/PA一致 | **available for verified game** |
 | 投手BB/HBP単独 | nf3の対象欄は「四死」合算のみ | **unavailable**。合算値だけ保存 |
 | appearance order / catcher | 対象Sourceで確定不能 | **unavailable** |
+
+### 第3弾：異なる実試合のEdge Case
+
+2026-09-23の**ソフトバンク10–3西武**を同じ手動Pipelineで確認した。打者27/27・投手8/8をSource IDからcanonical IDへ対応付け、両軍のbatting/pitching/game completenessは`complete`。ただし実証範囲はこの試合だけであり、Analysis UIや全試合収集のCapabilityは開放しない。[検証記録](npb-game-edge-proof.md)。
+
+| 項目 | この試合の実測 | 判定 |
+|---|---|---|
+| 2B | 柳町達1、牧原大成2、平沢大河1等。選手打席トークンから直接取得、両軍合計3/4 | **verified for selected game**。独立したチーム2B総計照合は未検証 |
+| 3B | 両軍0 | **unverified for nonzero** |
+| PA・打者BB | 近藤健介4 AB+1 BB=5 PA、笹川吉康0 AB+1 BB=1 PA。全員のPAが相手BFと一致 | **verified for selected game** |
+| 打者HBP・SH・SF | この試合はすべて0。合成変更によるParser testのみ | **unverified for nonzero** |
+| 0 AB・途中出場・打順 | 岸潤一郎0 AB/0 PA/1 R、笹川吉康0 AB/1 PA。途中出場9人は元の1～9番枠 | **verified for selected game** |
+| 救援・投球数・W/L | 救援投手各3人、上沢91球/勝、武内88球/敗 | **verified for selected game** |
+| 端数投球回・HLD・SV | この試合に該当者なし。合成変更によるParser testのみ | **unverified on live edge game** |
+| 投手BB/HBP | Sourceは「四死」合算 | **source-combined-only**。単独値はnull |
+| appearanceOrder | 使用表は背番号順で登板時系列を確定できない | **unavailable from current source**。null |
 
 以下の第1弾表は当時の限定範囲の記録であり、第2弾の実証後も全リーグ対応を意味しない。
 

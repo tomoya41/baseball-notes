@@ -184,7 +184,10 @@ describe("Hawks 10–3 Lions edge-game regression", () => {
       pitches: 90, catcherId: null, sourceKey: "nf3", sourceRecordId: `${teamId}:pitcher`, collectedAt: at }));
     const outs = { [edge.home]: 27, [edge.away]: 24 };
     expect(validateNpbGameFacts(edgeGame,18,batters,2,pitchers,18,2,[],outs).gameStatus).toBe("complete");
+    expect(validateNpbGameFacts(edgeGame,18,batters,2,pitchers,18,2).checks[`pitchingOuts:${edge.away}`]).toBe(false);
     expect(validateNpbGameFacts(edgeGame,18,batters.slice(1),2,pitchers,17,2,[],outs).gameStatus).toBe("partial");
     expect(validateNpbGameFacts(edgeGame,18,batters,2,pitchers.slice(1),18,1,[],outs).gameStatus).toBe("partial");
+    const impossibleDouble = [{ ...batters[0]!, hits: 0, doubles: 1 }, ...batters.slice(1)];
+    expect(validateNpbGameFacts(edgeGame,18,impossibleDouble,2,pitchers,18,2,[],outs).gameStatus).toBe("partial");
   });
 });

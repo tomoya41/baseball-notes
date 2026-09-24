@@ -105,6 +105,8 @@ nf3更新時刻の保証や公式API SLAはない。CollectorはJST前日を対�
 
 新しいSourceは追加していない。既存のnf3公開ページから、球団月間スタメン、打撃名簿、日付別投手使用表、選手月間打撃/投手ログを、2026-09-23ロッテ対オリックスに限って取得した。目的・URL pattern・Parser・取得列・欠測・実件数・制限は[npb-game-proof.md](npb-game-proof.md)。現在Source側更新時刻は得られず、取込は手動検証のみで日次Scheduleに追加しない。利用条件は従来の`public / no explicit prohibition found`を維持し、公式API/一般許諾とは扱わない。Source変更時は既存のnf3 Registry gateで止め、代替Sourceは今回選定しない。
 
+同じnf3のURL patternを2026-09-23ソフトバンク対西武の**別の1試合**にも手動適用し、二塁打の非ゼロ実例と全出場者を検証した。Source、利用条件、更新頻度、停止条件、日次Scheduleの収集範囲は変更しない。[第3弾の検証記録](npb-game-edge-proof.md)を参照。
+
 ## 実Providerを採用する前の確認
 
 対象league/year/metricのレスポンス例、欠測定義、機械取得と保存・集計・再配布の許諾、認証/無料quota、更新周期、CORS/Android通信、ID対応を揃える。利用条件が未確定のProviderはコード上でも無効にし、「無料で取れた」だけで既定Providerにしない。
