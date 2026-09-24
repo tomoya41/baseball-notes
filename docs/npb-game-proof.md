@@ -4,7 +4,7 @@
 
 `npm run collector:npb:game -- --fetch --dry-run`でSourceから再検証、`--fetch`でローカル書込み、`--offline-raw`で保存Raw再投入、`--verify-only`でRepositoryから永続結果を照会する。RemoteではGitHub Actionsの`Controlled NPB game completeness proof`を手動起動し、dry-run後にingestを選ぶ。日次Scheduleには組み込まない。`--require-remote`はローカルDBへの誤投入を拒否する。
 
-Source URL patternは各球団の月間スタメン `stat_disp.php?y=0&leg=1&mon=9&tm={M|B}&stvst=all`、打撃名簿 `?y=0&leg=1&tm={M|B}&fp=0&dn=1&dk=0`、投手直近2週間 `/Pacific/{M|B}/t/pc_all_data_last2w_pn.htm`、選手月間打撃 `?fpnum={背番号}&tm={M|B}&mon=9&vst=all`、投手月間 `?pcnum=...`。`y=0`は2026年に限って検証済み。出場者探索は両軍9人のスタメンから開始し、個人行の交代参照を辿る。投手は日付別投球数リストで独立に列挙する。各URLを1回だけ取得し、逐次・750ms以上・最大2試行・15秒timeout・500KB上限。Player IDは背番号だけで永続化せず、`season:team:uniform`をSource mappingにしてUUIDのcanonical IDへ対応させる。名簿・個人ページの氏名/背番号不一致時は保存しない。
+Source URL patternは各球団の月間スタメン `stat_disp.php?y=0&leg=1&mon=9&tm={M|B}&stvst=all`、打撃名簿 `?y=0&leg=1&tm={M|B}&fp=0&dn=1&dk=0`、投手直近2週間 `/Pacific/{M|B}/t/pc_all_data_last2w_pn.htm`、選手月間打撃 `?fpnum={背番号}&tm={M|B}&mon=9&vst=all`、投手月間 `?pcnum=...`。`y=0`は2026年に限って検証済み。出場者探索は両軍9人のスタメンから開始し、個人行の交代参照を辿る。投手は日付別投球数リストで独立に列挙する。各URLを1回だけ取得し、逐次・750ms以上・最大2試行・15秒timeout・500KB上限。Player IDは背番号だけで永続化せず、`season:team:uniform`をSource mappingにしてUUIDのcanonical IDへ対応させる。名簿・個人ページの氏名/背番号不一致時は保存しない。未対応Source IDが既存Playerと同名なら移籍または同姓同名として停止し、同名だけで自動統合・重複作成しない。移籍時の継続IDは手動検証した追加mappingが必要。
 
 2026-09-24のローカル実証では**打者23/23・投手6/6、マッピング23/23・6/6**。ロッテは打者10・投手3、オリックスは打者13・投手3。ロッテ打撃は30 PA、28 AB、3 H、0 R、投手27 outs・32 BF・4 H・1 R。オリックス打撃は32 PA、31 AB、4 H、1 HR、1 R、投手27 outs・30 BF・3 H・0 R。両軍のPAは相手投手BFと一致し、H/HR/R/27 outs/先発各1人・打順1～9の照合も通った。交代出場はロッテ1人、オリックス4人を辿った。これはnf3ページ間の照合であり、公式Box Scoreへの独立照合ではない。
 

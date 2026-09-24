@@ -60,6 +60,14 @@ export class NpbRepository {
         throw new Error(`Player identity changed for ${sourceId}: ${name}`);
       return String(mapped.rows[0].internal_entity_id);
     }
+    // A new team/number alias is not proof of a new person. Stop on a possible transfer
+    // or homonym until a stable identity is verified and mapped explicitly.
+    const existingPlayers = await this.client.execute("SELECT payload_json FROM master_history WHERE entity_kind='player'");
+    for (const row of existingPlayers.rows) {
+      const payload = JSON.parse(String(row.payload_json)) as { name?: string; normalizedName?: string };
+      if (normalizeNpbName(payload.normalizedName ?? payload.name ?? "") === normalizeNpbName(name))
+        throw new Error(`Unresolved possible existing/transferred player: ${sourceId} ${name}`);
+    }
     const id = dryRun ? `dry:${sourceId}` : randomUUID();
     if (!dryRun) await this.client.batch([
       { sql: "INSERT INTO source_entity_mappings VALUES ('nf3','player',?,?,?,?,?)", args: [sourceId,id,sourceUrl,at,at] },

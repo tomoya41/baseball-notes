@@ -94,6 +94,8 @@ describe("2026-09-23 controlled NPB game proof", () => {
     const playerId = await repository.resolveVerifiedPlayer(sourceId,"上田希由翔",game.sourceUrl,game.homeTeamId,at,false);
     expect(await repository.resolveVerifiedPlayer(sourceId,"上田希由翔",game.sourceUrl,game.homeTeamId,at,false)).toBe(playerId);
     await expect(repository.resolveVerifiedPlayer(sourceId,"別人",game.sourceUrl,game.homeTeamId,at,false)).rejects.toThrow(/identity changed/);
+    await expect(repository.resolveVerifiedPlayer("2026:B:uniform:99","上田希由翔",game.sourceUrl,game.awayTeamId,at,false))
+      .rejects.toThrow(/possible existing\/transferred/);
     const parsed = parseNf3GameBattingRow(fixture("batting-m10"),date,"M",playerId,sourceId,game.sourceUrl,at);
     const row = { ...parsed.row, fact: { ...parsed.row.fact, gameId, battingOrder: 2, starter: true } };
     await repository.saveBatting([row],date,false,false);
