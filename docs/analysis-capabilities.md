@@ -1,6 +1,19 @@
 # Analysis Data Capability Matrix
 
-確認日：2026-09-24（打順・点差・イニングを再確認）。対象は「月額0円で、本アプリが機械取得・集計・保存・再表示できるデータ」。Web画面で見える項目を、そのまま本アプリで取得可能とは判定しない。契約済みの実Providerはまだなく、現行アプリは架空サンプルのみ。
+確認日：2026-09-24（NPBの実Parser結果を追加）。対象は「月額0円で、本アプリが機械取得・集計・保存・再表示できるデータ」。Web画面で見える項目を、そのまま本アプリで取得可能とは判定しない。選手・Analysis UIは引き続き架空サンプルで、NPB Homeの順位表のみローカル収集の実データを表示する。
+
+## NPB実収集で検証した範囲
+
+| 項目 | 2026-09-23 nf3 Parser結果 | 製品Capability |
+|---|---|---|
+| セ・パ順位、W/L/T、試合数、勝率、ゲーム差 | 各6球団、計12件を検証。首位`-`→内部0、1.5等を数値化 | **available**（当日Raw Captureを持つ日次Snapshotのみ） |
+| 試合日程・結果 | 球団12ページから直近3日＋翌日、重複を統合して25試合。9/23の6試合はfinal、9/24の2試合はscheduled | **available**（検証済みwindow。延期は`postponed`へ正規化） |
+| 打者の試合別AB/H/HR/R/RBI/SO/SB/CS、打順 | 確認済み2選手の計8行。BB/HBPは詳細内訳が一致した行のみ | **conditional**（2選手だけ。全リーグの提供ではない） |
+| 投手の試合別IPアウト数/BF/投球数/H/HR/SO/R/ER、先発・救援 | 確認済み2投手の計3行。`0.2`→2アウト、`6`→18アウト | **conditional**（2投手だけ。四死合算のためBB単独は不可） |
+| PA、二塁打、三塁打、投手BB単独、全選手ID、全リーグ試合ログ | 今回のParserでは未取得・未検証 | **research / unavailable**。値を0で代用しない |
+| Pitch-level、Statcast相当、打席状況、点差、投手×打者 | 今回のSource/Parserで未取得 | **unavailable** |
+
+以下の従来表は**一般的なSource候補の評価**を記録したもので、NPB公式の禁止は公式経路に限る。nf3の限定実証結果がアプリ全選手のCapabilityを自動的にtrueにすることはない。`source=public/no explicit prohibition found`は権利保証ではなく、条件が変われば停止する。SourceのURL・制約は[data-sources.md](data-sources.md)。
 
 ## 分類
 

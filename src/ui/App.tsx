@@ -6,9 +6,10 @@ import {
 import { Link, Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
 import type { Services } from "../app/services";
 import type { CatalogResult, Favorite, League, PlayerCatalog, Statistics } from "../domain/models";
+import type { NpbLatestStandings } from "../domain/standings";
 import { metrics } from "../domain/metrics";
 import { positionDefinitions } from "../domain/baseball-terms";
-import { formatDate, formatDateTime, formatMetric, formatPlayerName, formatPositions, formatTeamName } from "../presentation/formatters";
+import { formatDate, formatDateTime, formatGamesBehind, formatMetric, formatPlayerName, formatPositions, formatTeamName, formatWinningPercentage } from "../presentation/formatters";
 import { sampleRanking } from "../presentation/sample-ranking";
 import type { SampleRankingMetric } from "../presentation/sample-ranking";
 import { BaseballIcon, BatIcon, HomePlateIcon } from "./baseball-icons";
@@ -22,6 +23,46 @@ import {
 } from "./components";
 
 type FavoriteTarget = Pick<Favorite, "kind" | "entityId" | "league">;
+
+function NpbStandingsSection({ services }: { services: Services }) {
+  const [payload, setPayload] = useState<NpbLatestStandings | null>(null);
+  const [state, setState] = useState<"loading" | "ready" | "missing" | "error">("loading");
+  const [stale, setStale] = useState(false);
+  useEffect(() => {
+    let active = true;
+    void services.standings.findLatestNpb().then((value) => {
+      if (active) {
+        setPayload(value);
+        setState(value ? "ready" : "missing");
+        if (value) {
+          const previousDay = new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Tokyo", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(Date.now() - 86_400_000));
+          setStale(value.throughDate < previousDay);
+        }
+      }
+    }).catch(() => { if (active) setState("error"); });
+    return () => { active = false; };
+  }, [services]);
+  return <section className="home-section">
+    <SectionHeader title="順位表" />
+    {state === "loading" && <LoadingSkeleton />}
+    {state === "missing" && <DataState kind="no-data" title="順位データはまだありません" />}
+    {state === "error" && <DataState kind="source-unavailable" title="順位データを読み込めません" />}
+    {payload && state === "ready" && <>
+      <p className="standings-asof">{formatDate(payload.throughDate, true)}終了時点 · 前日までの集計{stale && " · 更新待ち"}</p>
+      {(["Central", "Pacific"] as const).map((group) => <div key={group} className="standings-group">
+        <h3>{group === "Central" ? "セ・リーグ" : "パ・リーグ"}</h3>
+        <div className="standings-scroll"><table className="standings-table">
+          <thead><tr><th scope="col">順位</th><th scope="col">球団</th><th scope="col">勝-敗-分</th><th scope="col">勝率</th><th scope="col">差</th></tr></thead>
+          <tbody>{payload.standings.filter((row) => row.competitionGroup === group).map((row) =>
+            <tr key={row.teamId}><td>{row.rank}</td><th scope="row">{payload.teams[row.teamId]?.short ?? row.teamId}</th>
+              <td>{row.wins}-{row.losses}-{row.ties}</td><td>{formatWinningPercentage(row.pct)}</td>
+              <td>{formatGamesBehind(row.gamesBehindLeader,row.rank)}</td></tr>)}</tbody>
+        </table></div>
+      </div>)}
+      <p className="standings-source">{payload.attribution}</p>
+    </>}
+  </section>;
+}
 
 function HomeScreen({ catalog, favorites, services }: { catalog: PlayerCatalog; favorites: Favorite[]; services: Services }) {
   const league = catalog.league;
@@ -39,6 +80,7 @@ function HomeScreen({ catalog, favorites, services }: { catalog: PlayerCatalog; 
         <WatchToday catalog={catalog} provider={services.watch} />
       </div>
     </section>
+    {league === "NPB" && <NpbStandingsSection services={services} />}
     <section className="home-section">
       <SectionHeader title="お気に入り" action={saved.length > 2 ? "もっと見る" : undefined} to={`/${league}/my`} />
       {saved.length ? <div className="row-list">{saved.slice(0, 2).map(({ player }) =>
@@ -309,7 +351,7 @@ function LeagueView({ league, services, favorites, toggle, saving }: {
     {!result && loading && <LoadingSkeleton />}
     {result && <>
       {result.data.source.kind === "sample" && <div className="sample-banner">
-        <span>サンプル</span> 架空の選手・球団・成績を表示しています
+        <span>サンプル</span> {league === "NPB" ? "選手・分析は架空データです。順位表は取得済みの実データがあれば別途表示します" : "架空の選手・球団・成績を表示しています"}
       </div>}
       <Routes>
         <Route path="home" element={<HomeScreen catalog={result.data} favorites={favorites} services={services} />} />

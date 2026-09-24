@@ -46,6 +46,8 @@ ios/Pods/
 ios/App/Pods/
 
 # temporary / local-only
+.data/
+public/data/standings/
 tmp/
 temp/
 *.tmp

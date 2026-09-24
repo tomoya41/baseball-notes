@@ -2,7 +2,7 @@
 
 ## 採用構成
 
-React 19 / TypeScript strict / Vite 8 の静的SPAをCapacitor 8でAndroidに同梱する。React RouterのHashRouterで、Androidと静的ホスティングの両方に同じルートを使う。SSR、APIサーバー、クラウドDB、アカウント、AI依存は追加しない。
+React 19 / TypeScript strict / Vite 8 の静的SPAをCapacitor 8でAndroidに同梱する。React RouterのHashRouterで、Androidと静的ホスティングの両方に同じルートを使う。SSR、アカウント、AI依存は追加しない。別系統の日次データ基盤はローカルSQLite互換DBと静的Payloadを持つが、クラウドDB・公開APIはまだ接続していない。詳細は`docs/data-architecture.md`。
 
 Kotlin / ComposeはAndroid専用実装が増え、ブラウザで同じUIを検証できない。Flutterも候補だが、今回のTypeScript優先とWeb開発環境を満たすために別言語・ツールチェーンを導入する利点が小さい。Next.jsのサーバー機能は現在不要。現時点ではReact + Capacitorが最小の構成。
 
@@ -62,7 +62,7 @@ MATCHUPは既存AnalysisProviderへオンデマンドの投手×打者Queryを�
 
 ## コスト・公開
 
-実行時に外部サービスは不要。追加月額0円。GitHubリモート作成・push・Vercelデプロイは未実施。Vercelは必要な場合に個人・非商用Hobby静的プレビューに限定し、上限で停止してもAndroidは影響を受けない。Cloud Functions / Cron / DBを基盤にしない。
+現行UIの実行時に外部野球Sourceは不要。追加月額0円。GitHubリモート作成・push・Vercelデプロイは未実施。Vercelは必要な場合に個人・非商用Hobby静的プレビューに限定。日次基盤はローカルDBで検証し、GitHub Actions scheduleは明示的なopt-inまで停止する。
 
 GitHub Actionsはpublicリポジトリの標準runnerに限定。privateではjobをskipし、課金設定を確認するまでローカル`npm run check`を使う。自動課金枠や有料runnerを有効にしない。
 

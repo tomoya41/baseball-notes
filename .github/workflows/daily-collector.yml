@@ -1,0 +1,98 @@
+name: Daily NPB collector and Pages delivery
+on:
+  schedule:
+    - cron: "37 18 * * *" # 03:37 JST
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Check source without DB writes, or ingest and publish"
+        type: choice
+        options: [dry-run, ingest]
+        default: dry-run
+        required: true
+      target_date:
+        description: "Optional completed JST date (YYYY-MM-DD); default yesterday"
+        type: string
+        required: false
+permissions:
+  contents: read
+concurrency:
+  group: daily-npb-collector-and-pages
+  cancel-in-progress: false
+jobs:
+  collect:
+    # Schedule stays opt-in until manual remote ingestion, replay and Pages delivery pass.
+    if: github.event.repository.private == false && (github.event_name == 'workflow_dispatch' || vars.NPB_COLLECTOR_ENABLED == 'true')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Verify remote DB connection without writing
+        run: npm run verify:npb:remote -- --connection-only
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+      - name: Source dry run (manual only)
+        if: github.event_name == 'workflow_dispatch' && inputs.mode == 'dry-run'
+        shell: bash
+        env:
+          TARGET_DATE: ${{ inputs.target_date }}
+        run: |
+          args=()
+          if [[ -n "$TARGET_DATE" ]]; then args+=(--date "$TARGET_DATE"); fi
+          npm run collector:npb -- --fetch --dry-run "${args[@]}"
+      - name: Ingest, verify, and stage validated payload
+        if: github.event_name == 'schedule' || inputs.mode == 'ingest'
+        shell: bash
+        env:
+          TARGET_DATE: ${{ inputs.target_date }}
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+        run: |
+          args=()
+          if [[ -n "$TARGET_DATE" ]]; then args+=(--date "$TARGET_DATE"); fi
+          npm run collector:npb -- --fetch --require-remote --payload-root .data/publish "${args[@]}"
+          npm run -s verify:npb:remote -- --payload-root .data/publish "${args[@]}" > .data/remote-before.json
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+            npm run collector:npb -- --offline-raw --require-remote --payload-root .data/publish "${args[@]}"
+            npm run -s verify:npb:remote -- --payload-root .data/publish "${args[@]}" > .data/remote-after.json
+            cmp .data/remote-before.json .data/remote-after.json
+          fi
+          cat .data/remote-before.json
+      - name: Build Web app with the same-origin validated JSON
+        if: github.event_name == 'schedule' || inputs.mode == 'ingest'
+        shell: bash
+        run: |
+          npm run build
+          mkdir -p dist/data/standings/npb
+          cp .data/publish/data/standings/npb/latest.json dist/data/standings/npb/latest.json
+      - name: Configure GitHub Pages
+        if: github.event_name == 'schedule' || inputs.mode == 'ingest'
+        uses: actions/configure-pages@v5
+      - name: Upload complete site as one Pages artifact
+        if: github.event_name == 'schedule' || inputs.mode == 'ingest'
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist
+  deploy:
+    if: github.event.repository.private == false && (github.event_name == 'schedule' || inputs.mode == 'ingest')
+    needs: collect
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publish complete artifact to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

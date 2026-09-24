@@ -32,6 +32,15 @@ export function formatMetric(value: MetricValue, definition: MetricDefinition): 
   }
 }
 
+export function formatGamesBehind(value: number | null | undefined, rank: number): string {
+  if (!valid(value) || value < 0) return missing;
+  return rank === 1 ? "—" : number(value, 1);
+}
+
+export function formatWinningPercentage(value: number | null | undefined): string {
+  return valid(value) && value >= 0 && value <= 1 ? number(value, 3).replace(/^0\./, ".") : missing;
+}
+
 export function formatVelocity(
   value: number | null | undefined,
   unit: "mph" | "km/h",

@@ -6,12 +6,13 @@ Androidを主対象とする野球データアプリ。製品仕様は [SPEC.md]
 
 React + TypeScript strict + Vite + Capacitor Androidの構成。ホーム / 検索 / 分析 / 記録 / マイの5項目ナビ、NPB・MLB切替、選手・球団検索、選手詳細、端末保存のお気に入り、指標説明、stale表示を実装。Home / Player / 参考ランキングにLight/Dark対応のデザインシステムを適用しています。
 
-**現在はすべて架空のサンプルデータです。実選手・今季成績・ライブAPIは接続していません。** 実データへの利用許諾が未確定のまま取得しないための意図的な境界です。ランキングはサンプル内の参考表示で、規定条件や公式順位ではありません。Analysis画面には共通フィルター・カテゴリー・詳細・状態表示を実装。MATCHUPは投手/打者の手動選択と対戦分析UI、WATCHはHomeの今日の試合から進むUI契約を実装しました。現行Providerには試合別/投球別・日程・打順・登板履歴がなく、実数値や今日の試合は未接続です。
+**選手・Analysis等の既存UIは架空のサンプルデータです。NPB Homeの順位表のみ、ローカルCollectorが生成した実データPayloadを表示できます。** 実選手の今季成績はUIへ未接続です。ランキングはサンプル内の参考表示で、規定条件や公式順位ではありません。Analysis画面には共通フィルター・カテゴリー・詳細・状態表示を実装。MATCHUPは投手/打者の手動選択と対戦分析UI、WATCHはHomeの今日の試合から進むUI契約を実装しました。Retrosheet 2025年の歴史順位も別途生成できます。
 
 - [アーキテクチャ](docs/architecture.md)
 - [データ取得元の調査](docs/data-sources.md)
 - [MLB / NPB Capability Matrix](docs/analysis-capabilities.md)
 - [デザインシステム](docs/design-system.md)
+- [日次データ基盤](docs/data-architecture.md)
 - [検証・整理記録](docs/verification.md)
 
 ## ブラウザで開発
@@ -61,11 +62,29 @@ JDKの場所を `JAVA_HOME` に、SDKの場所をAndroid Studioまたは `androi
 
 `SampleProvider` → wire validation → normalization → domain validation → Repository → UI。外部Provider追加時は `src/app/services.ts` の組立て箇所を変更します。UIに外部APIを直接つながないでください。
 
+歴史順位のCollectorは別経路です。Retrosheetの許諾済み2025年ZIPを明示的に取得し、ローカルSQLite互換DBへ入れます。DB、archive、生成した静的JSONはGit対象外です。
+
+NPB実データ第1弾はnf3公開ページを1日1回、逐次・少数アクセスして収集します。NPB公式ページは二次利用・無断転載禁止のためCollectorに使いません。2026年9月時点で確認したnf3の公開ページには明示的な禁止を見つけていませんが、再利用許諾を保証するものではありません。詳細は[Source記録](docs/data-sources.md)。選手ログは阪神の検証済み4選手だけで、完全なリーグ収集ではありません。
+
+```powershell
+npm run collector:npb -- --fetch --date 2026-09-23
+npm run collector:npb -- --offline-raw --date 2026-09-23 --dry-run
+```
+
+通常は `npm run collector:npb:daily` が日本時間の前日を対象にします。Raw HTMLは`.data/raw/nf3/`にgzipで14日保存し、DB・生成PayloadとともにGit対象外です。ローカル生成Payloadは`public/data/standings/npb/latest.json`で、NPB Homeが自前Repository経由で参照します。GitHub Actionsは`NPB_COLLECTOR_ENABLED=true`を明示するまで停止し、リモートDBとアプリ向け静的Payloadの安全な公開方法が整うまでは有効化しないでください。過去日の順位は当日のRaw Captureなしに再構築できないため、現在ページを過去日に偽装するBackfillを拒否します。
+
+```powershell
+npm run collector:import -- --date 2025-06-01 --fetch --dry-run
+npm run collector:import -- --date 2025-06-01 --zip .data/raw/2025csvs.zip
+```
+
+`--dry-run`はFact/Snapshotを書きません。2行目は再取得せず、保存・静的Payload出力まで実行します。出力先は`public/data/standings/mlb/2025-06-01.json`。Retrosheetの指定クレジット原文をPayloadに含めていますが、公開画面では目立つ表示も必要です。`TURSO_DATABASE_URL`/`TURSO_AUTH_TOKEN`はCollector専用で、remote DBはまだ作成していません。詳細は[データ基盤](docs/data-architecture.md)。
+
 - お気に入り：Android Preferences / Web localStorage。アプリ削除やサイトデータ削除で消えます。同期機能なし。
 - キャッシュ：IndexedDB、正規化済みcatalogをリーグ・Provider別に保存。期限切れ/通信失敗を表示し、取得時刻と元データ更新時刻を分離。
 - AndroidはWeb assetsを同梱。ブラウザの完全オフライン起動はService Worker未導入のため保証しません。
 - `public/data/*.json`は実装とテストが使う架空データで、不要mockではありません。
-- 実ProviderのAPI keyを `VITE_*` やAndroidバンドルへ入れないでください。これらは秘密を保持できません。現在 `.env` は不要です。
+- 実ProviderやDBのAPI keyを `VITE_*` やAndroidバンドルへ入れないでください。これらは秘密を保持できません。現在 `.env` は不要です。
 
 ## Analysis A
 
