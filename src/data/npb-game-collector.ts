@@ -39,17 +39,31 @@ export interface NpbGameProofResult {
 
 export const controlledGameTargets = {
   baseline: { id: "npb:game:31c350227cecf978f3e8", date: "2026-09-23",
-    home: "npb:team:marines", away: "npb:team:buffaloes", homeScore: 0, awayScore: 1,
-    homePitchingOuts: 27, awayPitchingOuts: 27 },
+    home: "npb:team:marines", away: "npb:team:buffaloes", homeScore: 0, awayScore: 1 },
   edge: { id: "npb:game:7625951a1eb2412e96c1", date: "2026-09-23",
-    home: "npb:team:hawks", away: "npb:team:lions", homeScore: 10, awayScore: 3,
-    homePitchingOuts: 27, awayPitchingOuts: 24 },
+    home: "npb:team:hawks", away: "npb:team:lions", homeScore: 10, awayScore: 3 },
+  primary: { id: "npb:game:838179e9f7cb8080304b", date: "2026-09-23",
+    home: "npb:team:carp", away: "npb:team:giants", homeScore: 1, awayScore: 2 },
+  supplemental: { id: "npb:game:b37526c92a94ecb96bf7", date: "2026-09-23",
+    home: "npb:team:baystars", away: "npb:team:dragons", homeScore: 4, awayScore: 3 },
 } as const;
 export type ControlledGameTarget = keyof typeof controlledGameTargets;
 
+// nf3's schedule row has the final score but no independently stated final inning.
+// Reject shortened/ambiguous shapes rather than guessing a 27-out regulation game.
+export function hasPlausibleFinalOuts(game: NpbGame, homeOuts: number | null, awayOuts: number | null): boolean {
+  if (game.status !== "final" || game.homeScore === null || game.awayScore === null ||
+    homeOuts === null || awayOuts === null || homeOuts < 27 || homeOuts % 3 !== 0) return false;
+  if (game.homeScore <= game.awayScore) return awayOuts === homeOuts;
+  return awayOuts >= homeOuts - 3 && awayOuts < homeOuts;
+}
+
 export function validateNpbGameFacts(game: NpbGame, expectedBatters: number, batting: readonly PlayerGameBatting[],
   expectedPitchers: number, pitching: readonly PlayerGamePitching[], mappedBatters: number, mappedPitchers: number,
-  issues: string[] = [], expectedPitchingOuts?: Readonly<Record<string, number>>): GameCompleteness {
+  issues: string[] = []): GameCompleteness {
+  const homeOuts = total(pitching.filter((row) => row.teamId === game.homeTeamId).map((row) => row.inningsPitchedOuts));
+  const awayOuts = total(pitching.filter((row) => row.teamId === game.awayTeamId).map((row) => row.inningsPitchedOuts));
+  const legalOuts = hasPlausibleFinalOuts(game,homeOuts,awayOuts);
   const checks: Record<string, boolean> = {
     finalGame: game.status === "final" && game.homeScore !== null && game.awayScore !== null,
     batterCoverage: expectedBatters >= 18 && batting.length === expectedBatters && mappedBatters === expectedBatters,
@@ -76,9 +90,7 @@ export function validateNpbGameFacts(game: NpbGame, expectedBatters: number, bat
     checks[`hits:${key}`] = total(hitters.map((row) => row.hits)) === total(opposingPitchers.map((row) => row.hits));
     checks[`homeRuns:${key}`] = total(hitters.map((row) => row.homeRuns)) === total(opposingPitchers.map((row) => row.homeRuns));
     checks[`plateAppearances:${key}`] = total(hitters.map((row) => row.pa)) === total(opposingPitchers.map((row) => row.battersFaced));
-    // A home win without a bottom ninth gives the visiting staff only 24 defensive outs.
-    checks[`pitchingOuts:${key}`] = total(pitchers.map((row) => row.inningsPitchedOuts)) ===
-      (expectedPitchingOuts?.[key] ?? 27);
+    checks[`pitchingOuts:${key}`] = legalOuts;
     checks[`oneStarter:${key}`] = pitchers.filter((row) => row.starter).length === 1;
     checks[`opponents:${key}`] = hitters.every((row) => row.opponentTeamId === opponentId) &&
       pitchers.every((row) => row.opponentTeamId === opponentId);
@@ -101,7 +113,7 @@ export async function runNpbGameProof(client: DataClient, options: NpbGameProofO
   const { targetDate, gameId, dryRun = false, rawRoot = ".data/raw", delayMs = 750, persistRawManifest = true } = options;
   const target = Object.values(controlledGameTargets).find((candidate) => candidate.id === gameId && candidate.date === targetDate);
   if (!target || targetDate > addDays(jstToday(),-1))
-    throw new Error("This controlled proof is limited to the two reviewed 2026-09-23 games");
+    throw new Error("This controlled proof is limited to reviewed 2026-09-23 games");
   if (sourceRegistry.find((source) => source.key === "nf3")?.status !== "enabled-limited-public")
     throw new Error("nf3 provider is disabled in Source Registry");
   const repository = new NpbRepository(client);
@@ -161,9 +173,18 @@ export async function runNpbGameProof(client: DataClient, options: NpbGameProofO
     const starters = parseNf3StartingLineup(await get(lineupPath),targetDate,team.code);
     const roster = parseNf3BattingRoster(await get(rosterPath),team.code);
     const expectedPitcherList = parseNf3PitchUsage(await get(usagePath),targetDate,team.code);
+    const participants = [...roster];
+    for (const pitcher of expectedPitcherList) {
+      const existing = participants.find((player) => player.number === pitcher.number);
+      if (existing && normalizeNpbName(existing.name) !== normalizeNpbName(pitcher.name))
+        throw new Error(`Conflicting batter/pitcher identity: ${team.code} #${pitcher.number}`);
+      if (!existing) participants.push(pitcher);
+    }
     const queue: Nf3BattingParticipant[] = starters.map((starter) => {
-      const verified = roster.find((player) => player.number === starter.number);
-      if (!verified || verified.profileUrl !== starter.profileUrl) throw new Error(`Lineup/roster identity mismatch: ${team.code} #${starter.number}`);
+      const verified = participants.find((player) => player.number === starter.number);
+      const pitchingProfile = expectedPitcherList.find((player) => player.number === starter.number)?.profileUrl;
+      if (!verified || (verified.profileUrl !== starter.profileUrl && pitchingProfile !== starter.profileUrl))
+        throw new Error(`Lineup/roster identity mismatch: ${team.code} #${starter.number}`);
       return { ...verified, battingOrder: starter.battingOrder, started: true };
     });
     const processed = new Set<string>();
@@ -188,7 +209,7 @@ export async function runNpbGameProof(client: DataClient, options: NpbGameProofO
         const fact = { ...parsed.row.fact, gameId: game.id, battingOrder: participant.battingOrder, starter: participant.started };
         batting.push({ ...parsed.row, fact });
         for (const name of parsed.substitutions) {
-          const next = findRosterPlayer(roster,name);
+          const next = findRosterPlayer(participants,name);
           const already = queue.find((item) => item.number === next.number);
           if (already && already.battingOrder !== participant.battingOrder) throw new Error(`Conflicting batting-order slot: ${name}`);
           if (!processed.has(next.number) && !already)
@@ -216,8 +237,7 @@ export async function runNpbGameProof(client: DataClient, options: NpbGameProofO
     }
   }
   const report = validateNpbGameFacts(game,expectedBatters,batting.map((row) => row.fact),expectedPitchers,
-    pitching.map((row) => row.fact),mappedBatters,mappedPitchers,issues,
-    { [target.home]: target.homePitchingOuts, [target.away]: target.awayPitchingOuts });
+    pitching.map((row) => row.fact),mappedBatters,mappedPitchers,issues);
   if (dryRun || report.gameStatus !== "complete") {
     if (!dryRun) {
       const previous = await repository.findGameCompleteness(game.id);

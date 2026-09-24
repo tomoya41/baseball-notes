@@ -11,7 +11,7 @@ on:
       target:
         description: "Reviewed single game only"
         type: choice
-        options: [baseline, edge]
+        options: [baseline, edge, primary, supplemental]
         default: baseline
         required: true
 permissions:

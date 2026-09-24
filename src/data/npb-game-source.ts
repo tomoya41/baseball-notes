@@ -9,7 +9,7 @@ export interface Nf3BattingParticipant extends Nf3Participant { battingOrder: nu
 const ROOT = "https://nf3.sakura.ne.jp/";
 const dayLabel = (date: string) => `${Number(date.slice(5, 7))}/${Number(date.slice(8, 10))}`;
 function profile(link: string | undefined, teamCode: string): string {
-  if (!link || !new RegExp(`^\\./(?:Central|Pacific)/${teamCode}/[fp]/\\d+_stat\\.htm$`).test(link))
+  if (!link || !new RegExp(`^\\./(?:Central|Pacific)/${teamCode}/[fp]/\\d+[a-z]{0,3}_stat\\.htm$`).test(link))
     throw new Error(`Unexpected nf3 player profile: ${link}`);
   return new URL(link.slice(2), ROOT).toString();
 }
@@ -25,7 +25,7 @@ export function parseNf3StartingLineup(html: string, date: string, teamCode: str
   const starters = Array.from({ length: 9 }, (_, index) => {
     const cell = cells.eq(index + 5);
     const href = cell.find("a").attr("href");
-    const number = /\/([0-9]+)_stat\.htm$/.exec(href ?? "")?.[1];
+    const number = /\/([0-9]+)[a-z]{0,3}_stat\.htm$/.exec(href ?? "")?.[1];
     if (!number) throw new Error(`Missing lineup player ID: ${teamCode} ${index + 1}`);
     return { number, name: cell.text().trim(), profileUrl: profile(href, teamCode), battingOrder: index + 1 };
   });

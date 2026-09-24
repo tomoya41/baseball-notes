@@ -7,7 +7,7 @@ import { NpbRepository } from "../src/data/npb-repository";
 import { parseInningsOuts, type NpbGame } from "../src/data/npb-nf3";
 import { findRosterPlayer, parseNf3BattingRoster, parseNf3GameBattingRow,
   parseNf3GamePitchingRow, parseNf3PitchUsage, parseNf3StartingLineup } from "../src/data/npb-game-source";
-import { controlledGameTargets, validateNpbGameFacts } from "../src/data/npb-game-collector";
+import { controlledGameTargets, hasPlausibleFinalOuts, validateNpbGameFacts } from "../src/data/npb-game-collector";
 import { playerGameBattingSchema, playerGamePitchingSchema } from "../src/domain/game-facts";
 
 const date = "2026-09-23";
@@ -182,12 +182,90 @@ describe("Hawks 10–3 Lions edge-game regression", () => {
       battersFaced: teamId === edge.home ? 36 : 42, hits: 0, homeRuns: 0,
       runs: teamId === edge.home ? 3 : 10, earnedRuns: 0, walks: null, strikeouts: 0,
       pitches: 90, catcherId: null, sourceKey: "nf3", sourceRecordId: `${teamId}:pitcher`, collectedAt: at }));
-    const outs = { [edge.home]: 27, [edge.away]: 24 };
-    expect(validateNpbGameFacts(edgeGame,18,batters,2,pitchers,18,2,[],outs).gameStatus).toBe("complete");
-    expect(validateNpbGameFacts(edgeGame,18,batters,2,pitchers,18,2).checks[`pitchingOuts:${edge.away}`]).toBe(false);
-    expect(validateNpbGameFacts(edgeGame,18,batters.slice(1),2,pitchers,17,2,[],outs).gameStatus).toBe("partial");
-    expect(validateNpbGameFacts(edgeGame,18,batters,2,pitchers.slice(1),18,1,[],outs).gameStatus).toBe("partial");
+    expect(validateNpbGameFacts(edgeGame,18,batters,2,pitchers,18,2).gameStatus).toBe("complete");
+    expect(hasPlausibleFinalOuts(edgeGame,27,24)).toBe(true);
+    expect(hasPlausibleFinalOuts(edgeGame,27,25)).toBe(true);
+    expect(hasPlausibleFinalOuts(edgeGame,27,26)).toBe(true);
+    expect(hasPlausibleFinalOuts(edgeGame,27,27)).toBe(false);
+    expect(hasPlausibleFinalOuts(edgeGame,24,24)).toBe(false);
+    expect(hasPlausibleFinalOuts({ ...edgeGame, homeScore: 1, awayScore: 2 },27,27)).toBe(true);
+    expect(hasPlausibleFinalOuts({ ...edgeGame, homeScore: 1, awayScore: 2 },30,30)).toBe(true);
+    expect(validateNpbGameFacts(edgeGame,18,batters.slice(1),2,pitchers,17,2).gameStatus).toBe("partial");
+    expect(validateNpbGameFacts(edgeGame,18,batters,2,pitchers.slice(1),18,1).gameStatus).toBe("partial");
     const impossibleDouble = [{ ...batters[0]!, hits: 0, doubles: 1 }, ...batters.slice(1)];
-    expect(validateNpbGameFacts(edgeGame,18,impossibleDouble,2,pitchers,18,2,[],outs).gameStatus).toBe("partial");
+    expect(validateNpbGameFacts(edgeGame,18,impossibleDouble,2,pitchers,18,2).gameStatus).toBe("partial");
+  });
+});
+
+describe("2026-09-23 additional controlled game edge cases", () => {
+  const batter = (name: string, team: string) => parseNf3GameBattingRow(
+    fixture(name),date,team,`player-${name}`,`source-${name}`,game.sourceUrl,at);
+  const pitcher = (name: string, team: string) => parseNf3GamePitchingRow(
+    fixture(name),date,team,`player-${name}`,`source-${name}`,game.sourceUrl,at);
+
+  it("reads real triple, HBP and sacrifice-hit tokens without counting them as AB", () => {
+    expect(batter("supp-batting-db00","DB")).toMatchObject({
+      detail: ["空三振","中３","中飛","二ゴロ","三ゴロ"], row: { fact: { pa: 5, ab: 5, triples: 1 } } });
+    expect(batter("supp-batting-db25","DB")).toMatchObject({
+      detail: ["二ゴロ","三ゴロ","空三振","死球"], row: { fact: { pa: 4, ab: 3, hbp: 1, walks: 0 } } });
+    expect(batter("supp-batting-d9","D").row.fact).toMatchObject({ pa: 5, ab: 4, hbp: 1 });
+    expect(batter("primary-batting-c19","C")).toMatchObject({
+      detail: ["捕犠打","三ゴロ"], row: { fact: { pa: 2, ab: 1, sacrificeHits: 1, sacrificeFlies: 0 } } });
+  });
+
+  it("reads real fractional innings, hold, save, zero-out relief and combined four-dead-ball counts", () => {
+    expect(pitcher("primary-pitching-g21","G").fact).toMatchObject({
+      inningsPitchedOuts: 17, decision: "win", walks: null, hitBatters: null,
+      walksAndHitBatters: 2, pitches: 89, appearanceOrder: null });
+    expect(pitcher("primary-pitching-g41","G").fact).toMatchObject({
+      inningsPitchedOuts: 1, role: "reliever", decision: "hold", pitches: 13 });
+    expect(pitcher("primary-pitching-g92","G").fact).toMatchObject({
+      inningsPitchedOuts: 3, decision: "save", pitches: 12 });
+    expect(pitcher("primary-pitching-g91","G").fact).toMatchObject({
+      inningsPitchedOuts: 0, role: "reliever", walksAndHitBatters: 1, pitches: 4 });
+  });
+
+  it("accepts extra-inning home wins and rejects incomplete defensive-out shapes", () => {
+    const target = controlledGameTargets.supplemental;
+    const final: NpbGame = { ...game, id: target.id, homeTeamId: target.home, awayTeamId: target.away,
+      homeScore: target.homeScore, awayScore: target.awayScore };
+    expect(hasPlausibleFinalOuts(final,36,33)).toBe(true);
+    expect(hasPlausibleFinalOuts(final,36,34)).toBe(true);
+    expect(hasPlausibleFinalOuts(final,36,35)).toBe(true);
+    expect(hasPlausibleFinalOuts(final,36,30)).toBe(false);
+    expect(hasPlausibleFinalOuts(final,35,33)).toBe(false);
+  });
+
+  it("accepts a source profile suffix but still rejects a wrong team or malformed path", () => {
+    const html = fixture("roster-m").replace(/\/f\/(\d+)_stat\.htm/, "/f/$1ff_stat.htm");
+    expect(parseNf3BattingRoster(html,"M")).toHaveLength(parseNf3BattingRoster(fixture("roster-m"),"M").length);
+    expect(() => parseNf3BattingRoster(html,"B")).toThrow(/Unexpected nf3 player profile/);
+  });
+
+  it("corrects observed edge fields by upsert without duplicate facts", async () => {
+    const target = controlledGameTargets.supplemental;
+    const supplemental: NpbGame = { ...game, id: target.id, homeTeamId: target.home, awayTeamId: target.away,
+      homeScore: target.homeScore, awayScore: target.awayScore };
+    const client = await db(); const repository = new NpbRepository(client);
+    await repository.saveGames([supplemental],date,false);
+    const trip = batter("supp-batting-db00","DB").row;
+    const hbp = batter("supp-batting-db25","DB").row;
+    await repository.saveBatting([trip,hbp],date,false,false);
+    await repository.saveBatting([trip,hbp],date,false,false);
+    expect(await repository.findBattingByGame(target.id)).toHaveLength(2);
+    await repository.saveBatting([{ ...trip, fact: { ...trip.fact, triples: 0, sacrificeHits: 1,
+      sacrificeFlies: 1 } },{ ...hbp, fact: { ...hbp.fact, hbp: 0 } }],date,false,false);
+    const corrected = await repository.findBattingByGame(target.id);
+    expect(corrected.find((row) => row.playerId === trip.fact.playerId))
+      .toMatchObject({ triples: 0, sacrificeHits: 1, sacrificeFlies: 1 });
+    expect(corrected.find((row) => row.playerId === hbp.fact.playerId)?.hbp).toBe(0);
+    const hold = pitcher("primary-pitching-g41","G");
+    const primary = controlledGameTargets.primary;
+    await repository.saveGames([{ ...game, id: primary.id, homeTeamId: primary.home,
+      awayTeamId: primary.away, homeScore: primary.homeScore, awayScore: primary.awayScore }],date,false);
+    await repository.savePitching([hold],date,false,false);
+    await repository.savePitching([hold],date,false,false);
+    await repository.savePitching([{ ...hold, fact: { ...hold.fact, decision: "save", pitches: 14 } }],date,false,false);
+    expect(await repository.findPitchingByGame(primary.id)).toMatchObject([{ decision: "save", pitches: 14 }]);
   });
 });
