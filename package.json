@@ -22,6 +22,7 @@
     "collector:npb": "tsx scripts/collect-npb.ts",
     "collector:npb:daily": "tsx scripts/collect-npb.ts --fetch",
     "collector:npb:game": "tsx scripts/collect-npb-game.ts",
+    "backup:npb:drill": "tsx scripts/backup-npb.ts",
     "verify:npb:remote": "tsx scripts/verify-npb-database.ts",
     "publish:npb:remote": "tsx scripts/publish-npb-payload.ts"
   },
