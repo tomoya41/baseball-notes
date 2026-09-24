@@ -2,10 +2,10 @@ import { createHash, randomUUID } from "node:crypto";
 import type { InStatement } from "@libsql/client";
 import type { DataClient } from "./database";
 import type { Standing } from "../domain/standings";
-import type { PlayerGameBatting, PlayerGamePitching } from "../domain/game-facts";
-import { playerGameBattingSchema, playerGamePitchingSchema } from "../domain/game-facts";
+import type { GameCompleteness, PlayerGameBatting, PlayerGamePitching } from "../domain/game-facts";
+import { gameCompletenessSchema, playerGameBattingSchema, playerGamePitchingSchema } from "../domain/game-facts";
 import { teamSchema, type Team } from "../domain/models";
-import { npbTeams, type NpbGame, type NpbLogRow } from "./npb-nf3";
+import { normalizeNpbName, npbTeams, type NpbGame, type NpbLogRow } from "./npb-nf3";
 
 const hash = (value: unknown) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
 
@@ -46,6 +46,26 @@ export class NpbRepository {
       { sql: "INSERT INTO master_history (entity_kind,entity_id,valid_from,payload_json,source_key,source_record_id,collected_at) VALUES ('player',?,?,?,?,?,?)",
         args: [id, at.slice(0, 10), JSON.stringify({ name, teamId, sourceUrl }), "nf3", sourceId, at] },
     ], "write");
+    return id;
+  }
+
+  async resolveVerifiedPlayer(sourceId: string, name: string, sourceUrl: string, teamId: string, at: string, dryRun: boolean): Promise<string> {
+    const mapped = await this.client.execute({ sql: `SELECT m.internal_entity_id,h.payload_json FROM source_entity_mappings m
+      LEFT JOIN master_history h ON h.entity_kind='player' AND h.entity_id=m.internal_entity_id
+      WHERE m.source_key='nf3' AND m.entity_kind='player' AND m.source_entity_id=?
+      ORDER BY h.valid_from DESC LIMIT 1`, args: [sourceId] });
+    if (mapped.rows[0]) {
+      const payload = mapped.rows[0].payload_json ? JSON.parse(String(mapped.rows[0].payload_json)) as { name?: string } : null;
+      if (payload?.name && normalizeNpbName(payload.name) !== normalizeNpbName(name))
+        throw new Error(`Player identity changed for ${sourceId}: ${name}`);
+      return String(mapped.rows[0].internal_entity_id);
+    }
+    const id = dryRun ? `dry:${sourceId}` : randomUUID();
+    if (!dryRun) await this.client.batch([
+      { sql: "INSERT INTO source_entity_mappings VALUES ('nf3','player',?,?,?,?,?)", args: [sourceId,id,sourceUrl,at,at] },
+      { sql: `INSERT INTO master_history (entity_kind,entity_id,valid_from,payload_json,source_key,source_record_id,collected_at)
+        VALUES ('player',?,?,?,?,?,?)`, args: [id,at.slice(0,10),JSON.stringify({ name, normalizedName: normalizeNpbName(name), teamId, sourceUrl }),"nf3",sourceId,at] },
+    ],"write");
     return id;
   }
 
@@ -135,7 +155,7 @@ export class NpbRepository {
     throw new Error(`Unresolved/ambiguous game: ${date} ${teamId} ${opponentTeamId}`);
   }
 
-  async saveBatting(rows: readonly NpbLogRow<PlayerGameBatting>[], targetDate: string, dryRun: boolean): Promise<{ inserted: number; updated: number }> {
+  async saveBatting(rows: readonly NpbLogRow<PlayerGameBatting>[], targetDate: string, dryRun: boolean, recordStage = true): Promise<{ inserted: number; updated: number }> {
     const statements: InStatement[] = [];
     let inserted = 0, updated = 0;
     for (const row of rows) {
@@ -144,22 +164,24 @@ export class NpbRepository {
       const prior = await this.client.execute({ sql: "SELECT 1 FROM player_game_batting WHERE game_id=? AND player_id=? AND team_id=?", args: [gameId,fact.playerId,fact.teamId] });
       if (prior.rows.length) updated++; else inserted++;
       statements.push({ sql: `INSERT INTO player_game_batting
-        (game_id,player_id,team_id,opponent_team_id,batting_order,pa,ab,hits,doubles,triples,home_runs,rbi,walks,strikeouts,hbp,sb,cs,source_key,source_record_id,collected_at,runs,starter,source_url)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        (game_id,player_id,team_id,opponent_team_id,batting_order,pa,ab,hits,doubles,triples,home_runs,rbi,walks,strikeouts,hbp,sb,cs,source_key,source_record_id,collected_at,runs,starter,source_url,sacrifice_hits,sacrifice_flies)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         ON CONFLICT(game_id,player_id,team_id) DO UPDATE SET batting_order=excluded.batting_order,pa=excluded.pa,
           ab=excluded.ab,hits=excluded.hits,doubles=excluded.doubles,triples=excluded.triples,home_runs=excluded.home_runs,
           rbi=excluded.rbi,walks=excluded.walks,strikeouts=excluded.strikeouts,hbp=excluded.hbp,sb=excluded.sb,cs=excluded.cs,
-          collected_at=excluded.collected_at,runs=excluded.runs,starter=excluded.starter,source_url=excluded.source_url`,
+          collected_at=excluded.collected_at,runs=excluded.runs,starter=excluded.starter,source_url=excluded.source_url,
+          sacrifice_hits=excluded.sacrifice_hits,sacrifice_flies=excluded.sacrifice_flies`,
         args: [gameId,fact.playerId,fact.teamId,fact.opponentTeamId,fact.battingOrder,fact.pa,fact.ab,fact.hits,
           fact.doubles,fact.triples,fact.homeRuns,fact.rbi,fact.walks,fact.strikeouts,fact.hbp,fact.stolenBases,
-          fact.caughtStealing,fact.sourceKey,fact.sourceRecordId,fact.collectedAt,fact.runs ?? null,fact.starter ? 1 : 0,fact.sourceUrl ?? null] });
+          fact.caughtStealing,fact.sourceKey,fact.sourceRecordId,fact.collectedAt,fact.runs ?? null,fact.starter ? 1 : 0,fact.sourceUrl ?? null,
+          fact.sacrificeHits ?? null,fact.sacrificeFlies ?? null] });
     }
-    statements.push(this.stageStatement(targetDate,"batting","partial",rows.length,"Curated player subset only"));
+    if (recordStage) statements.push(this.stageStatement(targetDate,"batting","partial",rows.length,"Curated player subset only"));
     if (!dryRun) await this.client.batch(statements,"write");
     return { inserted, updated };
   }
 
-  async savePitching(rows: readonly NpbLogRow<PlayerGamePitching>[], targetDate: string, dryRun: boolean): Promise<{ inserted: number; updated: number }> {
+  async savePitching(rows: readonly NpbLogRow<PlayerGamePitching>[], targetDate: string, dryRun: boolean, recordStage = true): Promise<{ inserted: number; updated: number }> {
     const statements: InStatement[] = [];
     let inserted = 0, updated = 0;
     for (const row of rows) {
@@ -168,18 +190,19 @@ export class NpbRepository {
       const prior = await this.client.execute({ sql: "SELECT 1 FROM player_game_pitching WHERE fact_id=?", args: [fact.id] });
       if (prior.rows.length) updated++; else inserted++;
       statements.push({ sql: `INSERT INTO player_game_pitching
-        (fact_id,game_id,player_id,team_id,opponent_team_id,role,appearance_order,ip_outs,batters_faced,hits,home_runs,walks,strikeouts,runs,earned_runs,pitches,catcher_id,source_key,source_record_id,collected_at,starter,decision,source_url)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        (fact_id,game_id,player_id,team_id,opponent_team_id,role,appearance_order,ip_outs,batters_faced,hits,home_runs,walks,strikeouts,runs,earned_runs,pitches,catcher_id,source_key,source_record_id,collected_at,starter,decision,source_url,hit_batters,walks_and_hit_batters)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         ON CONFLICT(fact_id) DO UPDATE SET game_id=excluded.game_id,role=excluded.role,ip_outs=excluded.ip_outs,
           batters_faced=excluded.batters_faced,hits=excluded.hits,home_runs=excluded.home_runs,walks=excluded.walks,
           strikeouts=excluded.strikeouts,runs=excluded.runs,earned_runs=excluded.earned_runs,pitches=excluded.pitches,
-          collected_at=excluded.collected_at,starter=excluded.starter,decision=excluded.decision,source_url=excluded.source_url`,
+          collected_at=excluded.collected_at,starter=excluded.starter,decision=excluded.decision,source_url=excluded.source_url,
+          hit_batters=excluded.hit_batters,walks_and_hit_batters=excluded.walks_and_hit_batters`,
         args: [fact.id,gameId,fact.playerId,fact.teamId,fact.opponentTeamId,fact.role,fact.appearanceOrder,
           fact.inningsPitchedOuts,fact.battersFaced,fact.hits,fact.homeRuns,fact.walks,fact.strikeouts,fact.runs,
           fact.earnedRuns,fact.pitches,fact.catcherId,fact.sourceKey,fact.sourceRecordId,fact.collectedAt,
-          fact.starter ? 1 : 0,fact.decision ?? null,fact.sourceUrl ?? null] });
+          fact.starter ? 1 : 0,fact.decision ?? null,fact.sourceUrl ?? null,fact.hitBatters ?? null,fact.walksAndHitBatters ?? null] });
     }
-    statements.push(this.stageStatement(targetDate,"pitching","partial",rows.length,"Curated player subset only"));
+    if (recordStage) statements.push(this.stageStatement(targetDate,"pitching","partial",rows.length,"Curated player subset only"));
     if (!dryRun) await this.client.batch(statements,"write");
     return { inserted, updated };
   }
@@ -193,6 +216,7 @@ export class NpbRepository {
       pa: row.pa, ab: row.ab, hits: row.hits, doubles: row.doubles, triples: row.triples,
       homeRuns: row.home_runs, rbi: row.rbi, walks: row.walks, strikeouts: row.strikeouts,
       hbp: row.hbp, stolenBases: row.sb, caughtStealing: row.cs, runs: row.runs,
+      sacrificeHits: row.sacrifice_hits, sacrificeFlies: row.sacrifice_flies,
       starter: row.starter === null ? null : Number(row.starter) === 1,
       sourceUrl: row.source_url, sourceKey: row.source_key, sourceRecordId: row.source_record_id,
       collectedAt: row.collected_at }));
@@ -205,11 +229,62 @@ export class NpbRepository {
     return result.rows.map((row) => playerGamePitchingSchema.parse({ id: row.fact_id, gameId: row.game_id,
       playerId: row.player_id, teamId: row.team_id, opponentTeamId: row.opponent_team_id, role: row.role,
       appearanceOrder: row.appearance_order, inningsPitchedOuts: row.ip_outs, battersFaced: row.batters_faced,
-      hits: row.hits, homeRuns: row.home_runs, walks: row.walks, strikeouts: row.strikeouts,
+      hits: row.hits, homeRuns: row.home_runs, walks: row.walks, hitBatters: row.hit_batters,
+      walksAndHitBatters: row.walks_and_hit_batters, strikeouts: row.strikeouts,
       runs: row.runs, earnedRuns: row.earned_runs, pitches: row.pitches, catcherId: row.catcher_id,
       starter: row.starter === null ? null : Number(row.starter) === 1, decision: row.decision,
       sourceUrl: row.source_url, sourceKey: row.source_key, sourceRecordId: row.source_record_id,
       collectedAt: row.collected_at }));
+  }
+
+  async findBattingByGame(gameId: string): Promise<PlayerGameBatting[]> {
+    const result = await this.client.execute({ sql: "SELECT * FROM player_game_batting WHERE game_id=? ORDER BY team_id,batting_order,player_id", args: [gameId] });
+    return result.rows.map((row) => playerGameBattingSchema.parse({ gameId: row.game_id, playerId: row.player_id,
+      teamId: row.team_id, opponentTeamId: row.opponent_team_id, battingOrder: row.batting_order,
+      pa: row.pa, ab: row.ab, hits: row.hits, doubles: row.doubles, triples: row.triples,
+      homeRuns: row.home_runs, rbi: row.rbi, walks: row.walks, strikeouts: row.strikeouts,
+      hbp: row.hbp, stolenBases: row.sb, caughtStealing: row.cs, runs: row.runs,
+      sacrificeHits: row.sacrifice_hits, sacrificeFlies: row.sacrifice_flies,
+      starter: row.starter === null ? null : Number(row.starter) === 1,
+      sourceUrl: row.source_url, sourceKey: row.source_key, sourceRecordId: row.source_record_id,
+      collectedAt: row.collected_at }));
+  }
+
+  async findPitchingByGame(gameId: string): Promise<PlayerGamePitching[]> {
+    const result = await this.client.execute({ sql: "SELECT * FROM player_game_pitching WHERE game_id=? ORDER BY team_id,appearance_order,player_id", args: [gameId] });
+    return result.rows.map((row) => playerGamePitchingSchema.parse({ id: row.fact_id, gameId: row.game_id,
+      playerId: row.player_id, teamId: row.team_id, opponentTeamId: row.opponent_team_id,
+      role: row.role, appearanceOrder: row.appearance_order, inningsPitchedOuts: row.ip_outs,
+      battersFaced: row.batters_faced, hits: row.hits, homeRuns: row.home_runs,
+      walks: row.walks, hitBatters: row.hit_batters, walksAndHitBatters: row.walks_and_hit_batters,
+      strikeouts: row.strikeouts, runs: row.runs, earnedRuns: row.earned_runs,
+      pitches: row.pitches, catcherId: row.catcher_id,
+      starter: row.starter === null ? null : Number(row.starter) === 1, decision: row.decision,
+      sourceUrl: row.source_url, sourceKey: row.source_key, sourceRecordId: row.source_record_id,
+      collectedAt: row.collected_at }));
+  }
+
+  async saveGameCompleteness(value: GameCompleteness): Promise<void> {
+    const report = gameCompletenessSchema.parse(value);
+    await this.client.execute({ sql: `INSERT INTO npb_game_completeness VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+      ON CONFLICT(game_id) DO UPDATE SET batting_status=excluded.batting_status,pitching_status=excluded.pitching_status,
+      game_status=excluded.game_status,expected_batters=excluded.expected_batters,collected_batters=excluded.collected_batters,
+      mapped_batters=excluded.mapped_batters,expected_pitchers=excluded.expected_pitchers,collected_pitchers=excluded.collected_pitchers,
+      mapped_pitchers=excluded.mapped_pitchers,checks_json=excluded.checks_json,issues_json=excluded.issues_json,
+      verified_at=excluded.verified_at`, args: [report.gameId,report.battingStatus,report.pitchingStatus,report.gameStatus,
+      report.expectedBatters,report.collectedBatters,report.mappedBatters,report.expectedPitchers,report.collectedPitchers,
+      report.mappedPitchers,JSON.stringify(report.checks),JSON.stringify(report.issues),report.sourceKey,report.verifiedAt] });
+  }
+
+  async findGameCompleteness(gameId: string): Promise<GameCompleteness | null> {
+    const result = await this.client.execute({ sql: "SELECT * FROM npb_game_completeness WHERE game_id=?", args: [gameId] });
+    const row = result.rows[0];
+    return row ? gameCompletenessSchema.parse({ gameId: row.game_id, battingStatus: row.batting_status,
+      pitchingStatus: row.pitching_status, gameStatus: row.game_status,
+      expectedBatters: row.expected_batters, collectedBatters: row.collected_batters, mappedBatters: row.mapped_batters,
+      expectedPitchers: row.expected_pitchers, collectedPitchers: row.collected_pitchers, mappedPitchers: row.mapped_pitchers,
+      checks: JSON.parse(String(row.checks_json)) as unknown, issues: JSON.parse(String(row.issues_json)) as unknown,
+      sourceKey: row.source_key, verifiedAt: row.verified_at }) : null;
   }
 
   async markStage(date: string, stage: string, error: string): Promise<void> {

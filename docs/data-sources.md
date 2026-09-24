@@ -101,6 +101,10 @@ nf3更新時刻の保証や公式API SLAはない。CollectorはJST前日を対�
 
 出典：[SportsDataIO developers](https://sportsdata.io/developers)、[scrambled data](https://sportsdata.io/help/scrambled-data)、[Sportradar account / trial](https://developer.sportradar.com/getting-started/docs/your-account)、[Global Baseball endpoints](https://developer.sportradar.com/baseball/v1/reference/global-baseball-v1-endpoints)。試用開始・有料申込は行っていない。
 
+## 2026-09-24：nf3の1試合全出場者検証
+
+新しいSourceは追加していない。既存のnf3公開ページから、球団月間スタメン、打撃名簿、日付別投手使用表、選手月間打撃/投手ログを、2026-09-23ロッテ対オリックスに限って取得した。目的・URL pattern・Parser・取得列・欠測・実件数・制限は[npb-game-proof.md](npb-game-proof.md)。現在Source側更新時刻は得られず、取込は手動検証のみで日次Scheduleに追加しない。利用条件は従来の`public / no explicit prohibition found`を維持し、公式API/一般許諾とは扱わない。Source変更時は既存のnf3 Registry gateで止め、代替Sourceは今回選定しない。
+
 ## 実Providerを採用する前の確認
 
 対象league/year/metricのレスポンス例、欠測定義、機械取得と保存・集計・再配布の許諾、認証/無料quota、更新周期、CORS/Android通信、ID対応を揃える。利用条件が未確定のProviderはコード上でも無効にし、「無料で取れた」だけで既定Providerにしない。

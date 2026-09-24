@@ -14,6 +14,7 @@ React + TypeScript strict + Vite + Capacitor Androidの構成。ホーム / 検�
 - [デザインシステム](docs/design-system.md)
 - [日次データ基盤](docs/data-architecture.md)
 - [NPBリモート収集・配信運用](docs/npb-remote-delivery.md)
+- [NPB 1試合全出場者収集の検証](docs/npb-game-proof.md)
 - [検証・整理記録](docs/verification.md)
 
 ## ブラウザで開発

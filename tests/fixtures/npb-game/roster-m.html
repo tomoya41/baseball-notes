@@ -1,0 +1,512 @@
+<html><body><table class="Base" border="1">
+    <caption>
+    <div class="Title">打撃成績一覧 - 背番号順 - (番号の色付きは1軍選手・灰色背景はトレード)    <a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=1&amp;dk=1"> &gt;&gt; 各種指標へ </a></div>
+    </caption>
+    <tbody><tr class="Index">
+      <th width="25" nowrap=""><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=1&amp;dk=0">背番</a></th>
+      <th width="120" nowrap="">名前</th>
+      <th width="20" nowrap="">席</th>
+      <th width="40" nowrap=""><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=6&amp;dk=0">打率</a></th>
+      <th width="30" nowrap=""><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=7&amp;dk=0">試合</a></th>
+      <th width="30" nowrap=""><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=8&amp;dk=0">打席</a></th>
+      <th width="30" nowrap=""><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=9&amp;dk=0">打数</a></th>
+      <th width="30" nowrap=""><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=10&amp;dk=0">得点</a></th>
+      <th width="30" nowrap=""><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=11&amp;dk=0">安打</a></th>
+      <th width="30" nowrap=""><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=12&amp;dk=0">内安</a></th>
+      <th width="40" nowrap=""><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=13&amp;dk=0">内安率</a></th>
+      <th width="30" nowrap=""><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=14&amp;dk=0">２Ｂ</a></th>
+      <th width="30" nowrap=""><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=15&amp;dk=0">３Ｂ</a></th>
+      <th width="30" nowrap=""><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=16&amp;dk=0">本塁</a></th>
+      <th width="60" nowrap="">HR<br>勝敗</th>
+      <th width="30" nowrap=""><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=18&amp;dk=0">塁打</a></th>
+      <th width="30" nowrap=""><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=19&amp;dk=0">打点</a></th>
+      <th width="30" nowrap=""><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=20&amp;dk=0">三振</a></th>
+      <th width="30" nowrap=""><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=21&amp;dk=0">四球</a></th>
+      <th width="30" nowrap=""><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=22&amp;dk=0">敬遠</a></th>
+      <th width="30" nowrap=""><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=23&amp;dk=0">死球</a></th>
+      <th width="30" nowrap=""><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=24&amp;dk=0">犠打</a></th>
+      <th width="30" nowrap=""><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=25&amp;dk=0">犠飛</a></th>
+      <th width="30" nowrap=""><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=26&amp;dk=0">盗塁</a></th>
+      <th width="30" nowrap=""><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=27&amp;dk=0">盗塁死</a></th>
+      <th width="40" nowrap="">成功率</th>
+      <th width="30" nowrap=""><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=29&amp;dk=0">失策</a></th>
+      <th width="30" nowrap=""><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=30&amp;dk=0">捕逸</a></th>
+      <th width="30" nowrap=""><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=31&amp;dk=0">併殺打</a></th>
+      <th width="40" nowrap=""><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=32&amp;dk=0">得点圏</a></th>
+      <th width="40" nowrap=""><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=33&amp;dk=0">出塁率</a></th>
+      <th width="40" nowrap=""><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=34&amp;dk=0">長打率</a></th>
+      <th width="40" nowrap=""><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=35&amp;dk=0">OPS</a></th>
+    </tr>
+    <tr class="Index2" nowrap="">
+      <th colspan="3" nowrap="">合計</th>
+      <th>.236</th>
+      <th>131</th>
+      <th>4828</th>
+      <th>4390</th>
+      <th>457</th>
+      <th>1037</th>
+      <th>98</th>
+      <th>9.5%</th>
+      <th>167</th>
+      <th>12</th>
+      <th>118</th>
+      <th>-</th>
+      <th>1582</th>
+      <th>438</th>
+      <th>1046</th>
+      <th>329</th>
+      <th>9</th>
+      <th>53</th>
+      <th>37</th>
+      <th>19</th>
+      <th>45</th>
+      <th>19</th>
+      <th>70.3%</th>
+      <th>55</th>
+      <th>6</th>
+      <th>79</th>
+      <th>.241</th>
+      <th>.296</th>
+      <th>.360</th>
+      <th>.657</th>
+    </tr>
+    
+    
+    <tr onmouseover="M_over(this)" onmouseout="M_out(this)" onclick="M_click(this)">
+      <td><div class="M">1</div></td>
+      <td><a href="./Pacific/M/f/1_stat.htm">藤原恭大</a></td>
+      <td>左</td>
+      <td>.270</td>
+      <td>97</td>
+      <td>429</td>
+      <td>374</td>
+      <td>57</td>
+      <td>101</td>
+      <td>12</td>
+      <td>11.9</td>
+      <td>12</td>
+      <td>2</td>
+      <td>8</td>
+      <td>5-3-0</td>
+      <td>141</td>
+      <td>40</td>
+      <td>80</td>
+      <td>43</td>
+      <td>1</td>
+      <td>11</td>
+      <td>0</td>
+      <td>1</td>
+      <td>12</td>
+      <td>3</td>
+      <td>80.0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>7</td>
+      <td>.361</td>
+      <td>.361</td>
+      <td>.377</td>
+      <td>.738</td>
+    </tr>
+    
+    
+    
+    <tr onmouseover="M_over(this)" onmouseout="M_out(this)" onclick="M_click(this)">
+      <td><div class="M">5</div></td>
+      <td><a href="./Pacific/M/f/5_stat.htm">安田尚憲</a></td>
+      <td>左</td>
+      <td>.266</td>
+      <td>72</td>
+      <td>224</td>
+      <td>207</td>
+      <td>20</td>
+      <td>55</td>
+      <td>0</td>
+      <td>0.0</td>
+      <td>16</td>
+      <td>0</td>
+      <td>6</td>
+      <td>0-5-1</td>
+      <td>89</td>
+      <td>29</td>
+      <td>57</td>
+      <td>15</td>
+      <td>1</td>
+      <td>1</td>
+      <td>0</td>
+      <td>1</td>
+      <td>0</td>
+      <td>0</td>
+      <td>-</td>
+      <td>4</td>
+      <td>0</td>
+      <td>7</td>
+      <td>.348</td>
+      <td>.317</td>
+      <td>.430</td>
+      <td>.747</td>
+    </tr>
+    <tr onmouseover="M_over(this)" onmouseout="M_out(this)" onclick="M_click(this)">
+      <td><div class="M">6</div></td>
+      <td><a href="./Pacific/M/f/6_stat.htm">西川史礁</a></td>
+      <td>右</td>
+      <td>.292</td>
+      <td>124</td>
+      <td>534</td>
+      <td>487</td>
+      <td>57</td>
+      <td>142</td>
+      <td>13</td>
+      <td>9.2</td>
+      <td>28</td>
+      <td>1</td>
+      <td>7</td>
+      <td>5-2-0</td>
+      <td>193</td>
+      <td>48</td>
+      <td>98</td>
+      <td>38</td>
+      <td>1</td>
+      <td>9</td>
+      <td>0</td>
+      <td>0</td>
+      <td>2</td>
+      <td>2</td>
+      <td>50.0</td>
+      <td>4</td>
+      <td>0</td>
+      <td>13</td>
+      <td>.324</td>
+      <td>.354</td>
+      <td>.396</td>
+      <td>.750</td>
+    </tr>
+    
+    <tr onmouseover="M_over(this)" onmouseout="M_out(this)" onclick="M_click(this)">
+      <td><div class="M">10</div></td>
+      <td><a href="./Pacific/M/f/10_stat.htm">上田希由翔</a></td>
+      <td>左</td>
+      <td>.221</td>
+      <td>57</td>
+      <td>165</td>
+      <td>154</td>
+      <td>14</td>
+      <td>34</td>
+      <td>2</td>
+      <td>5.9</td>
+      <td>6</td>
+      <td>0</td>
+      <td>7</td>
+      <td>3-4-0</td>
+      <td>61</td>
+      <td>15</td>
+      <td>36</td>
+      <td>11</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>1</td>
+      <td>0.0</td>
+      <td>3</td>
+      <td>0</td>
+      <td>4</td>
+      <td>.189</td>
+      <td>.273</td>
+      <td>.396</td>
+      <td>.669</td>
+    </tr>
+    
+    
+    
+    
+    <tr onmouseover="M_over(this)" onmouseout="M_out(this)" onclick="M_click(this)">
+      <td><div class="M">32</div></td>
+      <td><a href="./Pacific/M/f/32_stat.htm">佐藤都志也</a></td>
+      <td>左</td>
+      <td>.236</td>
+      <td>121</td>
+      <td>428</td>
+      <td>373</td>
+      <td>40</td>
+      <td>88</td>
+      <td>7</td>
+      <td>8.0</td>
+      <td>15</td>
+      <td>0</td>
+      <td>17</td>
+      <td>13-2-0</td>
+      <td>154</td>
+      <td>55</td>
+      <td>88</td>
+      <td>46</td>
+      <td>1</td>
+      <td>5</td>
+      <td>1</td>
+      <td>3</td>
+      <td>1</td>
+      <td>0</td>
+      <td>100.0</td>
+      <td>6</td>
+      <td>3</td>
+      <td>3</td>
+      <td>.301</td>
+      <td>.326</td>
+      <td>.413</td>
+      <td>.738</td>
+    </tr>
+    <tr onmouseover="M_over(this)" onmouseout="M_out(this)" onclick="M_click(this)">
+      <td><div class="M">38</div></td>
+      <td><a href="./Pacific/M/f/38_stat.htm">山﨑剛</a></td>
+      <td>左</td>
+      <td>.220</td>
+      <td>54</td>
+      <td>155</td>
+      <td>141</td>
+      <td>16</td>
+      <td>31</td>
+      <td>3</td>
+      <td>9.7</td>
+      <td>4</td>
+      <td>1</td>
+      <td>1</td>
+      <td>0-1-0</td>
+      <td>40</td>
+      <td>7</td>
+      <td>44</td>
+      <td>9</td>
+      <td>0</td>
+      <td>3</td>
+      <td>1</td>
+      <td>1</td>
+      <td>3</td>
+      <td>0</td>
+      <td>100.0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>1</td>
+      <td>.242</td>
+      <td>.279</td>
+      <td>.284</td>
+      <td>.563</td>
+    </tr>
+    
+    
+    
+    
+    
+    <tr onmouseover="M_over(this)" onmouseout="M_out(this)" onclick="M_click(this)">
+      <td><div class="M">51</div></td>
+      <td><a href="./Pacific/M/f/51_stat.htm">山口航輝</a></td>
+      <td>右</td>
+      <td>.277</td>
+      <td>101</td>
+      <td>393</td>
+      <td>361</td>
+      <td>55</td>
+      <td>100</td>
+      <td>1</td>
+      <td>1.0</td>
+      <td>18</td>
+      <td>1</td>
+      <td>32</td>
+      <td>15-15-1</td>
+      <td>216</td>
+      <td>68</td>
+      <td>90</td>
+      <td>25</td>
+      <td>0</td>
+      <td>5</td>
+      <td>0</td>
+      <td>2</td>
+      <td>0</td>
+      <td>1</td>
+      <td>0.0</td>
+      <td>2</td>
+      <td>0</td>
+      <td>6</td>
+      <td>.329</td>
+      <td>.331</td>
+      <td>.598</td>
+      <td>.929</td>
+    </tr>
+    
+    <tr onmouseover="M_over(this)" onmouseout="M_out(this)" onclick="M_click(this)">
+      <td><div class="M">57</div></td>
+      <td><a href="./Pacific/M/f/57_stat.htm">小川龍成</a></td>
+      <td>左</td>
+      <td>.264</td>
+      <td>129</td>
+      <td>469</td>
+      <td>435</td>
+      <td>40</td>
+      <td>115</td>
+      <td>20</td>
+      <td>17.4</td>
+      <td>11</td>
+      <td>4</td>
+      <td>2</td>
+      <td>2-0-0</td>
+      <td>140</td>
+      <td>23</td>
+      <td>71</td>
+      <td>18</td>
+      <td>1</td>
+      <td>4</td>
+      <td>11</td>
+      <td>1</td>
+      <td>8</td>
+      <td>5</td>
+      <td>61.5</td>
+      <td>4</td>
+      <td>0</td>
+      <td>4</td>
+      <td>.302</td>
+      <td>.299</td>
+      <td>.322</td>
+      <td>.621</td>
+    </tr>
+    
+    
+    <tr onmouseover="M_over(this)" onmouseout="M_out(this)" onclick="M_click(this)">
+      <td><div class="M">65</div></td>
+      <td><a href="./Pacific/M/f/65_stat.htm">寺地隆成</a></td>
+      <td>左</td>
+      <td>.205</td>
+      <td>93</td>
+      <td>343</td>
+      <td>307</td>
+      <td>15</td>
+      <td>63</td>
+      <td>8</td>
+      <td>12.7</td>
+      <td>9</td>
+      <td>0</td>
+      <td>5</td>
+      <td>2-3-0</td>
+      <td>87</td>
+      <td>28</td>
+      <td>62</td>
+      <td>30</td>
+      <td>2</td>
+      <td>2</td>
+      <td>1</td>
+      <td>3</td>
+      <td>0</td>
+      <td>0</td>
+      <td>-</td>
+      <td>6</td>
+      <td>0</td>
+      <td>3</td>
+      <td>.197</td>
+      <td>.278</td>
+      <td>.283</td>
+      <td>.561</td>
+    </tr>
+    
+    <tr onmouseover="M_over(this)" onmouseout="M_out(this)" onclick="M_click(this)">
+      <td><div class="M">99</div></td>
+      <td><a href="./Pacific/M/f/99_stat.htm">ソト</a></td>
+      <td>右</td>
+      <td>.221</td>
+      <td>111</td>
+      <td>364</td>
+      <td>331</td>
+      <td>30</td>
+      <td>73</td>
+      <td>5</td>
+      <td>6.8</td>
+      <td>14</td>
+      <td>0</td>
+      <td>17</td>
+      <td>11-5-0</td>
+      <td>138</td>
+      <td>47</td>
+      <td>94</td>
+      <td>24</td>
+      <td>1</td>
+      <td>7</td>
+      <td>0</td>
+      <td>2</td>
+      <td>0</td>
+      <td>0</td>
+      <td>-</td>
+      <td>2</td>
+      <td>0</td>
+      <td>9</td>
+      <td>.209</td>
+      <td>.286</td>
+      <td>.417</td>
+      <td>.703</td>
+    </tr>
+    <tr class="Index2">
+      <th colspan="33">投手打撃成績</th>
+    </tr>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <tr class="Index">
+      <th width="25"><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=1&amp;dk=0">背番</a></th>
+      <th width="120">名前</th>
+      <th width="20">席</th>
+      <th width="40"><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=6&amp;dk=0">打率</a></th>
+      <th width="30"><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=7&amp;dk=0">試合</a></th>
+      <th width="30"><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=8&amp;dk=0">打席</a></th>
+      <th width="30"><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=9&amp;dk=0">打数</a></th>
+      <th width="30"><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=10&amp;dk=0">得点</a></th>
+      <th width="30"><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=11&amp;dk=0">安打</a></th>
+      <th width="30"><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=12&amp;dk=0">内安</a></th>
+      <th width="40"><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=13&amp;dk=0">内安率</a></th>
+      <th width="30"><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=14&amp;dk=0">２Ｂ</a></th>
+      <th width="30"><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=15&amp;dk=0">３Ｂ</a></th>
+      <th width="30"><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=16&amp;dk=0">本塁</a></th>
+      <th width="60">HR<br>勝敗</th>
+      <th width="30"><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=18&amp;dk=0">塁打</a></th>
+      <th width="30"><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=19&amp;dk=0">打点</a></th>
+      <th width="30"><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=20&amp;dk=0">三振</a></th>
+      <th width="30"><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=21&amp;dk=0">四球</a></th>
+      <th width="30"><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=22&amp;dk=0">敬遠</a></th>
+      <th width="30"><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=23&amp;dk=0">死球</a></th>
+      <th width="30"><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=24&amp;dk=0">犠打</a></th>
+      <th width="30"><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=25&amp;dk=0">犠飛</a></th>
+      <th width="30"><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=26&amp;dk=0">盗塁</a></th>
+      <th width="30"><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=27&amp;dk=0">盗塁死</a></th>
+      <th width="40">成功率</th>
+      <th width="30"><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=29&amp;dk=0">失策</a></th>
+      <th width="30"><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=30&amp;dk=0">捕逸</a></th>
+      <th width="30"><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=31&amp;dk=0">併殺打</a></th>
+      <th width="40"><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=32&amp;dk=0">得点圏</a></th>
+      <th width="40"><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=33&amp;dk=0">出塁率</a></th>
+      <th width="40"><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=34&amp;dk=0">長打率</a></th>
+      <th width="40"><a href="./php/stat_disp/stat_disp.php?y=0&amp;leg=1&amp;tm=M&amp;fp=0&amp;dn=35&amp;dk=0">OPS</a></th>
+    </tr>
+  </tbody></table></body></html>

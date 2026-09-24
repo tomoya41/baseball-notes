@@ -1,0 +1,59 @@
+name: Controlled NPB game completeness proof
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Dry run first, then ingest exactly the selected game"
+        type: choice
+        options: [dry-run, ingest]
+        default: dry-run
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: daily-npb-collector-and-pages
+  cancel-in-progress: false
+jobs:
+  proof:
+    if: github.event.repository.private == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Collect one game from nf3 and validate all participants without writing facts
+        if: inputs.mode == 'dry-run'
+        run: npm run collector:npb:game -- --fetch --dry-run --require-remote
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+      - name: Ingest exactly one validated game
+        if: inputs.mode == 'ingest'
+        run: npm run collector:npb:game -- --fetch --require-remote
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+      - name: Verify Turso repository query
+        if: inputs.mode == 'ingest'
+        run: npm run collector:npb:game -- --verify-only --require-remote
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+      - name: Idempotent re-run using captured source response
+        if: inputs.mode == 'ingest'
+        run: npm run collector:npb:game -- --offline-raw --require-remote
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+      - name: Verify repository counts after re-run
+        if: inputs.mode == 'ingest'
+        run: npm run collector:npb:game -- --verify-only --require-remote
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}

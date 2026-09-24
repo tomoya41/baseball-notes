@@ -4,6 +4,21 @@
 
 ## NPB実収集で検証した範囲
 
+### 第2弾：1試合限定の完了ゲート
+
+2026-09-23のロッテ対オリックス1試合では、両軍スタメンと交代参照、日付別投手使用ページを突合し、打者23/23、投手6/6のGame Factを検証した。下記は**この試合だけの実測Capability**であり、全NPBゲーム・Analysis UIの機能を開放しない。詳細は[npb-game-proof.md](npb-game-proof.md)。
+
+| 項目 | 実測 | 判定 |
+|---|---|---|
+| playerGameBatting、出場者・先発/交代・打順1–9 | 23人、交代出場5人をSource間照合 | **available for verified game** |
+| PA、BB/HBP、SH/SF | 打席トークンと四死合算列が全行で整合し、PAは両軍で相手BFと一致 | **available for verified game**。未対応打席結果はnull/partial |
+| 2B/3B | 当該試合は両軍とも0、トークンから0を検算。非ゼロ例は未検証 | **conditional**。非ゼロ実例のParser回帰が必要 |
+| playerGamePitching、outs、BF、投球数、先発/救援 | 6人、両軍各27 outs、BF/PA一致 | **available for verified game** |
+| 投手BB/HBP単独 | nf3の対象欄は「四死」合算のみ | **unavailable**。合算値だけ保存 |
+| appearance order / catcher | 対象Sourceで確定不能 | **unavailable** |
+
+以下の第1弾表は当時の限定範囲の記録であり、第2弾の実証後も全リーグ対応を意味しない。
+
 | 項目 | 2026-09-23 nf3 Parser結果 | 製品Capability |
 |---|---|---|
 | セ・パ順位、W/L/T、試合数、勝率、ゲーム差 | 各6球団、計12件を検証。首位`-`→内部0、1.5等を数値化 | **available**（当日Raw Captureを持つ日次Snapshotのみ） |

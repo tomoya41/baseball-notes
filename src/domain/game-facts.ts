@@ -15,6 +15,7 @@ export const playerGameBattingSchema = provenance.extend({
   doubles: nullableCount, triples: nullableCount, homeRuns: nullableCount,
   rbi: nullableCount, walks: nullableCount, strikeouts: nullableCount,
   hbp: nullableCount, stolenBases: nullableCount, caughtStealing: nullableCount,
+  sacrificeHits: nullableCount.optional(), sacrificeFlies: nullableCount.optional(),
   runs: nullableCount.optional(), starter: z.boolean().nullable().optional(), sourceUrl: z.url().optional(),
 }).superRefine((row, context) => {
   if (row.ab !== null && row.hits !== null && row.hits > row.ab)
@@ -28,12 +29,31 @@ export const playerGamePitchingSchema = provenance.extend({
   appearanceOrder: z.number().int().positive().nullable(),
   inningsPitchedOuts: nullableCount, battersFaced: nullableCount,
   hits: nullableCount, homeRuns: nullableCount, walks: nullableCount,
+  hitBatters: nullableCount.optional(), walksAndHitBatters: nullableCount.optional(),
   strikeouts: nullableCount, runs: nullableCount, earnedRuns: nullableCount,
   pitches: nullableCount, catcherId: id.nullable(),
   starter: z.boolean().nullable().optional(), decision: z.enum(["win","loss","hold","save","none"]).nullable().optional(),
   sourceUrl: z.url().optional(),
 });
 export type PlayerGamePitching = z.infer<typeof playerGamePitchingSchema>;
+
+export const gameCompletenessSchema = z.object({
+  gameId: id,
+  battingStatus: z.enum(["pending", "partial", "complete", "failed", "unverified"]),
+  pitchingStatus: z.enum(["pending", "partial", "complete", "failed", "unverified"]),
+  gameStatus: z.enum(["pending", "partial", "complete", "failed", "unverified"]),
+  expectedBatters: z.number().int().nonnegative(),
+  collectedBatters: z.number().int().nonnegative(),
+  mappedBatters: z.number().int().nonnegative(),
+  expectedPitchers: z.number().int().nonnegative(),
+  collectedPitchers: z.number().int().nonnegative(),
+  mappedPitchers: z.number().int().nonnegative(),
+  checks: z.record(z.string(), z.boolean()),
+  issues: z.array(z.string()),
+  sourceKey: id,
+  verifiedAt: timestampSchema,
+});
+export type GameCompleteness = z.infer<typeof gameCompletenessSchema>;
 
 export const pitcherAppearanceSchema = provenance.extend({
   id, gameId: id, pitcherId: id,
