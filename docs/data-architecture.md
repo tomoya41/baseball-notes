@@ -2,7 +2,7 @@
 
 NPB実データ第1弾は既存のSQLite/libSQL・Migration・Source Registry・Raw Retentionを再利用して追加した。`migrations/002_npb_daily.sql`はsource ID mapping、日程/結果、Stage別完了状態を追加し、既存の選手試合Factテーブルを必要な列だけ拡張した。外部nf3 HTMLは`src/data/npb-nf3.ts`で列とページfingerprintを検証してからDomainへ正規化する。`src/data/npb-repository.ts`がtransactional batch upsert、履歴照会、試合/選手紐付けを担い、`src/data/npb-collector.ts`が逐次取得とSource/Stage単位の失敗分離を担う。Rawは既存ローカルArchiveの`.data/raw/nf3/<date>/<sha>.html.gz`に14日置き、manifestで期限管理する。概要は[NPB収集記録](npb-ingestion.md)。
 
-次タスクでTurso FreeのRemote DBとGitHub Pagesの公開Payload配信を追加した。Object Storageは採用せず、Remote Rawはrunner内の一時保存に限る。詳細は[リモート運用](npb-remote-delivery.md)。GitHub Actionsの予定枠はJST 03:37のままで、`NPB_COLLECTOR_ENABLED=true`まで無効。今季選手全員の収集はアクセス負荷とID検証の問題から未実装で、選手Stageは常にpartialと記録する。
+次タスクでTurso FreeのRemote DBとGitHub Pagesの公開Payload配信を追加した。Object Storageは採用せず、Remote Rawはrunner内の一時保存に限る。詳細は[リモート運用](npb-remote-delivery.md)。GitHub Actionsの予定枠はJST 03:37で、2026-09-24に`NPB_COLLECTOR_ENABLED=true`を設定した。初回の自動schedule実行結果は未確認。今季選手全員の収集はアクセス負荷とID検証の問題から未実装で、選手Stageは常にpartialと記録する。
 
 ## 現在の到達点
 
@@ -32,6 +32,6 @@ Retentionは設定値`src/data/retention.ts`に置く。Fact、順位履歴、�
 
 `standings_daily`は日付＋league＋地区＋球団を主キーにし、履歴を上書きせず日付ごとに保存する。順位は地区内勝率順の**再構築値**で、MLB公式の同率時タイブレーク順位ではない。ゲーム差は`(首位勝数−当該勝数＋当該敗数−首位敗数)/2`。中断試合は完了日に反映する。日次収集は前日終了分だけを対象とし、将来の許諾済みProviderでも同じFact→Snapshot処理を使う。
 
-`.github/workflows/daily-collector.yml`はUTC 18:37（JST 03:37）の1日1回予定。公開repoかつ`NPB_COLLECTOR_ENABLED=true`の時のみNPB限定Collectorを開始する。手動dry-run、Remote ingest/replay、Pagesの公開JSON読出しを確認してから有効化する。オフマシンFact backupは未実装の運用リスクとして監視する。従来の`collector:daily`はRetrosheet履歴用のskipped経路として残す。GitHubは[公開repoの標準runnerを無料](https://docs.github.com/en/actions/concepts/billing-and-usage)とする一方、[scheduleの遅延/不実行や60日非アクティブ停止](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows)があり、厳密な時刻保証はない。private repoのrunnerは既定で使わない。
+`.github/workflows/daily-collector.yml`はUTC 18:37（JST 03:37）の1日1回予定。公開repoかつ`NPB_COLLECTOR_ENABLED=true`の時のみNPB限定Collectorを開始する。手動dry-run、Remote ingest/replay、Pagesの公開JSON読出しを確認して2026-09-24に有効化した。初回の自動schedule実行結果は未確認。オフマシンFact backupは未実装の運用リスクとして監視する。従来の`collector:daily`はRetrosheet履歴用のskipped経路として残す。GitHubは[公開repoの標準runnerを無料](https://docs.github.com/en/actions/concepts/billing-and-usage)とする一方、[scheduleの遅延/不実行や60日非アクティブ停止](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows)があり、厳密な時刻保証はない。private repoのrunnerは既定で使わない。
 
 DBを替える際はMigrationと`StandingsRepository`を保持してSQL adapterを交換する。GameFactの出典/一意キーを維持して再投入し、SnapshotとPayloadを再生成する。古いDBからの退避はFactのJSON.gz exportとMigrationを一緒に保管する方針だが、現時点のlocal archiveは自動オフサイトbackupではない。オフマシンのFact backup/リストア演習は今後の運用課題。

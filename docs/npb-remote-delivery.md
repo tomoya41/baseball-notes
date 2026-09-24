@@ -30,9 +30,11 @@ Local開発は引き続き`file:.data/baseball.db`。Collectorは`TURSO_DATABASE
 
 - [dry-run #1](https://github.com/tomoya41/baseball-notes/actions/runs/35940905282)：Remote `SELECT 1`とnf3の17ページを検証。順位12、試合25、打撃8、投手3、エラー0。DBへの収集書込なし。
 - [ingest #2](https://github.com/tomoya41/baseball-notes/actions/runs/35959237321)：Migration 001/002をRemote Tursoに適用。順位12、試合25、打撃Fact 8、投手Fact 3。`standings`/`games`はcomplete、選手ログ2種は意図どおりpartial。同じRawの再投入後も件数が完全一致し、重複なし。
+- [publish #3](https://github.com/tomoya41/baseball-notes/actions/runs/35959839104)：nf3へ再アクセスせずRemote Repositoryを再検証し、WebとJSONを一括再公開。12球団と修正済みの`nf3`出典を公開JSONで確認した。
 - 同Runで検証済みPayloadとWeb buildを単一artifactとして[GitHub Pages](https://tomoya41.github.io/baseball-notes/#/NPB/home)へデプロイ。公開JSONは2026-09-23終了時点、12球団（セ・パ各6）、首位ゲーム差0。ブラウザのNPB HomeがこのJSONを読み、勝敗・ゲーム差を表示した。PagesのJSONレスポンスは`Access-Control-Allow-Origin: *`で、Android WebViewの公開URL読出しに必要なCORSヘッダを確認した。APK実機試験は未実施。
 - Pagesの`github-pages` environmentは`main`のみデプロイ許可。Repository secretsは`TURSO_DATABASE_URL`/`TURSO_AUTH_TOKEN`の2つ。トークンはDB限定・read/writeで、Gitとクライアント配布物には含めない。
 - UI・出典表記のみの更新は`workflow_dispatch`の`publish`を選ぶ。最新Remote SnapshotとStageを再検証してPayload/Webを再公開し、nf3へはアクセスしない。指定日が最新Snapshotと違えば停止する。
+- 2026-09-24にRepository variable`NPB_COLLECTOR_ENABLED=true`を設定し、JST 03:37の日次scheduleを有効化した。初回の自動schedule実行結果はまだ確認していない。
 
 ## Payload、障害、鮮度
 
