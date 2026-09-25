@@ -63,5 +63,5 @@ try {
       projectionAndValidation: Math.round(timings.projectionAndValidationMs),
       serialization: Math.round(serializationMs), total: Math.round(performance.now() - started) },
     bytes, output: "local ignored diagnostic only", protectedCountsUnchanged: true,
-    before, after }, null, 2)}\n`);
+    before, after })}\n`);
 } finally { source.close(); }
