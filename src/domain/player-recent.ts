@@ -13,7 +13,7 @@ const periodStats = z.object({ from: z.iso.date(), to: z.iso.date(), playerId: z
 
 export const playerRecentResponseSchema = z.object({
   player: z.object({ id: z.string().uuid(), name: z.string().min(1), teamId: z.string().nullable(), teamName: z.string().nullable() }),
-  asOfDate: z.iso.date(), period: z.enum(["7d", "14d", "30d"]),
+  asOfDate: z.iso.date(), period: z.enum(["7d", "14d", "30d", "currentMonth", "season"]),
   batting: periodStats.nullable(), pitching: periodStats.nullable(),
 });
 export type PlayerRecentResponse = z.infer<typeof playerRecentResponseSchema>;

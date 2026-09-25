@@ -191,6 +191,33 @@ describe("shared calendar period resolver and aggregation", () => {
     expect(resolvePlayerPeriod({ ...query, asOfDate: "2027-01-03", period: "30d" }).from).toBe("2026-12-05");
   });
 
+  it("resolves the current JST calendar month without future dates", () => {
+    expect(resolvePlayerPeriod({ ...query, period: "currentMonth" })).toMatchObject({ from: "2026-09-01", to: "2026-09-24" });
+    expect(resolvePlayerPeriod({ ...query, asOfDate: "2026-09-01", period: "currentMonth" }).from).toBe("2026-09-01");
+    expect(resolvePlayerPeriod({ ...query, asOfDate: "2027-01-03", period: "currentMonth" }).from).toBe("2027-01-01");
+    expect(resolvePlayerPeriod({ ...query, asOfDate: "2028-02-29", period: "currentMonth" }).to).toBe("2028-02-29");
+  });
+
+  it("uses a Game-derived season boundary and does not claim opening-day proof", async () => {
+    const boundary = { season: 2026, firstRecordedGameDate: "2026-09-20", openingDateVerified: false };
+    expect(resolvePlayerPeriod({ ...query, period: "season" }, boundary)).toMatchObject({
+      from: "2026-09-20", to: "2026-09-24" });
+    expect(() => resolvePlayerPeriod({ ...query, period: "season" })).toThrow();
+    const reader = { findBattingByPlayer: vi.fn(async () => [batting("g1")]),
+      findPitchingByPlayer: vi.fn(async () => [pitching("g1")]),
+      findSeasonBoundary: vi.fn(async () => boundary) };
+    const completeCoverage = evaluatePeriodCoverage(
+      resolvePlayerPeriod({ ...query, period: "season" }, boundary),
+      periodDates(resolvePlayerPeriod({ ...query, period: "season" }, boundary)).map((date) => completeDay(date, 0)), []);
+    const service = new PlayerPeriodService(reader, () => new Date(at), { findPeriodCoverage: async () => completeCoverage });
+    const result = await service.batting({ ...query, period: "season" });
+    expect(result).toMatchObject({ from: "2026-09-20", coverage: { status: "unknown" }, metrics: { OPS: { status: "complete" } } });
+    expect(reader.findBattingByPlayer).toHaveBeenCalledWith("p", "2026-09-20", "2026-09-24", 2026);
+    const pitcher = await service.pitching({ ...query, period: "season" });
+    expect(pitcher.coverage.status).toBe("unknown");
+    expect(pitcher.metrics.WHIP.status).toBe("unavailable");
+  });
+
   it("uses the same sum-then-rate engine for each period and incorporates older facts", async () => {
     const dates = new Map([["new", "2026-09-24"], ["middle", "2026-09-12"], ["old", "2026-08-27"]]);
     const reader = {
@@ -303,6 +330,9 @@ describe("NPB SQL fact reader integration", () => {
     expect((await service.batting(query)).metrics.H.value).toBe(3);
     expect((await service.pitching(query)).metrics.outsRecorded.value).toBe(3);
     expect((await service.batting(query)).games).toBe(3);
+    expect(await new NpbRepository(db).findSeasonBoundary("2026-09-24")).toEqual({
+      season: 2026, firstRecordedGameDate: "2026-09-17", openingDateVerified: false });
+    expect((await service.batting({ ...query, period: "season" })).games).toBe(4);
     expect((await db.execute("SELECT COUNT(*) AS n FROM player_game_batting")).rows[0]?.n).toBe(countBefore.rows[0]?.n);
   });
 

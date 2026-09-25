@@ -19,8 +19,9 @@ const pitching: PlayerGamePitching = { ...common, id: "pitch-1", role: "reliever
 const query = { playerId: common.playerId, asOfDate: "2026-09-24", period: "7d" as const };
 const player = { id: common.playerId, name: "中島大輔", teamId: "team", teamName: "楽天" };
 const base = { player, asOfDate: query.asOfDate, period: query.period };
-const render = (payload: PlayerRecentResponse | null, state: "loading" | "ready" | "missing" | "error" = "ready") =>
-  renderToStaticMarkup(<PlayerRecentView period="7d" onPeriodChange={() => undefined} payload={payload} state={state} />);
+const render = (payload: PlayerRecentResponse | null, state: "loading" | "ready" | "missing" | "error" = "ready",
+  period: PlayerRecentResponse["period"] = "7d") =>
+  renderToStaticMarkup(<PlayerRecentView period={period} onPeriodChange={() => undefined} payload={payload} state={state} />);
 
 describe("Player Recent Form", () => {
   it("shows batter rates, period selector, freshness and unknown coverage without WHIP", () => {
@@ -30,10 +31,24 @@ describe("Player Recent Form", () => {
     expect(html).toContain("直近7日");
     expect(html).toContain("直近14日");
     expect(html).toContain("直近30日");
+    expect(html).toContain("今月の成績");
+    expect(html).toContain("シーズンの成績");
     expect(html).toContain("9月24日終了時点");
     expect(html).toContain("収集済みデータから算出");
     expect(html).toContain(".500");
     expect(html).not.toContain("WHIP");
+  });
+  it("offers all five accessible periods and keeps season values visible with unknown coverage", () => {
+    const result = aggregateBatting(query, [batting]);
+    result.coverage.status = "unknown";
+    const payload: PlayerRecentResponse = { ...base, period: "season", batting: result, pitching: null };
+    const html = render(payload, "ready", "season");
+    for (const label of ["直近7日", "直近14日", "直近30日", "今月の成績", "シーズンの成績"])
+      expect(html).toContain(`aria-label="${label}"`);
+    expect(html).toContain("aria-label=\"シーズンの成績\" aria-pressed=\"true\"");
+    expect(html).toContain("収集済みデータから算出");
+    expect(html).toContain(".500");
+    expect(render({ ...payload, period: "currentMonth" }, "ready", "currentMonth")).toContain("今月");
   });
   it("shows pitcher fractional IP, ERA and K/9; excludes WHIP even if computed", () => {
     const html = render({ ...base, batting: null, pitching: aggregatePitching(query, [pitching]) });

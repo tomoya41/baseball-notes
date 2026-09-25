@@ -1,10 +1,10 @@
 # NPB Player「最近の成績」実データ接続
 
-対象はcanonical Player IDのNPB選手ページ内「最近の成績」のみ。7日・14日・30日は選択基準日を含むJST暦日で、既存の`PlayerPeriodService`が保存済みGame Factsから読み取り時に再計算する。Career、Season、Analysis、HOT等は接続しない。実選手の一覧検索は今回の対象外なので、検証選手はcanonical URLで開く。
+対象はcanonical Player IDのNPB選手ページ内「最近の成績」のみ。7日・14日・30日は選択基準日を含むJST暦日、「今月」はその月の1日から基準日、「シーズン」は保存済みの対象seasonの最初の終了Gameから基準日で、同じ`PlayerPeriodService`がGame Factsから読み取り時に再計算する。シーズン開幕日の証明がない間はCoverageをcompleteにせず、表示範囲が記録済みの範囲であることを注記する。Career、完全なSeason totals、Analysis、HOT等は接続しない。実選手の一覧検索は今回の対象外なので、検証選手はcanonical URLで開く。
 
 `src/server-recent.ts`の公開Read-only APIはVercel Free上で動作し、Tursoの読み取り専用トークンをサーバー環境変数`TURSO_DATABASE_URL`と`TURSO_AUTH_TOKEN`から取得する。クライアント・GitHub Pages・AndroidバンドルにDBトークンを入れない。APIはPlayer IDと期間だけを受け、Repository、Period Service、Coverage Repositoryの結果を検証済みJSONで返す。Vercel側の最新Standings Snapshotの日付を完了済み基準日とする。Sourceへはアクセスせず、FactやDerivedをDBへ書かない。Vercel APIは公開読み取り口なので、将来大量アクセスが問題になればレート制限または生成Payloadを検討する。
 
-Web/AndroidのComposition Rootは公開API URLを`VITE_NPB_PLAYER_API_BASE_URL`で上書きでき、既定値は`https://baseball-notes-recent.vercel.app/`。これは公開URLでありSecretではない。通信失敗や不正JSONではRecentセクションにエラーを出し、架空データへ切り替えない。期間変更中はRecentのみSkeletonにし、同一画面で取得済みの期間は再利用する。Factなしは出場なしとして表示し、0 PA出場はG=1の実データとして扱う。
+Web/AndroidのComposition Rootは公開API URLを`VITE_NPB_PLAYER_API_BASE_URL`で上書きでき、既定値は`https://baseball-notes-recent.vercel.app/`。これは公開URLでありSecretではない。通信失敗や不正JSONではRecentセクションにエラーを出し、架空データへ切り替えない。期間変更中はRecentのみSkeletonにし、同一画面で取得済みの期間は再利用する。5期間の切替はスマートフォン幅でも押しやすい3列＋2列の2段配置とし、初期選択は7日のまま。Factなしは出場なしとして表示し、0 PA出場はG=1の実データとして扱う。
 
 主要指標を先に、詳細を開閉で表示する。Metric Statusがunavailableなら`—`。Period Coverageがcompleteなら注記なし、unknownなら「収集済みデータから算出」、partialなら「一部データ未収集」、unavailableなら「収集状況を確認できません」と表示する。Coverageは率の数学的完全性と別。NPB投手のBB/HBP分離が未確認なのでWHIPは表示しない。基準日と実際のfrom/toはセクション単位で表示する。
 

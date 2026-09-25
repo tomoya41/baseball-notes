@@ -1,13 +1,14 @@
 import type { PlayerGameBatting, PlayerGamePitching } from "../domain/game-facts";
 import { aggregateBatting, aggregatePitching, resolvePlayerPeriod, playerPeriodQuerySchema } from "../domain/player-period";
-import type { BattingPeriodResult, PitchingPeriodResult, PlayerPeriodQuery } from "../domain/player-period";
+import type { BattingPeriodResult, PitchingPeriodResult, PlayerPeriodQuery, SeasonBoundary } from "../domain/player-period";
 import { unavailablePeriodCoverage, type PeriodCoverage } from "../domain/period-coverage";
 import type { PeriodWindow } from "../domain/player-period";
 
 // The existing NpbRepository satisfies this read-only port. No collector or DB write is involved.
 export interface PlayerPeriodFactReader {
-  findBattingByPlayer(playerId: string, fromDate: string, toDate: string): Promise<PlayerGameBatting[]>;
-  findPitchingByPlayer(playerId: string, fromDate: string, toDate: string): Promise<PlayerGamePitching[]>;
+  findBattingByPlayer(playerId: string, fromDate: string, toDate: string, season?: number): Promise<PlayerGameBatting[]>;
+  findPitchingByPlayer(playerId: string, fromDate: string, toDate: string, season?: number): Promise<PlayerGamePitching[]>;
+  findSeasonBoundary?(asOfDate: string): Promise<SeasonBoundary | null>;
 }
 
 export interface PlayerPeriodCoverageReader {
@@ -24,21 +25,36 @@ export class PlayerPeriodService {
     catch { return unavailablePeriodCoverage(window); }
   }
 
+  private async window(query: PlayerPeriodQuery): Promise<{ window: PeriodWindow; season: SeasonBoundary | null }> {
+    const season = query.period === "season" ? await this.facts.findSeasonBoundary?.(query.asOfDate) ?? null : null;
+    return { window: resolvePlayerPeriod(query, season ?? undefined), season };
+  }
+
+  private async periodCoverage(window: PeriodWindow, season: SeasonBoundary | null): Promise<PeriodCoverage> {
+    const coverage = await this.coverage(window);
+    // The first stored Game is only a lower bound, not proof of the actual opening day.
+    if (season && !season.openingDateVerified && coverage.status === "complete")
+      return { ...coverage, status: "unknown" };
+    return coverage;
+  }
+
   async batting(input: PlayerPeriodQuery): Promise<BattingPeriodResult> {
     const query = playerPeriodQuerySchema.parse(input);
-    const window = resolvePlayerPeriod(query);
+    const { window, season } = await this.window(query);
     const [facts, coverage] = await Promise.all([
-      this.facts.findBattingByPlayer(query.playerId, window.from, window.to), this.coverage(window),
+      season ? this.facts.findBattingByPlayer(query.playerId, window.from, window.to, season.season)
+        : this.facts.findBattingByPlayer(query.playerId, window.from, window.to), this.periodCoverage(window, season),
     ]);
-    return aggregateBatting(query, facts, this.clock(), coverage);
+    return aggregateBatting(query, facts, this.clock(), coverage, window);
   }
 
   async pitching(input: PlayerPeriodQuery): Promise<PitchingPeriodResult> {
     const query = playerPeriodQuerySchema.parse(input);
-    const window = resolvePlayerPeriod(query);
+    const { window, season } = await this.window(query);
     const [facts, coverage] = await Promise.all([
-      this.facts.findPitchingByPlayer(query.playerId, window.from, window.to), this.coverage(window),
+      season ? this.facts.findPitchingByPlayer(query.playerId, window.from, window.to, season.season)
+        : this.facts.findPitchingByPlayer(query.playerId, window.from, window.to), this.periodCoverage(window, season),
     ]);
-    return aggregatePitching(query, facts, this.clock(), coverage);
+    return aggregatePitching(query, facts, this.clock(), coverage, window);
   }
 }

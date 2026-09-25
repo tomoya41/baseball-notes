@@ -3,6 +3,7 @@ import type { InStatement } from "@libsql/client";
 import type { DataClient } from "./database";
 import type { Standing } from "../domain/standings";
 import type { GameCompleteness, PlayerGameBatting, PlayerGamePitching } from "../domain/game-facts";
+import type { SeasonBoundary } from "../domain/player-period";
 import { gameCompletenessSchema, playerGameBattingSchema, playerGamePitchingSchema } from "../domain/game-facts";
 import { teamSchema, type Team } from "../domain/models";
 import { normalizeNpbName, npbTeams, type NpbGame, type NpbLogRow } from "./npb-nf3";
@@ -255,10 +256,11 @@ export class NpbRepository {
     return { inserted, updated };
   }
 
-  async findBattingByPlayer(playerId: string, fromDate: string, toDate: string): Promise<PlayerGameBatting[]> {
+  async findBattingByPlayer(playerId: string, fromDate: string, toDate: string, season?: number): Promise<PlayerGameBatting[]> {
     const result = await this.client.execute({ sql: `SELECT b.*,g.game_date FROM player_game_batting b
-      JOIN npb_games g ON g.game_id=b.game_id WHERE b.player_id=? AND g.game_date BETWEEN ? AND ? ORDER BY g.game_date`,
-      args: [playerId,fromDate,toDate] });
+      JOIN npb_games g ON g.game_id=b.game_id WHERE b.player_id=? AND g.game_date BETWEEN ? AND ?
+      AND (? IS NULL OR g.season=?) ORDER BY g.game_date`,
+      args: [playerId,fromDate,toDate,season ?? null,season ?? null] });
     return result.rows.map((row) => playerGameBattingSchema.parse({ gameId: row.game_id, playerId: row.player_id,
       teamId: row.team_id, opponentTeamId: row.opponent_team_id, battingOrder: row.batting_order,
       pa: row.pa, ab: row.ab, hits: row.hits, doubles: row.doubles, triples: row.triples,
@@ -270,10 +272,21 @@ export class NpbRepository {
       collectedAt: row.collected_at }));
   }
 
-  async findPitchingByPlayer(playerId: string, fromDate: string, toDate: string): Promise<PlayerGamePitching[]> {
+  async findSeasonBoundary(asOfDate: string): Promise<SeasonBoundary | null> {
+    const result = await this.client.execute({ sql: `SELECT season,MIN(game_date) AS first_game_date FROM npb_games
+      WHERE season=(SELECT season FROM npb_games WHERE game_date<=? AND status='final' ORDER BY game_date DESC LIMIT 1)
+      AND game_date<=? AND status='final' GROUP BY season`, args: [asOfDate,asOfDate] });
+    const row = result.rows[0];
+    if (!row) return null;
+    // npb_games has season but no season-type or verified opening-date metadata yet.
+    return { season: Number(row.season), firstRecordedGameDate: String(row.first_game_date), openingDateVerified: false };
+  }
+
+  async findPitchingByPlayer(playerId: string, fromDate: string, toDate: string, season?: number): Promise<PlayerGamePitching[]> {
     const result = await this.client.execute({ sql: `SELECT p.*,g.game_date FROM player_game_pitching p
-      JOIN npb_games g ON g.game_id=p.game_id WHERE p.player_id=? AND g.game_date BETWEEN ? AND ? ORDER BY g.game_date`,
-      args: [playerId,fromDate,toDate] });
+      JOIN npb_games g ON g.game_id=p.game_id WHERE p.player_id=? AND g.game_date BETWEEN ? AND ?
+      AND (? IS NULL OR g.season=?) ORDER BY g.game_date`,
+      args: [playerId,fromDate,toDate,season ?? null,season ?? null] });
     return result.rows.map((row) => playerGamePitchingSchema.parse({ id: row.fact_id, gameId: row.game_id,
       playerId: row.player_id, teamId: row.team_id, opponentTeamId: row.opponent_team_id, role: row.role,
       appearanceOrder: row.appearance_order, inningsPitchedOuts: row.ip_outs, battersFaced: row.batters_faced,

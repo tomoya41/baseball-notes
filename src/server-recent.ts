@@ -6,7 +6,7 @@ import { PlayerPeriodService } from "./application/player-period";
 import { getPlayerRecent } from "./application/player-recent";
 import { playerRecentResponseSchema } from "./domain/player-recent";
 
-const querySchema = z.object({ playerId: z.string().uuid(), period: z.enum(["7d", "14d", "30d"]) });
+const querySchema = z.object({ playerId: z.string().uuid(), period: z.enum(["7d", "14d", "30d", "currentMonth", "season"]) });
 const headers = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET, OPTIONS",
   "Access-Control-Allow-Headers": "Accept", "Content-Type": "application/json; charset=utf-8",
   "Cache-Control": "public, s-maxage=1800, stale-while-revalidate=300" };

@@ -6,7 +6,7 @@ import { unavailablePeriodCoverage, type PeriodCoverage } from "./period-coverag
 export const playerPeriodQuerySchema = z.strictObject({
   playerId: z.string().min(1),
   asOfDate: z.iso.date(),
-  period: z.enum(["7d", "14d", "30d"]),
+  period: z.enum(["7d", "14d", "30d", "currentMonth", "season"]),
 });
 export type PlayerPeriodQuery = z.infer<typeof playerPeriodQuerySchema>;
 export type PeriodWindow = { from: string; to: string; timeZone: "Asia/Tokyo" };
@@ -18,9 +18,17 @@ export type AggregateMetric = {
   factCount: number;
 };
 
-const periodDays: Record<PlayerPeriodQuery["period"], number> = { "7d": 7, "14d": 14, "30d": 30 };
-export function resolvePlayerPeriod(input: PlayerPeriodQuery): PeriodWindow {
+export type SeasonBoundary = { season: number; firstRecordedGameDate: string; openingDateVerified: boolean };
+const periodDays = { "7d": 7, "14d": 14, "30d": 30 } as const;
+export function resolvePlayerPeriod(input: PlayerPeriodQuery, season?: SeasonBoundary): PeriodWindow {
   const query = playerPeriodQuerySchema.parse(input);
+  if (query.period === "currentMonth")
+    return { from: `${query.asOfDate.slice(0, 7)}-01`, to: query.asOfDate, timeZone: "Asia/Tokyo" };
+  if (query.period === "season") {
+    if (!season || season.firstRecordedGameDate > query.asOfDate)
+      throw new Error("Season Game metadata is unavailable for the requested date");
+    return { from: season.firstRecordedGameDate, to: query.asOfDate, timeZone: "Asia/Tokyo" };
+  }
   const day = new Date(`${query.asOfDate}T00:00:00Z`);
   day.setUTCDate(day.getUTCDate() - periodDays[query.period] + 1);
   return { from: day.toISOString().slice(0, 10), to: query.asOfDate, timeZone: "Asia/Tokyo" };
@@ -69,8 +77,8 @@ export type BattingMetric = keyof typeof battingFields | "G" | "AVG" | "OBP" | "
 export type BattingPeriodResult = PeriodResult<Record<BattingMetric, AggregateMetric>>;
 
 export function aggregateBatting(query: PlayerPeriodQuery, facts: readonly PlayerGameBatting[], now = new Date(),
-  coverage?: PeriodCoverage): BattingPeriodResult {
-  const window = resolvePlayerPeriod(query);
+  coverage?: PeriodCoverage, resolvedWindow?: PeriodWindow): BattingPeriodResult {
+  const window = resolvedWindow ?? resolvePlayerPeriod(query);
   const rows = facts.filter((fact) => fact.playerId === query.playerId);
   const counts = {} as Record<keyof typeof battingFields, AggregateMetric>;
   for (const [name, field] of Object.entries(battingFields) as [keyof typeof battingFields, typeof battingFields[keyof typeof battingFields]][])
@@ -98,8 +106,8 @@ export type PitchingMetric = keyof typeof pitchingFields | "G" | "GS" | "appeara
 export type PitchingPeriodResult = PeriodResult<Record<PitchingMetric, AggregateMetric>>;
 
 export function aggregatePitching(query: PlayerPeriodQuery, facts: readonly PlayerGamePitching[], now = new Date(),
-  coverage?: PeriodCoverage): PitchingPeriodResult {
-  const window = resolvePlayerPeriod(query);
+  coverage?: PeriodCoverage, resolvedWindow?: PeriodWindow): PitchingPeriodResult {
+  const window = resolvedWindow ?? resolvePlayerPeriod(query);
   const rows = facts.filter((fact) => fact.playerId === query.playerId);
   const counts = {} as Record<keyof typeof pitchingFields, AggregateMetric>;
   for (const [name, field] of Object.entries(pitchingFields) as [keyof typeof pitchingFields, typeof pitchingFields[keyof typeof pitchingFields]][])

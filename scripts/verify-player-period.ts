@@ -5,7 +5,7 @@ import { PlayerPeriodService } from "../src/application/player-period";
 import { resolvePlayerPeriod } from "../src/domain/player-period";
 
 const asOfDate = process.argv.find((arg) => arg.startsWith("--date="))?.slice(7) ?? "2026-09-24";
-const periods = ["7d", "14d", "30d"] as const;
+const periods = ["7d", "14d", "30d", "currentMonth", "season"] as const;
 const window = resolvePlayerPeriod({ playerId: "selection", asOfDate, period: "30d" });
 const url = process.env.TURSO_DATABASE_URL ?? "file:.data/baseball.db";
 const client = openDataClient(url, process.env.TURSO_AUTH_TOKEN);
