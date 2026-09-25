@@ -1,0 +1,28 @@
+name: NPB published data freshness
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  check:
+    if: github.event.repository.private == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Check published JSON and Turso ingestion metadata
+        run: npm run monitor:npb:freshness -- --require-healthy
+        env:
+          NPB_FRESHNESS_DEADLINE_HOUR_JST: ${{ vars.NPB_FRESHNESS_DEADLINE_HOUR_JST || '12' }}
+          NPB_FRESHNESS_PAYLOAD_URL: https://tomoya41.github.io/baseball-notes/data/standings/npb/latest.json
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
