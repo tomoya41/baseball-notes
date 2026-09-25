@@ -59,6 +59,6 @@ Turso dashboardでstorage、月間rows read/write、Overages設定を週次確�
 
 2026-09-25にPortable JSONL.gz + schema/manifest Exportと、新規SQLiteへのRestore drillを[手動Action](https://github.com/tomoya41/baseball-notes/actions/runs/36068698789)で実証した。Repository読戻しまでPASS。運用手順と件数は[第5弾記録](npb-backup-day-proof.md)。上記の残課題は「**持続的な非公開オフプロバイダー保管と自動実行**」に縮小した。Runner内Exportは終了時に消え、永続Backupではない。
 
-第6弾の前日全試合Factは[日次運用手順](npb-day-operations.md)に分離した。従来のstandings JSON配信は変えず、Player Game FactをPagesへ公開しない。公開リポジトリのActions Artifactは読取可能なので、短期Artifactには暗号化済みExportのみを配置する。定刻Workflowの全試合化はmanual検証後のGateを通過するまで行わない。
+第6弾の前日全試合Factは[日次運用手順](npb-day-operations.md)に分離した。従来のstandings JSON配信は変えず、Player Game FactをPagesへ公開しない。公開リポジトリのActions Artifactは読取可能なので、短期Artifactには暗号化済みExportのみを配置する。manual dry-run、Turso実投入・再投入、Backup、Pages公開のGateを通過し、2026-09-25に既存定刻Workflowの`NPB_DAY_FACTS_ENABLED`を有効化した。統合後のmanual runは成功済み。次回scheduled runでの最終運用確認は残る。
 - nf3公開再配布の利用条件・継続性。Source Registryを無効化すればCollectorを停止できる。ソースが更新されない日に当日分として古い順位を記録する可能性は、提供元更新日時がないため監視で補う。
 - Androidの公開URL・CORSは確認したが、署名付きAPKの実機通信は未試験。必要なら別のAndroid検証タスクで行う。

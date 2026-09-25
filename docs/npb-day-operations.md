@@ -18,7 +18,7 @@
 3. 同Actionを`ingest`でdispatch。Tursoの重要Table件数を保存前・保存後に比較し、Game単位commit、Repository readback、Export→Scratch Restore、暗号化Artifactの順で実施。暗号化鍵はGitHub Actions Secret `NPB_BACKUP_ENCRYPTION_KEY`（32 byteをbase64化した値）。DB秘密情報と同様、Git/ログへ置かない。
 4. 同じ`ingest` Action内で保存済みRawを再利用して同日再投入する。Repositoryの1回目・2回目のJSONを照合し、件数増殖がないことを確認する。Run全体を再dispatchする必要がある場合も同じ対象日を指定する。
 5. 必要なら既存`Daily NPB collector and Pages delivery`の`publish` manual modeで**最新日付**のPayloadを再公開し、effectiveDateを確認。過去日のGame FactをPagesへ公開しない。
-6. 上記が通ってから、既存03:37 JST日次WorkflowへDay Factsを統合する。失敗時は`NPB_NF3_ENABLED=false`でSource取得を止め、対象日をmanual repairする。Game単位の既存controlled Collectorも残す。
+6. 上記を確認して2026-09-25に`NPB_DAY_FACTS_ENABLED=true`を設定し、既存03:37 JST日次Workflowへ統合した。停止時はRepository variable `NPB_DAY_FACTS_ENABLED=false`でDay Factsだけを無効化できる。nf3全体を止める必要がある場合は`NPB_NF3_ENABLED=false`を使い、対象日をmanual repairする。Game単位の既存controlled Collectorも残す。
 
 public repositoryのActions Artifactはread accessのある人がダウンロードできるため、平文Backupはアップロードしない。ArtifactはAES-256-GCMで暗号化した`*.enc`のみ、retention 7日。これは長期・非公開のオフプロバイダー保管先ではない。復元時は同じ鍵で`npx tsx scripts/crypt-npb-backup.ts decrypt <encrypted> <archive.tar.gz>`、tar展開後に`npm run backup:npb:restore -- --from=<export-dir> --to=<empty-db>`を行う。暗号化鍵の紛失時はArtifactを復号できない。鍵の私有保管と永続Backup先は別タスク。
 
@@ -28,6 +28,10 @@ Backup Exportだけ失敗してもGame FactはRollbackしない。`npb_day_runs.
 
 第6弾の[GitHub Actions manual dry-run #1](https://github.com/tomoya41/baseball-notes/actions/runs/36073742099)は2026-09-23をRemote Repositoryから列挙し、6 final/6 complete、打者185/185、投手65/65、mapping候補78、HTTP 286、unique page 286、retry 0、処理218.521秒でPASS。Fact書込なし。Local Raw再利用dry-runも6 complete、HTTP 96、retry 0、73.438秒。これらは同じDateのデータ品質確認であり、Remote実投入の証拠ではない。
 Migration 004適用後のLocal Portable Backup/Scratch Restore drillもschema v4、圧縮合計180,160 byteでPASS。
+
+同日の[manual real ingestion](https://github.com/tomoya41/baseball-notes/actions/runs/36074811850)は6 final/6 complete、打者185/185、投手65/65、Tursoへの新規Factは打者60・投手24、mapping新規78、HTTP 286、retry 0、Collector処理314.739秒でPASS。同じAction内で同日をRaw再利用して再投入し、Repository JSONの一致とUnique件数不変を確認した。最初のmanual real試行は作業ディレクトリ`.data`不足で**DB書込み前に停止**し、ディレクトリ作成を修正して再実行した。Export→空のSQLiteへのRestoreはPASS、暗号化Artifactのみ7日保持した。
+
+[既存日次Workflowのmanual publish](https://github.com/tomoya41/baseball-notes/actions/runs/36075922369)でPages配信を確認後、Day Facts flagを有効化した。[統合済み日次Workflowのmanual run](https://github.com/tomoya41/baseball-notes/actions/runs/36076130302)はJST前日2026-09-24のfinal 2/complete 2、打者53/53・投手13/13、Turso新規Fact 53+13、mapping新規24、HTTP 78、retry 0、Day処理88.409秒。Repository readback、schema v4 Backup Export/Scratch Restore、暗号化Artifact、Pages deployまでPASS。Remote Repositoryの対象日は2 Game・打者53・投手13、累積はstandings_daily 24、npb_games 30、打者Fact 244、投手Fact 79、Source mapping 285。公開順位JSONは`effectiveDate=2026-09-24`で12球団だった。**全試合化後の次回scheduled runはまだ未確認**で、次回はtrigger=`schedule`、JST前日、Day状態、Turso読戻し、Backup Artifact、Pages公開日付を照合する。
 
 第5弾の6試合実測は286ユニークページ。通常新規runnerでは数分の逐次取得を許容し、750ms間隔、最大1 retry、15秒timeout、500KB上限を維持する。Run内URL cacheで重複fetchしない。GitHub SecretsのDB credentialはAndroid/Webに渡さない。Fact数とmapping増加は`npb_day_runs`とRepository readbackで追う。DB容量はTurso dashboardまたは管理CLIで定期確認し、70/80/90%で確認・警告・再生成可能cache整理を検討する。Fact/順位履歴は削除しない。
 

@@ -67,7 +67,7 @@ JDKの場所を `JAVA_HOME` に、SDKの場所をAndroid Studioまたは `androi
 
 歴史順位のCollectorは別経路です。Retrosheetの許諾済み2025年ZIPを明示的に取得し、ローカルSQLite互換DBへ入れます。DB、archive、生成した静的JSONはGit対象外です。
 
-NPB実データ第1弾はnf3公開ページを1日1回、逐次・少数アクセスして収集します。NPB公式ページは二次利用・無断転載禁止のためCollectorに使いません。2026年9月時点で確認したnf3の公開ページには明示的な禁止を見つけていませんが、再利用許諾を保証するものではありません。詳細は[Source記録](docs/data-sources.md)。選手ログは阪神の検証済み4選手だけで、完全なリーグ収集ではありません。
+NPB実データはnf3公開ページを1日1回、逐次・少数アクセスして収集します。NPB公式ページは二次利用・無断転載禁止のためCollectorに使いません。2026年9月時点で確認したnf3の公開ページには明示的な禁止を見つけていませんが、再利用許諾を保証するものではありません。詳細は[Source記録](docs/data-sources.md)。従来の`collector:npb`が取得する選手ログは阪神の検証済み4選手だけです。前日終了済み全試合のFact収集は別の[Day Collector](docs/npb-day-operations.md)が担当します。
 
 ```powershell
 npm run collector:npb -- --fetch --date 2026-09-23
@@ -76,7 +76,7 @@ npm run collector:npb -- --offline-raw --date 2026-09-23 --dry-run
 
 通常は `npm run collector:npb:daily` が日本時間の前日を対象にします。Raw HTMLは`.data/raw/nf3/`にgzipで14日保存し、DB・生成PayloadとともにGit対象外です。ローカル生成Payloadは`public/data/standings/npb/latest.json`です。本番WebはGitHub Pagesの同一Origin、Androidは公開Pages URLをRepository経由で参照します。公開URLは`VITE_NPB_DATA_BASE_URL`で上書きできます。GitHub Actionsの定期実行は手動のdry-run・remote ingest・Pages配信を検証後、2026-09-24に`NPB_COLLECTOR_ENABLED=true`で有効化しました。初回の自動scheduleは約3時間遅延したものの収集・Pages公開まで成功しています。過去日の順位は当日のRaw Captureなしに再構築できないため、現在ページを過去日に偽装するBackfillを拒否します。
 
-重要FactのPortable Export/Restoreと、全試合へのSchedule切替前の1日限定manual dry-run：
+重要FactのPortable Export/Restoreと、1日限定manual dry-run：
 
 ```powershell
 npm run backup:npb:drill
@@ -114,7 +114,7 @@ Analysis基盤の次の候補タスクは、架空の集計結果だけを返す
 
 ## GitHub / プレビュー / 0円制約
 
-NPBの前日全試合Fact収集・manual検証・復旧手順は[docs/npb-day-operations.md](docs/npb-day-operations.md)を参照してください。日次Workflowの対象拡張は、Remote手動dry-run・実投入・再投入・暗号化Backup・公開検証後に行います。
+NPBの前日全試合Fact収集・manual検証・復旧手順は[docs/npb-day-operations.md](docs/npb-day-operations.md)を参照してください。Remote手動dry-run・実投入・再投入・暗号化Backup・公開検証を通過し、既存のJST 03:37日次Workflowで`NPB_DAY_FACTS_ENABLED=true`に設定しました。統合後のmanual runは成功済みで、次回scheduled runの運用確認が残ります。
 
 ローカルGitと作業ブランチを作成済み。公開GitHubリポジトリへpushしました。GitHubリポジトリへ追加する際は、既存ブランチをレビューし `npm run check` を通してください。
 
