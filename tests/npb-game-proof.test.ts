@@ -126,6 +126,21 @@ describe("2026-09-23 controlled NPB game proof", () => {
   });
 });
 
+describe("2026-09-25 Tigers intentional-walk regression", () => {
+  it("counts the real 敬遠 token as one walk only when nf3's combined column agrees", () => {
+    const html = fixture("repair-batting-t12");
+    const parsed = parseNf3GameBattingRow(html,"2026-09-25","T","player-12","source-12",game.sourceUrl,at);
+    expect(parsed.detail).toEqual(["遊ゴロ","敬遠","空三振"]);
+    expect(parsed.unsupportedPaEvents).toEqual([]);
+    expect(parsed.row.fact).toMatchObject({ ab: 2, walks: 1, hbp: 0, sacrificeHits: 0,
+      sacrificeFlies: 0, pa: 3, hits: 0, strikeouts: 1 });
+    const $ = load(html);
+    $("tr[onmouseover]").children("td").eq(16).text("2");
+    expect(parseNf3GameBattingRow($.html(),"2026-09-25","T","player-12","source-12",game.sourceUrl,at)
+      .row.fact).toMatchObject({ walks: null, hbp: null, pa: null });
+  });
+});
+
 describe("Hawks 10–3 Lions edge-game regression", () => {
   const edge = controlledGameTargets.edge;
   const batting = (name: string, team: "H" | "L") => parseNf3GameBattingRow(

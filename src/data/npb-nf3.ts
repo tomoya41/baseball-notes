@@ -151,7 +151,9 @@ export function parseNf3BattingLogs(html: string, season: number, teamCode: stri
     const date = sourceDate(cells[0] ?? "", season);
     const opponent = resolveNpbTeam(cells[3] ?? "");
     const detail = cells[25] ?? "";
-    const walks = (detail.match(/四球/g) ?? []).length;
+    // nf3 records an intentional walk as 「敬遠」 in the PA detail, while its
+    // combined walks+HBP column includes that event. Count each detail token once.
+    const walks = detail.split(/\s+/).filter((token) => /四球|敬遠/.test(token)).length;
     const hbp = (detail.match(/死球/g) ?? []).length;
     const combined = integer(cells[16] ?? "", "walks+hbp");
     const separated = walks + hbp === combined;
