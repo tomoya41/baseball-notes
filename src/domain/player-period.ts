@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { PlayerGameBatting, PlayerGamePitching } from "./game-facts";
 import { unavailablePeriodCoverage, type PeriodCoverage } from "./period-coverage";
+import type { NpbSeasonMetadata } from "./npb-season";
 
 // A baseball date is a JST calendar date, not an instant. The endpoint is inclusive.
 export const playerPeriodQuerySchema = z.strictObject({
@@ -9,7 +10,7 @@ export const playerPeriodQuerySchema = z.strictObject({
   period: z.enum(["7d", "14d", "30d", "currentMonth", "season"]),
 });
 export type PlayerPeriodQuery = z.infer<typeof playerPeriodQuerySchema>;
-export type PeriodWindow = { from: string; to: string; timeZone: "Asia/Tokyo" };
+export type PeriodWindow = { from: string; to: string; timeZone: "Asia/Tokyo"; beforeSeason?: true };
 export type AggregateStatus = "complete" | "partial" | "unavailable";
 export type AggregateMetric = {
   value: number | null;
@@ -18,16 +19,18 @@ export type AggregateMetric = {
   factCount: number;
 };
 
-export type SeasonBoundary = { season: number; firstRecordedGameDate: string; openingDateVerified: boolean };
 const periodDays = { "7d": 7, "14d": 14, "30d": 30 } as const;
-export function resolvePlayerPeriod(input: PlayerPeriodQuery, season?: SeasonBoundary): PeriodWindow {
+export function resolvePlayerPeriod(input: PlayerPeriodQuery, season?: NpbSeasonMetadata): PeriodWindow {
   const query = playerPeriodQuerySchema.parse(input);
   if (query.period === "currentMonth")
     return { from: `${query.asOfDate.slice(0, 7)}-01`, to: query.asOfDate, timeZone: "Asia/Tokyo" };
   if (query.period === "season") {
-    if (!season || season.firstRecordedGameDate > query.asOfDate)
-      throw new Error("Season Game metadata is unavailable for the requested date");
-    return { from: season.firstRecordedGameDate, to: query.asOfDate, timeZone: "Asia/Tokyo" };
+    if (!season || season.competitionType !== "regular")
+      throw new Error("Verified regular-season metadata is unavailable for the requested date");
+    if (query.asOfDate < season.startDate)
+      return { from: season.startDate, to: season.startDate, timeZone: "Asia/Tokyo", beforeSeason: true };
+    return { from: season.startDate, to: query.asOfDate < season.endDate ? query.asOfDate : season.endDate,
+      timeZone: "Asia/Tokyo" };
   }
   const day = new Date(`${query.asOfDate}T00:00:00Z`);
   day.setUTCDate(day.getUTCDate() - periodDays[query.period] + 1);

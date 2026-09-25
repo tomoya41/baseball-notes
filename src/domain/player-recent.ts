@@ -4,6 +4,11 @@ const metric = z.object({ value: z.number().nullable(), status: z.enum(["complet
   observedFacts: z.number().int().nonnegative(), factCount: z.number().int().nonnegative() });
 const coverage = z.object({ from: z.iso.date(), to: z.iso.date(),
   status: z.enum(["complete", "partial", "unknown", "unavailable"]),
+  calendar: z.array(z.object({ date: z.iso.date(), status: z.enum(["complete", "partial", "failed", "no_games", "unknown"]),
+    finalGames: z.number().int().nonnegative() })),
+  summary: z.object({ dates: z.number().int().nonnegative(), complete: z.number().int().nonnegative(),
+    partial: z.number().int().nonnegative(), failed: z.number().int().nonnegative(),
+    noGames: z.number().int().nonnegative(), unknown: z.number().int().nonnegative() }),
   finalGameDates: z.array(z.iso.date()), completeGameDates: z.array(z.iso.date()),
   noGameDates: z.array(z.iso.date()), partialDates: z.array(z.iso.date()), unknownDates: z.array(z.iso.date()) });
 const periodStats = z.object({ from: z.iso.date(), to: z.iso.date(), playerId: z.string(),

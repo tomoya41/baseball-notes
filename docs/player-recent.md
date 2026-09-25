@@ -1,6 +1,6 @@
 # NPB Player「最近の成績」実データ接続
 
-対象はcanonical Player IDのNPB選手ページ内「最近の成績」のみ。7日・14日・30日は選択基準日を含むJST暦日、「今月」はその月の1日から基準日、「シーズン」は保存済みの対象seasonの最初の終了Gameから基準日で、同じ`PlayerPeriodService`がGame Factsから読み取り時に再計算する。シーズン開幕日の証明がない間はCoverageをcompleteにせず、表示範囲が記録済みの範囲であることを注記する。Career、完全なSeason totals、Analysis、HOT等は接続しない。実選手の一覧検索は今回の対象外なので、検証選手はcanonical URLで開く。
+対象はcanonical Player IDのNPB選手ページ内「最近の成績」のみ。7日・14日・30日は選択基準日を含むJST暦日、「今月」はその月の1日から基準日、「シーズン」は別管理の公式日程確認済みregular-season開始日から基準日（予定終了日を超えない）で、同じ`PlayerPeriodService`が保存済みGame Factsから読み取り時に再計算する。Season期間が正式でも履歴Factの網羅を意味しない。Coverageがunknownなら「収集済みデータから算出」と明示する。Career、完全なSeason totals、Analysis、HOT等は接続しない。実選手の一覧検索は今回の対象外なので、検証選手はcanonical URLで開く。
 
 `src/server-recent.ts`の公開Read-only APIはVercel Free上で動作し、Tursoの読み取り専用トークンをサーバー環境変数`TURSO_DATABASE_URL`と`TURSO_AUTH_TOKEN`から取得する。クライアント・GitHub Pages・AndroidバンドルにDBトークンを入れない。APIはPlayer IDと期間だけを受け、Repository、Period Service、Coverage Repositoryの結果を検証済みJSONで返す。Vercel側の最新Standings Snapshotの日付を完了済み基準日とする。Sourceへはアクセスせず、FactやDerivedをDBへ書かない。Vercel APIは公開読み取り口なので、将来大量アクセスが問題になればレート制限または生成Payloadを検討する。
 

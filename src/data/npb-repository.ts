@@ -3,7 +3,8 @@ import type { InStatement } from "@libsql/client";
 import type { DataClient } from "./database";
 import type { Standing } from "../domain/standings";
 import type { GameCompleteness, PlayerGameBatting, PlayerGamePitching } from "../domain/game-facts";
-import type { SeasonBoundary } from "../domain/player-period";
+import type { NpbSeasonMetadata, FactAvailability } from "../domain/npb-season";
+import { findNpbRegularSeason } from "./npb-season-metadata";
 import { gameCompletenessSchema, playerGameBattingSchema, playerGamePitchingSchema } from "../domain/game-facts";
 import { teamSchema, type Team } from "../domain/models";
 import { normalizeNpbName, npbTeams, type NpbGame, type NpbLogRow } from "./npb-nf3";
@@ -272,14 +273,20 @@ export class NpbRepository {
       collectedAt: row.collected_at }));
   }
 
-  async findSeasonBoundary(asOfDate: string): Promise<SeasonBoundary | null> {
-    const result = await this.client.execute({ sql: `SELECT season,MIN(game_date) AS first_game_date FROM npb_games
-      WHERE season=(SELECT season FROM npb_games WHERE game_date<=? AND status='final' ORDER BY game_date DESC LIMIT 1)
-      AND game_date<=? AND status='final' GROUP BY season`, args: [asOfDate,asOfDate] });
+  async findSeasonBoundary(asOfDate: string): Promise<NpbSeasonMetadata | null> {
+    return findNpbRegularSeason(asOfDate);
+  }
+
+  async findPlayerFactAvailability(playerId: string, season: number): Promise<FactAvailability> {
+    const result = await this.client.execute({ sql: `SELECT MIN(game_date) AS first_fact_date,MAX(game_date) AS last_fact_date FROM (
+      SELECT g.game_date FROM player_game_batting b JOIN npb_games g ON g.game_id=b.game_id
+        WHERE b.player_id=? AND g.season=? AND g.status='final'
+      UNION ALL
+      SELECT g.game_date FROM player_game_pitching p JOIN npb_games g ON g.game_id=p.game_id
+        WHERE p.player_id=? AND g.season=? AND g.status='final')`, args: [playerId,season,playerId,season] });
     const row = result.rows[0];
-    if (!row) return null;
-    // npb_games has season but no season-type or verified opening-date metadata yet.
-    return { season: Number(row.season), firstRecordedGameDate: String(row.first_game_date), openingDateVerified: false };
+    return { firstFactDate: row?.first_fact_date == null ? null : String(row.first_fact_date),
+      lastFactDate: row?.last_fact_date == null ? null : String(row.last_fact_date) };
   }
 
   async findPitchingByPlayer(playerId: string, fromDate: string, toDate: string, season?: number): Promise<PlayerGamePitching[]> {

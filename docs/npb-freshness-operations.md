@@ -33,3 +33,7 @@ Source停止はRepository variable `NPB_NF3_ENABLED=false`、Day Factsだけを�
 [Freshness手動Run #1](https://github.com/tomoya41/baseball-notes/actions/runs/36077514185)は2026-09-25 09:26 JSTに成功。Scheduleを追加した最終版の[手動Run #2](https://github.com/tomoya41/baseball-notes/actions/runs/36077856430)も09:30 JSTに成功した。Pages実HTTP 200、期待/公開`effectiveDate=2026-09-24`、Turso対象Day=`complete`、終了2/完了2/部分0/失敗0、打者53・投手13、`backup_status=exported`を診断した。対象Dayはmanual runであり、最新scheduled Day Runはまだnull。ローカルでは期限を0時にした存在しないURLへのHTTP 404が`unreachable`/exit 1になることも確認した。GitHubのFreshness Workflowは`active`で、JST 12:17のscheduleを設定済み。次回の全試合化後scheduled Daily Runでは、trigger=`schedule`、JST前日target、全final GameとFactのreadback、暗号化Artifact、Pages deploy後の公開日付を確認し、無人End-to-End成立を記録する。
 
 暗号化Backup Artifactは7日保持のみで、長期の別事業者保管ではない。GitHub schedule自体の不実行や監視Workflow自身の不実行を別途保証する外部watchdogは¥0構成に含まれない。Actions failure通知がアカウントで届く設定も運用者が確認する。
+
+## 初回の無人Freshness確認（2026-09-25）
+
+[Scheduled Run #3](https://github.com/tomoya41/baseball-notes/actions/runs/36115227622) は `event=schedule` で17:51 JSTに開始し、17:52 JSTに成功した。予定12:17より約5時間34分遅れたが、実HTTPは200で、期待/公開日付はいずれも2026-09-24、`fresh`、Turso診断の対象Dayは `complete`（終了/完了2、部分/失敗0、打者53・投手13）、順位Snapshotも9月24日、Healthは `healthy`、`likelyFault=null` だった。最新scheduled Daily Runは全試合化前のRunで暗号化Artifactがないが、9月24日のmanual Day RunにはBackup Exportがある。監視の遅延自体はCollector障害と扱わない。次回は全試合化後のDaily `schedule` RunとそのArtifactを別途実測する。

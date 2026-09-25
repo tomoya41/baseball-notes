@@ -37,7 +37,7 @@ function CoverageNote({ stats, period }: { stats: PeriodStats; period: RecentPer
     ? "収集済みデータから算出" : "収集状況を確認できません";
   const detail = status === "partial" ? "期間内に収集が完了していない試合があります。表示値は取得済みの記録から計算しています。"
     : status === "unknown" ? period === "season"
-      ? "保存済みの最初の試合より前について、開幕日と収集完了を証明できません。表示値は取得済みの記録から計算しています。"
+      ? "正式なシーズン期間内の集計です。未収集日の記録は含まれず、表示値は保存済みの記録から計算しています。"
       : "この期間の一部について収集完了を証明する履歴がありません。表示値は取得済みの記録から計算しています。"
       : "期間内の収集状況を評価できません。表示値は取得済みの記録から計算しています。";
   return <details className={`recent-coverage recent-coverage--${status}`}>
@@ -60,7 +60,7 @@ export function PlayerRecentView({ period, onPeriodChange, payload, state }: {
     {state === "error" && <DataState kind="source-unavailable" title="最近の成績を読み込めません" />}
     {state === "missing" && <DataState kind="no-data" title="この期間の出場データはありません" />}
     {state === "ready" && payload && <>
-      <p className="recent-dates">{formatDate(payload.asOfDate, true)}終了時点 · {period === "season" && "記録範囲 "}
+      <p className="recent-dates">{formatDate(payload.asOfDate, true)}終了時点 · {period === "season" && "シーズン期間 "}
         {formatDate(stats[0]?.from ?? null, true)}〜{formatDate(stats[0]?.to ?? null, true)}</p>
       {stats.length === 0 && <DataState kind="no-data" title="この期間の出場データはありません" />}
       {payload.batting && <div className="recent-group"><h3>打撃</h3>

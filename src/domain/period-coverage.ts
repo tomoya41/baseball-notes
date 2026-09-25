@@ -1,6 +1,10 @@
 import type { PeriodWindow } from "./player-period";
 
 export type PeriodCoverageStatus = "complete" | "partial" | "unknown" | "unavailable";
+export type CoverageDayStatus = "complete" | "partial" | "failed" | "no_games" | "unknown";
+export type CoverageCalendarDay = { date: string; status: CoverageDayStatus; finalGames: number };
+export type CoverageSummary = { dates: number; complete: number; partial: number; failed: number;
+  noGames: number; unknown: number };
 export type DayCoverageEvidence = {
   date: string;
   dayStatus: "complete" | "partial" | "no_games" | "failed" | null;
@@ -19,6 +23,8 @@ export type GameCoverageEvidence = {
 };
 export type PeriodCoverage = Pick<PeriodWindow, "from" | "to"> & {
   status: PeriodCoverageStatus;
+  calendar: CoverageCalendarDay[];
+  summary: CoverageSummary;
   finalGameDates: string[];
   completeGameDates: string[];
   noGameDates: string[];
@@ -38,7 +44,8 @@ export function periodDates(window: PeriodWindow): string[] {
 
 export function unavailablePeriodCoverage(window: PeriodWindow): PeriodCoverage {
   return { from: window.from, to: window.to, status: "unavailable", finalGameDates: [],
-    completeGameDates: [], noGameDates: [], partialDates: [], unknownDates: [] };
+    completeGameDates: [], noGameDates: [], partialDates: [], unknownDates: [], calendar: [],
+    summary: { dates: periodDates(window).length, complete: 0, partial: 0, failed: 0, noGames: 0, unknown: 0 } };
 }
 
 // League-wide proof is conservative: a player's day without a Fact is never itself a gap.
@@ -52,25 +59,40 @@ export function evaluatePeriodCoverage(window: PeriodWindow,
     gamesByDate.set(game.date, rows);
   }
   const coverage: PeriodCoverage = { from: window.from, to: window.to, status: "complete",
-    finalGameDates: [], completeGameDates: [], noGameDates: [], partialDates: [], unknownDates: [] };
+    finalGameDates: [], completeGameDates: [], noGameDates: [], partialDates: [], unknownDates: [], calendar: [],
+    summary: { dates: 0, complete: 0, partial: 0, failed: 0, noGames: 0, unknown: 0 } };
+  function record(date: string, status: CoverageDayStatus, finalGames: number): void {
+    coverage.calendar.push({ date, status, finalGames });
+    coverage.summary.dates += 1;
+    if (status === "no_games") coverage.summary.noGames += 1;
+    else coverage.summary[status] += 1;
+    if (status === "complete") coverage.completeGameDates.push(date);
+    else if (status === "no_games") coverage.noGameDates.push(date);
+    else if (status === "unknown") coverage.unknownDates.push(date);
+    else coverage.partialDates.push(date);
+  }
   for (const date of periodDates(window)) {
     const day = byDate.get(date);
     const finalGames = gamesByDate.get(date) ?? [];
     if (finalGames.length) coverage.finalGameDates.push(date);
-    if (day?.dayStatus === "partial" || day?.dayStatus === "failed" ||
-      day?.gamesStageStatus === "partial" || day?.gamesStageStatus === "failed" ||
+    if (day?.dayStatus === "failed" || day?.gamesStageStatus === "failed" ||
+      finalGames.some((game) => game.gameStatus === "failed")) {
+      record(date, "failed", finalGames.length);
+      continue;
+    }
+    if (day?.dayStatus === "partial" || day?.gamesStageStatus === "partial" ||
       finalGames.some((game) => game.gameStatus != null && game.gameStatus !== "complete")) {
-      coverage.partialDates.push(date);
+      record(date, "partial", finalGames.length);
       continue;
     }
     if (!day || day.gamesStageStatus !== "complete") {
-      coverage.unknownDates.push(date);
+      record(date, "unknown", finalGames.length);
       continue;
     }
     if (day.dayStatus === "no_games") {
       if (day.finalGames === 0 && day.completeGames === 0 && day.partialGames === 0 &&
-        day.failedGames === 0 && finalGames.length === 0) coverage.noGameDates.push(date);
-      else coverage.partialDates.push(date);
+        day.failedGames === 0 && finalGames.length === 0) record(date, "no_games", 0);
+      else record(date, "partial", finalGames.length);
       continue;
     }
     if (day.dayStatus !== "complete" || day.finalGames === null || day.finalGames === 0 ||
@@ -78,10 +100,10 @@ export function evaluatePeriodCoverage(window: PeriodWindow,
       day.partialGames !== 0 || day.failedGames !== 0 ||
       finalGames.some((game) => game.gameStatus !== "complete" ||
         game.battingStatus !== "complete" || game.pitchingStatus !== "complete")) {
-      coverage.partialDates.push(date);
+      record(date, "partial", finalGames.length);
       continue;
     }
-    coverage.completeGameDates.push(date);
+    record(date, "complete", finalGames.length);
   }
   coverage.status = coverage.partialDates.length ? "partial" : coverage.unknownDates.length ? "unknown" : "complete";
   return coverage;
