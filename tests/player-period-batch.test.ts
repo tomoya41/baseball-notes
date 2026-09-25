@@ -54,6 +54,12 @@ describe("read-only period batch", () => {
     expect(empty.findBattingByPeriod).not.toHaveBeenCalled();
     expect(empty.findPitchingByPeriod).not.toHaveBeenCalled();
 
+    const one = await new PlayerPeriodBatchService(reader([batting("only", "g1")], []),
+      { findPeriodCoverage: async (window) => coverage(window, "complete") }, () => now).aggregate(query);
+    expect(one.summary).toMatchObject({ batterPlayers: 1, pitcherPlayers: 0, uniquePlayers: 1,
+      battingFacts: 1, coverage: { complete: 1 } });
+    expect(one.batters[0]?.metrics.PA.value).toBe(5);
+
     const rows = reader([batting("a", "g1"), batting("dual", "g1"), batting("dual", "g2")],
       [pitching("p", "g1"), pitching("dual", "g2")]);
     const result = await new PlayerPeriodBatchService(rows,
