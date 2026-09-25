@@ -13,6 +13,8 @@ let queries = 0;
 let sqlReadMs = 0;
 const client = new Proxy(source, { get(target, property) {
   if (property === "execute") return async (statement: string | InStatement) => {
+    const sql = typeof statement === "string" ? statement : statement.sql;
+    if (!/^\s*SELECT\b/i.test(sql)) throw new Error("Batch verification attempted a non-read SQL statement");
     const started = performance.now();
     const result = await target.execute(statement);
     queries += 1;
