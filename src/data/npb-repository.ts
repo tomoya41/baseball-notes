@@ -10,6 +10,31 @@ import { teamSchema, type Team } from "../domain/models";
 import { normalizeNpbName, npbTeams, type NpbGame, type NpbLogRow } from "./npb-nf3";
 
 const hash = (value: unknown) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
+type DbRow = Record<string, unknown>;
+
+function battingFact(row: DbRow): PlayerGameBatting {
+  return playerGameBattingSchema.parse({ gameId: row.game_id, playerId: row.player_id,
+    teamId: row.team_id, opponentTeamId: row.opponent_team_id, battingOrder: row.batting_order,
+    pa: row.pa, ab: row.ab, hits: row.hits, doubles: row.doubles, triples: row.triples,
+    homeRuns: row.home_runs, rbi: row.rbi, walks: row.walks, strikeouts: row.strikeouts,
+    hbp: row.hbp, stolenBases: row.sb, caughtStealing: row.cs, runs: row.runs,
+    sacrificeHits: row.sacrifice_hits, sacrificeFlies: row.sacrifice_flies,
+    starter: row.starter === null ? null : Number(row.starter) === 1,
+    sourceUrl: row.source_url ?? undefined, sourceKey: row.source_key, sourceRecordId: row.source_record_id,
+    collectedAt: row.collected_at });
+}
+
+function pitchingFact(row: DbRow): PlayerGamePitching {
+  return playerGamePitchingSchema.parse({ id: row.fact_id, gameId: row.game_id,
+    playerId: row.player_id, teamId: row.team_id, opponentTeamId: row.opponent_team_id, role: row.role,
+    appearanceOrder: row.appearance_order, inningsPitchedOuts: row.ip_outs, battersFaced: row.batters_faced,
+    hits: row.hits, homeRuns: row.home_runs, walks: row.walks, hitBatters: row.hit_batters,
+    walksAndHitBatters: row.walks_and_hit_batters, strikeouts: row.strikeouts,
+    runs: row.runs, earnedRuns: row.earned_runs, pitches: row.pitches, catcherId: row.catcher_id,
+    starter: row.starter === null ? null : Number(row.starter) === 1, decision: row.decision,
+    sourceUrl: row.source_url ?? undefined, sourceKey: row.source_key, sourceRecordId: row.source_record_id,
+    collectedAt: row.collected_at });
+}
 
 export class NpbRepository {
   constructor(private readonly client: DataClient) {}
@@ -262,15 +287,40 @@ export class NpbRepository {
       JOIN npb_games g ON g.game_id=b.game_id WHERE b.player_id=? AND g.game_date BETWEEN ? AND ?
       AND (? IS NULL OR g.season=?) ORDER BY g.game_date`,
       args: [playerId,fromDate,toDate,season ?? null,season ?? null] });
-    return result.rows.map((row) => playerGameBattingSchema.parse({ gameId: row.game_id, playerId: row.player_id,
-      teamId: row.team_id, opponentTeamId: row.opponent_team_id, battingOrder: row.batting_order,
-      pa: row.pa, ab: row.ab, hits: row.hits, doubles: row.doubles, triples: row.triples,
-      homeRuns: row.home_runs, rbi: row.rbi, walks: row.walks, strikeouts: row.strikeouts,
-      hbp: row.hbp, stolenBases: row.sb, caughtStealing: row.cs, runs: row.runs,
-      sacrificeHits: row.sacrifice_hits, sacrificeFlies: row.sacrifice_flies,
-      starter: row.starter === null ? null : Number(row.starter) === 1,
-      sourceUrl: row.source_url ?? undefined, sourceKey: row.source_key, sourceRecordId: row.source_record_id,
-      collectedAt: row.collected_at }));
+    return result.rows.map(battingFact);
+  }
+
+  async findPeriodPlayerIds(fromDate: string, toDate: string, season?: number): Promise<{ batters: string[]; pitchers: string[] }> {
+    const result = await this.client.execute({ sql: `SELECT role,player_id FROM (
+      SELECT 'batter' AS role,b.player_id FROM player_game_batting b JOIN npb_games g ON g.game_id=b.game_id
+        WHERE g.game_date BETWEEN ? AND ? AND g.status='final' AND (? IS NULL OR g.season=?)
+      UNION
+      SELECT 'pitcher' AS role,p.player_id FROM player_game_pitching p JOIN npb_games g ON g.game_id=p.game_id
+        WHERE g.game_date BETWEEN ? AND ? AND g.status='final' AND (? IS NULL OR g.season=?))
+      ORDER BY role,player_id`, args: [fromDate,toDate,season ?? null,season ?? null,
+      fromDate,toDate,season ?? null,season ?? null] });
+    return { batters: result.rows.filter((row) => row.role === 'batter').map((row) => String(row.player_id)),
+      pitchers: result.rows.filter((row) => row.role === 'pitcher').map((row) => String(row.player_id)) };
+  }
+
+  async findBattingByPeriod(fromDate: string, toDate: string, playerIds: readonly string[] | null, season?: number): Promise<PlayerGameBatting[]> {
+    if (playerIds?.length === 0) return [];
+    const selection = playerIds ? `AND b.player_id IN (${playerIds.map(() => '?').join(',')})` : '';
+    const result = await this.client.execute({ sql: `SELECT b.* FROM player_game_batting b
+      JOIN npb_games g ON g.game_id=b.game_id WHERE g.game_date BETWEEN ? AND ? AND g.status='final'
+      AND (? IS NULL OR g.season=?) ${selection} ORDER BY g.game_date,b.game_id,b.player_id`,
+    args: [fromDate,toDate,season ?? null,season ?? null,...playerIds ?? []] });
+    return result.rows.map(battingFact);
+  }
+
+  async findPitchingByPeriod(fromDate: string, toDate: string, playerIds: readonly string[] | null, season?: number): Promise<PlayerGamePitching[]> {
+    if (playerIds?.length === 0) return [];
+    const selection = playerIds ? `AND p.player_id IN (${playerIds.map(() => '?').join(',')})` : '';
+    const result = await this.client.execute({ sql: `SELECT p.* FROM player_game_pitching p
+      JOIN npb_games g ON g.game_id=p.game_id WHERE g.game_date BETWEEN ? AND ? AND g.status='final'
+      AND (? IS NULL OR g.season=?) ${selection} ORDER BY g.game_date,p.game_id,p.player_id`,
+    args: [fromDate,toDate,season ?? null,season ?? null,...playerIds ?? []] });
+    return result.rows.map(pitchingFact);
   }
 
   async findSeasonBoundary(asOfDate: string): Promise<NpbSeasonMetadata | null> {
@@ -294,42 +344,17 @@ export class NpbRepository {
       JOIN npb_games g ON g.game_id=p.game_id WHERE p.player_id=? AND g.game_date BETWEEN ? AND ?
       AND (? IS NULL OR g.season=?) ORDER BY g.game_date`,
       args: [playerId,fromDate,toDate,season ?? null,season ?? null] });
-    return result.rows.map((row) => playerGamePitchingSchema.parse({ id: row.fact_id, gameId: row.game_id,
-      playerId: row.player_id, teamId: row.team_id, opponentTeamId: row.opponent_team_id, role: row.role,
-      appearanceOrder: row.appearance_order, inningsPitchedOuts: row.ip_outs, battersFaced: row.batters_faced,
-      hits: row.hits, homeRuns: row.home_runs, walks: row.walks, hitBatters: row.hit_batters,
-      walksAndHitBatters: row.walks_and_hit_batters, strikeouts: row.strikeouts,
-      runs: row.runs, earnedRuns: row.earned_runs, pitches: row.pitches, catcherId: row.catcher_id,
-      starter: row.starter === null ? null : Number(row.starter) === 1, decision: row.decision,
-      sourceUrl: row.source_url ?? undefined, sourceKey: row.source_key, sourceRecordId: row.source_record_id,
-      collectedAt: row.collected_at }));
+    return result.rows.map(pitchingFact);
   }
 
   async findBattingByGame(gameId: string): Promise<PlayerGameBatting[]> {
     const result = await this.client.execute({ sql: "SELECT * FROM player_game_batting WHERE game_id=? ORDER BY team_id,batting_order,player_id", args: [gameId] });
-    return result.rows.map((row) => playerGameBattingSchema.parse({ gameId: row.game_id, playerId: row.player_id,
-      teamId: row.team_id, opponentTeamId: row.opponent_team_id, battingOrder: row.batting_order,
-      pa: row.pa, ab: row.ab, hits: row.hits, doubles: row.doubles, triples: row.triples,
-      homeRuns: row.home_runs, rbi: row.rbi, walks: row.walks, strikeouts: row.strikeouts,
-      hbp: row.hbp, stolenBases: row.sb, caughtStealing: row.cs, runs: row.runs,
-      sacrificeHits: row.sacrifice_hits, sacrificeFlies: row.sacrifice_flies,
-      starter: row.starter === null ? null : Number(row.starter) === 1,
-      sourceUrl: row.source_url ?? undefined, sourceKey: row.source_key, sourceRecordId: row.source_record_id,
-      collectedAt: row.collected_at }));
+    return result.rows.map(battingFact);
   }
 
   async findPitchingByGame(gameId: string): Promise<PlayerGamePitching[]> {
     const result = await this.client.execute({ sql: "SELECT * FROM player_game_pitching WHERE game_id=? ORDER BY team_id,appearance_order,player_id", args: [gameId] });
-    return result.rows.map((row) => playerGamePitchingSchema.parse({ id: row.fact_id, gameId: row.game_id,
-      playerId: row.player_id, teamId: row.team_id, opponentTeamId: row.opponent_team_id,
-      role: row.role, appearanceOrder: row.appearance_order, inningsPitchedOuts: row.ip_outs,
-      battersFaced: row.batters_faced, hits: row.hits, homeRuns: row.home_runs,
-      walks: row.walks, hitBatters: row.hit_batters, walksAndHitBatters: row.walks_and_hit_batters,
-      strikeouts: row.strikeouts, runs: row.runs, earnedRuns: row.earned_runs,
-      pitches: row.pitches, catcherId: row.catcher_id,
-      starter: row.starter === null ? null : Number(row.starter) === 1, decision: row.decision,
-      sourceUrl: row.source_url ?? undefined, sourceKey: row.source_key, sourceRecordId: row.source_record_id,
-      collectedAt: row.collected_at }));
+    return result.rows.map(pitchingFact);
   }
 
   async saveGameCompleteness(value: GameCompleteness): Promise<void> {

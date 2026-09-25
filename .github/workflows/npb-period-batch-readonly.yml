@@ -1,0 +1,33 @@
+name: NPB period batch read-only verification
+on:
+  workflow_dispatch:
+    inputs:
+      as_of_date:
+        description: "Completed JST date (YYYY-MM-DD); blank uses latest stored standings"
+        required: false
+        type: string
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Read-only Turso batch and count verification
+        shell: bash
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          AS_OF_DATE: ${{ inputs.as_of_date }}
+        run: |
+          args=(--require-remote)
+          if [[ -n "$AS_OF_DATE" ]]; then args+=(--date="$AS_OF_DATE"); fi
+          npm run -s verify:npb:period-batch -- "${args[@]}"

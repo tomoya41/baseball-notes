@@ -29,6 +29,7 @@
     "collector:npb:day:dry-run": "tsx scripts/dry-run-npb-day.ts",
     "collector:npb:day": "tsx scripts/collect-npb-day.ts",
     "verify:npb:day": "tsx scripts/verify-npb-day.ts",
+    "verify:npb:period-batch": "tsx scripts/verify-player-period-batch.ts",
     "monitor:npb:freshness": "tsx scripts/check-npb-freshness.ts",
     "verify:npb:remote": "tsx scripts/verify-npb-database.ts",
     "publish:npb:remote": "tsx scripts/publish-npb-payload.ts"
