@@ -24,7 +24,7 @@ jobs:
     # Schedule stays opt-in until manual remote ingestion, replay and Pages delivery pass.
     if: github.event.repository.private == false && (github.event_name == 'workflow_dispatch' || vars.NPB_COLLECTOR_ENABLED == 'true')
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
         with:
@@ -44,6 +44,7 @@ jobs:
         shell: bash
         env:
           TARGET_DATE: ${{ inputs.target_date }}
+          NPB_NF3_ENABLED: ${{ vars.NPB_NF3_ENABLED }}
         run: |
           args=()
           if [[ -n "$TARGET_DATE" ]]; then args+=(--date "$TARGET_DATE"); fi
@@ -55,6 +56,7 @@ jobs:
           TARGET_DATE: ${{ inputs.target_date }}
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          NPB_NF3_ENABLED: ${{ vars.NPB_NF3_ENABLED }}
         run: |
           args=()
           if [[ -n "$TARGET_DATE" ]]; then args+=(--date "$TARGET_DATE"); fi
