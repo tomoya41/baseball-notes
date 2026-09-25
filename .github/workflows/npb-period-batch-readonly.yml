@@ -41,3 +41,13 @@ jobs:
           args=(--require-remote)
           if [[ -n "$AS_OF_DATE" ]]; then args+=(--date="$AS_OF_DATE"); fi
           npm run -s verify:npb:hot -- "${args[@]}"
+      - name: Stage validated HOT JSON privately (not Pages)
+        shell: bash
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          AS_OF_DATE: ${{ inputs.as_of_date }}
+        run: |
+          args=(--require-remote)
+          if [[ -n "$AS_OF_DATE" ]]; then args+=(--date="$AS_OF_DATE"); fi
+          npm run -s generate:npb:hot:diagnostic -- "${args[@]}"

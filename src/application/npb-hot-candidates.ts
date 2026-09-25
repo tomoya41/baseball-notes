@@ -13,7 +13,7 @@ export const DEFAULT_HOT_SAMPLE_POLICY = Object.freeze({ batterPa: 20, starterGs
 export type HotSamplePolicy = Readonly<{ batterPa: number; starterGs: number; starterOuts: number;
   relieverAppearances: number; relieverOuts: number }>;
 
-type RankInputs = { primary: number | null; first: number | null; second: number | null;
+export type HotRankInputs = { primary: number | null; first: number | null; second: number | null;
   third: number | null; playerId: string };
 type HotCandidateBase = {
   playerId: string; role: HotRole; period: "7d"; from: string; to: string;
@@ -21,7 +21,7 @@ type HotCandidateBase = {
   eligibility: "eligible" | "ineligible";
   eligibilityReasons: HotEligibilityReason[];
   primaryMetric: { id: "OPS" | "ERA"; metric: AggregateMetric };
-  rankInputs: RankInputs;
+  rankInputs: HotRankInputs;
   reason: string | null;
   metadata?: HotCandidateMetadata;
 };
@@ -60,7 +60,7 @@ function eligibility(coverage: HotCandidateBase["coverage"], required: readonly 
   return { eligibility: reasons.length ? "ineligible" : "eligible", eligibilityReasons: reasons };
 }
 function rankInputs(playerId: string, primary: AggregateMetric, first: AggregateMetric,
-  second: AggregateMetric, third: AggregateMetric): RankInputs {
+  second: AggregateMetric, third: AggregateMetric): HotRankInputs {
   return { primary: primary.value, first: first.value, second: second.value,
     third: third.value, playerId };
 }
@@ -98,15 +98,19 @@ function pitcherCandidate(stats: PitchingPeriodResult, policy: HotSamplePolicy,
 }
 function compareIds(a: string, b: string): number { return a < b ? -1 : a > b ? 1 : 0; }
 // All ranked inputs are complete and non-null after the eligibility gate.
-export function compareHotCandidates(a: HotCandidate, b: HotCandidate): number {
-  if (a.role !== b.role) throw new Error("HOT ranks are compared only within the same role");
-  const ascending = a.role === "batter" ? -1 : 1;
+export function compareHotRankInputs(a: HotRankInputs, b: HotRankInputs, role: RankedHotRole): number {
+  const ascending = role === "batter" ? -1 : 1;
   for (const [field, direction] of [["primary", ascending], ["first", -1], ["second", -1],
     ["third", -1]] as const) {
-    const difference = (a.rankInputs[field]! - b.rankInputs[field]!) * direction;
+    const difference = (a[field]! - b[field]!) * direction;
     if (difference !== 0) return difference;
   }
   return compareIds(a.playerId, b.playerId);
+}
+export function compareHotCandidates(a: HotCandidate, b: HotCandidate): number {
+  if (a.role !== b.role || a.role === "unclassified_pitcher")
+    throw new Error("HOT ranks are compared only within the same classified role");
+  return compareHotRankInputs(a.rankInputs, b.rankInputs, a.role);
 }
 
 export function evaluateHotCandidates(batch: PlayerPeriodBatchResult,
