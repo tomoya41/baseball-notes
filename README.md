@@ -116,6 +116,8 @@ Analysis基盤の次の候補タスクは、架空の集計結果だけを返す
 
 NPBの前日全試合Fact収集・manual検証・復旧手順は[docs/npb-day-operations.md](docs/npb-day-operations.md)を参照してください。Remote手動dry-run・実投入・再投入・暗号化Backup・公開検証を通過し、既存のJST 03:37日次Workflowで`NPB_DAY_FACTS_ENABLED=true`に設定しました。統合後のmanual runは成功済みで、次回scheduled runの運用確認が残ります。
 
+公開NPBデータの正午JST鮮度監視は[docs/npb-freshness-operations.md](docs/npb-freshness-operations.md)を参照してください。`npm run monitor:npb:freshness`は公開JSONの日付を検査し、GitHub ActionsではTursoのDay状態と暗号化Backupも診断します。監視はnf3へアクセスしません。
+
 ローカルGitと作業ブランチを作成済み。公開GitHubリポジトリへpushしました。GitHubリポジトリへ追加する際は、既存ブランチをレビューし `npm run check` を通してください。
 
 `.github/workflows/check.yml` はpublicリポジトリの標準無料runnerでlint/typecheck/test/build/Capacitor syncを行います。privateではjobをskipします。private CIはアカウントの無料枠と課金停止設定を確認するまでローカルチェックを使います。公開repoのFoundation checksは成功しました。

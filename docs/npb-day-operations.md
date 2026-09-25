@@ -35,4 +35,4 @@ Migration 004適用後のLocal Portable Backup/Scratch Restore drillもschema v4
 
 第5弾の6試合実測は286ユニークページ。通常新規runnerでは数分の逐次取得を許容し、750ms間隔、最大1 retry、15秒timeout、500KB上限を維持する。Run内URL cacheで重複fetchしない。GitHub SecretsのDB credentialはAndroid/Webに渡さない。Fact数とmapping増加は`npb_day_runs`とRepository readbackで追う。DB容量はTurso dashboardまたは管理CLIで定期確認し、70/80/90%で確認・警告・再生成可能cache整理を検討する。Fact/順位履歴は削除しない。
 
-Scheduled Runは遅延し得る。次回初回実行で、event=`schedule`、JST前日target、Game/Day status、Turso readback、Artifact、Pages payloadのeffectiveDateを確認する。正午までに更新されない場合のAlertは別タスク。
+Scheduled Runは遅延し得る。次回初回実行で、event=`schedule`、JST前日target、Game/Day status、Turso readback、Artifact、Pages payloadのeffectiveDateを確認する。正午の独立Freshness監視と手動修復は[日次Health運用](npb-freshness-operations.md)を参照。

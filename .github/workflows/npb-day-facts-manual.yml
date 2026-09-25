@@ -5,7 +5,7 @@ on:
       mode:
         description: "Run dry-run before ingest"
         type: choice
-        options: [dry-run, ingest]
+        options: [dry-run, ingest, repair]
         default: dry-run
         required: true
       target_date:
@@ -44,7 +44,7 @@ jobs:
           if [[ "$TARGET_DATE" == "2026-09-23" ]]; then args+=(--controlled-history); fi
           npm run collector:npb:day -- --date="$TARGET_DATE" --trigger=manual --dry-run --require-remote "${args[@]}"
       - name: Ingest and Repository readback
-        if: inputs.mode == 'ingest'
+        if: inputs.mode == 'ingest' || inputs.mode == 'repair'
         env:
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
@@ -54,16 +54,18 @@ jobs:
         run: |
           args=()
           if [[ "$TARGET_DATE" == "2026-09-23" ]]; then args+=(--controlled-history); fi
+          trigger=manual
+          if [[ "${{ inputs.mode }}" == "repair" ]]; then trigger=repair; fi
           mkdir -p .data
           npm run -s verify:npb:day -- --date="$TARGET_DATE" --require-remote > .data/day-before.json
-          npm run collector:npb:day -- --date="$TARGET_DATE" --trigger=manual --fetch --require-remote --backup-root=.data/day-backup "${args[@]}"
+          npm run collector:npb:day -- --date="$TARGET_DATE" --trigger="$trigger" --fetch --require-remote --backup-root=.data/day-backup "${args[@]}"
           npm run -s verify:npb:day -- --date="$TARGET_DATE" --require-remote --require-complete --baseline=.data/day-before.json > .data/day-after-first.json
           npm run collector:npb:day -- --date="$TARGET_DATE" --trigger=manual --fetch --require-remote --reuse-local-raw --skip-backup "${args[@]}"
           npm run -s verify:npb:day -- --date="$TARGET_DATE" --require-remote --require-complete --baseline=.data/day-after-first.json > .data/day-after-replay.json
           cmp .data/day-after-first.json .data/day-after-replay.json
           cat .data/day-after-replay.json
       - name: Encrypt validated portable Export
-        if: inputs.mode == 'ingest'
+        if: inputs.mode == 'ingest' || inputs.mode == 'repair'
         env:
           NPB_BACKUP_ENCRYPTION_KEY: ${{ secrets.NPB_BACKUP_ENCRYPTION_KEY }}
         run: |
@@ -71,7 +73,7 @@ jobs:
           npx tsx scripts/crypt-npb-backup.ts encrypt .data/npb-backup.tar.gz .data/npb-backup.tar.gz.enc
           rm .data/npb-backup.tar.gz
       - name: Upload encrypted backup only
-        if: inputs.mode == 'ingest'
+        if: inputs.mode == 'ingest' || inputs.mode == 'repair'
         uses: actions/upload-artifact@v4
         with:
           name: npb-facts-encrypted-${{ inputs.target_date }}-${{ github.run_id }}

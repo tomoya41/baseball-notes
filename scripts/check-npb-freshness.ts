@@ -22,5 +22,6 @@ try {
 } catch(error) { scheduledActionError=String(error); }
 const summary=evaluateNpbDailyHealth(freshness,ingestion,scheduledAction);
 process.stdout.write(`${JSON.stringify({...summary,scheduledActionError},null,2)}\n`);
-if(process.argv.includes("--require-healthy") &&
-  (scheduledActionError || (freshness.deadlinePassed && summary.health!=="healthy"))) process.exitCode=1;
+if(process.argv.includes("--require-healthy") && (scheduledActionError ||
+  (freshness.status!=="fresh" && (freshness.deadlinePassed || freshness.status!=="stale")) ||
+  (freshness.status==="fresh" && summary.health!=="healthy"))) process.exitCode=1;
