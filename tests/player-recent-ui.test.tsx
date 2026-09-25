@@ -47,6 +47,7 @@ describe("Player Recent Form", () => {
       expect(html).toContain(`aria-label="${label}"`);
     expect(html).toContain("aria-label=\"シーズンの成績\" aria-pressed=\"true\"");
     expect(html).toContain("収集済みデータから算出");
+    expect(html).toContain("記録範囲");
     expect(html).toContain(".500");
     expect(render({ ...payload, period: "currentMonth" }, "ready", "currentMonth")).toContain("今月");
   });
