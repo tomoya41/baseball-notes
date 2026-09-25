@@ -420,7 +420,7 @@ function LeagueView({ league, services, favorites, toggle, saving }: {
         <Route path="favorites" element={<Navigate to={`/${league}/my`} replace />} />
         <Route path="*" element={<Navigate to={`/${league}/home`} replace />} />
       </Routes>
-      <DataNote result={result} clock={clock} loading={loading} refresh={() => void refresh()} />
+      {!canonicalPlayerRoute && <DataNote result={result} clock={clock} loading={loading} refresh={() => void refresh()} />}
     </>}
   </>;
 }
