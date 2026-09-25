@@ -12,6 +12,8 @@ On the local 2026-09-24 snapshot: 131 batting Facts, 42 pitching Facts, 25 Games
 
 [Manual workflow #1](https://github.com/tomoya41/baseball-notes/actions/runs/36125289110) succeeded on the 2026-09-24 as-of date. Counts were unchanged before/after: **244 batting, 79 pitching, 30 Games, 285 mappings**. 中島大輔's batting and 上原健太's pitching results matched the individual service exactly for 7/14/30d (including metric status and coverage); WHIP remained unavailable. No source was fetched and no write SQL was issued.
 
+The final [manual workflow #2](https://github.com/tomoya41/baseball-notes/actions/runs/36125641897) also succeeded after adding a verification guard that rejects any SQL statement other than `SELECT`. Thus both the SQL operation type and protected row counts were checked in the remote run.
+
 | Stage | Batters / pitchers | Facts batting / pitching | SQL reads | DB read | Aggregation | Total |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | A, 7d | 10 / 0 | 12 / 0 | 5 | 552 ms | 1 ms | 553 ms |
