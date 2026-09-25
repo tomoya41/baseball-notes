@@ -118,7 +118,7 @@ small { font-size: var(--type-caption); }
 .league-badge { display: inline-grid; place-items: center; min-width: 30px; height: 25px; padding: 0 5px; border: 1px solid var(--team-accent); border-radius: 5px; color: var(--color-text); font-size: .59rem; font-weight: 800; letter-spacing: .025em; white-space: nowrap; }
 .league-switch .league-badge { min-width: 25px; height: 22px; font-size: .5rem; }
 .sample-banner { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-sm); color: var(--color-muted); font-size: .74rem; margin-bottom: var(--space-6); }
-.sample-banner span { color: var(--brand); font-weight: 800; }
+.sample-banner span { color: var(--brand); font-weight: 800; white-space: nowrap; }
 .toast { padding: var(--space-3) var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--brand-soft); color: var(--color-text); font-size: .82rem; }
 .toast--error { background: var(--color-error-soft); }
 .screen { min-height: 45vh; }
@@ -217,6 +217,18 @@ small { font-size: var(--type-caption); }
 .profile-content { padding-top: var(--space-6); }
 .profile-content .page-heading { margin-bottom: var(--space-4); }
 .stats-section { margin-bottom: var(--space-8); }
+.recent-periods { margin: var(--space-3) 0 var(--space-4); }
+.recent-dates { color: var(--color-muted); font-size: var(--type-caption); margin: 0 0 var(--space-3); }
+.recent-group { margin-bottom: var(--space-6); }
+.recent-group h3 { font-size: .9rem; margin: var(--space-4) 0 var(--space-2); }
+.recent-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.recent-metrics .metric-tile { padding: var(--space-2) var(--space-3); }
+.recent-metrics .metric-tile__value { font-size: clamp(1.1rem, 4.7vw, 1.55rem); }
+.recent-coverage { color: var(--color-muted); font-size: var(--type-caption); margin-top: var(--space-2); }
+.recent-coverage--partial { color: var(--color-warning); }
+.recent-coverage summary { display: inline-flex; align-items: center; gap: var(--space-1); min-height: var(--touch); cursor: pointer; }
+.recent-coverage[open] summary svg { transform: rotate(90deg); }
+.recent-coverage p { margin: 0 0 var(--space-2); }
 .metric-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); margin-top: var(--space-3); }
 .metric-grid--advanced { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .metric-tile { min-width: 0; display: grid; align-content: start; gap: var(--space-2); padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }

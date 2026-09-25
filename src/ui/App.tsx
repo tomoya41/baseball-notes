@@ -7,6 +7,7 @@ import { Link, Navigate, Route, Routes, useLocation, useParams } from "react-rou
 import type { Services } from "../app/services";
 import type { CatalogResult, Favorite, League, PlayerCatalog, Statistics } from "../domain/models";
 import type { NpbLatestStandings } from "../domain/standings";
+import type { PlayerRecentResponse, RecentPeriod } from "../domain/player-recent";
 import { metrics } from "../domain/metrics";
 import { positionDefinitions } from "../domain/baseball-terms";
 import { formatDate, formatDateTime, formatGamesBehind, formatMetric, formatPlayerName, formatPositions, formatTeamName, formatWinningPercentage } from "../presentation/formatters";
@@ -16,6 +17,7 @@ import { BaseballIcon, BatIcon, HomePlateIcon } from "./baseball-icons";
 import { AnalysisDirectory, AnalysisScreen } from "./analysis";
 import { MatchupScreen } from "./matchup";
 import { WatchGameScreen, WatchToday } from "./watch";
+import { PlayerRecentView } from "./player-recent";
 import { LeagueBadge, TeamBrand } from "./branding";
 import {
   DataState, FavoriteButton, LoadingSkeleton, MetricGrid, PageHeading,
@@ -204,14 +206,49 @@ function PlayerScreen({ catalog, favorites, toggle, saving, services }: {
   services: Services;
 }) {
   const { playerId, section } = useParams();
-  const profile = catalog.profiles.find((item) => item.player.id === playerId);
+  const sampleProfile = catalog.profiles.find((item) => item.player.id === playerId);
+  const canonical = catalog.league === "NPB" && !sampleProfile && !!playerId;
+  const [period, setPeriod] = useState<RecentPeriod>("7d");
+  const [recent, setRecent] = useState<PlayerRecentResponse | null>(null);
+  const [identity, setIdentity] = useState<PlayerRecentResponse["player"] | null>(null);
+  const [recentState, setRecentState] = useState<"loading" | "ready" | "missing" | "error">("loading");
+  const [recentCache] = useState(() => new Map<string, PlayerRecentResponse | null>());
+  useEffect(() => {
+    if (!canonical || !playerId) return;
+    let active = true;
+    const cacheKey = `${playerId}:${period}`;
+    if (recentCache.has(cacheKey)) {
+      const value = recentCache.get(cacheKey) ?? null;
+      queueMicrotask(() => { if (active) { setRecent(value); setRecentState(value ? "ready" : "missing");
+        if (value) setIdentity(value.player); } });
+      return () => { active = false; };
+    }
+    void services.recent.find(playerId, period).then((value) => {
+      if (!active) return;
+      recentCache.set(cacheKey, value);
+      setRecent(value); setRecentState(value ? "ready" : "missing");
+      if (value) setIdentity(value.player);
+    }).catch(() => { if (active) setRecentState("error"); });
+    return () => { active = false; };
+  }, [canonical, playerId, period, recentCache, services]);
+  const identityPending = canonical && (recentState === "loading" || recentState === "error") && !identity;
+  const profile = sampleProfile ?? (identity && playerId === identity.id ? { player: {
+    id: identity.id, league: "NPB" as const, names: { canonical: identity.name, japanese: identity.name, english: null },
+    searchNames: [], teamId: identity.teamId, positions: [] as [], sourceIds: {},
+  }, jersey: null, bats: null, throws: null } : identityPending && playerId ? { player: {
+    id: playerId, league: "NPB" as const, names: { canonical: "選手情報", japanese: "選手情報", english: null },
+    searchNames: [], teamId: null, positions: [] as [], sourceIds: {},
+  }, jersey: null, bats: null, throws: null } : null);
   if (!profile) return <div className="screen"><DataState kind="no-data" title="選手が見つかりません"
     action="検索に戻る" to={`/${catalog.league}/search`} /></div>;
   if (section && !["stats", "analysis", "more"].includes(section)) {
     return <Navigate to={`/${catalog.league}/players/${encodeURIComponent(profile.player.id)}`} replace />;
   }
   const { player } = profile;
-  const team = catalog.teams.find((item) => item.id === player.teamId);
+  const team = catalog.teams.find((item) => item.id === player.teamId) ?? (identity?.teamId && identity.teamName ? {
+    id: identity.teamId, league: "NPB" as const, names: { canonical: identity.teamName,
+      japaneseFull: identity.teamName, japaneseShort: identity.teamName, abbreviation: null },
+  } : undefined);
   const isFavorite = favorites.some((favorite) => favorite.kind === "player" && favorite.entityId === player.id);
   const stats = catalog.statistics.filter((item) => item.playerId === player.id);
   const base = `/${catalog.league}/players/${encodeURIComponent(player.id)}`;
@@ -221,17 +258,21 @@ function PlayerScreen({ catalog, favorites, toggle, saving, services }: {
       <PlayerAvatar player={player} team={team} jersey={profile.jersey} size={section === "analysis" ? "sm" : "lg"} />
       <div className="profile-header__body">
         <div className="profile-header__top"><LeagueBadge league={catalog.league} />
-          <FavoriteButton active={isFavorite} saving={saving} label={formatPlayerName(player)}
-            onClick={() => toggle({ kind: "player", entityId: player.id, league: catalog.league })} />
+          {!identityPending && <FavoriteButton active={isFavorite} saving={saving} label={formatPlayerName(player)}
+            onClick={() => toggle({ kind: "player", entityId: player.id, league: catalog.league })} />}
         </div>
         <h1>{formatPlayerName(player)}</h1>
         {player.names.japanese && player.names.english && <p className="secondary-name">{player.names.english}</p>}
-        <p>{formatTeamName(team)} · {formatPositions(player.positions)}</p>
+        {team && <p>{formatTeamName(team)}{player.positions.length > 0 && ` · ${formatPositions(player.positions)}`}</p>}
       </div>
     </header>
-    {section !== "analysis" && <div className="profile-facts"><span>{formatPositions(player.positions, true)}</span>
-      <span>背番号 {profile.jersey ?? "—"}</span><span>{profile.throws ?? "—"}投 / {profile.bats ?? "—"}打</span>
-    </div>}
+    {section !== "analysis" && (player.positions.length > 0 || profile.jersey || profile.throws || profile.bats) &&
+      <div className="profile-facts">
+        {player.positions.length > 0 && <span>{formatPositions(player.positions, true)}</span>}
+        {profile.jersey && <span>背番号 {profile.jersey}</span>}
+        {(profile.throws || profile.bats) && <span>{profile.throws ? `${profile.throws}投` : ""}
+          {profile.throws && profile.bats ? " / " : ""}{profile.bats ? `${profile.bats}打` : ""}</span>}
+      </div>}
     <nav className="profile-tabs" aria-label="選手ページ">
       {[{ label: "概要", path: base }, { label: "成績", path: `${base}/stats` },
         { label: "分析", path: `${base}/analysis` }, { label: "その他", path: `${base}/more` }].map((tab, index) =>
@@ -245,15 +286,16 @@ function PlayerScreen({ catalog, favorites, toggle, saving, services }: {
         to={`/${catalog.league}/matchup?pitcher=${encodeURIComponent(player.id)}`}>打者との相性を見る<ChevronRight size={16} /></Link>}
     </div>
     {!section && <div className="profile-content">
+      {canonical && <PlayerRecentView period={period} onPeriodChange={(next) => { setRecentState("loading"); setPeriod(next); }} payload={recent} state={recentState} />}
       {stats.length ? stats.map((item) => <section className="stats-section" key={`${item.group}:${item.season}`}>
         <SectionHeader title={`${item.season}年 · ${item.group === "hitting" ? "打撃" : "投球"}`}
           action="成績を見る" to={`${base}/stats`} />
         <MetricGrid stats={item} />
-      </section>) : <DataState kind="no-data" title="成績はまだありません" />}
+      </section>) : !canonical && <DataState kind="no-data" title="成績はまだありません" />}
     </div>}
-    {section === "stats" && <div className="profile-content">{stats.length
+    {section === "stats" && <div className="profile-content">{canonical && <PlayerRecentView period={period} onPeriodChange={(next) => { setRecentState("loading"); setPeriod(next); }} payload={recent} state={recentState} />}{stats.length
       ? stats.map((item) => <StatsSection key={`${item.group}:${item.season}`} stats={item} />)
-      : <DataState kind="no-data" title="成績はまだありません" />}</div>}
+      : !canonical && <DataState kind="no-data" title="成績はまだありません" />}</div>}
     {section === "analysis" && <div className="profile-content profile-content--analysis"><AnalysisScreen key={player.id}
       catalog={catalog} player={player} provider={services.analysis} /></div>}
     {section === "more" && <div className="profile-content"><PageHeading title="その他" />
@@ -325,6 +367,8 @@ function LeagueView({ league, services, favorites, toggle, saving }: {
   league: League; services: Services; favorites: Favorite[];
   toggle: (target: FavoriteTarget) => void; saving: boolean;
 }) {
+  const location = useLocation();
+  const canonicalPlayerRoute = league === "NPB" && /^\/NPB\/players\/[0-9a-f-]{36}(?:\/|$)/i.test(location.pathname);
   const [result, setResult] = useState<CatalogResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -350,15 +394,15 @@ function LeagueView({ league, services, favorites, toggle, saving }: {
       {!result && <button className="button" onClick={() => void refresh()}>再試行</button>}</div>}
     {!result && loading && <LoadingSkeleton />}
     {result && <>
-      {result.data.source.kind === "sample" && <div className="sample-banner">
-        <span>サンプル</span> {league === "NPB" ? "選手・分析は架空データです。順位表は取得済みの実データがあれば別途表示します" : "架空の選手・球団・成績を表示しています"}
+      {result.data.source.kind === "sample" && !canonicalPlayerRoute && <div className="sample-banner">
+        <span>サンプル</span> {league === "NPB" ? "選手一覧・分析はサンプルです。実データ対応選手の最近の成績は別途表示します" : "架空の選手・球団・成績を表示しています"}
       </div>}
       <Routes>
         <Route path="home" element={<HomeScreen catalog={result.data} favorites={favorites} services={services} />} />
         <Route path="search" element={<SearchScreen catalog={result.data} favorites={favorites}
           query={searchQuery} setQuery={setSearchQuery} scope={searchScope} setScope={setSearchScope} />} />
         <Route path="ranking" element={<RankingScreen catalog={result.data} />} />
-        <Route path="players/:playerId/:section?" element={<PlayerScreen catalog={result.data}
+        <Route path="players/:playerId/:section?" element={<PlayerScreen key={location.pathname.split("/")[3]} catalog={result.data}
           favorites={favorites} toggle={toggle} saving={saving} services={services} />} />
         <Route path="teams/:teamId" element={<TeamScreen catalog={result.data}
           favorites={favorites} toggle={toggle} saving={saving} />} />

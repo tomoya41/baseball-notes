@@ -12,6 +12,19 @@ const hash = (value: unknown) => createHash("sha256").update(JSON.stringify(valu
 export class NpbRepository {
   constructor(private readonly client: DataClient) {}
 
+  async findPlayerIdentity(playerId: string): Promise<{ id: string; name: string; teamId: string | null; teamName: string | null } | null> {
+    const result = await this.client.execute({ sql: `SELECT payload_json FROM master_history
+      WHERE entity_kind='player' AND entity_id=? ORDER BY valid_from DESC LIMIT 1`, args: [playerId] });
+    const row = result.rows[0];
+    if (!row) return null;
+    const payload = JSON.parse(String(row.payload_json)) as { name?: unknown; teamId?: unknown };
+    if (typeof payload.name !== "string" || !payload.name.trim()) return null;
+    const teamId = typeof payload.teamId === "string" ? payload.teamId : null;
+    const teams = teamId ? await this.findTeams() : [];
+    const team = teams.find((item) => item.id === teamId);
+    return { id: playerId, name: payload.name, teamId, teamName: team?.names.japaneseShort ?? team?.names.canonical ?? null };
+  }
+
   async syncTeamMappings(at: string): Promise<void> {
     const statements: InStatement[] = [];
     for (const mapping of npbTeams) {
@@ -253,7 +266,7 @@ export class NpbRepository {
       hbp: row.hbp, stolenBases: row.sb, caughtStealing: row.cs, runs: row.runs,
       sacrificeHits: row.sacrifice_hits, sacrificeFlies: row.sacrifice_flies,
       starter: row.starter === null ? null : Number(row.starter) === 1,
-      sourceUrl: row.source_url, sourceKey: row.source_key, sourceRecordId: row.source_record_id,
+      sourceUrl: row.source_url ?? undefined, sourceKey: row.source_key, sourceRecordId: row.source_record_id,
       collectedAt: row.collected_at }));
   }
 
@@ -268,7 +281,7 @@ export class NpbRepository {
       walksAndHitBatters: row.walks_and_hit_batters, strikeouts: row.strikeouts,
       runs: row.runs, earnedRuns: row.earned_runs, pitches: row.pitches, catcherId: row.catcher_id,
       starter: row.starter === null ? null : Number(row.starter) === 1, decision: row.decision,
-      sourceUrl: row.source_url, sourceKey: row.source_key, sourceRecordId: row.source_record_id,
+      sourceUrl: row.source_url ?? undefined, sourceKey: row.source_key, sourceRecordId: row.source_record_id,
       collectedAt: row.collected_at }));
   }
 
@@ -281,7 +294,7 @@ export class NpbRepository {
       hbp: row.hbp, stolenBases: row.sb, caughtStealing: row.cs, runs: row.runs,
       sacrificeHits: row.sacrifice_hits, sacrificeFlies: row.sacrifice_flies,
       starter: row.starter === null ? null : Number(row.starter) === 1,
-      sourceUrl: row.source_url, sourceKey: row.source_key, sourceRecordId: row.source_record_id,
+      sourceUrl: row.source_url ?? undefined, sourceKey: row.source_key, sourceRecordId: row.source_record_id,
       collectedAt: row.collected_at }));
   }
 
@@ -295,7 +308,7 @@ export class NpbRepository {
       strikeouts: row.strikeouts, runs: row.runs, earnedRuns: row.earned_runs,
       pitches: row.pitches, catcherId: row.catcher_id,
       starter: row.starter === null ? null : Number(row.starter) === 1, decision: row.decision,
-      sourceUrl: row.source_url, sourceKey: row.source_key, sourceRecordId: row.source_record_id,
+      sourceUrl: row.source_url ?? undefined, sourceKey: row.source_key, sourceRecordId: row.source_record_id,
       collectedAt: row.collected_at }));
   }
 

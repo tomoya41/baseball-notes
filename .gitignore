@@ -10,6 +10,7 @@ coverage/
 .next/
 out/
 .vercel/
+api/npb/recent.js
 
 # environment / secrets
 .env

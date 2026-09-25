@@ -6,7 +6,7 @@ Androidを主対象とする野球データアプリ。製品仕様は [SPEC.md]
 
 React + TypeScript strict + Vite + Capacitor Androidの構成。ホーム / 検索 / 分析 / 記録 / マイの5項目ナビ、NPB・MLB切替、選手・球団検索、選手詳細、端末保存のお気に入り、指標説明、stale表示を実装。Home / Player / 参考ランキングにLight/Dark対応のデザインシステムを適用しています。
 
-**選手・Analysis等の既存UIは架空のサンプルデータです。NPB Homeの順位表のみ、日次Collectorが生成した実データPayloadを表示できます。** 実選手の今季成績はUIへ未接続です。ランキングはサンプル内の参考表示で、規定条件や公式順位ではありません。Analysis画面には共通フィルター・カテゴリー・詳細・状態表示を実装。MATCHUPは投手/打者の手動選択と対戦分析UI、WATCHはHomeの今日の試合から進むUI契約を実装しました。Retrosheet 2025年の歴史順位も別途生成できます。
+**選手一覧・Analysis等の既存UIは架空のサンプルデータです。NPB Homeの順位表と、canonical IDで開いた実選手Player画面の「最近の成績」だけ実データです。** Career・Season totals・HOTは未接続です。ランキングはサンプル内の参考表示で、規定条件や公式順位ではありません。Analysis画面には共通フィルター・カテゴリー・詳細・状態表示を実装。MATCHUPは投手/打者の手動選択と対戦分析UI、WATCHはHomeの今日の試合から進むUI契約を実装しました。Retrosheet 2025年の歴史順位も別途生成できます。
 
 - [アーキテクチャ](docs/architecture.md)
 - [データ取得元の調査](docs/data-sources.md)
@@ -14,6 +14,7 @@ React + TypeScript strict + Vite + Capacitor Androidの構成。ホーム / 検�
 - [デザインシステム](docs/design-system.md)
 - [日次データ基盤](docs/data-architecture.md)
 - [NPBリモート収集・配信運用](docs/npb-remote-delivery.md)
+- [Player Recent実データ接続](docs/player-recent.md)
 - [NPB 1試合全出場者収集の検証](docs/npb-game-proof.md)
 - [NPB別試合のEdge Case検証](docs/npb-game-edge-proof.md)
 - [検証・整理記録](docs/verification.md)
@@ -118,12 +119,14 @@ NPBの前日全試合Fact収集・manual検証・復旧手順は[docs/npb-day-op
 
 公開NPBデータの正午JST鮮度監視は[docs/npb-freshness-operations.md](docs/npb-freshness-operations.md)を参照してください。`npm run monitor:npb:freshness`は公開JSONの日付を検査し、GitHub ActionsではTursoのDay状態と暗号化Backupも診断します。監視はnf3へアクセスしません。
 
+保存済みNPB Player Game Factsからの単一選手・直近7/14/30暦日Read-only集計と収集Coverageは[docs/player-period.md](docs/player-period.md)を参照してください。`npx tsx scripts/verify-player-period.ts --date=2026-09-24`でローカルFactを読み、集計前後の件数を照合できます。Player「最近の成績」だけ公開Read-only API経由で接続済みです。構成・制約は[docs/player-recent.md](docs/player-recent.md)を参照してください。HOTは未接続です。
+
 ローカルGitと作業ブランチを作成済み。公開GitHubリポジトリへpushしました。GitHubリポジトリへ追加する際は、既存ブランチをレビューし `npm run check` を通してください。
 
 `.github/workflows/check.yml` はpublicリポジトリの標準無料runnerでlint/typecheck/test/build/Capacitor syncを行います。privateではjobをskipします。private CIはアカウントの無料枠と課金停止設定を確認するまでローカルチェックを使います。公開repoのFoundation checksは成功しました。
 
-Vercelは必須ではありません。必要な場合だけ個人・非商用Hobbyの静的プレビュー（build=`npm run build`、output=`dist`）として利用できます。HashRouterなのでrewriteは不要です。上限・適格性を確認し、有料プランや超過課金を自動導入しません。バックエンド、DB、Cron、通知、AIには接続していません。
+Player Recentだけ、Vercel FreeのServerless APIからTursoを読みます。読み取り専用トークンはVercelのサーバー環境変数に保持し、クライアントへ入れません。アプリは公開APIを読むだけです。Cron・通知・AIはVercelへ追加しません。
 
 ## 今回の停止位置
 
-Phase 0の骨格＋縦方向実装、Analysis Aの契約、Design Aと代表画面、Capabilityに従うAnalysis / MATCHUP / WATCH UIまで。Hot、正式な記録・ランキング、ドラフト、FA、Prospect、通知、AI、実データのAnalysis/MATCHUP集計および今日の日程/打順取得は未実装です。次Phaseへ自動的に進みません。
+Phase 0の骨格＋縦方向実装、Analysis Aの契約、Design Aと代表画面、Capabilityに従うAnalysis / MATCHUP / WATCH UIまで。Hot、正式な記録・ランキング、ドラフト、FA、Prospect、通知、AI、実データ集計のAnalysis/MATCHUP画面接続および今日の日程/打順取得は未実装です。次Phaseへ自動的に進みません。
