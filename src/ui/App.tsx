@@ -8,6 +8,7 @@ import type { Services } from "../app/services";
 import type { CatalogResult, Favorite, League, PlayerCatalog, Statistics } from "../domain/models";
 import type { NpbLatestStandings } from "../domain/standings";
 import type { PlayerRecentResponse, RecentPeriod } from "../domain/player-recent";
+import type { NpbDirectoryPlayer, NpbPlayerDirectory } from "../domain/npb-player-directory";
 import { metrics } from "../domain/metrics";
 import { positionDefinitions } from "../domain/baseball-terms";
 import { formatDate, formatDateTime, formatGamesBehind, formatMetric, formatPlayerName, formatPositions, formatTeamName, formatWinningPercentage } from "../presentation/formatters";
@@ -20,6 +21,7 @@ import { WatchGameScreen, WatchToday } from "./watch";
 import { PlayerRecentView } from "./player-recent";
 import { NpbHotSection } from "./npb-hot";
 import { NpbPlayerSearch } from "./npb-player-search";
+import { NpbPlayerProfileFacts } from "./npb-player-profile";
 import { LeagueBadge, TeamBrand } from "./branding";
 import {
   DataState, FavoriteButton, LoadingSkeleton, MetricGrid, PageHeading,
@@ -214,8 +216,23 @@ function PlayerScreen({ catalog, favorites, toggle, saving, services }: {
   const [period, setPeriod] = useState<RecentPeriod>("7d");
   const [recent, setRecent] = useState<PlayerRecentResponse | null>(null);
   const [identity, setIdentity] = useState<PlayerRecentResponse["player"] | null>(null);
+  const [directoryPlayer, setDirectoryPlayer] = useState<NpbDirectoryPlayer | null>(null);
+  const [directoryTeam, setDirectoryTeam] = useState<NpbPlayerDirectory["teams"][number] | null>(null);
+  const [directoryState, setDirectoryState] = useState<"loading" | "ready" | "error">("loading");
   const [recentState, setRecentState] = useState<"loading" | "ready" | "missing" | "error">("loading");
   const [recentCache] = useState(() => new Map<string, PlayerRecentResponse | null>());
+  useEffect(() => {
+    if (!canonical || !playerId) return;
+    let active = true;
+    void services.directory.findLatestNpb().then((value) => {
+      if (!active) return;
+      const found = value.players.find((item) => item.playerId === playerId) ?? null;
+      setDirectoryPlayer(found);
+      setDirectoryTeam(value.teams.find((item) => item.id === found?.teamId) ?? null);
+      setDirectoryState("ready");
+    }).catch(() => { if (active) setDirectoryState("error"); });
+    return () => { active = false; };
+  }, [canonical, playerId, services]);
   useEffect(() => {
     if (!canonical || !playerId) return;
     let active = true;
@@ -234,8 +251,13 @@ function PlayerScreen({ catalog, favorites, toggle, saving, services }: {
     }).catch(() => { if (active) setRecentState("error"); });
     return () => { active = false; };
   }, [canonical, playerId, period, recentCache, services]);
-  const identityPending = canonical && (recentState === "loading" || recentState === "error") && !identity;
-  const profile = sampleProfile ?? (identity && playerId === identity.id ? { player: {
+  const identityPending = canonical && directoryState === "loading" && !identity;
+  const profile = sampleProfile ?? (directoryPlayer && playerId === directoryPlayer.playerId ? { player: {
+    id: directoryPlayer.playerId, league: "NPB" as const,
+    names: { canonical: directoryPlayer.displayName, japanese: directoryPlayer.displayName, english: null },
+    searchNames: [], teamId: directoryPlayer.teamId,
+    positions: directoryPlayer.position ? [directoryPlayer.position] : [], sourceIds: {},
+  }, jersey: null, bats: null, throws: null } : identity && playerId === identity.id ? { player: {
     id: identity.id, league: "NPB" as const, names: { canonical: identity.name, japanese: identity.name, english: null },
     searchNames: [], teamId: identity.teamId, positions: [] as [], sourceIds: {},
   }, jersey: null, bats: null, throws: null } : identityPending && playerId ? { player: {
@@ -248,7 +270,10 @@ function PlayerScreen({ catalog, favorites, toggle, saving, services }: {
     return <Navigate to={`/${catalog.league}/players/${encodeURIComponent(profile.player.id)}`} replace />;
   }
   const { player } = profile;
-  const team = catalog.teams.find((item) => item.id === player.teamId) ?? (identity?.teamId && identity.teamName ? {
+  const team = catalog.teams.find((item) => item.id === player.teamId) ?? (directoryTeam ? {
+    id: directoryTeam.id, league: "NPB" as const, names: { canonical: directoryTeam.name,
+      japaneseFull: directoryTeam.name, japaneseShort: directoryTeam.shortName, abbreviation: null },
+  } : identity?.teamId && identity.teamName ? {
     id: identity.teamId, league: "NPB" as const, names: { canonical: identity.teamName,
       japaneseFull: identity.teamName, japaneseShort: identity.teamName, abbreviation: null },
   } : undefined);
@@ -269,7 +294,8 @@ function PlayerScreen({ catalog, favorites, toggle, saving, services }: {
         {team && <p>{formatTeamName(team)}{player.positions.length > 0 && ` · ${formatPositions(player.positions)}`}</p>}
       </div>
     </header>
-    {section !== "analysis" && (player.positions.length > 0 || profile.jersey || profile.throws || profile.bats) &&
+    {directoryPlayer && section !== "analysis" ? <NpbPlayerProfileFacts player={directoryPlayer} /> :
+    section !== "analysis" && (player.positions.length > 0 || profile.jersey || profile.throws || profile.bats) &&
       <div className="profile-facts">
         {player.positions.length > 0 && <span>{formatPositions(player.positions, true)}</span>}
         {profile.jersey && <span>背番号 {profile.jersey}</span>}
@@ -289,14 +315,14 @@ function PlayerScreen({ catalog, favorites, toggle, saving, services }: {
         to={`/${catalog.league}/matchup?pitcher=${encodeURIComponent(player.id)}`}>打者との相性を見る<ChevronRight size={16} /></Link>}
     </div>
     {!section && <div className="profile-content">
-      {canonical && <PlayerRecentView period={period} onPeriodChange={(next) => { setRecentState("loading"); setPeriod(next); }} payload={recent} state={recentState} />}
+      {canonical && <PlayerRecentView period={period} onPeriodChange={(next) => { setRecentState("loading"); setPeriod(next); }} payload={recent} state={recentState} noFactKnown={directoryPlayer?.recentAvailable === false} />}
       {stats.length ? stats.map((item) => <section className="stats-section" key={`${item.group}:${item.season}`}>
         <SectionHeader title={`${item.season}年 · ${item.group === "hitting" ? "打撃" : "投球"}`}
           action="成績を見る" to={`${base}/stats`} />
         <MetricGrid stats={item} />
       </section>) : !canonical && <DataState kind="no-data" title="成績はまだありません" />}
     </div>}
-    {section === "stats" && <div className="profile-content">{canonical && <PlayerRecentView period={period} onPeriodChange={(next) => { setRecentState("loading"); setPeriod(next); }} payload={recent} state={recentState} />}{stats.length
+    {section === "stats" && <div className="profile-content">{canonical && <PlayerRecentView period={period} onPeriodChange={(next) => { setRecentState("loading"); setPeriod(next); }} payload={recent} state={recentState} noFactKnown={directoryPlayer?.recentAvailable === false} />}{stats.length
       ? stats.map((item) => <StatsSection key={`${item.group}:${item.season}`} stats={item} />)
       : !canonical && <DataState kind="no-data" title="成績はまだありません" />}</div>}
     {section === "analysis" && <div className="profile-content profile-content--analysis"><AnalysisScreen key={player.id}

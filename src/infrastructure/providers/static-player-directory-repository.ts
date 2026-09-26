@@ -12,7 +12,7 @@ export class StaticPlayerDirectoryRepository {
 
   async findLatestNpb(): Promise<NpbPlayerDirectory> {
     const url = `${this.baseUrl.replace(/\/?$/, "/")}data/npb/players/latest.json`;
-    const cacheKey = `npb-player-directory-v1:${url}`;
+    const cacheKey = `npb-player-directory-v2:${url}`;
     let cached: NpbPlayerDirectory | null = null;
     try {
       const raw = this.cache?.getItem(cacheKey);

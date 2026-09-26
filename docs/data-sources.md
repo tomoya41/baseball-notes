@@ -72,7 +72,7 @@ nf3更新時刻の保証や公式API SLAはない。CollectorはJST前日を対�
 - 更新頻度：共同編集に依存。競技日次更新のSLAなし。
 - 規約・保存：structured dataはCC0で再利用・保存可能。画像・Wikipedia本文には別条件があり、自動的に同じライセンスと扱わない。
 - 公式保証：Wikimediaの文書化API。野球リーグの公式提供ではない。
-- 代替：既存キャッシュと明示した未提供。実選手ID対応表を確認してからadapterを追加。今回は未採用。
+- 採否・代替：Player Master v2では、手動照合済みの4件に限り構造化データを採用。名前だけの自動同定や全名簿取得は行わない。生年月日・出生地・国籍・確認できた投手/捕手Positionをfield provenance付きで保存し、投打など未掲載値はnullにする。写真とWikipedia本文は採用しない。DBへの取り込みは明示的なmanual workflowのみ。Game Fact収集は従来どおりnf3で変更なし。
 - 出典：[開発者案内](https://www.wikidata.org/wiki/Wikidata:For_developers)、[ライセンス](https://www.wikidata.org/wiki/Wikidata:Licensing)、[API](https://www.mediawiki.org/wiki/Wikibase/API)。
 
 ### API-SPORTS Baseball

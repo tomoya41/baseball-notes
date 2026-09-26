@@ -22,14 +22,16 @@ const ids = {
 };
 const teamNames = ["阪神", "巨人", "DeNA", "中日", "広島", "ヤクルト", "ソフトバンク", "日本ハム", "オリックス", "楽天", "西武", "ロッテ"];
 const teams = teamNames.map((name, index) => ({ id: `team-${index}`, name, shortName: name }));
+const blankProfile = { position: null, playerType: null, birthDate: null, birthPlace: null,
+  nationality: null, bats: null, throws: null } as const;
 const players: NpbPlayerDirectory["players"] = [
-  { playerId: ids.nakashima, displayName: "中島大輔", teamId: teams[9]!.id, position: null, battingAvailable: true, pitchingAvailable: false },
-  { playerId: ids.uehara, displayName: "上原健太", teamId: teams[7]!.id, position: null, battingAvailable: false, pitchingAvailable: true },
-  { playerId: ids.sakamoto, displayName: "坂本誠志郎", teamId: teams[0]!.id, position: null, battingAvailable: true, pitchingAvailable: false },
-  { playerId: ids.both, displayName: "二刀流選手", teamId: teams[1]!.id, position: null, battingAvailable: true, pitchingAvailable: true },
-  { playerId: ids.noFact, displayName: "新規選手", teamId: teams[2]!.id, position: null, battingAvailable: false, pitchingAvailable: false },
+  { ...blankProfile, playerId: ids.nakashima, displayName: "中島大輔", teamId: teams[9]!.id, battingAvailable: true, pitchingAvailable: false, recentAvailable: true },
+  { ...blankProfile, playerId: ids.uehara, displayName: "上原健太", teamId: teams[7]!.id, battingAvailable: false, pitchingAvailable: true, recentAvailable: true },
+  { ...blankProfile, playerId: ids.sakamoto, displayName: "坂本誠志郎", teamId: teams[0]!.id, battingAvailable: true, pitchingAvailable: false, recentAvailable: true },
+  { ...blankProfile, playerId: ids.both, displayName: "二刀流選手", teamId: teams[1]!.id, battingAvailable: true, pitchingAvailable: true, recentAvailable: true },
+  { ...blankProfile, playerId: ids.noFact, displayName: "新規選手", teamId: teams[2]!.id, battingAvailable: false, pitchingAvailable: false, recentAvailable: false },
 ];
-const fixture = npbPlayerDirectorySchema.parse({ schemaVersion: 1, league: "NPB",
+const fixture = npbPlayerDirectorySchema.parse({ schemaVersion: 2, league: "NPB",
   effectiveDate: "2026-09-25", generatedAt: "2026-09-26T00:00:00.000Z", teams, players });
 function view(state: "loading" | "ready" | "error", value: NpbPlayerDirectory | null = fixture, query = "") {
   return renderToStaticMarkup(<MemoryRouter><NpbPlayerSearchView directory={value} state={state}
@@ -83,7 +85,7 @@ describe("NPB Player Directory", () => {
       async () => { throw new Error("offline"); }, cache);
     expect((await offline.findLatestNpb()).players.length).toBe(5);
     await expect(new StaticPlayerDirectoryRepository("https://other.test/",
-      async () => Response.json({ schemaVersion: 1, players: [] }), cache).findLatestNpb()).rejects.toThrow();
+      async () => Response.json({ schemaVersion: 2, players: [] }), cache).findLatestNpb()).rejects.toThrow();
     expect(() => npbPlayerDirectorySchema.parse({ ...fixture, secret: "forbidden" })).toThrow();
   });
 
@@ -131,6 +133,14 @@ describe("NPB Player Directory", () => {
       expect(await preservePublishedNpbPlayerDirectory(path, "https://example.test/players.json",
         async () => Response.json({ players: [] }))).toBe("skipped");
       expect(await readFile(path, "utf8")).toBe(previous);
+      const legacy = { schemaVersion: 1, league: "NPB", effectiveDate: fixture.effectiveDate,
+        generatedAt: fixture.generatedAt, teams, players: players.map(({ playerId, displayName, teamId,
+          position, battingAvailable, pitchingAvailable }) => ({ playerId, displayName, teamId,
+          position, battingAvailable, pitchingAvailable })) };
+      expect(await preservePublishedNpbPlayerDirectory(path, "https://example.test/players.json",
+        async () => Response.json(legacy))).toBe("preserved");
+      const converted = npbPlayerDirectorySchema.parse(JSON.parse(await readFile(path, "utf8")) as unknown);
+      expect(converted.players.find((item) => item.playerId === ids.noFact)?.recentAvailable).toBe(false);
     } finally { await rm(root, { recursive: true, force: true }); }
   });
 });

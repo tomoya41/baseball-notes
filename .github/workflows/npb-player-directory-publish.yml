@@ -1,6 +1,11 @@
 name: Publish NPB Player Directory
 on:
   workflow_dispatch:
+    inputs:
+      import_verified_profiles:
+        description: Import only the four reviewed Wikidata identities before publication
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -22,6 +27,12 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      - name: Import reviewed Player Master v2 profiles
+        if: inputs.import_verified_profiles == true
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+        run: npx tsx scripts/import-npb-player-master-v2.ts --apply --confirmed-mapping
       - name: Generate validated Player Directory from read-only queries
         env:
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
@@ -36,7 +47,7 @@ jobs:
         id: identity
         shell: bash
         run: |
-          node -e "const p=require('./.data/publish/data/npb/players/latest.json'); if(p.schemaVersion!==1 || p.teams.length!==12 || !p.players.length) process.exit(1); console.log(p.players.length+' players')"
+          node -e "const p=require('./.data/publish/data/npb/players/latest.json'); if(p.schemaVersion!==2 || p.teams.length!==12 || !p.players.length) process.exit(1); console.log(p.players.length+' players')"
           echo "generated_at=$(node -p "require('./.data/publish/data/npb/players/latest.json').generatedAt")" >> "$GITHUB_OUTPUT"
       - name: Build app and stage complete Pages site
         shell: bash

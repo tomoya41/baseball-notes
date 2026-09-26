@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { openDataClient, type DataClient } from "../src/data/database";
 import { NpbPlayerDirectoryRepository } from "../src/data/npb-player-directory";
 import { writeNpbPlayerDirectoryAtomically } from "../src/data/npb-player-directory-payload";
+import { normalizePlayerSearch } from "../src/domain/npb-player-directory";
 
 function option(name: string): string | null {
   return process.argv.find((value) => value.startsWith(`${name}=`))?.slice(name.length + 1) ?? null;
@@ -29,10 +30,24 @@ try {
   const readMs = Math.round(performance.now() - started);
   const path = join(option("--payload-root") ?? ".data/publish", "data", "npb", "players", "latest.json");
   const bytes = await writeNpbPlayerDirectoryAtomically(path, directory);
+  const names = new Set<string>();
+  let duplicateNameCandidates = 0;
+  for (const player of directory.players) {
+    const key = normalizePlayerSearch(player.displayName);
+    if (names.has(key)) duplicateNameCandidates++;
+    names.add(key);
+  }
   process.stdout.write(`${JSON.stringify({ effectiveDate: directory.effectiveDate,
     playerCount: directory.players.length, teamCount: directory.teams.length,
     battingPlayers: directory.players.filter((player) => player.battingAvailable).length,
     pitchingPlayers: directory.players.filter((player) => player.pitchingAvailable).length,
     noFactPlayers: directory.players.filter((player) => !player.battingAvailable && !player.pitchingAvailable).length,
+    teamKnown: directory.players.filter((player) => player.teamId).length,
+    positionKnown: directory.players.filter((player) => player.position).length,
+    batsKnown: directory.players.filter((player) => player.bats).length,
+    throwsKnown: directory.players.filter((player) => player.throws).length,
+    birthDateKnown: directory.players.filter((player) => player.birthDate).length,
+    birthPlaceKnown: directory.players.filter((player) => player.birthPlace).length,
+    duplicateNameCandidates,
     bytes, queryCount, readMs, totalMs: Math.round(performance.now() - started) })}\n`);
 } finally { source.close(); }

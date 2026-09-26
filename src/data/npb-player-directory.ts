@@ -1,5 +1,6 @@
 import type { DataClient } from "./database";
-import { npbPlayerDirectorySchema, type NpbPlayerDirectory } from "../domain/npb-player-directory";
+import { npbPlayerDirectorySchema, npbStoredProfileSchema, type NpbPlayerDirectory } from "../domain/npb-player-directory";
+import { positionCodeSchema } from "../domain/baseball-terms";
 
 export class NpbPlayerDirectoryRepository {
   constructor(private readonly client: DataClient) {}
@@ -31,16 +32,22 @@ export class NpbPlayerDirectoryRepository {
     const battingIds = new Set(batting.rows.map((row) => String(row.player_id)));
     const pitchingIds = new Set(pitching.rows.map((row) => String(row.player_id)));
     const players = master.rows.map((row) => {
-      const value = JSON.parse(String(row.payload_json)) as { name?: unknown; teamId?: unknown; position?: unknown };
+      const value = JSON.parse(String(row.payload_json)) as { name?: unknown; teamId?: unknown; position?: unknown; profile?: unknown };
       if (typeof value.name !== "string" || !value.name.trim()) throw new Error("Invalid player master name");
+      const profile = value.profile ? npbStoredProfileSchema.parse(value.profile) : null;
+      const position = positionCodeSchema.safeParse(value.position).success ? positionCodeSchema.parse(value.position)
+        : profile?.position ?? null;
+      const battingAvailable = battingIds.has(String(row.entity_id));
+      const pitchingAvailable = pitchingIds.has(String(row.entity_id));
       return { playerId: String(row.entity_id), displayName: value.name,
         teamId: typeof value.teamId === "string" ? value.teamId : null,
-        position: typeof value.position === "string" && value.position.trim() ? value.position : null,
-        battingAvailable: battingIds.has(String(row.entity_id)),
-        pitchingAvailable: pitchingIds.has(String(row.entity_id)) };
+        position, playerType: position === "P" ? "pitcher" as const : position ? "fielder" as const : null,
+        birthDate: profile?.birthDate ?? null, birthPlace: profile?.birthPlace ?? null,
+        nationality: profile?.nationality ?? null, bats: profile?.bats ?? null, throws: profile?.throws ?? null,
+        battingAvailable, pitchingAvailable, recentAvailable: battingAvailable || pitchingAvailable };
     }).sort((a, b) => a.displayName.localeCompare(b.displayName, "ja") ||
       a.playerId.localeCompare(b.playerId));
-    return npbPlayerDirectorySchema.parse({ schemaVersion: 1, league: "NPB", effectiveDate,
+    return npbPlayerDirectorySchema.parse({ schemaVersion: 2, league: "NPB", effectiveDate,
       generatedAt, teams, players });
   }
 }

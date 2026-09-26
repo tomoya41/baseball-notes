@@ -2,6 +2,10 @@
 
 This file records decisions that should survive individual implementation tasks.
 
+## 2026-09-26 — Verified NPB Player Master and compact static Profile
+
+Canonical Player UUIDs remain in `master_history` independently of Game Facts. A bounded, manually reviewed Wikidata CC0 mapping supplements only confirmed Player fields; internal canonical name and current Team take precedence, and ambiguous identities or conflicts block import. The public version 2 Player Directory combines searchable identity and basic Profile because a few hundred small records remain compact and avoid per-Player database reads. Fact availability is a separate flag. This creates a no-Fact Player path without changing the daily nf3 Collector, HOT, Fact schema, or Recent calculation. The reviewed Master import is an explicit opt-in manual workflow step; ordinary Directory publication remains read-only.
+
 ## 2026-09-23 — Product focus
 The product is a baseball data discovery app, not a pitch-by-pitch速報 replacement.
 

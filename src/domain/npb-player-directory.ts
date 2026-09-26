@@ -1,7 +1,16 @@
 import { z } from "zod";
+import { positionCodeSchema } from "./baseball-terms";
+
+export const npbStoredProfileSchema = z.object({
+  birthDate: z.iso.date().nullable(), birthPlace: z.string().nullable(), nationality: z.string().nullable(),
+  position: positionCodeSchema.nullable(), bats: z.enum(["right", "left", "switch"]).nullable(),
+  throws: z.enum(["right", "left"]).nullable(),
+  provenance: z.record(z.string(), z.object({ source: z.enum(["wikidata", "nf3"]),
+    sourceId: z.string().min(1), verifiedAt: z.iso.datetime() })),
+});
 
 export const npbPlayerDirectorySchema = z.strictObject({
-  schemaVersion: z.literal(1),
+  schemaVersion: z.literal(2),
   league: z.literal("NPB"),
   effectiveDate: z.iso.date(),
   generatedAt: z.iso.datetime(),
@@ -10,9 +19,16 @@ export const npbPlayerDirectorySchema = z.strictObject({
     playerId: z.string().uuid(),
     displayName: z.string().min(1),
     teamId: z.string().nullable(),
-    position: z.string().nullable(),
+    position: positionCodeSchema.nullable(),
+    playerType: z.enum(["pitcher", "fielder"]).nullable(),
+    birthDate: z.iso.date().nullable(),
+    birthPlace: z.string().nullable(),
+    nationality: z.string().nullable(),
+    bats: z.enum(["right", "left", "switch"]).nullable(),
+    throws: z.enum(["right", "left"]).nullable(),
     battingAvailable: z.boolean(),
     pitchingAvailable: z.boolean(),
+    recentAvailable: z.boolean(),
   })),
 }).superRefine((value, context) => {
   const teams = new Set(value.teams.map((team) => team.id));
@@ -23,6 +39,8 @@ export const npbPlayerDirectorySchema = z.strictObject({
     players.add(player.playerId);
     if (player.teamId && !teams.has(player.teamId))
       context.addIssue({ code: "custom", message: "Unknown team" });
+    if (player.recentAvailable !== (player.battingAvailable || player.pitchingAvailable))
+      context.addIssue({ code: "custom", message: "Inconsistent recent availability" });
   }
 });
 
