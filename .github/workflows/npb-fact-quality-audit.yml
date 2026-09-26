@@ -1,0 +1,29 @@
+name: NPB Fact Quality Audit
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Audit saved NPB Facts (SELECT only)
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+        run: npx tsx scripts/audit-npb-fact-quality.ts > npb-fact-quality-audit.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: npb-fact-quality-audit
+          path: npb-fact-quality-audit.json
+          retention-days: 1
