@@ -1,6 +1,6 @@
 # NPB保存済みGame Fact品質監査（2026-09-27 JST）
 
-監査時刻は2026-09-27 07:38 JST（2026-09-26T22:38:30Z）。[手動Read-only監査Run](https://github.com/tomoya41/baseball-notes/actions/runs/36276917481)でTursoに10 SELECTを発行し、40 Games、518 Batting Facts、161 Pitching Facts、384 Source mappingsを読み取った。監査所要1,299 ms。前後の4テーブル件数はすべて同一。`plate_appearances`と`pitcher_appearances`はともに0件。監査用JSON Artifactは1日保持で、認証情報・raw HTMLは含めない。
+監査時刻は2026-09-27 07:42 JST（2026-09-26T22:42:10Z）。[手動Read-only監査Run](https://github.com/tomoya41/baseball-notes/actions/runs/36277111778)でTursoに10 SELECTを発行し、40 Games、518 Batting Facts、161 Pitching Facts、384 Source mappingsを読み取った。監査所要1,867 ms。前後の4テーブル件数はすべて同一。`plate_appearances`と`pitcher_appearances`はともに0件。監査用JSON Artifactは1日保持で、認証情報・raw HTMLは含めない。
 
 この監査は9/26の手動修復済みFactを含む。Daily `event=schedule` Run 36273112894の失敗は手動修復で相殺しない。Infrastructure PhaseはNOのまま、HOT Production Gateにも変更はない。
 
