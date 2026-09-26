@@ -1,7 +1,8 @@
 import { build } from "esbuild";
 
 await build({
-  entryPoints: { recent: "src/server-recent.ts", "game-log": "src/server-game-log.ts" },
+  entryPoints: { recent: "src/server-recent.ts", "game-log": "src/server-game-log.ts",
+    analysis: "src/server-analysis.ts" },
   outdir: "api/npb",
   entryNames: "[name]",
   bundle: true,

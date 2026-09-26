@@ -2,7 +2,7 @@ import { z } from "zod";
 
 const metric = z.object({ value: z.number().nullable(), status: z.enum(["complete", "partial", "unavailable"]),
   observedFacts: z.number().int().nonnegative(), factCount: z.number().int().nonnegative() });
-const coverage = z.object({ from: z.iso.date(), to: z.iso.date(),
+export const periodCoverageSchema = z.object({ from: z.iso.date(), to: z.iso.date(),
   status: z.enum(["complete", "partial", "unknown", "unavailable"]),
   calendar: z.array(z.object({ date: z.iso.date(), status: z.enum(["complete", "partial", "failed", "no_games", "unknown"]),
     finalGames: z.number().int().nonnegative() })),
@@ -13,7 +13,7 @@ const coverage = z.object({ from: z.iso.date(), to: z.iso.date(),
   noGameDates: z.array(z.iso.date()), partialDates: z.array(z.iso.date()), unknownDates: z.array(z.iso.date()) });
 const periodStats = z.object({ from: z.iso.date(), to: z.iso.date(), playerId: z.string(),
   games: z.number().int().nonnegative(), factCount: z.number().int().nonnegative(),
-  dataStatus: z.enum(["complete", "partial", "unavailable"]), coverage, calculatedAt: z.iso.datetime(),
+  dataStatus: z.enum(["complete", "partial", "unavailable"]), coverage: periodCoverageSchema, calculatedAt: z.iso.datetime(),
   metrics: z.record(z.string(), metric) });
 
 export const playerRecentResponseSchema = z.object({

@@ -9,6 +9,7 @@ import type { CatalogResult, Favorite, League, PlayerCatalog, Statistics } from 
 import type { NpbLatestStandings } from "../domain/standings";
 import type { PlayerRecentResponse, RecentPeriod } from "../domain/player-recent";
 import type { PlayerGameLogResponse } from "../domain/player-game-log";
+import type { PlayerPeriodComparison } from "../domain/player-period-comparison";
 import type { NpbDirectoryPlayer, NpbPlayerDirectory } from "../domain/npb-player-directory";
 import { metrics } from "../domain/metrics";
 import { positionDefinitions } from "../domain/baseball-terms";
@@ -21,6 +22,7 @@ import { MatchupScreen } from "./matchup";
 import { WatchGameScreen, WatchToday } from "./watch";
 import { PlayerRecentView } from "./player-recent";
 import { PlayerGameLogView } from "./player-game-log";
+import { NpbPlayerAnalysisScreen } from "./npb-player-analysis";
 import { NpbHotSection } from "./npb-hot";
 import { NpbPlayerSearch } from "./npb-player-search";
 import { NpbPlayerProfileFacts } from "./npb-player-profile";
@@ -225,6 +227,8 @@ function PlayerScreen({ catalog, favorites, toggle, saving, services }: {
   const [recentState, setRecentState] = useState<"loading" | "ready" | "missing" | "error">("loading");
   const [gameLog, setGameLog] = useState<PlayerGameLogResponse | null>(null);
   const [gameLogState, setGameLogState] = useState<"loading" | "ready" | "missing" | "error">("loading");
+  const [comparison, setComparison] = useState<PlayerPeriodComparison | null>(null);
+  const [comparisonState, setComparisonState] = useState<"loading" | "ready" | "missing" | "error">("loading");
   const [recentCache] = useState(() => new Map<string, PlayerRecentResponse | null>());
   useEffect(() => {
     if (!canonical || !playerId) return;
@@ -239,6 +243,14 @@ function PlayerScreen({ catalog, favorites, toggle, saving, services }: {
     }).catch(() => { if (active) setDirectoryState("error"); });
     return () => { active = false; };
   }, [canonical, playerId, services]);
+  useEffect(() => {
+    if (!canonical || !playerId || section !== "analysis") return;
+    let active = true;
+    void services.periodComparison.find(playerId).then((value) => {
+      if (active) { setComparison(value); setComparisonState(value ? "ready" : "missing"); }
+    }).catch(() => { if (active) setComparisonState("error"); });
+    return () => { active = false; };
+  }, [canonical, playerId, section, services]);
   useEffect(() => {
     if (!canonical || !playerId) return;
     let active = true;
@@ -346,8 +358,9 @@ function PlayerScreen({ catalog, favorites, toggle, saving, services }: {
     {section === "stats" && <div className="profile-content">{canonical && <PlayerRecentView period={period} onPeriodChange={(next) => { setRecentState("loading"); setPeriod(next); }} payload={recent} state={recentState} noFactKnown={directoryPlayer?.recentAvailable === false} />}{canonical && <PlayerGameLogView payload={gameLog} state={gameLogState} teams={gameLogTeams} />}{stats.length
       ? stats.map((item) => <StatsSection key={`${item.group}:${item.season}`} stats={item} />)
       : !canonical && <DataState kind="no-data" title="成績はまだありません" />}</div>}
-    {section === "analysis" && <div className="profile-content profile-content--analysis"><AnalysisScreen key={player.id}
-      catalog={catalog} player={player} provider={services.analysis} /></div>}
+    {section === "analysis" && <div className="profile-content profile-content--analysis">{canonical
+      ? <NpbPlayerAnalysisScreen payload={comparison} state={comparisonState} />
+      : <AnalysisScreen key={player.id} catalog={catalog} player={player} provider={services.analysis} />}</div>}
     {section === "more" && <div className="profile-content"><PageHeading title="その他" />
       <SectionHeader title="記録" /><DataState kind="not-implemented" title="記録は準備中です" />
       <SectionHeader title="経歴" /><DataState kind="not-implemented" title="経歴は準備中です" />

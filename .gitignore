@@ -12,6 +12,7 @@ out/
 .vercel/
 api/npb/recent.js
 api/npb/game-log.js
+api/npb/analysis.js
 
 # environment / secrets
 .env
