@@ -43,10 +43,10 @@ async function main() {
     const before = (await read(countsSql))[0]!;
     const [games, batting, pitching, mappings, completeness, masters, plateAppearances, pitcherAppearances] = await Promise.all([
       read("SELECT game_id,game_date,home_team_id,away_team_id,home_score,away_score,status FROM npb_games"),
-      read(`SELECT game_id,player_id,team_id,batting_order,starter,${battingMetrics.join(",")} FROM player_game_batting`),
+      read(`SELECT game_id,player_id,team_id,batting_order,starter,collected_at,source_record_id,${battingMetrics.join(",")} FROM player_game_batting`),
       read(`SELECT game_id,player_id,team_id,role,starter,appearance_order,${pitchingMetrics.join(",")} FROM player_game_pitching`),
       read("SELECT source_entity_id,internal_entity_id FROM source_entity_mappings WHERE source_key='nf3' AND entity_kind='player'"),
-      read("SELECT game_id,game_status,batting_status,pitching_status,checks_json,issues_json FROM npb_game_completeness"),
+      read("SELECT game_id,game_status,batting_status,pitching_status,expected_batters,mapped_batters,expected_pitchers,mapped_pitchers,checks_json,issues_json,verified_at FROM npb_game_completeness"),
       read("SELECT entity_id,valid_from,payload_json FROM master_history WHERE entity_kind='player' ORDER BY valid_from DESC"),
       read("SELECT count(*) AS count FROM plate_appearances"),
       read("SELECT count(*) AS count FROM pitcher_appearances"),
@@ -79,8 +79,11 @@ async function main() {
       pa: row.pa, ab: row.ab, walks: row.walks, hbp: row.hbp,
       sacrificeHits: row.sacrifice_hits, sacrificeFlies: row.sacrifice_flies,
       starter: row.starter, battingOrder: row.batting_order,
+      collectedAt: row.collected_at,
+      legacyCuratedSourceRecord: text(row.source_record_id).endsWith(text(row.player_id)),
       missingFields: required.filter((field) => !known(row[field])),
       gameStatus: statusById.get(text(row.game_id))?.game_status,
+      gameVerifiedAt: statusById.get(text(row.game_id))?.verified_at,
     }));
     const slots = new Map<string, Row[]>();
     for (const row of batting) {
@@ -99,6 +102,11 @@ async function main() {
         gameStatus: statusById.get(gameId)?.game_status,
         battingStatus: statusById.get(gameId)?.batting_status,
         pitchingStatus: statusById.get(gameId)?.pitching_status,
+        expectedBatters: statusById.get(gameId)?.expected_batters,
+        mappedBatters: statusById.get(gameId)?.mapped_batters,
+        expectedPitchers: statusById.get(gameId)?.expected_pitchers,
+        mappedPitchers: statusById.get(gameId)?.mapped_pitchers,
+        checks: JSON.parse(text(statusById.get(gameId)?.checks_json)),
         issues: JSON.parse(text(statusById.get(gameId)?.issues_json)),
       },
       batting: batting.filter((row) => row.game_id === gameId).map((row) => ({
@@ -151,6 +159,12 @@ async function main() {
       selected: {
         september25: selected("npb:game:32c76ee9e92f7408892c"),
         september26: selected("npb:game:bc2263e9378878e3fbe9"),
+        september23GiantsCarp: (() => {
+          const game = games.find((row) => row.game_date === "2026-09-23" &&
+            [row.home_team_id, row.away_team_id].includes("npb:team:giants") &&
+            [row.home_team_id, row.away_team_id].includes("npb:team:carp"));
+          return game ? selected(text(game.game_id)) : null;
+        })(),
         multiPitcher: multiPitcher ? selected(multiPitcher.gameId) : null,
       },
       robertoOsuna: {
