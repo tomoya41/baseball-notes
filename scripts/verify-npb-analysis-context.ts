@@ -83,13 +83,17 @@ try {
     const { payload } = result;
     const section = payload.battingOrder.status === "ready" ? payload.battingOrder.payload : null;
     const role = payload.pitcherRole.status === "ready" ? payload.pitcherRole.payload : null;
+    const batterRole = payload.batterRole.status === "ready" ? payload.batterRole.payload : null;
     console.log(JSON.stringify({ kind: "player_analysis", playerId, name: result.context.player.name,
       queryCount: queries - before, battingFactRows: result.context.batting.length,
       pitchingFactRows: result.context.pitching.length, dbReadMs: Math.round(result.dbReadMs),
       partitionAndAggregateMs: Math.round(result.aggregationMs), responseBytes: Buffer.byteLength(JSON.stringify(payload)),
+      contextBuildMs:result.contextBuildMs,partitionMs:result.partitionMs,
       sections: { comparison: payload.comparison.status, homeAway: payload.homeAway.status,
         opponent: payload.opponent.status, battingOrder: payload.battingOrder.status,
-        pitcherRole: payload.pitcherRole.status },
+        pitcherRole: payload.pitcherRole.status,batterRole:payload.batterRole.status },
+      batterRoles:batterRole && { starter:batterRole.starter?.metrics,substitute:batterRole.substitute?.metrics,
+        unknown:batterRole.unknownRoleFactCount },
       orders: section?.orders.map((item) => ({ order: item.battingOrder, games: item.stats?.metrics.G?.value,
         pa: item.stats?.metrics.PA?.value, ab: item.stats?.metrics.AB?.value,
         bb: item.stats?.metrics.BB?.value, ops: item.stats?.metrics.OPS?.value })) ?? [],

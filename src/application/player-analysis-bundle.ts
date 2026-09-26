@@ -41,6 +41,7 @@ export class PlayerAnalysisBundleService {
       this.coverageReader.findPeriodCoverages(windows).catch(() => windows.map(unavailablePeriodCoverage)),
     ]);
     const dbReadMs = performance.now() - started;
+    const contextStarted = performance.now();
     const context: PlayerAnalysisContext = { player, asOfDate, batting, pitching, coverages };
     const sharedFacts = {
       findPlayerIdentity: async () => context.player,
@@ -60,24 +61,28 @@ export class PlayerAnalysisBundleService {
       findPeriodCoverage: async (window: PeriodWindow) => context.coverages.find((item) =>
         item.from === window.from && item.to === window.to) ?? unavailablePeriodCoverage(window),
     };
-    let rolePartitionMs = 0, roleAggregationMs = 0;
+    const contextBuildMs = performance.now()-contextStarted;
+    let rolePartitionMs = 0, roleAggregationMs = 0, partitionMs = 0;
     const [comparison, homeAway, opponent, battingOrder, pitcherRole, batterRole] = await Promise.allSettled([
       new PlayerPeriodComparisonService(sharedFacts, sharedCoverage, this.clock).find(playerId, asOfDate)
         .then((value) => value?.payload ?? null),
       new PlayerHomeAwayService(sharedFacts, sharedCoverage, this.clock).find(playerId, asOfDate)
-        .then((value) => value?.payload ?? null),
+        .then((value) => { partitionMs += value?.partitionMs ?? 0; return value?.payload ?? null; }),
       new PlayerOpponentService(sharedFacts, sharedCoverage, this.clock).find(playerId, asOfDate)
-        .then((value) => value?.payload ?? null),
-      new PlayerBattingOrderService(sharedFacts, sharedCoverage, this.clock).find(playerId, asOfDate),
+        .then((value) => { partitionMs += value?.classificationMs ?? 0; return value?.payload ?? null; }),
+      new PlayerBattingOrderService(sharedFacts, sharedCoverage, this.clock,
+        (duration) => { partitionMs += duration; }).find(playerId, asOfDate),
       new PlayerPitcherRoleService(sharedFacts, sharedCoverage, this.clock).find(playerId, asOfDate)
-        .then((value) => { if (value) { rolePartitionMs = value.partitionMs; roleAggregationMs = value.aggregationMs; }
+        .then((value) => { if (value) { rolePartitionMs = value.partitionMs; roleAggregationMs = value.aggregationMs;
+          partitionMs += value.partitionMs; }
           return value?.payload ?? null; }),
-      new PlayerBatterRoleService(sharedFacts, sharedCoverage, this.clock).find(playerId, asOfDate),
+      new PlayerBatterRoleService(sharedFacts, sharedCoverage, this.clock,
+        (duration) => { partitionMs += duration; }).find(playerId, asOfDate),
     ]);
-    const aggregationMs = performance.now() - started - dbReadMs;
+    const aggregationMs = performance.now() - started - dbReadMs - contextBuildMs - partitionMs;
     const payload = playerAnalysisBundleSchema.parse({ playerId, asOfDate,
       comparison: settled(comparison), homeAway: settled(homeAway), opponent: settled(opponent),
       battingOrder: settled(battingOrder), pitcherRole: settled(pitcherRole), batterRole: settled(batterRole) });
-    return { payload, context, dbReadMs, aggregationMs, rolePartitionMs, roleAggregationMs };
+    return { payload, context, dbReadMs, contextBuildMs, partitionMs, aggregationMs, rolePartitionMs, roleAggregationMs };
   }
 }

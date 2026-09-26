@@ -106,7 +106,7 @@ try {
   if (JSON.stringify(beforeCounts) !== JSON.stringify(afterCounts)) throw new Error("Row counts changed");
   console.log(JSON.stringify({mode,beforeCounts,afterCounts,sourceRequests:cache.size,
     changedFacts:mode === "repair" ? plans.filter((plan) => plan.changed).length : 0,
-    limitedReplayDegradations:0,targets:plans.map(({date,game,old,row,changed}) => ({date,gameId:game.id,
+    limitedReplayDegradations:mode === "repair" ? 0 : null,targets:plans.map(({date,game,old,row,changed}) => ({date,gameId:game.id,
       playerId:old.playerId,beforePa:old.pa,pa:row.fact.pa,ab:row.fact.ab,bb:row.fact.walks,hbp:row.fact.hbp,
       sh:row.fact.sacrificeHits,sf:row.fact.sacrificeFlies,changed}))},null,2));
 } finally { client.close(); }

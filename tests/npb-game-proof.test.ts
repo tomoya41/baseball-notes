@@ -35,15 +35,21 @@ describe("2026-09-23 controlled NPB game proof", () => {
     const fact = { ...full.fact, gameId, pa: 0, ab: 0, doubles: 2, triples: 1, walks: 1,
       hbp: 1, sacrificeHits: 1, sacrificeFlies: 1, battingOrder: 3, starter: true };
     await repository.saveBatting([{ ...full, fact }],date,false,false);
+    const verified = (await repository.findBattingByGame(gameId))[0];
     const limited = { ...full, fact: { ...fact, pa: null, doubles: null, triples: null, walks: null,
       hbp: null, sacrificeHits: null, sacrificeFlies: null, battingOrder: null, starter: null,
       hits: 0, strikeouts: 0 } };
     await repository.saveBatting([limited],date,false,false,"limited");
+    expect((await repository.findBattingByGame(gameId))[0]).toEqual(verified);
     expect((await repository.findBattingByGame(gameId))[0]).toMatchObject({ pa: 0, doubles: 2,
       triples: 1, walks: 1, hbp: 1, sacrificeHits: 1, sacrificeFlies: 1,
       battingOrder: 3, starter: true });
     await repository.saveBatting([limited],date,false,false,"limited");
     expect(await repository.findBattingByGame(gameId)).toHaveLength(1);
+    await repository.saveBatting([{ ...full,fact:{...fact,pa:5,walks:0} }],date,false,false,"limited");
+    expect((await repository.findBattingByGame(gameId))[0]).toEqual(verified);
+    await repository.saveBatting([{ ...full,fact:{...fact,pa:5,walks:0,sacrificeHits:null} }],date,false,false,"full");
+    expect((await repository.findBattingByGame(gameId))[0]).toMatchObject({pa:5,walks:0,sacrificeHits:null});
     const pitcherId = await repository.resolveVerifiedPlayer("2026:M:uniform:18","石垣元気",game.sourceUrl,game.homeTeamId,at,false);
     const pitch = parseNf3GamePitchingRow(fixture("pitching-m18"),date,"M",pitcherId,"2026:M:uniform:18",game.sourceUrl,at);
     await repository.savePitching([pitch],date,false,false);

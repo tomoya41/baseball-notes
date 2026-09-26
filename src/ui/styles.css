@@ -278,6 +278,9 @@ small { font-size: var(--type-caption); }
 .analysis-batter-role { margin-top: var(--space-8); padding-top: var(--space-5); border-top: 1px solid var(--color-border); }
 .analysis-conditions { margin-top: var(--space-8); }
 .analysis-conditions > h2 { margin: 0; font-size: 1.1rem; }
+.analysis-condition { margin-top: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 0 var(--space-3); }
+.analysis-condition > summary { min-height: var(--touch); padding: var(--space-3) 0; cursor: pointer; font-size: .9rem; font-weight: 700; }
+.analysis-condition > section { margin-top: 0; padding-top: var(--space-3); border-top: 1px solid var(--color-border); }
 .analysis-opponent-select { display: grid; gap: var(--space-2); margin: var(--space-4) 0; font-size: .82rem; font-weight: 700; }
 .analysis-opponent-select select { width: 100%; min-height: var(--touch); padding: var(--space-2) var(--space-3); color: var(--color-text); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); font: inherit; }
 .analysis-opponent-single { margin: var(--space-4) 0; font-size: .86rem; }

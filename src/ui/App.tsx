@@ -364,21 +364,25 @@ function PlayerScreen({ catalog, favorites, toggle, saving, services }: {
     {section === "analysis" && <div className="profile-content profile-content--analysis">{canonical
       ? <><NpbPlayerAnalysisScreen payload={analysisBundle?.comparison.status === "ready" ? analysisBundle.comparison.payload : null}
           state={analysisState === "ready" ? analysisBundle?.comparison.status === "ready" ? "ready" : "error" : analysisState} />
-          <div className="analysis-conditions"><h2>条件別</h2>
+          {directoryPlayer?.recentAvailable !== false && <div className="analysis-conditions"><h2>条件別</h2>
+          <details className="analysis-condition" open><summary>ホーム / ビジター</summary>
           <NpbPlayerHomeAwaySection payload={analysisBundle?.homeAway.status === "ready" ? analysisBundle.homeAway.payload : null}
-            state={analysisState === "ready" ? analysisBundle?.homeAway.status === "ready" ? "ready" : "error" : analysisState} />
+            state={analysisState === "ready" ? analysisBundle?.homeAway.status === "ready" ? "ready" : "error" : analysisState} /></details>
+          <details className="analysis-condition"><summary>対戦相手</summary>
           <NpbPlayerOpponentSection key={player.id} payload={analysisBundle?.opponent.status === "ready" ? analysisBundle.opponent.payload : null}
             state={analysisState === "ready" ? analysisBundle?.opponent.status === "ready" ? "ready" : "error" : analysisState} teamNames={gameLogTeams}
-            teamOrder={directoryTeams.length ? directoryTeams.map((item) => item.id) : catalog.teams.map((item) => item.id)} />
+            teamOrder={directoryTeams.length ? directoryTeams.map((item) => item.id) : catalog.teams.map((item) => item.id)} /></details>
+          {directoryPlayer?.battingAvailable !== false && <details className="analysis-condition"><summary>打順</summary>
           <NpbPlayerBattingOrderSection key={player.id} payload={analysisBundle?.battingOrder.status === "ready" ? analysisBundle.battingOrder.payload : null}
             state={analysisState === "ready" ? analysisBundle?.battingOrder.status === "ready" ? "ready" : "error" : analysisState}
-            battingAvailable={directoryPlayer?.battingAvailable} />
+            battingAvailable={directoryPlayer?.battingAvailable} /></details>}
+          <details className="analysis-condition"><summary>出場形態</summary>
           <NpbPlayerBatterRoleSection payload={analysisBundle?.batterRole.status === "ready" ? analysisBundle.batterRole.payload : null}
             state={analysisState === "ready" ? analysisBundle?.batterRole.status === "ready" ? "ready" : "error" : analysisState}
             battingAvailable={directoryPlayer?.battingAvailable} />
           <NpbPlayerPitcherRoleSection payload={analysisBundle?.pitcherRole.status === "ready" ? analysisBundle.pitcherRole.payload : null}
             state={analysisState === "ready" ? analysisBundle?.pitcherRole.status === "ready" ? "ready" : "error" : analysisState}
-            pitchingAvailable={directoryPlayer?.pitchingAvailable} /></div></>
+            pitchingAvailable={directoryPlayer?.pitchingAvailable} /></details></div>}</>
       : <AnalysisScreen key={player.id} catalog={catalog} player={player} provider={services.analysis} />}</div>}
     {section === "more" && <div className="profile-content"><PageHeading title="その他" />
       <SectionHeader title="記録" /><DataState kind="not-implemented" title="記録は準備中です" />
