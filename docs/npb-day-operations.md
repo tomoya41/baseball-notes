@@ -31,8 +31,18 @@ Migration 004適用後のLocal Portable Backup/Scratch Restore drillもschema v4
 
 同日の[manual real ingestion](https://github.com/tomoya41/baseball-notes/actions/runs/36074811850)は6 final/6 complete、打者185/185、投手65/65、Tursoへの新規Factは打者60・投手24、mapping新規78、HTTP 286、retry 0、Collector処理314.739秒でPASS。同じAction内で同日をRaw再利用して再投入し、Repository JSONの一致とUnique件数不変を確認した。最初のmanual real試行は作業ディレクトリ`.data`不足で**DB書込み前に停止**し、ディレクトリ作成を修正して再実行した。Export→空のSQLiteへのRestoreはPASS、暗号化Artifactのみ7日保持した。
 
-[既存日次Workflowのmanual publish](https://github.com/tomoya41/baseball-notes/actions/runs/36075922369)でPages配信を確認後、Day Facts flagを有効化した。[統合済み日次Workflowのmanual run](https://github.com/tomoya41/baseball-notes/actions/runs/36076130302)はJST前日2026-09-24のfinal 2/complete 2、打者53/53・投手13/13、Turso新規Fact 53+13、mapping新規24、HTTP 78、retry 0、Day処理88.409秒。Repository readback、schema v4 Backup Export/Scratch Restore、暗号化Artifact、Pages deployまでPASS。Remote Repositoryの対象日は2 Game・打者53・投手13、累積はstandings_daily 24、npb_games 30、打者Fact 244、投手Fact 79、Source mapping 285。公開順位JSONは`effectiveDate=2026-09-24`で12球団だった。**全試合化後の次回scheduled runはまだ未確認**で、次回はtrigger=`schedule`、JST前日、Day状態、Turso読戻し、Backup Artifact、Pages公開日付を照合する。
+[既存日次Workflowのmanual publish](https://github.com/tomoya41/baseball-notes/actions/runs/36075922369)でPages配信を確認後、Day Facts flagを有効化した。[統合済み日次Workflowのmanual run](https://github.com/tomoya41/baseball-notes/actions/runs/36076130302)はJST前日2026-09-24のfinal 2/complete 2、打者53/53・投手13/13、Turso新規Fact 53+13、mapping新規24、HTTP 78、retry 0、Day処理88.409秒。Repository readback、schema v4 Backup Export/Scratch Restore、暗号化Artifact、Pages deployまでPASS。Remote Repositoryの対象日は2 Game・打者53・投手13、累積はstandings_daily 24、npb_games 30、打者Fact 244、投手Fact 79、Source mapping 285。公開順位JSONは`effectiveDate=2026-09-24`で12球団だった。
+
+## 2026-09-26 初回全試合Scheduled Runと修復
+
+[初回全試合Scheduled Run](https://github.com/tomoya41/baseball-notes/actions/runs/36193464380)は`event=schedule`で06:47:51 JSTに開始（03:37予定から3時間10分51秒遅延）、対象は2026-09-25。5 final中4 complete・1 partialでWorkflowは失敗した。打者113・投手36をGame単位で保存し、DeNA 2–1 阪神のGame `npb:game:32c76ee9e92f7408892c`はPA検算失敗のためFactをcommitしなかった。Runner内のPortable ExportとScratch RestoreはPASSしたが、後続の暗号化ArtifactとPages deployは実行されなかった。
+
+Raw再確認で阪神・坂本誠志郎（背番号12）の打席詳細`遊ゴロ 敬遠 空三振`、AB=2、nf3四死合算=1を確認した。既存Parserが`敬遠`を四球として数えていなかったためBB/HBP/PAがnullになり、`plateAppearancesKnown`と阪神PA=相手BFが失敗した。`敬遠`を1四球として数える最小修正後、Source合算欄・打席3件・相手投手BFとの一致を確認した。合算欄と一致しない場合は引き続きPAをnullにしてcompleteを拒否する。実Rawから最小回帰fixtureを保存した。
+
+[Remote manual dry-run](https://github.com/tomoya41/baseball-notes/actions/runs/36202461426)は5/5 complete、打者140/140・投手41/41、HTTP 211・retry 0、DB writeなし。[Manual repair](https://github.com/tomoya41/baseball-notes/actions/runs/36202772848)は5/5 complete・Day complete、Turso新規打撃25・投手5を追加。対象Gameの既存打撃2件はupsertされ、最終的に27打者・5投手をRepositoryから読戻した。同じRawの再投入は新規Fact 0、対象日140打者・41投手の件数不変。Portable Export→空のSQLiteへのRestoreとRepository検証はPASS、暗号化Artifactのみを7日保持。[Manual publish](https://github.com/tomoya41/baseball-notes/actions/runs/36203260823)後の公開JSONはHTTP 200・12球団・`effectiveDate=2026-09-25`。
+
+このrepairは失敗した`event=schedule`を成功に変えない。Infrastructure Phaseは**NO**のままとし、次の無人Scheduled RunでDay complete、Turso読戻し、暗号化Artifact、Pages公開とFreshnessを再確認する。
 
 第5弾の6試合実測は286ユニークページ。通常新規runnerでは数分の逐次取得を許容し、750ms間隔、最大1 retry、15秒timeout、500KB上限を維持する。Run内URL cacheで重複fetchしない。GitHub SecretsのDB credentialはAndroid/Webに渡さない。Fact数とmapping増加は`npb_day_runs`とRepository readbackで追う。DB容量はTurso dashboardまたは管理CLIで定期確認し、70/80/90%で確認・警告・再生成可能cache整理を検討する。Fact/順位履歴は削除しない。
 
-Scheduled Runは遅延し得る。次回初回実行で、event=`schedule`、JST前日target、Game/Day status、Turso readback、Artifact、Pages payloadのeffectiveDateを確認する。正午の独立Freshness監視と手動修復は[日次Health運用](npb-freshness-operations.md)を参照。
+Scheduled Runは遅延し得る。次回の`event=schedule`成功時に、JST前日target、Game/Day status、Turso readback、Artifact、Pages payloadのeffectiveDateを確認する。正午の独立Freshness監視と手動修復は[日次Health運用](npb-freshness-operations.md)を参照。
