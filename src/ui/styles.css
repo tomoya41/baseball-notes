@@ -253,6 +253,24 @@ small { font-size: var(--type-caption); }
 .recent-coverage summary { display: inline-flex; align-items: center; gap: var(--space-1); min-height: var(--touch); cursor: pointer; }
 .recent-coverage[open] summary svg { transform: rotate(90deg); }
 .recent-coverage p { margin: 0 0 var(--space-2); }
+.game-log-note { margin: var(--space-2) 0 var(--space-4); color: var(--color-muted); font-size: var(--type-caption); }
+.game-log-group { margin-top: var(--space-5); }
+.game-log-group h3 { margin-bottom: var(--space-3); font-size: .9rem; }
+.game-log-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }
+.game-log-card { min-width: 0; padding: var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }
+.game-log-card__header { display: flex; align-items: start; justify-content: space-between; gap: var(--space-2); }
+.game-log-card__header strong { display: block; font-size: .86rem; }
+.game-log-card__header small { display: block; margin-top: var(--space-1); color: var(--color-muted); font-size: .72rem; }
+.game-log-card__result { flex: none; font-size: .8rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.game-log-card__summary { margin: var(--space-3) 0 var(--space-1); font-size: .9rem; font-weight: 700; }
+.game-log-card__meta { margin: 0; color: var(--color-muted); font-size: .75rem; }
+.game-log-card__details { margin-top: var(--space-2); border-top: 1px solid var(--color-border); }
+.game-log-card__details summary { min-height: var(--touch); display: flex; justify-content: space-between; align-items: center; color: var(--brand); cursor: pointer; font-size: .8rem; font-weight: 700; }
+.game-log-card__details[open] summary svg { transform: rotate(90deg); }
+.game-log-card__metrics { margin: var(--space-2) 0 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-2); }
+.game-log-card__metrics > div { min-width: 0; padding: var(--space-2); border-radius: var(--radius-sm); background: var(--color-elevated); }
+.game-log-card__metrics dt { color: var(--color-muted); font-size: .68rem; }
+.game-log-card__metrics dd { margin: var(--space-1) 0 0; font-size: .82rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 .metric-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); margin-top: var(--space-3); }
 .metric-grid--advanced { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .metric-tile { min-width: 0; display: grid; align-content: start; gap: var(--space-2); padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }

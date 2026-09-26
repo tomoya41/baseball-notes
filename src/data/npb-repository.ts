@@ -12,7 +12,7 @@ import { normalizeNpbName, npbTeams, type NpbGame, type NpbLogRow } from "./npb-
 const hash = (value: unknown) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
 type DbRow = Record<string, unknown>;
 
-function battingFact(row: DbRow): PlayerGameBatting {
+export function battingFact(row: DbRow): PlayerGameBatting {
   return playerGameBattingSchema.parse({ gameId: row.game_id, playerId: row.player_id,
     teamId: row.team_id, opponentTeamId: row.opponent_team_id, battingOrder: row.batting_order,
     pa: row.pa, ab: row.ab, hits: row.hits, doubles: row.doubles, triples: row.triples,
@@ -24,7 +24,7 @@ function battingFact(row: DbRow): PlayerGameBatting {
     collectedAt: row.collected_at });
 }
 
-function pitchingFact(row: DbRow): PlayerGamePitching {
+export function pitchingFact(row: DbRow): PlayerGamePitching {
   return playerGamePitchingSchema.parse({ id: row.fact_id, gameId: row.game_id,
     playerId: row.player_id, teamId: row.team_id, opponentTeamId: row.opponent_team_id, role: row.role,
     appearanceOrder: row.appearance_order, inningsPitchedOuts: row.ip_outs, battersFaced: row.batters_faced,

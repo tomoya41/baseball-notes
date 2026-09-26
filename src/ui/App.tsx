@@ -8,6 +8,7 @@ import type { Services } from "../app/services";
 import type { CatalogResult, Favorite, League, PlayerCatalog, Statistics } from "../domain/models";
 import type { NpbLatestStandings } from "../domain/standings";
 import type { PlayerRecentResponse, RecentPeriod } from "../domain/player-recent";
+import type { PlayerGameLogResponse } from "../domain/player-game-log";
 import type { NpbDirectoryPlayer, NpbPlayerDirectory } from "../domain/npb-player-directory";
 import { metrics } from "../domain/metrics";
 import { positionDefinitions } from "../domain/baseball-terms";
@@ -19,6 +20,7 @@ import { AnalysisDirectory, AnalysisScreen } from "./analysis";
 import { MatchupScreen } from "./matchup";
 import { WatchGameScreen, WatchToday } from "./watch";
 import { PlayerRecentView } from "./player-recent";
+import { PlayerGameLogView } from "./player-game-log";
 import { NpbHotSection } from "./npb-hot";
 import { NpbPlayerSearch } from "./npb-player-search";
 import { NpbPlayerProfileFacts } from "./npb-player-profile";
@@ -218,8 +220,11 @@ function PlayerScreen({ catalog, favorites, toggle, saving, services }: {
   const [identity, setIdentity] = useState<PlayerRecentResponse["player"] | null>(null);
   const [directoryPlayer, setDirectoryPlayer] = useState<NpbDirectoryPlayer | null>(null);
   const [directoryTeam, setDirectoryTeam] = useState<NpbPlayerDirectory["teams"][number] | null>(null);
+  const [directoryTeams, setDirectoryTeams] = useState<NpbPlayerDirectory["teams"]>([]);
   const [directoryState, setDirectoryState] = useState<"loading" | "ready" | "error">("loading");
   const [recentState, setRecentState] = useState<"loading" | "ready" | "missing" | "error">("loading");
+  const [gameLog, setGameLog] = useState<PlayerGameLogResponse | null>(null);
+  const [gameLogState, setGameLogState] = useState<"loading" | "ready" | "missing" | "error">("loading");
   const [recentCache] = useState(() => new Map<string, PlayerRecentResponse | null>());
   useEffect(() => {
     if (!canonical || !playerId) return;
@@ -229,6 +234,7 @@ function PlayerScreen({ catalog, favorites, toggle, saving, services }: {
       const found = value.players.find((item) => item.playerId === playerId) ?? null;
       setDirectoryPlayer(found);
       setDirectoryTeam(value.teams.find((item) => item.id === found?.teamId) ?? null);
+      setDirectoryTeams(value.teams);
       setDirectoryState("ready");
     }).catch(() => { if (active) setDirectoryState("error"); });
     return () => { active = false; };
@@ -251,6 +257,14 @@ function PlayerScreen({ catalog, favorites, toggle, saving, services }: {
     }).catch(() => { if (active) setRecentState("error"); });
     return () => { active = false; };
   }, [canonical, playerId, period, recentCache, services]);
+  useEffect(() => {
+    if (!canonical || !playerId) return;
+    let active = true;
+    void services.gameLog.find(playerId).then((value) => {
+      if (active) { setGameLog(value); setGameLogState(value ? "ready" : "missing"); }
+    }).catch(() => { if (active) setGameLogState("error"); });
+    return () => { active = false; };
+  }, [canonical, playerId, services]);
   const identityPending = canonical && directoryState === "loading" && !identity;
   const profile = sampleProfile ?? (directoryPlayer && playerId === directoryPlayer.playerId ? { player: {
     id: directoryPlayer.playerId, league: "NPB" as const,
@@ -279,6 +293,11 @@ function PlayerScreen({ catalog, favorites, toggle, saving, services }: {
   } : undefined);
   const isFavorite = favorites.some((favorite) => favorite.kind === "player" && favorite.entityId === player.id);
   const stats = catalog.statistics.filter((item) => item.playerId === player.id);
+  const gameLogTeams = new Map<string, string>();
+  for (const item of catalog.teams) gameLogTeams.set(item.id, item.names.japaneseShort ?? item.names.canonical);
+  // Directory names take precedence over sample catalog names.
+  // All 12 names are already in the static Directory; do not query Turso per row.
+  for (const item of directoryTeams) gameLogTeams.set(item.id, item.shortName);
   const base = `/${catalog.league}/players/${encodeURIComponent(player.id)}`;
   return <div className="screen">
     <Link className="back-link" to={`/${catalog.league}/search`}><ArrowLeft size={18} />検索に戻る</Link>
@@ -317,13 +336,14 @@ function PlayerScreen({ catalog, favorites, toggle, saving, services }: {
     </div>
     {!section && <div className="profile-content">
       {canonical && <PlayerRecentView period={period} onPeriodChange={(next) => { setRecentState("loading"); setPeriod(next); }} payload={recent} state={recentState} noFactKnown={directoryPlayer?.recentAvailable === false} />}
+      {canonical && <PlayerGameLogView payload={gameLog} state={gameLogState} teams={gameLogTeams} />}
       {stats.length ? stats.map((item) => <section className="stats-section" key={`${item.group}:${item.season}`}>
         <SectionHeader title={`${item.season}年 · ${item.group === "hitting" ? "打撃" : "投球"}`}
           action="成績を見る" to={`${base}/stats`} />
         <MetricGrid stats={item} />
       </section>) : !canonical && <DataState kind="no-data" title="成績はまだありません" />}
     </div>}
-    {section === "stats" && <div className="profile-content">{canonical && <PlayerRecentView period={period} onPeriodChange={(next) => { setRecentState("loading"); setPeriod(next); }} payload={recent} state={recentState} noFactKnown={directoryPlayer?.recentAvailable === false} />}{stats.length
+    {section === "stats" && <div className="profile-content">{canonical && <PlayerRecentView period={period} onPeriodChange={(next) => { setRecentState("loading"); setPeriod(next); }} payload={recent} state={recentState} noFactKnown={directoryPlayer?.recentAvailable === false} />}{canonical && <PlayerGameLogView payload={gameLog} state={gameLogState} teams={gameLogTeams} />}{stats.length
       ? stats.map((item) => <StatsSection key={`${item.group}:${item.season}`} stats={item} />)
       : !canonical && <DataState kind="no-data" title="成績はまだありません" />}</div>}
     {section === "analysis" && <div className="profile-content profile-content--analysis"><AnalysisScreen key={player.id}

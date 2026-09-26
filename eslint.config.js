@@ -5,7 +5,7 @@ import refresh from "eslint-plugin-react-refresh";
 import globals from "globals";
 
 export default ts.config(
-  { ignores: ["dist/**", "node_modules/**", "android/**", "coverage/**", "api/npb/recent.js"] },
+  { ignores: ["dist/**", "node_modules/**", "android/**", "coverage/**", "api/npb/*.js"] },
   js.configs.recommended,
   ...ts.configs.recommended,
   {

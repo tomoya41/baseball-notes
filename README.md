@@ -120,6 +120,7 @@ NPBの前日全試合Fact収集・manual検証・復旧手順は[docs/npb-day-op
 公開NPBデータの正午JST鮮度監視は[docs/npb-freshness-operations.md](docs/npb-freshness-operations.md)を参照してください。`npm run monitor:npb:freshness`は公開JSONの日付を検査し、GitHub ActionsではTursoのDay状態と暗号化Backupも診断します。監視はnf3へアクセスしません。
 
 保存済みNPB Player Game Factsからの単一選手・直近7/14/30暦日Read-only集計と収集Coverageは[docs/player-period.md](docs/player-period.md)を参照してください。`npx tsx scripts/verify-player-period.ts --date=2026-09-24`でローカルFactを読み、集計前後の件数を照合できます。Player「最近の成績」だけ公開Read-only API経由で接続済みです。構成・制約は[docs/player-recent.md](docs/player-recent.md)を参照してください。HOTは未接続です。
+Player画面の「試合別成績」は保存済みFactとGame情報だけをVercelのRead-only APIで読み、最新10件を表示します。取得経路と欠損値・二刀流・ダブルヘッダーの扱いは[docs/player-game-log.md](docs/player-game-log.md)を参照してください。
 
 ローカルGitと作業ブランチを作成済み。公開GitHubリポジトリへpushしました。GitHubリポジトリへ追加する際は、既存ブランチをレビューし `npm run check` を通してください。
 

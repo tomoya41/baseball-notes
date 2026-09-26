@@ -10,6 +10,7 @@ import { StaticStandingsRepository } from "../infrastructure/providers/static-st
 import { StaticHotRepository } from "../infrastructure/providers/static-hot-repository";
 import { StaticPlayerDirectoryRepository } from "../infrastructure/providers/static-player-directory-repository";
 import { HttpPlayerRecentRepository } from "../infrastructure/providers/http-player-recent-repository";
+import { HttpPlayerGameLogRepository } from "../infrastructure/providers/http-player-game-log-repository";
 import { Capacitor } from "@capacitor/core";
 
 // Composition root: replace adapters here, never inside a screen.
@@ -24,6 +25,7 @@ export const services = {
   hot: new StaticHotRepository(npbDataBaseUrl),
   directory: new StaticPlayerDirectoryRepository(npbDataBaseUrl),
   recent: new HttpPlayerRecentRepository(import.meta.env.VITE_NPB_PLAYER_API_BASE_URL?.trim() || "https://baseball-notes-recent.vercel.app/"),
+  gameLog: new HttpPlayerGameLogRepository(import.meta.env.VITE_NPB_PLAYER_API_BASE_URL?.trim() || "https://baseball-notes-recent.vercel.app/"),
   favorites: new Favorites(new PreferenceStore()),
 };
 export type Services = typeof services;

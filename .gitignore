@@ -11,6 +11,7 @@ coverage/
 out/
 .vercel/
 api/npb/recent.js
+api/npb/game-log.js
 
 # environment / secrets
 .env
