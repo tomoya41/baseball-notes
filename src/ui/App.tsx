@@ -18,6 +18,7 @@ import { AnalysisDirectory, AnalysisScreen } from "./analysis";
 import { MatchupScreen } from "./matchup";
 import { WatchGameScreen, WatchToday } from "./watch";
 import { PlayerRecentView } from "./player-recent";
+import { NpbHotSection } from "./npb-hot";
 import { LeagueBadge, TeamBrand } from "./branding";
 import {
   DataState, FavoriteButton, LoadingSkeleton, MetricGrid, PageHeading,
@@ -97,10 +98,11 @@ function HomeScreen({ catalog, favorites, services }: { catalog: PlayerCatalog; 
           <PlayerRow key={player.id} player={player} catalog={catalog} favorites={favorites} />)}</div>
       </div>
     </section>
-    <section className="home-section home-section--compact">
-      <SectionHeader title="HOT" action="参考順位" to={`/${league}/ranking`} />
-      <DataState kind="unsupported" title="直近成績は未接続です" detail="HOT判定に必要な期間別データがありません。" />
-    </section>
+    {league === "NPB" ? <NpbHotSection repository={services.hot} /> :
+      <section className="home-section home-section--compact">
+        <SectionHeader title="HOT" action="参考順位" to={`/${league}/ranking`} />
+        <DataState kind="unsupported" title="直近成績は未接続です" detail="HOT判定に必要な期間別データがありません。" />
+      </section>}
     <section className="home-section home-section--compact">
       <SectionHeader title="今日の注目" />
       <DataState kind="unsupported" title="注目情報は未接続です" />

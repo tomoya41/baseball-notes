@@ -3,7 +3,8 @@ import type { AggregateMetric, BattingPeriodResult, PitchingPeriodResult } from 
 
 export type HotRole = "batter" | "starter" | "reliever" | "unclassified_pitcher";
 export type HotDivision = "Central" | "Pacific";
-export type HotCandidateMetadata = { displayName?: string; teamId?: string; division?: HotDivision; position?: string };
+export type HotCandidateMetadata = { displayName?: string; teamId?: string; teamName?: string;
+  division?: HotDivision; position?: string };
 export type HotEligibilityReason = "coverage_not_complete" | "insufficient_sample" |
   "metric_partial" | "metric_unavailable";
 

@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { buildNpbHotPayload, npbHotPayloadSchema } from "../src/application/npb-hot-payload";
+import type { HotCandidateMetadata } from "../src/application/npb-hot-candidates";
 import type { PlayerPeriodBatchResult } from "../src/application/player-period-batch";
 import { writeNpbHotPayloadAtomically } from "../src/data/npb-hot-payload";
 import { aggregateBatting, aggregatePitching } from "../src/domain/player-period";
@@ -54,8 +55,13 @@ function readyBatch() {
     ...Array.from({ length: 6 }, (_, i) => pitcher(`r${i}`, "reliever", i * .2)),
   ]);
 }
+function displayMetadata(value: PlayerPeriodBatchResult): Map<string, HotCandidateMetadata> {
+  return new Map([...value.batters, ...value.pitchers].map((row) =>
+    [row.playerId, { displayName: `選手${row.playerId}`, teamId: "T", teamName: "阪神" }] as const));
+}
 function create(value: PlayerPeriodBatchResult, scheduledProductionEvidence = true) {
-  return buildNpbHotPayload(value, { scheduledProductionEvidence, generatedAt }).payload;
+  return buildNpbHotPayload(value, { scheduledProductionEvidence, generatedAt,
+    metadata: displayMetadata(value) }).payload;
 }
 function altered(value: unknown, mutate: (draft: Record<string, unknown>) => void): unknown {
   const draft = structuredClone(value) as Record<string, unknown>;
@@ -76,7 +82,8 @@ describe("versioned NPB HOT static payload", () => {
 
   it("projects Top 5 per role with stable order, visible samples, and no raw Facts or WHIP", () => {
     const data = readyBatch();
-    const metadata = new Map([["b0", { displayName: "打者A", teamId: "T", position: "外野手" }]]);
+    const metadata = displayMetadata(data);
+    metadata.set("b0", { displayName: "打者A", teamId: "T", teamName: "阪神", position: "外野手" });
     const payload = buildNpbHotPayload(data, { generatedAt, scheduledProductionEvidence: true,
       metadata }).payload;
     expect(payload.readiness.status).toBe("ready");
@@ -87,11 +94,11 @@ describe("versioned NPB HOT static payload", () => {
     expect(payload.starters.map((row) => row.playerId)).toEqual(["s0", "s1", "s2", "s3", "s4"]);
     expect(payload.relievers.map((row) => row.playerId)).toEqual(["r0", "r1", "r2", "r3", "r4"]);
     expect(payload.batting.map((row) => row.rank)).toEqual([1, 2, 3, 4, 5]);
-    expect(payload.batting[0]).toMatchObject({ displayName: "打者A", teamId: "T", position: "外野手",
-      primaryMetric: { id: "OPS", value: 1.4 }, sample: { games: 1, pa: 28, ab: 24 },
+    expect(payload.batting[0]).toMatchObject({ displayName: "打者A", teamId: "T", teamName: "阪神", position: "外野手",
+      primaryMetric: { id: "OPS", value: 1.4 }, sample: { games: 1, pa: 28, ab: 24, hr: 2 },
       reason: "直近7日 OPS 1.400" });
     expect(payload.starters[0]).toMatchObject({ role: "starter", primaryMetric: { id: "ERA", value: 0 },
-      sample: { appearances: 1, starts: 1, outsRecorded: 18 }, reason: "直近7日 防御率 0.00" });
+      sample: { appearances: 1, starts: 1, outsRecorded: 18, k9: 3 }, reason: "直近7日 防御率 0.00" });
     expect(payload.relievers[0]).toMatchObject({ role: "reliever", sample: { appearances: 2,
       reliefAppearances: 2, outsRecorded: 6 } });
     const text = JSON.stringify(payload);
@@ -111,6 +118,14 @@ describe("versioned NPB HOT static payload", () => {
     expect(payload.readiness).toMatchObject({ status: "not_ready", reasons: ["category_not_ready"],
       categories: { batting: { status: "ready" }, starters: { status: "ready" },
         relievers: { status: "not_ready" } } });
+    expect([payload.batting, payload.starters, payload.relievers]).toEqual([[], [], []]);
+  });
+
+  it("keeps public lists closed when a ranked player's display identity is missing", () => {
+    const payload = buildNpbHotPayload(readyBatch(), { generatedAt,
+      scheduledProductionEvidence: true }).payload;
+    expect(payload.readiness).toMatchObject({ status: "not_ready",
+      reasons: ["display_metadata_unavailable"] });
     expect([payload.batting, payload.starters, payload.relievers]).toEqual([[], [], []]);
   });
 

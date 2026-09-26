@@ -1,0 +1,96 @@
+name: Publish NPB HOT static payload
+on:
+  workflow_dispatch:
+    inputs:
+      as_of_date:
+        description: "Completed JST date (YYYY-MM-DD); blank uses latest stored standings"
+        required: false
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: daily-npb-collector-and-pages
+  cancel-in-progress: false
+jobs:
+  stage:
+    if: github.event.repository.private == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      effective_date: ${{ steps.identity.outputs.effective_date }}
+      generated_at: ${{ steps.identity.outputs.generated_at }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Generate HOT from read-only Fact queries
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          AS_OF_DATE: ${{ inputs.as_of_date }}
+        shell: bash
+        run: |
+          args=(--require-remote --payload-root=.data/publish)
+          if [[ -n "$AS_OF_DATE" ]]; then args+=(--date="$AS_OF_DATE"); fi
+          npx tsx scripts/publish-npb-hot.ts "${args[@]}"
+      - name: Stage current validated standings from Turso
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          AS_OF_DATE: ${{ inputs.as_of_date }}
+        shell: bash
+        run: |
+          args=(--payload-root .data/publish)
+          if [[ -n "$AS_OF_DATE" ]]; then args+=(--date "$AS_OF_DATE"); fi
+          npm run publish:npb:remote -- "${args[@]}"
+      - name: Validate the two payloads as one publication
+        run: npx tsx scripts/validate-npb-hot-publish.ts
+      - name: Record public payload identity
+        id: identity
+        shell: bash
+        run: |
+          echo "effective_date=$(node -p "require('./.data/publish/data/npb/hot/latest.json').effectiveDate")" >> "$GITHUB_OUTPUT"
+          echo "generated_at=$(node -p "require('./.data/publish/data/npb/hot/latest.json').generatedAt")" >> "$GITHUB_OUTPUT"
+      - name: Build app and stage complete Pages site
+        shell: bash
+        run: |
+          npm run build
+          mkdir -p dist/data/standings/npb dist/data/npb/hot
+          cp .data/publish/data/standings/npb/latest.json dist/data/standings/npb/latest.json
+          cp .data/publish/data/npb/hot/latest.json dist/data/npb/hot/latest.json
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist
+  deploy:
+    needs: stage
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Publish complete artifact to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+      - name: Verify actual public HOT and standings HTTP payloads
+        env:
+          EXPECTED_EFFECTIVE_DATE: ${{ needs.stage.outputs.effective_date }}
+          EXPECTED_GENERATED_AT: ${{ needs.stage.outputs.generated_at }}
+        run: npx tsx scripts/verify-published-npb-hot.ts

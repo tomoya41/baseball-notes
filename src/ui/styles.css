@@ -139,6 +139,19 @@ small { font-size: var(--type-caption); }
 .standings-table th:nth-child(2) { text-align: left; }
 .standings-table thead { color: var(--color-muted); }
 .home-section--compact { margin-bottom: var(--space-6); }
+.npb-hot-groups { display: grid; gap: var(--space-4); }
+.npb-hot-group h3 { margin: 0 0 var(--space-2); font-size: .86rem; }
+.npb-hot-list { display: grid; gap: var(--space-2); }
+.npb-hot-card { display: flex; align-items: center; gap: var(--space-3); min-height: 72px; padding: var(--space-3);
+  border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }
+.npb-hot-card:hover, .npb-hot-card:focus-visible { border-color: var(--brand); background: var(--brand-soft); }
+.npb-hot-card__rank { flex: none; color: var(--brand); font-size: 1.1rem; font-weight: 800; width: 1.5rem; text-align: center; }
+.npb-hot-card__body { display: grid; gap: 2px; flex: 1; min-width: 0; font-size: .76rem; }
+.npb-hot-card__body strong { font-size: .9rem; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.npb-hot-card__body small, .npb-hot-card__body > span { color: var(--color-muted); overflow: hidden;
+  white-space: nowrap; text-overflow: ellipsis; }
+.npb-hot-card__metric { display: grid; flex: none; text-align: right; color: var(--brand); font-variant-numeric: tabular-nums; }
+.npb-hot-card__metric small { color: var(--color-muted); font-size: .65rem; }
 .feature-panel { border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); overflow: hidden; }
 .feature-panel--game { display: flex; align-items: center; gap: var(--space-4); padding: var(--space-4); border-left: 3px solid var(--brand); }
 .feature-panel--game .data-state { padding: 0; border: 0; background: none; }

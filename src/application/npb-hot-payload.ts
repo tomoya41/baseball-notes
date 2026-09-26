@@ -8,23 +8,23 @@ const count = z.number().int().nonnegative();
 const metric = z.number().finite().nonnegative();
 const rankInputs = z.strictObject({ primary: metric, first: metric, second: metric,
   third: metric, playerId: z.string().min(1) });
-const display = { displayName: z.string().min(1).optional(), teamId: z.string().min(1).optional(),
+const display = { displayName: z.string().min(1), teamId: z.string().min(1), teamName: z.string().min(1),
   position: z.string().min(1).optional() };
 const common = { playerId: z.string().min(1), rank: z.number().int().positive(),
   reason: z.string().min(1), rankInputs, ...display };
 const batterEntry = z.strictObject({ ...common, role: z.literal("batter"),
   primaryMetric: z.strictObject({ id: z.literal("OPS"), value: metric }),
-  sample: z.strictObject({ games: count, pa: count, ab: count }) });
+  sample: z.strictObject({ games: count, pa: count, ab: count, hr: count }) });
 const starterEntry = z.strictObject({ ...common, role: z.literal("starter"),
   primaryMetric: z.strictObject({ id: z.literal("ERA"), value: metric }),
   sample: z.strictObject({ appearances: count, starts: count, reliefAppearances: count,
-    outsRecorded: count, bf: count.optional() }) });
+    outsRecorded: count, bf: count.optional(), k9: metric }) });
 const relieverEntry = z.strictObject({ ...common, role: z.literal("reliever"),
   primaryMetric: z.strictObject({ id: z.literal("ERA"), value: metric }),
   sample: z.strictObject({ appearances: count, starts: count, reliefAppearances: count,
-    outsRecorded: count, bf: count.optional() }) });
+    outsRecorded: count, bf: count.optional(), k9: metric }) });
 const readinessReason = z.enum(["coverage_not_complete", "no_production_eligible_players",
-  "category_not_ready", "scheduled_production_evidence_pending"]);
+  "category_not_ready", "scheduled_production_evidence_pending", "display_metadata_unavailable"]);
 const category = z.strictObject({ status: z.enum(["ready", "not_ready"]), eligiblePlayers: count });
 
 export const npbHotPayloadSchema = z.strictObject({
@@ -95,6 +95,7 @@ function publicRankInputs(inputs: HotRankInputs) {
 function displayFields(metadata?: HotCandidateMetadata) {
   return { ...(metadata?.displayName ? { displayName: metadata.displayName } : {}),
     ...(metadata?.teamId ? { teamId: metadata.teamId } : {}),
+    ...(metadata?.teamName ? { teamName: metadata.teamName } : {}),
     ...(metadata?.position ? { position: metadata.position } : {}) };
 }
 function publicEntry(candidate: HotCandidate, rank: number) {
@@ -104,12 +105,13 @@ function publicEntry(candidate: HotCandidate, rank: number) {
     rankInputs: publicRankInputs(candidate.rankInputs), ...displayFields(candidate.metadata) };
   if (candidate.role === "batter") return { ...shared, role: "batter" as const,
     primaryMetric: { id: "OPS" as const, value: number(candidate.primaryMetric.metric.value) },
-    sample: { games: candidate.sample.games, pa: number(candidate.sample.pa), ab: number(candidate.sample.ab) } };
+    sample: { games: candidate.sample.games, pa: number(candidate.sample.pa), ab: number(candidate.sample.ab),
+      hr: number(candidate.stats.metrics.HR.value) } };
   return { ...shared, role: candidate.role,
     primaryMetric: { id: "ERA" as const, value: number(candidate.primaryMetric.metric.value) },
     sample: { appearances: number(candidate.sample.appearances), starts: number(candidate.sample.starts),
       reliefAppearances: number(candidate.sample.reliefAppearances),
-      outsRecorded: number(candidate.sample.outsRecorded),
+      outsRecorded: number(candidate.sample.outsRecorded), k9: number(candidate.stats.metrics.K9.value),
       ...(candidate.sample.bf !== null ? { bf: candidate.sample.bf } : {}) } };
 }
 
@@ -137,6 +139,10 @@ export function buildNpbHotPayload(batch: PlayerPeriodBatchResult, options: NpbH
   if (!eligibleTotal) reasons.push("no_production_eligible_players");
   else if (!hot.productionGate.ready) reasons.push("category_not_ready");
   if (!options.scheduledProductionEvidence) reasons.push("scheduled_production_evidence_pending");
+  if (hot.productionGate.ready && [
+    ...hot.top.batter, ...hot.top.starter, ...hot.top.reliever,
+  ].some((candidate) => !candidate.metadata?.displayName || !candidate.metadata.teamId ||
+    !candidate.metadata.teamName)) reasons.push("display_metadata_unavailable");
   const ready = reasons.length === 0;
   const completePlayers = new Set(hot.candidates.filter((candidate) => candidate.coverage.status === "complete")
     .map((candidate) => candidate.playerId)).size;
