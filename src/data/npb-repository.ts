@@ -24,6 +24,14 @@ export function battingFact(row: DbRow): PlayerGameBatting {
     collectedAt: row.collected_at });
 }
 
+// Historical rows with an invalid slot remain usable as Game Facts in Analysis,
+// but their batting order is unknown. Never infer a substitute's slot.
+export function situatedBattingFact(row: DbRow): PlayerGameBatting {
+  const order = row.batting_order;
+  return battingFact({ ...row, batting_order: typeof order === "number" && Number.isInteger(order) &&
+    order >= 1 && order <= 9 ? order : null });
+}
+
 export function pitchingFact(row: DbRow): PlayerGamePitching {
   return playerGamePitchingSchema.parse({ id: row.fact_id, gameId: row.game_id,
     playerId: row.player_id, teamId: row.team_id, opponentTeamId: row.opponent_team_id, role: row.role,
@@ -308,7 +316,7 @@ export class NpbRepository {
     const result = await this.client.execute({ sql: `SELECT b.*,g.game_date,g.home_team_id,g.away_team_id FROM player_game_batting b
       JOIN npb_games g ON g.game_id=b.game_id WHERE b.player_id=? AND g.game_date BETWEEN ? AND ?
       ORDER BY g.game_date,b.game_id`, args: [playerId,fromDate,toDate] });
-    return result.rows.map((row) => ({ date: String(row.game_date), fact: battingFact(row),
+    return result.rows.map((row) => ({ date: String(row.game_date), fact: situatedBattingFact(row),
       homeTeamId: row.home_team_id == null ? null : String(row.home_team_id),
       awayTeamId: row.away_team_id == null ? null : String(row.away_team_id) }));
   }

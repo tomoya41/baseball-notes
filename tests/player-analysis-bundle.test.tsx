@@ -11,6 +11,7 @@ import { resolvePlayerPeriod, aggregateBatting } from "../src/domain/player-peri
 import { unavailablePeriodCoverage } from "../src/domain/period-coverage";
 import { HttpPlayerAnalysisBundleRepository } from "../src/infrastructure/providers/http-player-analysis-bundle-repository";
 import { NpbPlayerBattingOrderSection } from "../src/ui/npb-player-analysis";
+import { battingFact, situatedBattingFact } from "../src/data/npb-repository";
 
 const playerId = "06a3e027-7a73-4792-9c91-8ecc3c1da36a";
 const asOfDate = "2026-09-25";
@@ -119,6 +120,16 @@ describe("shared 30-day Player Analysis", () => {
     const everySlot = Array.from({ length: 9 }, (_, index) =>
       situated("2026-09-20", batting(`slot${index + 1}`, { battingOrder: index + 1 })));
     expect([...partitionByBattingOrder(everySlot).groups.keys()]).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  });
+
+  it("treats an invalid stored slot as unknown for read-only Analysis", () => {
+    const row = { game_id: "game", player_id: playerId, team_id: eagles, opponent_team_id: fighters,
+      batting_order: 10, pa: 3, ab: 2, hits: 1, doubles: 0, triples: 0,
+      home_runs: 0, rbi: 0, walks: 1, strikeouts: 0, hbp: 0, sb: 0, cs: 0,
+      runs: 0, sacrifice_hits: 0, sacrifice_flies: 0, starter: 0,
+      source_key: "nf3", source_record_id: "row", collected_at: now.toISOString() };
+    expect(() => battingFact(row)).toThrow();
+    expect(situatedBattingFact(row)).toMatchObject({ battingOrder: null, pa: 3, ab: 2 });
   });
 
   it("preserves nullable metric status per order", async () => {
