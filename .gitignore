@@ -13,6 +13,7 @@ out/
 api/npb/recent.js
 api/npb/game-log.js
 api/npb/analysis.js
+api/npb/home-away.js
 
 # environment / secrets
 .env

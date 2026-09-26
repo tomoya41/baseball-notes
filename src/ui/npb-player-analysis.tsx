@@ -1,4 +1,6 @@
 import { comparisonPeriods, type ComparisonPeriod, type PlayerPeriodComparison } from "../domain/player-period-comparison";
+import type { PlayerHomeAway } from "../domain/player-home-away";
+import type { AggregateMetric } from "../domain/player-period";
 import { formatDate } from "../presentation/formatters";
 import { formatRecentMetric } from "../presentation/recent-formatter";
 import { DataState, LoadingSkeleton, PageHeading, SectionHeader } from "./components";
@@ -63,4 +65,66 @@ export function NpbPlayerAnalysisScreen({ payload, state }: { payload: PlayerPer
         <RoleComparison payload={payload} role="pitching" />
       </>}</>}
   </div>;
+}
+
+type SplitResult = NonNullable<PlayerHomeAway["batting"]["home"]> |
+  NonNullable<PlayerHomeAway["pitching"]["home"]>;
+function splitMetric(result: SplitResult | null, key: string) {
+  const metrics = result?.metrics as Record<string, AggregateMetric> | undefined;
+  return formatRecentMetric(key, metrics?.[key]);
+}
+
+const splitDetails = {
+  batting: [{ key: "AB", label: "打数" }, { key: "H", label: "安打" }, { key: "HR", label: "HR" },
+    { key: "BB", label: "四球" }, { key: "SO", label: "三振" }, { key: "OBP", label: "OBP" },
+    { key: "SLG", label: "SLG" }],
+  pitching: [{ key: "appearances", label: "登板" }, { key: "GS", label: "先発" },
+    { key: "BF", label: "BF" }, { key: "H", label: "安打" }, { key: "HR", label: "HR" },
+    { key: "SO", label: "三振" }, { key: "R", label: "失点" }, { key: "ER", label: "自責点" },
+    { key: "pitchCount", label: "投球数" }],
+} as const;
+
+function HomeAwayRole({ role, rows }: { role: Role; rows: PlayerHomeAway[Role] }) {
+  if (!rows.totalFactCount) return null;
+  const label = role === "batting" ? "打撃" : "投球";
+  const primary = role === "batting" ? [{ key: "OPS", label: "OPS" }, { key: "AVG", label: "AVG" },
+    { key: "PA", label: "PA" }, { key: "G", label: "試合" }] :
+    [{ key: "ERA", label: "ERA" }, { key: "K9", label: "K/9" },
+      { key: "outsRecorded", label: "IP" }, { key: "BF", label: "BF" }];
+  return <section className="analysis-split-role" aria-label={`${label}のホーム・ビジター比較`}>
+    <h3>{label}</h3><div className="analysis-split-grid">{(["home", "away"] as const).map((side) => {
+      const result = rows[side];
+      const sideName = side === "home" ? "ホーム" : "ビジター";
+      return <div className="analysis-split-card" key={side} role="group" aria-label={`${label} ${sideName}`}>
+        <h4>{sideName}</h4>{result ? <>
+          <div className="analysis-split-primary">{primary.map(({ key, label: name }) => <div key={key}>
+            <span>{name}</span><strong>{splitMetric(result, key)}</strong></div>)}</div>
+          {role === "pitching" && <p className="analysis-split-sample">{splitMetric(result, "appearances")}登板 · BF {splitMetric(result, "BF")}</p>}
+          <details className="analysis-split-details"><summary>詳しい成績</summary>
+            <dl>{splitDetails[role].map(({ key, label: name }) => <div key={key}><dt>{name}</dt>
+              <dd>{splitMetric(result, key)}</dd></div>)}</dl></details>
+        </> : <p className="muted">保存済み{sideName}成績なし</p>}</div>;
+    })}</div>
+    {rows.unknownFactCount > 0 && <p className="analysis-period-note">分類できない{label}記録：{rows.unknownFactCount}件</p>}
+  </section>;
+}
+
+export function NpbPlayerHomeAwaySection({ payload, state }: { payload: PlayerHomeAway | null; state: AnalysisState }) {
+  const hasFacts = payload && (payload.batting.totalFactCount > 0 || payload.pitching.totalFactCount > 0);
+  return <section className="analysis-home-away" aria-label="ホーム・ビジター条件別分析">
+    <SectionHeader title="ホーム / ビジター" />
+    <p className="analysis-period-note">保存済みの直近30日試合成績を、開催側で分けて比較します。</p>
+    {state === "loading" && <div aria-live="polite"><LoadingSkeleton /></div>}
+    {state === "error" && <DataState kind="source-unavailable" title="ホーム・ビジター成績を取得できませんでした" />}
+    {state === "missing" && <DataState kind="no-data" title="分析できる試合データがまだありません" />}
+    {state === "ready" && payload && (!hasFacts
+      ? <DataState kind="no-data" title="分析できる試合データがまだありません" />
+      : <><p className="analysis-period-note">{formatDate(payload.from, true)}〜{formatDate(payload.to, true)} · {formatDate(payload.asOfDate, true)}終了時点</p>
+        <HomeAwayRole role="batting" rows={payload.batting} />
+        <HomeAwayRole role="pitching" rows={payload.pitching} />
+        {payload.capability === "unavailable" && <p className="analysis-period-note">開催側を確認できる記録がありません。</p>}
+        {payload.coverage.status !== "complete" && <p className={`analysis-period-coverage analysis-period-coverage--${payload.coverage.status}`}>
+          {coverageNames[payload.coverage.status]}。表示値は保存済み記録から算出しています。</p>}
+      </>)}
+  </section>;
 }

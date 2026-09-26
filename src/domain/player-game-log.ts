@@ -31,11 +31,17 @@ export type PlayerGameLogResponse = z.infer<typeof playerGameLogResponseSchema>;
 export type PlayerBattingLog = PlayerGameLogResponse["batting"][number];
 export type PlayerPitchingLog = PlayerGameLogResponse["pitching"][number];
 
+export function classifyGameSide(teamId: string | null | undefined, homeTeamId: string | null | undefined,
+  awayTeamId: string | null | undefined): "home" | "away" | "unknown" {
+  if (!teamId || !homeTeamId || !awayTeamId || homeTeamId === awayTeamId) return "unknown";
+  return teamId === homeTeamId ? "home" : teamId === awayTeamId ? "away" : "unknown";
+}
+
 export function gameContext(row: { gameId: string; date: string; gameNumber: number; status: string;
   homeTeamId: string; awayTeamId: string; homeScore: number | null; awayScore: number | null },
   teamId: string, factOpponentId: string | null) {
-  const side = teamId === row.homeTeamId ? "home" : teamId === row.awayTeamId ? "away" : null;
-  if (!side) throw new Error(`Player team is not in game ${row.gameId}`);
+  const side = classifyGameSide(teamId, row.homeTeamId, row.awayTeamId);
+  if (side === "unknown") throw new Error(`Player team is not in game ${row.gameId}`);
   const opponentTeamId = side === "home" ? row.awayTeamId : row.homeTeamId;
   if (factOpponentId && factOpponentId !== opponentTeamId)
     throw new Error(`Fact opponent conflicts with game ${row.gameId}`);

@@ -272,6 +272,22 @@ small { font-size: var(--type-caption); }
 .analysis-period-sample__values strong { font-variant-numeric: tabular-nums; }
 .analysis-period-coverage { color: var(--color-muted); font-size: var(--type-caption); }
 .analysis-period-coverage--partial { color: var(--color-warning); }
+.analysis-home-away { margin-top: var(--space-8); padding-top: var(--space-5); border-top: 1px solid var(--color-border); }
+.analysis-split-role { margin: var(--space-5) 0; }
+.analysis-split-role h3 { margin-bottom: var(--space-2); font-size: .95rem; }
+.analysis-split-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); }
+.analysis-split-card { min-width: 0; padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }
+.analysis-split-card h4 { margin: 0 0 var(--space-3); font-size: .88rem; }
+.analysis-split-primary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3) var(--space-1); }
+.analysis-split-primary > div { min-width: 0; display: grid; gap: var(--space-1); }
+.analysis-split-primary span { color: var(--color-muted); font-size: .72rem; }
+.analysis-split-primary strong { font-size: clamp(.94rem, 4.2vw, 1.25rem); font-variant-numeric: tabular-nums; }
+.analysis-split-sample { margin: var(--space-3) 0 0; color: var(--color-muted); font-size: .72rem; }
+.analysis-split-details { margin-top: var(--space-3); border-top: 1px solid var(--color-border); }
+.analysis-split-details summary { min-height: var(--touch); display: flex; align-items: center; color: var(--brand); font-size: .78rem; font-weight: 700; cursor: pointer; }
+.analysis-split-details dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); margin: 0; }
+.analysis-split-details dt { color: var(--color-muted); font-size: .7rem; }
+.analysis-split-details dd { margin: 0; font-size: .8rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 .game-log-note { margin: var(--space-2) 0 var(--space-4); color: var(--color-muted); font-size: var(--type-caption); }
 .game-log-group { margin-top: var(--space-5); }
 .game-log-group h3 { margin-bottom: var(--space-3); font-size: .9rem; }

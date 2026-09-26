@@ -304,6 +304,24 @@ export class NpbRepository {
     return result.rows.map((row) => ({ date: String(row.game_date), fact: pitchingFact(row) }));
   }
 
+  async findSituatedBattingByPlayer(playerId: string, fromDate: string, toDate: string) {
+    const result = await this.client.execute({ sql: `SELECT b.*,g.game_date,g.home_team_id,g.away_team_id FROM player_game_batting b
+      JOIN npb_games g ON g.game_id=b.game_id WHERE b.player_id=? AND g.game_date BETWEEN ? AND ?
+      ORDER BY g.game_date,b.game_id`, args: [playerId,fromDate,toDate] });
+    return result.rows.map((row) => ({ date: String(row.game_date), fact: battingFact(row),
+      homeTeamId: row.home_team_id == null ? null : String(row.home_team_id),
+      awayTeamId: row.away_team_id == null ? null : String(row.away_team_id) }));
+  }
+
+  async findSituatedPitchingByPlayer(playerId: string, fromDate: string, toDate: string) {
+    const result = await this.client.execute({ sql: `SELECT p.*,g.game_date,g.home_team_id,g.away_team_id FROM player_game_pitching p
+      JOIN npb_games g ON g.game_id=p.game_id WHERE p.player_id=? AND g.game_date BETWEEN ? AND ?
+      ORDER BY g.game_date,p.game_id`, args: [playerId,fromDate,toDate] });
+    return result.rows.map((row) => ({ date: String(row.game_date), fact: pitchingFact(row),
+      homeTeamId: row.home_team_id == null ? null : String(row.home_team_id),
+      awayTeamId: row.away_team_id == null ? null : String(row.away_team_id) }));
+  }
+
   async findPeriodPlayerIds(fromDate: string, toDate: string, season?: number): Promise<{ batters: string[]; pitchers: string[] }> {
     const result = await this.client.execute({ sql: `SELECT role,player_id FROM (
       SELECT 'batter' AS role,b.player_id FROM player_game_batting b JOIN npb_games g ON g.game_id=b.game_id
