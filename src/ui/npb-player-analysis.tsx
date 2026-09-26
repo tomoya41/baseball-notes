@@ -3,6 +3,7 @@ import { comparisonPeriods, type ComparisonPeriod, type PlayerPeriodComparison }
 import type { PlayerHomeAway } from "../domain/player-home-away";
 import { opponentChoice, type PlayerOpponent } from "../domain/player-opponent";
 import { battingOrderChoice, type PlayerBattingOrder } from "../domain/player-batting-order";
+import type { PlayerPitcherRole } from "../domain/player-pitcher-role";
 import type { AggregateMetric } from "../domain/player-period";
 import { formatDate } from "../presentation/formatters";
 import { formatRecentMetric } from "../presentation/recent-formatter";
@@ -249,6 +250,52 @@ export function NpbPlayerBattingOrderSection({ payload, state, battingAvailable 
       {payload.unknownBattingOrderFactCount > 0 && <p className="analysis-period-note">打順不明の記録：
         {payload.unknownBattingOrderFactCount}件{payload.unknownBattingOrderPa !== null &&
           `・${payload.unknownBattingOrderPa}打席`}</p>}
+      {payload.coverage.status !== "complete" && <p className={`analysis-period-coverage analysis-period-coverage--${payload.coverage.status}`}>
+        {coverageNames[payload.coverage.status]}。表示値は保存済み記録から算出しています。</p>}
+    </>}
+  </section>;
+}
+
+const pitcherRoleDetails = [{ key: "BF", label: "BF" }, { key: "H", label: "被安打" },
+  { key: "HR", label: "被本塁打" }, { key: "SO", label: "奪三振" },
+  { key: "R", label: "失点" }, { key: "ER", label: "自責点" },
+  { key: "pitchCount", label: "投球数" }, { key: "W", label: "勝" },
+  { key: "L", label: "敗" }, { key: "HLD", label: "HLD" }, { key: "SV", label: "SV" }] as const;
+
+export function NpbPlayerPitcherRoleSection({ payload, state, pitchingAvailable }: {
+  payload: PlayerPitcherRole | null; state: AnalysisState; pitchingAvailable: boolean | undefined;
+}) {
+  if (pitchingAvailable === false || (state === "ready" && payload?.totalFactCount === 0)) return null;
+  return <section className="analysis-pitcher-role" aria-label="先発・救援別分析">
+    <SectionHeader title="先発 / 救援" />
+    <p className="analysis-period-note">保存済みの直近30日投球成績を、記録された役割で分けて表示します。</p>
+    {state === "loading" && <div aria-live="polite"><LoadingSkeleton /></div>}
+    {state === "error" && <DataState kind="source-unavailable" title="先発・救援別成績を取得できませんでした" />}
+    {state === "missing" && <DataState kind="no-data" title="分析できる試合データがまだありません" />}
+    {state === "ready" && payload && <>
+      <p className="analysis-period-note">{formatDate(payload.from, true)}〜{formatDate(payload.to, true)} · {formatDate(payload.asOfDate, true)}終了時点</p>
+      <div className="analysis-split-grid">{(["starter", "reliever"] as const).map((role) => {
+        const result = payload[role];
+        const name = role === "starter" ? "先発" : "救援";
+        return <div className="analysis-split-card" key={role} role="group" aria-label={`${name}投球成績`}>
+          <h3>{name}</h3>{result ? <>
+            <div className="analysis-split-primary">{([
+              { key: "ERA", label: "ERA" }, { key: "K9", label: "K/9" },
+              { key: "outsRecorded", label: "IP" },
+              role === "starter" ? { key: "GS", label: "先発" } : { key: "appearances", label: "登板" },
+            ] as const).map(({ key, label }) => <div key={key}><span>{label}</span>
+              <strong>{splitMetric(result, key)}</strong></div>)}</div>
+            <p className="analysis-split-sample">{role === "starter" ? `先発 ${splitMetric(result, "GS")}` :
+              `登板 ${splitMetric(result, "appearances")}`} · IP {splitMetric(result, "outsRecorded")} · BF {splitMetric(result, "BF")}</p>
+            <details className="analysis-split-details"><summary>詳しい成績</summary><dl>
+              {pitcherRoleDetails.map(({ key, label }) => <div key={key}><dt>{label}</dt>
+                <dd>{splitMetric(result, key)}</dd></div>)}
+            </dl></details>
+          </> : <p className="muted">保存済み{name}登板なし</p>}</div>;
+      })}</div>
+      {payload.unknownRoleAppearances > 0 && <p className="analysis-period-note">役割不明の登板：
+        {payload.unknownRoleAppearances}件 · IP {payload.unknownRoleOuts === null ? "—" :
+          `${Math.floor(payload.unknownRoleOuts / 3)}.${payload.unknownRoleOuts % 3}`} · BF {payload.unknownRoleBf ?? "—"}</p>}
       {payload.coverage.status !== "complete" && <p className={`analysis-period-coverage analysis-period-coverage--${payload.coverage.status}`}>
         {coverageNames[payload.coverage.status]}。表示値は保存済み記録から算出しています。</p>}
     </>}

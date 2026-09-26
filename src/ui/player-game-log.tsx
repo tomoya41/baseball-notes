@@ -1,5 +1,6 @@
 import { ChevronRight } from "lucide-react";
 import { formatOuts, type PlayerBattingLog, type PlayerGameLogResponse, type PlayerPitchingLog } from "../domain/player-game-log";
+import { classifyPitcherRole } from "../domain/player-pitcher-role";
 import { formatDate } from "../presentation/formatters";
 import { DataState, LoadingSkeleton, SectionHeader } from "./components";
 
@@ -78,7 +79,8 @@ export function PlayerGameLogView({ payload, state, teams }: { payload: PlayerGa
     {state === "ready" && payload?.pitching.length ? <div className="game-log-group"><h3>投球</h3>
       <ol className="game-log-list">{payload.pitching.map((row) => <li className="game-log-card" key={row.gameId}>
         {gameHeader(row, teams)}<p className="game-log-card__summary">{pitchingSummary(row)}</p>
-        <p className="game-log-card__meta">{row.role === "starter" ? "先発" : row.role === "reliever" ? "救援" : ""}
+        <p className="game-log-card__meta">{classifyPitcherRole(row) === "starter" ? "先発" :
+          classifyPitcherRole(row) === "reliever" ? "救援" : ""}
           {row.decision && row.decision !== "none" ? ` · ${decisionLabel[row.decision]}` : ""}</p>
         {details(row, pitchingKeys)}
       </li>)}</ol></div> : null}

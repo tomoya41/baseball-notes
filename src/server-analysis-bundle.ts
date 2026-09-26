@@ -27,7 +27,8 @@ export async function GET(request: Request): Promise<Response> {
       .find(query.data.playerId, asOfDate);
     if (!result) return new Response(JSON.stringify({ error: "player_not_found" }), { status: 404, headers });
     return new Response(JSON.stringify(result.payload), { status: 200, headers: { ...headers,
-      "Server-Timing": `db;dur=${result.dbReadMs.toFixed(1)}, aggregate;dur=${result.aggregationMs.toFixed(1)}` } });
+      "Server-Timing": `db;dur=${result.dbReadMs.toFixed(1)}, aggregate;dur=${result.aggregationMs.toFixed(1)}, ` +
+        `role-partition;dur=${result.rolePartitionMs.toFixed(1)}, role-aggregate;dur=${result.roleAggregationMs.toFixed(1)}` } });
   } catch {
     return new Response(JSON.stringify({ error: "analysis_unavailable" }), { status: 503, headers });
   } finally { client.close(); }

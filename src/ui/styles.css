@@ -274,6 +274,7 @@ small { font-size: var(--type-caption); }
 .analysis-period-coverage--partial { color: var(--color-warning); }
 .analysis-home-away { margin-top: var(--space-8); padding-top: var(--space-5); border-top: 1px solid var(--color-border); }
 .analysis-opponent { margin-top: var(--space-8); padding-top: var(--space-5); border-top: 1px solid var(--color-border); }
+.analysis-pitcher-role { margin-top: var(--space-8); padding-top: var(--space-5); border-top: 1px solid var(--color-border); }
 .analysis-opponent-select { display: grid; gap: var(--space-2); margin: var(--space-4) 0; font-size: .82rem; font-weight: 700; }
 .analysis-opponent-select select { width: 100%; min-height: var(--touch); padding: var(--space-2) var(--space-3); color: var(--color-text); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); font: inherit; }
 .analysis-opponent-single { margin: var(--space-4) 0; font-size: .86rem; }
@@ -291,6 +292,7 @@ small { font-size: var(--type-caption); }
 .analysis-split-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); }
 .analysis-split-card { min-width: 0; padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }
 .analysis-split-card h4 { margin: 0 0 var(--space-3); font-size: .88rem; }
+.analysis-pitcher-role .analysis-split-card h3 { margin: 0 0 var(--space-3); font-size: .88rem; }
 .analysis-split-primary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3) var(--space-1); }
 .analysis-split-primary > div { min-width: 0; display: grid; gap: var(--space-1); }
 .analysis-split-primary span { color: var(--color-muted); font-size: .72rem; }

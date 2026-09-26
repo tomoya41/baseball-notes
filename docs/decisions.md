@@ -198,3 +198,5 @@ Read canonical Players and Teams from existing `master_history`, with batting/pi
 ## 2026-09-26 — One read-only context for NPB Player Analysis
 
 The Player Analysis page uses one 30-day Fact/Game/Coverage read for period comparison, Home/Away, opponent, and batting-order projections. A combined API returns independently validated section results, while existing individual endpoints remain available for rollback. Batting-order analysis uses only recorded 1–9 slots, keeps unknown slots diagnosable, and reuses the batting aggregator. No derived table or persistent cache is introduced. See `docs/player-analysis-batting-order.md`.
+
+The same 30-day Analysis Context also projects starter and reliever splits from the explicit stored pitching role. A contradictory starter flag leaves that appearance unknown; the existing pitching aggregator and period coverage are reused. Game Log shares the classification rule, while HOT ranking logic is unchanged. See `docs/player-analysis-pitcher-role.md`.
