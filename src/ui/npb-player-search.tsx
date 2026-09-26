@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ChevronRight, Search } from "lucide-react";
 import { Link } from "react-router-dom";
 import { searchNpbPlayers, type NpbPlayerDirectory } from "../domain/npb-player-directory";
+import { positionDefinitions } from "../domain/baseball-terms";
 import { DataState, LoadingSkeleton, PageHeading } from "./components";
 
 type SearchState = "loading" | "ready" | "error";
@@ -45,7 +46,7 @@ export function NpbPlayerSearchView({ directory, state, query, onQueryChange, te
           <span className="npb-directory-avatar" aria-hidden="true">{player.displayName.slice(0, 1)}</span>
           <span className="player-row__body"><strong>{player.displayName}</strong>
             <small>{player.teamId ? teams.get(player.teamId) : "所属球団未登録"}
-              {player.position ? ` · ${player.position}` : ""}
+              {player.position ? ` · ${positionDefinitions[player.position]}` : ""}
               {player.battingAvailable || player.pitchingAvailable ?
                 ` · ${[player.battingAvailable && "打撃", player.pitchingAvailable && "投球"].filter(Boolean).join("・")}データあり` :
                 " · 最近の成績なし"}</small>

@@ -291,7 +291,8 @@ function PlayerScreen({ catalog, favorites, toggle, saving, services }: {
         </div>
         <h1>{formatPlayerName(player)}</h1>
         {player.names.japanese && player.names.english && <p className="secondary-name">{player.names.english}</p>}
-        {team && <p>{formatTeamName(team)}{player.positions.length > 0 && ` · ${formatPositions(player.positions)}`}</p>}
+        {team && <p>{formatTeamName(team)}{player.positions.length > 0 &&
+          ` · ${canonical ? player.positions.map((code) => positionDefinitions[code]).join(" / ") : formatPositions(player.positions)}`}</p>}
       </div>
     </header>
     {directoryPlayer && section !== "analysis" ? <NpbPlayerProfileFacts player={directoryPlayer} /> :

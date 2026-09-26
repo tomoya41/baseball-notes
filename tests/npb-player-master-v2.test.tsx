@@ -101,5 +101,12 @@ describe("Verified Player Master v2", () => {
     const recent = renderToStaticMarkup(<PlayerRecentView period="7d" onPeriodChange={() => undefined}
       payload={null} state="missing" noFactKnown />);
     expect(recent).toContain("最近の成績データはありません");
+    const emptyResponse = { player: { id: base.playerId, name: base.displayName,
+      teamId: base.teamId, teamName: "楽天" }, asOfDate: "2026-09-25" as const,
+      period: "7d" as const, batting: null, pitching: null };
+    const empty = renderToStaticMarkup(<PlayerRecentView period="7d" onPeriodChange={() => undefined}
+      payload={emptyResponse} state="ready" noFactKnown />);
+    expect(empty).toContain("最近の成績データはありません");
+    expect(empty).not.toContain("—〜—");
   });
 });
