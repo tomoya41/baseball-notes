@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "league": "NPB",
+  "generatedAt": "2026-09-26T00:00:00.000Z",
+  "effectiveDate": "2026-09-25",
+  "period": { "type": "7d", "from": "2026-09-19", "to": "2026-09-25" },
+  "readiness": {
+    "status": "ready",
+    "scheduledProductionEvidence": true,
+    "reasons": [],
+    "categories": {
+      "batting": { "status": "ready", "eligiblePlayers": 1 },
+      "starters": { "status": "ready", "eligiblePlayers": 1 },
+      "relievers": { "status": "ready", "eligiblePlayers": 1 }
+    }
+  },
+  "coverage": {
+    "status": "complete", "completePlayers": 3, "candidateCount": 3,
+    "eligibleBatters": 1, "eligibleStarters": 1, "eligibleRelievers": 1
+  },
+  "batting": [{
+    "playerId": "fixture-batter", "rank": 1, "role": "batter", "displayName": "検証打者",
+    "teamId": "npb:team:tigers", "teamName": "阪神", "reason": "直近7日 OPS 1.200",
+    "primaryMetric": { "id": "OPS", "value": 1.2 },
+    "rankInputs": { "primary": 1.2, "first": 28, "second": 2, "third": 8, "playerId": "fixture-batter" },
+    "sample": { "games": 6, "pa": 28, "ab": 24, "hr": 2 }
+  }],
+  "starters": [{
+    "playerId": "fixture-starter", "rank": 1, "role": "starter", "displayName": "検証先発",
+    "teamId": "npb:team:hawks", "teamName": "ソフトバンク", "reason": "直近7日 防御率 0.00",
+    "primaryMetric": { "id": "ERA", "value": 0 },
+    "rankInputs": { "primary": 0, "first": 9, "second": 18, "third": 24, "playerId": "fixture-starter" },
+    "sample": { "appearances": 1, "starts": 1, "reliefAppearances": 0,
+      "outsRecorded": 18, "bf": 24, "k9": 9 }
+  }],
+  "relievers": [{
+    "playerId": "fixture-reliever", "rank": 1, "role": "reliever", "displayName": "検証救援",
+    "teamId": "npb:team:giants", "teamName": "巨人", "reason": "直近7日 防御率 0.00",
+    "primaryMetric": { "id": "ERA", "value": 0 },
+    "rankInputs": { "primary": 0, "first": 12, "second": 2, "third": 7, "playerId": "fixture-reliever" },
+    "sample": { "appearances": 2, "starts": 0, "reliefAppearances": 2,
+      "outsRecorded": 7, "k9": 12 }
+  }]
+}

@@ -108,6 +108,12 @@ describe("NPB HOT static Home delivery", () => {
     expect(expectedNpbHotDate(new Date("2026-09-25T15:01:00Z"))).toBe("2026-09-25");
   });
 
+  it("accepts the isolated ready preview fixture without publishing it", () => {
+    const fixture = readFileSync(fileURLToPath(new URL("./fixtures/npb-hot-ready.json", import.meta.url)), "utf8");
+    const preview = npbHotPayloadSchema.parse(JSON.parse(fixture) as unknown);
+    expect(view(preview, "ready")).toContain("検証打者");
+  });
+
   it("carries only validated HOT JSON into a later whole-site Pages build", async () => {
     const directory = await mkdtemp(join(tmpdir(), "npb-hot-preserve-"));
     try {
