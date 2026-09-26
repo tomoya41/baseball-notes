@@ -8,6 +8,7 @@ import { foundationAnalysisCapabilities } from "./analysis-policy";
 import { IndexedDbCache, PreferenceStore } from "../infrastructure/storage";
 import { StaticStandingsRepository } from "../infrastructure/providers/static-standings-repository";
 import { StaticHotRepository } from "../infrastructure/providers/static-hot-repository";
+import { StaticPlayerDirectoryRepository } from "../infrastructure/providers/static-player-directory-repository";
 import { HttpPlayerRecentRepository } from "../infrastructure/providers/http-player-recent-repository";
 import { Capacitor } from "@capacitor/core";
 
@@ -21,6 +22,7 @@ export const services = {
   watch: new UnavailableWatchProvider(),
   standings: new StaticStandingsRepository(import.meta.env.BASE_URL, undefined, npbDataBaseUrl),
   hot: new StaticHotRepository(npbDataBaseUrl),
+  directory: new StaticPlayerDirectoryRepository(npbDataBaseUrl),
   recent: new HttpPlayerRecentRepository(import.meta.env.VITE_NPB_PLAYER_API_BASE_URL?.trim() || "https://baseball-notes-recent.vercel.app/"),
   favorites: new Favorites(new PreferenceStore()),
 };

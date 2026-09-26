@@ -19,6 +19,7 @@ import { MatchupScreen } from "./matchup";
 import { WatchGameScreen, WatchToday } from "./watch";
 import { PlayerRecentView } from "./player-recent";
 import { NpbHotSection } from "./npb-hot";
+import { NpbPlayerSearch } from "./npb-player-search";
 import { LeagueBadge, TeamBrand } from "./branding";
 import {
   DataState, FavoriteButton, LoadingSkeleton, MetricGrid, PageHeading,
@@ -396,13 +397,14 @@ function LeagueView({ league, services, favorites, toggle, saving }: {
       {!result && <button className="button" onClick={() => void refresh()}>再試行</button>}</div>}
     {!result && loading && <LoadingSkeleton />}
     {result && <>
-      {result.data.source.kind === "sample" && !canonicalPlayerRoute && <div className="sample-banner">
+      {result.data.source.kind === "sample" && !canonicalPlayerRoute && !(league === "NPB" && location.pathname.endsWith("/search")) && <div className="sample-banner">
         <span>サンプル</span> {league === "NPB" ? "選手一覧・分析はサンプルです。実データ対応選手の最近の成績は別途表示します" : "架空の選手・球団・成績を表示しています"}
       </div>}
       <Routes>
         <Route path="home" element={<HomeScreen catalog={result.data} favorites={favorites} services={services} />} />
-        <Route path="search" element={<SearchScreen catalog={result.data} favorites={favorites}
-          query={searchQuery} setQuery={setSearchQuery} scope={searchScope} setScope={setSearchScope} />} />
+        <Route path="search" element={league === "NPB" ? <NpbPlayerSearch repository={services.directory} /> :
+          <SearchScreen catalog={result.data} favorites={favorites}
+            query={searchQuery} setQuery={setSearchQuery} scope={searchScope} setScope={setSearchScope} />} />
         <Route path="ranking" element={<RankingScreen catalog={result.data} />} />
         <Route path="players/:playerId/:section?" element={<PlayerScreen key={location.pathname.split("/")[3]} catalog={result.data}
           favorites={favorites} toggle={toggle} saving={saving} services={services} />} />
@@ -422,7 +424,8 @@ function LeagueView({ league, services, favorites, toggle, saving }: {
         <Route path="favorites" element={<Navigate to={`/${league}/my`} replace />} />
         <Route path="*" element={<Navigate to={`/${league}/home`} replace />} />
       </Routes>
-      {!canonicalPlayerRoute && <DataNote result={result} clock={clock} loading={loading} refresh={() => void refresh()} />}
+      {!canonicalPlayerRoute && !(league === "NPB" && location.pathname.endsWith("/search")) &&
+        <DataNote result={result} clock={clock} loading={loading} refresh={() => void refresh()} />}
     </>}
   </>;
 }

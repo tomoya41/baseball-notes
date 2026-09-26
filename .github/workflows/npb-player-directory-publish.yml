@@ -1,11 +1,6 @@
-name: Publish NPB HOT static payload
+name: Publish NPB Player Directory
 on:
   workflow_dispatch:
-    inputs:
-      as_of_date:
-        description: "Completed JST date (YYYY-MM-DD); blank uses latest stored standings"
-        required: false
-        type: string
 permissions:
   contents: read
 concurrency:
@@ -17,7 +12,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     outputs:
-      effective_date: ${{ steps.identity.outputs.effective_date }}
       generated_at: ${{ steps.identity.outputs.generated_at }}
     steps:
       - uses: actions/checkout@v7
@@ -28,42 +22,30 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - name: Generate HOT from read-only Fact queries
+      - name: Generate validated Player Directory from read-only queries
         env:
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
-          AS_OF_DATE: ${{ inputs.as_of_date }}
-        shell: bash
-        run: |
-          args=(--require-remote --payload-root=.data/publish)
-          if [[ -n "$AS_OF_DATE" ]]; then args+=(--date="$AS_OF_DATE"); fi
-          npx tsx scripts/publish-npb-hot.ts "${args[@]}"
-      - name: Stage current validated standings from Turso
+        run: npx tsx scripts/generate-npb-player-directory.ts --require-remote --payload-root=.data/publish
+      - name: Stage current standings without source access
         env:
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
-          AS_OF_DATE: ${{ inputs.as_of_date }}
-        shell: bash
-        run: |
-          args=(--payload-root .data/publish)
-          if [[ -n "$AS_OF_DATE" ]]; then args+=(--date "$AS_OF_DATE"); fi
-          npm run publish:npb:remote -- "${args[@]}"
-      - name: Validate the two payloads as one publication
-        run: npx tsx scripts/validate-npb-hot-publish.ts
-      - name: Record public payload identity
+        run: npm run publish:npb:remote -- --payload-root .data/publish
+      - name: Validate Player Directory and record identity
         id: identity
         shell: bash
         run: |
-          echo "effective_date=$(node -p "require('./.data/publish/data/npb/hot/latest.json').effectiveDate")" >> "$GITHUB_OUTPUT"
-          echo "generated_at=$(node -p "require('./.data/publish/data/npb/hot/latest.json').generatedAt")" >> "$GITHUB_OUTPUT"
+          node -e "const p=require('./.data/publish/data/npb/players/latest.json'); if(p.schemaVersion!==1 || p.teams.length!==12 || !p.players.length) process.exit(1); console.log(p.players.length+' players')"
+          echo "generated_at=$(node -p "require('./.data/publish/data/npb/players/latest.json').generatedAt")" >> "$GITHUB_OUTPUT"
       - name: Build app and stage complete Pages site
         shell: bash
         run: |
           npm run build
-          mkdir -p dist/data/standings/npb dist/data/npb/hot
+          mkdir -p dist/data/standings/npb dist/data/npb/players
           cp .data/publish/data/standings/npb/latest.json dist/data/standings/npb/latest.json
-          cp .data/publish/data/npb/hot/latest.json dist/data/npb/hot/latest.json
-          npx tsx scripts/preserve-published-npb-player-directory.ts
+          cp .data/publish/data/npb/players/latest.json dist/data/npb/players/latest.json
+          npx tsx scripts/preserve-published-npb-hot.ts
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:
@@ -90,8 +72,7 @@ jobs:
       - name: Publish complete artifact to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-      - name: Verify actual public HOT and standings HTTP payloads
+      - name: Verify public Player Directory HTTP
         env:
-          EXPECTED_EFFECTIVE_DATE: ${{ needs.stage.outputs.effective_date }}
           EXPECTED_GENERATED_AT: ${{ needs.stage.outputs.generated_at }}
-        run: npx tsx scripts/verify-published-npb-hot.ts
+        run: npx tsx scripts/verify-published-npb-player-directory.ts
