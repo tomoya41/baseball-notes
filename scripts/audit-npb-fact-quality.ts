@@ -130,6 +130,13 @@ async function main() {
       queries, durationMs: Math.round(performance.now() - started),
       rows: { games: games.length, batting: batting.length, pitching: pitching.length, mappings: mappings.length,
         plateAppearances: num(plateAppearances[0]?.count), pitcherAppearances: num(pitcherAppearances[0]?.count) },
+      games: {
+        status: Object.fromEntries([...new Set(games.map((row) => text(row.status)))].map((status) => [status,
+          games.filter((row) => row.status === status).length])),
+        scoreKnown: games.filter((row) => known(row.home_score) && known(row.away_score)).length,
+        completeness: Object.fromEntries([...new Set(completeness.map((row) => text(row.game_status)))].map((status) => [status,
+          completeness.filter((row) => row.game_status === status).length])),
+      },
       batting: {
         paKnown: batting.length - unknownPa.length, paZero: batting.filter((row) => row.pa === 0).length,
         paUnknown: unknownPa.length, fieldCompleteButPaNull: candidates.length,
@@ -153,6 +160,8 @@ async function main() {
         reliever: roles.filter((role) => role === "reliever").length,
         unknown: roles.filter((role) => role === "unknown").length,
         appearanceOrderKnown: pitching.filter((row) => known(row.appearance_order)).length,
+        decisions: Object.fromEntries([...new Set(pitching.map((row) => text(row.decision)))].map((decision) => [decision,
+          pitching.filter((row) => text(row.decision) === decision).length])),
         fieldKnown: Object.fromEntries(pitchingMetrics.map((field) => [field,
           pitching.filter((row) => known(row[field])).length])),
       },
