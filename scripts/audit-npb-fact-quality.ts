@@ -178,7 +178,8 @@ async function main() {
       },
       robertoOsuna: {
         playerId: "a4d2116b-07d3-4a7a-8f8e-32f6d28759e4",
-        mapped: mappings.some((row) => row.internal_entity_id === "a4d2116b-07d3-4a7a-8f8e-32f6d28759e4"),
+        mapped: mappings.some((row) => row.source_entity_id === "2026:H:uniform:54" &&
+          row.internal_entity_id === "a4d2116b-07d3-4a7a-8f8e-32f6d28759e4"),
         pitchingFacts: pitching.filter((row) => row.player_id === "a4d2116b-07d3-4a7a-8f8e-32f6d28759e4").length,
       },
     };
