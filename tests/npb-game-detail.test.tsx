@@ -58,7 +58,8 @@ describe("NPB Game Detail", () => {
     const result = await new NpbGameDetailRepository({ execute } as unknown as DataClient).find(gameId);
     expect(execute).toHaveBeenCalledTimes(6);
     expect(result?.payload).toMatchObject({ gameId, date: "2026-09-25", status: "final", completeness: "complete",
-      home: { score: 1, totals: { pa: 3, ab: 2, hits: 0 } }, away: { score: 2, totals: { pa: null } } });
+      home: { score: 1, totals: { pa: 3, paSource: "battingFacts", ab: 2, hits: 0 } },
+      away: { score: 2, totals: { pa: 24, paSource: "opponentBf" } } });
     expect(result?.payload.batting.home).toHaveLength(2);
     expect(result?.payload.batting.home.map((row) => row.battingOrder)).toEqual([8,8]);
     expect(result?.payload.batting.home.find((row) => row.name === "坂本誠志郎"))
@@ -83,6 +84,7 @@ describe("NPB Game Detail", () => {
     expect(await repository.find("npb:game:00000000000000000000")).toBeNull();
     await client.execute({ sql: "UPDATE npb_game_completeness SET game_status='partial' WHERE game_id=?", args: [gameId] });
     const partial = (await repository.find(gameId))!.payload;
+    expect(partial.away.totals).toMatchObject({ pa: null, paSource: "unavailable" });
     expect(renderToStaticMarkup(<NpbGameDetailView payload={partial} state="ready" />)).toContain("一部の成績を取得できていません");
     expect(renderToStaticMarkup(<NpbGameDetailView payload={null} state="missing" />)).toContain("試合が見つかりません");
     expect(renderToStaticMarkup(<NpbGameDetailView payload={null} state="error" />)).toContain("取得できませんでした");

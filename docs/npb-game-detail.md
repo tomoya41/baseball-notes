@@ -17,8 +17,11 @@ when known, then the explicit role and a stable ID; role classification shares
 the Game Log/Analysis helper. Internal innings remain outs; only display uses
 baseball `innings.remainder` notation.
 
-Nullable fields stay unknown and display as a dash. Team totals are returned
-only when every saved player row supplies the field. Score is taken from the
+Nullable player fields stay unknown and display as a dash. Team totals are returned
+only when every saved player row supplies the field. For a validated complete
+Game only, missing individual PA may be supplemented at the **team** level by
+the opposing pitchers' saved BF sum, with provenance displayed beside PA;
+individual PA remains unknown. Score is taken from the
 Game, not inferred from player totals. A non-complete Game carries a visible
 completeness note. Scheduled/postponed games show their status without a fake
 Box Score. The view does not claim inning-by-inning or play-by-play detail,

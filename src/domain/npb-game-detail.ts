@@ -4,7 +4,8 @@ import { classifyPitcherRole } from "./player-pitcher-role";
 
 const count = z.number().int().nonnegative().nullable();
 const team = z.object({ id: z.string(), name: z.string(), shortName: z.string(), score: count,
-  totals: z.object({ pa: count, ab: count, runs: count, hits: count, homeRuns: count }) });
+  totals: z.object({ pa: count, paSource: z.enum(["battingFacts", "opponentBf", "unavailable"]),
+    ab: count, runs: count, hits: count, homeRuns: count }) });
 const batting = z.object({ playerId: z.string(), name: z.string(), teamId: z.string(),
   battingOrder: z.number().int().min(1).max(9).nullable(), starter: z.boolean().nullable(),
   pa: count, ab: count, runs: count, hits: count, doubles: count, triples: count, homeRuns: count,

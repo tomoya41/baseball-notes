@@ -45,7 +45,8 @@ export function NpbGameDetailView({ payload, state }: { payload: NpbGameDetail |
       return <section className="game-detail__team" key={side} aria-label={`${side === "away" ? "ビジター" : "ホーム"} ${team.shortName}のボックススコア`}>
         <h2>{side === "away" ? "ビジター" : "ホーム"} · {team.shortName}</h2>
         <p className="game-detail__totals">チーム合計：{value(team.totals.runs)}得点 · {value(team.totals.hits)}安打 ·
-          {value(team.totals.homeRuns)}本塁打 · PA {value(team.totals.pa)} · AB {value(team.totals.ab)}</p>
+          {value(team.totals.homeRuns)}本塁打 · PA {value(team.totals.pa)}
+          {team.totals.paSource === "opponentBf" ? "（相手投手BFから確認）" : ""} · AB {value(team.totals.ab)}</p>
         <h3>打撃</h3>{batting.length ? <ol className="game-detail__list">{batting.map((row) => <li className="game-detail__line" key={`${row.playerId}:${row.teamId}`}>
           <div className="game-detail__line-main"><span className="game-detail__order">{row.battingOrder === null ? "—" : `${row.battingOrder}番`}</span>
             <a href={`#/NPB/players/${encodeURIComponent(row.playerId)}`}>{row.name}</a>

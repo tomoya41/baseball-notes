@@ -66,9 +66,17 @@ export class NpbGameDetailRepository {
     const team = (key: "home" | "away") => {
       const id = key === "home" ? homeId : awayId;
       const rows = batting[key];
+      const batterPa = sumKnown(rows.map((row) => row.pa));
+      // A complete Game has already passed the Collector's PA/BF check. If some
+      // individual PA values remain null, the opposing pitchers' stored BF can
+      // still establish the team PA without fabricating any player's PA.
+      const opponentBf = completeness?.gameStatus === "complete" ?
+        sumKnown(pitching[key === "home" ? "away" : "home"].map((row) => row.bf)) : null;
+      const pa = batterPa ?? opponentBf;
       return { ...teamName(id), score: game[key === "home" ? "home_score" : "away_score"] === null ? null :
         Number(game[key === "home" ? "home_score" : "away_score"]),
-      totals: { pa: sumKnown(rows.map((row) => row.pa)), ab: sumKnown(rows.map((row) => row.ab)),
+      totals: { pa, paSource: batterPa !== null ? "battingFacts" : opponentBf !== null ? "opponentBf" : "unavailable",
+        ab: sumKnown(rows.map((row) => row.ab)),
         runs: sumKnown(rows.map((row) => row.runs)), hits: sumKnown(rows.map((row) => row.hits)),
         homeRuns: sumKnown(rows.map((row) => row.homeRuns)) } };
     };
