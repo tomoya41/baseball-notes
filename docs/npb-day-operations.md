@@ -46,3 +46,9 @@ Raw再確認で阪神・坂本誠志郎（背番号12）の打席詳細`遊ゴ�
 第5弾の6試合実測は286ユニークページ。通常新規runnerでは数分の逐次取得を許容し、750ms間隔、最大1 retry、15秒timeout、500KB上限を維持する。Run内URL cacheで重複fetchしない。GitHub SecretsのDB credentialはAndroid/Webに渡さない。Fact数とmapping増加は`npb_day_runs`とRepository readbackで追う。DB容量はTurso dashboardまたは管理CLIで定期確認し、70/80/90%で確認・警告・再生成可能cache整理を検討する。Fact/順位履歴は削除しない。
 
 Scheduled Runは遅延し得る。次回の`event=schedule`成功時に、JST前日target、Game/Day status、Turso readback、Artifact、Pages payloadのeffectiveDateを確認する。正午の独立Freshness監視と手動修復は[日次Health運用](npb-freshness-operations.md)を参照。
+
+## 2026-09-27 Scheduled Runの同名選手identity障害
+
+[9/26対象のScheduled Run](https://github.com/tomoya41/baseball-notes/actions/runs/36273112894)は5 final中4 complete・1 partialで失敗。楽天対ソフトバンク `npb:game:bc2263e9378878e3fbe9` のホークス投手 `2026:H:uniform:54 オスナ` が、Master内の同名選手と衝突し、Game単位のFact保存を止めた。既存のヤクルト「オスナ」は[NPB公式 J. オスナ](https://npb.jp/bis/players/23525153.html)（内野手 #13）。今回のホークス投手は[nf3 #54](https://nf3.sakura.ne.jp/Pacific/H/p/54_stat.htm)から[NPB公式 R. オスナ](https://npb.jp/bis/players/13415155.html)へリンクされるロベルト・オスナで、別人と確認した。ホークス所属のロベルト自身の過去のロッテ所属は、今回のヤクルト選手と同一である根拠にならない。
+
+この1件だけ、source ID・氏名・canonical team ID・nf3 profile URL・公式プロフィールの根拠を`src/data/npb-verified-nf3-identities.ts`へ固定した。自動的な同名統合は引き続き禁止。背番号やSource identityが変われば再確認する。過去Factのteam IDは変更しない。手動repairが成功しても失敗したScheduled Runの代替証拠にはせず、Infrastructure PhaseはNOを維持する。

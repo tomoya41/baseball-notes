@@ -5,6 +5,7 @@ import type { Standing } from "../domain/standings";
 import type { GameCompleteness, PlayerGameBatting, PlayerGamePitching } from "../domain/game-facts";
 import type { NpbSeasonMetadata, FactAvailability } from "../domain/npb-season";
 import { findNpbRegularSeason } from "./npb-season-metadata";
+import { verifiedNf3Identities } from "./npb-verified-nf3-identities";
 import { gameCompletenessSchema, playerGameBattingSchema, playerGamePitchingSchema } from "../domain/game-facts";
 import { teamSchema, type Team } from "../domain/models";
 import { normalizeNpbName, npbTeams, type NpbGame, type NpbLogRow } from "./npb-nf3";
@@ -99,15 +100,38 @@ export class NpbRepository {
 
   async resolveVerifiedPlayer(sourceId: string, name: string, sourceUrl: string, teamId: string, at: string,
     dryRun: boolean, onWouldCreateAlias?: () => void): Promise<string> {
+    const verified = verifiedNf3Identities.find((item) => item.sourceId === sourceId);
+    if (verified && (normalizeNpbName(name) !== normalizeNpbName(verified.name) ||
+      teamId !== verified.teamId || sourceUrl !== verified.profileUrl))
+      throw new Error(`Verified player identity mismatch: ${sourceId}`);
     const mapped = await this.client.execute({ sql: `SELECT m.internal_entity_id,h.payload_json FROM source_entity_mappings m
       LEFT JOIN master_history h ON h.entity_kind='player' AND h.entity_id=m.internal_entity_id
       WHERE m.source_key='nf3' AND m.entity_kind='player' AND m.source_entity_id=?
       ORDER BY h.valid_from DESC LIMIT 1`, args: [sourceId] });
     if (mapped.rows[0]) {
+      if (verified && String(mapped.rows[0].internal_entity_id) !== verified.playerId)
+        throw new Error(`Conflicting verified player mapping: ${sourceId}`);
       const payload = mapped.rows[0].payload_json ? JSON.parse(String(mapped.rows[0].payload_json)) as { name?: string } : null;
       if (payload?.name && normalizeNpbName(payload.name) !== normalizeNpbName(name))
         throw new Error(`Player identity changed for ${sourceId}: ${name}`);
       return String(mapped.rows[0].internal_entity_id);
+    }
+    // The reviewed Hawks pitcher and the existing Swallows batter share the
+    // short name オスナ. Only this exact source/team/profile tuple is exempt
+    // from the general possible-transfer/homonym stop below.
+    if (verified) {
+      const collision = await this.client.execute({ sql: `SELECT source_record_id FROM master_history
+        WHERE entity_kind='player' AND entity_id=? LIMIT 1`, args: [verified.playerId] });
+      if (collision.rows.length) throw new Error(`Conflicting verified player ID: ${sourceId}`);
+      if (dryRun) { onWouldCreateAlias?.(); return verified.playerId; }
+      await this.client.batch([
+        { sql: "INSERT INTO source_entity_mappings VALUES ('nf3','player',?,?,?,?,?)",
+          args: [sourceId,verified.playerId,sourceUrl,at,at] },
+        { sql: `INSERT INTO master_history (entity_kind,entity_id,valid_from,payload_json,source_key,source_record_id,collected_at)
+          VALUES ('player',?,?,?,?,?,?)`, args: [verified.playerId,at.slice(0,10),
+            JSON.stringify({name,normalizedName:normalizeNpbName(name),teamId,sourceUrl}),"nf3",sourceId,at] },
+      ],"write");
+      return verified.playerId;
     }
     // The first bounded collector used role-specific IDs. A same-season/team/uniform
     // alias is safe only when the stored name, team and source query identity agree.

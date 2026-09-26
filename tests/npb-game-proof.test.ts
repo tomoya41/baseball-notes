@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { load } from "cheerio";
 import { openDataClient, migrateData, type DataClient } from "../src/data/database";
 import { NpbRepository } from "../src/data/npb-repository";
+import { verifiedNf3Identities } from "../src/data/npb-verified-nf3-identities";
 import { parseInningsOuts, type NpbGame } from "../src/data/npb-nf3";
 import { findRosterPlayer, parseNf3BattingRoster, parseNf3GameBattingRow,
   parseNf3GamePitchingRow, parseNf3PitchUsage, parseNf3StartingLineup,
@@ -292,6 +293,42 @@ describe("2026-09-23 additional controlled game edge cases", () => {
     expect(await repository.resolveVerifiedPlayer(alias,"近本光司",profile,"npb:team:tigers",at,false)).toBe("known-player");
     const rows=await client.execute({sql:"SELECT * FROM source_entity_mappings WHERE source_entity_id=?",args:[alias]});
     expect(rows.rows).toHaveLength(1);
+  });
+
+  it("keeps the reviewed Hawks R. Osuna separate from the Swallows J. Osuna", async () => {
+    const client = await db();
+    const repository = new NpbRepository(client);
+    const identity = verifiedNf3Identities[0];
+    const swallowsId = "c3fc5eab-2404-42e1-9e67-9682c114de9c";
+    await client.batch([
+      { sql: "INSERT INTO source_entity_mappings VALUES ('nf3','player',?,?,?,?,?)",
+        args: ["2026:S:uniform:13",swallowsId,"https://nf3.sakura.ne.jp/Central/S/f/13_stat.htm",at,at] },
+      { sql: "INSERT INTO master_history VALUES (?,?,?,?,?,?,?)",
+        args: ["player",swallowsId,"2026-01-01",JSON.stringify({name:"オスナ",teamId:"npb:team:swallows"}),
+          "nf3","2026:S:uniform:13",at] },
+    ], "write");
+    let wouldCreate = 0;
+    expect(await repository.resolveVerifiedPlayer(identity.sourceId,identity.name,identity.profileUrl,
+      identity.teamId,at,true,() => { wouldCreate++; })).toBe(identity.playerId);
+    expect(wouldCreate).toBe(1);
+    expect((await client.execute("SELECT COUNT(*) AS n FROM master_history WHERE entity_kind='player'")).rows[0]?.n).toBe(1);
+    await expect(repository.resolveVerifiedPlayer(identity.sourceId,identity.name,identity.profileUrl,
+      "npb:team:swallows",at,true)).rejects.toThrow(/identity mismatch/);
+    await expect(repository.resolveVerifiedPlayer(identity.sourceId,identity.name,
+      "https://nf3.sakura.ne.jp/Pacific/H/p/54ff_stat.htm",identity.teamId,at,true))
+      .rejects.toThrow(/identity mismatch/);
+    await expect(repository.resolveVerifiedPlayer(identity.sourceId,"別人",identity.profileUrl,identity.teamId,at,true))
+      .rejects.toThrow(/identity mismatch/);
+    await expect(repository.resolveVerifiedPlayer("2026:M:uniform:54","オスナ",identity.profileUrl,
+      "npb:team:marines",at,true)).rejects.toThrow(/Unresolved possible existing\/transferred player/);
+    expect(await repository.resolveVerifiedPlayer(identity.sourceId,identity.name,identity.profileUrl,
+      identity.teamId,at,false)).toBe(identity.playerId);
+    expect(await repository.resolveVerifiedPlayer(identity.sourceId,identity.name,identity.profileUrl,
+      identity.teamId,at,false)).toBe(identity.playerId);
+    const mappings = await client.execute("SELECT source_entity_id,internal_entity_id FROM source_entity_mappings WHERE entity_kind='player'");
+    expect(mappings.rows).toHaveLength(2);
+    expect(mappings.rows.find((row) => row.source_entity_id === identity.sourceId)?.internal_entity_id).toBe(identity.playerId);
+    expect(mappings.rows.find((row) => row.source_entity_id === "2026:S:uniform:13")?.internal_entity_id).toBe(swallowsId);
   });
 
   it("corrects observed edge fields by upsert without duplicate facts", async () => {
