@@ -1,0 +1,54 @@
+name: Targeted NPB PA integrity repair
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        type: choice
+        options: [dry-run, repair]
+        default: dry-run
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: daily-npb-collector-and-pages
+  cancel-in-progress: false
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Verify full source and repair only ten canonical facts
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          NPB_NF3_ENABLED: ${{ vars.NPB_NF3_ENABLED }}
+          MODE: ${{ inputs.mode }}
+        run: |
+          mkdir -p .data/batch-a
+          npx tsx scripts/repair-npb-pa-integrity.ts --mode="$MODE" > .data/batch-a/repair-first.json
+          cat .data/batch-a/repair-first.json
+          if [ "$MODE" = "repair" ]; then
+            npx tsx scripts/repair-npb-pa-integrity.ts --mode=repair > .data/batch-a/repair-second.json
+            cat .data/batch-a/repair-second.json
+            node -e "if(require('./.data/batch-a/repair-second.json').changedFacts!==0) process.exit(1)"
+          fi
+      - name: Read-only Fact audit and Analysis verification
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+        run: |
+          npx tsx scripts/audit-npb-fact-quality.ts > .data/batch-a/audit.json
+          npx tsx scripts/verify-npb-analysis-context.ts --date=2026-09-26 > .data/batch-a/analysis.jsonl
+      - uses: actions/upload-artifact@v4
+        with:
+          name: npb-batch-a-verification
+          path: .data/batch-a
+          retention-days: 1

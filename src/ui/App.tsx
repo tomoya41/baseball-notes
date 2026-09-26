@@ -24,7 +24,7 @@ import { PlayerRecentView } from "./player-recent";
 import { PlayerGameLogView } from "./player-game-log";
 import { NpbGameDetailScreen } from "./npb-game-detail";
 import { NpbPlayerAnalysisScreen, NpbPlayerHomeAwaySection, NpbPlayerOpponentSection,
-  NpbPlayerBattingOrderSection, NpbPlayerPitcherRoleSection } from "./npb-player-analysis";
+  NpbPlayerBattingOrderSection, NpbPlayerPitcherRoleSection, NpbPlayerBatterRoleSection } from "./npb-player-analysis";
 import { NpbHotSection } from "./npb-hot";
 import { NpbPlayerSearch } from "./npb-player-search";
 import { NpbPlayerProfileFacts } from "./npb-player-profile";
@@ -364,6 +364,7 @@ function PlayerScreen({ catalog, favorites, toggle, saving, services }: {
     {section === "analysis" && <div className="profile-content profile-content--analysis">{canonical
       ? <><NpbPlayerAnalysisScreen payload={analysisBundle?.comparison.status === "ready" ? analysisBundle.comparison.payload : null}
           state={analysisState === "ready" ? analysisBundle?.comparison.status === "ready" ? "ready" : "error" : analysisState} />
+          <div className="analysis-conditions"><h2>条件別</h2>
           <NpbPlayerHomeAwaySection payload={analysisBundle?.homeAway.status === "ready" ? analysisBundle.homeAway.payload : null}
             state={analysisState === "ready" ? analysisBundle?.homeAway.status === "ready" ? "ready" : "error" : analysisState} />
           <NpbPlayerOpponentSection key={player.id} payload={analysisBundle?.opponent.status === "ready" ? analysisBundle.opponent.payload : null}
@@ -372,9 +373,12 @@ function PlayerScreen({ catalog, favorites, toggle, saving, services }: {
           <NpbPlayerBattingOrderSection key={player.id} payload={analysisBundle?.battingOrder.status === "ready" ? analysisBundle.battingOrder.payload : null}
             state={analysisState === "ready" ? analysisBundle?.battingOrder.status === "ready" ? "ready" : "error" : analysisState}
             battingAvailable={directoryPlayer?.battingAvailable} />
+          <NpbPlayerBatterRoleSection payload={analysisBundle?.batterRole.status === "ready" ? analysisBundle.batterRole.payload : null}
+            state={analysisState === "ready" ? analysisBundle?.batterRole.status === "ready" ? "ready" : "error" : analysisState}
+            battingAvailable={directoryPlayer?.battingAvailable} />
           <NpbPlayerPitcherRoleSection payload={analysisBundle?.pitcherRole.status === "ready" ? analysisBundle.pitcherRole.payload : null}
             state={analysisState === "ready" ? analysisBundle?.pitcherRole.status === "ready" ? "ready" : "error" : analysisState}
-            pitchingAvailable={directoryPlayer?.pitchingAvailable} /></>
+            pitchingAvailable={directoryPlayer?.pitchingAvailable} /></div></>
       : <AnalysisScreen key={player.id} catalog={catalog} player={player} provider={services.analysis} />}</div>}
     {section === "more" && <div className="profile-content"><PageHeading title="その他" />
       <SectionHeader title="記録" /><DataState kind="not-implemented" title="記録は準備中です" />

@@ -3,14 +3,16 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { PlayerAnalysisBundleService } from "../src/application/player-analysis-bundle";
 import { PlayerHomeAwayService } from "../src/application/player-home-away";
 import { PlayerOpponentService } from "../src/application/player-opponent";
+import { PlayerBatterRoleService } from "../src/application/player-batter-role";
 import { PlayerPeriodComparisonService } from "../src/application/player-period-comparison";
 import { battingOrderChoice, partitionByBattingOrder } from "../src/domain/player-batting-order";
+import { partitionBatterRoles } from "../src/domain/player-batter-role";
 import { playerGameBattingSchema, playerGamePitchingSchema, type PlayerGameBatting } from "../src/domain/game-facts";
 import type { SituatedFact } from "../src/domain/player-home-away";
 import { resolvePlayerPeriod, aggregateBatting } from "../src/domain/player-period";
 import { unavailablePeriodCoverage } from "../src/domain/period-coverage";
 import { HttpPlayerAnalysisBundleRepository } from "../src/infrastructure/providers/http-player-analysis-bundle-repository";
-import { NpbPlayerBattingOrderSection } from "../src/ui/npb-player-analysis";
+import { NpbPlayerBattingOrderSection, NpbPlayerBatterRoleSection } from "../src/ui/npb-player-analysis";
 import { battingFact, situatedBattingFact } from "../src/data/npb-repository";
 
 const playerId = "06a3e027-7a73-4792-9c91-8ecc3c1da36a";
@@ -67,6 +69,7 @@ describe("shared 30-day Player Analysis", () => {
     expect(result.payload.homeAway.status).toBe("ready");
     expect(result.payload.opponent.status).toBe("ready");
     expect(result.payload.battingOrder.status).toBe("ready");
+    expect(result.payload.batterRole.status).toBe("ready");
     const directComparison = (await new PlayerPeriodComparisonService(fixture.facts, fixture.coverage, () => now)
       .find(playerId, asOfDate))!.payload;
     const directHomeAway = (await new PlayerHomeAwayService(fixture.facts, fixture.coverage, () => now)
@@ -78,6 +81,36 @@ describe("shared 30-day Player Analysis", () => {
     expect(result.payload.comparison.payload).toEqual(directComparison);
     expect(result.payload.homeAway.payload).toEqual(directHomeAway);
     expect(result.payload.opponent.payload).toEqual(directOpponent);
+  });
+
+  it("splits starter and substitute from the shared Facts while retaining zero-PA and unknown appearances", async () => {
+    const rows = [situated("2026-09-25", batting("starter", { starter:true, pa:4, ab:3 })),
+      situated("2026-09-24", batting("pinch", { starter:false, pa:0, ab:0, hits:0,
+        doubles:0, triples:0, walks:0, hbp:0, sacrificeHits:0, sacrificeFlies:0 })),
+      situated("2026-09-23", batting("unknown", { starter:null, pa:2, ab:2 }))];
+    const fixture = setup(rows);
+    const bundle = (await fixture.bundle.find(playerId,asOfDate))!.payload;
+    expect(fixture.facts.findSituatedBattingByPlayer).toHaveBeenCalledOnce();
+    expect(partitionBatterRoles(rows).unknown).toHaveLength(1);
+    if (bundle.batterRole.status !== "ready") throw new Error("Unexpected section error");
+    const role = bundle.batterRole.payload;
+    expect(role).toMatchObject({ totalFactCount:3, unknownRoleFactCount:1,
+      starter:{ metrics:{ G:{value:1},PA:{value:4} } },
+      substitute:{ metrics:{ G:{value:1},PA:{value:0} } } });
+    expect(role.starter!.metrics.PA!.value! + role.substitute!.metrics.PA!.value!)
+      .toBe(role.classifiedTotal!.metrics.PA!.value);
+    expect(role.starter).toEqual((await new PlayerBatterRoleService(fixture.facts,fixture.coverage,() => now)
+      .find(playerId,asOfDate))?.starter);
+    const html = renderToStaticMarkup(<NpbPlayerBatterRoleSection payload={role} state="ready" battingAvailable />);
+    expect(html).toContain("途中出場");
+    expect(html).toContain("打席");
+    expect(html).not.toContain("得意");
+    expect(renderToStaticMarkup(<NpbPlayerBatterRoleSection payload={null} state="loading" battingAvailable />))
+      .toContain("skeleton");
+    expect(renderToStaticMarkup(<NpbPlayerBatterRoleSection payload={null} state="error" battingAvailable />))
+      .toContain("出場形態別成績を取得できませんでした");
+    expect(renderToStaticMarkup(<NpbPlayerBatterRoleSection payload={null} state="loading" battingAvailable={false} />))
+      .toBe("");
   });
 
   it("keeps one failed projection isolated from other sections", async () => {

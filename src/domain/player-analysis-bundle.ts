@@ -4,6 +4,7 @@ import { playerHomeAwaySchema } from "./player-home-away";
 import { playerOpponentSchema } from "./player-opponent";
 import { playerBattingOrderSchema } from "./player-batting-order";
 import { playerPitcherRoleSchema } from "./player-pitcher-role";
+import { playerBatterRoleSchema } from "./player-batter-role";
 
 const section = <T extends z.ZodType>(schema: T) => z.discriminatedUnion("status", [
   z.object({ status: z.literal("ready"), payload: schema }),
@@ -16,5 +17,6 @@ export const playerAnalysisBundleSchema = z.object({
   opponent: section(playerOpponentSchema),
   battingOrder: section(playerBattingOrderSchema),
   pitcherRole: section(playerPitcherRoleSchema),
+  batterRole: section(playerBatterRoleSchema),
 });
 export type PlayerAnalysisBundle = z.infer<typeof playerAnalysisBundleSchema>;

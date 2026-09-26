@@ -262,25 +262,27 @@ export class NpbRepository {
     throw new Error(`Unresolved/ambiguous game: ${date} ${teamId} ${opponentTeamId}`);
   }
 
-  async saveBatting(rows: readonly NpbLogRow<PlayerGameBatting>[], targetDate: string, dryRun: boolean, recordStage = true): Promise<{ inserted: number; updated: number }> {
+  async saveBatting(rows: readonly NpbLogRow<PlayerGameBatting>[], targetDate: string, dryRun: boolean, recordStage = true,
+    writeMode: "full" | "limited" = "full"): Promise<{ inserted: number; updated: number }> {
     const statements: InStatement[] = [];
     let inserted = 0, updated = 0;
     for (const row of rows) {
       const fact = row.fact;
       const gameId = await this.linkGame(row.date,fact.teamId,row.opponentTeamId,row.scheduledTime);
       const prior = await this.client.execute({ sql: "SELECT 1 FROM player_game_batting WHERE game_id=? AND player_id=? AND team_id=?", args: [gameId,fact.playerId,fact.teamId] });
-      if (prior.rows.length) updated++; else inserted++;
+      if (prior.rows.length) { if (writeMode === "full") updated++; } else inserted++;
       statements.push({ sql: `INSERT INTO player_game_batting
         (game_id,player_id,team_id,opponent_team_id,batting_order,pa,ab,hits,doubles,triples,home_runs,rbi,walks,strikeouts,hbp,sb,cs,source_key,source_record_id,collected_at,runs,starter,source_url,sacrifice_hits,sacrifice_flies)
         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-        ON CONFLICT(game_id,player_id,team_id) DO UPDATE SET batting_order=excluded.batting_order,pa=excluded.pa,
+        ${writeMode === "limited" ? "ON CONFLICT(game_id,player_id,team_id) DO NOTHING" : `ON CONFLICT(game_id,player_id,team_id) DO UPDATE SET batting_order=excluded.batting_order,pa=excluded.pa,
           ab=excluded.ab,hits=excluded.hits,doubles=excluded.doubles,triples=excluded.triples,home_runs=excluded.home_runs,
           rbi=excluded.rbi,walks=excluded.walks,strikeouts=excluded.strikeouts,hbp=excluded.hbp,sb=excluded.sb,cs=excluded.cs,
           collected_at=excluded.collected_at,runs=excluded.runs,starter=excluded.starter,source_url=excluded.source_url,
-          sacrifice_hits=excluded.sacrifice_hits,sacrifice_flies=excluded.sacrifice_flies`,
+          sacrifice_hits=excluded.sacrifice_hits,sacrifice_flies=excluded.sacrifice_flies`}`,
         args: [gameId,fact.playerId,fact.teamId,fact.opponentTeamId,fact.battingOrder,fact.pa,fact.ab,fact.hits,
           fact.doubles,fact.triples,fact.homeRuns,fact.rbi,fact.walks,fact.strikeouts,fact.hbp,fact.stolenBases,
-          fact.caughtStealing,fact.sourceKey,fact.sourceRecordId,fact.collectedAt,fact.runs ?? null,fact.starter ? 1 : 0,fact.sourceUrl ?? null,
+          fact.caughtStealing,fact.sourceKey,fact.sourceRecordId,fact.collectedAt,fact.runs ?? null,
+          fact.starter == null ? null : Number(fact.starter),fact.sourceUrl ?? null,
           fact.sacrificeHits ?? null,fact.sacrificeFlies ?? null] });
     }
     if (recordStage) statements.push(this.stageStatement(targetDate,"batting","partial",rows.length,"Curated player subset only"));
@@ -288,26 +290,28 @@ export class NpbRepository {
     return { inserted, updated };
   }
 
-  async savePitching(rows: readonly NpbLogRow<PlayerGamePitching>[], targetDate: string, dryRun: boolean, recordStage = true): Promise<{ inserted: number; updated: number }> {
+  async savePitching(rows: readonly NpbLogRow<PlayerGamePitching>[], targetDate: string, dryRun: boolean, recordStage = true,
+    writeMode: "full" | "limited" = "full"): Promise<{ inserted: number; updated: number }> {
     const statements: InStatement[] = [];
     let inserted = 0, updated = 0;
     for (const row of rows) {
       const fact = row.fact;
       const gameId = await this.linkGame(row.date,fact.teamId,row.opponentTeamId,row.scheduledTime);
       const prior = await this.client.execute({ sql: "SELECT 1 FROM player_game_pitching WHERE fact_id=?", args: [fact.id] });
-      if (prior.rows.length) updated++; else inserted++;
+      if (prior.rows.length) { if (writeMode === "full") updated++; } else inserted++;
       statements.push({ sql: `INSERT INTO player_game_pitching
         (fact_id,game_id,player_id,team_id,opponent_team_id,role,appearance_order,ip_outs,batters_faced,hits,home_runs,walks,strikeouts,runs,earned_runs,pitches,catcher_id,source_key,source_record_id,collected_at,starter,decision,source_url,hit_batters,walks_and_hit_batters)
         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-        ON CONFLICT(fact_id) DO UPDATE SET game_id=excluded.game_id,role=excluded.role,ip_outs=excluded.ip_outs,
+        ${writeMode === "limited" ? "ON CONFLICT(fact_id) DO NOTHING" : `ON CONFLICT(fact_id) DO UPDATE SET game_id=excluded.game_id,role=excluded.role,ip_outs=excluded.ip_outs,
           batters_faced=excluded.batters_faced,hits=excluded.hits,home_runs=excluded.home_runs,walks=excluded.walks,
           strikeouts=excluded.strikeouts,runs=excluded.runs,earned_runs=excluded.earned_runs,pitches=excluded.pitches,
           collected_at=excluded.collected_at,starter=excluded.starter,decision=excluded.decision,source_url=excluded.source_url,
-          hit_batters=excluded.hit_batters,walks_and_hit_batters=excluded.walks_and_hit_batters`,
+          hit_batters=excluded.hit_batters,walks_and_hit_batters=excluded.walks_and_hit_batters`}`,
         args: [fact.id,gameId,fact.playerId,fact.teamId,fact.opponentTeamId,fact.role,fact.appearanceOrder,
           fact.inningsPitchedOuts,fact.battersFaced,fact.hits,fact.homeRuns,fact.walks,fact.strikeouts,fact.runs,
           fact.earnedRuns,fact.pitches,fact.catcherId,fact.sourceKey,fact.sourceRecordId,fact.collectedAt,
-          fact.starter ? 1 : 0,fact.decision ?? null,fact.sourceUrl ?? null,fact.hitBatters ?? null,fact.walksAndHitBatters ?? null] });
+          fact.starter == null ? null : Number(fact.starter),fact.decision ?? null,fact.sourceUrl ?? null,
+          fact.hitBatters ?? null,fact.walksAndHitBatters ?? null] });
     }
     if (recordStage) statements.push(this.stageStatement(targetDate,"pitching","partial",rows.length,"Curated player subset only"));
     if (!dryRun) await this.client.batch(statements,"write");

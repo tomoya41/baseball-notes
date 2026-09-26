@@ -10,6 +10,7 @@ import { PlayerOpponentService } from "./player-opponent";
 import { PlayerPeriodComparisonService } from "./player-period-comparison";
 import { PlayerBattingOrderService } from "./player-batting-order";
 import { PlayerPitcherRoleService } from "./player-pitcher-role";
+import { PlayerBatterRoleService } from "./player-batter-role";
 
 type CoverageReader = { findPeriodCoverages(windows: readonly PeriodWindow[]): Promise<PeriodCoverage[]> };
 export type PlayerAnalysisContext = {
@@ -60,7 +61,7 @@ export class PlayerAnalysisBundleService {
         item.from === window.from && item.to === window.to) ?? unavailablePeriodCoverage(window),
     };
     let rolePartitionMs = 0, roleAggregationMs = 0;
-    const [comparison, homeAway, opponent, battingOrder, pitcherRole] = await Promise.allSettled([
+    const [comparison, homeAway, opponent, battingOrder, pitcherRole, batterRole] = await Promise.allSettled([
       new PlayerPeriodComparisonService(sharedFacts, sharedCoverage, this.clock).find(playerId, asOfDate)
         .then((value) => value?.payload ?? null),
       new PlayerHomeAwayService(sharedFacts, sharedCoverage, this.clock).find(playerId, asOfDate)
@@ -71,11 +72,12 @@ export class PlayerAnalysisBundleService {
       new PlayerPitcherRoleService(sharedFacts, sharedCoverage, this.clock).find(playerId, asOfDate)
         .then((value) => { if (value) { rolePartitionMs = value.partitionMs; roleAggregationMs = value.aggregationMs; }
           return value?.payload ?? null; }),
+      new PlayerBatterRoleService(sharedFacts, sharedCoverage, this.clock).find(playerId, asOfDate),
     ]);
     const aggregationMs = performance.now() - started - dbReadMs;
     const payload = playerAnalysisBundleSchema.parse({ playerId, asOfDate,
       comparison: settled(comparison), homeAway: settled(homeAway), opponent: settled(opponent),
-      battingOrder: settled(battingOrder), pitcherRole: settled(pitcherRole) });
+      battingOrder: settled(battingOrder), pitcherRole: settled(pitcherRole), batterRole: settled(batterRole) });
     return { payload, context, dbReadMs, aggregationMs, rolePartitionMs, roleAggregationMs };
   }
 }

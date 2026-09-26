@@ -199,13 +199,13 @@ export async function runNpbCollector(client: DataClient, options: NpbCollectorO
   } else {
     try {
       if (battingPages === 0) throw new Error("No batting player pages validated");
-      const changes = await repository.saveBatting(batting,targetDate,false);
+      const changes = await repository.saveBatting(batting,targetDate,false,true,"limited");
       battingCount = batting.length; insertedCount += changes.inserted; updatedCount += changes.updated;
     }
     catch (error) { errors.push(`batting/database: ${String(error)}`); await repository.markStage(targetDate,"batting",String(error)); }
     try {
       if (pitchingPages === 0) throw new Error("No pitching player pages validated");
-      const changes = await repository.savePitching(pitching,targetDate,false);
+      const changes = await repository.savePitching(pitching,targetDate,false,true,"limited");
       pitchingCount = pitching.length; insertedCount += changes.inserted; updatedCount += changes.updated;
     }
     catch (error) { errors.push(`pitching/database: ${String(error)}`); await repository.markStage(targetDate,"pitching",String(error)); }

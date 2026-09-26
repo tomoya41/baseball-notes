@@ -27,6 +27,32 @@ async function db(): Promise<DataClient> {
 afterEach(() => { for (const client of clients.splice(0)) client.close(); });
 
 describe("2026-09-23 controlled NPB game proof", () => {
+  it("does not degrade authoritative batting and pitching facts when limited collection revisits a game", async () => {
+    const client = await db(); const repository = new NpbRepository(client);
+    await repository.saveGames([game],date,false);
+    const playerId = await repository.resolveVerifiedPlayer("2026:M:uniform:10","上田希由翔",game.sourceUrl,game.homeTeamId,at,false);
+    const full = parseNf3GameBattingRow(fixture("batting-m10"),date,"M",playerId,"2026:M:uniform:10",game.sourceUrl,at).row;
+    const fact = { ...full.fact, gameId, pa: 0, ab: 0, doubles: 2, triples: 1, walks: 1,
+      hbp: 1, sacrificeHits: 1, sacrificeFlies: 1, battingOrder: 3, starter: true };
+    await repository.saveBatting([{ ...full, fact }],date,false,false);
+    const limited = { ...full, fact: { ...fact, pa: null, doubles: null, triples: null, walks: null,
+      hbp: null, sacrificeHits: null, sacrificeFlies: null, battingOrder: null, starter: null,
+      hits: 0, strikeouts: 0 } };
+    await repository.saveBatting([limited],date,false,false,"limited");
+    expect((await repository.findBattingByGame(gameId))[0]).toMatchObject({ pa: 0, doubles: 2,
+      triples: 1, walks: 1, hbp: 1, sacrificeHits: 1, sacrificeFlies: 1,
+      battingOrder: 3, starter: true });
+    await repository.saveBatting([limited],date,false,false,"limited");
+    expect(await repository.findBattingByGame(gameId)).toHaveLength(1);
+    const pitcherId = await repository.resolveVerifiedPlayer("2026:M:uniform:18","石垣元気",game.sourceUrl,game.homeTeamId,at,false);
+    const pitch = parseNf3GamePitchingRow(fixture("pitching-m18"),date,"M",pitcherId,"2026:M:uniform:18",game.sourceUrl,at);
+    await repository.savePitching([pitch],date,false,false);
+    await repository.savePitching([{ ...pitch, fact: { ...pitch.fact, inningsPitchedOuts: null,
+      battersFaced: null, pitches: null, walksAndHitBatters: null } }],date,false,false,"limited");
+    expect((await repository.findPitchingByGame(gameId))[0]).toMatchObject({
+      inningsPitchedOuts: pitch.fact.inningsPitchedOuts, battersFaced: pitch.fact.battersFaced,
+      pitches: pitch.fact.pitches, walksAndHitBatters: pitch.fact.walksAndHitBatters });
+  });
   it("discovers nine starters, a substitute, and all three Marines pitchers from independent page types", () => {
     const starters = parseNf3StartingLineup(fixture("lineup-m"), date, "M");
     const roster = parseNf3BattingRoster(fixture("roster-m"), "M");

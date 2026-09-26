@@ -4,6 +4,7 @@ import type { PlayerHomeAway } from "../domain/player-home-away";
 import { opponentChoice, type PlayerOpponent } from "../domain/player-opponent";
 import { battingOrderChoice, type PlayerBattingOrder } from "../domain/player-batting-order";
 import type { PlayerPitcherRole } from "../domain/player-pitcher-role";
+import type { PlayerBatterRole } from "../domain/player-batter-role";
 import type { AggregateMetric } from "../domain/player-period";
 import { formatDate } from "../presentation/formatters";
 import { formatRecentMetric } from "../presentation/recent-formatter";
@@ -261,6 +262,49 @@ const pitcherRoleDetails = [{ key: "BF", label: "BF" }, { key: "H", label: "被�
   { key: "R", label: "失点" }, { key: "ER", label: "自責点" },
   { key: "pitchCount", label: "投球数" }, { key: "W", label: "勝" },
   { key: "L", label: "敗" }, { key: "HLD", label: "HLD" }, { key: "SV", label: "SV" }] as const;
+
+const batterRoleDetails = [{ key: "AB", label: "打数" }, { key: "R", label: "得点" },
+  { key: "H", label: "安打" }, { key: "2B", label: "二塁打" }, { key: "3B", label: "三塁打" },
+  { key: "HR", label: "本塁打" }, { key: "RBI", label: "打点" }, { key: "BB", label: "四球" },
+  { key: "HBP", label: "死球" }, { key: "SH", label: "犠打" }, { key: "SF", label: "犠飛" },
+  { key: "SO", label: "三振" }, { key: "SB", label: "盗塁" }, { key: "CS", label: "盗塁死" },
+  { key: "OBP", label: "出塁率" }, { key: "SLG", label: "長打率" }] as const;
+
+export function NpbPlayerBatterRoleSection({ payload, state, battingAvailable }: {
+  payload: PlayerBatterRole | null; state: AnalysisState; battingAvailable: boolean | undefined;
+}) {
+  if (battingAvailable === false || (state === "ready" && payload?.totalFactCount === 0)) return null;
+  return <section className="analysis-batter-role" aria-label="打者の出場形態別分析">
+    <SectionHeader title="先発 / 途中出場" />
+    <p className="analysis-period-note">保存済みの直近30日打撃成績を、記録された出場形態で分けて表示します。交代順は含みません。</p>
+    {state === "loading" && <div aria-live="polite"><LoadingSkeleton /></div>}
+    {state === "error" && <DataState kind="source-unavailable" title="出場形態別成績を取得できませんでした" />}
+    {state === "missing" && <DataState kind="no-data" title="分析できる試合データがまだありません" />}
+    {state === "ready" && payload && <>
+      <p className="analysis-period-note">{formatDate(payload.from, true)}〜{formatDate(payload.to, true)} · {formatDate(payload.asOfDate, true)}終了時点</p>
+      <div className="analysis-split-grid">{(["starter", "substitute"] as const).map((role) => {
+        const result = payload[role];
+        const name = role === "starter" ? "先発" : "途中出場";
+        return <div className="analysis-split-card" key={role} role="group" aria-label={`${name}打撃成績`}>
+          <h3>{name}</h3>{result ? <>
+            <div className="analysis-split-primary">{([
+              { key: "OPS", label: "OPS" }, { key: "AVG", label: "AVG" },
+              { key: "PA", label: "PA" }, { key: "G", label: "試合" },
+            ] as const).map(({ key, label }) => <div key={key}><span>{label}</span>
+              <strong>{splitMetric(result,key)}</strong></div>)}</div>
+            <p className="analysis-split-sample">{splitMetric(result,"G")}試合 · {splitMetric(result,"PA")}打席</p>
+            <details className="analysis-split-details"><summary>詳しい成績</summary><dl>
+              {batterRoleDetails.map(({ key, label }) => <div key={key}><dt>{label}</dt>
+                <dd>{splitMetric(result,key)}</dd></div>)}
+            </dl></details>
+          </> : <p className="muted">保存済み{name}成績なし</p>}</div>;
+      })}</div>
+      {payload.unknownRoleFactCount > 0 && <p className="analysis-period-note">出場形態を判定できない記録：{payload.unknownRoleFactCount}件</p>}
+      {payload.coverage.status !== "complete" && <p className={`analysis-period-coverage analysis-period-coverage--${payload.coverage.status}`}>
+        {coverageNames[payload.coverage.status]}。表示値は保存済み記録から算出しています。</p>}
+    </>}
+  </section>;
+}
 
 export function NpbPlayerPitcherRoleSection({ payload, state, pitchingAvailable }: {
   payload: PlayerPitcherRole | null; state: AnalysisState; pitchingAvailable: boolean | undefined;
