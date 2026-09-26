@@ -321,6 +321,27 @@ small { font-size: var(--type-caption); }
 .game-log-card__metrics > div { min-width: 0; padding: var(--space-2); border-radius: var(--radius-sm); background: var(--color-elevated); }
 .game-log-card__metrics dt { color: var(--color-muted); font-size: .68rem; }
 .game-log-card__metrics dd { margin: var(--space-1) 0 0; font-size: .82rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.game-detail__header p, .game-detail__note, .game-detail__totals { color: var(--color-muted); font-size: var(--type-caption); }
+.game-detail__header h1 { margin: var(--space-2) 0; }
+.game-detail__score { display: grid; gap: var(--space-2); margin: var(--space-4) 0; padding: var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }
+.game-detail__score > div { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.game-detail__score strong { font-size: 1.5rem; font-variant-numeric: tabular-nums; }
+.game-detail__team { margin-top: var(--space-6); }
+.game-detail__team h2 { margin-bottom: var(--space-2); }
+.game-detail__team h3 { margin: var(--space-5) 0 var(--space-2); }
+.game-detail__list { list-style: none; display: grid; gap: var(--space-2); margin: 0; padding: 0; }
+.game-detail__line { min-width: 0; padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }
+.game-detail__line-main { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: var(--space-3); }
+.game-detail__order { color: var(--color-muted); font-size: .72rem; }
+.game-detail__line-main a { display: flex; align-items: center; min-height: var(--touch); font-weight: 700; }
+.game-detail__numbers { grid-column: 2; font-size: .82rem; font-variant-numeric: tabular-nums; }
+.game-detail__minor { margin: var(--space-1) 0 0; color: var(--color-muted); font-size: .75rem; }
+.game-detail__line details { margin-top: var(--space-2); border-top: 1px solid var(--color-border); }
+.game-detail__line summary { display: flex; align-items: center; min-height: var(--touch); color: var(--brand); font-size: .8rem; font-weight: 700; cursor: pointer; }
+.game-detail__line dl { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-2); margin: var(--space-2) 0 0; }
+.game-detail__line dl > div { min-width: 0; padding: var(--space-2); border-radius: var(--radius-sm); background: var(--color-elevated); }
+.game-detail__line dt { color: var(--color-muted); font-size: .68rem; }
+.game-detail__line dd { margin: var(--space-1) 0 0; font-weight: 700; font-size: .82rem; font-variant-numeric: tabular-nums; }
 .metric-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); margin-top: var(--space-3); }
 .metric-grid--advanced { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .metric-tile { min-width: 0; display: grid; align-content: start; gap: var(--space-2); padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }

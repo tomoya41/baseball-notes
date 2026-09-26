@@ -12,6 +12,7 @@ out/
 .vercel/
 api/npb/recent.js
 api/npb/game-log.js
+api/npb/game-detail.js
 api/npb/analysis.js
 api/npb/home-away.js
 api/npb/opponent.js

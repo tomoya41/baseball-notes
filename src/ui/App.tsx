@@ -22,6 +22,7 @@ import { MatchupScreen } from "./matchup";
 import { WatchGameScreen, WatchToday } from "./watch";
 import { PlayerRecentView } from "./player-recent";
 import { PlayerGameLogView } from "./player-game-log";
+import { NpbGameDetailScreen } from "./npb-game-detail";
 import { NpbPlayerAnalysisScreen, NpbPlayerHomeAwaySection, NpbPlayerOpponentSection,
   NpbPlayerBattingOrderSection, NpbPlayerPitcherRoleSection } from "./npb-player-analysis";
 import { NpbHotSection } from "./npb-hot";
@@ -519,7 +520,7 @@ export function App({ services }: { services: Services }) {
   const section = location.pathname.split("/")[2] ?? "home";
   const currentNav = section === "matchup" ? "analysis" : section === "watch" ? "home"
     : section === "players" && location.pathname.endsWith("/analysis") ? "analysis"
-    : section === "players" || section === "teams" || section === "ranking" ? "search"
+    : section === "players" || section === "games" || section === "teams" || section === "ranking" ? "search"
     : section === "favorites" ? "my" : section;
   const [favorites, setFavorites] = useState<Favorite[]>([]);
   const [saving, setSaving] = useState(false);
@@ -556,6 +557,7 @@ export function App({ services }: { services: Services }) {
     {favoriteMessage && <p className={`toast${favoriteError ? " toast--error" : ""}`}
       role={favoriteError ? "alert" : "status"}>{favoriteMessage}</p>}
     <main id="main-content" tabIndex={-1}><Routes>
+      <Route path="/NPB/games/:gameId" element={<NpbGameDetailScreen repository={services.gameDetail} />} />
       <Route path="/NPB/*" element={<LeagueView key="NPB" league="NPB" services={services}
         favorites={favorites} toggle={toggle} saving={saving} />} />
       <Route path="/MLB/*" element={<LeagueView key="MLB" league="MLB" services={services}

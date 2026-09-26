@@ -25,7 +25,8 @@ function gameHeader(row: PlayerBattingLog | PlayerPitchingLog, teams: ReadonlyMa
   const own = row.side === "home" ? row.homeScore : row.awayScore;
   const other = row.side === "home" ? row.awayScore : row.homeScore;
   return <div className="game-log-card__header"><div>
-    <strong>{formatDate(row.date, true)} · 対{opponent}</strong>
+    <strong><a href={`#/NPB/games/${encodeURIComponent(row.gameId)}`} aria-label={`${formatDate(row.date, true)} 対${opponent}の試合詳細`}>
+      {formatDate(row.date, true)} · 対{opponent}</a></strong>
     <small>{row.side === "home" ? "ホーム" : "ビジター"} · {statusLabel[row.status]}
       {row.gameNumber > 1 ? ` · 第${row.gameNumber}試合` : ""}</small>
   </div><span className="game-log-card__result">{row.result ? resultLabel[row.result] : "—"}
