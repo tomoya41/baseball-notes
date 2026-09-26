@@ -273,6 +273,19 @@ small { font-size: var(--type-caption); }
 .analysis-period-coverage { color: var(--color-muted); font-size: var(--type-caption); }
 .analysis-period-coverage--partial { color: var(--color-warning); }
 .analysis-home-away { margin-top: var(--space-8); padding-top: var(--space-5); border-top: 1px solid var(--color-border); }
+.analysis-opponent { margin-top: var(--space-8); padding-top: var(--space-5); border-top: 1px solid var(--color-border); }
+.analysis-opponent-select { display: grid; gap: var(--space-2); margin: var(--space-4) 0; font-size: .82rem; font-weight: 700; }
+.analysis-opponent-select select { width: 100%; min-height: var(--touch); padding: var(--space-2) var(--space-3); color: var(--color-text); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); font: inherit; }
+.analysis-opponent-single { margin: var(--space-4) 0; font-size: .86rem; }
+.analysis-opponent-role { margin: var(--space-5) 0; }
+.analysis-opponent-role h3 { margin-bottom: var(--space-2); font-size: .95rem; }
+.analysis-opponent-table { padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); font-variant-numeric: tabular-nums; }
+.analysis-opponent-table__head, .analysis-opponent-table__row { display: grid; grid-template-columns: minmax(0, 1fr) repeat(2, minmax(0, 1fr)); align-items: baseline; gap: var(--space-2); padding: var(--space-2) 0; }
+.analysis-opponent-table__head { color: var(--color-muted); font-size: .72rem; border-bottom: 1px solid var(--color-border); }
+.analysis-opponent-table__head strong { overflow-wrap: anywhere; }
+.analysis-opponent-table__row { font-size: .84rem; }
+.analysis-opponent-table__row > :not(:first-child), .analysis-opponent-table__head > :not(:first-child) { text-align: right; }
+.analysis-opponent-table__row > span:last-child { color: var(--color-muted); }
 .analysis-split-role { margin: var(--space-5) 0; }
 .analysis-split-role h3 { margin-bottom: var(--space-2); font-size: .95rem; }
 .analysis-split-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); }

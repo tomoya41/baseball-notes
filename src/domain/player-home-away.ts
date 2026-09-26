@@ -20,13 +20,20 @@ export type SituatedFact<T extends { teamId: string; opponentTeamId: string | nu
   date: string; fact: T; homeTeamId: string | null; awayTeamId: string | null;
 };
 
+export function classifySituatedFact<T extends { teamId: string; opponentTeamId: string | null }>(row: SituatedFact<T>) {
+  const side = classifyGameSide(row.fact.teamId, row.homeTeamId, row.awayTeamId);
+  const opponentTeamId = side === "home" ? row.awayTeamId : side === "away" ? row.homeTeamId : null;
+  if (!opponentTeamId || opponentTeamId === row.fact.teamId ||
+    (row.fact.opponentTeamId && row.fact.opponentTeamId !== opponentTeamId))
+    return { side: "unknown" as const, opponentTeamId: null };
+  return { side, opponentTeamId };
+}
+
 export function partitionHomeAway<T extends { teamId: string; opponentTeamId: string | null }>(rows: readonly SituatedFact<T>[]) {
   const home: T[] = [], away: T[] = [], unknown: T[] = [];
   for (const row of rows) {
-    const side = classifyGameSide(row.fact.teamId, row.homeTeamId, row.awayTeamId);
-    const expectedOpponent = side === "home" ? row.awayTeamId : side === "away" ? row.homeTeamId : null;
-    const valid = side !== "unknown" && (!row.fact.opponentTeamId || row.fact.opponentTeamId === expectedOpponent);
-    (valid ? side === "home" ? home : away : unknown).push(row.fact);
+    const { side } = classifySituatedFact(row);
+    (side === "home" ? home : side === "away" ? away : unknown).push(row.fact);
   }
   return { home, away, unknown };
 }

@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { comparisonPeriods, type ComparisonPeriod, type PlayerPeriodComparison } from "../domain/player-period-comparison";
 import type { PlayerHomeAway } from "../domain/player-home-away";
+import { opponentChoice, type PlayerOpponent } from "../domain/player-opponent";
 import type { AggregateMetric } from "../domain/player-period";
 import { formatDate } from "../presentation/formatters";
 import { formatRecentMetric } from "../presentation/recent-formatter";
@@ -123,6 +125,82 @@ export function NpbPlayerHomeAwaySection({ payload, state }: { payload: PlayerHo
         <HomeAwayRole role="batting" rows={payload.batting} />
         <HomeAwayRole role="pitching" rows={payload.pitching} />
         {payload.capability === "unavailable" && <p className="analysis-period-note">開催側を確認できる記録がありません。</p>}
+        {payload.coverage.status !== "complete" && <p className={`analysis-period-coverage analysis-period-coverage--${payload.coverage.status}`}>
+          {coverageNames[payload.coverage.status]}。表示値は保存済み記録から算出しています。</p>}
+      </>)}
+  </section>;
+}
+
+const opponentPrimary = {
+  batting: [{ key: "OPS", label: "OPS" }, { key: "AVG", label: "AVG" },
+    { key: "PA", label: "PA" }, { key: "G", label: "試合" }],
+  pitching: [{ key: "ERA", label: "ERA" }, { key: "K9", label: "K/9" },
+    { key: "outsRecorded", label: "IP" }, { key: "BF", label: "BF" },
+    { key: "appearances", label: "登板" }],
+} as const;
+const opponentDetails = {
+  batting: [{ key: "AB", label: "打数" }, { key: "H", label: "安打" },
+    { key: "2B", label: "二塁打" }, { key: "3B", label: "三塁打" },
+    { key: "HR", label: "HR" }, { key: "RBI", label: "打点" }, { key: "BB", label: "四球" },
+    { key: "HBP", label: "死球" }, { key: "SO", label: "三振" },
+    { key: "OBP", label: "OBP" }, { key: "SLG", label: "SLG" }],
+  pitching: [{ key: "GS", label: "先発" }, { key: "H", label: "被安打" },
+    { key: "HR", label: "被本塁打" }, { key: "SO", label: "奪三振" },
+    { key: "R", label: "失点" }, { key: "ER", label: "自責点" },
+    { key: "pitchCount", label: "投球数" }, { key: "W", label: "勝" },
+    { key: "L", label: "敗" }, { key: "HLD", label: "HLD" }, { key: "SV", label: "SV" }],
+} as const;
+
+function OpponentRole({ role, selected, total, teamName }: { role: Role; selected: SplitResult | null;
+  total: SplitResult | null; teamName: string }) {
+  if (!selected) return null;
+  const label = role === "batting" ? "打撃" : "投球";
+  return <section className="analysis-opponent-role" aria-label={`${teamName}戦の${label}成績`}>
+    <h3>{label}</h3>
+    <div className="analysis-opponent-table" role="group" aria-label={`${teamName}戦と分類できた30日全体の比較`}>
+      <div className="analysis-opponent-table__head"><span>指標</span><strong>対{teamName}</strong><strong>30日全体</strong></div>
+      {opponentPrimary[role].map(({ key, label: name }) => <div className="analysis-opponent-table__row" key={key}>
+        <span>{name}</span><strong>{splitMetric(selected, key)}</strong><span>{splitMetric(total, key)}</span>
+      </div>)}
+    </div>
+    <details className="analysis-split-details"><summary>詳しい成績</summary>
+      <dl>{opponentDetails[role].map(({ key, label: name }) => <div key={key}><dt>{name}</dt>
+        <dd>{splitMetric(selected, key)}</dd></div>)}</dl></details>
+  </section>;
+}
+
+export function NpbPlayerOpponentSection({ payload, state, teamNames, teamOrder }: {
+  payload: PlayerOpponent | null; state: AnalysisState; teamNames: ReadonlyMap<string, string>;
+  teamOrder: readonly string[];
+}) {
+  const [selection, setSelection] = useState<string | null>(null);
+  const choices = payload ? opponentChoice(payload, teamOrder) : null;
+  const selectedId = payload?.opponents.some((item) => item.teamId === selection)
+    ? selection : choices?.defaultTeamId;
+  const selected = payload?.opponents.find((item) => item.teamId === selectedId);
+  const factCount = payload ? payload.batting.totalFactCount + payload.pitching.totalFactCount : 0;
+  const unknownCount = payload ? payload.batting.unknownOpponentFactCount + payload.pitching.unknownOpponentFactCount : 0;
+  const teamName = selected ? teamNames.get(selected.teamId) ?? "球団名不明" : "";
+  return <section className="analysis-opponent" aria-label="対戦相手別分析">
+    <SectionHeader title="対戦相手別" />
+    <p className="analysis-period-note">保存済みの直近30日試合成績を対戦球団ごとに表示します。</p>
+    {state === "loading" && <div aria-live="polite"><LoadingSkeleton /></div>}
+    {state === "error" && <DataState kind="source-unavailable" title="対戦相手別成績を取得できませんでした" />}
+    {state === "missing" && <DataState kind="no-data" title="分析できる試合データがまだありません" />}
+    {state === "ready" && payload && (!factCount
+      ? <DataState kind="no-data" title="分析できる試合データがまだありません" />
+      : <><p className="analysis-period-note">{formatDate(payload.from, true)}〜{formatDate(payload.to, true)} · {formatDate(payload.asOfDate, true)}終了時点</p>
+        {!selected ? <DataState kind="no-data" title="対戦相手を判定できる記録がありません" /> : <>
+          {choices && choices.options.length > 1 ? <label className="analysis-opponent-select">対戦相手
+            <select value={selectedId ?? ""} onChange={(event) => setSelection(event.target.value)}>
+              {choices.options.map((item) => <option key={item.teamId} value={item.teamId}>
+                {teamNames.get(item.teamId) ?? "球団名不明"}</option>)}
+            </select></label> : <p className="analysis-opponent-single">対戦相手：<strong>{teamName}</strong></p>}
+          <OpponentRole role="batting" selected={selected.batting} total={payload.batting.classifiedTotal} teamName={teamName} />
+          <OpponentRole role="pitching" selected={selected.pitching} total={payload.pitching.classifiedTotal} teamName={teamName} />
+          <p className="analysis-period-note">30日全体は対戦相手を判定できた保存済み記録の合計です。</p>
+        </>}
+        {unknownCount > 0 && <p className="analysis-period-note">対戦相手を判定できない記録：{unknownCount}件</p>}
         {payload.coverage.status !== "complete" && <p className={`analysis-period-coverage analysis-period-coverage--${payload.coverage.status}`}>
           {coverageNames[payload.coverage.status]}。表示値は保存済み記録から算出しています。</p>}
       </>)}

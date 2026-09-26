@@ -13,6 +13,7 @@ import { HttpPlayerRecentRepository } from "../infrastructure/providers/http-pla
 import { HttpPlayerGameLogRepository } from "../infrastructure/providers/http-player-game-log-repository";
 import { HttpPlayerPeriodComparisonRepository } from "../infrastructure/providers/http-player-period-comparison-repository";
 import { HttpPlayerHomeAwayRepository } from "../infrastructure/providers/http-player-home-away-repository";
+import { HttpPlayerOpponentRepository } from "../infrastructure/providers/http-player-opponent-repository";
 import { Capacitor } from "@capacitor/core";
 
 // Composition root: replace adapters here, never inside a screen.
@@ -30,6 +31,7 @@ export const services = {
   gameLog: new HttpPlayerGameLogRepository(import.meta.env.VITE_NPB_PLAYER_API_BASE_URL?.trim() || "https://baseball-notes-recent.vercel.app/"),
   periodComparison: new HttpPlayerPeriodComparisonRepository(import.meta.env.VITE_NPB_PLAYER_API_BASE_URL?.trim() || "https://baseball-notes-recent.vercel.app/"),
   homeAway: new HttpPlayerHomeAwayRepository(import.meta.env.VITE_NPB_PLAYER_API_BASE_URL?.trim() || "https://baseball-notes-recent.vercel.app/"),
+  opponent: new HttpPlayerOpponentRepository(import.meta.env.VITE_NPB_PLAYER_API_BASE_URL?.trim() || "https://baseball-notes-recent.vercel.app/"),
   favorites: new Favorites(new PreferenceStore()),
 };
 export type Services = typeof services;

@@ -11,6 +11,7 @@ import type { PlayerRecentResponse, RecentPeriod } from "../domain/player-recent
 import type { PlayerGameLogResponse } from "../domain/player-game-log";
 import type { PlayerPeriodComparison } from "../domain/player-period-comparison";
 import type { PlayerHomeAway } from "../domain/player-home-away";
+import type { PlayerOpponent } from "../domain/player-opponent";
 import type { NpbDirectoryPlayer, NpbPlayerDirectory } from "../domain/npb-player-directory";
 import { metrics } from "../domain/metrics";
 import { positionDefinitions } from "../domain/baseball-terms";
@@ -23,7 +24,7 @@ import { MatchupScreen } from "./matchup";
 import { WatchGameScreen, WatchToday } from "./watch";
 import { PlayerRecentView } from "./player-recent";
 import { PlayerGameLogView } from "./player-game-log";
-import { NpbPlayerAnalysisScreen, NpbPlayerHomeAwaySection } from "./npb-player-analysis";
+import { NpbPlayerAnalysisScreen, NpbPlayerHomeAwaySection, NpbPlayerOpponentSection } from "./npb-player-analysis";
 import { NpbHotSection } from "./npb-hot";
 import { NpbPlayerSearch } from "./npb-player-search";
 import { NpbPlayerProfileFacts } from "./npb-player-profile";
@@ -232,6 +233,8 @@ function PlayerScreen({ catalog, favorites, toggle, saving, services }: {
   const [comparisonState, setComparisonState] = useState<"loading" | "ready" | "missing" | "error">("loading");
   const [homeAway, setHomeAway] = useState<PlayerHomeAway | null>(null);
   const [homeAwayState, setHomeAwayState] = useState<"loading" | "ready" | "missing" | "error">("loading");
+  const [opponent, setOpponent] = useState<PlayerOpponent | null>(null);
+  const [opponentState, setOpponentState] = useState<"loading" | "ready" | "missing" | "error">("loading");
   const [recentCache] = useState(() => new Map<string, PlayerRecentResponse | null>());
   useEffect(() => {
     if (!canonical || !playerId) return;
@@ -252,6 +255,15 @@ function PlayerScreen({ catalog, favorites, toggle, saving, services }: {
     void services.periodComparison.find(playerId).then((value) => {
       if (active) { setComparison(value); setComparisonState(value ? "ready" : "missing"); }
     }).catch(() => { if (active) setComparisonState("error"); });
+    return () => { active = false; };
+  }, [canonical, playerId, section, services]);
+  useEffect(() => {
+    if (!canonical || !playerId || section !== "analysis") return;
+    let active = true;
+    queueMicrotask(() => { if (active) { setOpponent(null); setOpponentState("loading"); } });
+    void services.opponent.find(playerId).then((value) => {
+      if (active) { setOpponent(value); setOpponentState(value ? "ready" : "missing"); }
+    }).catch(() => { if (active) setOpponentState("error"); });
     return () => { active = false; };
   }, [canonical, playerId, section, services]);
   useEffect(() => {
@@ -372,7 +384,9 @@ function PlayerScreen({ catalog, favorites, toggle, saving, services }: {
       : !canonical && <DataState kind="no-data" title="成績はまだありません" />}</div>}
     {section === "analysis" && <div className="profile-content profile-content--analysis">{canonical
       ? <><NpbPlayerAnalysisScreen payload={comparison} state={comparisonState} />
-          <NpbPlayerHomeAwaySection payload={homeAway} state={homeAwayState} /></>
+          <NpbPlayerHomeAwaySection payload={homeAway} state={homeAwayState} />
+          <NpbPlayerOpponentSection key={player.id} payload={opponent} state={opponentState} teamNames={gameLogTeams}
+            teamOrder={directoryTeams.length ? directoryTeams.map((item) => item.id) : catalog.teams.map((item) => item.id)} /></>
       : <AnalysisScreen key={player.id} catalog={catalog} player={player} provider={services.analysis} />}</div>}
     {section === "more" && <div className="profile-content"><PageHeading title="その他" />
       <SectionHeader title="記録" /><DataState kind="not-implemented" title="記録は準備中です" />
