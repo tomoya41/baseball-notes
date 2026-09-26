@@ -194,3 +194,7 @@ Use a manual-only HOT Pages workflow that reads stored Facts, applies the existi
 ## 2026-09-26 — Static NPB Player Directory for real Search navigation
 
 Read canonical Players and Teams from existing `master_history`, with batting/pitching availability from distinct Fact Player IDs, in a fixed five-query read-only repository. Publish a small, schema-validated directory JSON through an independent manual Pages workflow instead of querying Turso on every keystroke or creating a duplicate Player Master. Use the existing NPB Search route for local exact/prefix/partial Japanese-name search and Team/Fact-role filters; keep MLB discovery unchanged. Unverified position and phonetic name remain absent rather than inferred. Whole-site Daily and HOT delivery steps preserve the last validated directory, without changing their collection or ranking logic. Rollback removes the directory workflow, adapter and NPB Search branch; permanent Facts and schemas remain untouched. See `docs/npb-player-directory.md`.
+
+## 2026-09-26 — One read-only context for NPB Player Analysis
+
+The Player Analysis page uses one 30-day Fact/Game/Coverage read for period comparison, Home/Away, opponent, and batting-order projections. A combined API returns independently validated section results, while existing individual endpoints remain available for rollback. Batting-order analysis uses only recorded 1–9 slots, keeps unknown slots diagnosable, and reuses the batting aggregator. No derived table or persistent cache is introduced. See `docs/player-analysis-batting-order.md`.

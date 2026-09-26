@@ -2,6 +2,7 @@ import { useState } from "react";
 import { comparisonPeriods, type ComparisonPeriod, type PlayerPeriodComparison } from "../domain/player-period-comparison";
 import type { PlayerHomeAway } from "../domain/player-home-away";
 import { opponentChoice, type PlayerOpponent } from "../domain/player-opponent";
+import { battingOrderChoice, type PlayerBattingOrder } from "../domain/player-batting-order";
 import type { AggregateMetric } from "../domain/player-period";
 import { formatDate } from "../presentation/formatters";
 import { formatRecentMetric } from "../presentation/recent-formatter";
@@ -204,5 +205,52 @@ export function NpbPlayerOpponentSection({ payload, state, teamNames, teamOrder 
         {payload.coverage.status !== "complete" && <p className={`analysis-period-coverage analysis-period-coverage--${payload.coverage.status}`}>
           {coverageNames[payload.coverage.status]}。表示値は保存済み記録から算出しています。</p>}
       </>)}
+  </section>;
+}
+
+export function NpbPlayerBattingOrderSection({ payload, state, battingAvailable }: {
+  payload: PlayerBattingOrder | null; state: AnalysisState; battingAvailable: boolean | undefined;
+}) {
+  const [selection, setSelection] = useState<number | null>(null);
+  if (battingAvailable === false || (state === "ready" && payload?.totalFactCount === 0)) return null;
+  const choices = payload ? battingOrderChoice(payload) : null;
+  const selectedOrder = payload?.orders.some((item) => item.battingOrder === selection)
+    ? selection : choices?.defaultOrder;
+  const selected = payload?.orders.find((item) => item.battingOrder === selectedOrder);
+  return <section className="analysis-batting-order" aria-label="打順別分析">
+    <SectionHeader title="打順別" />
+    <p className="analysis-period-note">保存済みの直近30日打撃成績を、記録された打順ごとに表示します。</p>
+    {state === "loading" && <div aria-live="polite"><LoadingSkeleton /></div>}
+    {state === "error" && <DataState kind="source-unavailable" title="打順別成績を取得できませんでした" />}
+    {state === "missing" && <DataState kind="no-data" title="分析できる試合データがまだありません" />}
+    {state === "ready" && payload && <>
+      <p className="analysis-period-note">{formatDate(payload.from, true)}〜{formatDate(payload.to, true)} · {formatDate(payload.asOfDate, true)}終了時点</p>
+      {!selected ? <DataState kind="no-data" title="打順を判定できる記録がありません" /> : <>
+        {choices && choices.options.length > 1 ? <label className="analysis-opponent-select">打順
+          <select value={selectedOrder ?? ""} onChange={(event) => setSelection(Number(event.target.value))}>
+            {choices.options.map((item) => <option key={item.battingOrder} value={item.battingOrder}>
+              {item.battingOrder}番</option>)}</select></label> :
+          <p className="analysis-opponent-single">打順：<strong>{selected.battingOrder}番</strong></p>}
+        <section className="analysis-opponent-role" aria-label={`${selected.battingOrder}番の打撃成績`}>
+          <div className="analysis-opponent-table" role="group" aria-label={`${selected.battingOrder}番と分類できた30日全体の比較`}>
+            <div className="analysis-opponent-table__head"><span>指標</span><strong>{selected.battingOrder}番</strong><strong>30日全体</strong></div>
+            {([{ key: "OPS", label: "OPS" }, { key: "AVG", label: "AVG" }, { key: "PA", label: "PA" },
+              { key: "G", label: "試合" }, { key: "HR", label: "HR" }] as const).map(({ key, label }) =>
+              <div className="analysis-opponent-table__row" key={key}><span>{label}</span>
+                <strong>{splitMetric(selected.stats, key)}</strong><span>{splitMetric(payload.classifiedTotal, key)}</span></div>)}
+          </div>
+          <details className="analysis-split-details"><summary>詳しい成績</summary><dl>
+            {opponentDetails.batting.map(({ key, label }) => <div key={key}><dt>{label}</dt>
+              <dd>{splitMetric(selected.stats, key)}</dd></div>)}
+          </dl></details>
+        </section>
+        <p className="analysis-period-note">30日全体は打順を判定できた保存済み記録の合計です。</p>
+      </>}
+      {payload.unknownBattingOrderFactCount > 0 && <p className="analysis-period-note">打順不明の記録：
+        {payload.unknownBattingOrderFactCount}件{payload.unknownBattingOrderPa !== null &&
+          `・${payload.unknownBattingOrderPa}打席`}</p>}
+      {payload.coverage.status !== "complete" && <p className={`analysis-period-coverage analysis-period-coverage--${payload.coverage.status}`}>
+        {coverageNames[payload.coverage.status]}。表示値は保存済み記録から算出しています。</p>}
+    </>}
   </section>;
 }

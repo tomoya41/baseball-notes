@@ -31,6 +31,16 @@ jobs:
           args=(--require-remote)
           if [[ -n "$AS_OF_DATE" ]]; then args+=(--date="$AS_OF_DATE"); fi
           npm run -s verify:npb:period-batch -- "${args[@]}"
+      - name: Read-only Player Analysis Context and batting-order diagnostic
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          AS_OF_DATE: ${{ inputs.as_of_date }}
+        shell: bash
+        run: |
+          args=()
+          if [[ -n "$AS_OF_DATE" ]]; then args+=("--date=$AS_OF_DATE"); fi
+          npx tsx scripts/verify-npb-analysis-context.ts "${args[@]}"
       - name: Read-only HOT candidate diagnostic
         shell: bash
         env:

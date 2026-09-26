@@ -14,6 +14,7 @@ import { HttpPlayerGameLogRepository } from "../infrastructure/providers/http-pl
 import { HttpPlayerPeriodComparisonRepository } from "../infrastructure/providers/http-player-period-comparison-repository";
 import { HttpPlayerHomeAwayRepository } from "../infrastructure/providers/http-player-home-away-repository";
 import { HttpPlayerOpponentRepository } from "../infrastructure/providers/http-player-opponent-repository";
+import { HttpPlayerAnalysisBundleRepository } from "../infrastructure/providers/http-player-analysis-bundle-repository";
 import { Capacitor } from "@capacitor/core";
 
 // Composition root: replace adapters here, never inside a screen.
@@ -32,6 +33,7 @@ export const services = {
   periodComparison: new HttpPlayerPeriodComparisonRepository(import.meta.env.VITE_NPB_PLAYER_API_BASE_URL?.trim() || "https://baseball-notes-recent.vercel.app/"),
   homeAway: new HttpPlayerHomeAwayRepository(import.meta.env.VITE_NPB_PLAYER_API_BASE_URL?.trim() || "https://baseball-notes-recent.vercel.app/"),
   opponent: new HttpPlayerOpponentRepository(import.meta.env.VITE_NPB_PLAYER_API_BASE_URL?.trim() || "https://baseball-notes-recent.vercel.app/"),
+  analysisBundle: new HttpPlayerAnalysisBundleRepository(import.meta.env.VITE_NPB_PLAYER_API_BASE_URL?.trim() || "https://baseball-notes-recent.vercel.app/"),
   favorites: new Favorites(new PreferenceStore()),
 };
 export type Services = typeof services;

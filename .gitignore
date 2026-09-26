@@ -15,6 +15,7 @@ api/npb/game-log.js
 api/npb/analysis.js
 api/npb/home-away.js
 api/npb/opponent.js
+api/npb/analysis-bundle.js
 
 # environment / secrets
 .env
