@@ -65,6 +65,9 @@ describe("NPB Player Directory", () => {
     expect(ready).not.toContain("サンプル選手");
     expect(ready).toContain("選手名を検索");
     expect(ready).toContain("すべての球団");
+    const noFact = view("ready", fixture, "新規選手");
+    expect(noFact).toContain(`/NPB/players/${ids.noFact}`);
+    expect(noFact).toContain("最近の成績なし");
     expect(view("ready", fixture, "なし")).toContain("該当する選手が見つかりません");
     expect(view("loading", null)).toContain("読み込み中");
     expect(view("error", null)).toContain("選手一覧を取得できませんでした");
