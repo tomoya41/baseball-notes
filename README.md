@@ -132,4 +132,4 @@ Player Recentだけ、Vercel FreeのServerless APIからTursoを読みます。�
 
 ## 今回の停止位置
 
-Batch BのHistorical Backfill経路、Season aggregate、Player Season UI、Ranking readiness / Records read model、公開Season JSONまで。2026-09-26基準のSeason Coverageはcomplete 12日 / no_games 24日 / partial 2日 / unknown 146日で未完成です。Production Ranking / HOTはnot_readyを維持しています。実測値・未解決日付・公開Runは[Batch B報告](docs/npb-batch-b-2026-09-27.md)を参照してください。Infrastructure Scheduled証拠は別トラックです。Batch C、Direct BvP、pitch-level、Live WATCHへ自動的に進みません。
+Batch BでHistorical Backfill経路、Season aggregate、Player Season UI、Ranking readiness / Records read model、公開Season JSONを実装。Batch B-2ではhistorical日程・参加者取得を一般化し、2026-03-27〜09-26の184日を再処理しました。Coverageはcomplete 154日 / confirmed no_games 25日 / partial 5日 / unknown 0日です。残る5日は雨天コールド6試合で参加者・終了回等のSource証拠が不足し、Production Ranking / HOTはnot_readyを維持しています。[Batch B報告](docs/npb-batch-b-2026-09-27.md)と[Batch B-2実測・残課題](docs/npb-batch-b2-2026-09-27.md)を参照してください。Infrastructure Scheduled証拠は別トラックです。Batch C、Direct BvP、pitch-level、Live WATCHへ自動的に進みません。
