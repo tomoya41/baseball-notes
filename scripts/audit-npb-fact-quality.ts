@@ -73,10 +73,6 @@ async function main() {
         nameById.set(id, payload.name ?? "");
       }
     }
-    const identityProbes = ["根尾昂", "柴田獅子", "オスナ"].map(name => ({ name,
-      masters: [...nameById].filter(([,displayName]) => displayName === name)
-        .map(([playerId]) => ({ playerId, sourceIds: mappings.filter(row => row.internal_entity_id === playerId)
-          .map(row => text(row.source_entity_id)).sort() })) }));
     const gameById = new Map(games.map((row) => [text(row.game_id), row]));
     const statusById = new Map(completeness.map((row) => [text(row.game_id), row]));
     const unknownPa = batting.filter((row) => !known(row.pa));
@@ -144,7 +140,7 @@ async function main() {
     })).sort((a, b) => b.pitchers - a.pitchers || a.gameId.localeCompare(b.gameId))[0];
     const report = {
       auditedAt: new Date().toISOString(), before, after, unchanged: JSON.stringify(before) === JSON.stringify(after),
-      queries, durationMs: Math.round(performance.now() - started), identityProbes,
+      queries, durationMs: Math.round(performance.now() - started),
       unresolvedDays:dayEvidence.map(row=>({date:row.target_date,status:row.day_status,
         finalGames:row.final_games,completeGames:row.complete_games,partialGames:row.partial_games,
         failedGames:row.failed_games,reasonCodes:historicalReasonCodes([text(row.error_summary)]),
