@@ -6,7 +6,7 @@ Androidを主対象とする野球データアプリ。製品仕様は [SPEC.md]
 
 React + TypeScript strict + Vite + Capacitor Androidの構成。ホーム / 検索 / 分析 / 記録 / マイの5項目ナビ、NPB・MLB切替、選手・球団検索、選手詳細、端末保存のお気に入り、指標説明、stale表示を実装。Home / Player / 参考ランキングにLight/Dark対応のデザインシステムを適用しています。
 
-**選手一覧・Analysis等の既存UIは架空のサンプルデータです。NPB Homeの順位表と、canonical IDで開いた実選手Player画面の「最近の成績」だけ実データです。** Career・Season totals・HOTは未接続です。ランキングはサンプル内の参考表示で、規定条件や公式順位ではありません。Analysis画面には共通フィルター・カテゴリー・詳細・状態表示を実装。MATCHUPは投手/打者の手動選択と対戦分析UI、WATCHはHomeの今日の試合から進むUI契約を実装しました。Retrosheet 2025年の歴史順位も別途生成できます。
+NPBはcanonical Player検索・プロフィール・Recent・Game Log・Game Detail・Player Analysisを保存済み実データへ接続しています。Analysisは共通30日Contextから期間比較、ホーム／ビジター、対戦相手、打順、出場形態を集計します。Playerの2026シーズン成績も既存Aggregatorで算出し、Coverage不足とMetric欠損を区別します。Home HOTはStatic JSONを参照し、Production Gateが閉じている間はランキング準備中です。Career、MATCHUP、WATCH、既存の参考ランキング等にはサンプル／未接続領域が残ります。保存済み成績を公式順位や最終成績と扱わないでください。Retrosheet 2025年の歴史順位も別途生成できます。
 
 - [アーキテクチャ](docs/architecture.md)
 - [データ取得元の調査](docs/data-sources.md)
@@ -119,7 +119,9 @@ NPBの前日全試合Fact収集・manual検証・復旧手順は[docs/npb-day-op
 
 公開NPBデータの正午JST鮮度監視は[docs/npb-freshness-operations.md](docs/npb-freshness-operations.md)を参照してください。`npm run monitor:npb:freshness`は公開JSONの日付を検査し、GitHub ActionsではTursoのDay状態と暗号化Backupも診断します。監視はnf3へアクセスしません。
 
-保存済みNPB Player Game Factsからの単一選手・直近7/14/30暦日Read-only集計と収集Coverageは[docs/player-period.md](docs/player-period.md)を参照してください。`npx tsx scripts/verify-player-period.ts --date=2026-09-24`でローカルFactを読み、集計前後の件数を照合できます。Player「最近の成績」だけ公開Read-only API経由で接続済みです。構成・制約は[docs/player-recent.md](docs/player-recent.md)を参照してください。HOTは未接続です。
+保存済みNPB Player Game FactsのRead-only集計と収集Coverageは[docs/player-period.md](docs/player-period.md)を参照してください。`npx tsx scripts/verify-player-period.ts --date=2026-09-24`でローカルFactを読み、集計前後の件数を照合できます。Player Recent / Seasonは公開Read-only APIへ接続しています。構成は[docs/player-recent.md](docs/player-recent.md)を参照してください。
+
+2026 Historical Backfillは `npx tsx scripts/backfill-npb-season.ts --from=2026-03-27 --to=2026-09-26 --mode=inventory` で棚卸し、`--mode=dry-run` でRemote ExportをScratch DBへ復元して検証、`--mode=ingest` で明示的に本番投入します。Remote接続の環境変数が必要です。完了済み日の現在Factを再検証して再利用し、日付単位で再開できます。既存Sourceから過去の投手参加者を確認できない日はunknownを維持します。独立manual workflow `npb-historical-backfill.yml` と `npb-season-publish.yml` を用意しています。Seasonの公開JSONは `/data/npb/season/2026/latest.json`、Raw Factや内部Source IDは含めません。manual成功はScheduled運用証拠ではありません。
 Player画面の「試合別成績」は保存済みFactとGame情報だけをVercelのRead-only APIで読み、最新10件を表示します。取得経路と欠損値・二刀流・ダブルヘッダーの扱いは[docs/player-game-log.md](docs/player-game-log.md)を参照してください。
 
 ローカルGitと作業ブランチを作成済み。公開GitHubリポジトリへpushしました。GitHubリポジトリへ追加する際は、既存ブランチをレビューし `npm run check` を通してください。
