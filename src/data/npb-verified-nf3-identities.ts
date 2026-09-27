@@ -2,32 +2,20 @@
 // NPB player page below; the Swallows' J. Osuna is a different person.
 export const verifiedNf3Identities = [
   {
-    sourceId: "2026:D:profile:30f", playerId: "7996a107-69eb-4950-820d-913760f6669e",
+    sourceId: "2026:D:uniform:30", playerId: "7996a107-69eb-4950-820d-913760f6669e",
     existingCanonical: true, name: "根尾昂", teamId: "npb:team:dragons",
     profileUrl: "https://nf3.sakura.ne.jp/Central/D/f/30f_stat.htm",
+    additionalProfileUrls: ["https://nf3.sakura.ne.jp/Central/D/p/30pp_stat.htm"],
     officialProfileUrl: "https://npb.jp/bis/players/81285138.html", verifiedAt: "2026-09-27",
     note: "Batting profile 30f and pitching profile 30pp both link to NPB 81285138; preserve existing Dragons #30 master.",
   },
   {
-    sourceId: "2026:D:profile:30pp", playerId: "7996a107-69eb-4950-820d-913760f6669e",
-    existingCanonical: true, name: "根尾昂", teamId: "npb:team:dragons",
-    profileUrl: "https://nf3.sakura.ne.jp/Central/D/p/30pp_stat.htm",
-    officialProfileUrl: "https://npb.jp/bis/players/81285138.html", verifiedAt: "2026-09-27",
-    note: "Pitching alias of the same reviewed Dragons #30 identity.",
-  },
-  {
-    sourceId: "2026:F:profile:31f", playerId: "35e631df-8103-4fe3-8b9c-2231f8cf5247",
+    sourceId: "2026:F:uniform:31", playerId: "35e631df-8103-4fe3-8b9c-2231f8cf5247",
     existingCanonical: true, name: "柴田獅子", teamId: "npb:team:fighters",
     profileUrl: "https://nf3.sakura.ne.jp/Pacific/F/f/31f_stat.htm",
+    additionalProfileUrls: ["https://nf3.sakura.ne.jp/Pacific/F/p/31pp_stat.htm"],
     officialProfileUrl: "https://npb.jp/bis/players/81085150.html", verifiedAt: "2026-09-27",
     note: "Batting profile 31f and pitching profile 31pp both link to NPB 81085150; preserve existing Fighters #31 master.",
-  },
-  {
-    sourceId: "2026:F:profile:31pp", playerId: "35e631df-8103-4fe3-8b9c-2231f8cf5247",
-    existingCanonical: true, name: "柴田獅子", teamId: "npb:team:fighters",
-    profileUrl: "https://nf3.sakura.ne.jp/Pacific/F/p/31pp_stat.htm",
-    officialProfileUrl: "https://npb.jp/bis/players/81085150.html", verifiedAt: "2026-09-27",
-    note: "Pitching alias of the same reviewed Fighters #31 identity.",
   },
   {
     sourceId: "2026:F:uniform:2", playerId: "79e33d14-9021-4db8-a976-74c9d02df328",

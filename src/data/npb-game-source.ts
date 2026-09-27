@@ -178,7 +178,9 @@ export function findRosterPlayer(roster: readonly Nf3Participant[], name: string
     // A two-way player may have distinct nf3 batting/pitching profiles. Resolve
     // only reviewed exact URL/name tuples mapped to one existing canonical ID.
     const reviewed = matches.map(player=>verifiedNf3Identities.find(identity=>
-      identity.profileUrl===player.profileUrl && normalizeNpbName(identity.name)===normalizeNpbName(player.name)));
+      (identity.profileUrl===player.profileUrl || ("additionalProfileUrls" in identity &&
+        (identity.additionalProfileUrls as readonly string[]).includes(player.profileUrl))) &&
+      normalizeNpbName(identity.name)===normalizeNpbName(player.name)));
     const batting = matches.filter(player=>/\/f\//.test(new URL(player.profileUrl).pathname));
     if (reviewed.every(Boolean) && new Set(reviewed.map(identity=>identity?.playerId)).size===1 && batting.length===1)
       return batting[0]!;

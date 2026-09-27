@@ -96,14 +96,15 @@ describe("2026-09-23 controlled NPB game proof", () => {
   });
   it("maps reviewed two-way batting and pitching aliases to one existing canonical player",async()=>{
     const client=await db(),repository=new NpbRepository(client);
-    for(const [prefix,originalId] of [["2026:D:profile:30f","2026:D:uniform:30"],["2026:F:profile:31f","2026:F:uniform:31"]] as const){
-      const batter=verifiedNf3Identities.find(p=>p.sourceId===prefix)!;
-      const pitcher=verifiedNf3Identities.find(p=>p.sourceId===prefix.replace(/f$/, "pp"))!;
+    for(const sourceId of ["2026:D:uniform:30","2026:F:uniform:31"] as const){
+      const batter=verifiedNf3Identities.find(p=>p.sourceId===sourceId)!;
+      if(!("additionalProfileUrls" in batter))throw new Error("Missing reviewed pitching URL");
+      const pitchingUrl=batter.additionalProfileUrls[0];
       await client.execute({sql:"INSERT INTO master_history VALUES (?,?,?,?,?,?,?)",args:["player",batter.playerId,"2026-01-01",
-        JSON.stringify({name:batter.name,teamId:batter.teamId}),"nf3",originalId,at]});
+        JSON.stringify({name:batter.name,teamId:batter.teamId}),"nf3",sourceId,at]});
       expect(await repository.resolveVerifiedPlayer(batter.sourceId,batter.name,batter.profileUrl,batter.teamId,at,false)).toBe(batter.playerId);
-      expect(await repository.resolveVerifiedPlayer(pitcher.sourceId,pitcher.name,pitcher.profileUrl,pitcher.teamId,at,false)).toBe(batter.playerId);
-      await expect(repository.resolveVerifiedPlayer(pitcher.sourceId,pitcher.name,pitcher.profileUrl.replace("/p/","/f/"),pitcher.teamId,at,false)).rejects.toThrow("identity mismatch");
+      expect(await repository.resolveVerifiedPlayer(batter.sourceId,batter.name,pitchingUrl,batter.teamId,at,false)).toBe(batter.playerId);
+      await expect(repository.resolveVerifiedPlayer(batter.sourceId,batter.name,pitchingUrl.replace("_stat","x_stat"),batter.teamId,at,false)).rejects.toThrow("identity mismatch");
     }
     expect((await client.execute("SELECT count(DISTINCT entity_id) n FROM master_history WHERE entity_kind='player'")).rows[0]?.n).toBe(2);
   });
