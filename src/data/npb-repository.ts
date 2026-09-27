@@ -124,7 +124,8 @@ export class NpbRepository {
         WHERE entity_kind='player' AND entity_id=? ORDER BY valid_from DESC LIMIT 1`, args: [verified.playerId] });
       if ("existingCanonical" in verified && verified.existingCanonical) {
         const stored=collision.rows[0]?.payload_json ? JSON.parse(String(collision.rows[0].payload_json)) as {name?:string;teamId?:string}:null;
-        if (!stored || normalizeNpbName(stored.name ?? "")!==normalizeNpbName(name) || stored.teamId!==teamId)
+        const canonicalTeamId="canonicalTeamId" in verified?verified.canonicalTeamId:teamId;
+        if (!stored || normalizeNpbName(stored.name ?? "")!==normalizeNpbName(name) || stored.teamId!==canonicalTeamId)
           throw new Error(`Conflicting reviewed existing canonical player: ${sourceId}`);
         if (dryRun) onWouldCreateAlias?.();
         else await this.client.execute({sql:"INSERT INTO source_entity_mappings VALUES ('nf3','player',?,?,?,?,?)",
@@ -138,7 +139,7 @@ export class NpbRepository {
           args: [sourceId,verified.playerId,sourceUrl,at,at] },
         { sql: `INSERT INTO master_history (entity_kind,entity_id,valid_from,payload_json,source_key,source_record_id,collected_at)
           VALUES ('player',?,?,?,?,?,?)`, args: [verified.playerId,at.slice(0,10),
-            JSON.stringify({name,normalizedName:normalizeNpbName(name),teamId,sourceUrl}),"nf3",sourceId,at] },
+            JSON.stringify({name,normalizedName:normalizeNpbName(name),teamId:"canonicalTeamId" in verified?verified.canonicalTeamId:teamId,sourceUrl}),"nf3",sourceId,at] },
       ],"write");
       return verified.playerId;
     }
@@ -272,14 +273,17 @@ export class NpbRepository {
   }
 
   async saveBatting(rows: readonly NpbLogRow<PlayerGameBatting>[], targetDate: string, dryRun: boolean, recordStage = true,
-    writeMode: "full" | "limited" = "full"): Promise<{ inserted: number; updated: number }> {
+    writeMode: "full" | "limited" = "full", verifiedGame?: NpbGame): Promise<{ inserted: number; updated: number }> {
     const statements: InStatement[] = [];
+    const existing=verifiedGame?new Set((await this.client.execute({sql:"SELECT player_id,team_id FROM player_game_batting WHERE game_id=?",
+      args:[verifiedGame.id]})).rows.map(r=>`${r.player_id}|${r.team_id}`)):null;
     let inserted = 0, updated = 0;
     for (const row of rows) {
       const fact = row.fact;
-      const gameId = await this.linkGame(row.date,fact.teamId,row.opponentTeamId,row.scheduledTime);
-      const prior = await this.client.execute({ sql: "SELECT 1 FROM player_game_batting WHERE game_id=? AND player_id=? AND team_id=?", args: [gameId,fact.playerId,fact.teamId] });
-      if (prior.rows.length) { if (writeMode === "full") updated++; } else inserted++;
+      const gameId = verifiedGame?this.checkedVerifiedGame(row,verifiedGame):await this.linkGame(row.date,fact.teamId,row.opponentTeamId,row.scheduledTime);
+      const present=existing?existing.has(`${fact.playerId}|${fact.teamId}`):
+        (await this.client.execute({ sql: "SELECT 1 FROM player_game_batting WHERE game_id=? AND player_id=? AND team_id=?", args: [gameId,fact.playerId,fact.teamId] })).rows.length>0;
+      if (present) { if (writeMode === "full") updated++; } else inserted++;
       statements.push({ sql: `INSERT INTO player_game_batting
         (game_id,player_id,team_id,opponent_team_id,batting_order,pa,ab,hits,doubles,triples,home_runs,rbi,walks,strikeouts,hbp,sb,cs,source_key,source_record_id,collected_at,runs,starter,source_url,sacrifice_hits,sacrifice_flies)
         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
@@ -300,14 +304,17 @@ export class NpbRepository {
   }
 
   async savePitching(rows: readonly NpbLogRow<PlayerGamePitching>[], targetDate: string, dryRun: boolean, recordStage = true,
-    writeMode: "full" | "limited" = "full"): Promise<{ inserted: number; updated: number }> {
+    writeMode: "full" | "limited" = "full", verifiedGame?: NpbGame): Promise<{ inserted: number; updated: number }> {
     const statements: InStatement[] = [];
+    const existing=verifiedGame?new Set((await this.client.execute({sql:"SELECT fact_id FROM player_game_pitching WHERE game_id=?",
+      args:[verifiedGame.id]})).rows.map(r=>String(r.fact_id))):null;
     let inserted = 0, updated = 0;
     for (const row of rows) {
       const fact = row.fact;
-      const gameId = await this.linkGame(row.date,fact.teamId,row.opponentTeamId,row.scheduledTime);
-      const prior = await this.client.execute({ sql: "SELECT 1 FROM player_game_pitching WHERE fact_id=?", args: [fact.id] });
-      if (prior.rows.length) { if (writeMode === "full") updated++; } else inserted++;
+      const gameId = verifiedGame?this.checkedVerifiedGame(row,verifiedGame):await this.linkGame(row.date,fact.teamId,row.opponentTeamId,row.scheduledTime);
+      const present=existing?existing.has(fact.id):
+        (await this.client.execute({ sql: "SELECT 1 FROM player_game_pitching WHERE fact_id=?", args: [fact.id] })).rows.length>0;
+      if (present) { if (writeMode === "full") updated++; } else inserted++;
       statements.push({ sql: `INSERT INTO player_game_pitching
         (fact_id,game_id,player_id,team_id,opponent_team_id,role,appearance_order,ip_outs,batters_faced,hits,home_runs,walks,strikeouts,runs,earned_runs,pitches,catcher_id,source_key,source_record_id,collected_at,starter,decision,source_url,hit_batters,walks_and_hit_batters)
         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
@@ -325,6 +332,14 @@ export class NpbRepository {
     if (recordStage) statements.push(this.stageStatement(targetDate,"pitching","partial",rows.length,"Curated player subset only"));
     if (!dryRun) await this.client.batch(statements,"write");
     return { inserted, updated };
+  }
+
+  private checkedVerifiedGame(row:NpbLogRow<PlayerGameBatting|PlayerGamePitching>,game:NpbGame):string {
+    const opponent=row.fact.teamId===game.homeTeamId?game.awayTeamId:
+      row.fact.teamId===game.awayTeamId?game.homeTeamId:null;
+    if (row.fact.gameId!==game.id || row.date!==game.date || !opponent || row.opponentTeamId!==opponent ||
+      (game.scheduledTime && row.scheduledTime!==game.scheduledTime)) throw new Error("Verified Fact/Game identity mismatch");
+    return game.id;
   }
 
   async findBattingByPlayer(playerId: string, fromDate: string, toDate: string, season?: number): Promise<PlayerGameBatting[]> {

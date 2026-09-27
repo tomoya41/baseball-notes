@@ -25,7 +25,7 @@ export function createNf3DryRunSession(delayMs = 750, provided?: (url: string) =
   let last = 0;
   const request = async (url: string): Promise<string> => {
     const cached = pages.get(url);
-    if (cached !== undefined) return cached;
+    if (cached !== undefined) { metrics.cacheHits++; return cached; }
     if (rawRoot && targetDate && !provided) {
       const source = new URL(url);
       const key = `${source.pathname.slice(1)}${source.search}`;

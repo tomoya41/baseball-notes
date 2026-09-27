@@ -52,7 +52,8 @@ export async function runHistoricalBackfill(client: DataClient, options: {
   const session=createNf3DryRunSession(1000,options.request);
   let schedules: NpbGame[] | undefined;
   let scheduleFailure: string | undefined;
-  const historicalPitchers=createHistoricalPitcherDiscovery(session.request);
+  const timings={scheduleParsingMs:0,participantParsingMs:0,gameParsingNormalizationMs:0};
+  const historicalPitchers=createHistoricalPitcherDiscovery(session.request,ms=>timings.participantParsingMs+=ms);
   const reports: { date:string; status:string; issues:string[]; reasonCodes?:string[]; result?:unknown }[]=[];
   const started=performance.now();
   for(const date of dates) {
@@ -65,7 +66,9 @@ export async function runHistoricalBackfill(client: DataClient, options: {
         const pages: NpbGame[][]=[];
         for(const team of npbTeams) {
           const url=`https://nf3.sakura.ne.jp/php/stat_disp/stat_disp.php?y=0&leg=${team.group==="Central"?0:1}&mon=0&tm=${team.code}&vst=all`;
-          pages.push(parseNf3TeamGames(await session.request(url),team.code,2026,url,new Date().toISOString()));
+          const html=await session.request(url),parseStart=performance.now();
+          pages.push(parseNf3TeamGames(html,team.code,2026,url,new Date().toISOString()));
+          timings.scheduleParsingMs+=performance.now()-parseStart;
         }
         schedules=reconcileHistoricalSchedules(pages);
         } catch(error) { scheduleFailure=String(error); throw error; }
@@ -109,7 +112,7 @@ export async function runHistoricalBackfill(client: DataClient, options: {
                 insertedBatting:0,insertedPitching:0,wouldCreateMappings:[],observed:{sacrificeFlies:0,fractionalTwoOutPitchers:0},nonBattingSubstitutes:[]};
             }
             return runNpbGameProof(client,{gameId:game.id,targetDate:date,dryRun:options.dryRun ?? false,scope:"day-ingest",
-              request,persistRawManifest:false,historicalPitchers});
+              request,persistRawManifest:false,historicalPitchers,onParseTiming:ms=>timings.gameParsingNormalizationMs+=ms});
           }});
         status=result.status;
         reports.push({date,status,issues:result.games.flatMap(g=>g.issues),result});
@@ -122,5 +125,5 @@ export async function runHistoricalBackfill(client: DataClient, options: {
     last.reasonCodes=historicalReasonCodes(last.issues);
     await options.progress?.(last);
   }
-  return {from:options.from,to:options.to,dates:dates.length,reports,http:session.metrics,durationMs:performance.now()-started};
+  return {from:options.from,to:options.to,dates:dates.length,reports,http:session.metrics,timings,durationMs:performance.now()-started};
 }

@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { load } from "cheerio";
 import { openDataClient, migrateData, type DataClient } from "../src/data/database";
 import { NpbRepository } from "../src/data/npb-repository";
@@ -27,6 +27,19 @@ async function db(): Promise<DataClient> {
 afterEach(() => { for (const client of clients.splice(0)) client.close(); });
 
 describe("2026-09-23 controlled NPB game proof", () => {
+  it("batches existing verified Game facts without per-player linking queries and rejects mismatched games",async()=>{
+    const client=await db(),repository=new NpbRepository(client);
+    await repository.saveGames([game],date,false);
+    const row=parseNf3GameBattingRow(fixture("batting-m10"),date,"M","10","source",game.sourceUrl,at).row;
+    const rows=["10","11"].map(playerId=>({...row,scheduledTime:game.scheduledTime,fact:{...row.fact,gameId,playerId}}));
+    const spy=vi.spyOn(client,"execute");
+    await repository.saveBatting(rows,date,false,false,"full",game);
+    expect(spy).toHaveBeenCalledTimes(1);spy.mockClear();
+    await repository.saveBatting(rows,date,false,false,"limited",game);
+    expect(spy).toHaveBeenCalledTimes(1);
+    await expect(repository.saveBatting([{...rows[0]!,date:"2026-09-22"}],date,false,false,"full",game)).rejects.toThrow("identity mismatch");
+    spy.mockRestore();expect(await repository.findBattingByGame(gameId)).toHaveLength(2);
+  });
   it("recognizes the observed 9/22 投犠野 sacrifice without reclassifying ordinary fielder choice",()=>{
     const html=fixture("batting-db-sacrifice-choice");
     const parsed=parseNf3GameBattingRow(html,"2026-09-22","DB","azuma","2026:DB:uniform:11",game.sourceUrl,at);
@@ -42,6 +55,16 @@ describe("2026-09-23 controlled NPB game proof", () => {
     expect(await repository.resolveVerifiedPlayer(identity.sourceId,identity.name,identity.profileUrl,identity.teamId,at,false)).toBe(identity.playerId);
     expect((await client.execute("SELECT count(DISTINCT entity_id) n FROM master_history WHERE entity_kind='player'")).rows[0]?.n).toBe(1);
     await expect(repository.resolveVerifiedPlayer(identity.sourceId,identity.name,identity.profileUrl,"npb:team:hawks",at,true)).rejects.toThrow();
+  });
+  it("keeps an explicitly reviewed transferred identity without changing the current canonical team",async()=>{
+    const client=await db(),repo=new NpbRepository(client);
+    const identity=verifiedNf3Identities.find(p=>p.sourceId==="2026:DB:profile:tr_H_50")!;
+    await client.execute({sql:"INSERT INTO master_history VALUES (?,?,?,?,?,?,?)",args:["player",identity.playerId,"2026-01-01",
+      JSON.stringify({name:identity.name,teamId:"npb:team:hawks"}),"nf3","2026:H:uniform:39",at]});
+    expect(await repo.resolveVerifiedPlayer(identity.sourceId,identity.name,identity.profileUrl,identity.teamId,at,false)).toBe(identity.playerId);
+    const master=(await client.execute("SELECT payload_json FROM master_history WHERE entity_kind='player'")).rows;
+    expect(master).toHaveLength(1);expect(JSON.parse(String(master[0]?.payload_json)).teamId).toBe("npb:team:hawks");
+    await expect(repo.resolveVerifiedPlayer(identity.sourceId,identity.name,identity.profileUrl.replace("tr_H_50","50"),identity.teamId,at,true)).rejects.toThrow();
   });
   it("does not degrade authoritative batting and pitching facts when limited collection revisits a game", async () => {
     const client = await db(); const repository = new NpbRepository(client);

@@ -30,6 +30,7 @@ export interface NpbGameProofOptions {
   persistRawManifest?: boolean;
   scope?: "controlled" | "day-dry-run" | "day-ingest";
   historicalPitchers?: (game: NpbGame, teamId: string) => Promise<Nf3Participant[]>;
+  onParseTiming?: (ms:number)=>void;
 }
 export interface NpbGameProofResult {
   report: GameCompleteness;
@@ -193,13 +194,15 @@ export async function runNpbGameProof(client: DataClient, options: NpbGameProofO
       parseNf3PitchUsage(await get(usagePath),targetDate,team.code);
     const participants = [...roster];
     for (const pitcher of expectedPitcherList) {
-      const existing = participants.find((player) => player.number === pitcher.number);
+      const existing = participants.find((player) => player.number === pitcher.number &&
+        !/\/(?:wb_|tr_)/.test(player.profileUrl));
       if (existing && normalizeNpbName(existing.name) !== normalizeNpbName(pitcher.name))
         throw new Error(`Conflicting batter/pitcher identity: ${team.code} #${pitcher.number}`);
       if (!existing) participants.push(pitcher);
     }
     const queue: Nf3BattingParticipant[] = starters.map((starter) => {
-      const verified = participants.find((player) => player.number === starter.number);
+      const verified = participants.find((player) => player.profileUrl === starter.profileUrl) ??
+        participants.find((player) => player.number === starter.number && !/\/(?:wb_|tr_)/.test(player.profileUrl));
       const pitchingProfile = expectedPitcherList.find((player) => player.number === starter.number)?.profileUrl;
       if (!verified || (verified.profileUrl !== starter.profileUrl && pitchingProfile !== starter.profileUrl))
         throw new Error(`Lineup/roster identity mismatch: ${team.code} #${starter.number}`);
@@ -208,11 +211,11 @@ export async function runNpbGameProof(client: DataClient, options: NpbGameProofO
     const processed = new Set<string>();
     while (queue.length) {
       const participant = queue.shift()!;
-      if (processed.has(participant.number)) continue;
-      processed.add(participant.number);
-      expectedBatters++;
-      const sourceId = `2026:${team.code}:uniform:${participant.number}`;
       const profileId = nf3ProfileParameter(participant.profileUrl,team.code,participant.number);
+      const sourceId = /^(?:wb_|tr_)/.test(profileId)?`2026:${team.code}:profile:${profileId}`:`2026:${team.code}:uniform:${participant.number}`;
+      if (processed.has(participant.profileUrl)) continue;
+      processed.add(participant.profileUrl);
+      expectedBatters++;
       const path = `php/stat_disp/stat_disp.php?y=0&leg=${leg}&fpnum=${profileId}&tm=${team.code}&mon=${month}&vst=all`;
       try {
         const html = await get(path);
@@ -229,26 +232,30 @@ export async function runNpbGameProof(client: DataClient, options: NpbGameProofO
           () => recordMapping(sourceId,participant.name,team.id,participant.profileUrl));
         if (playerId.startsWith("dry:")) recordMapping(sourceId,participant.name,team.id,participant.profileUrl);
         mappedBatters++;
+        const parseStart=performance.now();
         const parsed = parseNf3GameBattingRow(html,targetDate,team.code,playerId,sourceId,new URL(path,ROOT).toString(),at);
+        options.onParseTiming?.(performance.now()-parseStart);
         if (parsed.unsupportedPaEvents.length)
           issues.push(`Unsupported PA event ${sourceId}: ${parsed.unsupportedPaEvents.join(",")}`);
+        if (parsed.row.fact.pa===null)
+          issues.push(`Unknown PA ${sourceId}: AB=${parsed.row.fact.ab},BB=${parsed.row.fact.walks},HBP=${parsed.row.fact.hbp},SH=${parsed.row.fact.sacrificeHits},SF=${parsed.row.fact.sacrificeFlies}; tokens=${parsed.detail.join(" ")}`);
         if (parsed.row.opponentTeamId !== opponent.id || (game.scheduledTime && parsed.row.scheduledTime !== game.scheduledTime))
           throw new Error(`Batting game identity mismatch: ${sourceId}`);
         const fact = { ...parsed.row.fact, gameId: game.id, battingOrder: participant.battingOrder, starter: participant.started };
         batting.push({ ...parsed.row, fact });
         for (const name of parsed.substitutions) {
           const next = findRosterPlayer(participants,name);
-          const already = queue.find((item) => item.number === next.number);
+          const already = queue.find((item) => item.profileUrl === next.profileUrl);
           if (already && already.battingOrder !== participant.battingOrder) throw new Error(`Conflicting batting-order slot: ${name}`);
-          if (!processed.has(next.number) && !already)
+          if (!processed.has(next.profileUrl) && !already)
             queue.push({ ...next, battingOrder: participant.battingOrder, started: false });
         }
       } catch (error) { issues.push(`batting/${sourceId}: ${String(error)}`); }
     }
     for (const pitcher of expectedPitcherList) {
       expectedPitchers++;
-      const sourceId = `2026:${team.code}:uniform:${pitcher.number}`;
       const profileId = nf3ProfileParameter(pitcher.profileUrl,team.code,pitcher.number);
+      const sourceId = /^(?:wb_|tr_)/.test(profileId)?`2026:${team.code}:profile:${profileId}`:`2026:${team.code}:uniform:${pitcher.number}`;
       const path = `php/stat_disp/stat_disp.php?y=0&leg=${leg}&pcnum=${profileId}&tm=${team.code}&mon=${month}&vst=all`;
       try {
         const html = await get(path);
@@ -260,7 +267,9 @@ export async function runNpbGameProof(client: DataClient, options: NpbGameProofO
           () => recordMapping(sourceId,pitcher.name,team.id,pitcher.profileUrl));
         if (playerId.startsWith("dry:")) recordMapping(sourceId,pitcher.name,team.id,pitcher.profileUrl);
         mappedPitchers++;
+        const parseStart=performance.now();
         const row = parseNf3GamePitchingRow(html,targetDate,team.code,playerId,sourceId,new URL(path,ROOT).toString(),at);
+        options.onParseTiming?.(performance.now()-parseStart);
         if (row.opponentTeamId !== opponent.id || (game.scheduledTime && row.scheduledTime !== game.scheduledTime))
           throw new Error(`Pitching game identity mismatch: ${sourceId}`);
         pitching.push({ ...row, fact: { ...row.fact, gameId: game.id } });
@@ -299,8 +308,8 @@ export async function runNpbGameProof(client: DataClient, options: NpbGameProofO
     });
     await transaction.execute({ sql: "INSERT INTO ingestion_runs (run_id,source_key,target_date,started_at,status) VALUES (?,'nf3',?,?,'running')",
       args: [runId,targetDate,at] });
-    const b = await inTransaction.saveBatting(committedBatting,targetDate,false,false);
-    const p = await inTransaction.savePitching(committedPitching,targetDate,false,false);
+    const b = await inTransaction.saveBatting(committedBatting,targetDate,false,false,"full",options.historicalPitchers?game:undefined);
+    const p = await inTransaction.savePitching(committedPitching,targetDate,false,false,"full",options.historicalPitchers?game:undefined);
     const savedBatting = await inTransaction.findBattingByGame(game.id);
     const savedPitching = await inTransaction.findPitchingByGame(game.id);
     if (savedBatting.length !== batting.length || savedPitching.length !== pitching.length)

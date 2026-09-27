@@ -10,7 +10,7 @@ const ROOT = "https://nf3.sakura.ne.jp/";
 const dayLabel = (date: string) => `${Number(date.slice(5, 7))}/${Number(date.slice(8, 10))}`;
 export function nf3ProfileParameter(profileUrl: string, teamCode: string, number: string): string {
   const url = new URL(profileUrl);
-  const match = new RegExp(`^/(?:Central|Pacific)/${teamCode}/[fp]/(${number}[a-z]{0,3})_stat\\.htm$`).exec(url.pathname);
+  const match = new RegExp(`^/(?:Central|Pacific)/${teamCode}/[fp]/((?:wb_|tr_[A-Z]{1,2}_)?${number}[a-z]{0,3})_stat\\.htm$`).exec(url.pathname);
   if (url.origin !== new URL(ROOT).origin || !match) throw new Error(`Unexpected nf3 player profile ID: ${profileUrl}`);
   return match[1]!;
 }
@@ -25,7 +25,7 @@ export function hasNf3BattingGameRow(html: string, date: string): boolean {
   return rows.length === 1;
 }
 function profile(link: string | undefined, teamCode: string): string {
-  if (!link || !new RegExp(`^\\./(?:Central|Pacific)/${teamCode}/[fp]/\\d+[a-z]{0,3}_stat\\.htm$`).test(link))
+  if (!link || !new RegExp(`^\\./(?:Central|Pacific)/${teamCode}/[fp]/(?:wb_|tr_[A-Z]{1,2}_)?\\d+[a-z]{0,3}_stat\\.htm$`).test(link))
     throw new Error(`Unexpected nf3 player profile: ${link}`);
   return new URL(link.slice(2), ROOT).toString();
 }
@@ -41,7 +41,7 @@ export function parseNf3StartingLineup(html: string, date: string, teamCode: str
   const starters = Array.from({ length: 9 }, (_, index) => {
     const cell = cells.eq(index + 5);
     const href = cell.find("a").attr("href");
-    const number = /\/([0-9]+)[a-z]{0,3}_stat\.htm$/.exec(href ?? "")?.[1];
+    const number = /\/(?:wb_|tr_[A-Z]{1,2}_)?([0-9]+)[a-z]{0,3}_stat\.htm$/.exec(href ?? "")?.[1];
     if (!number) throw new Error(`Missing lineup player ID: ${teamCode} ${index + 1}`);
     return { number, name: cell.text().trim(), profileUrl: profile(href, teamCode), battingOrder: index + 1 };
   });
@@ -53,7 +53,7 @@ export function parseNf3BattingRoster(html: string, teamCode: string): Nf3Partic
   const $ = load(html);
   const table = $("table.Base").filter((_, element) => $(element).find("caption").text().includes("打撃成績一覧")).first();
   if (!table.length || !table.find("tr").first().text().includes("打席")) throw new Error("nf3 batting roster schema changed");
-  const participants = table.find("tr[onmouseover]").toArray().map((row) => {
+  const participants = table.find("tr").toArray().filter(row=>$(row).children("td").eq(1).find("a").length>0).map((row) => {
     const cells = $(row).children("td");
     const number = cells.eq(0).text().trim();
     const name = cells.eq(1).text().trim();
@@ -61,7 +61,7 @@ export function parseNf3BattingRoster(html: string, teamCode: string): Nf3Partic
     if (!/^\d+$/.test(number) || !name) throw new Error("Invalid nf3 batting roster identity");
     return { number, name, profileUrl: profile(href, teamCode) };
   });
-  if (participants.length < 9 || new Set(participants.map((item) => item.number)).size !== participants.length)
+  if (participants.length < 9 || new Set(participants.map((item) => item.profileUrl)).size !== participants.length)
     throw new Error("Incomplete/duplicate nf3 batting roster");
   return participants;
 }
@@ -96,7 +96,7 @@ export function parseNf3PitchingRoster(html: string, teamCode: string): Nf3Parti
   const table = $("table.Base").filter((_, element) => $(element).find("caption").text().includes("投手成績一覧")).first();
   const header = table.find("tr").first().text();
   if (!table.length || !header.includes("先発") || !header.includes("救援")) throw new Error("nf3 pitching roster schema changed");
-  const participants = table.find("tr[onmouseover]").toArray().map(row => {
+  const participants = table.find("tr").toArray().filter(row=>$(row).children("td").eq(1).find("a").length>0).map(row => {
     const cells = $(row).children("td");
     const number = cells.eq(0).text().trim(), name = cells.eq(1).text().trim();
     if (!/^\d+$/.test(number) || !name) throw new Error("Invalid nf3 pitching roster identity");

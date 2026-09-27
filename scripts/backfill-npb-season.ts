@@ -17,7 +17,7 @@ if(!url || url.startsWith("file:") || !process.env.TURSO_AUTH_TOKEN) throw new E
 await mkdir(".data/batch-b",{recursive:true});
 const root=await mkdtemp(".data/batch-b/private-");
 const remote=openDataClient(url,process.env.TURSO_AUTH_TOKEN);
-const db={selects:0,writeStatements:0,affectedRows:0};
+const db={selects:0,writeStatements:0,affectedRows:0,readMs:0,writeMs:0};
 function trace(raw:DataClient):DataClient {
   const count=(statement:Parameters<DataClient["execute"]>[0])=>{
     const sql=typeof statement==="string"?statement:statement.sql;
@@ -25,9 +25,13 @@ function trace(raw:DataClient):DataClient {
   };
   return new Proxy(raw,{get(target,key){
     if(key==="execute")return async(statement:Parameters<DataClient["execute"]>[0])=>{
-      count(statement);const result=await target.execute(statement);db.affectedRows+=result.rowsAffected;return result;};
+      count(statement);const started=performance.now();const result=await target.execute(statement);
+      const sql=typeof statement==="string"?statement:statement.sql;
+      if(/^\s*SELECT\b/i.test(sql))db.readMs+=performance.now()-started;else db.writeMs+=performance.now()-started;
+      db.affectedRows+=result.rowsAffected;return result;};
     if(key==="batch")return async(...args:Parameters<DataClient["batch"]>)=>{
-      args[0].forEach(count);const result=await target.batch(...args);db.affectedRows+=result.reduce((n,r)=>n+r.rowsAffected,0);return result;};
+      args[0].forEach(count);const started=performance.now();const result=await target.batch(...args);
+      db.writeMs+=performance.now()-started;db.affectedRows+=result.reduce((n,r)=>n+r.rowsAffected,0);return result;};
     if(key==="transaction")return async(...args:Parameters<DataClient["transaction"]>)=>
       trace(await target.transaction(...args) as unknown as DataClient);
     const value=Reflect.get(target,key);return typeof value==="function"?value.bind(target):value;
@@ -39,7 +43,7 @@ const countsSql=`SELECT (SELECT count(*) FROM npb_games) games,
  (SELECT count(*) FROM npb_day_runs) days,(SELECT count(*) FROM player_game_batting WHERE pa IS NULL) paUnknown`;
 const window=resolvePlayerPeriod({playerId:"audit",period:"season",asOfDate:to},findNpbRegularSeason(to)!);
 const factFingerprint=async()=>{
-  const rows=await Promise.all(["player_game_batting","player_game_pitching","source_entity_mappings"].map(table=>
+  const rows=await Promise.all(["npb_games","player_game_batting","player_game_pitching","source_entity_mappings"].map(table=>
     remote.execute(`SELECT * FROM ${table} ORDER BY rowid`)));
   return createHash("sha256").update(JSON.stringify(rows.map(r=>r.rows))).digest("hex");
 };
@@ -63,7 +67,7 @@ try {
       if(mode==="ingest") {
         const first=(await remote.execute(countsSql)).rows[0];
         const values=await factFingerprint();
-        const second=await runHistoricalBackfill(target,{from,to,progress});
+        const second=await runHistoricalBackfill(trace(target),{from,to,progress});
         const next=(await remote.execute(countsSql)).rows[0]!;
         const countsUnchanged=["games","batting","pitching","mappings"].every(k=>first?.[k]===next[k]);
         const valuesUnchanged=values===await factFingerprint();

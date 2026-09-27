@@ -3,7 +3,7 @@ import { nf3ProfileParameter, parseNf3PitchingRoster, type Nf3Participant } from
 
 // nf3's published 全表示/全投球成績 routes, cached for this backfill only.
 // Daily's rolling two-week discovery remains independent.
-export function createHistoricalPitcherDiscovery(request: (url: string) => Promise<string>) {
+export function createHistoricalPitcherDiscovery(request: (url: string) => Promise<string>, onParse?: (ms:number)=>void) {
   const teams = new Map<string, Promise<{ participant:Nf3Participant; dates:Set<string> }[]>>();
   return async (game: NpbGame, teamId: string): Promise<Nf3Participant[]> => {
     const team = npbTeams.find(t=>t.id===teamId);
@@ -11,12 +11,16 @@ export function createHistoricalPitcherDiscovery(request: (url: string) => Promi
     if (!teams.has(teamId)) teams.set(teamId,(async()=>{
       const leg=team.group==="Central"?0:1;
       const rosterUrl=`https://nf3.sakura.ne.jp/php/stat_disp/stat_disp.php?y=0&leg=${leg}&tm=${team.code}&fp=1&dn=1&dk=0`;
-      const roster=parseNf3PitchingRoster(await request(rosterUrl),team.code);
+      const rosterHtml=await request(rosterUrl),rosterStart=performance.now();
+      const roster=parseNf3PitchingRoster(rosterHtml,team.code);
+      onParse?.(performance.now()-rosterStart);
       const result: {participant:Nf3Participant;dates:Set<string>}[]=[];
       for (const participant of roster) {
         const number=nf3ProfileParameter(participant.profileUrl,team.code,participant.number);
         const url=`https://nf3.sakura.ne.jp/php/stat_disp/stat_disp.php?y=0&leg=${leg}&pcnum=${number}&tm=${team.code}&mon=0&vst=all`;
-        const rows=parseNf3PitchingLogs(await request(url),2026,team.code,"discovery",url,new Date().toISOString());
+        const html=await request(url),start=performance.now();
+        const rows=parseNf3PitchingLogs(html,2026,team.code,"discovery",url,new Date().toISOString());
+        onParse?.(performance.now()-start);
         // Identity key includes opponent/time, never totals, decisions or pitch count.
         result.push({participant,dates:new Set(rows.map(r=>`${r.date}|${r.opponentTeamId}|${r.scheduledTime ?? ""}`))});
       }
@@ -39,5 +43,5 @@ export function historicalReasonCodes(issues: readonly string[]): string[] {
     /lineup|roster/i.test(issue)?"participants_unknown":
     /Network failure|HTTP \d|Timeout/i.test(issue)?"source_unavailable":
     /schedule|games page|non-final/i.test(issue)?"schedule_enumeration_failure":
-    /schema|column|Invalid|Unknown nf3|Missing\/ambiguous/i.test(issue)?"source_response_invalid":"other"))];
+    /schema|column|Invalid|Unknown nf3|Unknown PA|Unsupported PA|Missing\/ambiguous/i.test(issue)?"source_response_invalid":"other"))];
 }
