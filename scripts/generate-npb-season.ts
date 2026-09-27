@@ -38,5 +38,11 @@ try {
     bytes:Buffer.byteLength(json),internalCountingCandidates:Object.fromEntries(Object.entries(rankings.counting.batting).map(([k,v])=>[k,v.length])),
     rankingReadiness:rankings.readiness,qualifierCounts:Object.fromEntries(Object.entries(rankings.qualifications).map(([role,players])=>
       [role,Object.fromEntries(["qualified","unqualified","unknown"].map(status=>[status,players.filter(p=>p.status===status).length]))])),
+    qualifierReasons:Object.fromEntries(Object.entries(rankings.qualifications).map(([role,players])=>
+      [role,Object.fromEntries([...new Set(players.map(p=>p.reason ?? "none"))].map(reason=>
+        [reason,players.filter(p=>(p.reason ?? "none")===reason).length]))])),
+    countingMetricReadiness:rankings.countingReadiness,rateMetricReadiness:rankings.rates.metricReadiness,
+    rateReadinessReason:rankings.rates.reason,
+    qualifiedRateCounts:Object.fromEntries(Object.entries(rankings.rates.qualified).map(([key,players])=>[key,players.length])),
     sample:payload.players.filter(p=>["中島大輔","上原健太","坂本誠志郎","佐藤輝明","早川隆久"].includes(p.displayName))}));
 } finally {source.close();}
