@@ -33,7 +33,7 @@ describe("season read model",()=>{
     expect(payload.players[0]?.batting?.metrics.PA?.value).toBe(3);
     expect(payload.players[0]?.pitching?.metrics.outsRecorded?.value).toBe(2);
     expect(payload.coverage.status).toBe("unknown");
-    expect(payload.readiness.rateQualifier).toBe("pending");
+    expect(payload.readiness.rateQualifier).toBe("verified");
     expect(payload.rankings).toEqual({batting:[],pitching:[]});
     expect(JSON.stringify(payload)).not.toMatch(/WHIP|sourceRecordId|sourceUrl|private|token/);
     expect(buildNpbSeasonPayload(result,directory,at)).toEqual(payload);
@@ -44,6 +44,21 @@ describe("season read model",()=>{
     expect(payload.players[0]?.batting?.metrics.OPS?.value).toBeNull();
     expect(seasonRankingReadModel(result).rates.candidates.OPS).toEqual([]);
     expect(seasonRankingReadModel(result).records.pitching.HLD?.[0]?.value).toBe(1);
+  });
+  it("filters rates by verified qualifiers and keeps ties deterministically ordered",async()=>{
+    const result=await batch();
+    result.coverage={...result.coverage,status:"complete"};
+    const rankDirectory={players:[{playerId:"dual",teamId:"t",displayName:"選手"}]} as NpbPlayerDirectory;
+    const context={teamGames:new Map([["t",1]]),playerTeams:new Map([["batting:dual",["t"]],["pitching:dual",["t"]]])};
+    const rankings=seasonRankingReadModel(result,rankDirectory,context);
+    expect(rankings.qualifications.batters![0]?.status).toBe("qualified");
+    expect(rankings.qualifications.pitchers![0]?.status).toBe("unqualified");
+    expect(rankings.rates.qualified.OPS).toHaveLength(1);
+    expect(rankings.rates.qualified.ERA).toEqual([]);
+    const second={...result.batters[0]!,playerId:"aaa"};
+    result.batters.push(second);
+    expect(seasonRankingReadModel(result).counting.batting.HR?.map(p=>p.playerId)).toEqual(["aaa","dual"]);
+    expect(seasonRankingReadModel(result).qualifications.batters!.every(p=>p.status==="unknown")).toBe(true);
   });
   it("rejects duplicate players, inconsistent dates and unknown schema fields",async()=>{
     const payload=buildNpbSeasonPayload(await batch(),directory,at);
@@ -64,7 +79,7 @@ describe("season read model",()=>{
     expect(payload.coverage.status).toBe("complete");expect(payload.readiness.counting).toBe("ready");
     expect(payload.readiness.status).toBe("not_ready");expect(payload.rankings.batting).toEqual([]);
     expect(payload.readiness.reasons).not.toContain("season_coverage_not_complete");
-    expect(payload.readiness.reasons).toContain("official_qualifier_unverified");
+    expect(payload.readiness.reasons).not.toContain("official_qualifier_unverified");
   });
 });
 describe("season UI",()=>{

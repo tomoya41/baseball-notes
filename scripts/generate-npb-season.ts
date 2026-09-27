@@ -6,6 +6,7 @@ import { NpbPeriodCoverageRepository } from "../src/data/npb-period-coverage-rep
 import { NpbPlayerDirectoryRepository } from "../src/data/npb-player-directory";
 import { PlayerPeriodBatchService } from "../src/application/player-period-batch";
 import { buildNpbSeasonPayload, npbSeasonPayloadSchema, seasonRankingReadModel } from "../src/application/npb-season-payload";
+import { readSeasonQualifierContext } from "../src/data/npb-season-qualifier";
 const url=process.env.TURSO_DATABASE_URL;
 if(!url || url.startsWith("file:") || !process.env.TURSO_AUTH_TOKEN) throw new Error("Read-only remote connection required");
 const source=openDataClient(url,process.env.TURSO_AUTH_TOKEN);
@@ -31,9 +32,11 @@ try {
   const path=`${root}/data/npb/season/2026/latest.json`;
   await mkdir(dirname(path),{recursive:true});await writeFile(`${path}.tmp`,json);
   npbSeasonPayloadSchema.parse(JSON.parse(await readFile(`${path}.tmp`,"utf8")));await rename(`${path}.tmp`,path);
-  const rankings=seasonRankingReadModel(batch);
+  const rankings=seasonRankingReadModel(batch,directory,await readSeasonQualifierContext(client,batch.window.from,batch.window.to));
   console.log(JSON.stringify({schemaVersion:1,effectiveDate:date,readiness:payload.readiness,coverage:payload.coverage,
     playerCount:payload.players.length,summary:batch.summary,queries,timings:{...batch.timings,serializationMs,totalMs:performance.now()-start},
     bytes:Buffer.byteLength(json),internalCountingCandidates:Object.fromEntries(Object.entries(rankings.counting.batting).map(([k,v])=>[k,v.length])),
+    rankingReadiness:rankings.readiness,qualifierCounts:Object.fromEntries(Object.entries(rankings.qualifications).map(([role,players])=>
+      [role,Object.fromEntries(["qualified","unqualified","unknown"].map(status=>[status,players.filter(p=>p.status===status).length]))])),
     sample:payload.players.filter(p=>["中島大輔","上原健太","坂本誠志郎","佐藤輝明","早川隆久"].includes(p.displayName))}));
 } finally {source.close();}

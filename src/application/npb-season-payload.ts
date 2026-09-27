@@ -2,6 +2,8 @@ import { z } from "zod";
 import type { PlayerPeriodBatchResult } from "./player-period-batch";
 import type { AggregateMetric } from "../domain/player-period";
 import type { NpbPlayerDirectory } from "../domain/npb-player-directory";
+import { qualifyNpbSeason } from "../domain/npb-ranking-qualifier";
+import type { SeasonQualifierContext } from "../data/npb-season-qualifier";
 
 export const seasonBattingKeys=["G","PA","AB","R","H","2B","3B","HR","RBI","BB","HBP","SH","SF","SO","SB","CS","AVG","OBP","SLG","OPS"] as const;
 export const seasonPitchingKeys=["G","GS","outsRecorded","BF","H","HR","SO","R","ER","pitchCount","W","L","HLD","SV","ERA","K9"] as const;
@@ -38,7 +40,17 @@ export const npbSeasonPayloadSchema=z.strictObject({schemaVersion:z.literal(1),l
 export type NpbSeasonPayload=z.infer<typeof npbSeasonPayloadSchema>;
 
 // Internal candidates are never a public ranking. Official qualifiers are intentionally unresolved.
-export function seasonRankingReadModel(batch:PlayerPeriodBatchResult) {
+export function seasonRankingReadModel(batch:PlayerPeriodBatchResult,directory?:NpbPlayerDirectory,context?:SeasonQualifierContext) {
+  const metadata=new Map(directory?.players.map(p=>[p.playerId,p]) ?? []);
+  const qualifications=Object.fromEntries((["batters","pitchers"] as const).map(role=>[role,
+    batch[role].map(p=>{
+      const teamId=metadata.get(p.playerId)?.teamId ?? null;
+      const key=role==="batters"?"batting":"pitching";
+      return {playerId:p.playerId,...qualifyNpbSeason({role:key,coverageComplete:batch.coverage.status==="complete",
+        teamGames:teamId?context?.teamGames.get(teamId) ?? null:null,
+        playerTeamIds:context?.playerTeams.get(`${key}:${p.playerId}`) ?? [],displayTeamId:teamId,
+        sample:(p.metrics as Record<string,AggregateMetric>)[role==="batters"?"PA":"outsRecorded"]!})};
+    })]));
   const rank=(role:"batters"|"pitchers",key:string,ascending=false)=>(batch[role] as readonly {playerId:string;metrics:Record<string,AggregateMetric>}[])
     .filter(p=>p.metrics[key]?.status==="complete" && p.metrics[key]?.value!==null)
     .map(p=>({playerId:p.playerId,value:p.metrics[key]!.value!,sample:p.metrics[role==="batters"?"PA":"outsRecorded"]!}))
@@ -46,8 +58,21 @@ export function seasonRankingReadModel(batch:PlayerPeriodBatchResult) {
     .map((p,index)=>({...p,rank:index+1}));
   const batting=Object.fromEntries(["HR","RBI","H","SB"].map(key=>[key,rank("batters",key)]));
   const pitching=Object.fromEntries(["SO","W","HLD","SV"].map(key=>[key,rank("pitchers",key)]));
-  return {counting:{batting,pitching},rates:{status:"not_ready" as const,reason:"official_qualifier_unverified",
-    candidates:{AVG:rank("batters","AVG"),OPS:rank("batters","OPS"),ERA:rank("pitchers","ERA",true),K9:rank("pitchers","K9")}},
+  const metricReadiness=(role:"batters"|"pitchers",keys:string[])=>Object.fromEntries(keys.map(key=>[key,
+    batch.coverage.status==="complete" && batch[role].every(p=>(p.metrics as Record<string,AggregateMetric>)[key]?.status==="complete")?"ready":"not_ready"]));
+  const countingReadiness={batting:metricReadiness("batters",Object.keys(batting)),pitching:metricReadiness("pitchers",Object.keys(pitching))};
+  const countingReady=Object.values(countingReadiness).flatMap(Object.values).every(s=>s==="ready");
+  const qualified=(role:"batters"|"pitchers",key:string,ascending=false)=>{
+    const ids=new Set(qualifications[role]!.filter(p=>p.status==="qualified").map(p=>p.playerId));
+    return rank(role,key,ascending).filter(p=>ids.has(p.playerId)).map((p,index)=>({...p,rank:index+1}));
+  };
+  return {counting:{batting,pitching},qualifications,countingReadiness,
+    readiness:{counting:countingReady?"ready":"not_ready",rule:"verified",
+      rates:batch.coverage.status==="complete" && !Object.values(qualifications).flat().some(p=>p.status==="unknown")?"ready":"not_ready"},
+    rates:{status:batch.coverage.status==="complete" && !Object.values(qualifications).flat().some(p=>p.status==="unknown")?"ready":"not_ready",
+      reason:batch.coverage.status!=="complete"?"season_coverage_not_complete":"qualifier_computation_pending",
+      qualified:{AVG:qualified("batters","AVG"),OPS:qualified("batters","OPS"),ERA:qualified("pitchers","ERA",true),K9:qualified("pitchers","K9")},
+      candidates:{AVG:rank("batters","AVG"),OPS:rank("batters","OPS"),ERA:rank("pitchers","ERA",true),K9:rank("pitchers","K9")}},
     // Simple season records only; the same counting read model, no all-time/career claims.
     records:{batting,pitching}};
 }
@@ -65,9 +90,9 @@ export function buildNpbSeasonPayload(batch:PlayerPeriodBatchResult,directory:Np
       batting:project(batters.get(playerId),seasonBattingKeys),pitching:project(pitchers.get(playerId),seasonPitchingKeys)};
   });
   const reasons=[...(batch.coverage.status!=="complete"?["season_coverage_not_complete"]:[]),
-    "official_qualifier_unverified","public_ranking_not_enabled"];
+    ...(batch.coverage.status!=="complete"?["qualifier_computation_requires_complete_coverage"]:[]),"public_ranking_not_enabled"];
   return npbSeasonPayloadSchema.parse({schemaVersion:1,league:"NPB",season:2026,effectiveDate:batch.window.to,generatedAt,
     period:{from:batch.window.from,to:batch.window.to},coverage:{status:batch.coverage.status,summary:batch.coverage.summary},
-    readiness:{status:"not_ready",reasons,counting:batch.coverage.status==="complete"?"ready":"not_ready",rateQualifier:"pending"},
+    readiness:{status:"not_ready",reasons,counting:batch.coverage.status==="complete"?"ready":"not_ready",rateQualifier:"verified"},
     players,rankings:{batting:[],pitching:[]}});
 }
