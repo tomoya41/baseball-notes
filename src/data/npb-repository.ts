@@ -249,7 +249,8 @@ export class NpbRepository {
     return Object.fromEntries(result.rows.map((row) => [String(row.stage), String(row.status)]));
   }
 
-  async saveGames(games: readonly NpbGame[], targetDate: string, dryRun: boolean, complete = true): Promise<{ inserted: number; updated: number; skipped: number }> {
+  async saveGames(games: readonly NpbGame[], targetDate: string, dryRun: boolean, complete = true,
+    options: {preserveEnumeration?:boolean} = {}): Promise<{ inserted: number; updated: number; skipped: number }> {
     const ids = games.map((game) => game.id);
     if (new Set(ids).size !== ids.length) throw new Error("Duplicate game identity");
     const statements: InStatement[] = [];
@@ -270,8 +271,9 @@ export class NpbRepository {
         ON CONFLICT(source_key,entity_kind,source_entity_id) DO UPDATE SET last_seen=excluded.last_seen`,
         args: [game.sourceRecordId,game.id,game.sourceUrl,game.collectedAt,game.collectedAt] });
     }
-    statements.push(this.stageStatement(targetDate,"games",complete ? "complete" : "partial",games.length,complete ? null : "Not all team schedule pages validated"));
-    if (!dryRun) await this.client.batch(statements,"write");
+    if(!options.preserveEnumeration)
+      statements.push(this.stageStatement(targetDate,"games",complete ? "complete" : "partial",games.length,complete ? null : "Not all team schedule pages validated"));
+    if (!dryRun && statements.length) await this.client.batch(statements,"write");
     return { inserted, updated, skipped };
   }
 
@@ -293,7 +295,8 @@ export class NpbRepository {
   async saveShortenedFinalEvidence(input:ShortenedFinalEvidence):Promise<void> {
     const evidence=shortenedFinalEvidenceSchema.parse(input);
     const row=(await this.client.execute({sql:"SELECT * FROM npb_games WHERE game_id=?",args:[evidence.gameId]})).rows[0];
-    if(!row||row.status!=="final"||row.home_team_id!==evidence.homeTeamId||row.away_team_id!==evidence.awayTeamId||
+    if(!row||row.status!=="final"||row.home_score===null||row.away_score===null||
+      row.home_team_id!==evidence.homeTeamId||row.away_team_id!==evidence.awayTeamId||
       Number(row.home_score)!==evidence.homeScore||Number(row.away_score)!==evidence.awayScore)
       throw Error("Shortened evidence does not match canonical Game");
     await this.client.execute({sql:`INSERT INTO permanent_events VALUES (?,?,?,?,?,?,?,?)

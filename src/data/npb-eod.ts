@@ -89,7 +89,7 @@ export async function runEodWatcher(client:DataClient,request:(u:string)=>Promis
         if(g.status==="final"&&pair[0]!.status!=="final")throw Error("Final status regression");
         return pair[0]!;
       });
-      await repository.saveGames(checked,date,false,false);
+      await repository.saveGames(checked,date,false,false,{preserveEnumeration:true});
       return checked;
     },
     collect:async game=>{

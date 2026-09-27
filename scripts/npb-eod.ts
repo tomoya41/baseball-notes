@@ -22,6 +22,20 @@ const client=new Proxy(source,{get(target,key){
     for(const item of s){const sql=typeof item==="string"?item:item.sql;if(/^\s*SELECT\b/i.test(sql))dbReads++;else dbWrites++;}
     return target.batch(s,mode);
   };
+  if(key==="transaction")return async(mode:Parameters<DataClient["transaction"]>[0])=>{
+    const tx=await target.transaction(mode);
+    return new Proxy(tx,{get(t,k){
+      if(k==="execute")return async(s:Parameters<typeof tx.execute>[0])=>{
+        const sql=typeof s==="string"?s:s.sql;if(/^\s*SELECT\b/i.test(sql))dbReads++;else dbWrites++;
+        return t.execute(s);
+      };
+      if(k==="batch")return async(s:Parameters<typeof tx.batch>[0])=>{
+        for(const item of s){const sql=typeof item==="string"?item:item.sql;if(/^\s*SELECT\b/i.test(sql))dbReads++;else dbWrites++;}
+        return t.batch(s);
+      };
+      const value=Reflect.get(t,k);return typeof value==="function"?value.bind(t):value;
+    }});
+  };
   const value=Reflect.get(target,key);return typeof value==="function"?value.bind(target):value;
 }}) as DataClient;
 const started=performance.now();let sourceCheckStartedAt:string|null=null;

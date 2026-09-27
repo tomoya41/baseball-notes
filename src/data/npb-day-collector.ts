@@ -31,8 +31,9 @@ export async function runNpbDayFacts(client:DataClient,options:{targetDate:strin
   runGame?:(game:NpbGame,request:(url:string)=>Promise<string>)=>Promise<NpbGameProofResult>;
   requireCompleteGameStage?:boolean;allowCurrentDayFinal?:boolean;reuseCompleteGames?:boolean}):Promise<NpbDayResult> {
   const {targetDate,trigger,dryRun=false}=options;
-  if (!/^2026-\d{2}-\d{2}$/.test(targetDate) || targetDate>previousJstDate())
-    if(!(options.allowCurrentDayFinal && targetDate===jstToday()))throw new Error("Target must be a completed 2026 JST date");
+  if (!/^2026-\d{2}-\d{2}$/.test(targetDate) ||
+    (targetDate>previousJstDate() && !(options.allowCurrentDayFinal && targetDate===jstToday())))
+    throw new Error("Target must be a completed 2026 JST date");
   const repository=new NpbRepository(client);
   if (options.requireCompleteGameStage) {
     const stage=await client.execute({sql:"SELECT status FROM npb_ingestion_stages WHERE target_date=? AND stage='games'",

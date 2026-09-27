@@ -8,6 +8,11 @@ import { shortenedFinalEvidenceSchema } from "../src/domain/npb-game-completion"
 import type { NpbGame } from "../src/data/npb-nf3";
 import { parseNf3TeamGames } from "../src/data/npb-nf3";
 import { readFileSync } from "node:fs";
+import { mkdtemp } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { openDataClient, migrateData } from "../src/data/database";
+import { NpbRepository } from "../src/data/npb-repository";
 
 const game=(id="day",time="13:00",status:NpbGame["status"]="scheduled"):NpbGame=>({
   id,date:"2026-09-27",season:2026,scheduledTime:time,homeTeamId:"home",awayTeamId:"away",
@@ -143,4 +148,35 @@ test("Watcher schedule parser requires an explicit result marker, not score alon
   const lacking=html.replaceAll("○","").replaceAll("●","").replaceAll("△","");
   expect(parseNf3TeamGames(lacking,"T",2026,"https://nf3.sakura.ne.jp/","2026-09-27T00:00:00Z",true)
     .filter(g=>g.homeScore!==null).every(g=>g.status==="unknown")).toBe(true);
+});
+test("independent evidence survives canonical repository read and rejects mismatched header",async()=>{
+  const dir=await mkdtemp(join(tmpdir(),"eod-evidence-")),client=openDataClient(`file:${join(dir,"data.db")}`);
+  try {
+    await migrateData(client);const repo=new NpbRepository(client),g=game("short","13:00","final");
+    await repo.saveGames([g],g.date,false,true);
+    const spy=vi.spyOn(client,"batch");
+    await repo.saveGames([g],g.date,false,false,{preserveEnumeration:true});
+    expect(spy).not.toHaveBeenCalled();
+    expect((await repo.findStageStatuses(g.date)).games).toBe("complete");spy.mockRestore();
+    const e=shortenedFinalEvidenceSchema.parse({gameId:g.id,provider:"nf3",observedStatus:"officially_shortened_final",
+      observedFinalInning:6,homeTeamId:g.homeTeamId,awayTeamId:g.awayTeamId,homeScore:2,awayScore:1,
+      homePitchingOuts:18,awayPitchingOuts:18,sourceUrl:g.sourceUrl,verifiedAt:g.collectedAt});
+    await repo.saveShortenedFinalEvidence(e);await repo.saveShortenedFinalEvidence(e);
+    expect((await repo.findGamesByDate(g.date))[0]?.completionEvidence).toEqual(e);
+    expect(Number((await client.execute("SELECT COUNT(*) AS n FROM permanent_events")).rows[0]?.n)).toBe(1);
+    await expect(repo.saveShortenedFinalEvidence({...e,homeScore:99})).rejects.toThrow("canonical Game");
+    expect(Number((await client.execute("SELECT COUNT(*) AS n FROM player_game_batting")).rows[0]?.n)).toBe(0);
+  } finally {client.close();}
+});
+test("transient failure retries once, never unbounded",async()=>{
+  const fetcher=vi.fn().mockResolvedValueOnce(new Response("error",{status:503})).mockResolvedValueOnce(new Response("ok"));
+  vi.stubGlobal("fetch",fetcher);const session=createNf3DryRunSession(0);
+  expect(await session.request("https://nf3.sakura.ne.jp/")).toBe("ok");
+  expect(session.metrics).toMatchObject({httpRequests:2,retries:1});
+});
+test("one Game's collection error preserves other Game but blocks Day publication",async()=>{
+  const games=[game("one"),game("two")],final=games.map(g=>({...g,status:"final" as const,homeScore:2,awayScore:1}));
+  const p=fixture(games,final);p.collect=vi.fn(async g=>{if(g.id==="one")throw Error("identity unresolved");return true;});
+  expect(await watchNpbEod(p,now("16:17"))).toMatchObject({fullCollectionGames:2,failedCollectionGames:1,publishRequired:false});
+  expect(p.collect).toHaveBeenCalledTimes(2);expect(p.finalize).not.toHaveBeenCalled();
 });
