@@ -1,7 +1,7 @@
 import { mkdir, mkdtemp, rename, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
-import { openDataClient } from "../src/data/database";
+import { openDataClient, type DataClient } from "../src/data/database";
 import { exportNpbBackup, restoreNpbBackup, verifyRestoredNpbRepository } from "../src/data/npb-backup";
 import { backfillDates, runHistoricalBackfill } from "../src/data/npb-historical-backfill";
 import { NpbPeriodCoverageRepository } from "../src/data/npb-period-coverage-repository";
@@ -17,6 +17,22 @@ if(!url || url.startsWith("file:") || !process.env.TURSO_AUTH_TOKEN) throw new E
 await mkdir(".data/batch-b",{recursive:true});
 const root=await mkdtemp(".data/batch-b/private-");
 const remote=openDataClient(url,process.env.TURSO_AUTH_TOKEN);
+const db={selects:0,writeStatements:0,affectedRows:0};
+function trace(raw:DataClient):DataClient {
+  const count=(statement:Parameters<DataClient["execute"]>[0])=>{
+    const sql=typeof statement==="string"?statement:statement.sql;
+    if(/^\s*SELECT\b/i.test(sql)) db.selects++; else db.writeStatements++;
+  };
+  return new Proxy(raw,{get(target,key){
+    if(key==="execute")return async(statement:Parameters<DataClient["execute"]>[0])=>{
+      count(statement);const result=await target.execute(statement);db.affectedRows+=result.rowsAffected;return result;};
+    if(key==="batch")return async(...args:Parameters<DataClient["batch"]>)=>{
+      args[0].forEach(count);const result=await target.batch(...args);db.affectedRows+=result.reduce((n,r)=>n+r.rowsAffected,0);return result;};
+    if(key==="transaction")return async(...args:Parameters<DataClient["transaction"]>)=>
+      trace(await target.transaction(...args) as unknown as DataClient);
+    const value=Reflect.get(target,key);return typeof value==="function"?value.bind(target):value;
+  }}) as DataClient;
+}
 const countsSql=`SELECT (SELECT count(*) FROM npb_games) games,
  (SELECT count(*) FROM player_game_batting) batting,(SELECT count(*) FROM player_game_pitching) pitching,
  (SELECT count(*) FROM source_entity_mappings) mappings,(SELECT count(*) FROM npb_game_completeness) completeness,
@@ -43,7 +59,7 @@ try {
         await writeFile(".data/batch-b/checkpoint.tmp",JSON.stringify(day));
         await rename(".data/batch-b/checkpoint.tmp",".data/batch-b/checkpoint.json");
       };
-      result=await runHistoricalBackfill(target,{from,to,dryRun:mode==="dry-run",scratch:mode==="dry-run",progress});
+      result=await runHistoricalBackfill(trace(target),{from,to,dryRun:mode==="dry-run",scratch:mode==="dry-run",progress});
       if(mode==="ingest") {
         const first=(await remote.execute(countsSql)).rows[0];
         const values=await factFingerprint();
@@ -68,7 +84,7 @@ try {
   if(mode!=="ingest" && JSON.stringify(before)!==JSON.stringify(after)) throw new Error("Read-only counts changed");
   const coverage=await new NpbPeriodCoverageRepository(remote).findPeriodCoverage(window);
   const report={mode,from,to,targetDates:dates.length,futureDates:Math.max(0, Math.round((Date.parse("2026-10-07")-Date.parse(to))/86400000)),
-    before,after,beforeCoverage:beforeCoverage.summary,coverage,result,replay,backup};
+    before,after,beforeCoverage:beforeCoverage.summary,coverage,result,replay,backup,db};
   await writeFile(".data/batch-b/report.json",JSON.stringify(report,null,2));
   console.log(JSON.stringify(report));
 } finally {remote.close();}

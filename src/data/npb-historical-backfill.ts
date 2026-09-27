@@ -87,13 +87,15 @@ export async function runHistoricalBackfill(client: DataClient, options: {
       if(reusable && ["complete","no_games"].includes(String(days.rows[0]?.day_status))) {
         reports.push({date,status:"skipped_verified",issues});
       } else {
-        // Preflight historical participant availability before any write. Never infer missing pitchers.
+        // Both schedules have established Game identity/score independently of player detail.
+        // Keep that safe metadata even when historical participant detail remains unavailable.
+        // Dry-run stages schedules only in the explicitly caller-owned scratch DB.
+        await repository.saveGames(games,date,false,true);
+        // Preflight before any Player Fact write. Never infer missing pitchers.
         for(const game of games.filter(g=>g.status==="final")) for(const id of [game.homeTeamId,game.awayTeamId]) {
           const team=npbTeams.find(t=>t.id===id)!;
           parseNf3PitchUsage(await session.request(`https://nf3.sakura.ne.jp/${team.group}/${team.code}/t/pc_all_data_last2w_pn.htm`),date,team.code);
         }
-        // Dry-run stages schedules only in the explicitly caller-owned scratch DB.
-        await repository.saveGames(games,date,false,true);
         const result=await runNpbDayFacts(client,{targetDate:date,trigger:"repair",dryRun:options.dryRun ?? false,
           requireCompleteGameStage:true,request:session.request,runGame:async(game,request)=>{
             const evidence=await repository.findGameCompleteness(game.id);

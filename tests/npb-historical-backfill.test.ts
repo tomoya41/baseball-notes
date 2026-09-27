@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { backfillDates, reconcileHistoricalSchedules, runHistoricalBackfill } from "../src/data/npb-historical-backfill";
 import type { NpbGame } from "../src/data/npb-nf3";
-import type { DataClient } from "../src/data/database";
+import { openDataClient, migrateData, type DataClient } from "../src/data/database";
 import { npbTeams } from "../src/data/npb-nf3";
 
 const now=new Date("2026-09-27T00:00:00Z");
@@ -36,6 +36,25 @@ describe("historical range safety",()=>{
     const result=await runHistoricalBackfill({execute} as unknown as DataClient,{from:"2026-09-21",to:"2026-09-21",request,now});
     expect(result.reports[0]?.status).toBe("skipped_verified");expect(request).toHaveBeenCalledTimes(12);
     expect(execute.mock.calls.every(([s])=>s.sql.startsWith("SELECT"))).toBe(true);
+  });
+  it("keeps independently verified Game metadata but never invents unavailable historical Player Facts",async()=>{
+    const client=openDataClient("file::memory:");await migrateData(client);
+    try {
+      const request=async(url:string)=>{
+        const code=new URL(url).searchParams.get("tm");
+        if(!code) throw new Error("historical participant date unavailable");
+        const index=npbTeams.findIndex(t=>t.code===code),opponent=npbTeams[index%2===0?index+1:index-1]!;
+        const cells=Array.from({length:19},(_,i)=>i===0?"9/20":i===2?opponent.short:i===4?(index%2===0?"H":"V"):
+          i===18?(index%2===0?"1-0":"0-1"):"-");
+        return `<table class="Base"><caption>試合日程・先発</caption><tr class="Index2"><th>スコア</th></tr><tr onmouseover="x">${cells.map(c=>`<td>${c}</td>`).join("")}</tr></table>`;
+      };
+      const result=await runHistoricalBackfill(client,{from:"2026-09-20",to:"2026-09-20",request,now});
+      expect(result.reports[0]?.status).toBe("unknown");
+      expect(Number((await client.execute("SELECT count(*) n FROM npb_games")).rows[0]?.n)).toBe(6);
+      expect(Number((await client.execute("SELECT count(*) n FROM player_game_batting")).rows[0]?.n)).toBe(0);
+      expect(Number((await client.execute("SELECT count(*) n FROM player_game_pitching")).rows[0]?.n)).toBe(0);
+      expect(Number((await client.execute("SELECT count(*) n FROM npb_day_runs")).rows[0]?.n)).toBe(0);
+    } finally {client.close();}
   });
 });
 describe("dual-source schedule reconciliation",()=>{

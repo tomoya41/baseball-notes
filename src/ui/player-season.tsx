@@ -19,7 +19,7 @@ export function PlayerSeasonView({payload,state}:{payload:PlayerRecentResponse|n
         <StatTiles stats={batting} keys={["G","AB","R","H","2B","3B","BB","HBP","SH","SF","SO","SB","CS","OBP","SLG"]} /></details>
     </div>}
     {state==="ready" && pitching && <div className="recent-group"><h3>投球</h3>
-      <StatTiles stats={pitching} keys={["ERA","K9","outsRecorded","SO","G","GS"]} />
+      <StatTiles stats={pitching} keys={["ERA","K9","outsRecorded","SO","G","GS"]} labelOverrides={{G:"登板"}} />
       <CoverageNote stats={pitching} period="season" />
       <details className="advanced-disclosure"><summary>投球の詳細成績</summary>
         <StatTiles stats={pitching} keys={["BF","H","HR","R","ER","pitchCount","W","L","HLD","SV"]} /></details>
