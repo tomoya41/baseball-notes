@@ -13,6 +13,7 @@ const action=option("--action")??"watch",date=option("--date")??jstToday();
 const url=process.env.TURSO_DATABASE_URL,token=process.env.TURSO_AUTH_TOKEN;
 if(!url||url.startsWith("file:")||!token)throw Error("Remote connection required");
 const source=openDataClient(url,token);let dbWrites=0,dbReads=0;
+const redact=(text:string)=>text.replaceAll(url,"[database]").replaceAll(token,"[credential]");
 const client=new Proxy(source,{get(target,key){
   if(key==="execute")return async(s:Parameters<DataClient["execute"]>[0])=>{
     const sql=typeof s==="string"?s:s.sql;if(/^\s*SELECT\b/i.test(sql))dbReads++;else dbWrites++;
@@ -50,7 +51,7 @@ async function saveReport(error?:unknown) {
     observation:process.env.NPB_RUN_CREATED_AT&&process.env.NPB_RUNNER_STARTED_AT&&process.env.NPB_CRON?
       scheduleObservation({workflowName:process.env.GITHUB_WORKFLOW??"NPB EOD",cron:process.env.NPB_CRON,
         runCreatedAt:process.env.NPB_RUN_CREATED_AT,runnerStartedAt:process.env.NPB_RUNNER_STARTED_AT,targetDate:date}):null};
-  await writeFile(`.data/eod/${action}.json`,JSON.stringify(report,null,2));console.log(JSON.stringify(report));
+  await writeFile(`.data/eod/${action}.json`,redact(JSON.stringify(report,null,2)));console.log(redact(JSON.stringify(report)));
 }
 try {
   if(action==="safety-check") {
@@ -90,5 +91,7 @@ try {
     result={publishPerformed:true,date};
   } else throw Error("Unknown EOD action");
   await saveReport();
-} catch(error) {await saveReport(error);throw error;
+} catch(error) {await saveReport(error);throw new Error("NPB EOD operation failed",{
+  // eslint-disable-next-line preserve-caught-error -- An original cause may contain the connection URL/token; retain only its redacted message.
+  cause:redact(error instanceof Error?error.message:String(error))});
 } finally {source.close();}

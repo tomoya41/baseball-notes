@@ -1,7 +1,7 @@
 import { afterEach, expect, test, vi } from "vitest";
 import { monitorAfter, watchNpbEod, type EodWatcherPort } from "../src/application/npb-eod-watcher";
 import { scheduleObservation } from "../src/application/npb-schedule-observability";
-import { scheduleRange } from "../src/data/npb-eod";
+import { scheduleRange, eodEvent, runEodWatcher } from "../src/data/npb-eod";
 import { createNf3DryRunSession } from "../src/data/npb-day-dry-run";
 import { hasPlausibleFinalOuts } from "../src/data/npb-game-collector";
 import { shortenedFinalEvidenceSchema } from "../src/domain/npb-game-completion";
@@ -179,4 +179,16 @@ test("one Game's collection error preserves other Game but blocks Day publicatio
   const p=fixture(games,final);p.collect=vi.fn(async g=>{if(g.id==="one")throw Error("identity unresolved");return true;});
   expect(await watchNpbEod(p,now("16:17"))).toMatchObject({fullCollectionGames:2,failedCollectionGames:1,publishRequired:false});
   expect(p.collect).toHaveBeenCalledTimes(2);expect(p.finalize).not.toHaveBeenCalled();
+});
+test("future weekly no-games evidence cannot replace today's confirmation",async()=>{
+  const client=openDataClient("file::memory:");
+  try {
+    await migrateData(client);const request=vi.fn(async()=>{throw Error("Source must not be accessed");});
+    await eodEvent(client,"schedule-sync","2026-09-27",{confirmed:true,gameIds:[],verifiedAt:"2026-09-26T00:00:00Z"});
+    expect((await runEodWatcher(client,request,"2026-09-27",now("16:17"))).reason).toBe("schedule_not_confirmed");
+    await eodEvent(client,"schedule-sync","2026-09-27",{confirmed:true,gameIds:[],verifiedAt:"2026-09-27T00:00:00Z"});
+    const writes=vi.spyOn(client,"batch");
+    expect((await runEodWatcher(client,request,"2026-09-27",now("16:17"))).reason).toBe("confirmed_no_games");
+    expect(request).not.toHaveBeenCalled();expect(writes).not.toHaveBeenCalled();
+  } finally {client.close();}
 });

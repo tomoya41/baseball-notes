@@ -14,7 +14,7 @@ test("all EOD/safety workflows are valid YAML and retain safety schedules",()=>{
 test("heavy EOD steps and deploy require publish output; manual fixtures cannot publish",()=>{
   const w=read("npb-eod-watcher");
   for(const s of w.jobs.watch!.steps.filter(s=>s.run?.includes("npm run build")||s.run?.includes("backup:npb:drill")))
-    expect(s.if).toBe("steps.watch.outputs.publish == 'true'");
+    expect(["steps.watch.outputs.publish == 'true'","inputs.fixture_only && inputs.verify_backup"]).toContain(s.if);
   expect(w.jobs.deploy?.if).toBe("needs.watch.outputs.publish == 'true'");
   expect(w.jobs.watch?.steps.find(s=>s.run?.includes("--action=watch"))?.if).toBe("!inputs.fixture_only");
   expect(read("daily-collector").jobs.deploy?.if).toContain("needs.collect.outputs.skip != 'true'");

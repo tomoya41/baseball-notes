@@ -9,6 +9,10 @@ on:
         type: boolean
         default: true
         description: "Run deterministic validation without production/source access"
+      verify_backup:
+        type: boolean
+        default: false
+        description: "With fixture_only, also read remote DB and verify encrypted portable backup/restore"
 permissions:
   contents: read
   actions: read
@@ -46,6 +50,14 @@ jobs:
       - name: Manual fixture validation is not Scheduled proof
         if: inputs.fixture_only
         run: npx vitest run tests/npb-eod.test.ts tests/npb-game-proof.test.ts tests/npb-day-collector.test.ts
+      - name: Manual current-state portable backup and scratch restore
+        if: inputs.fixture_only && inputs.verify_backup
+        run: |
+          mkdir -p .data/eod
+          npm run backup:npb:drill -- --require-remote > .data/eod/backup.json
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
       - name: Lightweight status check and incremental collection
         id: watch
         if: '!inputs.fixture_only'
@@ -69,7 +81,7 @@ jobs:
           npm run publish:npb:remote -- --date "$TARGET_DATE" --payload-root .data/publish
           npx tsx scripts/generate-npb-player-directory.ts --require-remote --payload-root=.data/publish
       - name: Encrypt portable export
-        if: steps.watch.outputs.publish == 'true'
+        if: steps.watch.outputs.publish == 'true' || (inputs.fixture_only && inputs.verify_backup)
         env:
           NPB_BACKUP_ENCRYPTION_KEY: ${{ secrets.NPB_BACKUP_ENCRYPTION_KEY }}
         run: |
@@ -79,7 +91,7 @@ jobs:
           npx tsx scripts/crypt-npb-backup.ts encrypt .data/eod-backup.tar.gz .data/eod-backup.tar.gz.enc
           rm .data/eod-backup.tar.gz
       - uses: actions/upload-artifact@v4
-        if: steps.watch.outputs.publish == 'true'
+        if: steps.watch.outputs.publish == 'true' || (inputs.fixture_only && inputs.verify_backup)
         with:
           name: npb-eod-encrypted-backup
           path: .data/eod-backup.tar.gz.enc

@@ -71,9 +71,17 @@ export async function runEodWatcher(client:DataClient,request:(u:string)=>Promis
   if(date>jstToday(now)||!/^2026-\d{2}-\d{2}$/.test(date))throw Error("Invalid EOD date");
   const repository=new NpbRepository(client);
   let dayResult:Awaited<ReturnType<typeof runNpbDayFacts>>|undefined;
+  let cachedGames:Promise<NpbGame[]>|undefined;
+  const loadGames=()=>cachedGames??=repository.findGamesByDate(date);
   const report=await watchNpbEod({
-    games:()=>repository.findGamesByDate(date),
-    scheduleConfirmed:async()=>Boolean((await readEodEvent(client,"schedule-sync",date))?.confirmed),
+    games:loadGames,
+    scheduleConfirmed:async()=>{
+      const record=await readEodEvent(client,"schedule-sync",date);
+      if(record?.confirmed!==true||typeof record.verifiedAt!=="string"||
+        jstToday(new Date(record.verifiedAt))!==date||!Array.isArray(record.gameIds))return false;
+      const games=await loadGames();
+      return record.gameIds.length===games.length&&games.every(g=>record.gameIds instanceof Array&&record.gameIds.includes(g.id));
+    },
     published:async()=>Boolean(await readEodEvent(client,"eod-published",date)),
     complete:g=>currentGameComplete(repository,g),
     checkStatus:async due=>{
@@ -101,7 +109,15 @@ export async function runEodWatcher(client:DataClient,request:(u:string)=>Promis
       // Reconcile today's whole schedule once before finalizing: catch added fixtures.
       const sourceGames=reconcileHistoricalSchedules(await discoverNpbSchedules(request)).filter(g=>g.date===date);
       if(sourceGames.length!==games.length||games.some(g=>!sourceGames.some(n=>n.id===g.id&&n.status===g.status&&
-        n.homeScore===g.homeScore&&n.awayScore===g.awayScore)))throw Error("Day schedule changed during finalization");
+        n.homeScore===g.homeScore&&n.awayScore===g.awayScore))) {
+        if(games.some(g=>!sourceGames.some(n=>n.id===g.id)||
+          (g.status==="final"&&sourceGames.some(n=>n.id===g.id&&n.status!=="final"))))
+          throw Error("Removed Game or final regression needs explicit evidence");
+        await repository.saveGames(sourceGames,date,false,true);
+        await eodEvent(client,"schedule-sync",date,{confirmed:true,gameIds:sourceGames.map(g=>g.id),
+          timezone:"Asia/Tokyo",provider:"nf3",verifiedAt:new Date().toISOString()});
+        return false; // Changed/new fixture gets its own monitoring/validation on the next tick.
+      }
       await repository.saveGames(sourceGames,date,false,true);
       dayResult=await runNpbDayFacts(client,{targetDate:date,trigger:"manual",allowCurrentDayFinal:true,
         reuseCompleteGames:true,request,requireCompleteGameStage:true});
@@ -115,7 +131,10 @@ export async function runEodWatcher(client:DataClient,request:(u:string)=>Promis
 // Undated nf3 standings are not stamped as today just because a clock says so.
 // Verify every W/L/T against the independently paired canonical source schedule.
 export async function captureEodStandings(client:DataClient,request:(u:string)=>Promise<string>,date:string) {
-  const games=reconcileHistoricalSchedules(await discoverNpbSchedules(request)).filter(g=>g.date<=date&&g.status==="final");
+  const season=findNpbRegularSeason(date);
+  if(!season||date<season.startDate||date>season.endDate)throw Error("EOD standings outside verified regular-season metadata");
+  const games=reconcileHistoricalSchedules(await discoverNpbSchedules(request))
+    .filter(g=>g.date>=season.startDate&&g.date<=date&&g.status==="final");
   const rows=parseNf3Standings(await request("https://nf3.sakura.ne.jp/"),date,new Date().toISOString());
   for(const row of rows) {
     let wins=0,losses=0,ties=0;

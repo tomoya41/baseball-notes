@@ -11,5 +11,5 @@ export const shortenedFinalEvidenceSchema = z.object({
   homePitchingOuts: z.number().int().nonnegative(), awayPitchingOuts: z.number().int().nonnegative(),
   sourceUrl: z.url().refine(u=>new URL(u).hostname==="nf3.sakura.ne.jp"),
   verifiedAt: z.iso.datetime(),
-});
+}).refine(e=>e.homeTeamId!==e.awayTeamId,{message:"Distinct canonical teams required"});
 export type ShortenedFinalEvidence = z.infer<typeof shortenedFinalEvidenceSchema>;
