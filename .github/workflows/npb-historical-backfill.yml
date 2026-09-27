@@ -49,4 +49,5 @@ jobs:
           path: |
             .data/batch-b/report.json
             .data/batch-b/checkpoint.json
+            .data/batch-b/progress.jsonl
           retention-days: 7

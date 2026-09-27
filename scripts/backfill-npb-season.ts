@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rename, writeFile } from "node:fs/promises";
+import { appendFile, mkdir, mkdtemp, rename, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
 import { openDataClient, type DataClient } from "../src/data/database";
@@ -59,14 +59,22 @@ try {
       await restoreNpbBackup(target,join(root,"baseline"));
     }
     try {
+      let pass=1;
       const progress=async (day:unknown)=>{
         await writeFile(".data/batch-b/checkpoint.tmp",JSON.stringify(day));
         await rename(".data/batch-b/checkpoint.tmp",".data/batch-b/checkpoint.json");
+        await appendFile(".data/batch-b/progress.jsonl",JSON.stringify({pass,day})+"\n");
       };
       result=await runHistoricalBackfill(trace(target),{from,to,dryRun:mode==="dry-run",scratch:mode==="dry-run",progress});
       if(mode==="ingest") {
         const first=(await remote.execute(countsSql)).rows[0];
+        // Keep first-pass evidence even if later replay/backup verification fails.
+        const firstCoverage=await new NpbPeriodCoverageRepository(remote).findPeriodCoverage(window);
+        await writeFile(".data/batch-b/report.json",JSON.stringify({mode,from,to,targetDates:dates.length,
+          before,after:first,beforeCoverage:beforeCoverage.summary,coverage:firstCoverage,result,replay:null,backup:null,
+          db,verification:"pending"},null,2));
         const values=await factFingerprint();
+        pass=2;
         const second=await runHistoricalBackfill(trace(target),{from,to,progress});
         const next=(await remote.execute(countsSql)).rows[0]!;
         const countsUnchanged=["games","batting","pitching","mappings"].every(k=>first?.[k]===next[k]);

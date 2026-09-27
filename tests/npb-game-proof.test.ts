@@ -27,6 +27,24 @@ async function db(): Promise<DataClient> {
 afterEach(() => { for (const client of clients.splice(0)) client.close(); });
 
 describe("2026-09-23 controlled NPB game proof", () => {
+  it("batch reads existing historical mappings while retaining name, ambiguity and verified tuple checks",async()=>{
+    const client=await db(),repository=new NpbRepository(client);
+    const ids=["2026:M:uniform:10","2026:M:uniform:18"];
+    const names=["上田希由翔","石垣元気"];
+    const canonical=[];
+    for(let i=0;i<ids.length;i++)canonical.push(await repository.resolveVerifiedPlayer(ids[i]!,names[i]!,game.sourceUrl,game.homeTeamId,at,false));
+    const spy=vi.spyOn(client,"execute");
+    await repository.primePlayerMappings([...ids,"2026:B:uniform:99"]);
+    expect(spy).toHaveBeenCalledTimes(1);spy.mockClear();
+    for(let i=0;i<ids.length;i++)expect(await repository.resolveVerifiedPlayer(ids[i]!,names[i]!,game.sourceUrl,game.homeTeamId,at,true)).toBe(canonical[i]);
+    expect(spy).not.toHaveBeenCalled();
+    await expect(repository.resolveVerifiedPlayer(ids[0]!,"別人",game.sourceUrl,game.homeTeamId,at,true)).rejects.toThrow("identity changed");
+    await expect(repository.resolveVerifiedPlayer("2026:B:uniform:99",names[0]!,game.sourceUrl,game.awayTeamId,at,true)).rejects.toThrow("Unresolved possible existing/transferred");
+    spy.mockRestore();
+    const verified=verifiedNf3Identities.find(p=>p.sourceId==="2026:H:uniform:54")!;
+    await repository.primePlayerMappings([verified.sourceId]);
+    await expect(repository.resolveVerifiedPlayer(verified.sourceId,verified.name,verified.profileUrl+"?wrong",verified.teamId,at,true)).rejects.toThrow("identity mismatch");
+  });
   it("batches existing verified Game facts without per-player linking queries and rejects mismatched games",async()=>{
     const client=await db(),repository=new NpbRepository(client);
     await repository.saveGames([game],date,false);

@@ -200,6 +200,11 @@ export async function runNpbGameProof(client: DataClient, options: NpbGameProofO
         throw new Error(`Conflicting batter/pitcher identity: ${team.code} #${pitcher.number}`);
       if (!existing) participants.push(pitcher);
     }
+    const participantSourceId=(participant:Nf3Participant)=>{
+      const profileId=nf3ProfileParameter(participant.profileUrl,team.code,participant.number);
+      return /^(?:wb_|tr_)/.test(profileId)?`2026:${team.code}:profile:${profileId}`:`2026:${team.code}:uniform:${participant.number}`;
+    };
+    if(options.historicalPitchers) await repository.primePlayerMappings([...participants,...expectedPitcherList].map(participantSourceId));
     const queue: Nf3BattingParticipant[] = starters.map((starter) => {
       const verified = participants.find((player) => player.profileUrl === starter.profileUrl) ??
         participants.find((player) => player.number === starter.number && !/\/(?:wb_|tr_)/.test(player.profileUrl));
@@ -212,7 +217,7 @@ export async function runNpbGameProof(client: DataClient, options: NpbGameProofO
     while (queue.length) {
       const participant = queue.shift()!;
       const profileId = nf3ProfileParameter(participant.profileUrl,team.code,participant.number);
-      const sourceId = /^(?:wb_|tr_)/.test(profileId)?`2026:${team.code}:profile:${profileId}`:`2026:${team.code}:uniform:${participant.number}`;
+      const sourceId = participantSourceId(participant);
       if (processed.has(participant.profileUrl)) continue;
       processed.add(participant.profileUrl);
       expectedBatters++;
@@ -255,7 +260,7 @@ export async function runNpbGameProof(client: DataClient, options: NpbGameProofO
     for (const pitcher of expectedPitcherList) {
       expectedPitchers++;
       const profileId = nf3ProfileParameter(pitcher.profileUrl,team.code,pitcher.number);
-      const sourceId = /^(?:wb_|tr_)/.test(profileId)?`2026:${team.code}:profile:${profileId}`:`2026:${team.code}:uniform:${pitcher.number}`;
+      const sourceId = participantSourceId(pitcher);
       const path = `php/stat_disp/stat_disp.php?y=0&leg=${leg}&pcnum=${profileId}&tm=${team.code}&mon=${month}&vst=all`;
       try {
         const html = await get(path);

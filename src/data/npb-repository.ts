@@ -46,7 +46,25 @@ export function pitchingFact(row: DbRow): PlayerGamePitching {
 }
 
 export class NpbRepository {
+  private readonly primedPlayerMappings = new Map<string, DbRow | null>();
   constructor(private readonly client: DataClient) {}
+
+  // One historical Game's observed roster, not a persistent or cross-request cache.
+  // resolveVerifiedPlayer still checks every exact verified tuple and stored name.
+  async primePlayerMappings(sourceIds: readonly string[]): Promise<void> {
+    const ids=[...new Set(sourceIds)];
+    if (!ids.length) return;
+    const rows=await this.client.execute({sql:`SELECT m.source_entity_id,m.internal_entity_id,h.payload_json
+      FROM source_entity_mappings m LEFT JOIN master_history h
+      ON h.entity_kind='player' AND h.entity_id=m.internal_entity_id
+      WHERE m.source_key='nf3' AND m.entity_kind='player' AND m.source_entity_id IN (${ids.map(()=>"?").join(",")})
+      ORDER BY h.valid_from DESC`,args:ids});
+    for(const id of ids) this.primedPlayerMappings.set(id,null);
+    for(const row of rows.rows) {
+      const id=String(row.source_entity_id);
+      if(this.primedPlayerMappings.get(id)===null)this.primedPlayerMappings.set(id,row);
+    }
+  }
 
   async findPlayerIdentity(playerId: string): Promise<{ id: string; name: string; teamId: string | null; teamName: string | null } | null> {
     const result = await this.client.execute({ sql: `SELECT payload_json FROM master_history
@@ -104,10 +122,13 @@ export class NpbRepository {
     if (verified && (normalizeNpbName(name) !== normalizeNpbName(verified.name) ||
       teamId !== verified.teamId || sourceUrl !== verified.profileUrl))
       throw new Error(`Verified player identity mismatch: ${sourceId}`);
-    const mapped = await this.client.execute({ sql: `SELECT m.internal_entity_id,h.payload_json FROM source_entity_mappings m
+    const cached = this.primedPlayerMappings.get(sourceId);
+    const mapped = this.primedPlayerMappings.has(sourceId) ? {rows:cached?[cached]:[]} : await this.client.execute({ sql: `SELECT m.internal_entity_id,h.payload_json FROM source_entity_mappings m
       LEFT JOIN master_history h ON h.entity_kind='player' AND h.entity_id=m.internal_entity_id
       WHERE m.source_key='nf3' AND m.entity_kind='player' AND m.source_entity_id=?
       ORDER BY h.valid_from DESC LIMIT 1`, args: [sourceId] });
+    // A subsequent write may create this alias; never retain negative evidence after a write attempt.
+    if(!dryRun && cached===null)this.primedPlayerMappings.delete(sourceId);
     if (mapped.rows[0]) {
       if (verified && String(mapped.rows[0].internal_entity_id) !== verified.playerId)
         throw new Error(`Conflicting verified player mapping: ${sourceId}`);
