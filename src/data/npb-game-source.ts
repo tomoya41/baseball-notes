@@ -14,6 +14,18 @@ export function nf3ProfileParameter(profileUrl: string, teamCode: string, number
   if (url.origin !== new URL(ROOT).origin || !match) throw new Error(`Unexpected nf3 player profile ID: ${profileUrl}`);
   return match[1]!;
 }
+
+export function mergeNf3ParticipantProfiles(roster:readonly Nf3Participant[],pitchers:readonly Nf3Participant[],teamCode:string):Nf3Participant[] {
+  const participants=[...roster];
+  for(const pitcher of pitchers) {
+    const key=nf3ProfileParameter(pitcher.profileUrl,teamCode,pitcher.number);
+    const existing=participants.find(player=>nf3ProfileParameter(player.profileUrl,teamCode,player.number)===key);
+    if(existing && normalizeNpbName(existing.name)!==normalizeNpbName(pitcher.name))
+      throw new Error(`Conflicting batter/pitcher identity: ${teamCode} ${key}`);
+    if(!existing)participants.push(pitcher);
+  }
+  return participants;
+}
 export function hasNf3BattingGameRow(html: string, date: string): boolean {
   const $ = load(html);
   const table = $("table.Base").filter((_, element) => $(element).find("caption").text().includes("全打席成績")).first();

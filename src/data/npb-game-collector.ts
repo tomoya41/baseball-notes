@@ -9,7 +9,7 @@ import { addDays, jstToday } from "./npb-collector";
 import { npbTeams, normalizeNpbName, type NpbGame, type NpbLogRow } from "./npb-nf3";
 import { findRosterPlayer, parseNf3BattingRoster, parseNf3GameBattingRow, parseNf3GamePitchingRow,
   parseNf3PitchUsage, parseNf3StartingLineup, nf3ProfileParameter, hasNf3BattingGameRow,
-  type Nf3BattingParticipant, type Nf3Participant } from "./npb-game-source";
+  mergeNf3ParticipantProfiles,type Nf3BattingParticipant, type Nf3Participant } from "./npb-game-source";
 import { NpbRepository } from "./npb-repository";
 import { retentionDays } from "./retention";
 import { sourceRegistry } from "./source-registry";
@@ -192,24 +192,16 @@ export async function runNpbGameProof(client: DataClient, options: NpbGameProofO
     const roster = parseNf3BattingRoster(await get(rosterPath),team.code);
     const expectedPitcherList = options.historicalPitchers ? await options.historicalPitchers(game,team.id) :
       parseNf3PitchUsage(await get(usagePath),targetDate,team.code);
-    const participants = [...roster];
-    for (const pitcher of expectedPitcherList) {
-      const existing = participants.find((player) => player.number === pitcher.number &&
-        !/\/(?:wb_|tr_)/.test(player.profileUrl));
-      if (existing && normalizeNpbName(existing.name) !== normalizeNpbName(pitcher.name))
-        throw new Error(`Conflicting batter/pitcher identity: ${team.code} #${pitcher.number}`);
-      if (!existing) participants.push(pitcher);
-    }
+    const participants = mergeNf3ParticipantProfiles(roster,expectedPitcherList,team.code);
     const participantSourceId=(participant:Nf3Participant)=>{
       const profileId=nf3ProfileParameter(participant.profileUrl,team.code,participant.number);
       return /^(?:wb_|tr_)/.test(profileId)?`2026:${team.code}:profile:${profileId}`:`2026:${team.code}:uniform:${participant.number}`;
     };
     if(options.historicalPitchers) await repository.primePlayerMappings([...participants,...expectedPitcherList].map(participantSourceId));
     const queue: Nf3BattingParticipant[] = starters.map((starter) => {
-      const verified = participants.find((player) => player.profileUrl === starter.profileUrl) ??
-        participants.find((player) => player.number === starter.number && !/\/(?:wb_|tr_)/.test(player.profileUrl));
-      const pitchingProfile = expectedPitcherList.find((player) => player.number === starter.number)?.profileUrl;
-      if (!verified || (verified.profileUrl !== starter.profileUrl && pitchingProfile !== starter.profileUrl))
+      const key=nf3ProfileParameter(starter.profileUrl,team.code,starter.number);
+      const verified = participants.find(player=>nf3ProfileParameter(player.profileUrl,team.code,player.number)===key);
+      if (!verified)
         throw new Error(`Lineup/roster identity mismatch: ${team.code} #${starter.number}`);
       return { ...verified, battingOrder: starter.battingOrder, started: true };
     });

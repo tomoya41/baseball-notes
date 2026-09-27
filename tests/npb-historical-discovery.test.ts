@@ -1,10 +1,20 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 import { createHistoricalPitcherDiscovery, historicalReasonCodes } from "../src/data/npb-historical-discovery";
-import { nf3ProfileParameter, parseNf3BattingRoster, parseNf3PitchingRoster } from "../src/data/npb-game-source";
+import { findRosterPlayer,mergeNf3ParticipantProfiles,nf3ProfileParameter, parseNf3BattingRoster, parseNf3PitchingRoster } from "../src/data/npb-game-source";
 import { parseNf3TeamGames, type NpbGame } from "../src/data/npb-nf3";
 const fixture=(name:string)=>readFileSync(new URL(`./fixtures/npb-game/${name}.html`,import.meta.url),"utf8");
 describe("published historical season participant route",()=>{
+  it("merges the observed withdrawn Duplantier f/p profiles only by the same exact provider identity",()=>{
+    const batter={number:"0",name:"デュプランティエ",profileUrl:"https://nf3.sakura.ne.jp/Central/DB/f/wb_0_stat.htm"};
+    const pitcher={...batter,profileUrl:batter.profileUrl.replace("/f/","/p/")};
+    expect(mergeNf3ParticipantProfiles([batter],[pitcher],"DB")).toEqual([batter]);
+    expect(()=>mergeNf3ParticipantProfiles([batter],[{...pitcher,name:"別人"}],"DB")).toThrow("Conflicting");
+    const differentId={...pitcher,number:"20",profileUrl:"https://nf3.sakura.ne.jp/Central/DB/p/20_stat.htm"};
+    const ambiguous=mergeNf3ParticipantProfiles([batter],[differentId],"DB");
+    expect(ambiguous).toHaveLength(2);
+    expect(()=>findRosterPlayer(ambiguous,batter.name)).toThrow("ambiguous");
+  });
   it("enumerates old March games from the observed 全表示 schedule",()=>{
     const games=parseNf3TeamGames(fixture("schedule-e-march-all"),"E",2026,"https://nf3.sakura.ne.jp/",new Date().toISOString());
     expect(games.map(g=>g.date)).toEqual(["2026-03-27","2026-03-28","2026-03-29","2026-03-31"]);
