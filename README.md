@@ -132,4 +132,4 @@ Player Recentだけ、Vercel FreeのServerless APIからTursoを読みます。�
 
 ## 今回の停止位置
 
-Phase 0の骨格＋縦方向実装、Analysis Aの契約、Design Aと代表画面、Capabilityに従うAnalysis / MATCHUP / WATCH UIまで。Hot、正式な記録・ランキング、ドラフト、FA、Prospect、通知、AI、実データ集計のAnalysis/MATCHUP画面接続および今日の日程/打順取得は未実装です。次Phaseへ自動的に進みません。
+Batch BのHistorical Backfill経路、Season aggregate、Player Season UI、Ranking readiness / Records read model、公開Season JSONまで。2026-09-26基準のSeason Coverageはcomplete 12日 / no_games 24日 / partial 2日 / unknown 146日で未完成です。Production Ranking / HOTはnot_readyを維持しています。実測値・未解決日付・公開Runは[Batch B報告](docs/npb-batch-b-2026-09-27.md)を参照してください。Infrastructure Scheduled証拠は別トラックです。Batch C、Direct BvP、pitch-level、Live WATCHへ自動的に進みません。
