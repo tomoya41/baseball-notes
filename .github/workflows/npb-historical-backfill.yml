@@ -1,0 +1,52 @@
+name: NPB historical backfill
+on:
+  workflow_dispatch:
+    inputs:
+      from:
+        type: string
+        default: '2026-03-27'
+        required: true
+      to:
+        type: string
+        default: '2026-09-26'
+        required: true
+      mode:
+        type: choice
+        options: [inventory, dry-run, ingest]
+        default: inventory
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: daily-npb-collector-and-pages
+  cancel-in-progress: false
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Explicit historical range; never a scheduled production proof
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          NPB_NF3_ENABLED: ${{ vars.NPB_NF3_ENABLED }}
+          FROM: ${{ inputs.from }}
+          TO: ${{ inputs.to }}
+          MODE: ${{ inputs.mode }}
+        run: npx tsx scripts/backfill-npb-season.ts --from="$FROM" --to="$TO" --mode="$MODE"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: npb-backfill-report
+          path: |
+            .data/batch-b/report.json
+            .data/batch-b/checkpoint.json
+          retention-days: 7
