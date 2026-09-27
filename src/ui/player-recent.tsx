@@ -23,14 +23,14 @@ const labels: Record<string, string> = { G: "試合", PA: "打席", AB: "打数"
   SB: "盗塁", CS: "盗塁死", GS: "先発", outsRecorded: "IP", ERA: "ERA", K9: "K/9", BF: "対戦打者",
   ER: "自責点", pitchCount: "投球数", W: "勝", L: "敗", HLD: "HLD", SV: "SV" };
 
-function StatTiles({ stats, keys }: { stats: PeriodStats; keys: readonly string[] }) {
+export function StatTiles({ stats, keys }: { stats: PeriodStats; keys: readonly string[] }) {
   return <div className="metric-grid recent-metrics">{keys.map((key) => <div className="metric-tile" key={key}>
     <span className="metric-tile__label">{labels[key] ?? key}</span>
     <strong className="metric-tile__value">{formatRecentMetric(key, stats.metrics[key])}</strong>
   </div>)}</div>;
 }
 
-function CoverageNote({ stats, period }: { stats: PeriodStats; period: RecentPeriod }) {
+export function CoverageNote({ stats, period }: { stats: PeriodStats; period: RecentPeriod }) {
   const status = stats.coverage.status;
   if (status === "complete") return null;
   const label = status === "partial" ? "一部データ未収集" : status === "unknown"

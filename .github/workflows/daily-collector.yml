@@ -122,6 +122,7 @@ jobs:
           cp .data/publish/data/standings/npb/latest.json dist/data/standings/npb/latest.json
           npx tsx scripts/preserve-published-npb-hot.ts
           npx tsx scripts/preserve-published-npb-player-directory.ts
+          npx tsx scripts/preserve-published-npb-season.ts
       - name: Configure GitHub Pages
         if: github.event_name == 'schedule' || inputs.mode == 'ingest' || inputs.mode == 'publish'
         uses: actions/configure-pages@v5

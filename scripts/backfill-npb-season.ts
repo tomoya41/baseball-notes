@@ -1,5 +1,6 @@
 import { mkdir, mkdtemp, rename, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { createHash } from "node:crypto";
 import { openDataClient } from "../src/data/database";
 import { exportNpbBackup, restoreNpbBackup, verifyRestoredNpbRepository } from "../src/data/npb-backup";
 import { backfillDates, runHistoricalBackfill } from "../src/data/npb-historical-backfill";
@@ -21,6 +22,11 @@ const countsSql=`SELECT (SELECT count(*) FROM npb_games) games,
  (SELECT count(*) FROM source_entity_mappings) mappings,(SELECT count(*) FROM npb_game_completeness) completeness,
  (SELECT count(*) FROM npb_day_runs) days,(SELECT count(*) FROM player_game_batting WHERE pa IS NULL) paUnknown`;
 const window=resolvePlayerPeriod({playerId:"audit",period:"season",asOfDate:to},findNpbRegularSeason(to)!);
+const factFingerprint=async()=>{
+  const rows=await Promise.all(["player_game_batting","player_game_pitching","source_entity_mappings"].map(table=>
+    remote.execute(`SELECT * FROM ${table} ORDER BY rowid`)));
+  return createHash("sha256").update(JSON.stringify(rows.map(r=>r.rows))).digest("hex");
+};
 try {
   const before=(await remote.execute(countsSql)).rows[0];
   const beforeCoverage=await new NpbPeriodCoverageRepository(remote).findPeriodCoverage(window);
@@ -40,9 +46,14 @@ try {
       result=await runHistoricalBackfill(target,{from,to,dryRun:mode==="dry-run",scratch:mode==="dry-run",progress});
       if(mode==="ingest") {
         const first=(await remote.execute(countsSql)).rows[0];
+        const values=await factFingerprint();
         const second=await runHistoricalBackfill(target,{from,to,progress});
-        replay={countsUnchanged:JSON.stringify(first)===JSON.stringify((await remote.execute(countsSql)).rows[0]),
+        const next=(await remote.execute(countsSql)).rows[0]!;
+        const countsUnchanged=["games","batting","pitching","mappings"].every(k=>first?.[k]===next[k]);
+        const valuesUnchanged=values===await factFingerprint();
+        replay={countsUnchanged,valuesUnchanged,
           statuses:second.reports.map(d=>({date:d.date,status:d.status})),http:second.http};
+        if(!countsUnchanged || !valuesUnchanged) throw new Error("Backfill replay changed canonical Facts or mappings");
         const manifest=await exportNpbBackup(remote,join(root,"export"),"turso-remote");
         const scratch=openDataClient(`file:${join(root,"restored.db")}`);
         try { await restoreNpbBackup(scratch,join(root,"export"));

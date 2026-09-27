@@ -21,6 +21,7 @@ import { AnalysisDirectory, AnalysisScreen } from "./analysis";
 import { MatchupScreen } from "./matchup";
 import { WatchGameScreen, WatchToday } from "./watch";
 import { PlayerRecentView } from "./player-recent";
+import { PlayerSeasonView } from "./player-season";
 import { PlayerGameLogView } from "./player-game-log";
 import { NpbGameDetailScreen } from "./npb-game-detail";
 import { NpbPlayerAnalysisScreen, NpbPlayerHomeAwaySection, NpbPlayerOpponentSection,
@@ -227,11 +228,23 @@ function PlayerScreen({ catalog, favorites, toggle, saving, services }: {
   const [directoryTeams, setDirectoryTeams] = useState<NpbPlayerDirectory["teams"]>([]);
   const [directoryState, setDirectoryState] = useState<"loading" | "ready" | "error">("loading");
   const [recentState, setRecentState] = useState<"loading" | "ready" | "missing" | "error">("loading");
+  const [season, setSeason] = useState<PlayerRecentResponse | null>(null);
+  const [seasonState, setSeasonState] = useState<"loading" | "ready" | "missing" | "error">("loading");
   const [gameLog, setGameLog] = useState<PlayerGameLogResponse | null>(null);
   const [gameLogState, setGameLogState] = useState<"loading" | "ready" | "missing" | "error">("loading");
   const [analysisBundle, setAnalysisBundle] = useState<PlayerAnalysisBundle | null>(null);
   const [analysisState, setAnalysisState] = useState<"loading" | "ready" | "missing" | "error">("loading");
   const [recentCache] = useState(() => new Map<string, PlayerRecentResponse | null>());
+  useEffect(() => {
+    if (!canonical || !playerId || (section && section !== "stats")) return;
+    let active=true;
+    queueMicrotask(()=>{if(active){setSeason(null);setSeasonState("loading");}});
+    void services.recent.find(playerId,"season").then(value=>{
+      if(!active) return;
+      recentCache.set(`${playerId}:season`,value);setSeason(value);setSeasonState(value?"ready":"missing");
+    }).catch(()=>{if(active)setSeasonState("error");});
+    return ()=>{active=false;};
+  },[canonical,playerId,recentCache,section,services]);
   useEffect(() => {
     if (!canonical || !playerId) return;
     let active = true;
@@ -351,6 +364,7 @@ function PlayerScreen({ catalog, favorites, toggle, saving, services }: {
     </div>
     {!section && <div className="profile-content">
       {canonical && <PlayerRecentView period={period} onPeriodChange={(next) => { setRecentState("loading"); setPeriod(next); }} payload={recent} state={recentState} noFactKnown={directoryPlayer?.recentAvailable === false} />}
+      {canonical && <PlayerSeasonView payload={season} state={seasonState} />}
       {canonical && <PlayerGameLogView payload={gameLog} state={gameLogState} teams={gameLogTeams} />}
       {stats.length ? stats.map((item) => <section className="stats-section" key={`${item.group}:${item.season}`}>
         <SectionHeader title={`${item.season}年 · ${item.group === "hitting" ? "打撃" : "投球"}`}
@@ -358,7 +372,7 @@ function PlayerScreen({ catalog, favorites, toggle, saving, services }: {
         <MetricGrid stats={item} />
       </section>) : !canonical && <DataState kind="no-data" title="成績はまだありません" />}
     </div>}
-    {section === "stats" && <div className="profile-content">{canonical && <PlayerRecentView period={period} onPeriodChange={(next) => { setRecentState("loading"); setPeriod(next); }} payload={recent} state={recentState} noFactKnown={directoryPlayer?.recentAvailable === false} />}{canonical && <PlayerGameLogView payload={gameLog} state={gameLogState} teams={gameLogTeams} />}{stats.length
+    {section === "stats" && <div className="profile-content">{canonical && <PlayerRecentView period={period} onPeriodChange={(next) => { setRecentState("loading"); setPeriod(next); }} payload={recent} state={recentState} noFactKnown={directoryPlayer?.recentAvailable === false} />}{canonical && <PlayerSeasonView payload={season} state={seasonState} />}{canonical && <PlayerGameLogView payload={gameLog} state={gameLogState} teams={gameLogTeams} />}{stats.length
       ? stats.map((item) => <StatsSection key={`${item.group}:${item.season}`} stats={item} />)
       : !canonical && <DataState kind="no-data" title="成績はまだありません" />}</div>}
     {section === "analysis" && <div className="profile-content profile-content--analysis">{canonical

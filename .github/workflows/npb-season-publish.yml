@@ -1,0 +1,79 @@
+name: Publish NPB Season aggregates
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: daily-npb-collector-and-pages
+  cancel-in-progress: false
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Read-only aggregate generation and HOT readiness diagnostic
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+        run: |
+          mkdir -p .data/batch-b
+          npx tsx scripts/generate-npb-season.ts > .data/batch-b/season.json
+          npx tsx scripts/generate-npb-hot-payload.ts --require-remote > .data/batch-b/hot.json
+          npx tsx scripts/audit-npb-fact-quality.ts > .data/batch-b/audit.json
+          npx tsx scripts/validate-npb-season-facts.ts > .data/batch-b/current-validation.json
+          npm run backup:npb:drill -- --require-remote > .data/batch-b/backup.json
+          npm run publish:npb:remote -- --payload-root .data/publish
+          npx tsx scripts/generate-npb-player-directory.ts --require-remote --payload-root=.data/publish
+      - name: Encrypt portable export; never publish raw backup
+        env:
+          NPB_BACKUP_ENCRYPTION_KEY: ${{ secrets.NPB_BACKUP_ENCRYPTION_KEY }}
+        run: |
+          exports=(.data/backup-drill-*/export)
+          [[ ${#exports[@]} == 1 && -d "${exports[0]}" ]]
+          tar -C "$(dirname "${exports[0]}")" -czf .data/season-backup.tar.gz export
+          npx tsx scripts/crypt-npb-backup.ts encrypt .data/season-backup.tar.gz .data/season-backup.tar.gz.enc
+          rm .data/season-backup.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: npb-season-encrypted-backup
+          path: .data/season-backup.tar.gz.enc
+          retention-days: 7
+      - name: Build and atomically stage complete site
+        run: |
+          npm run build
+          cp -R .data/publish/data dist/
+          mkdir -p dist/data/npb/hot
+          cp .data/hot-diagnostics/npb-hot-7d.json dist/data/npb/hot/latest.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: npb-season-verification
+          path: .data/batch-b
+          retention-days: 7
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist
+  deploy:
+    needs: stage
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@v4
+        id: deployment
+      - name: Public HTTP and schema identity
+        run: |
+          node --input-type=module -e "const r=await fetch('https://tomoya41.github.io/baseball-notes/data/npb/season/2026/latest.json?v='+Date.now());if(r.status!==200)throw Error('Season HTTP');const p=await r.json();if(p.schemaVersion!==1||p.season!==2026||!p.players.length||p.rankings.batting.length||p.rankings.pitching.length)throw Error('Season contract');console.log(JSON.stringify({http:r.status,effectiveDate:p.effectiveDate,coverage:p.coverage,readiness:p.readiness,players:p.players.length}))"
