@@ -51,7 +51,7 @@ async function main() {
     (SELECT count(*) FROM source_entity_mappings) AS mappings`;
   try {
     const before = (await read(countsSql))[0]!;
-    const [games, batting, pitching, mappings, completeness, masters, plateAppearances, pitcherAppearances] = await Promise.all([
+    const [games, batting, pitching, mappings, completeness, masters, plateAppearances, pitcherAppearances, dayEvidence] = await Promise.all([
       read("SELECT game_id,game_date,home_team_id,away_team_id,home_score,away_score,status FROM npb_games"),
       read(`SELECT game_id,player_id,team_id,batting_order,starter,collected_at,source_record_id,${battingMetrics.join(",")} FROM player_game_batting`),
       read(`SELECT game_id,player_id,team_id,role,starter,appearance_order,${pitchingMetrics.join(",")} FROM player_game_pitching`),
@@ -60,6 +60,9 @@ async function main() {
       read("SELECT entity_id,valid_from,payload_json FROM master_history WHERE entity_kind='player' ORDER BY valid_from DESC"),
       read("SELECT count(*) AS count FROM plate_appearances"),
       read("SELECT count(*) AS count FROM pitcher_appearances"),
+      read(`SELECT target_date,day_status,final_games,complete_games,partial_games,failed_games,error_summary
+        FROM (SELECT *,ROW_NUMBER() OVER (PARTITION BY target_date ORDER BY started_at DESC,run_id DESC) ordinal
+          FROM npb_day_runs) WHERE ordinal=1 AND day_status NOT IN ('complete','no_games') ORDER BY target_date`),
     ]);
     const after = (await read(countsSql))[0]!;
     const nameById = new Map<string, string>();
@@ -138,6 +141,11 @@ async function main() {
     const report = {
       auditedAt: new Date().toISOString(), before, after, unchanged: JSON.stringify(before) === JSON.stringify(after),
       queries, durationMs: Math.round(performance.now() - started),
+      unresolvedDays:dayEvidence.map(row=>({date:row.target_date,status:row.day_status,
+        finalGames:row.final_games,completeGames:row.complete_games,partialGames:row.partial_games,
+        failedGames:row.failed_games,reasonCodes:historicalReasonCodes([text(row.error_summary)]),
+        // This existing Day column is capped at 500 characters; full backfill reports retain all Game issues.
+        errorSummary:row.error_summary})),
       rows: { games: games.length, batting: batting.length, pitching: pitching.length, mappings: mappings.length,
         plateAppearances: num(plateAppearances[0]?.count), pitcherAppearances: num(pitcherAppearances[0]?.count) },
       games: {
