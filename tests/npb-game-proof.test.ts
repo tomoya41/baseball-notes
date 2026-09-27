@@ -77,6 +77,12 @@ describe("2026-09-23 controlled NPB game proof", () => {
     const ambiguous=parseNf3GameBattingRow(html.replace("打妨","妨害不明"),"2026-04-30","F","mannami","source",game.sourceUrl,at);
     expect(ambiguous.row.fact.pa).toBeNull();expect(ambiguous.unsupportedPaEvents).toEqual(["妨害不明"]);
   });
+  it("counts the observed 6/5 打妨 alongside a real walk and home run",()=>{
+    const parsed=parseNf3GameBattingRow(fixture("batting-db-interference"),"2026-06-05","DB","player","source",game.sourceUrl,at);
+    expect(parsed.detail).toEqual(["左飛","四球","左本(1)","打妨"]);
+    expect(parsed.row.fact).toMatchObject({pa:4,ab:2,walks:1,hbp:0,sacrificeHits:0,sacrificeFlies:0,homeRuns:1});
+    expect(parsed.unsupportedPaEvents).toEqual([]);
+  });
   it("links verified Hayakawa to his existing canonical master and rejects altered identity evidence",async()=>{
     const client=await db(),repository=new NpbRepository(client);
     const identity=verifiedNf3Identities.find(p=>p.sourceId==="2026:E:uniform:21")!;
