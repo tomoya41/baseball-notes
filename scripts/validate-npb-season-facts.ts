@@ -15,8 +15,11 @@ try {
     client.execute("SELECT * FROM npb_game_completeness")]);
   const proofs=new Map(evidence.rows.map(r=>[String(r.game_id),r]));
   const results=games.rows.filter(r=>r.status==="final").map(r=>{
-    const game={id:String(r.game_id),date:String(r.game_date),homeTeamId:String(r.home_team_id),awayTeamId:String(r.away_team_id),
-      homeScore:r.home_score===null?null:Number(r.home_score),awayScore:r.away_score===null?null:Number(r.away_score)} as NpbGame;
+    const game: NpbGame={id:String(r.game_id),season:Number(r.season),date:String(r.game_date),status:"final",
+      homeTeamId:String(r.home_team_id),awayTeamId:String(r.away_team_id),gameNumber:Number(r.game_number),
+      homeScore:r.home_score===null?null:Number(r.home_score),awayScore:r.away_score===null?null:Number(r.away_score),
+      venue:r.venue===null?null:String(r.venue),scheduledTime:r.scheduled_time===null?null:String(r.scheduled_time),
+      sourceKey:"nf3",sourceRecordId:String(r.source_record_id),sourceUrl:String(r.source_url),collectedAt:String(r.collected_at)};
     const proof=proofs.get(game.id);
     if(!proof) return {gameId:game.id,date:game.date,status:"unverified",issues:["expected_participants_unverified"]};
     const result=validateNpbGameFacts(game,Number(proof.expected_batters),batting.filter(b=>b.gameId===game.id),
