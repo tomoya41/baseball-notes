@@ -19,3 +19,17 @@ test("heavy EOD steps and deploy require publish output; manual fixtures cannot 
   expect(w.jobs.watch?.steps.find(s=>s.run?.includes("--action=watch"))?.if).toBe("!inputs.fixture_only");
   expect(read("daily-collector").jobs.deploy?.if).toContain("needs.collect.outputs.skip != 'true'");
 });
+test("Daily safety-net publication regenerates player payloads after verified Fact collection",()=>{
+  const steps=read("daily-collector").jobs.collect!.steps;
+  const collectIndex=steps.findIndex(s=>s.run?.includes("npm run collector:npb:day"));
+  const buildIndex=steps.findIndex(s=>s.run?.includes("npm run build"));
+  expect(collectIndex).toBeGreaterThanOrEqual(0);
+  expect(buildIndex).toBeGreaterThan(collectIndex);
+  const build=steps[buildIndex]!.run!;
+  expect(build).toContain('"$GITHUB_EVENT_NAME" == "schedule"');
+  expect(build).toContain("generate-npb-season.ts --date=\"$date_jst\"");
+  expect(build).toContain("generate-npb-player-directory.ts --require-remote");
+  expect(build).toContain("generate-npb-hot-payload.ts --require-remote");
+  expect(build.indexOf("generate-npb-season.ts")).toBeLessThan(build.indexOf("npm run build"));
+  expect(build).toContain("else\n  npx tsx scripts/preserve-published-npb-hot.ts");
+});

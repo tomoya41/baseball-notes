@@ -139,15 +139,29 @@ jobs:
         if: steps.safety.outputs.skip != 'true' && (github.event_name == 'schedule' || inputs.mode == 'ingest' || inputs.mode == 'publish')
         shell: bash
         env:
+          TARGET_DATE: ${{ inputs.target_date }}
+          NPB_MODE: ${{ inputs.mode }}
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
         run: |
+          if [[ "$GITHUB_EVENT_NAME" == "schedule" || "$NPB_MODE" == "ingest" ]]; then
+            date_jst="${TARGET_DATE:-$(TZ=Asia/Tokyo date -d yesterday +%F)}"
+            npx tsx scripts/generate-npb-season.ts --date="$date_jst" --payload-root=.data/publish
+            npx tsx scripts/generate-npb-hot-payload.ts --require-remote
+            npx tsx scripts/generate-npb-player-directory.ts --require-remote --payload-root=.data/publish
+          fi
           npm run build
           mkdir -p dist/data/standings/npb
           cp .data/publish/data/standings/npb/latest.json dist/data/standings/npb/latest.json
-          npx tsx scripts/preserve-published-npb-hot.ts
-          npx tsx scripts/preserve-published-npb-player-directory.ts
-          npx tsx scripts/preserve-published-npb-season.ts
+          if [[ "$GITHUB_EVENT_NAME" == "schedule" || "$NPB_MODE" == "ingest" ]]; then
+            cp -R .data/publish/data dist/
+            mkdir -p dist/data/npb/hot
+            cp .data/hot-diagnostics/npb-hot-7d.json dist/data/npb/hot/latest.json
+          else
+            npx tsx scripts/preserve-published-npb-hot.ts
+            npx tsx scripts/preserve-published-npb-player-directory.ts
+            npx tsx scripts/preserve-published-npb-season.ts
+          fi
           npx tsx scripts/generate-npb-game-surface.ts --payload-root=dist > .data/game-surface.json
       - name: Configure GitHub Pages
         if: steps.safety.outputs.skip != 'true' && (github.event_name == 'schedule' || inputs.mode == 'ingest' || inputs.mode == 'publish')
