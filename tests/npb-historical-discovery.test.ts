@@ -1,0 +1,31 @@
+import { readFileSync } from "node:fs";
+import { describe, expect, it, vi } from "vitest";
+import { createHistoricalPitcherDiscovery, historicalReasonCodes } from "../src/data/npb-historical-discovery";
+import { parseNf3PitchingRoster } from "../src/data/npb-game-source";
+import type { NpbGame } from "../src/data/npb-nf3";
+const fixture=(name:string)=>readFileSync(new URL(`./fixtures/npb-game/${name}.html`,import.meta.url),"utf8");
+describe("published historical season participant route",()=>{
+  const game={date:"2026-09-23",homeTeamId:"npb:team:eagles",awayTeamId:"npb:team:buffaloes",scheduledTime:"17:00"} as NpbGame;
+  it("validates a season pitcher roster and source profile identity",()=>{
+    expect(parseNf3PitchingRoster(fixture("roster-pitching-e"),"E")).toEqual([
+      {number:"21",name:"早川隆久",profileUrl:"https://nf3.sakura.ne.jp/Pacific/E/p/21_stat.htm"}]);
+    expect(()=>parseNf3PitchingRoster(fixture("roster-pitching-e").replace("Pacific/E/p","Pacific/H/p"),"E")).toThrow();
+  });
+  it("fetches roster/logs once, uses exact date/opponent/time and preserves zero outs",async()=>{
+    const request=vi.fn(async(url:string)=>new URL(url).searchParams.has("pcnum")?
+      fixture("pitching-m18").replaceAll("ロッテ","楽天"):fixture("roster-pitching-e"));
+    const discover=createHistoricalPitcherDiscovery(request);
+    const pitchers=await discover(game,game.homeTeamId);
+    expect(pitchers).toHaveLength(1);
+    expect(await discover(game,game.homeTeamId)).toEqual(pitchers);
+    expect(request).toHaveBeenCalledTimes(2);
+    expect(request.mock.calls[1]![0]).toContain("mon=0");
+    await expect(discover({...game,scheduledTime:"14:00"},game.homeTeamId)).rejects.toThrow("unavailable");
+  });
+  it("classifies failures without turning parser/network errors into no games",()=>{
+    expect(historicalReasonCodes(["nf3 games page has no games"])).toEqual(["schedule_enumeration_failure"]);
+    expect(historicalReasonCodes(["Unresolved possible existing/transferred player", "Check failed: plateAppearances"])).toEqual(["identity_unresolved","validation_failure"]);
+    expect(historicalReasonCodes(["Network failure HTTP 503"])).toEqual(["source_unavailable"]);
+  });
+});
+

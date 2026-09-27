@@ -3,7 +3,7 @@ import { addDays, jstToday } from "./npb-collector";
 import { previousJstDate, runNpbDayFacts } from "./npb-day-collector";
 import { createNf3DryRunSession } from "./npb-day-dry-run";
 import { parseNf3TeamGames, npbTeams, type NpbGame } from "./npb-nf3";
-import { parseNf3PitchUsage } from "./npb-game-source";
+import { createHistoricalPitcherDiscovery, historicalReasonCodes } from "./npb-historical-discovery";
 import { runNpbGameProof, validateNpbGameFacts } from "./npb-game-collector";
 import { NpbRepository } from "./npb-repository";
 import { findNpbRegularSeason } from "./npb-season-metadata";
@@ -50,27 +50,27 @@ export async function runHistoricalBackfill(client: DataClient, options: {
     throw new Error("nf3 provider disabled");
   const repository=new NpbRepository(client);
   const session=createNf3DryRunSession(1000,options.request);
-  const monthly=new Map<string,NpbGame[]>();
-  const monthlyFailures=new Map<string,string>();
-  const reports: { date:string; status:string; issues:string[]; result?:unknown }[]=[];
+  let schedules: NpbGame[] | undefined;
+  let scheduleFailure: string | undefined;
+  const historicalPitchers=createHistoricalPitcherDiscovery(session.request);
+  const reports: { date:string; status:string; issues:string[]; reasonCodes?:string[]; result?:unknown }[]=[];
   const started=performance.now();
   for(const date of dates) {
     let status="unknown";
     const issues: string[]=[];
     try {
-      const month=date.slice(5,7);
-      if(monthlyFailures.has(month)) throw new Error(monthlyFailures.get(month));
-      if(!monthly.has(month)) {
+      if(scheduleFailure) throw new Error(scheduleFailure);
+      if(!schedules) {
         try {
         const pages: NpbGame[][]=[];
         for(const team of npbTeams) {
-          const url=`https://nf3.sakura.ne.jp/php/stat_disp/stat_disp.php?y=0&leg=${team.group==="Central"?0:1}&mon=${Number(month)}&tm=${team.code}&vst=all`;
+          const url=`https://nf3.sakura.ne.jp/php/stat_disp/stat_disp.php?y=0&leg=${team.group==="Central"?0:1}&mon=0&tm=${team.code}&vst=all`;
           pages.push(parseNf3TeamGames(await session.request(url),team.code,2026,url,new Date().toISOString()));
         }
-        monthly.set(month,reconcileHistoricalSchedules(pages));
-        } catch(error) { monthlyFailures.set(month,String(error)); throw error; }
+        schedules=reconcileHistoricalSchedules(pages);
+        } catch(error) { scheduleFailure=String(error); throw error; }
       }
-      const games=monthly.get(month)!.filter(g=>g.date===date);
+      const games=schedules!.filter(g=>g.date===date);
       // Future/postponed rows are not final Facts; a completed-day scheduled row remains unresolved.
       if(games.some(g=>g.status==="scheduled" || g.status==="unknown" || g.status==="suspended"))
         throw new Error("Unresolved non-final schedule row on completed date");
@@ -96,8 +96,7 @@ export async function runHistoricalBackfill(client: DataClient, options: {
         await repository.saveGames(games,date,false,true);
         // Preflight before any Player Fact write. Never infer missing pitchers.
         for(const game of games.filter(g=>g.status==="final")) for(const id of [game.homeTeamId,game.awayTeamId]) {
-          const team=npbTeams.find(t=>t.id===id)!;
-          parseNf3PitchUsage(await session.request(`https://nf3.sakura.ne.jp/${team.group}/${team.code}/t/pc_all_data_last2w_pn.htm`),date,team.code);
+          await historicalPitchers(game,id);
         }
         const result=await runNpbDayFacts(client,{targetDate:date,trigger:"repair",dryRun:options.dryRun ?? false,
           requireCompleteGameStage:true,request:session.request,runGame:async(game,request)=>{
@@ -110,7 +109,7 @@ export async function runHistoricalBackfill(client: DataClient, options: {
                 insertedBatting:0,insertedPitching:0,wouldCreateMappings:[],observed:{sacrificeFlies:0,fractionalTwoOutPitchers:0},nonBattingSubstitutes:[]};
             }
             return runNpbGameProof(client,{gameId:game.id,targetDate:date,dryRun:options.dryRun ?? false,scope:"day-ingest",
-              request,persistRawManifest:false});
+              request,persistRawManifest:false,historicalPitchers});
           }});
         status=result.status;
         reports.push({date,status,issues:result.games.flatMap(g=>g.issues),result});
@@ -119,7 +118,9 @@ export async function runHistoricalBackfill(client: DataClient, options: {
       issues.push(String(error));
       reports.push({date,status,issues});
     }
-    await options.progress?.(reports.at(-1));
+    const last=reports.at(-1)!;
+    last.reasonCodes=historicalReasonCodes(last.issues);
+    await options.progress?.(last);
   }
   return {from:options.from,to:options.to,dates:dates.length,reports,http:session.metrics,durationMs:performance.now()-started};
 }

@@ -9,7 +9,7 @@ import { addDays, jstToday } from "./npb-collector";
 import { npbTeams, normalizeNpbName, type NpbGame, type NpbLogRow } from "./npb-nf3";
 import { findRosterPlayer, parseNf3BattingRoster, parseNf3GameBattingRow, parseNf3GamePitchingRow,
   parseNf3PitchUsage, parseNf3StartingLineup, nf3ProfileParameter, hasNf3BattingGameRow,
-  type Nf3BattingParticipant } from "./npb-game-source";
+  type Nf3BattingParticipant, type Nf3Participant } from "./npb-game-source";
 import { NpbRepository } from "./npb-repository";
 import { retentionDays } from "./retention";
 import { sourceRegistry } from "./source-registry";
@@ -29,6 +29,7 @@ export interface NpbGameProofOptions {
   delayMs?: number;
   persistRawManifest?: boolean;
   scope?: "controlled" | "day-dry-run" | "day-ingest";
+  historicalPitchers?: (game: NpbGame, teamId: string) => Promise<Nf3Participant[]>;
 }
 export interface NpbGameProofResult {
   report: GameCompleteness;
@@ -182,13 +183,14 @@ export async function runNpbGameProof(client: DataClient, options: NpbGameProofO
   for (const team of teams) {
     const opponent = teams.find((item) => item.id !== team.id)!;
     const leg = team.group === "Central" ? 0 : 1;
-    const month = Number(targetDate.slice(5,7));
+    const month = options.historicalPitchers ? 0 : Number(targetDate.slice(5,7));
     const lineupPath = `php/stat_disp/stat_disp.php?y=0&leg=${leg}&mon=${month}&tm=${team.code}&stvst=all`;
     const rosterPath = `php/stat_disp/stat_disp.php?y=0&leg=${leg}&tm=${team.code}&fp=0&dn=1&dk=0`;
     const usagePath = `${team.group}/${team.code}/t/pc_all_data_last2w_pn.htm`;
     const starters = parseNf3StartingLineup(await get(lineupPath),targetDate,team.code);
     const roster = parseNf3BattingRoster(await get(rosterPath),team.code);
-    const expectedPitcherList = parseNf3PitchUsage(await get(usagePath),targetDate,team.code);
+    const expectedPitcherList = options.historicalPitchers ? await options.historicalPitchers(game,team.id) :
+      parseNf3PitchUsage(await get(usagePath),targetDate,team.code);
     const participants = [...roster];
     for (const pitcher of expectedPitcherList) {
       const existing = participants.find((player) => player.number === pitcher.number);

@@ -120,8 +120,17 @@ export class NpbRepository {
     // short name オスナ. Only this exact source/team/profile tuple is exempt
     // from the general possible-transfer/homonym stop below.
     if (verified) {
-      const collision = await this.client.execute({ sql: `SELECT source_record_id FROM master_history
-        WHERE entity_kind='player' AND entity_id=? LIMIT 1`, args: [verified.playerId] });
+      const collision = await this.client.execute({ sql: `SELECT source_record_id,payload_json FROM master_history
+        WHERE entity_kind='player' AND entity_id=? ORDER BY valid_from DESC LIMIT 1`, args: [verified.playerId] });
+      if ("existingCanonical" in verified && verified.existingCanonical) {
+        const stored=collision.rows[0]?.payload_json ? JSON.parse(String(collision.rows[0].payload_json)) as {name?:string;teamId?:string}:null;
+        if (!stored || normalizeNpbName(stored.name ?? "")!==normalizeNpbName(name) || stored.teamId!==teamId)
+          throw new Error(`Conflicting reviewed existing canonical player: ${sourceId}`);
+        if (dryRun) onWouldCreateAlias?.();
+        else await this.client.execute({sql:"INSERT INTO source_entity_mappings VALUES ('nf3','player',?,?,?,?,?)",
+          args:[sourceId,verified.playerId,sourceUrl,at,at]});
+        return verified.playerId;
+      }
       if (collision.rows.length) throw new Error(`Conflicting verified player ID: ${sourceId}`);
       if (dryRun) { onWouldCreateAlias?.(); return verified.playerId; }
       await this.client.batch([

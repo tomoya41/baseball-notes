@@ -90,6 +90,23 @@ export function parseNf3PitchUsage(html: string, date: string, teamCode: string)
   return pitchers;
 }
 
+// Published season roster, including traded rows. Never infer appearances from totals.
+export function parseNf3PitchingRoster(html: string, teamCode: string): Nf3Participant[] {
+  const $ = load(html);
+  const table = $("table.Base").filter((_, element) => $(element).find("caption").text().includes("投手成績一覧")).first();
+  const header = table.find("tr").first().text();
+  if (!table.length || !header.includes("先発") || !header.includes("救援")) throw new Error("nf3 pitching roster schema changed");
+  const participants = table.find("tr[onmouseover]").toArray().map(row => {
+    const cells = $(row).children("td");
+    const number = cells.eq(0).text().trim(), name = cells.eq(1).text().trim();
+    if (!/^\d+$/.test(number) || !name) throw new Error("Invalid nf3 pitching roster identity");
+    return {number,name,profileUrl:profile(cells.eq(1).find("a").attr("href"),teamCode)};
+  });
+  if (!participants.length || new Set(participants.map(p=>p.profileUrl)).size !== participants.length)
+    throw new Error("Incomplete/duplicate nf3 pitching roster");
+  return participants;
+}
+
 function gameCells(html: string, date: string, caption: string): string[] {
   const $ = load(html);
   const table = $("table.Base").filter((_, element) => $(element).find("caption").text().includes(caption)).first();
@@ -112,7 +129,9 @@ export function parseNf3GameBattingRow(html: string, date: string, teamCode: str
   const ab = rows[0]!.fact.ab!;
   const walks = rows[0]!.fact.walks;
   const hbp = rows[0]!.fact.hbp;
-  const sacrificeHits = detail.filter((token) => /犠打|犠バント/.test(token)).length;
+  // nf3 marks a sacrifice bunt with fielder's choice as 犠野 (e.g. 投犠野).
+  // Only the explicit sacrifice marker counts; ordinary 野選 remains an AB.
+  const sacrificeHits = detail.filter((token) => /犠打|犠バント|犠野/.test(token)).length;
   const sacrificeFlies = detail.filter((token) => /犠飛/.test(token)).length;
   const expectedPa = walks === null || hbp === null ? null : ab + walks + hbp + sacrificeHits + sacrificeFlies;
   const pa = expectedPa !== null && !unsupportedPaEvents.length && detail.length === expectedPa ? expectedPa : null;

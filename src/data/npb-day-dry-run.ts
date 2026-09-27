@@ -21,7 +21,7 @@ async function tableFingerprints(client: DataClient): Promise<Record<string,stri
 export function createNf3DryRunSession(delayMs = 750, provided?: (url: string) => Promise<string>,
   rawRoot?: string, targetDate?: string) {
   const pages = new Map<string,string>();
-  const metrics = { httpRequests:0,uniquePages:0,retries:0,cacheHits:0 };
+  const metrics = { httpRequests:0,uniquePages:0,retries:0,cacheHits:0,fetchedBytes:0 };
   let last = 0;
   const request = async (url: string): Promise<string> => {
     const cached = pages.get(url);
@@ -54,6 +54,7 @@ export function createNf3DryRunSession(delayMs = 750, provided?: (url: string) =
           signal:AbortSignal.timeout(15_000) });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const bytes = new Uint8Array(await response.arrayBuffer());
+        metrics.fetchedBytes+=bytes.length;
         if (bytes.length > 500_000) throw new Error("Oversized nf3 response");
         const html = new TextDecoder("utf-8",{fatal:true}).decode(bytes);
         pages.set(url,html); metrics.uniquePages = pages.size;

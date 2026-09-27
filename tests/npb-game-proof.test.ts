@@ -27,6 +27,22 @@ async function db(): Promise<DataClient> {
 afterEach(() => { for (const client of clients.splice(0)) client.close(); });
 
 describe("2026-09-23 controlled NPB game proof", () => {
+  it("recognizes the observed 9/22 投犠野 sacrifice without reclassifying ordinary fielder choice",()=>{
+    const html=fixture("batting-db-sacrifice-choice");
+    const parsed=parseNf3GameBattingRow(html,"2026-09-22","DB","azuma","2026:DB:uniform:11",game.sourceUrl,at);
+    expect(parsed.detail).toEqual(["中飛","投犠野"]);
+    expect(parsed.row.fact).toMatchObject({pa:2,ab:1,walks:0,hbp:0,sacrificeHits:1,sacrificeFlies:0});
+    expect(parseNf3GameBattingRow(html.replace("投犠野","投野選"),"2026-09-22","DB","azuma","source",game.sourceUrl,at).row.fact.pa).toBeNull();
+  });
+  it("links verified Hayakawa to his existing canonical master and rejects altered identity evidence",async()=>{
+    const client=await db(),repository=new NpbRepository(client);
+    const identity=verifiedNf3Identities.find(p=>p.sourceId==="2026:E:uniform:21")!;
+    await client.execute({sql:"INSERT INTO master_history VALUES (?,?,?,?,?,?,?)",args:["player",identity.playerId,"2026-01-01",
+      JSON.stringify({name:identity.name,teamId:identity.teamId}),"verified-profile","hayakawa",at]});
+    expect(await repository.resolveVerifiedPlayer(identity.sourceId,identity.name,identity.profileUrl,identity.teamId,at,false)).toBe(identity.playerId);
+    expect((await client.execute("SELECT count(DISTINCT entity_id) n FROM master_history WHERE entity_kind='player'")).rows[0]?.n).toBe(1);
+    await expect(repository.resolveVerifiedPlayer(identity.sourceId,identity.name,identity.profileUrl,"npb:team:hawks",at,true)).rejects.toThrow();
+  });
   it("does not degrade authoritative batting and pitching facts when limited collection revisits a game", async () => {
     const client = await db(); const repository = new NpbRepository(client);
     await repository.saveGames([game],date,false);
@@ -330,7 +346,7 @@ describe("2026-09-23 additional controlled game edge cases", () => {
   it("keeps the reviewed Hawks R. Osuna separate from the Swallows J. Osuna", async () => {
     const client = await db();
     const repository = new NpbRepository(client);
-    const identity = verifiedNf3Identities[0];
+    const identity = verifiedNf3Identities.find(p=>p.sourceId==="2026:H:uniform:54")!;
     const swallowsId = "c3fc5eab-2404-42e1-9e67-9682c114de9c";
     await client.batch([
       { sql: "INSERT INTO source_entity_mappings VALUES ('nf3','player',?,?,?,?,?)",
