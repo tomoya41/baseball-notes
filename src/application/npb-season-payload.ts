@@ -6,7 +6,12 @@ import type { NpbPlayerDirectory } from "../domain/npb-player-directory";
 export const seasonBattingKeys=["G","PA","AB","R","H","2B","3B","HR","RBI","BB","HBP","SH","SF","SO","SB","CS","AVG","OBP","SLG","OPS"] as const;
 export const seasonPitchingKeys=["G","GS","outsRecorded","BF","H","HR","SO","R","ER","pitchCount","W","L","HLD","SV","ERA","K9"] as const;
 const metricSchema=z.strictObject({value:z.number().finite().nonnegative().nullable(),
-  status:z.enum(["complete","partial","unavailable"]),observedFacts:z.number().int().nonnegative(),factCount:z.number().int().nonnegative()});
+  status:z.enum(["complete","partial","unavailable"]),observedFacts:z.number().int().nonnegative(),factCount:z.number().int().nonnegative()})
+  .superRefine((metric,ctx)=>{
+    if(metric.observedFacts>metric.factCount || (metric.status==="complete" && metric.value===null) ||
+      (metric.status==="unavailable" && metric.value!==null))
+      ctx.addIssue({code:"custom",message:"Inconsistent metric availability/sample"});
+  });
 const metricsSchema=(keys:readonly string[])=>z.object(Object.fromEntries(keys.map(k=>[k,metricSchema]))).strict();
 const statsSchema=(keys:readonly string[])=>z.strictObject({factCount:z.number().int().positive(),metrics:metricsSchema(keys)});
 export const npbSeasonPayloadSchema=z.strictObject({schemaVersion:z.literal(1),league:z.literal("NPB"),season:z.literal(2026),
@@ -24,6 +29,11 @@ export const npbSeasonPayloadSchema=z.strictObject({schemaVersion:z.literal(1),l
     ctx.addIssue({code:"custom",message:"Season period/effective date mismatch"});
   if(new Set(value.players.map(p=>p.playerId)).size!==value.players.length)
     ctx.addIssue({code:"custom",message:"Duplicate canonical Player"});
+  const summary=value.coverage.summary;
+  if(value.coverage.status!=="unavailable" && summary.dates!==summary.complete+summary.noGames+summary.partial+summary.failed+summary.unknown)
+    ctx.addIssue({code:"custom",message:"Inconsistent coverage day counts"});
+  if(value.coverage.status==="complete" && summary.partial+summary.failed+summary.unknown!==0)
+    ctx.addIssue({code:"custom",message:"Complete coverage contains unverified dates"});
 });
 export type NpbSeasonPayload=z.infer<typeof npbSeasonPayloadSchema>;
 

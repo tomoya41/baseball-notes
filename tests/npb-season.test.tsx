@@ -5,7 +5,7 @@ import { buildNpbSeasonPayload, npbSeasonPayloadSchema, seasonRankingReadModel }
 import { playerGameBattingSchema, playerGamePitchingSchema } from "../src/domain/game-facts";
 import { aggregateBatting, aggregatePitching } from "../src/domain/player-period";
 import { findNpbRegularSeason } from "../src/data/npb-season-metadata";
-import { evaluatePeriodCoverage } from "../src/domain/period-coverage";
+import { evaluatePeriodCoverage, periodDates } from "../src/domain/period-coverage";
 import type { NpbPlayerDirectory } from "../src/domain/npb-player-directory";
 import { PlayerSeasonView } from "../src/ui/player-season";
 
@@ -50,6 +50,21 @@ describe("season read model",()=>{
     expect(()=>npbSeasonPayloadSchema.parse({...payload,players:[...payload.players,...payload.players]})).toThrow();
     expect(()=>npbSeasonPayloadSchema.parse({...payload,effectiveDate:"2026-09-25"})).toThrow();
     expect(()=>npbSeasonPayloadSchema.parse({...payload,token:"unsafe"})).toThrow();
+    expect(()=>npbSeasonPayloadSchema.parse({...payload,coverage:{...payload.coverage,status:"complete"}})).toThrow();
+    expect(()=>npbSeasonPayloadSchema.parse({...payload,players:payload.players.map(p=>({...p,batting:p.batting &&
+      {...p.batting,metrics:{...p.batting.metrics,PA:{value:null,status:"complete",observedFacts:1,factCount:1}}}}))})).toThrow();
+  });
+  it("keeps public rankings closed even with complete coverage until qualifier/public readiness is reviewed",async()=>{
+    const result=await batch();
+    result.coverage=evaluatePeriodCoverage(result.window,periodDates(result.window).map(day=>({date:day,
+      dayStatus:day===date?"complete":"no_games",gamesStageStatus:"complete",finalGames:day===date?1:0,
+      completeGames:day===date?1:0,partialGames:0,failedGames:0})),
+      [{date,gameId:"g",gameStatus:"complete",battingStatus:"complete",pitchingStatus:"complete"}]);
+    const payload=buildNpbSeasonPayload(result,directory,at);
+    expect(payload.coverage.status).toBe("complete");expect(payload.readiness.counting).toBe("ready");
+    expect(payload.readiness.status).toBe("not_ready");expect(payload.rankings.batting).toEqual([]);
+    expect(payload.readiness.reasons).not.toContain("season_coverage_not_complete");
+    expect(payload.readiness.reasons).toContain("official_qualifier_unverified");
   });
 });
 describe("season UI",()=>{
