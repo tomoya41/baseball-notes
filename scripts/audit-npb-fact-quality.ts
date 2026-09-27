@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 import { openDataClient } from "../src/data/database";
 import { classifyPitcherRole } from "../src/domain/player-pitcher-role";
+import { historicalReasonCodes } from "../src/data/npb-historical-discovery";
 
 type Row = Record<string, unknown>;
 const required = ["ab", "walks", "hbp", "sacrifice_hits", "sacrifice_flies"] as const;
@@ -21,6 +22,15 @@ export function assessStoredPa(row: Row, sourceDetailVerified = false) {
   const fieldsKnown = required.every((field) => known(row[field]));
   return { kind: fieldsKnown ? "field_complete_unverified" : "missing_fields",
     safelyDerivable: fieldsKnown && sourceDetailVerified } as const;
+}
+
+export function unresolvedGameEvidence(games:readonly Row[],evidence:readonly Row[]) {
+  const dates=new Map(games.map(g=>[text(g.game_id),text(g.game_date)]));
+  return evidence.filter(e=>e.game_status!=="complete").map(e=>{
+    const issues=JSON.parse(text(e.issues_json)||"[]") as string[];
+    return {gameId:text(e.game_id),date:dates.get(text(e.game_id)) ?? null,status:text(e.game_status),
+      reasonCodes:historicalReasonCodes(issues),issues};
+  }).sort((a,b)=>(a.date ?? "").localeCompare(b.date ?? "")||a.gameId.localeCompare(b.gameId));
 }
 
 async function main() {
@@ -131,6 +141,7 @@ async function main() {
       rows: { games: games.length, batting: batting.length, pitching: pitching.length, mappings: mappings.length,
         plateAppearances: num(plateAppearances[0]?.count), pitcherAppearances: num(pitcherAppearances[0]?.count) },
       games: {
+        unresolvedEvidence:unresolvedGameEvidence(games,completeness),
         status: Object.fromEntries([...new Set(games.map((row) => text(row.status)))].map((status) => [status,
           games.filter((row) => row.status === status).length])),
         scoreKnown: games.filter((row) => known(row.home_score) && known(row.away_score)).length,
