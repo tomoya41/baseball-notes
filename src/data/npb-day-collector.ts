@@ -18,8 +18,9 @@ export type NpbDayResult = {runId:string;targetDate:string;trigger:DayTrigger;st
   retries:number;durationMs:number;games:DayGameResult[] };
 
 export function classifyDay(games:readonly DayGameResult[],scheduledGames:number,finalGames:number,
-  enumerationOk=true):DayStatus {
+  enumerationOk=true,terminalGames=scheduledGames):DayStatus {
   if (!enumerationOk) return "failed";
+  if (terminalGames!==scheduledGames) return "partial";
   if (finalGames===0) return "no_games";
   if (games.length!==finalGames || games.some((game)=>game.status!=="complete")) return "partial";
   if (scheduledGames<finalGames) return "failed";
@@ -85,7 +86,8 @@ export async function runNpbDayFacts(client:DataClient,options:{targetDate:strin
         expectedPitchers:0,storedPitchers:0,issues:[String(error)]});
     }
   }
-  const status=classifyDay(games,scheduled.length,finalGames.length);
+  const terminalGames=scheduled.filter(g=>["final","postponed","canceled"].includes(g.status)).length;
+  const status=classifyDay(games,scheduled.length,finalGames.length,true,terminalGames);
   const result:NpbDayResult={runId,targetDate,trigger,status,scheduledGames:scheduled.length,
     finalGames:finalGames.length,completeGames:games.filter((game)=>game.status==="complete").length,
     partialGames:games.filter((game)=>game.status==="partial").length,

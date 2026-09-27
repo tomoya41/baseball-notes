@@ -45,7 +45,7 @@ const request=async(u:string)=>{sourceCheckStartedAt??=new Date().toISOString();
 let result:unknown;
 async function saveReport(error?:unknown) {
   await mkdir(".data/eod",{recursive:true});
-  const report={action,date,result,error:error instanceof Error?error.message:error?String(error):null,
+  const report={action,date,eventName:process.env.GITHUB_EVENT_NAME??"local",result,error:error instanceof Error?error.message:error?String(error):null,
     http:session.metrics,dbReads,dbWrites,sourceCheckStartedAt,finishedAt:new Date().toISOString(),elapsedMs:performance.now()-started,
     runnerStartedAt:process.env.NPB_RUNNER_STARTED_AT??null,
     observation:process.env.NPB_RUN_CREATED_AT&&process.env.NPB_RUNNER_STARTED_AT&&process.env.NPB_CRON?
@@ -68,7 +68,8 @@ try {
     await migrateData(client);
     result=await syncNpbSchedule(client,request,scheduleRange(mode as "season"|"monthly"|"weekly"|"daily",date));
   } else if(action==="watch") {
-    result=await runEodWatcher(client,request,date,new Date(),Number(process.env.NPB_MONITOR_OFFSET_MINUTES??120));
+    result=await runEodWatcher(client,request,date,new Date(),Number(process.env.NPB_MONITOR_OFFSET_MINUTES??120),
+      process.env.GITHUB_EVENT_NAME==="schedule"?"scheduled":"manual");
     const report=result as {publishRequired:boolean};
     if(report.publishRequired) {
       // If source standings lag, retain collected Facts and retry publication next watcher.

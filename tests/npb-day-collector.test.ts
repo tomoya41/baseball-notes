@@ -47,6 +47,12 @@ test("no final games is a successful no_games day",async()=>{
   const result=await runNpbDayFacts(client,{targetDate:"2026-09-23",trigger:"scheduled",dryRun:true});
   expect(result).toMatchObject({status:"no_games",scheduledGames:1,finalGames:0});
 });
+test("pending or unknown past Games cannot be mislabeled no_games or complete",async()=>{
+  const client=await database(["scheduled","unknown"]);
+  const result=await runNpbDayFacts(client,{targetDate:"2026-09-23",trigger:"manual",dryRun:true});
+  expect(result).toMatchObject({status:"partial",scheduledGames:2,finalGames:0});
+  expect(classifyDay([],2,0,true,0)).toBe("partial");
+});
 test("one partial game or parser failure cannot mark day complete",async()=>{
   const client=await database(["final","final"]);
   const partial=await runNpbDayFacts(client,{targetDate:"2026-09-23",trigger:"repair",dryRun:true,

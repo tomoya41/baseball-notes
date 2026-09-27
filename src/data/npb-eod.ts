@@ -4,7 +4,7 @@ import { npbTeams, parseNf3TeamGames, parseNf3Standings, type NpbGame } from "./
 import { reconcileHistoricalSchedules } from "./npb-historical-backfill";
 import { NpbRepository } from "./npb-repository";
 import { validateNpbGameFacts, runNpbGameProof } from "./npb-game-collector";
-import { runNpbDayFacts } from "./npb-day-collector";
+import { runNpbDayFacts, type DayTrigger } from "./npb-day-collector";
 import { watchNpbEod } from "../application/npb-eod-watcher";
 import { sourceRegistry } from "./source-registry";
 import { findNpbRegularSeason } from "./npb-season-metadata";
@@ -67,11 +67,13 @@ export async function currentGameComplete(repository:NpbRepository,game:NpbGame)
   return validateNpbGameFacts(game,evidence.expectedBatters,batting,evidence.expectedPitchers,pitching,
     batting.length,pitching.length).gameStatus==="complete";
 }
-export async function runEodWatcher(client:DataClient,request:(u:string)=>Promise<string>,date:string,now=new Date(),offset=120) {
+export async function runEodWatcher(client:DataClient,request:(u:string)=>Promise<string>,date:string,now=new Date(),offset=120,
+  trigger:DayTrigger="manual") {
   if(date>jstToday(now)||!/^2026-\d{2}-\d{2}$/.test(date))throw Error("Invalid EOD date");
   const repository=new NpbRepository(client);
   let dayResult:Awaited<ReturnType<typeof runNpbDayFacts>>|undefined;
   let cachedGames:Promise<NpbGame[]>|undefined;
+  const attempts=new Map<string,number>();
   const loadGames=()=>cachedGames??=repository.findGamesByDate(date);
   const report=await watchNpbEod({
     games:loadGames,
@@ -100,10 +102,22 @@ export async function runEodWatcher(client:DataClient,request:(u:string)=>Promis
       await repository.saveGames(checked,date,false,false,{preserveEnumeration:true});
       return checked;
     },
+    canCollect:async game=>{
+      const saved=await readEodEvent(client,`eod-collection:${game.id}`,date);
+      const count=Number(saved?.attempts??0);
+      if(!Number.isInteger(count)||count<0)throw Error("Invalid collection attempt state");
+      attempts.set(game.id,count);return count<3;
+    },
     collect:async game=>{
-      const result=await runNpbGameProof(client,{gameId:game.id,targetDate:date,scope:"day-ingest",
-        allowCurrentDayFinal:true,request,persistRawManifest:false});
-      return result.report.gameStatus==="complete";
+      let status="failed";
+      try {
+        const result=await runNpbGameProof(client,{gameId:game.id,targetDate:date,scope:"day-ingest",
+          allowCurrentDayFinal:true,request,persistRawManifest:false});
+        status=result.report.gameStatus;return status==="complete";
+      } finally {
+        await eodEvent(client,`eod-collection:${game.id}`,date,{attempts:(attempts.get(game.id)??0)+1,status,
+          attemptedAt:new Date().toISOString()});
+      }
     },
     finalize:async games=>{
       // Reconcile today's whole schedule once before finalizing: catch added fixtures.
@@ -119,7 +133,7 @@ export async function runEodWatcher(client:DataClient,request:(u:string)=>Promis
         return false; // Changed/new fixture gets its own monitoring/validation on the next tick.
       }
       await repository.saveGames(sourceGames,date,false,true);
-      dayResult=await runNpbDayFacts(client,{targetDate:date,trigger:"manual",allowCurrentDayFinal:true,
+      dayResult=await runNpbDayFacts(client,{targetDate:date,trigger,allowCurrentDayFinal:true,
         reuseCompleteGames:true,request,requireCompleteGameStage:true});
       if(!["complete","no_games"].includes(dayResult.status))return false;
       return true;

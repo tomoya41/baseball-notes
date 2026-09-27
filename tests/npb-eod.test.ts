@@ -192,3 +192,9 @@ test("future weekly no-games evidence cannot replace today's confirmation",async
     expect(request).not.toHaveBeenCalled();expect(writes).not.toHaveBeenCalled();
   } finally {client.close();}
 });
+test("exhausted final collection budget does not repeat Player detail or publish",async()=>{
+  const p=fixture([game("day","13:00","final")],[game("day","13:00","final")]);
+  p.canCollect=vi.fn(async()=>false);
+  expect(await watchNpbEod(p,now("16:17"))).toMatchObject({newFinalGames:0,fullCollectionGames:0,deferredFinalGames:1,publishRequired:false});
+  expect(p.collect).not.toHaveBeenCalled();expect(p.finalize).not.toHaveBeenCalled();
+});
