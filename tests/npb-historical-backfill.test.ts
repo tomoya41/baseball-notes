@@ -3,6 +3,10 @@ import { backfillDates, reconcileHistoricalSchedules, runHistoricalBackfill } fr
 import type { NpbGame } from "../src/data/npb-nf3";
 import { openDataClient, migrateData, type DataClient } from "../src/data/database";
 import { npbTeams } from "../src/data/npb-nf3";
+import { parseNf3TeamGames } from "../src/data/npb-nf3";
+import { NpbRepository } from "../src/data/npb-repository";
+import { playerGameBattingSchema,playerGamePitchingSchema } from "../src/domain/game-facts";
+import { validateNpbGameFacts } from "../src/data/npb-game-collector";
 
 const now=new Date("2026-09-27T00:00:00Z");
 describe("historical range safety",()=>{
@@ -60,6 +64,38 @@ describe("historical range safety",()=>{
       expect(Number((await client.execute("SELECT count(*) n FROM player_game_batting")).rows[0]?.n)).toBe(0);
       expect(Number((await client.execute("SELECT count(*) n FROM player_game_pitching")).rows[0]?.n)).toBe(0);
       expect(Number((await client.execute("SELECT count(*) n FROM npb_day_runs")).rows[0]?.n)).toBe(0);
+    } finally {client.close();}
+  });
+  it("a partial-day resume fetches participants only for Games lacking current validated Facts",async()=>{
+    const client=openDataClient("file::memory:");await migrateData(client);
+    try {
+      const page=(code:string)=>{
+        const index=npbTeams.findIndex(t=>t.code===code),opponent=npbTeams[index%2===0?index+1:index-1]!;
+        const cells=Array.from({length:19},(_,i)=>i===0?"9/20":i===2?opponent.short:i===4?(index%2===0?"H":"V"):i===18?"0-0":"-");
+        return `<table class="Base"><caption>試合日程・先発</caption><tr class="Index2"><th>スコア</th></tr><tr onmouseover="x">${cells.map(c=>`<td>${c}</td>`).join("")}</tr></table>`;
+      };
+      const games=npbTeams.filter((_,i)=>i%2===0).map(t=>parseNf3TeamGames(page(t.code),t.code,2026,"https://nf3.sakura.ne.jp/",now.toISOString())[0]!);
+      const repo=new NpbRepository(client);await repo.saveGames(games,"2026-09-20",false);
+      for(const game of games.slice(0,5)) {
+        const batters=[game.homeTeamId,game.awayTeamId].flatMap(teamId=>Array.from({length:9},(_,i)=>playerGameBattingSchema.parse({
+          gameId:game.id,playerId:`${teamId}:${i}`,teamId,opponentTeamId:teamId===game.homeTeamId?game.awayTeamId:game.homeTeamId,
+          sourceKey:"nf3",sourceRecordId:`${game.id}:${teamId}:${i}`,collectedAt:now.toISOString(),battingOrder:i+1,starter:true,
+          pa:3,ab:3,runs:0,hits:0,doubles:0,triples:0,homeRuns:0,rbi:0,walks:0,hbp:0,sacrificeHits:0,sacrificeFlies:0,strikeouts:0,stolenBases:0,caughtStealing:0})));
+        const pitchers=[game.homeTeamId,game.awayTeamId].map(teamId=>playerGamePitchingSchema.parse({
+          id:`${game.id}:${teamId}`,gameId:game.id,playerId:`${teamId}:0`,teamId,opponentTeamId:teamId===game.homeTeamId?game.awayTeamId:game.homeTeamId,
+          sourceKey:"nf3",sourceRecordId:`${game.id}:${teamId}`,collectedAt:now.toISOString(),role:"starter",starter:true,
+          appearanceOrder:null,inningsPitchedOuts:27,battersFaced:27,hits:0,homeRuns:0,walks:null,walksAndHitBatters:0,strikeouts:0,runs:0,earnedRuns:0,pitches:90,catcherId:null,decision:"none"}));
+        await repo.saveBatting(batters.map(fact=>({date:game.date,opponentTeamId:fact.opponentTeamId!,scheduledTime:null,fact})),game.date,false,false,"full",game);
+        await repo.savePitching(pitchers.map(fact=>({date:game.date,opponentTeamId:fact.opponentTeamId!,scheduledTime:null,fact})),game.date,false,false,"full",game);
+        const proof=validateNpbGameFacts(game,18,batters,2,pitchers,18,2);expect(proof.gameStatus).toBe("complete");await repo.saveGameCompleteness(proof);
+      }
+      const request=vi.fn(async(url:string)=>page(new URL(url).searchParams.get("tm")!));
+      const result=await runHistoricalBackfill(client,{from:"2026-09-20",to:"2026-09-20",request,now});
+      expect(result.reports[0]?.status).toBe("unknown"); // Missing Game's roster deliberately invalid.
+      const participantRequests=request.mock.calls.map(([url])=>new URL(url)).filter(u=>u.searchParams.has("fp"));
+      expect(participantRequests).toHaveLength(1);
+      expect(participantRequests[0]?.searchParams.get("tm")).toBe(npbTeams.find(t=>t.id===games[5]!.homeTeamId)!.code);
+      expect(Number((await client.execute("SELECT count(*) n FROM player_game_batting")).rows[0]?.n)).toBe(90);
     } finally {client.close();}
   });
 });

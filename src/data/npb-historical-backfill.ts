@@ -4,7 +4,7 @@ import { previousJstDate, runNpbDayFacts } from "./npb-day-collector";
 import { createNf3DryRunSession } from "./npb-day-dry-run";
 import { parseNf3TeamGames, npbTeams, type NpbGame } from "./npb-nf3";
 import { createHistoricalPitcherDiscovery, historicalReasonCodes } from "./npb-historical-discovery";
-import { runNpbGameProof, validateNpbGameFacts } from "./npb-game-collector";
+import { runNpbGameProof, validateNpbGameFacts, type NpbGameProofResult } from "./npb-game-collector";
 import { NpbRepository } from "./npb-repository";
 import { findNpbRegularSeason } from "./npb-season-metadata";
 import { sourceRegistry } from "./source-registry";
@@ -78,6 +78,7 @@ export async function runHistoricalBackfill(client: DataClient, options: {
       if(games.some(g=>g.status==="scheduled" || g.status==="unknown" || g.status==="suspended"))
         throw new Error("Unresolved non-final schedule row on completed date");
       const stages=await repository.findStageStatuses(date);
+      const verifiedGames=new Map<string,NpbGameProofResult>();
       let reusable=stages.games==="complete";
       const prior=await repository.findGamesByDate(date);
       reusable &&= prior.length===games.length && prior.every(g=>games.some(n=>n.id===g.id && n.status===g.status &&
@@ -86,8 +87,11 @@ export async function runHistoricalBackfill(client: DataClient, options: {
         const evidence=await repository.findGameCompleteness(game.id);
         if(!evidence || evidence.gameStatus!=="complete") {reusable=false;continue;}
         const [batting,pitching]=await Promise.all([repository.findBattingByGame(game.id),repository.findPitchingByGame(game.id)]);
-        if(validateNpbGameFacts(game,evidence.expectedBatters,batting,evidence.expectedPitchers,pitching,
-          evidence.mappedBatters,evidence.mappedPitchers).gameStatus!=="complete") reusable=false;
+        const report=validateNpbGameFacts(game,evidence.expectedBatters,batting,evidence.expectedPitchers,pitching,
+          evidence.mappedBatters,evidence.mappedPitchers);
+        if(report.gameStatus!=="complete") reusable=false;
+        else verifiedGames.set(game.id,{report,fetchedPages:0,battingFacts:batting.length,pitchingFacts:pitching.length,
+          insertedBatting:0,insertedPitching:0,wouldCreateMappings:[],observed:{sacrificeFlies:0,fractionalTwoOutPitchers:0},nonBattingSubstitutes:[]});
       }
       const days=await client.execute({sql:"SELECT day_status FROM npb_day_runs WHERE target_date=? ORDER BY started_at DESC,run_id DESC LIMIT 1",args:[date]});
       if(reusable && ["complete","no_games"].includes(String(days.rows[0]?.day_status))) {
@@ -98,19 +102,13 @@ export async function runHistoricalBackfill(client: DataClient, options: {
         // Dry-run stages schedules only in the explicitly caller-owned scratch DB.
         await repository.saveGames(games,date,false,true);
         // Preflight before any Player Fact write. Never infer missing pitchers.
-        for(const game of games.filter(g=>g.status==="final")) for(const id of [game.homeTeamId,game.awayTeamId]) {
+        for(const game of games.filter(g=>g.status==="final" && !verifiedGames.has(g.id))) for(const id of [game.homeTeamId,game.awayTeamId]) {
           await historicalPitchers(game,id);
         }
         const result=await runNpbDayFacts(client,{targetDate:date,trigger:"repair",dryRun:options.dryRun ?? false,
           requireCompleteGameStage:true,request:session.request,runGame:async(game,request)=>{
-            const evidence=await repository.findGameCompleteness(game.id);
-            if(evidence?.gameStatus==="complete") {
-              const [b,p]=await Promise.all([repository.findBattingByGame(game.id),repository.findPitchingByGame(game.id)]);
-              const report=validateNpbGameFacts(game,evidence.expectedBatters,b,evidence.expectedPitchers,p,
-                evidence.mappedBatters,evidence.mappedPitchers);
-              if(report.gameStatus==="complete") return {report,fetchedPages:0,battingFacts:b.length,pitchingFacts:p.length,
-                insertedBatting:0,insertedPitching:0,wouldCreateMappings:[],observed:{sacrificeFlies:0,fractionalTwoOutPitchers:0},nonBattingSubstitutes:[]};
-            }
+            const verified=verifiedGames.get(game.id);
+            if(verified)return verified;
             return runNpbGameProof(client,{gameId:game.id,targetDate:date,dryRun:options.dryRun ?? false,scope:"day-ingest",
               request,persistRawManifest:false,historicalPitchers,onParseTiming:ms=>timings.gameParsingNormalizationMs+=ms});
           }});
