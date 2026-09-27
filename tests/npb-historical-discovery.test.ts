@@ -15,6 +15,17 @@ describe("published historical season participant route",()=>{
     expect(ambiguous).toHaveLength(2);
     expect(()=>findRosterPlayer(ambiguous,batter.name)).toThrow("ambiguous");
   });
+  it("chooses a batting profile only for manually reviewed two-way aliases",()=>{
+    const pairs=[
+      ["根尾昂","https://nf3.sakura.ne.jp/Central/D/f/30f_stat.htm","https://nf3.sakura.ne.jp/Central/D/p/30pp_stat.htm","30"],
+      ["柴田獅子","https://nf3.sakura.ne.jp/Pacific/F/f/31f_stat.htm","https://nf3.sakura.ne.jp/Pacific/F/p/31pp_stat.htm","31"],
+    ] as const;
+    for(const [name,batting,pitching,number] of pairs){
+      const players=[{name,number,profileUrl:batting},{name,number,profileUrl:pitching}];
+      expect(findRosterPlayer(players,name).profileUrl).toBe(batting);
+      expect(()=>findRosterPlayer([...players,{name,number,profileUrl:batting.replace("_stat.htm","x_stat.htm")}],name)).toThrow("ambiguous");
+    }
+  });
   it("enumerates old March games from the observed 全表示 schedule",()=>{
     const games=parseNf3TeamGames(fixture("schedule-e-march-all"),"E",2026,"https://nf3.sakura.ne.jp/",new Date().toISOString());
     expect(games.map(g=>g.date)).toEqual(["2026-03-27","2026-03-28","2026-03-29","2026-03-31"]);

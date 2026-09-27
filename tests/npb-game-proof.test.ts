@@ -88,6 +88,25 @@ describe("2026-09-23 controlled NPB game proof", () => {
     expect((await client.execute("SELECT count(DISTINCT entity_id) n FROM master_history WHERE entity_kind='player'")).rows[0]?.n).toBe(1);
     await expect(repository.resolveVerifiedPlayer(identity.sourceId,identity.name,identity.profileUrl,"npb:team:hawks",at,true)).rejects.toThrow();
   });
+  it("maps reviewed two-way batting and pitching aliases to one existing canonical player",async()=>{
+    const client=await db(),repository=new NpbRepository(client);
+    for(const [prefix,originalId] of [["2026:D:profile:30f","2026:D:uniform:30"],["2026:F:profile:31f","2026:F:uniform:31"]] as const){
+      const batter=verifiedNf3Identities.find(p=>p.sourceId===prefix)!;
+      const pitcher=verifiedNf3Identities.find(p=>p.sourceId===prefix.replace(/f$/, "pp"))!;
+      await client.execute({sql:"INSERT INTO master_history VALUES (?,?,?,?,?,?,?)",args:["player",batter.playerId,"2026-01-01",
+        JSON.stringify({name:batter.name,teamId:batter.teamId}),"nf3",originalId,at]});
+      expect(await repository.resolveVerifiedPlayer(batter.sourceId,batter.name,batter.profileUrl,batter.teamId,at,false)).toBe(batter.playerId);
+      expect(await repository.resolveVerifiedPlayer(pitcher.sourceId,pitcher.name,pitcher.profileUrl,pitcher.teamId,at,false)).toBe(batter.playerId);
+      await expect(repository.resolveVerifiedPlayer(pitcher.sourceId,pitcher.name,pitcher.profileUrl.replace("/p/","/f/"),pitcher.teamId,at,false)).rejects.toThrow("identity mismatch");
+    }
+    expect((await client.execute("SELECT count(DISTINCT entity_id) n FROM master_history WHERE entity_kind='player'")).rows[0]?.n).toBe(2);
+  });
+  it("accepts only the reviewed Hawks Osuna batting profile alongside pitching",async()=>{
+    const client=await db(),repository=new NpbRepository(client);
+    const verified=verifiedNf3Identities.find(p=>p.sourceId==="2026:H:uniform:54")!;
+    expect(await repository.resolveVerifiedPlayer(verified.sourceId,verified.name,verified.profileUrl.replace("/p/","/f/"),verified.teamId,at,false)).toBe(verified.playerId);
+    await expect(repository.resolveVerifiedPlayer(verified.sourceId,verified.name,verified.profileUrl.replace("/p/","/f/").replace("54_stat","55_stat"),verified.teamId,at,false)).rejects.toThrow("identity mismatch");
+  });
   it("keeps an explicitly reviewed transferred identity without changing the current canonical team",async()=>{
     const client=await db(),repo=new NpbRepository(client);
     const identity=verifiedNf3Identities.find(p=>p.sourceId==="2026:DB:profile:tr_H_50")!;

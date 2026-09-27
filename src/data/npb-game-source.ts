@@ -1,6 +1,7 @@
 import { load } from "cheerio";
 import { playerGameBattingSchema, playerGamePitchingSchema, type PlayerGameBatting, type PlayerGamePitching } from "../domain/game-facts";
 import { normalizeNpbName, parseNf3BattingLogs, parseNf3PitchingLogs, type NpbLogRow } from "./npb-nf3";
+import { verifiedNf3Identities } from "./npb-verified-nf3-identities";
 
 export interface Nf3Participant { number: string; name: string; profileUrl: string }
 export interface Nf3Starter extends Nf3Participant { battingOrder: number }
@@ -173,6 +174,15 @@ export function parseNf3GamePitchingRow(html: string, date: string, teamCode: st
 
 export function findRosterPlayer(roster: readonly Nf3Participant[], name: string): Nf3Participant {
   const matches = roster.filter((player) => normalizeNpbName(player.name) === normalizeNpbName(name));
+  if (matches.length > 1) {
+    // A two-way player may have distinct nf3 batting/pitching profiles. Resolve
+    // only reviewed exact URL/name tuples mapped to one existing canonical ID.
+    const reviewed = matches.map(player=>verifiedNf3Identities.find(identity=>
+      identity.profileUrl===player.profileUrl && normalizeNpbName(identity.name)===normalizeNpbName(player.name)));
+    const batting = matches.filter(player=>/\/f\//.test(new URL(player.profileUrl).pathname));
+    if (reviewed.every(Boolean) && new Set(reviewed.map(identity=>identity?.playerId)).size===1 && batting.length===1)
+      return batting[0]!;
+  }
   if (matches.length !== 1) throw new Error(`Unresolved/ambiguous nf3 player: ${name}`);
   return matches[0]!;
 }
