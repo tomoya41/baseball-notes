@@ -145,6 +145,7 @@ jobs:
           npx tsx scripts/preserve-published-npb-hot.ts
           npx tsx scripts/preserve-published-npb-player-directory.ts
           npx tsx scripts/preserve-published-npb-season.ts
+          npx tsx scripts/preserve-published-npb-game-surface.ts
       - name: Configure GitHub Pages
         if: steps.safety.outputs.skip != 'true' && (github.event_name == 'schedule' || inputs.mode == 'ingest' || inputs.mode == 'publish')
         uses: actions/configure-pages@v5

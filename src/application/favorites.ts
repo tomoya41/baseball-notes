@@ -27,6 +27,7 @@ export class Favorites {
   }
   toggle(
     target: Pick<Favorite, "entityId" | "kind" | "league">,
+    mode: "toggle" | "add" | "remove" = "toggle",
   ): Promise<Favorite[]> {
     const operation = this.queue.then(async () => {
       const current = await this.list();
@@ -34,7 +35,9 @@ export class Favorites {
         item.kind === target.kind &&
         item.entityId === target.entityId &&
         item.league === target.league;
-      const next = current.some(match)
+      const exists=current.some(match);
+      if((mode==="add"&&exists)||(mode==="remove"&&!exists))return current;
+      const next = mode==="remove" || (mode==="toggle"&&exists)
         ? current.filter((item) => !match(item))
         : [
             ...current,
@@ -49,4 +52,6 @@ export class Favorites {
     this.queue = operation.catch(() => undefined);
     return operation;
   }
+  add(target:Pick<Favorite,"entityId"|"kind"|"league">):Promise<Favorite[]>{return this.toggle(target,"add");}
+  remove(target:Pick<Favorite,"entityId"|"kind"|"league">):Promise<Favorite[]>{return this.toggle(target,"remove");}
 }

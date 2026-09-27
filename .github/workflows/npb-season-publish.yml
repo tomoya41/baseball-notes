@@ -33,6 +33,7 @@ jobs:
           npm run backup:npb:drill -- --require-remote > .data/batch-b/backup.json
           npm run publish:npb:remote -- --payload-root .data/publish
           npx tsx scripts/generate-npb-player-directory.ts --require-remote --payload-root=.data/publish
+          npx tsx scripts/generate-npb-game-surface.ts > .data/batch-b/game-surface.json
       - name: Encrypt portable export; never publish raw backup
         env:
           NPB_BACKUP_ENCRYPTION_KEY: ${{ secrets.NPB_BACKUP_ENCRYPTION_KEY }}

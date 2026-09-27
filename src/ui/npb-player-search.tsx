@@ -3,14 +3,16 @@ import { ChevronRight, Search } from "lucide-react";
 import { Link } from "react-router-dom";
 import { searchNpbPlayers, type NpbPlayerDirectory } from "../domain/npb-player-directory";
 import { positionDefinitions } from "../domain/baseball-terms";
-import { DataState, LoadingSkeleton, PageHeading } from "./components";
+import type { Favorite } from "../domain/models";
+import { DataState, FavoriteButton, LoadingSkeleton, PageHeading } from "./components";
 
 type SearchState = "loading" | "ready" | "error";
 type Role = "all" | "batter" | "pitcher";
 type DirectoryReader = { findLatestNpb(): Promise<NpbPlayerDirectory> };
 
 export function NpbPlayerSearchView({ directory, state, query, onQueryChange, teamId, onTeamChange,
-  role, onRoleChange }: { directory: NpbPlayerDirectory | null; state: SearchState;
+  role, onRoleChange, favorites=[],toggle,saving=false }: { directory: NpbPlayerDirectory | null; state: SearchState;
+  favorites?:Favorite[]|undefined;toggle?:((target:Pick<Favorite,"kind"|"entityId"|"league">)=>void)|undefined;saving?:boolean|undefined;
   query: string; onQueryChange: (value: string) => void; teamId: string; onTeamChange: (value: string) => void;
   role: Role; onRoleChange: (value: Role) => void }) {
   const players = useMemo(() => directory ? searchNpbPlayers(directory.players, query,
@@ -41,7 +43,7 @@ export function NpbPlayerSearchView({ directory, state, query, onQueryChange, te
       </div>
       <div className="list-heading"><strong>{query || teamId || role !== "all" ? "検索結果" : "選手一覧"}</strong><span>{players.length}人</span></div>
       {players.length ? <div className="row-list">{players.map((player) =>
-        <Link className="player-row npb-directory-row" key={player.playerId}
+        <div className="surface-favorite" key={player.playerId}><Link className="player-row npb-directory-row"
           to={`/NPB/players/${encodeURIComponent(player.playerId)}`}>
           <span className="npb-directory-avatar" aria-hidden="true">{player.displayName.slice(0, 1)}</span>
           <span className="player-row__body"><strong>{player.displayName}</strong>
@@ -51,13 +53,15 @@ export function NpbPlayerSearchView({ directory, state, query, onQueryChange, te
                 ` · ${[player.battingAvailable && "打撃", player.pitchingAvailable && "投球"].filter(Boolean).join("・")}データあり` :
                 " · 最近の成績なし"}</small>
           </span><ChevronRight className="row-chevron" size={19} aria-hidden="true" />
-        </Link>)}</div> : <DataState kind="no-data" title="該当する選手が見つかりません" />}
+        </Link>{toggle&&<FavoriteButton active={favorites.some(f=>f.league==="NPB"&&f.kind==="player"&&f.entityId===player.playerId)}
+          saving={saving} label={player.displayName} onClick={()=>toggle({kind:"player",league:"NPB",entityId:player.playerId})}/>}</div>)}</div> : <DataState kind="no-data" title="該当する選手が見つかりません" />}
       <p className="npb-directory-note">保存済み選手情報から表示しています。守備位置が未登録の選手は表示を省略します。</p>
     </>}
   </div>;
 }
 
-export function NpbPlayerSearch({ repository }: { repository: DirectoryReader }) {
+export function NpbPlayerSearch({ repository,favorites,toggle,saving }: { repository: DirectoryReader;
+  favorites?:Favorite[]|undefined;toggle?:((target:Pick<Favorite,"kind"|"entityId"|"league">)=>void)|undefined;saving?:boolean|undefined }) {
   const [directory, setDirectory] = useState<NpbPlayerDirectory | null>(null);
   const [state, setState] = useState<SearchState>("loading");
   const [query, setQuery] = useState("");
@@ -70,5 +74,5 @@ export function NpbPlayerSearch({ repository }: { repository: DirectoryReader })
     return () => { active = false; };
   }, [repository]);
   return <NpbPlayerSearchView directory={directory} state={state} query={query} onQueryChange={setQuery}
-    teamId={teamId} onTeamChange={setTeamId} role={role} onRoleChange={setRole} />;
+    teamId={teamId} onTeamChange={setTeamId} role={role} onRoleChange={setRole} favorites={favorites} toggle={toggle} saving={saving} />;
 }

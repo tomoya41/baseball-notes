@@ -80,6 +80,7 @@ jobs:
           npx tsx scripts/generate-npb-hot-payload.ts --require-remote > .data/eod/hot.json
           npm run publish:npb:remote -- --date "$TARGET_DATE" --payload-root .data/publish
           npx tsx scripts/generate-npb-player-directory.ts --require-remote --payload-root=.data/publish
+          npx tsx scripts/generate-npb-game-surface.ts > .data/eod/game-surface.json
       - name: Encrypt portable export
         if: steps.watch.outputs.publish == 'true' || (inputs.fixture_only && inputs.verify_backup)
         env:

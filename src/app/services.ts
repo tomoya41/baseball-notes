@@ -17,6 +17,7 @@ import { HttpPlayerHomeAwayRepository } from "../infrastructure/providers/http-p
 import { HttpPlayerOpponentRepository } from "../infrastructure/providers/http-player-opponent-repository";
 import { HttpPlayerAnalysisBundleRepository } from "../infrastructure/providers/http-player-analysis-bundle-repository";
 import { Capacitor } from "@capacitor/core";
+import { StaticGameSurfaceRepository } from "../infrastructure/providers/static-game-surface-repository";
 
 // Composition root: replace adapters here, never inside a screen.
 const npbDataBaseUrl = import.meta.env.VITE_NPB_DATA_BASE_URL?.trim() ||
@@ -29,6 +30,7 @@ export const services = {
   standings: new StaticStandingsRepository(import.meta.env.BASE_URL, undefined, npbDataBaseUrl),
   hot: new StaticHotRepository(npbDataBaseUrl),
   directory: new StaticPlayerDirectoryRepository(npbDataBaseUrl),
+  gameSurface: new StaticGameSurfaceRepository(npbDataBaseUrl),
   recent: new HttpPlayerRecentRepository(import.meta.env.VITE_NPB_PLAYER_API_BASE_URL?.trim() || "https://baseball-notes-recent.vercel.app/"),
   gameLog: new HttpPlayerGameLogRepository(import.meta.env.VITE_NPB_PLAYER_API_BASE_URL?.trim() || "https://baseball-notes-recent.vercel.app/"),
   gameDetail: new HttpNpbGameDetailRepository(import.meta.env.VITE_NPB_PLAYER_API_BASE_URL?.trim() || "https://baseball-notes-recent.vercel.app/"),

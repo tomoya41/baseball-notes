@@ -65,6 +65,7 @@ jobs:
           cp .data/publish/data/npb/hot/latest.json dist/data/npb/hot/latest.json
           npx tsx scripts/preserve-published-npb-player-directory.ts
           npx tsx scripts/preserve-published-npb-season.ts
+          npx tsx scripts/preserve-published-npb-game-surface.ts
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:

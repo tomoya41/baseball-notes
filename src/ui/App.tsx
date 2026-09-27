@@ -24,6 +24,8 @@ import { PlayerRecentView } from "./player-recent";
 import { PlayerSeasonView } from "./player-season";
 import { PlayerGameLogView } from "./player-game-log";
 import { NpbGameDetailScreen } from "./npb-game-detail";
+import { NpbScheduleScreen,NpbRecentGames,NpbRecordsScreen } from "./npb-game-surface";
+import { NpbSavedPlayers } from "./npb-my";
 import { NpbPlayerAnalysisScreen, NpbPlayerHomeAwaySection, NpbPlayerOpponentSection,
   NpbPlayerBattingOrderSection, NpbPlayerPitcherRoleSection, NpbPlayerBatterRoleSection } from "./npb-player-analysis";
 import { NpbHotSection } from "./npb-hot";
@@ -77,7 +79,8 @@ function NpbStandingsSection({ services }: { services: Services }) {
   </section>;
 }
 
-function HomeScreen({ catalog, favorites, services }: { catalog: PlayerCatalog; favorites: Favorite[]; services: Services }) {
+function HomeScreen({ catalog, favorites, services,toggle,saving }: { catalog: PlayerCatalog; favorites: Favorite[]; services: Services;
+  toggle:(target:FavoriteTarget)=>void;saving:boolean }) {
   const league = catalog.league;
   const saved = catalog.profiles.filter(({ player }) => favorites.some((favorite) =>
     favorite.kind === "player" && favorite.entityId === player.id));
@@ -86,28 +89,28 @@ function HomeScreen({ catalog, favorites, services }: { catalog: PlayerCatalog; 
       <div><p className="eyebrow">{formatDate(new Date().toISOString())}</p><h1>今日の野球</h1></div>
       <LeagueBadge league={league} />
     </div>
-    <section className="home-section">
+    {league==="NPB"?<NpbRecentGames repository={services.gameSurface}/>:<section className="home-section">
       <SectionHeader title="今日の試合" />
       <div className="feature-panel feature-panel--game">
         <HomePlateIcon className="feature-icon" />
         <WatchToday catalog={catalog} provider={services.watch} />
       </div>
-    </section>
+    </section>}
     {league === "NPB" && <NpbStandingsSection services={services} />}
     <section className="home-section">
-      <SectionHeader title="お気に入り" action={saved.length > 2 ? "もっと見る" : undefined} to={`/${league}/my`} />
-      {saved.length ? <div className="row-list">{saved.slice(0, 2).map(({ player }) =>
+      <SectionHeader title="お気に入り" action={league==="NPB"?"Myへ":saved.length > 2 ? "もっと見る" : undefined} to={`/${league}/my`} />
+      {league==="NPB"?<NpbSavedPlayers repository={services.directory} favorites={favorites} toggle={toggle} saving={saving} compact/>:saved.length ? <div className="row-list">{saved.slice(0, 2).map(({ player }) =>
         <PlayerRow key={player.id} player={player} catalog={catalog} favorites={favorites} />)}</div>
         : <DataState kind="no-data" title="お気に入りはまだありません" action="選手を探す" to={`/${league}/search`} />}
     </section>
-    <section className="home-section">
+    {league!=="NPB"&&<section className="home-section">
       <SectionHeader title="サンプル選手" action="もっと見る" to={`/${league}/search`} />
       <div className="feature-panel feature-panel--players">
         <div className="feature-panel__title"><BatIcon className="feature-icon" /><span>選手データを見てみる</span></div>
         <div className="row-list">{catalog.profiles.slice(0, 2).map(({ player }) =>
           <PlayerRow key={player.id} player={player} catalog={catalog} favorites={favorites} />)}</div>
       </div>
-    </section>
+    </section>}
     {league === "NPB" ? <NpbHotSection repository={services.hot} /> :
       <section className="home-section home-section--compact">
         <SectionHeader title="HOT" action="参考順位" to={`/${league}/ranking`} />
@@ -494,34 +497,36 @@ function LeagueView({ league, services, favorites, toggle, saving }: {
       {!result && <button className="button" onClick={() => void refresh()}>再試行</button>}</div>}
     {!result && loading && <LoadingSkeleton />}
     {result && <>
-      {result.data.source.kind === "sample" && !canonicalPlayerRoute && !(league === "NPB" && location.pathname.endsWith("/search")) && <div className="sample-banner">
-        <span>サンプル</span> {league === "NPB" ? "選手一覧・分析はサンプルです。実データ対応選手の最近の成績は別途表示します" : "架空の選手・球団・成績を表示しています"}
+      {result.data.source.kind === "sample" && league!=="NPB" && !canonicalPlayerRoute && <div className="sample-banner">
+        <span>サンプル</span> 架空の選手・球団・成績を表示しています
       </div>}
       <Routes>
-        <Route path="home" element={<HomeScreen catalog={result.data} favorites={favorites} services={services} />} />
-        <Route path="search" element={league === "NPB" ? <NpbPlayerSearch repository={services.directory} /> :
+        <Route path="home" element={<HomeScreen catalog={result.data} favorites={favorites} services={services} toggle={toggle} saving={saving}/>} />
+        <Route path="schedule" element={<NpbScheduleScreen repository={services.gameSurface}/>} />
+        <Route path="search" element={league === "NPB" ? <NpbPlayerSearch repository={services.directory} favorites={favorites} toggle={toggle} saving={saving}/> :
           <SearchScreen catalog={result.data} favorites={favorites}
             query={searchQuery} setQuery={setSearchQuery} scope={searchScope} setScope={setSearchScope} />} />
-        <Route path="ranking" element={<RankingScreen catalog={result.data} />} />
+        <Route path="ranking" element={league==="NPB"?<NpbRecordsScreen repository={services.gameSurface}/>:<RankingScreen catalog={result.data} />} />
         <Route path="players/:playerId/:section?" element={<PlayerScreen key={location.pathname.split("/")[3]} catalog={result.data}
           favorites={favorites} toggle={toggle} saving={saving} services={services} />} />
         <Route path="teams/:teamId" element={<TeamScreen catalog={result.data}
           favorites={favorites} toggle={toggle} saving={saving} />} />
-        <Route path="analysis" element={<AnalysisDirectory catalog={result.data}
-          provider={services.analysis} favorites={favorites} />} />
+        <Route path="analysis" element={league==="NPB"?<div className="screen"><PageHeading eyebrow="NPB" title="選手の分析"
+          detail="選手画面の「分析」で、最近の成績や条件別成績を確認できます。"/><Link className="button" to="/NPB/search">分析する選手を探す</Link></div>:
+          <AnalysisDirectory catalog={result.data} provider={services.analysis} favorites={favorites} />} />
         <Route path="matchup" element={<MatchupScreen catalog={result.data} provider={services.analysis} />} />
         <Route path="watch/:gameId" element={<WatchGameScreen catalog={result.data} provider={services.watch} />} />
-        <Route path="records" element={<div className="screen"><PageHeading eyebrow={`${league} / 記録`} title="記録" />
+        <Route path="records" element={league==="NPB"?<NpbRecordsScreen repository={services.gameSurface}/>:<div className="screen"><PageHeading eyebrow={`${league} / 記録`} title="記録" />
           <DataState kind="not-implemented" title="記録データは未接続です" />
           <Link className="ranking-entry" to={`/${league}/ranking`}><Trophy size={20} />
             <span><strong>参考ランキング</strong><small>架空サンプル内の表示順</small></span><ChevronRight size={19} /></Link>
         </div>} />
-        <Route path="my" element={<MyScreen catalog={result.data} favorites={favorites} />} />
+        <Route path="my" element={league==="NPB"?<div className="screen"><NpbSavedPlayers repository={services.directory} favorites={favorites} toggle={toggle} saving={saving}/></div>:<MyScreen catalog={result.data} favorites={favorites} />} />
         <Route path="players" element={<Navigate to={`/${league}/search`} replace />} />
         <Route path="favorites" element={<Navigate to={`/${league}/my`} replace />} />
         <Route path="*" element={<Navigate to={`/${league}/home`} replace />} />
       </Routes>
-      {!canonicalPlayerRoute && !(league === "NPB" && location.pathname.endsWith("/search")) &&
+      {league!=="NPB" && !canonicalPlayerRoute &&
         <DataNote result={result} clock={clock} loading={loading} refresh={() => void refresh()} />}
     </>}
   </>;
@@ -540,9 +545,10 @@ export function App({ services }: { services: Services }) {
   useEffect(() => { window.scrollTo(0, 0); }, [location.pathname]);
   const league: League = location.pathname.split("/")[1] === "MLB" ? "MLB" : "NPB";
   const section = location.pathname.split("/")[2] ?? "home";
-  const currentNav = section === "matchup" ? "analysis" : section === "watch" ? "home"
+  const currentNav = section === "matchup" ? "analysis" : ["watch","games","schedule"].includes(section) ? "home"
+    : section === "ranking" ? "records"
     : section === "players" && location.pathname.endsWith("/analysis") ? "analysis"
-    : section === "players" || section === "games" || section === "teams" || section === "ranking" ? "search"
+    : section === "players" || section === "teams" ? "search"
     : section === "favorites" ? "my" : section;
   const [favorites, setFavorites] = useState<Favorite[]>([]);
   const [saving, setSaving] = useState(false);
@@ -579,7 +585,7 @@ export function App({ services }: { services: Services }) {
     {favoriteMessage && <p className={`toast${favoriteError ? " toast--error" : ""}`}
       role={favoriteError ? "alert" : "status"}>{favoriteMessage}</p>}
     <main id="main-content" tabIndex={-1}><Routes>
-      <Route path="/NPB/games/:gameId" element={<NpbGameDetailScreen repository={services.gameDetail} />} />
+      <Route path="/NPB/games/:gameId" element={<NpbGameDetailScreen key={location.pathname} repository={services.gameDetail} />} />
       <Route path="/NPB/*" element={<LeagueView key="NPB" league="NPB" services={services}
         favorites={favorites} toggle={toggle} saving={saving} />} />
       <Route path="/MLB/*" element={<LeagueView key="MLB" league="MLB" services={services}

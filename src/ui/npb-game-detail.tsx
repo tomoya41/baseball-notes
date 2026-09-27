@@ -30,6 +30,7 @@ export function NpbGameDetailView({ payload, state }: { payload: NpbGameDetail |
     <DataState kind="source-unavailable" title="試合データを取得できませんでした" /></div>;
   const hasBox = payload.status === "final";
   return <div className="screen game-detail">
+    <a className="back-link" href={`#/NPB/schedule?date=${payload.date}`}>日程・結果に戻る</a>
     <header className="game-detail__header"><p>NPB / 試合詳細</p><h1>{formatDate(payload.date, true)}の試合</h1>
       <p>{statusName[payload.status]}{payload.gameNumber > 1 ? ` · 第${payload.gameNumber}試合` : ""}</p></header>
     <div className="game-detail__score" aria-label={`${payload.away.shortName} ${value(payload.away.score)}、${payload.home.shortName} ${value(payload.home.score)}`}>
@@ -52,6 +53,7 @@ export function NpbGameDetailView({ payload, state }: { payload: NpbGameDetail |
             <a href={`#/NPB/players/${encodeURIComponent(row.playerId)}`}>{row.name}</a>
             <span className="game-detail__numbers">{value(row.ab)}打数 {value(row.hits)}安打 · {value(row.rbi)}打点 · {value(row.homeRuns)}HR</span></div>
           {row.pa === 0 && row.ab === 0 && <p className="game-detail__minor">打席なし{row.starter === false ? " · 途中出場" : ""}</p>}
+          <p className="game-detail__minor">{row.starter===true?"先発":row.starter===false?"途中出場":"出場形態未確認"}</p>
           <details><summary>詳しい打撃成績</summary><dl>{battingDetails.map(({ key, label }) =>
             <div key={key}><dt>{label}</dt><dd>{value(row[key])}</dd></div>)}</dl></details>
         </li>)}</ol> : <p className="game-detail__note">保存済み打撃成績はありません。</p>}
@@ -63,6 +65,7 @@ export function NpbGameDetailView({ payload, state }: { payload: NpbGameDetail |
           <details><summary>詳しい投球成績</summary><dl>{pitchingDetails.map(({ key, label }) =>
             <div key={key}><dt>{label}</dt><dd>{value(row[key])}</dd></div>)}</dl></details>
         </li>)}</ol> : <p className="game-detail__note">保存済み投球成績はありません。</p>}
+        <p className="game-detail__minor">同じ打順の交代順・救援投手の登板順は表示順から判断できません。</p>
       </section>;
     })}
   </div>;
