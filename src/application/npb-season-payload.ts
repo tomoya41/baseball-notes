@@ -39,7 +39,7 @@ export const npbSeasonPayloadSchema=z.strictObject({schemaVersion:z.literal(1),l
 });
 export type NpbSeasonPayload=z.infer<typeof npbSeasonPayloadSchema>;
 
-// Internal candidates are never a public ranking. Official qualifiers are intentionally unresolved.
+// Internal candidates are never a public ranking; qualification also needs verified coverage/team context.
 export function seasonRankingReadModel(batch:PlayerPeriodBatchResult,directory?:NpbPlayerDirectory,context?:SeasonQualifierContext) {
   const metadata=new Map(directory?.players.map(p=>[p.playerId,p]) ?? []);
   const qualifications=Object.fromEntries((["batters","pitchers"] as const).map(role=>[role,
@@ -66,11 +66,19 @@ export function seasonRankingReadModel(batch:PlayerPeriodBatchResult,directory?:
     const ids=new Set(qualifications[role]!.filter(p=>p.status==="qualified").map(p=>p.playerId));
     return rank(role,key,ascending).filter(p=>ids.has(p.playerId)).map((p,index)=>({...p,rank:index+1}));
   };
+  const qualifierUnknown=Object.values(qualifications).flat().some(p=>p.status==="unknown");
+  const rateReadiness=(role:"batters"|"pitchers",keys:string[])=>Object.fromEntries(keys.map(key=>[key,
+    batch.coverage.status==="complete" && !qualifierUnknown && batch[role].every(p=>
+      qualifications[role]!.find(q=>q.playerId===p.playerId)?.status!=="qualified" ||
+      (p.metrics as Record<string,AggregateMetric>)[key]?.status==="complete")?"ready":"not_ready"]));
+  const ratesReadiness={batting:rateReadiness("batters",["AVG","OPS"]),pitching:rateReadiness("pitchers",["ERA","K9"])};
+  const ratesReady=Object.values(ratesReadiness).flatMap(Object.values).every(s=>s==="ready");
   return {counting:{batting,pitching},qualifications,countingReadiness,
     readiness:{counting:countingReady?"ready":"not_ready",rule:"verified",
-      rates:batch.coverage.status==="complete" && !Object.values(qualifications).flat().some(p=>p.status==="unknown")?"ready":"not_ready"},
-    rates:{status:batch.coverage.status==="complete" && !Object.values(qualifications).flat().some(p=>p.status==="unknown")?"ready":"not_ready",
-      reason:batch.coverage.status!=="complete"?"season_coverage_not_complete":"qualifier_computation_pending",
+      rates:ratesReady?"ready":"not_ready"},
+    rates:{status:ratesReady?"ready":"not_ready",metricReadiness:ratesReadiness,
+      reason:batch.coverage.status!=="complete"?"season_coverage_not_complete":qualifierUnknown?
+        "qualifier_computation_pending":!ratesReady?"qualified_metric_incomplete":null,
       qualified:{AVG:qualified("batters","AVG"),OPS:qualified("batters","OPS"),ERA:qualified("pitchers","ERA",true),K9:qualified("pitchers","K9")},
       candidates:{AVG:rank("batters","AVG"),OPS:rank("batters","OPS"),ERA:rank("pitchers","ERA",true),K9:rank("pitchers","K9")}},
     // Simple season records only; the same counting read model, no all-time/career claims.
@@ -93,6 +101,6 @@ export function buildNpbSeasonPayload(batch:PlayerPeriodBatchResult,directory:Np
     ...(batch.coverage.status!=="complete"?["qualifier_computation_requires_complete_coverage"]:[]),"public_ranking_not_enabled"];
   return npbSeasonPayloadSchema.parse({schemaVersion:1,league:"NPB",season:2026,effectiveDate:batch.window.to,generatedAt,
     period:{from:batch.window.from,to:batch.window.to},coverage:{status:batch.coverage.status,summary:batch.coverage.summary},
-    readiness:{status:"not_ready",reasons,counting:batch.coverage.status==="complete"?"ready":"not_ready",rateQualifier:"verified"},
+    readiness:{status:"not_ready",reasons,counting:seasonRankingReadModel(batch).readiness.counting,rateQualifier:"verified"},
     players,rankings:{batting:[],pitching:[]}});
 }

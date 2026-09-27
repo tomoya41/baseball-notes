@@ -55,6 +55,12 @@ describe("season read model",()=>{
     expect(rankings.qualifications.pitchers![0]?.status).toBe("unqualified");
     expect(rankings.rates.qualified.OPS).toHaveLength(1);
     expect(rankings.rates.qualified.ERA).toEqual([]);
+    expect(rankings.rates.reason).toBeNull();
+    const incomplete=await batch(true);
+    incomplete.coverage={...incomplete.coverage,status:"complete"};
+    const blocked=seasonRankingReadModel(incomplete,rankDirectory,context);
+    expect(blocked.rates.metricReadiness.batting.OPS).toBe("not_ready");
+    expect(blocked.rates.reason).toBe("qualified_metric_incomplete");
     const second={...result.batters[0]!,playerId:"aaa"};
     result.batters.push(second);
     expect(seasonRankingReadModel(result).counting.batting.HR?.map(p=>p.playerId)).toEqual(["aaa","dual"]);
