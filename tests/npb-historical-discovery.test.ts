@@ -20,6 +20,19 @@ describe("published historical season participant route",()=>{
     expect(games.map(g=>g.date)).toEqual(["2026-03-27","2026-03-28","2026-03-29","2026-03-31"]);
     expect(games[0]).toMatchObject({status:"final",awayScore:10,homeScore:0});
   });
+  it("keeps observed uniform reuse separate while merging each exact historical f/p pair",()=>{
+    const players=[
+      {number:"42",name:"ビド",profileUrl:"https://nf3.sakura.ne.jp/Central/DB/f/42_stat.htm"},
+      {number:"42",name:"コックス",profileUrl:"https://nf3.sakura.ne.jp/Central/DB/f/wb_42_stat.htm"},
+    ];
+    expect(mergeNf3ParticipantProfiles(players,players.map(p=>({...p,profileUrl:p.profileUrl.replace("/f/","/p/")})),"DB")).toEqual(players);
+    expect(findRosterPlayer(players,"コックス").profileUrl).toContain("wb_42");
+    const hawks=[
+      {number:"39",name:"山本祐大",profileUrl:"https://nf3.sakura.ne.jp/Pacific/H/f/39_stat.htm"},
+      {number:"39",name:"尾形崇斗",profileUrl:"https://nf3.sakura.ne.jp/Pacific/H/f/tr_DB_39_stat.htm"},
+    ];
+    expect(mergeNf3ParticipantProfiles(hawks,[{...hawks[1]!,profileUrl:hawks[1]!.profileUrl.replace("/f/","/p/")}],"H")).toEqual(hawks);
+  });
   const game={date:"2026-09-23",homeTeamId:"npb:team:eagles",awayTeamId:"npb:team:buffaloes",scheduledTime:"17:00"} as NpbGame;
   it("validates a season pitcher roster and source profile identity",()=>{
     expect(parseNf3PitchingRoster(fixture("roster-pitching-e"),"E")).toEqual([

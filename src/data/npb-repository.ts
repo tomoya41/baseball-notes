@@ -120,7 +120,8 @@ export class NpbRepository {
     dryRun: boolean, onWouldCreateAlias?: () => void): Promise<string> {
     const verified = verifiedNf3Identities.find((item) => item.sourceId === sourceId);
     if (verified && (normalizeNpbName(name) !== normalizeNpbName(verified.name) ||
-      teamId !== verified.teamId || sourceUrl !== verified.profileUrl))
+      teamId !== verified.teamId || (sourceUrl !== verified.profileUrl &&
+        !("additionalProfileUrls" in verified && (verified.additionalProfileUrls as readonly string[]).includes(sourceUrl)))))
       throw new Error(`Verified player identity mismatch: ${sourceId}`);
     const cached = this.primedPlayerMappings.get(sourceId);
     const mapped = this.primedPlayerMappings.has(sourceId) ? {rows:cached?[cached]:[]} : await this.client.execute({ sql: `SELECT m.internal_entity_id,h.payload_json FROM source_entity_mappings m

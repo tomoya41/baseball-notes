@@ -20,8 +20,11 @@ Each exception in `src/data/npb-verified-nf3-identities.ts` requires source ID, 
 | A.マルティネス | Fighters #2, nf3 `Pacific/F/f/2_stat.htm`, [NPB 73975136](https://npb.jp/bis/players/73975136.html), Ariel catcher born 1996-05-28 | New verified identity, separate from Giants R.マルティネス / NPB 23925134 |
 | 山本祐大 | Former DeNA `Central/DB/f/tr_H_50_stat.htm` and current Hawks profile both link [NPB 23125136](https://npb.jp/bis/players/23125136.html) | Keep existing canonical ID/current Hawks Master; historical DeNA Fact team retained |
 | 若林楽人 | Former Giants `Central/G/f/tr_L_59_stat.htm` and current Lions `Pacific/L/f/49_stat.htm` both link [NPB 53555153](https://npb.jp/bis/players/53555153.html) | One reviewed canonical identity, two strict source aliases; current Lions metadata and past Giants Facts separated |
+| 尾形崇斗 | Former Hawks `Pacific/H/f/tr_DB_39_stat.htm` and `p/tr_DB_39_stat.htm`, current DeNA `Central/DB/p/36_stat.htm` all link [NPB 61365136](https://npb.jp/bis/players/61365136.html) | Keep `2ef0916f-a072-42fa-90ba-9b897506e86c` / current DeNA Master; historical Hawks Fact team retained |
 
 These are identity exceptions supported by explicit profile evidence, not date-specific numeric patches or name-only merges. The Roberto/José Osuna exception is unchanged.
+
+An explicitly reviewed f/p profile pair can be listed as two exact permitted URLs for one source identity. Hayakawa's Eagles f/21 and p/21 both link to NPB 31835153; this permits his recorded batting participation as well as pitching without weakening unrelated URL guards. Withdrawn/traded f/p pairs are merged only when both the complete provider parameter and normalized name agree. Ordinary #42 and `wb_42`, or #39 and `tr_DB_39`, remain separate participants despite uniform reuse.
 
 ## 9/22 DeNA PA regression
 

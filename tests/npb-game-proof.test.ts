@@ -71,6 +71,8 @@ describe("2026-09-23 controlled NPB game proof", () => {
     await client.execute({sql:"INSERT INTO master_history VALUES (?,?,?,?,?,?,?)",args:["player",identity.playerId,"2026-01-01",
       JSON.stringify({name:identity.name,teamId:identity.teamId}),"verified-profile","hayakawa",at]});
     expect(await repository.resolveVerifiedPlayer(identity.sourceId,identity.name,identity.profileUrl,identity.teamId,at,false)).toBe(identity.playerId);
+    expect(await repository.resolveVerifiedPlayer(identity.sourceId,identity.name,identity.profileUrl.replace("/p/","/f/"),identity.teamId,at,true)).toBe(identity.playerId);
+    await expect(repository.resolveVerifiedPlayer(identity.sourceId,identity.name,identity.profileUrl.replace("21_stat","22_stat"),identity.teamId,at,true)).rejects.toThrow("identity mismatch");
     expect((await client.execute("SELECT count(DISTINCT entity_id) n FROM master_history WHERE entity_kind='player'")).rows[0]?.n).toBe(1);
     await expect(repository.resolveVerifiedPlayer(identity.sourceId,identity.name,identity.profileUrl,"npb:team:hawks",at,true)).rejects.toThrow();
   });
@@ -83,6 +85,17 @@ describe("2026-09-23 controlled NPB game proof", () => {
     const master=(await client.execute("SELECT payload_json FROM master_history WHERE entity_kind='player'")).rows;
     expect(master).toHaveLength(1);expect(JSON.parse(String(master[0]?.payload_json)).teamId).toBe("npb:team:hawks");
     await expect(repo.resolveVerifiedPlayer(identity.sourceId,identity.name,identity.profileUrl.replace("tr_H_50","50"),identity.teamId,at,true)).rejects.toThrow();
+  });
+  it("keeps both explicitly reviewed former Hawks Ogata profiles on the existing DeNA canonical identity",async()=>{
+    const client=await db(),repo=new NpbRepository(client);
+    const identity=verifiedNf3Identities.find(p=>p.sourceId==="2026:H:profile:tr_DB_39")!;
+    await client.execute({sql:"INSERT INTO master_history VALUES (?,?,?,?,?,?,?)",args:["player",identity.playerId,"2026-01-01",
+      JSON.stringify({name:identity.name,teamId:"npb:team:baystars"}),"nf3","2026:DB:uniform:36",at]});
+    for(const url of [identity.profileUrl,identity.profileUrl.replace("/p/","/f/")])
+      expect(await repo.resolveVerifiedPlayer(identity.sourceId,identity.name,url,identity.teamId,at,false)).toBe(identity.playerId);
+    await expect(repo.resolveVerifiedPlayer(identity.sourceId,identity.name,identity.profileUrl.replace("tr_DB_39","39"),identity.teamId,at,true)).rejects.toThrow("identity mismatch");
+    const master=(await client.execute("SELECT payload_json FROM master_history WHERE entity_kind='player'")).rows;
+    expect(master).toHaveLength(1);expect(JSON.parse(String(master[0]?.payload_json)).teamId).toBe("npb:team:baystars");
   });
   it("does not degrade authoritative batting and pitching facts when limited collection revisits a game", async () => {
     const client = await db(); const repository = new NpbRepository(client);
