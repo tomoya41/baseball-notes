@@ -37,7 +37,7 @@ export function PlayerRow({ player, catalog, favorites, trailing, to }: {
 }) {
   const team = catalog.teams.find((item) => item.id === player.teamId);
   const profile = catalog.profiles.find((item) => item.player.id === player.id);
-  const isFavorite = favorites?.some((item) => item.kind === "player" && item.entityId === player.id);
+  const isFavorite = favorites?.some((item) => item.league === player.league && item.kind === "player" && item.entityId === player.id);
   return <Link className="player-row" to={to ?? `/${catalog.league}/players/${encodeURIComponent(player.id)}`}>
     <PlayerAvatar player={player} team={team} jersey={profile?.jersey} />
     <span className="player-row__body">

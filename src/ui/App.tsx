@@ -5,6 +5,8 @@ import {
 } from "lucide-react";
 import { Link, Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
 import type { Services } from "../app/services";
+import { favoriteMatches, leagueSwitchPath } from "../domain/cross-league";
+import { MlbLeagueView } from "./mlb-foundation";
 import type { CatalogResult, Favorite, League, PlayerCatalog, Statistics } from "../domain/models";
 import type { NpbLatestStandings } from "../domain/standings";
 import type { PlayerRecentResponse, RecentPeriod } from "../domain/player-recent";
@@ -83,7 +85,7 @@ function HomeScreen({ catalog, favorites, services,toggle,saving }: { catalog: P
   toggle:(target:FavoriteTarget)=>void;saving:boolean }) {
   const league = catalog.league;
   const saved = catalog.profiles.filter(({ player }) => favorites.some((favorite) =>
-    favorite.kind === "player" && favorite.entityId === player.id));
+    favorite.league === league && favorite.kind === "player" && favorite.entityId === player.id));
   return <div className="screen home-screen">
     <div className="home-intro">
       <div><p className="eyebrow">{formatDate(new Date().toISOString())}</p><h1>今日の野球</h1></div>
@@ -322,7 +324,7 @@ function PlayerScreen({ catalog, favorites, toggle, saving, services }: {
     id: identity.teamId, league: "NPB" as const, names: { canonical: identity.teamName,
       japaneseFull: identity.teamName, japaneseShort: identity.teamName, abbreviation: null },
   } : undefined);
-  const isFavorite = favorites.some((favorite) => favorite.kind === "player" && favorite.entityId === player.id);
+  const isFavorite = favorites.some((favorite) => favorite.league === player.league && favorite.kind === "player" && favorite.entityId === player.id);
   const stats = catalog.statistics.filter((item) => item.playerId === player.id);
   const gameLogTeams = new Map<string, string>();
   for (const item of catalog.teams) gameLogTeams.set(item.id, item.names.japaneseShort ?? item.names.canonical);
@@ -416,7 +418,7 @@ function TeamScreen({ catalog, favorites, toggle, saving }: {
   if (!team) return <div className="screen"><DataState kind="no-data" title="球団が見つかりません"
     action="検索に戻る" to={`/${catalog.league}/search`} /></div>;
   const members = catalog.profiles.filter(({ player }) => player.teamId === team.id);
-  const active = favorites.some((favorite) => favorite.kind === "team" && favorite.entityId === team.id);
+  const active = favorites.some((favorite) => favorite.league === team.league && favorite.kind === "team" && favorite.entityId === team.id);
   return <div className="screen">
     <Link className="back-link" to={`/${catalog.league}/search`}><ArrowLeft size={18} />検索に戻る</Link>
     <header className="team-header"><TeamBrand team={team} size="lg" /><div>
@@ -433,9 +435,9 @@ function TeamScreen({ catalog, favorites, toggle, saving }: {
 
 function MyScreen({ catalog, favorites }: { catalog: PlayerCatalog; favorites: Favorite[] }) {
   const players = catalog.profiles.filter(({ player }) => favorites.some((favorite) =>
-    favorite.kind === "player" && favorite.entityId === player.id));
+    favorite.league === catalog.league && favorite.kind === "player" && favorite.entityId === player.id));
   const teams = catalog.teams.filter((team) => favorites.some((favorite) =>
-    favorite.kind === "team" && favorite.entityId === team.id));
+    favorite.league === catalog.league && favorite.kind === "team" && favorite.entityId === team.id));
   const missing = favorites.some((favorite) => favorite.league === catalog.league &&
     (favorite.kind === "player" ? !catalog.profiles.some(({ player }) => player.id === favorite.entityId)
       : !catalog.teams.some((team) => team.id === favorite.entityId)));
@@ -564,13 +566,12 @@ export function App({ services }: { services: Services }) {
     setSaving(true);
     void services.favorites.toggle(target).then((items) => {
       setFavorites(items); setFavoriteError(false);
-      setFavoriteMessage(items.some((item) => item.kind === target.kind && item.entityId === target.entityId)
+      setFavoriteMessage(items.some((item) => favoriteMatches(item, target))
         ? "お気に入りを保存しました。" : "お気に入りから削除しました。");
     }).catch(() => { setFavoriteError(true); setFavoriteMessage("お気に入りを保存できません。端末の保存領域を確認してください。"); })
       .finally(() => setSaving(false));
   }, [services]);
-  const switchPath = (next: League) => `/${next}/${section === "matchup" ? "matchup"
-    : ["home", "analysis", "records", "my", "ranking"].includes(section) ? section : "search"}`;
+  const switchPath = (next: League) => leagueSwitchPath(location.pathname, location.search, next);
   return <div className="app-shell">
     <a className="skip-link" href="#main-content" onClick={(event) => {
       event.preventDefault(); document.getElementById("main-content")?.focus();
@@ -588,7 +589,7 @@ export function App({ services }: { services: Services }) {
       <Route path="/NPB/games/:gameId" element={<NpbGameDetailScreen key={location.pathname} repository={services.gameDetail} />} />
       <Route path="/NPB/*" element={<LeagueView key="NPB" league="NPB" services={services}
         favorites={favorites} toggle={toggle} saving={saving} />} />
-      <Route path="/MLB/*" element={<LeagueView key="MLB" league="MLB" services={services}
+      <Route path="/MLB/*" element={<MlbLeagueView key="MLB" repository={services.leagueAvailability}
         favorites={favorites} toggle={toggle} saving={saving} />} />
       <Route path="*" element={<Navigate to="/NPB/home" replace />} />
     </Routes></main>

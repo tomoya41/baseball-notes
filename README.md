@@ -145,3 +145,9 @@ Batch BでHistorical Backfill経路、Season aggregate、Player Season UI、Rank
 NPBの日程・結果は `#/NPB/schedule?date=2026-09-25`、試合詳細は `#/NPB/games/{canonicalGameId}`。公開Game metadataは `/data/npb/games/manifest.json`、`dates/YYYY-MM-DD.json`、`recent.json` に分割します。`npx tsx scripts/generate-npb-game-surface.ts` はTursoをSELECTだけで読み、既存Season JSONからGate付きRecords payloadも生成します。Season/EOD publishで生成し、他の公開経路では既存payloadをschema検証して保持します。
 
 NPB選手のお気に入りはSearch/Profileから追加・解除し、Myで表示します。端末内Preferences保存のみでAccount/Cloud syncはありません。RecordsはProduction Gateが閉じていれば「2026年シーズン集計を確認中」と表示し、内部候補ランキングは公開しません。
+
+## MLB Source gate / Cross-league foundation
+
+MLB routes now show the real availability state instead of fictional sample rankings or NPB schedule data. `npm run build` generates the small `/data/mlb/manifest.json` automatically. The actual 2026 MLB Collector / Backfill / Player statistics remain unimplemented because bulk acquisition and static redistribution rights are not established. See [MLB source assessment](docs/mlb-source-rights-2026-09-27.md).
+
+Favorite v1 already stores league and canonical entity ID; no destructive migration is needed. NPB Favorites remain in the same local storage. MLB/My retains even unmapped saved IDs and allows removal. No credentials, extra paid service or cloud Favorites are added.

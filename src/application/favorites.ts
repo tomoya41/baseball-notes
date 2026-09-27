@@ -2,6 +2,7 @@ import { z } from "zod";
 import { favoriteSchema } from "../domain/models";
 import type { Favorite } from "../domain/models";
 import type { SettingsStore } from "./ports";
+import { favoriteMatches } from "../domain/cross-league";
 
 const schema = z.object({
   version: z.literal(1),
@@ -31,10 +32,7 @@ export class Favorites {
   ): Promise<Favorite[]> {
     const operation = this.queue.then(async () => {
       const current = await this.list();
-      const match = (item: Favorite) =>
-        item.kind === target.kind &&
-        item.entityId === target.entityId &&
-        item.league === target.league;
+      const match = (item: Favorite) => favoriteMatches(item, target);
       const exists=current.some(match);
       if((mode==="add"&&exists)||(mode==="remove"&&!exists))return current;
       const next = mode==="remove" || (mode==="toggle"&&exists)
