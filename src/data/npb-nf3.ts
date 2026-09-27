@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { load } from "cheerio";
+import type { ShortenedFinalEvidence } from "../domain/npb-game-completion";
 import { standingSchema, type Standing } from "../domain/standings";
 import { playerGameBattingSchema, playerGamePitchingSchema, type PlayerGameBatting, type PlayerGamePitching } from "../domain/game-facts";
 
@@ -90,6 +91,7 @@ export function parseNf3Standings(html: string, date: string, collectedAt: strin
 }
 
 export interface NpbGame {
+  completionEvidence?: ShortenedFinalEvidence;
   id: string; season: number; date: string; homeTeamId: string; awayTeamId: string; gameNumber: number;
   venue: string | null; scheduledTime: string | null;
   status: "scheduled" | "final" | "postponed" | "canceled" | "suspended" | "unknown";
@@ -97,7 +99,8 @@ export interface NpbGame {
   sourceKey: "nf3"; sourceRecordId: string; sourceUrl: string; collectedAt: string;
 }
 
-export function parseNf3TeamGames(html: string, teamCode: string, season: number, sourceUrl: string, collectedAt: string): NpbGame[] {
+export function parseNf3TeamGames(html: string, teamCode: string, season: number, sourceUrl: string, collectedAt: string,
+  requireFinalResult = false): NpbGame[] {
   const $ = load(html);
   const team = npbTeams.find((item) => item.code === teamCode);
   if (!team) throw new Error(`Unknown team code: ${teamCode}`);
@@ -117,7 +120,9 @@ export function parseNf3TeamGames(html: string, teamCode: string, season: number
     const number = (seen.get(identity) ?? 0) + 1;
     seen.set(identity, number);
     const score = /^(\d+)-(\d+)$/.exec(cells[18] ?? "");
-    const status = score ? "final" : cells.join(" ").includes("中止") ? "postponed" : "scheduled";
+    const resultConfirmed = /^[○●△]$/.test(cells[17] ?? "");
+    const status = score ? (!requireFinalResult || resultConfirmed ? "final" : "unknown") :
+      cells.join(" ").includes("中止") ? "postponed" : "scheduled";
     const ownScore = score ? Number(score[1]) : null;
     const opponentScore = score ? Number(score[2]) : null;
     const sourceRecordId = `${identity}:${number}`;

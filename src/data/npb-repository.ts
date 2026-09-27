@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
+import { shortenedFinalEvidenceSchema, type ShortenedFinalEvidence } from "../domain/npb-game-completion";
 import type { InStatement } from "@libsql/client";
 import type { DataClient } from "./database";
 import type { Standing } from "../domain/standings";
@@ -275,13 +276,30 @@ export class NpbRepository {
   }
 
   async findGamesByDate(date: string): Promise<NpbGame[]> {
-    const result = await this.client.execute({ sql: "SELECT * FROM npb_games WHERE game_date=? ORDER BY scheduled_time,game_id", args: [date] });
+    const result = await this.client.execute({ sql: `SELECT g.*, e.payload_json AS completion_evidence
+      FROM npb_games g LEFT JOIN permanent_events e ON e.event_id='npb:shortened-final:' || g.game_id
+      WHERE game_date=? ORDER BY scheduled_time,game_id`, args: [date] });
     return result.rows.map((row) => ({ id: String(row.game_id), season: Number(row.season), date: String(row.game_date),
       homeTeamId: String(row.home_team_id), awayTeamId: String(row.away_team_id), gameNumber: Number(row.game_number),
       venue: row.venue === null ? null : String(row.venue), scheduledTime: row.scheduled_time === null ? null : String(row.scheduled_time),
       status: String(row.status) as NpbGame["status"], homeScore: row.home_score === null ? null : Number(row.home_score),
       awayScore: row.away_score === null ? null : Number(row.away_score), sourceKey: "nf3", sourceRecordId: String(row.source_record_id),
-      sourceUrl: String(row.source_url), collectedAt: String(row.collected_at) }));
+      sourceUrl: String(row.source_url), collectedAt: String(row.collected_at),
+      ...(row.completion_evidence?{completionEvidence:shortenedFinalEvidenceSchema.parse(JSON.parse(String(row.completion_evidence)))}:{}) }));
+  }
+
+  // Called only after an adapter has independently observed explicit final/ending evidence.
+  // No inferred exception list; the evidence travels with the canonical Game read model.
+  async saveShortenedFinalEvidence(input:ShortenedFinalEvidence):Promise<void> {
+    const evidence=shortenedFinalEvidenceSchema.parse(input);
+    const row=(await this.client.execute({sql:"SELECT * FROM npb_games WHERE game_id=?",args:[evidence.gameId]})).rows[0];
+    if(!row||row.status!=="final"||row.home_team_id!==evidence.homeTeamId||row.away_team_id!==evidence.awayTeamId||
+      Number(row.home_score)!==evidence.homeScore||Number(row.away_score)!==evidence.awayScore)
+      throw Error("Shortened evidence does not match canonical Game");
+    await this.client.execute({sql:`INSERT INTO permanent_events VALUES (?,?,?,?,?,?,?,?)
+      ON CONFLICT(event_id) DO UPDATE SET payload_json=excluded.payload_json,collected_at=excluded.collected_at`,
+      args:[`npb:shortened-final:${evidence.gameId}`,"shortened-final",String(row.game_date),evidence.gameId,
+        JSON.stringify(evidence),evidence.provider,evidence.gameId,evidence.verifiedAt]});
   }
 
   async linkGame(date: string, teamId: string, opponentTeamId: string, time: string | null): Promise<string> {

@@ -29,6 +29,7 @@ jobs:
           npx tsx scripts/generate-npb-hot-payload.ts --require-remote > .data/batch-b/hot.json
           npx tsx scripts/audit-npb-fact-quality.ts > .data/batch-b/audit.json
           npx tsx scripts/validate-npb-season-facts.ts > .data/batch-b/current-validation.json
+          npx tsx scripts/audit-npb-eod-coverage.ts > .data/batch-b/eod-coverage.json
           npm run backup:npb:drill -- --require-remote > .data/batch-b/backup.json
           npm run publish:npb:remote -- --payload-root .data/publish
           npx tsx scripts/generate-npb-player-directory.ts --require-remote --payload-root=.data/publish

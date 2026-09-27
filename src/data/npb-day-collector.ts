@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { DataClient } from "./database";
 import { addDays, jstToday } from "./npb-collector";
 import { createNf3DryRunSession } from "./npb-day-dry-run";
-import { runNpbGameProof, type NpbGameProofResult } from "./npb-game-collector";
+import { runNpbGameProof, validateNpbGameFacts, type NpbGameProofResult } from "./npb-game-collector";
 import type { NpbGame } from "./npb-nf3";
 import { NpbRepository } from "./npb-repository";
 
@@ -29,10 +29,10 @@ export function classifyDay(games:readonly DayGameResult[],scheduledGames:number
 export async function runNpbDayFacts(client:DataClient,options:{targetDate:string;trigger:DayTrigger;
   dryRun?:boolean;request?:(url:string)=>Promise<string>;rawRoot?:string;delayMs?:number;
   runGame?:(game:NpbGame,request:(url:string)=>Promise<string>)=>Promise<NpbGameProofResult>;
-  requireCompleteGameStage?:boolean}):Promise<NpbDayResult> {
+  requireCompleteGameStage?:boolean;allowCurrentDayFinal?:boolean;reuseCompleteGames?:boolean}):Promise<NpbDayResult> {
   const {targetDate,trigger,dryRun=false}=options;
   if (!/^2026-\d{2}-\d{2}$/.test(targetDate) || targetDate>previousJstDate())
-    throw new Error("Target must be a completed 2026 JST date");
+    if(!(options.allowCurrentDayFinal && targetDate===jstToday()))throw new Error("Target must be a completed 2026 JST date");
   const repository=new NpbRepository(client);
   if (options.requireCompleteGameStage) {
     const stage=await client.execute({sql:"SELECT status FROM npb_ingestion_stages WHERE target_date=? AND stage='games'",
@@ -47,9 +47,19 @@ export async function runNpbDayFacts(client:DataClient,options:{targetDate:strin
   let mappingCreated=0,newBatting=0,newPitching=0;
   for(const game of finalGames) {
     try {
-      const result=await (options.runGame ? options.runGame(game,session.request) :
+      let reused:NpbGameProofResult|undefined;
+      if(options.reuseCompleteGames) {
+        const evidence=await repository.findGameCompleteness(game.id);
+        if(evidence?.gameStatus==="complete") {
+          const [b,p]=await Promise.all([repository.findBattingByGame(game.id),repository.findPitchingByGame(game.id)]);
+          const report=validateNpbGameFacts(game,evidence.expectedBatters,b,evidence.expectedPitchers,p,b.length,p.length);
+          if(report.gameStatus==="complete")reused={report,fetchedPages:0,battingFacts:b.length,pitchingFacts:p.length,
+            insertedBatting:0,insertedPitching:0,wouldCreateMappings:[],observed:{sacrificeFlies:0,fractionalTwoOutPitchers:0},nonBattingSubstitutes:[]};
+        }
+      }
+      const result=reused??await (options.runGame ? options.runGame(game,session.request) :
         runNpbGameProof(client,{gameId:game.id,targetDate,dryRun,scope:"day-ingest",
-          request:session.request,persistRawManifest:false}));
+          allowCurrentDayFinal:options.allowCurrentDayFinal??false,request:session.request,persistRawManifest:false}));
       const status=result.report.gameStatus==="complete" ? "complete" :
         result.report.gameStatus==="failed" ? "failed" : "partial";
       let storedBatters=0,storedPitchers=0;

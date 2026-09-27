@@ -1,0 +1,60 @@
+name: NPB schedule calendar sync
+on:
+  schedule:
+    - cron: "27 9 * * *"
+      timezone: "Asia/Tokyo"
+    - cron: "37 8 * * 1"
+      timezone: "Asia/Tokyo"
+    - cron: "47 8 1 * *"
+      timezone: "Asia/Tokyo"
+  workflow_dispatch:
+    inputs:
+      range:
+        type: choice
+        options: [daily, weekly, monthly, season]
+        default: daily
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: daily-npb-collector-and-pages
+  cancel-in-progress: false
+jobs:
+  sync:
+    if: github.event.repository.private == false && vars.NPB_EOD_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      NPB_NF3_ENABLED: ${{ vars.NPB_NF3_ENABLED }}
+    steps:
+      - name: Capture runner start
+        run: echo "NPB_RUNNER_STARTED_AT=$(date -u +%FT%TZ)" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Observe scheduled clock
+        run: npx tsx scripts/log-npb-schedule.ts
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          NPB_CRON: ${{ github.event.schedule }}
+          NPB_SCHEDULE_TIMEZONE: Asia/Tokyo
+          NPB_TARGET_DATE_MODE: today
+      - name: Refresh canonical schedule; no Player detail requests
+        run: npx tsx scripts/npb-eod.ts --action=sync --range="$SYNC_RANGE"
+        env:
+          SYNC_RANGE: ${{ inputs.range || (github.event.schedule == '47 8 1 * *' && 'monthly') || (github.event.schedule == '37 8 * * 1' && 'weekly') || 'daily' }}
+          NPB_CRON: ${{ github.event.schedule }}
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: npb-schedule-report
+          path: .data/eod
+          retention-days: 7
+          if-no-files-found: ignore

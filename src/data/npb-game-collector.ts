@@ -13,6 +13,7 @@ import { findRosterPlayer, parseNf3BattingRoster, parseNf3GameBattingRow, parseN
 import { NpbRepository } from "./npb-repository";
 import { retentionDays } from "./retention";
 import { sourceRegistry } from "./source-registry";
+import { shortenedFinalEvidenceSchema } from "../domain/npb-game-completion";
 
 const ROOT = "https://nf3.sakura.ne.jp/";
 const HEADERS = { "User-Agent": "BaseballDataAppCollector/0.1 (controlled one-game completeness check)" };
@@ -31,6 +32,7 @@ export interface NpbGameProofOptions {
   scope?: "controlled" | "day-dry-run" | "day-ingest";
   historicalPitchers?: (game: NpbGame, teamId: string) => Promise<Nf3Participant[]>;
   onParseTiming?: (ms:number)=>void;
+  allowCurrentDayFinal?: boolean;
 }
 export interface NpbGameProofResult {
   report: GameCompleteness;
@@ -59,6 +61,15 @@ export type ControlledGameTarget = keyof typeof controlledGameTargets;
 // nf3's schedule row has the final score but no independently stated final inning.
 // Reject shortened/ambiguous shapes rather than guessing a 27-out regulation game.
 export function hasPlausibleFinalOuts(game: NpbGame, homeOuts: number | null, awayOuts: number | null): boolean {
+  if(game.completionEvidence) {
+    const parsed=shortenedFinalEvidenceSchema.safeParse(game.completionEvidence);
+    if(!parsed.success)return false;
+    const e=parsed.data;
+    return game.status==="final"&&e.gameId===game.id&&e.homeTeamId===game.homeTeamId&&e.awayTeamId===game.awayTeamId&&
+      e.homeScore===game.homeScore&&e.awayScore===game.awayScore&&homeOuts===e.homePitchingOuts&&awayOuts===e.awayPitchingOuts&&
+      homeOuts>0&&awayOuts>0&&Math.max(homeOuts,awayOuts)<=e.observedFinalInning*3&&
+      Math.max(homeOuts,awayOuts)>(e.observedFinalInning-1)*3;
+  }
   if (game.status !== "final" || game.homeScore === null || game.awayScore === null ||
     homeOuts === null || awayOuts === null || homeOuts < 27 || homeOuts % 3 !== 0) return false;
   if (game.homeScore <= game.awayScore) return awayOuts === homeOuts;
@@ -122,7 +133,7 @@ export async function runNpbGameProof(client: DataClient, options: NpbGameProofO
   const target = Object.values(controlledGameTargets).find((candidate) => candidate.id === gameId && candidate.date === targetDate);
   if ((scope === "controlled" && !target) || (scope === "day-dry-run" && (!dryRun || targetDate !== "2026-09-23")) ||
     (scope === "day-ingest" && !/^2026-\d{2}-\d{2}$/.test(targetDate)) ||
-    targetDate > addDays(jstToday(),-1))
+    targetDate > (options.allowCurrentDayFinal && scope==="day-ingest" ? jstToday() : addDays(jstToday(),-1)))
     throw new Error("This controlled proof is limited to reviewed 2026-09-23 games");
   if (process.env.NPB_NF3_ENABLED === "false" ||
     sourceRegistry.find((source) => source.key === "nf3")?.status !== "enabled-limited-public")

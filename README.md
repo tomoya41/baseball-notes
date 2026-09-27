@@ -2,6 +2,14 @@
 
 Androidを主対象とする野球データアプリ。製品仕様は [SPEC.md](SPEC.md)、恒久ルールは [AGENTS.md](AGENTS.md)、重要な判断は [docs/decisions.md](docs/decisions.md) を参照。
 
+## NPB Schedule-aware EOD運用
+
+`NPB_EOD_ENABLED=true` のrepository variableで予定同期と毎時17分JSTのWatcherを有効化します。`NPB_MONITOR_OFFSET_MINUTES` は初期120分。最初に `npb-schedule-sync.yml` を手動でdaily/weekly/monthly/seasonのいずれかで実行してください。通常は毎朝09:27、月曜08:37、毎月1日08:47 JSTに同じServiceを使用します。
+
+Watcherの手動初期値は `fixture_only=true`（Source/DBへアクセスしません）。`false` は当日の予定を読み、監視時刻を過ぎたGameだけ両球団の日程ページを照合します。新たなFinalだけ既存full collectionを実施し、全Game確定・現在Fact検証・順位表整合後に公開。成功はHTTP確認後に既存イベント台帳へ記録されます。03:37 Dailyと12:17 Freshnessは維持します。停止は `NPB_EOD_ENABLED=false`、永久Factの削除は不要です。
+
+nf3更新遅延とGitHub待ち時間があるため実際の終了から60分以内を保証しません。短縮試合の証拠がnf3から取得できない場合はpartialのままです。詳細・制約は [Batch B-3報告](docs/npb-batch-b3-2026-09-27.md) を参照。
+
 ## 現在できること
 
 React + TypeScript strict + Vite + Capacitor Androidの構成。ホーム / 検索 / 分析 / 記録 / マイの5項目ナビ、NPB・MLB切替、選手・球団検索、選手詳細、端末保存のお気に入り、指標説明、stale表示を実装。Home / Player / 参考ランキングにLight/Dark対応のデザインシステムを適用しています。

@@ -24,6 +24,7 @@ const client=openDataClient(url,process.env.TURSO_AUTH_TOKEN);
 try {
   if(!dryRun) await migrateData(client);
   const result=await runNpbDayFacts(client,{targetDate,trigger,dryRun,
+    reuseCompleteGames:!args.has("--force-refetch"),
     rawRoot:args.has("--reuse-local-raw")?".data/raw":undefined,
     requireCompleteGameStage:!controlledHistory});
   process.stdout.write(`${JSON.stringify(result,null,2)}\n`);

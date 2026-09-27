@@ -1,0 +1,134 @@
+name: NPB hourly lightweight EOD watcher
+on:
+  schedule:
+    - cron: "17 * * * *"
+      timezone: "Asia/Tokyo"
+  workflow_dispatch:
+    inputs:
+      fixture_only:
+        type: boolean
+        default: true
+        description: "Run deterministic validation without production/source access"
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: daily-npb-collector-and-pages
+  cancel-in-progress: false
+jobs:
+  watch:
+    if: github.event.repository.private == false && (vars.NPB_EOD_ENABLED == 'true' || inputs.fixture_only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      NPB_NF3_ENABLED: ${{ vars.NPB_NF3_ENABLED }}
+    outputs:
+      publish: ${{ steps.watch.outputs.publish }}
+      date: ${{ steps.watch.outputs.target_date }}
+    steps:
+      - name: Capture runner start
+        run: echo "NPB_RUNNER_STARTED_AT=$(date -u +%FT%TZ)" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Observe scheduled clock
+        run: npx tsx scripts/log-npb-schedule.ts
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          NPB_CRON: ${{ github.event.schedule }}
+          NPB_SCHEDULE_TIMEZONE: Asia/Tokyo
+          NPB_TARGET_DATE_MODE: today
+      - name: Manual fixture validation is not Scheduled proof
+        if: inputs.fixture_only
+        run: npx vitest run tests/npb-eod.test.ts tests/npb-game-proof.test.ts tests/npb-day-collector.test.ts
+      - name: Lightweight status check and incremental collection
+        id: watch
+        if: '!inputs.fixture_only'
+        run: npx tsx scripts/npb-eod.ts --action=watch
+        env:
+          NPB_CRON: ${{ github.event.schedule }}
+          NPB_MONITOR_OFFSET_MINUTES: ${{ vars.NPB_MONITOR_OFFSET_MINUTES || '120' }}
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+      - name: Generate only after newly complete Day; gates remain unchanged
+        if: steps.watch.outputs.publish == 'true'
+        env:
+          TARGET_DATE: ${{ steps.watch.outputs.target_date }}
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+        run: |
+          mkdir -p .data/eod
+          npm run backup:npb:drill -- --require-remote > .data/eod/backup.json
+          npx tsx scripts/generate-npb-season.ts --date="$TARGET_DATE" > .data/eod/season.json
+          npx tsx scripts/generate-npb-hot-payload.ts --require-remote > .data/eod/hot.json
+          npm run publish:npb:remote -- --date "$TARGET_DATE" --payload-root .data/publish
+          npx tsx scripts/generate-npb-player-directory.ts --require-remote --payload-root=.data/publish
+      - name: Encrypt portable export
+        if: steps.watch.outputs.publish == 'true'
+        env:
+          NPB_BACKUP_ENCRYPTION_KEY: ${{ secrets.NPB_BACKUP_ENCRYPTION_KEY }}
+        run: |
+          exports=(.data/backup-drill-*/export)
+          [[ ${#exports[@]} == 1 && -d "${exports[0]}" ]]
+          tar -C "$(dirname "${exports[0]}")" -czf .data/eod-backup.tar.gz export
+          npx tsx scripts/crypt-npb-backup.ts encrypt .data/eod-backup.tar.gz .data/eod-backup.tar.gz.enc
+          rm .data/eod-backup.tar.gz
+      - uses: actions/upload-artifact@v4
+        if: steps.watch.outputs.publish == 'true'
+        with:
+          name: npb-eod-encrypted-backup
+          path: .data/eod-backup.tar.gz.enc
+          retention-days: 7
+      - name: Build complete site once
+        if: steps.watch.outputs.publish == 'true'
+        run: |
+          npm run build
+          cp -R .data/publish/data dist/
+          mkdir -p dist/data/npb/hot
+          cp .data/hot-diagnostics/npb-hot-7d.json dist/data/npb/hot/latest.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: npb-eod-report
+          path: .data/eod
+          retention-days: 7
+          if-no-files-found: ignore
+      - uses: actions/configure-pages@v5
+        if: steps.watch.outputs.publish == 'true'
+      - uses: actions/upload-pages-artifact@v4
+        if: steps.watch.outputs.publish == 'true'
+        with:
+          path: dist
+  deploy:
+    needs: watch
+    if: needs.watch.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@v4
+        id: deployment
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Verify public date before recording successful publication
+        run: npx tsx scripts/npb-eod.ts --action=mark-published --date="$TARGET_DATE"
+        env:
+          TARGET_DATE: ${{ needs.watch.outputs.date }}
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}

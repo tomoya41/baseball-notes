@@ -12,6 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      - name: Capture runner start
+        run: echo "NPB_RUNNER_STARTED_AT=$(date -u +%FT%TZ)" >> "$GITHUB_ENV"
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
@@ -20,6 +22,12 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      - name: Observe scheduled clock
+        run: npx tsx scripts/log-npb-schedule.ts
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          NPB_CRON: ${{ github.event.schedule }}
+          NPB_SCHEDULE_TIMEZONE: UTC
       - name: Check published JSON and Turso ingestion metadata
         run: npm run monitor:npb:freshness -- --require-healthy
         env:

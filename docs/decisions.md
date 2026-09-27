@@ -215,6 +215,14 @@ Season aggregates reuse the existing regular-season resolver and aggregators. Pl
 
 ## 2026-09-27 — Published season-wide nf3 history and verified ranking thresholds
 
+The schedule-aware extension below does not change the historical collection or qualification rules recorded here.
+
 The historical adapter now follows nf3's published full-season schedule, pitching roster and full pitching-log links. It caches those pages within one backfill run, reconciles all twelve team schedules and preserves explicit withdrawn/traded profile prefixes as distinct source identities. A missing parser result is never no-games evidence. Historical participant discovery is isolated from the Daily rolling-window path. Verified identity exceptions require source ID, name, canonical source team and exact profile URL; explicit transfers preserve current Master identity and historical Fact teams. No new source or schema is introduced. Rollback disables historical ingestion and keeps authoritative Facts and limited-write protections intact.
 
 NPB's 2026 leaders tables verify actual team games × 3.1 rounded PA and × 1.0 innings. Qualification requires complete Season Coverage, complete samples and verified team context; transfers without a reviewed qualification context remain unknown. The under-threshold batting-title exception is not ordinary qualification. Counting readiness and qualified rate-metric readiness are evaluated separately. OPS/K9 sample thresholds are app comparison policy, not official-title claims. Public rankings remain independently disabled; neither backfill nor a manual run is Scheduled production proof. See `docs/npb-ranking-qualifiers.md`.
+
+## 2026-09-27 — Schedule-aware EOD checks and independent shortened evidence
+
+Hourly checks use the published nf3 schedule parser and run-local request cache, not a repeated full league collection. Both canonical teams confirm a final result, then only unvalidated Games use authoritative atomic writes. A current-Fact Day finalizer and reconciled standings guard publication. The backed-up permanent event ledger stores schedule confirmation/publication status without a schema migration. Daily skips an EOD-published/currently valid Day. Disabling `NPB_EOD_ENABLED` restores Daily-only operation while preserving Facts.
+
+Shortened evidence is independent of pitcher Fact sums and tied to canonical teams/score. Fewer outs alone cannot close Coverage; no Game exceptions are adopted. nf3 schedules currently lack explicit called-ending evidence, so six historical Games stay partial. Official NPB pages remain manual confirmation material, not a collection adapter. Near-real-time is best-effort after nf3 updates, not a live SLA. GitHub cron-slot inference is a lower-bound diagnostic, never exact trigger evidence.

@@ -52,14 +52,24 @@ export function createNf3DryRunSession(delayMs = 750, provided?: (url: string) =
       try {
         const response = await fetch(url,{ headers:{"User-Agent":"BaseballDataAppCollector/0.1 (NPB daily game facts)"},
           signal:AbortSignal.timeout(15_000) });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        if (!response.ok) {
+          const failure = new Error(`HTTP ${response.status}`);
+          if (response.status !== 429 && response.status < 500) throw Object.assign(failure,{permanent:true});
+          throw failure;
+        }
         const bytes = new Uint8Array(await response.arrayBuffer());
         metrics.fetchedBytes+=bytes.length;
-        if (bytes.length > 500_000) throw new Error("Oversized nf3 response");
-        const html = new TextDecoder("utf-8",{fatal:true}).decode(bytes);
+        if (bytes.length > 500_000) throw Object.assign(new Error("Oversized nf3 response"),{permanent:true});
+        let html:string;
+        try { html = new TextDecoder("utf-8",{fatal:true}).decode(bytes); }
+        catch { throw Object.assign(new Error("Invalid nf3 encoding"),{permanent:true}); }
         pages.set(url,html); metrics.uniquePages = pages.size;
         return html;
-      } catch (caught) { error=caught; if (attempt===0) { metrics.retries++; await wait(1000); } }
+      } catch (caught) {
+        error=caught;
+        if((caught as {permanent?:boolean}).permanent)break;
+        if (attempt===0) { metrics.retries++; await wait(1000); }
+      }
     }
     throw new Error(`Network failure for ${url}: ${String(error)}`);
   };

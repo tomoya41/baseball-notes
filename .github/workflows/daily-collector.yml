@@ -16,6 +16,7 @@ on:
         required: false
 permissions:
   contents: read
+  actions: read
 concurrency:
   group: daily-npb-collector-and-pages
   cancel-in-progress: false
@@ -25,7 +26,12 @@ jobs:
     if: github.event.repository.private == false && (github.event_name == 'workflow_dispatch' || vars.NPB_COLLECTOR_ENABLED == 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    outputs:
+      skip: ${{ steps.safety.outputs.skip }}
+      date: ${{ steps.safety.outputs.target_date }}
     steps:
+      - name: Capture runner start
+        run: echo "NPB_RUNNER_STARTED_AT=$(date -u +%FT%TZ)" >> "$GITHUB_ENV"
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
@@ -34,6 +40,22 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      - name: Observe scheduled clock without treating manual runs as proof
+        run: npx tsx scripts/log-npb-schedule.ts
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          NPB_CRON: ${{ github.event.schedule }}
+          NPB_SCHEDULE_TIMEZONE: UTC
+      - name: Safety net skips EOD-published and currently valid Day
+        id: safety
+        if: github.event_name == 'schedule' || inputs.mode == 'ingest'
+        run: |
+          date_jst="${TARGET_DATE:-$(TZ=Asia/Tokyo date -d yesterday +%F)}"
+          npx tsx scripts/npb-eod.ts --action=safety-check --date="$date_jst"
+        env:
+          TARGET_DATE: ${{ inputs.target_date }}
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
       - name: Verify remote DB connection without writing
         run: npm run verify:npb:remote -- --connection-only
         env:
@@ -50,7 +72,7 @@ jobs:
           if [[ -n "$TARGET_DATE" ]]; then args+=(--date "$TARGET_DATE"); fi
           npm run collector:npb -- --fetch --dry-run "${args[@]}"
       - name: Ingest, verify, and stage validated payload
-        if: github.event_name == 'schedule' || inputs.mode == 'ingest'
+        if: steps.safety.outputs.skip != 'true' && (github.event_name == 'schedule' || inputs.mode == 'ingest')
         shell: bash
         env:
           TARGET_DATE: ${{ inputs.target_date }}
@@ -69,7 +91,7 @@ jobs:
           fi
           cat .data/remote-before.json
       - name: Collect all final Games for the preceding JST day
-        if: vars.NPB_DAY_FACTS_ENABLED == 'true' && (github.event_name == 'schedule' || inputs.mode == 'ingest')
+        if: steps.safety.outputs.skip != 'true' && vars.NPB_DAY_FACTS_ENABLED == 'true' && (github.event_name == 'schedule' || inputs.mode == 'ingest')
         shell: bash
         env:
           TARGET_DATE: ${{ inputs.target_date }}
@@ -84,7 +106,7 @@ jobs:
           npm run collector:npb:day -- --fetch --require-remote --trigger="$trigger" --backup-root=.data/day-backup "${args[@]}"
           npm run verify:npb:day -- --require-remote --require-complete "${args[@]}"
       - name: Encrypt and upload short-retention Fact backup
-        if: vars.NPB_DAY_FACTS_ENABLED == 'true' && (github.event_name == 'schedule' || inputs.mode == 'ingest')
+        if: steps.safety.outputs.skip != 'true' && vars.NPB_DAY_FACTS_ENABLED == 'true' && (github.event_name == 'schedule' || inputs.mode == 'ingest')
         shell: bash
         env:
           NPB_BACKUP_ENCRYPTION_KEY: ${{ secrets.NPB_BACKUP_ENCRYPTION_KEY }}
@@ -95,7 +117,7 @@ jobs:
             rm .data/npb-backup.tar.gz
           fi
       - name: Store encrypted Fact backup for seven days
-        if: vars.NPB_DAY_FACTS_ENABLED == 'true' && (github.event_name == 'schedule' || inputs.mode == 'ingest')
+        if: steps.safety.outputs.skip != 'true' && vars.NPB_DAY_FACTS_ENABLED == 'true' && (github.event_name == 'schedule' || inputs.mode == 'ingest')
         uses: actions/upload-artifact@v4
         with:
           name: npb-facts-encrypted-${{ github.run_id }}
@@ -114,7 +136,7 @@ jobs:
           if [[ -n "$TARGET_DATE" ]]; then args+=(--date "$TARGET_DATE"); fi
           npm run publish:npb:remote -- --payload-root .data/publish "${args[@]}"
       - name: Build Web app with the same-origin validated JSON
-        if: github.event_name == 'schedule' || inputs.mode == 'ingest' || inputs.mode == 'publish'
+        if: steps.safety.outputs.skip != 'true' && (github.event_name == 'schedule' || inputs.mode == 'ingest' || inputs.mode == 'publish')
         shell: bash
         run: |
           npm run build
@@ -124,15 +146,15 @@ jobs:
           npx tsx scripts/preserve-published-npb-player-directory.ts
           npx tsx scripts/preserve-published-npb-season.ts
       - name: Configure GitHub Pages
-        if: github.event_name == 'schedule' || inputs.mode == 'ingest' || inputs.mode == 'publish'
+        if: steps.safety.outputs.skip != 'true' && (github.event_name == 'schedule' || inputs.mode == 'ingest' || inputs.mode == 'publish')
         uses: actions/configure-pages@v5
       - name: Upload complete site as one Pages artifact
-        if: github.event_name == 'schedule' || inputs.mode == 'ingest' || inputs.mode == 'publish'
+        if: steps.safety.outputs.skip != 'true' && (github.event_name == 'schedule' || inputs.mode == 'ingest' || inputs.mode == 'publish')
         uses: actions/upload-pages-artifact@v4
         with:
           path: dist
   deploy:
-    if: github.event.repository.private == false && (github.event_name == 'schedule' || inputs.mode == 'ingest' || inputs.mode == 'publish')
+    if: needs.collect.outputs.skip != 'true' && github.event.repository.private == false && (github.event_name == 'schedule' || inputs.mode == 'ingest' || inputs.mode == 'publish')
     needs: collect
     runs-on: ubuntu-latest
     permissions:
@@ -146,3 +168,21 @@ jobs:
       - name: Publish complete artifact to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+      - uses: actions/checkout@v7
+        if: vars.NPB_DAY_FACTS_ENABLED == 'true' && (github.event_name == 'schedule' || inputs.mode == 'ingest')
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        if: vars.NPB_DAY_FACTS_ENABLED == 'true' && (github.event_name == 'schedule' || inputs.mode == 'ingest')
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+        if: vars.NPB_DAY_FACTS_ENABLED == 'true' && (github.event_name == 'schedule' || inputs.mode == 'ingest')
+      - name: Record successful safety-net publication after public readback
+        if: vars.NPB_DAY_FACTS_ENABLED == 'true' && (github.event_name == 'schedule' || inputs.mode == 'ingest')
+        run: npx tsx scripts/npb-eod.ts --action=mark-published --date="$TARGET_DATE"
+        env:
+          TARGET_DATE: ${{ needs.collect.outputs.date }}
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
