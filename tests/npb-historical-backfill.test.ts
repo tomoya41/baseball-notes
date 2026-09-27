@@ -16,6 +16,12 @@ describe("historical range safety",()=>{
     await expect(runHistoricalBackfill({} as DataClient,{from:"2026-09-20",to:"2026-09-20",dryRun:true,now}))
       .rejects.toThrow("scratch");
   });
+  it("rejects the current-season Source alias after the JST year changes",async()=>{
+    const request=vi.fn(),execute=vi.fn();
+    await expect(runHistoricalBackfill({execute} as unknown as DataClient,{from:"2026-09-20",to:"2026-09-20",
+      request,now:new Date("2026-12-31T15:00:00Z")})).rejects.toThrow("year changes");
+    expect(request).not.toHaveBeenCalled();expect(execute).not.toHaveBeenCalled();
+  });
   it("a failed monthly source is fetched once and never writes or declares no_games",async()=>{
     const execute=vi.fn();const request=vi.fn(async()=>{throw new Error("provider unavailable");});
     const result=await runHistoricalBackfill({execute} as unknown as DataClient,

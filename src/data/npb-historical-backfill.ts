@@ -1,5 +1,5 @@
 import type { DataClient } from "./database";
-import { addDays } from "./npb-collector";
+import { addDays, jstToday } from "./npb-collector";
 import { previousJstDate, runNpbDayFacts } from "./npb-day-collector";
 import { createNf3DryRunSession } from "./npb-day-dry-run";
 import { parseNf3TeamGames, npbTeams, type NpbGame } from "./npb-nf3";
@@ -43,6 +43,9 @@ export async function runHistoricalBackfill(client: DataClient, options: {
 }) {
   const dates=backfillDates(options.from,options.to,options.now);
   if (options.dryRun && !options.scratch) throw new Error("Dry-run requires a caller-owned scratch database");
+  // y=0 is this provider's current-season alias. Never stamp next year's pages as 2026.
+  if (!jstToday(options.now ?? new Date()).startsWith("2026-"))
+    throw new Error("The current-year nf3 adapter cannot verify historical 2026 data after the year changes");
   if (process.env.NPB_NF3_ENABLED === "false" || sourceRegistry.find(s=>s.key==="nf3")?.status!=="enabled-limited-public")
     throw new Error("nf3 provider disabled");
   const repository=new NpbRepository(client);
