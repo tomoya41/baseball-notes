@@ -115,7 +115,7 @@ Coverage Closureは未完。独立Product Surfaceは公開済み。Scheduled Ope
 66. Typecheck PASS。
 67. Build PASS。既存main bundle約561KBのwarningは残る（本作業で無関係な分割は行わない）。
 68. Vercel build PASS。
-69. Pages manual Run [36313869271](https://github.com/tomoya41/baseball-notes/actions/runs/36313869271) PASS（adb1700）。Game Index/Records/Season public HTTP200、encrypted backup/restoreも同Run PASS。最終小修正の再公開Runは末尾に追記する。
+69. Pages manual Run [36313869271](https://github.com/tomoya41/baseball-notes/actions/runs/36313869271) PASS（adb1700）。最終小修正の [36314601508](https://github.com/tomoya41/baseball-notes/actions/runs/36314601508) もPASS（424fbce、20:06 JST deploy完了）。Game Index/Records/Season public HTTP200、encrypted backup/restoreも両Run PASS。
 
 ## 判定（報告70〜76）
 
@@ -130,3 +130,5 @@ Coverage Closureは未完。独立Product Surfaceは公開済み。Scheduled Ope
 ## Hygiene / Security
 
 新規公開payloadにraw HTML、nf3 source ID/URL、Turso credential、内部stackなし。既存canonical IDのみ。Source/Parser/Collector/identity/Analysis/HOT Engineは変更しない。既存mainの変更はfetchして保持。新規Source収集なし、Fact writeなし、schema migrationなし。生成物・encrypted backup・QA screenshotはignored `.data`/`dist`に置きGitへ含めない。New scriptsはworkflow/testsから参照される。Public publishを行う各workflowは新payloadを再生成またはpreserveして削除を防ぐ。
+
+最終Run再確認（20:05 JST）：870 Games / 22,590 Batting / 6,848 Pitching / 1,627 Mappings、監査前後不変。Game Surface固定6 SELECT、DB read1,102ms/generation1,864ms。最初の公開と合わせた2回の実測はDB761〜1,102ms/生成1,335〜1,864ms。最大日payload2,184bytes/Records637bytesは不変。Final encrypted artifact1,543,406bytes。Manifest/date/RecordsすべてHTTP200、Source identifier/credential fieldなし。Light公開画面とDark既存CSS QAの証拠はignored `.data/batch-c/screenshots` に保存。検証用一時script・QA HTML/CSSは確認後削除。
