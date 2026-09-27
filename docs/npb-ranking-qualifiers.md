@@ -4,7 +4,7 @@ Verified on 2026-09-27 from primary sources:
 
 - [NPB 2026 batting leaders](https://npb.jp/bis/2026/stats/bat_p.html): required PA = actual team games × 3.1, rounded to nearest integer.
 - [NPB 2026 pitching leaders](https://npb.jp/bis/2026/stats/pit_p.html): required innings = actual team games × 1.0.
-- [Official scoring rules, 9.22](https://npb.jp/scoring/officialrule_900.pdf), including the Japanese note: actual games played, not the planned schedule. The published rules PDF predates 2026; the 2026 leaders pages independently confirm the thresholds. [2026 amendments](https://npb.jp/npb/2026rules.html) do not amend 9.22.
+- [Official scoring rules, 9.22](https://npb.jp/scoring/officialrule_900.pdf). The published rules PDF predates 2026. [2026 amendments, item 24](https://npb.jp/npb/2026rules.html) revise the Japanese note and explicitly apply actual games played rather than the planned schedule, with rounding following the rule's explanatory notes. The 2026 leaders pages independently confirm the first-team thresholds.
 
 Calculation uses integer PA and integer outs. Batting threshold is `floor((teamGames * 31 + 5) / 10)`; pitching threshold is `teamGames * 3` outs. Team games are counted from canonical final Games only **after the entire requested Season Coverage is complete**. Unknown Coverage, missing sample metrics, or ambiguous/transferred team context yields `qualifier unknown`, never qualified. No inference from current standings or incomplete schedules.
 
