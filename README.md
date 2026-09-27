@@ -121,7 +121,7 @@ NPBの前日全試合Fact収集・manual検証・復旧手順は[docs/npb-day-op
 
 保存済みNPB Player Game FactsのRead-only集計と収集Coverageは[docs/player-period.md](docs/player-period.md)を参照してください。`npx tsx scripts/verify-player-period.ts --date=2026-09-24`でローカルFactを読み、集計前後の件数を照合できます。Player Recent / Seasonは公開Read-only APIへ接続しています。構成は[docs/player-recent.md](docs/player-recent.md)を参照してください。
 
-2026 Historical Backfillは `npx tsx scripts/backfill-npb-season.ts --from=2026-03-27 --to=2026-09-26 --mode=inventory` で棚卸し、`--mode=dry-run` でRemote ExportをScratch DBへ復元して検証、`--mode=ingest` で明示的に本番投入します。Remote接続の環境変数が必要です。完了済み日の現在Factを再検証して再利用し、日付単位で再開できます。既存Sourceから過去の投手参加者を確認できない日はunknownを維持します。独立manual workflow `npb-historical-backfill.yml` と `npb-season-publish.yml` を用意しています。Seasonの公開JSONは `/data/npb/season/2026/latest.json`、Raw Factや内部Source IDは含めません。manual成功はScheduled運用証拠ではありません。
+2026 Historical Backfillは `npx tsx scripts/backfill-npb-season.ts --from=2026-03-27 --to=2026-09-26 --mode=inventory` で棚卸し、`--mode=dry-run` でRemote ExportをScratch DBへ復元して検証、`--mode=ingest` で明示的に本番投入します。Remote接続の環境変数が必要です。完了済み日の現在Factを再検証して再利用し、日付単位で再開できます。nf3の公開「全表示」日程と投手一覧・「全投球成績」を利用し、同一run内ではURL/解析結果を再利用します。退団・移籍の明示プロフィール識別子は区別し、不明な参加者・identity・validationはreason code付きで未完了に残します。独立manual workflow `npb-historical-backfill.yml` と `npb-season-publish.yml` を用意しています。Seasonの公開JSONは `/data/npb/season/2026/latest.json`、Raw Factや内部Source IDは含めません。規定打席・投球回の一次資料と資格判定方針は `docs/npb-ranking-qualifiers.md`。manual成功はScheduled運用証拠ではありません。
 Player画面の「試合別成績」は保存済みFactとGame情報だけをVercelのRead-only APIで読み、最新10件を表示します。取得経路と欠損値・二刀流・ダブルヘッダーの扱いは[docs/player-game-log.md](docs/player-game-log.md)を参照してください。
 
 ローカルGitと作業ブランチを作成済み。公開GitHubリポジトリへpushしました。GitHubリポジトリへ追加する際は、既存ブランチをレビューし `npm run check` を通してください。
