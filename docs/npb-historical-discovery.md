@@ -32,4 +32,8 @@ An explicitly reviewed f/p profile pair can be listed as two exact permitted URL
 
 ## Safety and rollback
 
+The 4/30 万波中正 row is `空三振 三ゴロ 中飛 打妨`, AB 3 / BB 0 / HBP 0. [nf3's batting help](https://nf3.sakura.ne.jp/Help/Help_fp.htm) and [official rule 9.22](https://npb.jp/scoring/officialrule_900.pdf), reviewed 2026-09-27, include an interference award in PA but exclude it from AB. The full-detail parser counts only the exact observed `打妨` token, checks the complete event count, and stores PA 4. BB/HBP/SH/SF remain unchanged; ambiguous interference text still yields unknown PA. No aggregator formula or schema changes.
+
+Historical 4/9 Tigers–Swallows and 4/14 Swallows–DeNA currently fail the strict final-outs shape check. Source pitcher logs give Swallows 20 and 15 outs respectively. The published schedule does not independently state the final inning. These games remain partial rather than inferring a called-game ending or weakening validation.
+
 Each Game uses existing canonical identity resolution, validation and atomic authoritative writes. Complete days are reused only after current Fact validation and Day evidence agree. Unknown identities/tokens or schedule inconsistencies remain unresolved with reason codes. The optimized historical save path accepts a verified Game to batch existing Fact-key reads; Daily's default persistence path and limited insert-only safety remain intact. Disable historical ingestion to roll back discovery without deleting canonical Facts or re-enabling limited-write degradation.

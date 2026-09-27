@@ -145,7 +145,11 @@ export function parseNf3GameBattingRow(html: string, date: string, teamCode: str
   // Only the explicit sacrifice marker counts; ordinary 野選 remains an AB.
   const sacrificeHits = detail.filter((token) => /犠打|犠バント|犠野/.test(token)).length;
   const sacrificeFlies = detail.filter((token) => /犠飛/.test(token)).length;
-  const expectedPa = walks === null || hbp === null ? null : ab + walks + hbp + sacrificeHits + sacrificeFlies;
+  // Exact nf3 打妨 is an interference award: a PA, never an AB/BB/HBP.
+  // Other ambiguous interference/obstruction text remains unsupported.
+  // Provider Help_fp and official rule 9.22 agree; the source token count still must match.
+  const interferenceAwards = detail.filter((token) => token === "打妨").length;
+  const expectedPa = walks === null || hbp === null ? null : ab + walks + hbp + sacrificeHits + sacrificeFlies + interferenceAwards;
   const pa = expectedPa !== null && !unsupportedPaEvents.length && detail.length === expectedPa ? expectedPa : null;
   const hitsInDetail = detail.filter((token) => /安|２|３|本\(/.test(token)).length;
   const extraBaseVerified = hitsInDetail === rows[0]!.fact.hits;

@@ -11,6 +11,7 @@ import { findRosterPlayer, parseNf3BattingRoster, parseNf3GameBattingRow,
   hasNf3BattingGameRow,nf3ProfileParameter } from "../src/data/npb-game-source";
 import { controlledGameTargets, hasPlausibleFinalOuts, validateNpbGameFacts } from "../src/data/npb-game-collector";
 import { playerGameBattingSchema, playerGamePitchingSchema } from "../src/domain/game-facts";
+import { aggregateBatting } from "../src/domain/player-period";
 
 const date = "2026-09-23";
 const at = "2026-09-24T00:00:00.000Z";
@@ -64,6 +65,17 @@ describe("2026-09-23 controlled NPB game proof", () => {
     expect(parsed.detail).toEqual(["中飛","投犠野"]);
     expect(parsed.row.fact).toMatchObject({pa:2,ab:1,walks:0,hbp:0,sacrificeHits:1,sacrificeFlies:0});
     expect(parseNf3GameBattingRow(html.replace("投犠野","投野選"),"2026-09-22","DB","azuma","source",game.sourceUrl,at).row.fact.pa).toBeNull();
+  });
+  it("counts the observed 4/30 打妨 as PA without converting it to AB, BB, HBP or a sacrifice",()=>{
+    const html=fixture("batting-f-interference");
+    const parsed=parseNf3GameBattingRow(html,"2026-04-30","F","mannami","source",game.sourceUrl,at);
+    expect(parsed.detail).toEqual(["空三振","三ゴロ","中飛","打妨"]);
+    expect(parsed.row.fact).toMatchObject({pa:4,ab:3,walks:0,hbp:0,sacrificeHits:0,sacrificeFlies:0});
+    const aggregate=aggregateBatting({playerId:"mannami",asOfDate:"2026-04-30",period:"7d"},[parsed.row.fact]);
+    expect(aggregate.metrics.PA).toMatchObject({value:4,status:"complete"});
+    expect(aggregate.metrics.OBP.value).toBe(parsed.row.fact.hits! / 3);
+    const ambiguous=parseNf3GameBattingRow(html.replace("打妨","妨害不明"),"2026-04-30","F","mannami","source",game.sourceUrl,at);
+    expect(ambiguous.row.fact.pa).toBeNull();expect(ambiguous.unsupportedPaEvents).toEqual(["妨害不明"]);
   });
   it("links verified Hayakawa to his existing canonical master and rejects altered identity evidence",async()=>{
     const client=await db(),repository=new NpbRepository(client);
