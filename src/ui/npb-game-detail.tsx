@@ -52,7 +52,7 @@ export function NpbGameDetailView({ payload, state }: { payload: NpbGameDetail |
           <div className="game-detail__line-main"><span className="game-detail__order">{row.battingOrder === null ? "—" : `${row.battingOrder}番`}</span>
             <a href={`#/NPB/players/${encodeURIComponent(row.playerId)}`}>{row.name}</a>
             <span className="game-detail__numbers">{value(row.ab)}打数 {value(row.hits)}安打 · {value(row.rbi)}打点 · {value(row.homeRuns)}HR</span></div>
-          {row.pa === 0 && row.ab === 0 && <p className="game-detail__minor">打席なし{row.starter === false ? " · 途中出場" : ""}</p>}
+          {row.pa === 0 && row.ab === 0 && <p className="game-detail__minor">打席なし</p>}
           <p className="game-detail__minor">{row.starter===true?"先発":row.starter===false?"途中出場":"出場形態未確認"}</p>
           <details><summary>詳しい打撃成績</summary><dl>{battingDetails.map(({ key, label }) =>
             <div key={key}><dt>{label}</dt><dd>{value(row[key])}</dd></div>)}</dl></details>

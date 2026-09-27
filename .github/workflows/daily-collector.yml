@@ -138,6 +138,9 @@ jobs:
       - name: Build Web app with the same-origin validated JSON
         if: steps.safety.outputs.skip != 'true' && (github.event_name == 'schedule' || inputs.mode == 'ingest' || inputs.mode == 'publish')
         shell: bash
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
         run: |
           npm run build
           mkdir -p dist/data/standings/npb
@@ -145,7 +148,7 @@ jobs:
           npx tsx scripts/preserve-published-npb-hot.ts
           npx tsx scripts/preserve-published-npb-player-directory.ts
           npx tsx scripts/preserve-published-npb-season.ts
-          npx tsx scripts/preserve-published-npb-game-surface.ts
+          npx tsx scripts/generate-npb-game-surface.ts --payload-root=dist > .data/game-surface.json
       - name: Configure GitHub Pages
         if: steps.safety.outputs.skip != 'true' && (github.event_name == 'schedule' || inputs.mode == 'ingest' || inputs.mode == 'publish')
         uses: actions/configure-pages@v5
