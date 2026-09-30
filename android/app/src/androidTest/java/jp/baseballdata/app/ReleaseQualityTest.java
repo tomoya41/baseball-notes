@@ -5,6 +5,9 @@ import androidx.test.core.app.ActivityScenario;
 import androidx.test.platform.app.InstrumentationRegistry;
 import android.content.Intent;
 import android.net.Uri;
+import android.graphics.Bitmap;
+import java.io.File;
+import java.io.FileOutputStream;
 import org.junit.*;
 import org.junit.runner.RunWith;
 import org.json.JSONTokener;
@@ -29,6 +32,14 @@ public class ReleaseQualityTest {
     private void shell(String command) throws Exception {
         InstrumentationRegistry.getInstrumentation().getUiAutomation().executeShellCommand(command).close();
     }
+    private void screenshot(String name) throws Exception {
+        File dir = new File(InstrumentationRegistry.getInstrumentation().getTargetContext().getExternalFilesDir(null), "ui-redesign");
+        assertTrue(dir.isDirectory() || dir.mkdirs());
+        Bitmap image = InstrumentationRegistry.getInstrumentation().getUiAutomation().takeScreenshot();
+        assertNotNull("Native screenshot", image);
+        try (FileOutputStream file = new FileOutputStream(new File(dir, name + ".png"))) { assertTrue(image.compress(Bitmap.CompressFormat.PNG, 100, file)); }
+        finally { image.recycle(); }
+    }
     @After public void close() throws Exception { shell("svc wifi enable"); shell("svc data enable"); if (scenario != null) scenario.close(); }
     @Test public void shellDeepLinksBackAndHistorical() throws Exception {
         long start = System.currentTimeMillis(); scenario = ActivityScenario.launch(MainActivity.class);
@@ -47,10 +58,25 @@ public class ReleaseQualityTest {
         shell("svc wifi disable"); shell("svc data disable");
         js("location.hash='#/MLB/sources'"); waitText("Retrosheet"); waitText("Chadwick");
         shell("svc wifi enable"); shell("svc data enable");
+        long homeStart = System.currentTimeMillis(); js("location.hash='#/MLB/home'");
+        waitText("日本人選手");
+        waitText("1.014"); waitText("0.696");
+        System.out.println("PERF mlb_home_ms=" + (System.currentTimeMillis() - homeStart));
+        assertEquals("Four actual Player summaries", "4", js("document.querySelectorAll('.follow-player').length"));
+        assertEquals("true", js("document.documentElement.scrollWidth <= window.innerWidth"));
+        shell("cmd uimode night no"); Thread.sleep(500); screenshot("mlb-home-360-light");
+        shell("cmd uimode night yes"); Thread.sleep(500); screenshot("mlb-home-360-dark");
+        shell("cmd uimode night no"); shell("wm size 600x1000"); Thread.sleep(700);
+        assertEquals("true", js("document.documentElement.scrollWidth <= window.innerWidth")); screenshot("mlb-home-600");
+        shell("wm size 360x800"); Thread.sleep(700);
+        js("location.hash='#/MLB/schedule?season=2025&date=2025-09-28'"); waitText("日程・結果"); waitText("試合終了");
+        assertEquals("true", js("!!document.querySelector('button[aria-label=\"前日\"]')"));
+        assertEquals("true", js("document.documentElement.scrollWidth <= window.innerWidth")); screenshot("mlb-schedule-360");
         Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("baseballnotes://MLB/players/mlb%3Aplayer%3Ae70b8d12-aa41-50c0-9c1b-d468d451355f"),
             InstrumentationRegistry.getInstrumentation().getTargetContext(), MainActivity.class);
         scenario.close(); scenario = ActivityScenario.launch(intent);
         long player = waitText("大谷翔平"); System.out.println("PERF historical_player_ms=" + player);
+        waitText("シーズン成績"); screenshot("mlb-player-360");
         assertTrue(js("location.hash").contains("e70b8d12"));
         assertEquals("true", js("!!document.querySelector('button[aria-label=\"大谷翔平をお気に入りに追加\"]')"));
         js("document.querySelector('button[aria-label=\"大谷翔平をお気に入りに追加\"]').click()");
@@ -64,6 +90,7 @@ public class ReleaseQualityTest {
         System.out.println("PERF game_detail_ms=" + waitText("試合結果"));
         waitText("PA");
         assertEquals("true", js("document.documentElement.scrollWidth <= window.innerWidth"));
+        screenshot("mlb-game-360");
         js("new Promise(resolve=>{const q=indexedDB.open('baseball-public-responses-v1');q.onsuccess=()=>{const db=q.result;if(!db.objectStoreNames.length){resolve(0);return;}const r=db.transaction(db.objectStoreNames[0]).objectStore(db.objectStoreNames[0]).openCursor();let max=0;r.onsuccess=()=>{const c=r.result;if(c){max=Math.max(max,c.value.bytes||0);c.continue();}else resolve(max);};};}).then(n=>document.documentElement.dataset.cachemax=String(n))");
         for (int i=0; i<100 && js("document.documentElement.dataset.cachemax || 'pending'").equals("pending"); i++) Thread.sleep(50);
         assertTrue("Persistent public response cache measured", Long.parseLong(js("document.documentElement.dataset.cachemax")) > 0);

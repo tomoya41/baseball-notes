@@ -4,6 +4,7 @@ import { formatOuts } from "../domain/player-game-log";
 import type { NpbGameDetail } from "../domain/npb-game-detail";
 import { formatDate } from "../presentation/formatters";
 import { DataState, LoadingSkeleton, MetricLabel } from "./components";
+import { ScoreHero } from "./design-system";
 
 type DetailState = "loading" | "ready" | "missing" | "error";
 const value = (number: number | null) => number === null ? "—" : String(number);
@@ -33,10 +34,7 @@ export function NpbGameDetailView({ payload, state }: { payload: NpbGameDetail |
     <a className="back-link" href={`#/NPB/schedule?date=${payload.date}`}>日程・結果に戻る</a>
     <header className="game-detail__header"><p>NPB / 試合詳細</p><h1>{formatDate(payload.date, true)}の試合</h1>
       <p>{statusName[payload.status]}{payload.gameNumber > 1 ? ` · 第${payload.gameNumber}試合` : ""}</p></header>
-    <div className="game-detail__score" aria-label={`${payload.away.shortName} ${value(payload.away.score)}、${payload.home.shortName} ${value(payload.home.score)}`}>
-      <div><span>ビジター · {payload.away.shortName}</span><strong>{value(payload.away.score)}</strong></div>
-      <div><span>ホーム · {payload.home.shortName}</span><strong>{value(payload.home.score)}</strong></div>
-    </div>
+    <ScoreHero away={payload.away.shortName} home={payload.home.shortName} awayScore={payload.away.score} homeScore={payload.home.score} status={statusName[payload.status]} />
     {payload.status !== "final" && <p className="game-detail__note">{statusName[payload.status]}のため、試合別成績はありません。</p>}
     {hasBox && payload.completeness !== "complete" && <p className="game-detail__note" role="status">
       {payload.completeness === "partial" || payload.completeness === "failed" ?

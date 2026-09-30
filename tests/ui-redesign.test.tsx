@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { PlayerTabs, Monogram, ScoreboardRow } from "../src/ui/design-system";
+import { PlayerTabs, Monogram, ScoreboardRow, ScoreHero, DateRibbon } from "../src/ui/design-system";
 import { MetricLabel } from "../src/ui/components";
 import { metricHelp } from "../src/presentation/metric-help";
 import { ExploreScreen, FutureFeatureScreen, PlayerFutureLinks } from "../src/ui/future-surfaces";
@@ -78,12 +78,27 @@ describe("verified Japanese cohort and display", () => {
 describe("compact scoreboards and contextual metric help", () => {
   it("preserves score zero, unknown score, canonical routes and confirmed partial status", () => {
     const html = wrap(<ScoreboardRow to="/NPB/games/npb%3Agame%3Aone" home="阪神" away="DeNA" homeScore={0} awayScore={null} status="開始前" gameNumber={2} partial />);
-    expect(html).toContain("npb%3Agame%3Aone"); expect(html).toContain("<strong>0</strong>"); expect(html).toContain("<strong>—</strong>");
+    expect(html).toContain("npb%3Agame%3Aone"); expect(html).toMatch(/<strong[^>]*>0<\/strong>/); expect(html).toMatch(/<strong[^>]*>—<\/strong>/);
     expect(html).toContain("第2試合"); expect(html).toContain("一部データ確認中"); expect(html).not.toContain("scoreboard-winner");
   });
   it("marks a known leading score without inventing a game completion state", () => {
     const html = wrap(<ScoreboardRow to="/MLB/games/canonical" home="ホーム" away="ビジター" homeScore={1} awayScore={2} status="中断" />);
     expect(html).toContain("scoreboard-winner"); expect(html).toContain("中断"); expect(html).not.toContain("試合終了");
+  });
+  it("keeps the central game hero's zero and unavailable scores distinct", () => {
+    const html = wrap(<ScoreHero home="阪神" away="DeNA" homeScore={0} awayScore={null} status="中断" />);
+    expect(html).toContain('role="group"'); expect(html).toContain("得点未確認");
+    expect(html).toContain("—<i"); expect(html).toContain("</i>0"); expect(html).toContain("中断");
+    expect(html).not.toContain("試合終了");
+  });
+  it("bounds the quick calendar to the imported season, across month boundaries", () => {
+    const html = wrap(<DateRibbon date="2025-04-01" min="2025-03-31" max="2025-04-02" onChange={() => {}} />);
+    for (const date of ["2025-03-31", "2025-04-01", "2025-04-02"]) expect(html).toContain(`aria-label="${date}"`);
+    expect(html).not.toContain('aria-label="2025-03-30"'); expect(html).not.toContain('aria-label="2025-04-03"');
+    expect(html).toContain('aria-label="2025-04-01" aria-pressed="true"');
+    expect(wrap(<DateRibbon date="2025-03-31" min="2025-03-31" max="2025-04-02" onChange={() => {}} />)).toContain('aria-label="前日" disabled=""');
+    expect(wrap(<DateRibbon date="2025-04-02" min="2025-03-31" max="2025-04-02" onChange={() => {}} />)).toContain('aria-label="翌日" disabled=""');
+    for (const date of ["broken", "2025-02-30", "2026-04-01"]) expect(wrap(<DateRibbon date={date} min="2025-03-31" max="2025-04-02" onChange={() => {}} />)).toBe("");
   });
   it.each(["OPS", "OBP", "SLG", "K9", "K/9", "BF", "RISP", "PA", "AB", "IP", "outsRecorded"])("%s has a local accessible explanation", key => {
     const definition = metricHelp(key)!; expect(definition.description).toBeTruthy(); expect(definition.interpretation).toBeTruthy();

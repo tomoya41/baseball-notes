@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import { ArrowUpRight, Moon, Sun, Monitor } from "lucide-react";
+import { ArrowUpRight, ChevronLeft, ChevronRight, Moon, Sun, Monitor } from "lucide-react";
 import { Link } from "react-router-dom";
 import { readAppearance, setAppearance } from "../app/appearance";
 import type { ThemePreference } from "../app/appearance";
@@ -37,11 +37,25 @@ export function ScoreboardRow({ to, away, home, awayScore, homeScore, status, da
   to: string; away: string; home: string; awayScore: number | null; homeScore: number | null;
   status: string; date?: string; gameNumber?: number | undefined; partial?: boolean;
 }) {
-  return <Link className="scoreboard-row" to={to}>
-    <span className="scoreboard-teams"><span className={awayScore !== null && homeScore !== null && awayScore > homeScore ? "scoreboard-winner" : ""}><span><span className="sr-only">ビジター </span>{away}</span><strong>{awayScore ?? "—"}</strong></span>
-      <span className={awayScore !== null && homeScore !== null && homeScore > awayScore ? "scoreboard-winner" : ""}><span><span className="sr-only">ホーム </span>{home}</span><strong>{homeScore ?? "—"}</strong></span></span>
-    <span className="scoreboard-status"><span>{date}</span><strong>{status}</strong>{gameNumber !== undefined && gameNumber > 0 && <small>第{gameNumber}試合</small>}{partial && <small>一部データ確認中</small>}<ArrowUpRight size={15} aria-hidden="true" /></span>
+  const known = awayScore !== null && homeScore !== null;
+  return <Link className="scoreboard-row" to={to} aria-label={`${date ? `${date}、` : ""}ビジター ${away} ${awayScore ?? "得点未確認"}、ホーム ${home} ${homeScore ?? "得点未確認"}、${status}${gameNumber ? `、第${gameNumber}試合` : ""}${partial ? "、一部データ確認中" : ""}`}>
+    <span className={`scoreboard-club${known && awayScore > homeScore ? " scoreboard-winner" : ""}`}><small>ビジター</small><span>{away}</span></span>
+    <span className="scoreboard-center"><span className="scoreboard-result"><strong className={known && awayScore > homeScore ? "scoreboard-winner" : ""}>{awayScore ?? "—"}</strong><span aria-hidden="true">–</span><strong className={known && homeScore > awayScore ? "scoreboard-winner" : ""}>{homeScore ?? "—"}</strong></span><small>{date && `${date} · `}{status}</small>{gameNumber !== undefined && gameNumber > 0 && <small>第{gameNumber}試合</small>}{partial && <small className="scoreboard-partial">一部データ確認中</small>}</span>
+    <span className={`scoreboard-club scoreboard-club--home${known && homeScore > awayScore ? " scoreboard-winner" : ""}`}><small>ホーム</small><span>{home}</span></span>
   </Link>;
+}
+export function HomeModeNav({ modes, active, onChange }: { modes: readonly { id: string; label: string }[]; active: string; onChange: (id: string) => void }) {
+  return <div className="home-mode-nav" role="group" aria-label="ホームの表示">{modes.map(mode => <button key={mode.id} aria-pressed={active === mode.id} onClick={() => onChange(mode.id)}>{mode.label}</button>)}</div>;
+}
+export function DateRibbon({ date, min, max, onChange }: { date: string; min: string; max: string; onChange: (date: string) => void }) {
+  const parsed = new Date(`${date}T00:00:00Z`);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0,10) !== date || date < min || date > max) return null;
+  const shift = (offset: number) => { const next = new Date(`${date}T00:00:00Z`); next.setUTCDate(next.getUTCDate() + offset); return next.toISOString().slice(0,10); };
+  const dates = [-2,-1,0,1,2].map(shift).filter(d => d >= min && d <= max);
+  return <div className="date-ribbon"><div className="date-ribbon-heading"><strong>{Number(date.slice(0,4))}年{Number(date.slice(5,7))}月</strong><label><span className="sr-only">試合日</span><input type="date" aria-label="試合日" value={date} min={min} max={max} onChange={e => { if(e.target.value >= min && e.target.value <= max) onChange(e.target.value); }} /></label></div><nav aria-label="日付移動"><button aria-label="前日" disabled={date <= min} onClick={() => onChange(shift(-1))}><ChevronLeft size={18} /></button><div className="date-ribbon-days">{dates.map(d => <button key={d} aria-label={d} aria-pressed={date === d} onClick={() => onChange(d)}><small>{new Intl.DateTimeFormat("ja-JP",{weekday:"short",timeZone:"UTC"}).format(new Date(`${d}T00:00:00Z`))}</small><strong>{Number(d.slice(8))}</strong></button>)}</div><button aria-label="翌日" disabled={date >= max} onClick={() => onChange(shift(1))}><ChevronRight size={18} /></button></nav></div>;
+}
+export function ScoreHero({ away, home, awayScore, homeScore, status }: { away: string; home: string; awayScore: number | null; homeScore: number | null; status: string }) {
+  return <div className="score-hero" role="group" aria-label={`${away} ${awayScore ?? "得点未確認"}、${home} ${homeScore ?? "得点未確認"}、${status}`}><div><small>ビジター</small><strong>{away}</strong></div><div className="score-hero-result"><span>{awayScore ?? "—"}<i aria-hidden="true">:</i>{homeScore ?? "—"}</span><small>{status}</small></div><div><small>ホーム</small><strong>{home}</strong></div></div>;
 }
 export function Shortcut({ to, title, detail }: { to: string; title: string; detail: string }) {
   return <Link className="shortcut" to={to}><span><strong>{title}</strong>{detail && <small>{detail}</small>}</span><ArrowUpRight size={21} aria-hidden="true" /></Link>;

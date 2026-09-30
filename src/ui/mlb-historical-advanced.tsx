@@ -30,8 +30,8 @@ export function HistoricalAdvancedAnalysis({ playerId, season, hasBatting, hasPi
   const opponent = section?.opponents.find(row => row.playerId === opponentId);
   const splits = section?.splits.filter(row => row.key.startsWith(`${mode}:`)) ?? [];
   const split = splits.find(row => row.key === splitKey) ?? splits[0];
-  return <section className="surface-card"><h2>高度分析</h2>
-    <button className="button" type="button" aria-expanded={open} onClick={() => setOpen(!open)}>{open ? "閉じる" : "対戦・状況別を見る"}</button>
+  return <section className="surface-card advanced-workspace"><header className="section-header"><h2>高度分析</h2>
+    <button className="text-button" type="button" aria-expanded={open} onClick={() => setOpen(!open)}>{open ? "閉じる" : "対戦・状況別を見る"}</button></header>
     {open && <>
       <div className="mlb-controls"><label>対象期間<select value={scope} onChange={event => setScope(event.target.value as "season" | "range")}>
         <option value="season">{season}年</option><option value="range">収録期間内 2020〜2025</option></select></label>
@@ -48,8 +48,8 @@ export function HistoricalAdvancedAnalysis({ playerId, season, hasBatting, hasPi
           <p className="inline-note">{opponents.length}人。実際に対戦した相手だけを表示します。</p>
           {opponent && <div><h3>{opponent.name}</h3><PaMetricTable metrics={opponent.metrics} pitching={role === "pitching"} />
             <Link className="text-link" to={`/MLB/players/${encodeURIComponent(opponent.playerId)}?season=${season}`}>選手ページへ</Link></div>}
-          <div className="row-list">{opponents.slice(0, 40).map(row => <button className="ranking-entry" type="button" key={row.playerId}
-            aria-pressed={row.playerId === opponentId} onClick={() => setOpponentId(row.playerId)}>{row.name} · {row.metrics.PA} PA</button>)}</div>
+          <div className="row-list matchup-opponents">{opponents.slice(0, 40).map(row => <button className="ranking-entry" type="button" key={row.playerId}
+            aria-pressed={row.playerId === opponentId} onClick={() => setOpponentId(row.playerId)}><span>{row.name}</span><span><strong>{row.metrics.PA}</strong><small>PA</small></span></button>)}</div>
           {!opponents.length && <DataState kind="no-data" title="該当する対戦相手はいません" />}
           {opponents.length > 40 && <p className="inline-note">先頭40人を表示。名前で絞り込めます。</p>}
         </> : result.value!.situations !== "ready" ? <DataState kind="unsupported" title="状況別成績を確認中です" /> : !split ?

@@ -7,7 +7,7 @@ import type { NpbLatestStandings } from "../domain/standings";
 import { positionDefinitions } from "../domain/baseball-terms";
 import { formatDate, formatGamesBehind, formatWinningPercentage } from "../presentation/formatters";
 import { DataState, LoadingSkeleton, SectionHeader } from "./components";
-import { CompetitionHeader, Monogram, Shortcut } from "./design-system";
+import { CompetitionHeader, HomeModeNav, Monogram } from "./design-system";
 import { NpbRecentGames } from "./npb-game-surface";
 import { NpbSavedPlayers } from "./npb-my";
 import { NpbHotSection } from "./npb-hot";
@@ -30,13 +30,16 @@ export function NpbStandings({ services }: { services: Services }) {
   </section>;
 }
 export function NpbHome({ services, favorites, toggle, saving }: { services: Services; favorites: Favorite[]; toggle: (target: Target) => void; saving: boolean }) {
+  const [view,setView] = useState("scores");
   const season = new Intl.DateTimeFormat("ja-JP", { year: "numeric", timeZone: "Asia/Tokyo" }).format(new Date());
-  return <div className="screen home-screen"><CompetitionHeader league="NPB" context={`${season} · 公式戦`} />
-    <div className="home-columns"><div><NpbRecentGames repository={services.gameSurface} /><NpbStandings services={services} /></div><div>
-      <section className="home-section"><SectionHeader title="お気に入り選手" action="Myへ" to="/NPB/my" /><NpbSavedPlayers repository={services.directory} favorites={favorites} toggle={toggle} saving={saving} compact /></section>
-      <div className="shortcut-grid"><Shortcut to="/NPB/search" title="選手検索" detail="" /><Shortcut to="/NPB/records" title="個人成績" detail="2026シーズン" /></div>
-      <NpbHotSection repository={services.hot} />
-    </div></div></div>;
+  return <div className="screen home-screen home-hub"><CompetitionHeader league="NPB" context={`${season} · 公式戦`} />
+    <HomeModeNav active={view} onChange={setView} modes={[{id:"scores",label:"スコア"},{id:"standings",label:"順位表"},{id:"follow",label:"フォロー"}]} />
+    {view === "scores" && <NpbRecentGames repository={services.gameSurface} />}
+    {view === "standings" && <NpbStandings services={services} />}
+    {view === "follow" && <section className="home-section"><SectionHeader title="お気に入り選手" action="My" to="/NPB/my" /><NpbSavedPlayers repository={services.directory} favorites={favorites} toggle={toggle} saving={saving} compact /></section>}
+    <div className="hub-links"><Link to="/NPB/search">選手を探す <span>→</span></Link><Link to="/NPB/records">個人成績 <span>→</span></Link></div>
+    <div className="hub-readiness"><NpbHotSection repository={services.hot} /></div>
+  </div>;
 }
 export function NpbProfileDetails({ player }: { player: NpbCatalog["players"][number] }) {
   const p = player.profile;

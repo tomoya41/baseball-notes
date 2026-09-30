@@ -46,6 +46,7 @@ adb logcat -d -s System.out:I > .data/android-emulator/performance.txt
 adb logcat -d -s Capacitor:V Capacitor/Console:V > .data/android-emulator/bridge.txt
 adb exec-out screencap -p > .data/android-emulator/instrumentation-screen.png
 grep -q 'OK (' .data/android-emulator/instrumentation.txt
+adb pull /sdcard/Android/data/com.tomoya41.baseballnotes/files/ui-redesign .data/android-emulator/ui-redesign
 adb shell svc wifi disable
 adb shell svc data disable
 adb shell am force-stop com.tomoya41.baseballnotes

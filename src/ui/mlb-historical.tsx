@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { Link, Navigate, Route, Routes, useLocation, useParams, useSearchParams } from "react-router-dom";
 import type { Favorite } from "../domain/models";
 import { isVerifiedJapanPlayer } from "../domain/mlb-japan-cohort";
-import { CompetitionHeader, Monogram, PlayerTabs, ScoreboardRow } from "./design-system";
+import { CompetitionHeader, DateRibbon, HomeModeNav, Monogram, PlayerTabs, ScoreboardRow, ScoreHero } from "./design-system";
 import { matchesMlbPlayerName } from "../domain/mlb-japanese-display";
 import { battingAggregate, dateWindow, pitchingAggregate } from "../domain/mlb-historical-aggregate";
 import type { DatedBatter, DatedPitcher } from "../domain/mlb-historical-aggregate";
@@ -14,6 +14,8 @@ import { DataState, FavoriteButton, LoadingSkeleton, PageHeading, SectionHeader,
 import { HistoricalAdvancedAnalysis } from "./mlb-historical-advanced";
 import { useHistoricalStatic as useStatic } from "./use-mlb-historical";
 import { ExploreScreen, FutureFeatureScreen, PlayerFutureLinks } from "./future-surfaces";
+
+import { MlbFollowPlayer } from "./mlb-follow-board";
 
 const canonicalGameId = /^mlb:game:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const canonicalPlayerId = /^mlb:player:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -45,10 +47,6 @@ function Status({ state, missing = "データがありません" }: { state: Ret
 }
 const format = (value: number | null | undefined) => value === null || value === undefined ? "—" : String(value);
 const teamName = (manifest: Manifest, id: string) => manifest.teams.find(team => team.id === id)?.name ?? "球団不明";
-const day = (value: string, offset: number) => {
-  const date = new Date(`${value}T00:00:00Z`); date.setUTCDate(date.getUTCDate() + offset);
-  return date.toISOString().slice(0, 10);
-};
 
 export function MlbDataSources() {
   return <div className="screen"><PageHeading eyebrow="BASEBALL NOTES" title="データ提供元" />
@@ -70,24 +68,23 @@ export function MlbDataSources() {
 export function MlbHistoricalHome({ manifest, favorites, toggle, saving }: { manifest: Manifest; favorites: Favorite[]; toggle: (target: FavoriteTarget) => void; saving: boolean }) {
   const [params, setParams] = useSearchParams();
   const selectedYear = Number(params.get("season") ?? manifest.seasons.at(-1)!.season);
+  const view = ["japan","follow","league"].includes(params.get("view") ?? "") ? params.get("view")! : "japan";
+  const change = (key: string,value: string) => { const next = new URLSearchParams(params); next.set(key,value); setParams(next); };
   const latest = manifest.seasons.find(item => item.season === selectedYear);
   const index = useStatic<{ players: IndexPlayer[] }>("players/index.json");
   const results = useStatic<Schedule>(latest ? `schedule/${latest.season}/${latest.lastDate}.json` : null);
-  const records = useStatic<{ counting: string; records: { metric: string; role: string; classification?: string; rows: { playerId: string; name: string; value: number; rank: number }[] }[] }>(latest ? `records/${latest.season}.json` : null);
+  const records = useStatic<{ counting: string; records: { metric: string; role: string; classification?: string; rows: { playerId: string; name: string; value: number; rank: number }[] }[] }>(latest && view === "league" ? `records/${latest.season}.json` : null);
   if (!latest) return <div className="screen"><PageHeading eyebrow="MLB" title="未収録シーズン" /><DataState kind="unsupported" title={selectedYear === 2026 ? "2026年の試合結果・選手成績は未対応" : "このシーズンは未収録です"} action="収録済みのシーズンへ" to="/MLB/home" /></div>;
   const japan = (index.value?.players ?? []).filter(p => isVerifiedJapanPlayer(p.id) && p.seasons.includes(latest.season))
     .sort((a,b) => Number(b.id === "mlb:player:e70b8d12-aa41-50c0-9c1b-d468d451355f") - Number(a.id === "mlb:player:e70b8d12-aa41-50c0-9c1b-d468d451355f") || a.name.localeCompare(b.name,"ja"));
   const saved = (index.value?.players ?? []).filter(p => favorites.some(f => f.league === "MLB" && f.entityId === p.id));
-  const row = (player: IndexPlayer) => <div className="mlb-player-row" key={player.id}><Link to={`/MLB/players/${encodeURIComponent(player.id)}?season=${player.seasons.includes(latest.season) ? latest.season : player.seasons.at(-1)}`}><Monogram name={player.name} /><span><strong>{player.name}</strong><small>{historicalPositions(player.positions).split("・").slice(0,2).join("・")}</small></span></Link><FavoriteButton active={favorites.some(f => f.league === "MLB" && f.entityId === player.id)} saving={saving} label={player.name} onClick={() => toggle({ league: "MLB", kind: "player", entityId: player.id })} /></div>;
   const leaders = records.value?.counting === "ready" ? records.value.records.find(record => record.role === "batting" && record.metric === "HR" && record.classification !== "rate")?.rows.slice(0,3) : undefined;
-  return <div className="screen home-screen"><CompetitionHeader league="MLB" context="過去シーズン · 2020–2025"><label className="competition-season"><span className="sr-only">シーズン</span><select value={latest.season} onChange={e => setParams({season:e.target.value})}>{manifest.seasons.map(s => <option key={s.season} value={s.season}>{s.season}年</option>)}</select></label></CompetitionHeader>
-    <div className="home-columns"><div><section className="japan-panel"><SectionHeader title="日本人選手" action="全員を見る" to={`/MLB/search?focus=japan&season=${latest.season}`} />{index.status === "ready" ? <div className="row-list">{japan.slice(0,4).map(row)}</div> : <Status state={index} />}</section>
-    <section className="home-section"><SectionHeader title="試合結果" action="日程・結果" to={`/MLB/schedule?season=${latest.season}&date=${latest.lastDate}`} />
-      {results.status === "ready" ? <div className="scoreboard-list">{results.value!.games.slice(0,3).map(game => <ScoreboardRow key={game.id} to={`/MLB/games/${encodeURIComponent(game.id)}`} away={teamName(manifest,game.awayTeamId)} home={teamName(manifest,game.homeTeamId)} awayScore={game.awayRuns} homeScore={game.homeRuns} date={latest.lastDate.slice(5).replace("-","/")} status="試合終了" gameNumber={game.number} partial={!game.complete} />)}</div> : <Status state={results} />}</section>
-    </div><div>
-    <section className="home-section"><SectionHeader title="本塁打" action="個人成績" to={`/MLB/records?season=${latest.season}`} />{leaders ? <ol className="row-list leaderboard">{leaders.map(player => <li key={player.playerId}><Link to={`/MLB/players/${encodeURIComponent(player.playerId)}?season=${latest.season}`}><strong className="rank-number">{player.rank}</strong><span className="rank-person"><strong>{player.name}</strong></span><strong className="rank-value">{player.value}</strong></Link></li>)}</ol> : records.status === "loading" ? <LoadingSkeleton /> : <DataState kind="unsupported" title="集計を確認中" />}</section>
-    {saved.length > 0 && <section className="home-section"><SectionHeader title="お気に入り" action="Myへ" to="/MLB/my" /><div className="row-list">{saved.slice(0,4).map(row)}</div></section>}
-    <p className="inline-note availability-note">2026年の試合結果・選手成績は未対応</p></div></div></div>;
+  const players = view === "follow" ? saved : japan;
+  return <div className="screen home-screen home-hub"><CompetitionHeader league="MLB" context="Historical"><label className="competition-season"><span className="sr-only">シーズン</span><select value={latest.season} onChange={e => change("season",e.target.value)}>{manifest.seasons.map(s => <option key={s.season} value={s.season}>{s.season}年</option>)}</select></label></CompetitionHeader>
+    <HomeModeNav active={view} onChange={v => change("view",v)} modes={[{id:"japan",label:"日本人選手"},{id:"follow",label:"フォロー"},{id:"league",label:"リーグ"}]} />
+    {view !== "league" ? <section className="follow-board"><SectionHeader title={`${latest.season} シーズン`} action={view === "follow" ? "My" : "すべての日本人選手"} to={view === "follow" ? "/MLB/my" : `/MLB/search?focus=japan&season=${latest.season}`} />{index.status !== "ready" ? <Status state={index} /> : players.length ? players.slice(0,4).map(p => <MlbFollowPlayer key={`${p.id}:${latest.season}`} player={p} season={latest.season} favorites={favorites} toggle={toggle} saving={saving} />) : <DataState kind="no-data" title={view === "follow" ? "お気に入りの選手をここに" : "この年の日本人選手は未収録"} action="選手を探す" to={`/MLB/search?season=${latest.season}`} />}</section> : <><section className="home-section"><SectionHeader title="試合結果" action="日程・結果" to={`/MLB/schedule?season=${latest.season}&date=${latest.lastDate}`} />{results.status === "ready" ? <div className="scoreboard-list">{results.value!.games.map(game => <ScoreboardRow key={game.id} to={`/MLB/games/${encodeURIComponent(game.id)}`} away={teamName(manifest,game.awayTeamId)} home={teamName(manifest,game.homeTeamId)} awayScore={game.awayRuns} homeScore={game.homeRuns} date={latest.lastDate.slice(5).replace("-","/")} status="試合終了" gameNumber={game.number} partial={!game.complete} />)}</div> : <Status state={results} />}</section><section className="home-section"><SectionHeader title="本塁打" action="個人成績" to={`/MLB/records?season=${latest.season}`} />{leaders ? <ol className="row-list leaderboard">{leaders.map(player => <li key={player.playerId}><Link to={`/MLB/players/${encodeURIComponent(player.playerId)}?season=${latest.season}`}><strong className="rank-number">{player.rank}</strong><span className="rank-person"><strong>{player.name}</strong></span><strong className="rank-value">{player.value}</strong></Link></li>)}</ol> : <DataState kind="unsupported" title="集計を確認中" />}</section></>}
+    {view !== "league" && <Link className="hub-game-entry" to={`/MLB/schedule?season=${latest.season}&date=${latest.lastDate}`}><span><small>{latest.lastDate.replaceAll("-",".")}</small><strong>試合結果</strong></span><span>{results.value?.games.length ?? "—"}<small>試合 →</small></span></Link>}
+    <p className="inline-note availability-note">過去記録 2020–2025 · 2026年の試合結果・選手成績は未対応</p></div>;
 }
 export function MlbHistoricalSearch({ manifest, favorites, toggle, saving }: { manifest: Manifest; favorites: Favorite[]; toggle: (target: FavoriteTarget) => void; saving: boolean }) {
   const result = useStatic<{ players: IndexPlayer[] }>("players/index.json");
@@ -120,16 +117,8 @@ export function MlbHistoricalSchedule({ manifest }: { manifest: Manifest }) {
     <DataState kind="unsupported" title={season === 2026 ? "2026年の試合結果・選手成績は未対応" : "このシーズンは未収録です"}
       action="過去の記録を見る" to="/MLB/schedule?season=2025" /></div>;
   return <div className="screen"><PageHeading eyebrow="MLB / 過去記録" title="日程・結果" />
-    <div className="mlb-controls"><label>シーズン<select value={selected.season}
-      onChange={event => { const next = manifest.seasons.find(item => item.season === Number(event.target.value))!;
-        setParams({ season: String(next.season), date: next.lastDate }); }}>
-      {manifest.seasons.map(item => <option key={item.season}>{item.season}</option>)}
-    </select></label><label>日付<input type="date" min={selected.firstDate} max={selected.lastDate}
-      value={date} onChange={event => navigate(event.target.value)} /></label></div>
-    <nav className="mlb-date-nav" aria-label="日付移動">
-      <button type="button" disabled={date <= selected.firstDate} onClick={() => navigate(day(date, -1))}>前日</button>
-      <strong>{date}</strong><button type="button" disabled={date >= selected.lastDate} onClick={() => navigate(day(date, 1))}>翌日</button>
-    </nav>
+    <div className="schedule-season"><label>シーズン<select value={selected.season} onChange={e => { const next = manifest.seasons.find(s => s.season === Number(e.target.value))!; setParams({season:String(next.season),date:next.lastDate}); }}>{manifest.seasons.map(s => <option key={s.season}>{s.season}</option>)}</select></label><span>Regular Season</span></div>
+    {validDate && <DateRibbon date={date} min={selected.firstDate} max={selected.lastDate} onChange={navigate} />}
     {!validDate ? <DataState kind="no-data" title="対象期間外の日付です" /> : result.status === "missing" ?
       <DataState kind="no-data" title="この日に収録された公式戦はありません" detail="現在シーズンの試合有無を示すものではありません。" /> :
       result.status !== "ready" ? <Status state={result} /> : <div className="scoreboard-list">
@@ -181,10 +170,7 @@ export function MlbHistoricalGame({ manifest }: { manifest: Manifest }) {
     </section>;
   };
   return <div className="screen"><PageHeading eyebrow="MLB / 過去記録" title={`${game.date} 試合結果`} />
-    <div className="mlb-score" aria-label={`${teamName(manifest, game.awayTeamId)} ${game.awayRuns}、${teamName(manifest, game.homeTeamId)} ${game.homeRuns}`}>
-      <p>アウェー {teamName(manifest, game.awayTeamId)} <strong>{game.awayRuns}</strong></p>
-      <p>ホーム {teamName(manifest, game.homeTeamId)} <strong>{game.homeRuns}</strong></p>
-      <small>終了 · {game.innings === null ? "回数不明" : `${game.innings}回`}</small></div>
+    <ScoreHero away={teamName(manifest,game.awayTeamId)} home={teamName(manifest,game.homeTeamId)} awayScore={game.awayRuns} homeScore={game.homeRuns} status={`終了 · ${game.innings === null ? "回数不明" : `${game.innings}回`}`} />
     {renderTeam(game.awayTeamId, "アウェー")}{renderTeam(game.homeTeamId, "ホーム")}
     <Link to={`/MLB/schedule?season=${game.season}&date=${game.date}`}>日程・結果へ戻る</Link></div>;
 }
@@ -282,12 +268,11 @@ export function MlbHistoricalPlayer({ manifest, favorites, toggle, saving }: {
     <section className="surface-card"><h2>最近の成績</h2>
       <label className="mlb-asof">基準日<input type="date" min={firstDate} max={lastDate}
         value={selectedAsOf} onChange={event => context("asOfDate",event.target.value)} /></label>
-      <div className="chip-list" role="group" aria-label="期間">{([7, 14, 30] as const).map(value =>
-        <button className="filter-chip" key={value} type="button" aria-pressed={period === value}
+      <div className="segmented period-control" role="group" aria-label="期間">{([7, 14, 30] as const).map(value =>
+        <button key={value} type="button" aria-pressed={period === value}
           onClick={() => setPeriod(value)}>{value}日</button>)}</div>
-      {section === "analysis" && <div className="chip-list" role="group" aria-label="条件">{splitOptions.map(value =>
-        <button className="filter-chip" key={value} type="button" aria-pressed={split === value}
-          onClick={() => setSplit(value)}>{({ total: "全体", home: "ホーム", away: "アウェー", opponent: "対戦相手", order: "打順", "batter-starter": "打者・先発", "batter-substitute": "打者・途中出場", "pitcher-starter": "投手・先発", "pitcher-reliever": "投手・救援" })[value]}</button>)}</div>}
+      {section === "analysis" && <label className="analysis-condition">条件<select value={split} onChange={event => setSplit(event.target.value as typeof split)}>{splitOptions.map(value =>
+        <option key={value} value={value}>{({ total: "全体", home: "ホーム", away: "アウェー", opponent: "対戦相手", order: "打順", "batter-starter": "打者・先発", "batter-substitute": "打者・途中出場", "pitcher-starter": "投手・先発", "pitcher-reliever": "投手・救援" })[value]}</option>)}</select></label>}
       {effectiveSplit === "opponent" && <label className="mlb-asof">対戦相手<select value={activeOpponent}
         onChange={event => setOpponent(event.target.value)}>{opponents.map(team =>
           <option key={team} value={team}>{teamName(manifest, team)}</option>)}</select></label>}
