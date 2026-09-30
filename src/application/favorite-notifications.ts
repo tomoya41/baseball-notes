@@ -19,8 +19,8 @@ export class FavoriteNotifications {
     ]); } finally { if (timer !== undefined) clearTimeout(timer); }
   }
   async enabled() { return await this.store.get("baseball:notifications:enabled") === "true"; }
-  private async topics(): Promise<string[]> {
-    try { const value: unknown = JSON.parse(await this.store.get("baseball:notifications:topics") ?? "[]");
+  private async topics(key = "baseball:notifications:topics"): Promise<string[]> {
+    try { const value: unknown = JSON.parse(await this.store.get(key) ?? "[]");
       return Array.isArray(value) ? value.filter((t): t is string => typeof t === "string" && /^npb-player-[0-9a-f-]{36}$/.test(t)) : [];
     } catch { return []; }
   }
@@ -41,14 +41,21 @@ export class FavoriteNotifications {
       const desired = enabled && status.granted ? favoriteNotificationTopics(favorites) : [];
       if (desired.length > 2000) throw Error("通知対象のお気に入りが上限を超えています。");
       let stored = await this.topics();
-      for (const topic of stored.filter(t => !desired.includes(t))) {
-        await this.mutateTopic(topic, false); stored = stored.filter(t => t !== topic);
+      const pendingKey = "baseball:notifications:pending";
+      let pending = await this.topics(pendingKey);
+      const apply = async (topic: string, subscribe: boolean) => {
+        // SDK may complete after timeout/process death. Remember the attempt before
+        // invoking it so removal/OFF can still undo an uncertain subscription.
+        pending = [...new Set([...pending, topic])];
+        await this.store.set(pendingKey, JSON.stringify(pending));
+        await this.mutateTopic(topic, subscribe);
+        stored = subscribe ? [...new Set([...stored, topic])] : stored.filter(t => t !== topic);
         await this.store.set("baseball:notifications:topics", JSON.stringify(stored));
-      }
-      for (const topic of desired.filter(t => !stored.includes(t))) {
-        await this.mutateTopic(topic, true); stored.push(topic);
-        await this.store.set("baseball:notifications:topics", JSON.stringify(stored));
-      }
+        pending = pending.filter(t => t !== topic);
+        await this.store.set(pendingKey, JSON.stringify(pending));
+      };
+      for (const topic of [...new Set([...stored, ...pending])].filter(t => !desired.includes(t))) await apply(topic, false);
+      for (const topic of desired.filter(t => !stored.includes(t) || pending.includes(t))) await apply(topic, true);
     });
     this.queue = operation.catch(() => undefined); return operation;
   }

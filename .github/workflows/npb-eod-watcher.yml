@@ -150,6 +150,7 @@ jobs:
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
       - name: Optional published EOD favorite notifications
         continue-on-error: true
+        timeout-minutes: 5
         run: npx tsx scripts/send-eod-notifications.ts
         env:
           TARGET_DATE: ${{ needs.watch.outputs.date }}

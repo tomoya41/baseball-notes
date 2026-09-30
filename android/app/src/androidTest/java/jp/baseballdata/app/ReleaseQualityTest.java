@@ -73,6 +73,11 @@ public class ReleaseQualityTest {
         js("location.hash='#/MLB/my'"); waitText("大谷翔平");
     }
     @Test public void nativePreferencesSurviveRestartAndFirebaseDisabled() throws Exception {
+        String fixture = "{\"items\":[{\"league\":\"NPB\",\"kind\":\"player\",\"entityId\":\"canonical-player\"}]}";
+        assertTrue(EodMessagingService.isFavoritePlayer(fixture, "canonical-player"));
+        assertFalse(EodMessagingService.isFavoritePlayer(fixture, "removed-player"));
+        assertFalse(EodMessagingService.isFavoritePlayer(fixture.replace("NPB", "MLB"), "canonical-player"));
+        assertFalse(EodMessagingService.isFavoritePlayer("corrupt", "canonical-player"));
         scenario = ActivityScenario.launch(MainActivity.class); waitText("BASEBALL");
         js("Capacitor.Plugins.Preferences.set({key:'qa-persistence',value:'canonical-key'}).then(()=>document.documentElement.dataset.qa='saved')");
         for (int i=0; i<100 && !js("document.documentElement.dataset.qa").equals("saved"); i++) Thread.sleep(50);

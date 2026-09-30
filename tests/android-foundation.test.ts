@@ -107,6 +107,19 @@ describe("opt-in favorite notification subscriptions", () => {
     await expect(service.setEnabled(true, [fav(id)])).rejects.toThrow("offline"); await service.sync([fav(id)]);
     expect(port.subscribe).toHaveBeenCalledTimes(2);
   });
+  it("removes an uncertain subscription after restart even when it never reached the confirmed ledger", async () => {
+    const { service, values, port } = setup(); vi.mocked(port.subscribe).mockRejectedValueOnce(Error("offline uncertain"));
+    await expect(service.setEnabled(true, [fav(id)])).rejects.toThrow("uncertain");
+    const restarted = new FavoriteNotifications({ get: async k => values.get(k) ?? null, set: async (k,v) => { values.set(k,v); } }, port);
+    await restarted.sync([]); expect(port.unsubscribe).toHaveBeenCalledWith({ topic: `npb-player-${id}` });
+    expect(values.get("baseball:notifications:pending")).toBe("[]");
+  });
+  it("reconciles pending unsubscribe when the user favorites that player again", async () => {
+    const { service, values, port } = setup(); await service.setEnabled(true, [fav(id)]);
+    vi.mocked(port.unsubscribe).mockRejectedValueOnce(Error("uncertain unsubscribe"));
+    await expect(service.sync([])).rejects.toThrow("uncertain"); await service.sync([fav(id)]);
+    expect(port.subscribe).toHaveBeenCalledTimes(2); expect(values.get("baseball:notifications:pending")).toBe("[]");
+  });
   it("bounds an offline SDK wait without losing the pending subscription", async () => {
     vi.useFakeTimers();
     try {
@@ -152,5 +165,6 @@ it("native project and workflows retain safety schedules, no secrets or placehol
     const mark = steps.findIndex((s: { run?: string }) => s.run?.includes("mark-published"));
     const notify = steps.findIndex((s: { run?: string }) => s.run?.includes("send-eod-notifications"));
     expect(notify).toBeGreaterThan(mark); expect(steps[notify]["continue-on-error"]).toBe(true);
+    expect(steps[notify]["timeout-minutes"]).toBe(5);
   }
 });
