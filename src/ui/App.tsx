@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import {
   ArrowLeft, ChartNoAxesCombined, ChevronRight, House, RefreshCw,
   Search, SlidersHorizontal, Trophy, UserRound,
@@ -6,7 +6,6 @@ import {
 import { Link, Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
 import type { Services } from "../app/services";
 import { favoriteMatches, leagueSwitchPath } from "../domain/cross-league";
-import { MlbLeagueView } from "./mlb-foundation";
 import type { CatalogResult, Favorite, League, PlayerCatalog, Statistics } from "../domain/models";
 import type { NpbLatestStandings } from "../domain/standings";
 import type { PlayerRecentResponse, RecentPeriod } from "../domain/player-recent";
@@ -40,6 +39,8 @@ import {
 } from "./components";
 
 type FavoriteTarget = Pick<Favorite, "kind" | "entityId" | "league">;
+// Keep the Japanese historical name registry off the NPB initial download.
+const MlbLeagueView = lazy(() => import("./mlb-foundation").then(module => ({ default: module.MlbLeagueView })));
 
 function NpbStandingsSection({ services }: { services: Services }) {
   const [payload, setPayload] = useState<NpbLatestStandings | null>(null);
@@ -589,8 +590,8 @@ export function App({ services }: { services: Services }) {
       <Route path="/NPB/games/:gameId" element={<NpbGameDetailScreen key={location.pathname} repository={services.gameDetail} />} />
       <Route path="/NPB/*" element={<LeagueView key="NPB" league="NPB" services={services}
         favorites={favorites} toggle={toggle} saving={saving} />} />
-      <Route path="/MLB/*" element={<MlbLeagueView key="MLB"
-        favorites={favorites} toggle={toggle} saving={saving} />} />
+      <Route path="/MLB/*" element={<Suspense fallback={<LoadingSkeleton />}><MlbLeagueView key="MLB"
+        favorites={favorites} toggle={toggle} saving={saving} /></Suspense>} />
       <Route path="*" element={<Navigate to="/NPB/home" replace />} />
     </Routes></main>
     <nav className="bottom-nav" aria-label="基本ナビゲーション">{navItems.map(({ label, segment, icon: Icon }) =>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { validStaticPayload } from "../domain/mlb-historical-public";
+import { japaneseHistoricalPayload } from "../domain/mlb-japanese-display";
 
 const base = `${import.meta.env.BASE_URL}data/mlb/historical/`;
 export function useHistoricalStatic<T>(path: string | null) {
@@ -19,7 +20,7 @@ export function useHistoricalStatic<T>(path: string | null) {
         : new TextDecoder().decode(bytes);
       const value = JSON.parse(text) as T;
       if (!validStaticPayload(path, value)) throw new Error("Invalid MLB public payload");
-      if (active) setState({ path, status: "ready", value });
+      if (active) setState({ path, status: "ready", value: japaneseHistoricalPayload(path, value) });
     }).catch(() => { if (active) setState({ path, status: "error", value: null }); });
     return () => { active = false; };
   }, [path]);

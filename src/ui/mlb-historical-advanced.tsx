@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { normalizePlayerSearch } from "../domain/cross-league";
+import { matchesMlbPlayerName } from "../domain/mlb-japanese-display";
 import type { AdvancedPlayerPayload, PaAnalysisLine } from "../domain/mlb-pa-analysis";
 import { DataState, LoadingSkeleton } from "./components";
 import { useHistoricalStatic } from "./use-mlb-historical";
@@ -26,7 +26,7 @@ export function HistoricalAdvancedAnalysis({ playerId, season, hasBatting, hasPi
   const role = !hasBatting ? "pitching" : !hasPitching ? "batting" : selectedRole;
   const result = useHistoricalStatic<AdvancedPlayerPayload>(open ? `advanced/${scope === "range" ? "range" : season}/${playerId.replaceAll(":", "_")}.json` : null);
   const section = result.value?.[role];
-  const opponents = (section?.opponents ?? []).filter(row => normalizePlayerSearch(row.name).includes(normalizePlayerSearch(query)));
+  const opponents = (section?.opponents ?? []).filter(row => matchesMlbPlayerName(row.playerId, row.name, query));
   const opponent = section?.opponents.find(row => row.playerId === opponentId);
   const splits = section?.splits.filter(row => row.key.startsWith(`${mode}:`)) ?? [];
   const split = splits.find(row => row.key === splitKey) ?? splits[0];

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link, Navigate, Route, Routes, useParams, useSearchParams } from "react-router-dom";
 import type { Favorite } from "../domain/models";
-import { normalizePlayerSearch } from "../domain/cross-league";
+import { matchesMlbPlayerName } from "../domain/mlb-japanese-display";
 import { battingAggregate, dateWindow, pitchingAggregate } from "../domain/mlb-historical-aggregate";
 import type { DatedBatter, DatedPitcher } from "../domain/mlb-historical-aggregate";
 import type { HistoricalGame, HistoricalPlayer } from "../data/mlb-historical";
@@ -54,6 +54,10 @@ export function MlbDataSources() {
     <section className="surface-card"><h2>Chadwick Register</h2>
       <p>Contains information from <a href="https://github.com/chadwickbureau/register">Chadwick Register</a> which is made available under the <a href="https://opendatacommons.org/licenses/by/1-0/">ODC Attribution License 1.0</a>.</p>
       <p>選手IDの照合に使用しています。</p>
+    </section>
+    <section className="surface-card"><h2>日本語の選手名</h2>
+      <p>日本語表示名の確認に<a href="https://www.wikidata.org/">Wikidata</a>の構造化データ（<a href="https://www.wikidata.org/wiki/Wikidata:Licensing">CC0</a>）を利用しています。</p>
+      <p>日本人選手は漢字、その他の選手は確認できるカタカナ表記を表示します。表記未確認の選手は原名を表示します。</p>
     </section></div>;
 }
 export function MlbHistoricalHome({ manifest }: { manifest: Manifest }) {
@@ -74,7 +78,7 @@ export function MlbHistoricalSearch({ manifest, favorites, toggle, saving }: {
   const [query, setQuery] = useState("");
   const [season, setSeason] = useState(2025);
   const rows = useMemo(() => (result.value?.players ?? []).filter(player => player.seasons.includes(season) &&
-    normalizePlayerSearch(player.name).includes(normalizePlayerSearch(query))).slice(0, 100), [result.value, season, query]);
+    matchesMlbPlayerName(player.id, player.name, query)).slice(0, 100), [result.value, season, query]);
   return <div className="screen"><PageHeading eyebrow="MLB / 過去記録" title="選手を探す" />
     <div className="mlb-controls"><label>シーズン<select value={season} onChange={event => setSeason(Number(event.target.value))}>
       {manifest.seasons.map(item => <option key={item.season} value={item.season}>{item.season}</option>)}
