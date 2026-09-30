@@ -68,7 +68,8 @@ public class ReleaseQualityTest {
         for (int i=0; i<100 && js("document.documentElement.dataset.cachemax || 'pending'").equals("pending"); i++) Thread.sleep(50);
         assertTrue("Persistent public response cache measured", Long.parseLong(js("document.documentElement.dataset.cachemax")) > 0);
         System.out.println("PERF largest_cached_response_bytes=" + js("document.documentElement.dataset.cachemax"));
-        js("location.hash='#/MLB/search'"); System.out.println("PERF search_ms=" + waitText("選手を探す"));
+        js("location.hash='#/MLB/search'"); System.out.println("PERF search_ms=" + waitText("選手一覧"));
+        assertEquals("Search input is available", "true", js("!!document.querySelector('main input[type=search]')"));
         // Real last-validated Player/manifest cache must survive a process/activity restart.
         shell("svc wifi disable"); shell("svc data disable"); Thread.sleep(1500);
         scenario.close(); scenario = ActivityScenario.launch(intent);
