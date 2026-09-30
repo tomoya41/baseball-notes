@@ -1,13 +1,22 @@
 import { execFileSync } from "node:child_process";
 import { mkdir, mkdtemp, readFile, unlink, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
-import { historicalPublicArchivePointer, parseHistoricalPublicArchive, verifyHistoricalArchive } from "../src/data/mlb-public-archive";
+import { HISTORICAL_PUBLIC_ARCHIVE_ATTRIBUTION, historicalPublicArchivePointer, parseHistoricalPublicArchive, verifyHistoricalArchive } from "../src/data/mlb-public-archive";
 
 const target = resolve(process.argv[2] ?? "dist/data/mlb");
 const pointerPath = join(target, "historical-release.json");
 let existing = null;
 try { existing = parseHistoricalPublicArchive(JSON.parse(await readFile(pointerPath, "utf8"))); }
 catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; }
+const attributionPath = join(target, "historical", "ATTRIBUTION.txt");
+let attribution = null;
+try { attribution = await readFile(attributionPath, "utf8"); }
+catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; }
+if (attribution !== HISTORICAL_PUBLIC_ARCHIVE_ATTRIBUTION) {
+  await writeFile(attributionPath, HISTORICAL_PUBLIC_ARCHIVE_ATTRIBUTION);
+  // Migrate the legacy public copy into an attributed immutable archive.
+  existing = null;
+}
 if (existing) console.log(JSON.stringify({ reused: true, ...existing }));
 else {
   await mkdir(".data", { recursive: true });
@@ -28,7 +37,7 @@ else {
   } else {
     execFileSync("gh", ["release", "create", tag, archivePath, "--repo", repo, "--target", process.env.GITHUB_SHA ?? "main",
       "--latest=false", "--title", "MLB historical public aggregate preservation",
-      "--notes", "Content-addressed copy of the app's public MLB historical aggregates and game read models. Retrosheet and Chadwick attribution is available in the app's Data Sources page. No raw PA rows, source archives, credentials or private database backup are included."]);
+      "--notes", `${HISTORICAL_PUBLIC_ARCHIVE_ATTRIBUTION}\nContent-addressed public aggregate preservation. No raw PA rows, source archives, credentials or private database backup are included.`]);
   }
   await writeFile(pointerPath, `${JSON.stringify(pointer)}\n`);
   console.log(JSON.stringify({ reused: false, archiveBytes: archive.length, ...pointer }));

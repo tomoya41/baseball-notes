@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { historicalPublicArchivePointer, parseHistoricalPublicArchive, validateHistoricalArchiveMembers, verifyHistoricalArchive } from "../src/data/mlb-public-archive";
+import { HISTORICAL_PUBLIC_ARCHIVE_ATTRIBUTION, historicalPublicArchivePointer, parseHistoricalPublicArchive, validateHistoricalArchiveMembers, verifyHistoricalArchive } from "../src/data/mlb-public-archive";
+import { RETROSHEET_ATTRIBUTION } from "../src/data/source-registry";
 
 describe("MLB public aggregate archive preservation", () => {
+  it("bundles the exact source credit and identity license with the transfer", () => {
+    expect(HISTORICAL_PUBLIC_ARCHIVE_ATTRIBUTION).toContain(RETROSHEET_ATTRIBUTION);
+    expect(HISTORICAL_PUBLIC_ARCHIVE_ATTRIBUTION).toContain("https://opendatacommons.org/licenses/by/1-0/");
+    expect(HISTORICAL_PUBLIC_ARCHIVE_ATTRIBUTION).toContain("modified, aggregated");
+  });
   it("uses a content-addressed asset in the existing repository", () => {
     const archive = new TextEncoder().encode("public aggregates only");
     const pointer = historicalPublicArchivePointer(archive);

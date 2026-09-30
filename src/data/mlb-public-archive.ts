@@ -1,4 +1,16 @@
 import { createHash } from "node:crypto";
+import { RETROSHEET_ATTRIBUTION } from "./source-registry";
+
+export const HISTORICAL_PUBLIC_ARCHIVE_ATTRIBUTION = `${RETROSHEET_ATTRIBUTION}
+Retrosheet usage notice: https://www.retrosheet.org/notice.txt
+
+Contains information from Chadwick Register, available under the ODC Attribution License 1.0.
+Register: https://github.com/chadwickbureau/register
+License: https://opendatacommons.org/licenses/by/1-0/
+
+These are modified, aggregated app read models for the released 2020–2025 historical range, not original source archives or current MLB results.
+App and full Data Sources notice: https://tomoya41.github.io/baseball-notes/#/MLB/sources
+`;
 
 export interface HistoricalPublicArchive {
   schemaVersion: 1;

@@ -54,7 +54,7 @@ PAはTursoではなく既存MLBローカルrelease SQLiteへ保存。remote PA w
 | Advanced public audit | 11,521 files、13,010 ms、PA両role/partition/順位/ties/schema/private-field監査PASS |
 | Historical public gzip総量 | 124,136,959 bytes、Coreからの増加73,919,597 bytes |
 | Advanced最大gzip | 50,774 bytes |
-| Historical全体最大gzip | 269,717 bytes（既存Player payload） |
+| Historical公開全体最大gzip | 269,712 bytes（2021 Season aggregate） |
 | Raw PA public | 0。public preservation tarもaggregate/Game Core payloadのみ |
 
 ローカル代表SQL（各1 SELECT、warm single-run measurement、rows-scannedはSQLite API非提供）:
@@ -149,7 +149,7 @@ NPB code、Fact、Coverage、雨天partial、HOT/Ranking Gate、Infrastructure P
 | 63 | 360 Light | PASS、2020 threshold/rate UI |
 | 64 | 360 Dark | PASS、BvP/状況別、table内部scrollのみ |
 | 65 | accessibility | label/aria state/keyboard/44px control/page overflow確認PASS |
-| 66 | tests | 426 tests / 45 files PASS |
+| 66 | tests | 427 tests / 45 files PASS |
 | 67 | lint | PASS |
 | 68 | typecheck | PASS |
 | 69 | build | PASS。既存main bundle >500kB warningは残る |
@@ -169,4 +169,12 @@ NPB code、Fact、Coverage、雨天partial、HOT/Ranking Gate、Infrastructure P
 
 同RunでMLB portable export/Scratch Restore/代表PA29 fieldsとNPB remote export/restoreがPASS。combined encrypted artifact66,546,058 bytes、保持7日。NPB readback Games898 / Batting22,804 / Pitching6,913 / mappings1,656、target2026-09-29。NPB writeなし。最初のPages artifact251,066,286 bytesには旧保持archiveが重複するため、次のapp-only publishでRelease assetへ移す。UI-only更新はPA再importせず、公開されたaggregateをSHA256検証して保持する。
 
-最終app-only公開HTTP/Run結果は下記へ追記する。manual成功をNPB Scheduled Production証拠として扱わない。
+最終[app-only Run 36670545132](https://github.com/tomoya41/baseball-notes/actions/runs/36670545132)はsuccess。04:48:59〜04:51:04 UTC（13:48:59〜13:51:04 JST）、約2分5秒。426 tests/lint/typecheck/buildがCIでもPASS。PA/Core importとDB writeはskip。公開aggregate保持archive125,236,597 bytesを同repositoryのcontent-addressed Release assetへ移し、Pages artifactは125,791,711 bytesへ縮小した。SHA256は`3d494c14a506fab8e97e4feac83a8a92056e0f5f3e906ea6b4397b390c4dabed`。旧重複Pages artifact251,066,286 bytesは新公開成功とarchive restore後に削除し、encrypted backupとvalidation artifactは7日保持。実測時repository active artifacts62件 / 481,853,746 bytes。アカウント全体の他repository用途とは別の実測値。
+
+公開pointerからRelease assetをdownload/hash検証/28,413 archive members復元し、復元した全11,521 advanced/records/schema payloadの再監査PASS（10,644 ms、DB write0）。画面用Historical payloadは28,393 files / 124,136,959 bytes、最大269,712 bytes。Raw PA/source archives/private DBはReleaseにもPagesにも含まない。旧tar/SHA形式のfallbackは残す。
+
+[公開Records](https://tomoya41.github.io/baseball-notes/#/MLB/records)、[代表Player](https://tomoya41.github.io/baseball-notes/#/MLB/players/mlb%3Aplayer%3Ae70b8d12-aa41-50c0-9c1b-d468d451355f)と12代表JSONのHTTP200、Zod/readiness/全Season資格/代表BvP/Current unavailable契約PASS。public client経路はDB SELECT0。Ohtani profile36,935 bytes / fetch205.24 ms / parse14.79 ms、2025 advanced16,905 bytes / fetch218.27 ms / parse5.08 ms、収録期間advanced50,774 bytes / fetch216.68 ms / parse6.36 ms。Rate payload11,417〜12,115 bytes、fetch179〜236 ms（warm単回のローカルnetwork実測、SLAではない）。相手検索と状況切替は取得済みaggregateから処理。
+
+公開360px Darkで2020 Rate186 PA / 60 IP、DJ LeMahieu AVG .364 / 216 PA、Ohtani×Valdez39 PA、アウト状況1,281 PA、canonical navigationを確認。Light360px/412px/keyboard/44px controls/table内部scrollは同一UI buildのローカルQAでもPASS。NPB Home/Search/Player Recent/Season/Game Log/Analysis/Schedule/Game Detail/Records/Myは既存表示を維持。9/25坂本誠志郎PA3/AB2/BB1、阪神PA36/DeNA PA33、9/25と9/26のcomplete、雨天6Gameのpartialをpublic readbackで確認。NPB公開effectiveDate2026-09-29、Season/Records/HOTはnot_ready。雨天以外の並行Operations状態を今回修復・再判定しない。
+
+manual成功をNPB Scheduled Production証拠として扱わない。Infrastructure Phase、NPB Facts/Coverage/HOT/Rankingロジックは変更なし。Android/Push/Statcast/MLB Currentは未実行。残件はTTO/Countの定義・全品質検証、既存606.47 kB main bundleのRelease時分割検討、NPBの別Operations/雨天証拠。Batch Eの公開済みCapabilityには未説明validation blockerなし。
