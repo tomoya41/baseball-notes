@@ -39,3 +39,5 @@ npx tsx scripts/update-mlb-japanese-names.ts --fetch > .data/mlb-japanese-names-
 - ページ幅345px（viewport 360px、scrollbarを除く）に対しscrollWidth345px。横方向のページoverflowなし。
 - 名前辞書を含むMLB画面をlazy load。NPB側の初回main chunkは163.13KB gzip（変更前174.58KB）。MLB chunkは140.80KB gzip。読み込み中は既存Loading Skeleton。
 - 通常表示でWikidata request追加0、DB write0。既存Favoritesのcanonical Key・NPB Facts・Coverage・HOT/Ranking/Infrastructure Gate変更0。
+- Pages `app-only` [Run 36676324181](https://github.com/tomoya41/baseball-notes/actions/runs/36676324181) 成功（code `793ac23`、1分45秒）。全433 testsもCIでPASS。既存Historical公開データを維持し再importなし。
+- 公開readbackは12 HTTPすべて200。大谷翔平の対フランバー・バルデス39PA等の集計値、2020〜2025のRate Gate、2026 Current unavailableを維持。NPB Recordsも公開不可の既存表示を維持。手動公開をScheduled証拠へ代用しない。
