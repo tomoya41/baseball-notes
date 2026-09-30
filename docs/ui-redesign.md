@@ -6,6 +6,8 @@
 
 Five primary destinations: Home, Games, Players, Records and My. Analysis lives in a player's context; existing canonical Analysis links remain. General NPB Analysis opens search; MLB opens the verified Japanese cohort. League switching never carries another league's player/game ID.
 
+Cross-league switching also clears season/date parameters because NPB Current and MLB Historical use different calendars. The target league opens its supported default context. Selecting the already active league preserves the current route and query, including a historical ranking year.
+
 Player tabs: Overview, Stats, Analysis, Game Log, Profile. Overview emphasizes saved Season and Recent with three recent game links. Details use disclosure. NPB splits retain the shared 30-day API bundle. MLB keeps season/as-of context in the URL and computes additional splits from the same saved player payload. Advanced BvP/situations load on request. Unsupported 2026 results never fall back to 2025.
 
 NPB Home prioritizes real results and standings. MLB Home combines selected-season results, Japanese players and actual counting leaders, with canonical drill-downs. My combines local favorites with appearance, notifications, privacy and source credits. Light/dark/system uses the existing small-preference adapter; favorites keys and native storage remain unchanged.

@@ -26,13 +26,13 @@ export function favoriteMatches(item: Favorite, target: Pick<Favorite, "kind" | 
 
 export function leagueSwitchPath(pathname: string, search: string, next: League): string {
   leagueSchema.parse(next);
+  if (pathname.split("/")[1] === next) return `${pathname}${search}`;
   const section = pathname.split("/")[2] ?? "home";
   const destination = ["home", "search", "analysis", "records", "my", "ranking", "schedule"].includes(section)
     ? section : "search";
-  // IDs and provider-specific routes never cross leagues.
-  const date = new URLSearchParams(search).get("date");
-  return `/${next}/${destination}${destination === "schedule" && date && /^\d{4}-\d{2}-\d{2}$/.test(date)
-    ? `?date=${date}` : ""}`;
+  // IDs and date/season context never cross leagues: NPB Current and MLB
+  // Historical have different available calendars. The target selects its own.
+  return `/${next}/${destination}`;
 }
 
 export function normalizePlayerSearch(value: string): string {
