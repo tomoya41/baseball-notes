@@ -43,6 +43,9 @@ public class ReleaseQualityTest {
         Thread.sleep(300); assertEquals("false", js("document.getElementById('qatest').open"));
         scenario.onActivity(activity -> activity.getOnBackPressedDispatcher().onBackPressed());
         waitText("今日の野球");
+        shell("svc wifi disable"); shell("svc data disable");
+        js("location.hash='#/MLB/sources'"); waitText("Retrosheet"); waitText("Chadwick");
+        shell("svc wifi enable"); shell("svc data enable");
         Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("baseballnotes://MLB/players/mlb%3Aplayer%3Ae70b8d12-aa41-50c0-9c1b-d468d451355f"),
             InstrumentationRegistry.getInstrumentation().getTargetContext(), MainActivity.class);
         scenario.close(); scenario = ActivityScenario.launch(intent);

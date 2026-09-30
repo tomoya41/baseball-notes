@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link, Navigate, Route, Routes, useParams, useSearchParams } from "react-router-dom";
+import { Link, Navigate, Route, Routes, useLocation, useParams, useSearchParams } from "react-router-dom";
 import type { Favorite } from "../domain/models";
 import { matchesMlbPlayerName } from "../domain/mlb-japanese-display";
 import { battingAggregate, dateWindow, pitchingAggregate } from "../domain/mlb-historical-aggregate";
@@ -346,9 +346,15 @@ function MlbHistoricalMy({ favorites, toggle, saving }: {
       </div>)}</div>}</div>;
 }
 
-export function MlbHistoricalRoutes({ favorites, toggle, saving }: {
+type HistoricalRouteProps = {
   favorites: Favorite[]; toggle: (target: FavoriteTarget) => void; saving: boolean;
-}) {
+};
+export function MlbHistoricalRoutes(props: HistoricalRouteProps) {
+  const location = useLocation();
+  // Attribution belongs to the bundled app, not a successfully fetched manifest.
+  return location.pathname === "/MLB/sources" ? <MlbDataSources /> : <MlbHistoricalDataRoutes {...props} />;
+}
+function MlbHistoricalDataRoutes({ favorites, toggle, saving }: HistoricalRouteProps) {
   const result = useStatic<Manifest>("manifest.json");
   if (result.status !== "ready") return <div className="screen">
     <PageHeading eyebrow="MLB" title="過去の記録" />
