@@ -18,9 +18,19 @@ adb shell am start -W -n com.tomoya41.baseballnotes/jp.baseballdata.app.MainActi
 adb shell am instrument -w com.tomoya41.baseballnotes.test/androidx.test.runner.AndroidJUnitRunner > .data/android-emulator/instrumentation.txt
 cat .data/android-emulator/instrumentation.txt
 adb logcat -d -s System.out:I > .data/android-emulator/performance.txt
+adb logcat -d -s Capacitor:V Capacitor/Console:V > .data/android-emulator/bridge.txt
+adb exec-out screencap -p > .data/android-emulator/instrumentation-screen.png
 grep -q 'OK (' .data/android-emulator/instrumentation.txt
 adb shell dumpsys meminfo com.tomoya41.baseballnotes > .data/android-emulator/memory.txt
+adb shell svc wifi disable
+adb shell svc data disable
+adb shell am force-stop com.tomoya41.baseballnotes
 adb shell am start -W -a android.intent.action.VIEW -d 'baseballnotes://MLB/players/mlb%3Aplayer%3Ae70b8d12-aa41-50c0-9c1b-d468d451355f' com.tomoya41.baseballnotes > .data/android-emulator/deep-link.txt
+sleep 3
+adb exec-out screencap -p > .data/android-emulator/offline-process-restart.png
+adb shell svc wifi enable
+adb shell svc data enable
+sleep 2
 adb shell run-as com.tomoya41.baseballnotes du -k . > .data/android-emulator/storage.txt
 adb exec-out screencap -p > .data/android-emulator/android-360.png
 adb shell cmd uimode night yes

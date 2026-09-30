@@ -32,6 +32,13 @@ describe("canonical native navigation", () => {
   });
 });
 describe("validated persistent response cache", () => {
+  it("never caches or deduplicates a Request carrying POST", async () => {
+    const store = new PublicResponseStore("qa-cache-post"), request = vi.fn<typeof fetch>().mockImplementation(async () => new Response("ok"));
+    const fetcher = createPublicFetch(store, request, () => true);
+    const input = new Request("https://public.test/action", { method: "POST" });
+    await Promise.all([fetcher(input), fetcher(input)]);
+    expect(request).toHaveBeenCalledTimes(2); expect(await store.get(input.url)).toBeUndefined();
+  });
   it("preserves valid data across store instances and offline without turning null/zero into estimates", async () => {
     const store = new PublicResponseStore("qa-cache-restart"), request = vi.fn<typeof fetch>().mockResolvedValue(new Response('{"PA":0,"SF":null}'));
     let network = true;
@@ -99,6 +106,16 @@ describe("opt-in favorite notification subscriptions", () => {
     const { service, port } = setup(); vi.mocked(port.subscribe).mockRejectedValueOnce(Error("offline"));
     await expect(service.setEnabled(true, [fav(id)])).rejects.toThrow("offline"); await service.sync([fav(id)]);
     expect(port.subscribe).toHaveBeenCalledTimes(2);
+  });
+  it("bounds an offline SDK wait without losing the pending subscription", async () => {
+    vi.useFakeTimers();
+    try {
+      const { values, port } = setup(); vi.mocked(port.subscribe).mockImplementationOnce(() => new Promise(() => undefined));
+      const service = new FavoriteNotifications({ get: async k => values.get(k) ?? null, set: async (k,v) => { values.set(k,v); } }, port, 100);
+      const pending = expect(service.setEnabled(true, [fav(id)])).rejects.toThrow("通信");
+      await vi.advanceTimersByTimeAsync(100); await pending;
+      await service.sync([fav(id)]); expect(port.subscribe).toHaveBeenCalledTimes(2);
+    } finally { vi.useRealTimers(); }
   });
   it("generates non-evaluative EOD content and canonical deep link", () => {
     const event = eodNotification("2026-09-30", id, "中島大輔");

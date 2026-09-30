@@ -58,7 +58,8 @@ export function createPublicFetch(store: ResponseStore, request: typeof fetch = 
   return async (input, init) => {
     const rawUrl = input instanceof Request ? input.url : String(input);
     const url = new URL(rawUrl, typeof location === "undefined" ? "https://localhost/" : location.href).href;
-    if ((init?.method ?? "GET") !== "GET" || /\/(raw|plays|plate-appearances|pa)\//i.test(url)) return request(input, init);
+    const method = init?.method ?? (input instanceof Request ? input.method : "GET");
+    if (method.toUpperCase() !== "GET" || /\/(raw|plays|plate-appearances|pa)\//i.test(url)) return request(input, init);
     let task = pending.get(url);
     if (!task) {
       task = (async () => {

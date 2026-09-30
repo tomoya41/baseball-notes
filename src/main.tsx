@@ -8,13 +8,17 @@ import { installPlatformRuntime } from "./app/platform";
 import "./ui/styles.css";
 
 void installAndroidBackHandler();
-void installPlatformRuntime().catch(() => undefined);
 const root = document.getElementById("root");
 if (!root) throw new Error("App root missing");
-ReactDOM.createRoot(root).render(
+// Resolve a native launch URI before the root route can redirect to Home.
+async function mount() {
+  await installPlatformRuntime().catch(() => undefined);
+  ReactDOM.createRoot(root!).render(
   <React.StrictMode>
     <HashRouter>
       <App services={services} />
     </HashRouter>
   </React.StrictMode>,
 );
+}
+void mount();
