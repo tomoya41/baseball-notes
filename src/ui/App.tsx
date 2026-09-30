@@ -589,7 +589,7 @@ export function App({ services }: { services: Services }) {
       <Route path="/NPB/games/:gameId" element={<NpbGameDetailScreen key={location.pathname} repository={services.gameDetail} />} />
       <Route path="/NPB/*" element={<LeagueView key="NPB" league="NPB" services={services}
         favorites={favorites} toggle={toggle} saving={saving} />} />
-      <Route path="/MLB/*" element={<MlbLeagueView key="MLB" repository={services.leagueAvailability}
+      <Route path="/MLB/*" element={<MlbLeagueView key="MLB"
         favorites={favorites} toggle={toggle} saving={saving} />} />
       <Route path="*" element={<Navigate to="/NPB/home" replace />} />
     </Routes></main>

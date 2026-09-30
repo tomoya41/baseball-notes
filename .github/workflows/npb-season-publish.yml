@@ -59,6 +59,8 @@ jobs:
           name: npb-season-verification
           path: .data/batch-b
           retention-days: 7
+      - name: Preserve released MLB historical data
+        run: npx tsx scripts/preserve-mlb-historical.ts dist/data/mlb
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:

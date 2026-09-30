@@ -151,3 +151,11 @@ NPB選手のお気に入りはSearch/Profileから追加・解除し、Myで表�
 MLB routes now show the real availability state instead of fictional sample rankings or NPB schedule data. `npm run build` generates the small `/data/mlb/manifest.json` automatically. The actual 2026 MLB Collector / Backfill / Player statistics remain unimplemented because bulk acquisition and static redistribution rights are not established. See [MLB source assessment](docs/mlb-source-rights-2026-09-27.md).
 
 Favorite v1 already stores league and canonical entity ID; no destructive migration is needed. NPB Favorites remain in the same local storage. MLB/My retains even unmapped saved IDs and allows removal. No credentials, extra paid service or cloud Favorites are added.
+
+## MLB Historical release import
+
+MLBの公開画面はRetrosheetの2020〜2025年公式戦を対象にします。2026 Currentの試合結果・選手成績は未対応です。権利根拠と指定creditは [Historical source evidence](docs/mlb-historical-source-evidence-2026-09-30.md) を参照してください。Chadwick Registerは選手ID照合だけに使用します。Lahmanは不要です。
+
+`npx tsx scripts/import-mlb-historical.ts --download --cache .data --db .data/mlb-historical.sqlite --output .data/mlb-public` で公式Season ZIPとRegisterを取得し、ローカルSQLiteへcanonical Game/Player/Fact/mappingを保存します。ダウンロード済みarchiveは再利用します。Game・Playerのcontent hashが同じならDBを書きません。`npx tsx scripts/backup-mlb-historical.ts` はschema・JSONL.gz・manifest/hashを出力し、空のScratch SQLiteへ復元して検証します。
+
+手動の `mlb-historical-publish.yml` はrelease import・検証・NPB/MLB両方のBackup/Restore・Pages公開を行います。MLB daily collectionはありません。公開payloadは `/data/mlb/historical/` 下のmanifest、Player別、日付別、Game別、Season別、Records別gzipです。Raw全量やSource IDは公開しません。Playerの合計は「2020〜2025収録期間合計」であり、MLB通算ではありません。Counting recordsと率指標の公開資格は独立しています。Rate rankingは例外規定対応まで閉じています。

@@ -113,6 +113,9 @@ jobs:
           if-no-files-found: ignore
       - uses: actions/configure-pages@v5
         if: steps.watch.outputs.publish == 'true'
+      - name: Preserve released MLB historical data
+        if: steps.watch.outputs.publish == 'true'
+        run: npx tsx scripts/preserve-mlb-historical.ts dist/data/mlb
       - uses: actions/upload-pages-artifact@v4
         if: steps.watch.outputs.publish == 'true'
         with:

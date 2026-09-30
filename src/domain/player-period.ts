@@ -10,7 +10,7 @@ export const playerPeriodQuerySchema = z.strictObject({
   period: z.enum(["7d", "14d", "30d", "currentMonth", "season"]),
 });
 export type PlayerPeriodQuery = z.infer<typeof playerPeriodQuerySchema>;
-export type PeriodWindow = { from: string; to: string; timeZone: "Asia/Tokyo"; beforeSeason?: true };
+export type PeriodWindow = { from: string; to: string; timeZone: "Asia/Tokyo" | "source-local"; beforeSeason?: true };
 export type AggregateStatus = "complete" | "partial" | "unavailable";
 export type AggregateMetric = {
   value: number | null;

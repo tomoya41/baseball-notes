@@ -1,0 +1,90 @@
+name: Publish MLB Historical Retrosheet release
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: daily-npb-collector-and-pages
+  cancel-in-progress: false
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Validate app and importer
+        run: npm run check
+      - name: Import released 2020–2025 archives
+        run: |
+          mkdir -p .data
+          npx tsx scripts/import-mlb-historical.ts --download --cache .data --output .data/mlb-public --db .data/mlb-historical.sqlite > .data/mlb-import-report.json
+          cat .data/mlb-import-report.json
+          npx tsx scripts/backup-mlb-historical.ts --db .data/mlb-historical.sqlite --output .data/mlb-backup --scratch .data/mlb-restored.sqlite > .data/mlb-backup-report.json
+          cat .data/mlb-backup-report.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mlb-historical-portable-backup
+          path: .data/mlb-backup
+          retention-days: 7
+      - name: Read and preserve current NPB public data
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+        run: |
+          npm run publish:npb:remote -- --payload-root .data/publish
+          npm run build
+          cp -R .data/publish/data dist/
+          npx tsx scripts/preserve-published-npb-season.ts
+          npx tsx scripts/preserve-published-npb-player-directory.ts
+          npx tsx scripts/preserve-published-npb-hot.ts
+          npx tsx scripts/preserve-published-npb-game-surface.ts
+      - name: Verify combined NPB and MLB portable backup
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          NPB_BACKUP_ENCRYPTION_KEY: ${{ secrets.NPB_BACKUP_ENCRYPTION_KEY }}
+        run: |
+          npm run -s backup:npb:drill -- --require-remote > .data/npb-backup-report.json
+          cat .data/npb-backup-report.json
+          node --input-type=module -e "import{readFileSync,mkdirSync,cpSync}from'node:fs';const r=JSON.parse(readFileSync('.data/npb-backup-report.json','utf8'));if(r.result!=='PASS')throw Error('NPB restore');mkdirSync('.data/combined-backup',{recursive:true});cpSync(r.directory+'/export','.data/combined-backup/npb',{recursive:true});cpSync('.data/mlb-backup','.data/combined-backup/mlb',{recursive:true});"
+          tar -C .data -czf .data/combined-backup.tar.gz combined-backup
+          npx tsx scripts/crypt-npb-backup.ts encrypt .data/combined-backup.tar.gz .data/combined-backup.tar.gz.enc
+      - uses: actions/upload-artifact@v4
+        with:
+          name: npb-mlb-combined-portable-backup-encrypted
+          path: .data/combined-backup.tar.gz.enc
+          retention-days: 7
+      - name: Stage compressed Historical payload and preservation archive
+        run: |
+          mkdir -p dist/data/mlb
+          cp -R .data/mlb-public/data/mlb/historical dist/data/mlb/
+          tar -C dist/data/mlb -czf dist/data/mlb/historical-payload.tar.gz historical
+          sha256sum dist/data/mlb/historical-payload.tar.gz | cut -d ' ' -f 1 > dist/data/mlb/historical-payload.sha256
+          node --input-type=module -e "import{readFileSync}from'node:fs';import{gunzipSync}from'node:zlib';const p=JSON.parse(gunzipSync(readFileSync('dist/data/mlb/historical/manifest.json.gz')));if(p.seasons.length!==6||p.current2026!=='unavailable'||p.seasons.some(s=>s.coverage!=='complete'))throw Error('Historical manifest');console.log(JSON.stringify({seasons:p.seasons.length,games:p.seasons.reduce((n,s)=>n+s.games,0)}))"
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist
+  deploy:
+    needs: stage
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@v4
+        id: deployment
+      - name: Verify public Historical and NPB payloads
+        run: |
+          node --input-type=module -e "import{gunzipSync}from'node:zlib';const b='https://tomoya41.github.io/baseball-notes/';const [m,n]=await Promise.all([fetch(b+'data/mlb/historical/manifest.json.gz?v='+Date.now()),fetch(b+'data/npb/season/2026/latest.json?v='+Date.now())]);if(m.status!==200||n.status!==200)throw Error('public HTTP');const p=JSON.parse(gunzipSync(Buffer.from(await m.arrayBuffer())));if(p.seasons.length!==6||p.current2026!=='unavailable')throw Error('Historical public contract');console.log(JSON.stringify({mlb:m.status,npb:n.status,seasons:p.seasons.length}))"

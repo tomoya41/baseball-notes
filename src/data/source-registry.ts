@@ -20,9 +20,16 @@ export const sourceRegistry: readonly DataSource[] = [
     key: "retrosheet-csv", displayName: "Retrosheet Daily Logs", league: "MLB",
     baseUrl: "https://www.retrosheet.org/downloads/", type: "licensed-download",
     priority: 10,
-    status: "enabled-historical", categories: ["game", "historical-standings"],
+    status: "enabled-historical", categories: ["game", "player-game", "historical-standings", "play-by-play"],
     updateCadence: "release-based; current archive through 2025", termsUrl: "https://www.retrosheet.org/notice.txt",
-    checkedOn: "2026-09-24", notes: "Permits reuse with prominent exact attribution. Historical only; source can correct records.",
+    checkedOn: "2026-09-30", notes: "Permits reuse with prominent exact attribution. Historical releases only; source can correct records.",
+  },
+  {
+    key: "chadwick-register", displayName: "Chadwick Register", league: "MLB",
+    baseUrl: "https://github.com/chadwickbureau/register", type: "licensed-download",
+    priority: 20, status: "enabled-historical", categories: ["player-identity-crosswalk"],
+    updateCadence: "release-based", termsUrl: "https://opendatacommons.org/licenses/by/1-0/",
+    checkedOn: "2026-09-30", notes: "ODC-By 1.0. Cross-reference IDs only; no rights implied for linked providers.",
   },
   {
     key: "npb-official", displayName: "NPB公式", league: "NPB", baseUrl: "https://npb.jp/",

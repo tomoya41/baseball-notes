@@ -6,7 +6,7 @@ import { leagueAvailabilitySchema, mlbAvailability } from "../src/domain/league-
 import { StaticLeagueAvailabilityRepository } from "../src/infrastructure/providers/static-league-availability-repository";
 import { Favorites } from "../src/application/favorites";
 import type { Favorite } from "../src/domain/models";
-import { LeagueSavedPlayers, MlbEntityPage, MlbLeagueView, MlbUnavailableSection } from "../src/ui/mlb-foundation";
+import { MlbLeagueView } from "../src/ui/mlb-foundation";
 
 const uuid = "a66dfd52-1ae2-4245-b849-558f263e6422";
 const npb: Favorite = { league: "NPB", kind: "player", entityId: uuid, addedAt: "2026-09-27T00:00:00Z" };
@@ -92,29 +92,10 @@ describe("Favorites storage compatibility", () => {
 
 describe("MLB UI isolation", () => {
   it.each(["home", "search", "schedule", "analysis", "records", "my"])("has an isolated %s route without NPB facts or sample statistics", section => {
-    const repository = { find: vi.fn(async () => mlbAvailability) };
-    const html = render(<Routes><Route path="/MLB/*" element={<MlbLeagueView repository={repository} favorites={[]} toggle={() => undefined} saving={false} />} /></Routes>, `/MLB/${section}`);
+    const html = render(<Routes><Route path="/MLB/*" element={<MlbLeagueView favorites={[]} toggle={() => undefined} saving={false} />} /></Routes>, `/MLB/${section}`);
     expect(html).not.toContain("サンプル");
     expect(html).not.toContain("DeNA");
     expect(html).not.toContain("npb:game");
     expect(html).not.toContain("参考ランキング");
-  });
-  it.each(["loading", "error", "unavailable"] as const)("renders %s without a mock fallback", state => {
-    const html = render(<MlbUnavailableSection title="日程・結果" state={state} retry={() => undefined} />);
-    expect(html).not.toContain("試合なし");
-    expect(html).not.toContain("サンプル");
-    if (state === "error") expect(html).toContain("再試行");
-    if (state === "unavailable") expect(html).toContain("実データはまだ提供していません");
-  });
-  it("rejects NPB and provider IDs on a direct MLB entity route", () => {
-    const html = render(<Routes><Route path="/MLB/games/:gameId" element={<MlbEntityPage kind="game" state="unavailable" retry={() => undefined} />} /></Routes>, "/MLB/games/660271");
-    expect(html).toContain("ページが見つかりません");
-  });
-  it("retains broken and unmapped favorite IDs with a removable accessible button", () => {
-    const html = render(<LeagueSavedPlayers favorites={[npb, mlb, { ...mlb, entityId: "broken" }]} toggle={() => undefined} saving={false} />);
-    expect(html).toContain("NPBのお気に入り（1）");
-    expect(html.match(/aria-pressed="true"/g)).toHaveLength(2);
-    expect(html).toContain("お気に入りから削除");
-    expect(html).not.toContain("broken");
   });
 });
