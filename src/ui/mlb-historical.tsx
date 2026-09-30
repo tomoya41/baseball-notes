@@ -274,7 +274,8 @@ export function MlbHistoricalPlayer({ manifest, favorites, toggle, saving }: {
       <p className="inline-note">選択基準日までの期間。出場記録がない条件は—です。</p>
     </section>
     {(manifest.features?.directBvp === "available" || manifest.features?.situationalAnalysis === "available") &&
-      <HistoricalAdvancedAnalysis playerId={player.id} season={selected} hasBatting={games.some(row => (row.pa ?? 0) > 0)}
+      <HistoricalAdvancedAnalysis playerId={player.id} season={selected}
+        hasBatting={games.some(row => (row.pa ?? 0) > 0) || (games.length > 0 && pitches.length === 0)}
         hasPitching={pitches.length > 0} />}
     <section className="surface-card"><h2>試合別成績</h2><div className="row-list">
       {log.map(row => <Link className="ranking-entry" key={row.gameId} to={`/MLB/games/${encodeURIComponent(row.gameId)}`}>

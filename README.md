@@ -171,3 +171,5 @@ npx tsx scripts/backup-mlb-historical.ts
 ```
 
 PAはローカルrelease SQLiteに保存し、Tursoへ投入しません。Game単位hashによる再投入はwrite 0、訂正時はそのGameのPAをatomicに置換します。BvP・状況別の公開には全Seasonのboxscore照合と状態検証を要求し、Clientへは選手・Season別のaggregateのみ返します。MLB RecordsのAVG/OBP/SLGはRule 9.22の不足PA例外を個別評価。OPS/K9は通常規定相当のsample条件を使うアプリ統計で、公式タイトルとは区別します。[公式規定の根拠](docs/mlb-ranking-rule-2026-09-30.md)と[Batch E検証報告](docs/mlb-batch-e-2026-09-30.md)を参照してください。
+
+同workflowの `mode=app-only` はUI更新用です。既に公開されたHistorical aggregate archiveのhashを検証して保持し、archive再取得・PA再import・DB writeを行いません。新しいRetrosheet releaseを取り込む場合は既定の `mode=release` を使用してください。
