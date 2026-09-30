@@ -70,7 +70,7 @@ EXPLAIN QUERY PLANは対戦pair/index SEARCH、opponent listはsubject先頭のi
 
 代表BvP: Shohei Ohtani × Framber Valdez、2020〜2025収録期間内。PA39 / AB32 / H4 / 2B1 / 3B0 / HR1 / BB6 / HBP0 / SO9、AVG .125 / OBP .263158 / SLG .250 / OPS .513158。PAとAB+BBが一致しない1打席は明示result `xi`（捕手干渉）1件で、AB対象外PAを残す公式processed flagsに従う。相手同Game出場だけから対戦を作らない。
 
-無料構造: 公開repo標準Ubuntu Actions、無料Pages、ローカルSQLite、release時だけ明示import。新しい有料API/service/cronなし。archiveは6 Season ZIP＋Chadwickを再利用（既存download計81,168,942 bytes）。PAのGame別HTTPなし。Plain backupの重複Artifactを廃止し、NPB＋MLB combined encrypted portable backupに一本化、7日保持。Pages artifactは1日。公開payloadとpreservation archiveの合計は約250 MBでPages 1 GB上限以内。Artifact保管は時間積算なので、アカウント全体の別用途も含めた請求額保証とは分ける。[GitHub Actions billing](https://docs.github.com/en/billing/concepts/product-billing/github-actions)、[Pages limits](https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits)参照。追加recurring service cost ¥0。
+無料構造: 公開repo標準Ubuntu Actions、無料Pages、ローカルSQLite、release時だけ明示import。新しい有料API/service/cronなし。archiveは6 Season ZIP＋Chadwickを再利用（既存download計81,168,942 bytes）。PAのGame別HTTPなし。Plain backupの重複Artifactを廃止し、NPB＋MLB combined encrypted portable backupに一本化、7日保持。Pages artifactは1日。公開aggregate保持archiveは同じpublic GitHub repositoryのcontent-addressed Release assetへ保存し、Pagesは約124 MBの画面用payload＋小さなSHA256 pointerのみとする。以前の約250 MBの二重配置を避ける。Release assetは2 GiB/file未満、GitHubの一次資料ではtotal size/bandwidth制限なし。旧Pages archiveも移行/rollback時はhash検証して読み取れる。[GitHub Releases](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases)参照。Artifact保管は時間積算なので、アカウント全体の別用途も含めた請求額保証とは分ける。[GitHub Actions billing](https://docs.github.com/en/billing/concepts/product-billing/github-actions)、[Pages limits](https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits)参照。追加recurring service cost ¥0。
 
 ## Backup / UI / Regression
 
@@ -149,7 +149,7 @@ NPB code、Fact、Coverage、雨天partial、HOT/Ranking Gate、Infrastructure P
 | 63 | 360 Light | PASS、2020 threshold/rate UI |
 | 64 | 360 Dark | PASS、BvP/状況別、table内部scrollのみ |
 | 65 | accessibility | label/aria state/keyboard/44px control/page overflow確認PASS |
-| 66 | tests | 420 tests / 44 files PASS |
+| 66 | tests | 426 tests / 45 files PASS |
 | 67 | lint | PASS |
 | 68 | typecheck | PASS |
 | 69 | build | PASS。既存main bundle >500kB warningは残る |
@@ -165,4 +165,8 @@ NPB code、Fact、Coverage、雨天partial、HOT/Ranking Gate、Infrastructure P
 
 ## Release evidence
 
-公開前のローカル全件検証とHTTP契約検証PASS。Pages manual workflowと公開HTTPの最終実測は公開後に追記する。manual workflow成功をNPB Scheduled Production証拠として扱わない。
+2026-09-30 JSTの[manual release Run 36665572619](https://github.com/tomoya41/baseball-notes/actions/runs/36665572619)はsuccess。03:42:02〜03:56:01 UTC（12:42:02〜12:56:01 JST）、約13分59秒。Core source取得7 requests / 81,168,942 bytes、Core import91,235 ms、PA cold import253,934 ms / 1,005,947 logical writes、DB169,160,704→905,998,336 bytes。既存archiveを利用するPA工程の追加HTTPは0。Advanced aggregate生成161,455 ms / 13 SELECT、audit12,291 ms。全Seasonのmismatch/identity/parser/skippedは0。CI代表pair1 SELECT / 1.53 ms、相手一覧batter54.94 ms / pitcher28.04 ms、outs15.61 ms。
+
+同RunでMLB portable export/Scratch Restore/代表PA29 fieldsとNPB remote export/restoreがPASS。combined encrypted artifact66,546,058 bytes、保持7日。NPB readback Games898 / Batting22,804 / Pitching6,913 / mappings1,656、target2026-09-29。NPB writeなし。最初のPages artifact251,066,286 bytesには旧保持archiveが重複するため、次のapp-only publishでRelease assetへ移す。UI-only更新はPA再importせず、公開されたaggregateをSHA256検証して保持する。
+
+最終app-only公開HTTP/Run結果は下記へ追記する。manual成功をNPB Scheduled Production証拠として扱わない。

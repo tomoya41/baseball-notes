@@ -15,6 +15,8 @@ concurrency:
 jobs:
   stage:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@v7
@@ -86,15 +88,15 @@ jobs:
       - name: Stage compressed Historical payload and preservation archive
         env:
           MLB_PUBLISH_MODE: ${{ inputs.mode }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           mkdir -p dist/data/mlb
           if [ "$MLB_PUBLISH_MODE" = 'app-only' ]; then
             npx tsx scripts/preserve-mlb-historical.ts dist/data/mlb
           else
             cp -R .data/mlb-public/data/mlb/historical dist/data/mlb/
-            tar -C dist/data/mlb -czf dist/data/mlb/historical-payload.tar.gz historical
-            sha256sum dist/data/mlb/historical-payload.tar.gz | cut -d ' ' -f 1 > dist/data/mlb/historical-payload.sha256
           fi
+          npx tsx scripts/publish-mlb-public-archive.ts dist/data/mlb
           node --input-type=module -e "import{readFileSync}from'node:fs';import{gunzipSync}from'node:zlib';const p=JSON.parse(gunzipSync(readFileSync('dist/data/mlb/historical/manifest.json.gz')));if(p.seasons.length!==6||p.current2026!=='unavailable'||p.seasons.some(s=>s.coverage!=='complete'))throw Error('Historical manifest');console.log(JSON.stringify({seasons:p.seasons.length,games:p.seasons.reduce((n,s)=>n+s.games,0)}))"
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
