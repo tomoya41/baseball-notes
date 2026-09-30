@@ -51,6 +51,8 @@ const japanese: Record<string, string> = {
 const familiar: Record<string, string> = {
   "Aaron Judge": "アーロン・ジャッジ", "Mike Trout": "マイク・トラウト", "Mookie Betts": "ムーキー・ベッツ",
   "Freddie Freeman": "フレディ・フリーマン", "Framber Valdez": "フランバー・バルデス",
+  "Pete Alonso": "ピート・アロンソ", "Junior Caminero": "ジュニア・カミネロ",
+  "DJ LeMahieu": "DJ・ルメイヒュー", "Eugenio Suarez": "エウヘニオ・スアレス",
   "Juan Soto": "フアン・ソト", "Ronald Acuna Jr.": "ロナルド・アクーニャ・ジュニア",
   "Vladimir Guerrero Jr.": "ブラディミール・ゲレーロ・ジュニア", "Fernando Tatis Jr.": "フェルナンド・タティス・ジュニア",
   "Lars Nootbaar": "ラーズ・ヌートバー", "Ha-Seong Kim": "キム・ハソン", "Hyun Jin Ryu": "リュ・ヒョンジン",

@@ -18,6 +18,7 @@
 - [Retrosheet person ID — P6976](https://www.wikidata.org/wiki/Property:P6976)、[MLB.com player ID — P3541](https://www.wikidata.org/wiki/Property:P3541): 採用済みChadwick Registerのexact IDに照合。名前検索からidentityを作らない。RegisterにQ IDがある場合も一致を要求。
 - 日本人・一部主要選手の慣用表記はeditorial override。各表示名は既存canonical IDへ固定。[MLB Japan 日本人選手](https://www.mlb.com/ja/news/active-japanese-mlb-players)等を確認資料とし、Current成績を収集しない。
 - sourceごとのevidenceを `src/data/mlb-japanese-names.json` に記録。Raw IDはUIへ公開しない。
+- 慣用表記の追加確認: [ピート・アロンソ](https://www.mlb.com/ja/news/pete-alonso-sets-mets-all-time-home-run-record)、[ジュニア・カミネロ](https://www.mlb.com/ja/news/junior-caminero-2025-home-run-derby)、[DJ・ルメイヒュー](https://www.mlb.com/ja/player/dj-lemahieu-518934)、[エウヘニオ・スアレス](https://www.mlb.com/ja/player/eugenio-suarez-553993)。表示名のみ参照し、成績は取得しない。
 
 ## 明示更新
 

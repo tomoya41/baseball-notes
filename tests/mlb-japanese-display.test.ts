@@ -12,6 +12,10 @@ describe("Japanese MLB presentation without identity or Fact changes", () => {
     expect(japaneseMlbPlayerName(idFor("Gosuke Katoh"), "Gosuke Katoh")).toBe("加藤豪将");
     expect(japaneseMlbPlayerName(idFor("Yu Darvish"), "Yu Darvish")).toBe("ダルビッシュ有");
     expect(japaneseMlbPlayerName(trout, "Mike Trout")).toBe("マイク・トラウト");
+    for (const [english, japanese] of [["Pete Alonso", "ピート・アロンソ"], ["Junior Caminero", "ジュニア・カミネロ"],
+      ["DJ LeMahieu", "DJ・ルメイヒュー"], ["Eugenio Suarez", "エウヘニオ・スアレス"]] as const) {
+      expect(japaneseMlbPlayerName(idFor(english), english)).toBe(japanese);
+    }
     expect(Object.values(names.players).filter(row => /\p{Script=Han}/u.test(row.ja))).toHaveLength(23);
   });
   it("does not assign a translation to a same-name different canonical identity", () => {
