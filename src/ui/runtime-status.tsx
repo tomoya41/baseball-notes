@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import type { Favorite } from "../domain/models";
-import { hasSavedResponseFallback, favoriteNotifications as notifications } from "../app/mobile-services";
+import { hasSavedResponseFallback, publicNetworkOnline, favoriteNotifications as notifications } from "../app/mobile-services";
 import { isAndroid } from "../app/platform";
 export function RuntimeStatus() {
-  const [online, setOnline] = useState(navigator.onLine), [saved, setSaved] = useState(hasSavedResponseFallback());
+  const [online, setOnline] = useState(publicNetworkOnline()), [saved, setSaved] = useState(hasSavedResponseFallback());
   useEffect(() => {
-    const update = () => { setOnline(navigator.onLine); setSaved(hasSavedResponseFallback()); };
+    const update = () => { setOnline(publicNetworkOnline()); setSaved(hasSavedResponseFallback()); };
     for (const event of ["online", "offline", "baseball:saved-data", "baseball:refresh-data"]) window.addEventListener(event, update);
     return () => { for (const event of ["online", "offline", "baseball:saved-data", "baseball:refresh-data"]) window.removeEventListener(event, update); };
   }, []);

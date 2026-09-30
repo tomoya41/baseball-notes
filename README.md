@@ -154,6 +154,8 @@ Favorite v1 already stores league and canonical entity ID; no destructive migrat
 
 ## MLB Historical release import
 
+Android版は既存Web UIを共有するCapacitor shellです。`npm run android:sync`でShellのみを同期し、SDK/JDK設定後に`npm run android:apk` / `npm run android:aab`を使用します。無料の公開repo Actions `android-beta.yml`でもAPK・unsigned AABを生成可能です。Firebase・署名・App Linksは別manual gateです。[Android手順と権利・Privacy・Release Gate](docs/android-release-2026-09-30.md)を参照してください。
+
 MLBの公開画面はRetrosheetの2020〜2025年公式戦を対象にします。2026 Currentの試合結果・選手成績は未対応です。権利根拠と指定creditは [Historical source evidence](docs/mlb-historical-source-evidence-2026-09-30.md) を参照してください。Chadwick Registerは選手ID照合だけに使用します。Lahmanは不要です。
 
 `npx tsx scripts/import-mlb-historical.ts --download --cache .data --db .data/mlb-historical.sqlite --output .data/mlb-public` で公式Season ZIPとRegisterを取得し、ローカルSQLiteへcanonical Game/Player/Fact/mappingを保存します。ダウンロード済みarchiveは再利用します。Game・Playerのcontent hashが同じならDBを書きません。`npx tsx scripts/backup-mlb-historical.ts` はschema・JSONL.gz・manifest/hashを出力し、空のScratch SQLiteへ復元して検証します。

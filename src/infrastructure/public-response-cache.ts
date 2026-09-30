@@ -3,13 +3,16 @@ export type CachedResponse = { url: string; body: ArrayBuffer; contentType: stri
 export interface ResponseStore { get(url: string): Promise<CachedResponse | undefined>; put(row: CachedResponse): Promise<void>; remove(url: string): Promise<void> }
 export class PublicResponseStore implements ResponseStore {
   constructor(private readonly name = "baseball-public-responses-v1", private readonly maxBytes = 64 * 1024 * 1024) {}
-  private async run<T>(mode: IDBTransactionMode, action: (store: IDBObjectStore) => IDBRequest<T>): Promise<T> {
-    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+  private open(): Promise<IDBDatabase> {
+    return new Promise<IDBDatabase>((resolve, reject) => {
       const r = indexedDB.open(this.name, 1);
       r.onupgradeneeded = () => r.result.createObjectStore("responses", { keyPath: "url" });
       r.onsuccess = () => resolve(r.result); r.onerror = () => reject(r.error);
       r.onblocked = () => reject(Error("Response cache unavailable"));
     });
+  }
+  private async run<T>(mode: IDBTransactionMode, action: (store: IDBObjectStore) => IDBRequest<T>): Promise<T> {
+    const db = await this.open();
     try { return await new Promise<T>((resolve, reject) => {
       const tx = db.transaction("responses", mode), r = action(tx.objectStore("responses"));
       tx.oncomplete = () => resolve(r.result); tx.onabort = tx.onerror = () => reject(tx.error);
@@ -21,7 +24,15 @@ export class PublicResponseStore implements ResponseStore {
     // Bound both a response and the whole cache. PA/event archives are never eligible.
     if (row.bytes > 2 * 1024 * 1024) return;
     await this.run("readwrite", s => s.put(row));
-    const rows = await this.run<CachedResponse[]>("readonly", s => s.getAll());
+    // Keep metadata only while evicting; never materialize 64 MiB of response bodies.
+    const db = await this.open();
+    const rows = await new Promise<Pick<CachedResponse, "url" | "savedAt" | "bytes">[]>((resolve, reject) => {
+      const metadata: Pick<CachedResponse, "url" | "savedAt" | "bytes">[] = [];
+      const tx = db.transaction("responses", "readonly"), cursor = tx.objectStore("responses").openCursor();
+      cursor.onsuccess = () => { const item = cursor.result;
+        if (item) { const value = item.value as CachedResponse; metadata.push({ url: value.url, savedAt: value.savedAt, bytes: value.bytes }); item.continue(); } };
+      tx.oncomplete = () => resolve(metadata); tx.onerror = tx.onabort = () => reject(tx.error);
+    }).finally(() => db.close());
     rows.sort((a, b) => b.savedAt - a.savedAt);
     let size = 0;
     for (let i = 0; i < rows.length; i++) { const item = rows[i]!; size += item.bytes;
@@ -30,14 +41,19 @@ export class PublicResponseStore implements ResponseStore {
   }
 }
 let stale = false;
+let needsRefresh = false;
+let nativeOnline: boolean | undefined;
+export function publicNetworkOnline() { return nativeOnline ?? (typeof navigator === "undefined" || navigator.onLine !== false); }
+export function setPublicNetworkOnline(online: boolean) { nativeOnline = online; }
 export function hasSavedResponseFallback() { return stale; }
-export function clearSavedResponseFallback() { stale = false; }
+export function needsPublicDataRefresh() { return needsRefresh || stale; }
+export function clearSavedResponseFallback() { stale = false; needsRefresh = false; }
 function indicateSaved() { stale = true; if (typeof window !== "undefined") window.dispatchEvent(new Event("baseball:saved-data")); }
 const candidates = new WeakMap<Response, () => Promise<void>>();
 export async function rememberPublicResponse(response: Response) { await candidates.get(response)?.().catch(() => undefined); }
 
 export function createPublicFetch(store: ResponseStore, request: typeof fetch = fetch,
-  online: () => boolean = () => typeof navigator === "undefined" || navigator.onLine !== false): typeof fetch {
+  online: () => boolean = publicNetworkOnline): typeof fetch {
   const pending = new Map<string, Promise<Response>>();
   return async (input, init) => {
     const rawUrl = input instanceof Request ? input.url : String(input);
@@ -53,6 +69,7 @@ export function createPublicFetch(store: ResponseStore, request: typeof fetch = 
           if (response.status === 404) await store.remove(url).catch(() => undefined);
           return response;
         } catch (error) {
+          needsRefresh = true;
           const saved = await store.get(url).catch(() => undefined);
           if (!saved) throw error;
           indicateSaved();

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { publicDataFetch, rememberPublicResponse } from "../public-response-cache";
 import type { PlayerProvider } from "../../application/ports";
 import {
   catalogSchema,
@@ -151,19 +152,21 @@ export class SampleProvider implements PlayerProvider {
     allowPersistence: true,
   };
   constructor(
-    private readonly request: typeof fetch = (input, init) =>
-      fetch(input, init),
+    private readonly request: typeof fetch = publicDataFetch,
+    private readonly baseUrl = import.meta.env.BASE_URL,
   ) {}
   async loadCatalog(
     league: League,
     signal: AbortSignal,
   ): Promise<PlayerCatalog> {
     const response = await this.request(
-      `${import.meta.env.BASE_URL}data/${league.toLowerCase()}.json`,
+      `${this.baseUrl}data/${league.toLowerCase()}.json`,
       { signal },
     );
     if (!response.ok) throw new Error(`Provider HTTP ${response.status}`);
     const payload: unknown = await response.json();
-    return normalizeSample(payload, league);
+    const catalog = normalizeSample(payload, league);
+    await rememberPublicResponse(response);
+    return catalog;
   }
 }

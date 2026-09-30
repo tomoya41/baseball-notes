@@ -50,6 +50,12 @@ public class ReleaseQualityTest {
         waitText("お気に入りを保存しました");
         js("location.hash='#/MLB/players/mlb%3Aplayer%3Ae70b8d12-aa41-50c0-9c1b-d468d451355f/analysis'");
         System.out.println("PERF analysis_ms=" + waitText("高度分析"));
+        js("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='対戦・状況別を見る').click()");
+        System.out.println("PERF bvp_ms=" + waitText("対戦投手を検索"));
+        assertEquals("true", js("document.documentElement.scrollWidth <= window.innerWidth"));
+        js("location.hash='#/MLB/games/mlb%3Agame%3A0000523f-86d2-5c92-b466-d191e31baf38'");
+        System.out.println("PERF game_detail_ms=" + waitText("試合結果"));
+        waitText("PA");
         assertEquals("true", js("document.documentElement.scrollWidth <= window.innerWidth"));
         js("location.hash='#/MLB/search'"); System.out.println("PERF search_ms=" + waitText("選手を探す"));
         // Real last-validated Player/manifest cache must survive a process/activity restart.

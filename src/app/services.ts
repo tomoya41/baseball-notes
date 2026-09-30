@@ -26,7 +26,7 @@ const npbDataBaseUrl = import.meta.env.VITE_NPB_DATA_BASE_URL?.trim() ||
 
 export const services = {
   leagueAvailability: new StaticLeagueAvailabilityRepository(publicAssetBase()),
-  players: new PlayerRepository(new SampleProvider(), new IndexedDbCache()),
+  players: new PlayerRepository(new SampleProvider(undefined, publicAssetBase()), new IndexedDbCache()),
   analysis: new UnavailableAnalysisProvider(foundationAnalysisCapabilities) as AnalysisProvider,
   watch: new UnavailableWatchProvider(),
   standings: new StaticStandingsRepository(import.meta.env.BASE_URL, undefined, npbDataBaseUrl),
