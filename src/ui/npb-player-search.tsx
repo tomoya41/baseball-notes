@@ -24,7 +24,7 @@ export function NpbPlayerSearchView({ directory, state, query, onQueryChange, te
   const [expandedKey, setExpandedKey] = useState(filterKey);
   const visibleLimit = expandedKey === filterKey ? limit : 80;
   return <div className="screen npb-player-search">
-    <PageHeading eyebrow="NPB / 選手" title="選手を探す" detail="球団や名前から選手を探せます" />
+    <PageHeading eyebrow="NPB" title="選手" />
     {state === "loading" && <LoadingSkeleton />}
     {state === "error" && <DataState kind="source-unavailable" title="選手一覧を取得できませんでした" />}
     {state === "ready" && directory && <>

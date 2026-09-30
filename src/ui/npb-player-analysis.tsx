@@ -8,7 +8,7 @@ import type { PlayerBatterRole } from "../domain/player-batter-role";
 import type { AggregateMetric } from "../domain/player-period";
 import { formatDate } from "../presentation/formatters";
 import { formatRecentMetric } from "../presentation/recent-formatter";
-import { DataState, LoadingSkeleton, PageHeading, SectionHeader } from "./components";
+import { DataState, LoadingSkeleton, PageHeading, SectionHeader, MetricLabel } from "./components";
 
 type AnalysisState = "loading" | "ready" | "missing" | "error";
 type Role = "batting" | "pitching";
@@ -31,11 +31,9 @@ function RoleComparison({ payload, role }: { payload: PlayerPeriodComparison; ro
   const samples = role === "batting" ? battingSamples : pitchingSamples;
   return <section className="analysis-period-role" aria-label={role === "batting" ? "打撃の期間比較" : "投球の期間比較"}>
     <SectionHeader title={role === "batting" ? "打撃の比較" : "投球の比較"} />
-    <p className="analysis-period-note">{role === "batting" ? "OPSを中心に、出塁率と長打率も比較します。" :
-      "ERAとK/9を、登板数・投球回とあわせて確認できます。"}</p>
     <div className="analysis-period-metrics">{metrics.map(({ key, label }, index) => <div key={key}
       className={`analysis-period-metric${index === 0 ? " analysis-period-metric--primary" : ""}`}
-      role="group" aria-label={`${label}の期間比較`}><strong>{label}</strong>
+      role="group" aria-label={`${label}の期間比較`}><strong><MetricLabel metric={key} label={label} /></strong>
       <div className="analysis-period-metric__values">{comparisonPeriods.map((period) => <div key={period}>
         <span>{names[period]}</span><strong>{formatRecentMetric(key, payload.periods[period][role]?.metrics[key])}</strong>
       </div>)}</div></div>)}</div>
@@ -46,7 +44,7 @@ function RoleComparison({ payload, role }: { payload: PlayerPeriodComparison; ro
       return <div className="analysis-period-sample" key={period}><div className="analysis-period-sample__heading">
         <strong>{names[period]}</strong><small>{result && `${formatDate(result.from, true)}〜${formatDate(result.to, true)}`}</small></div>
         {result ? <div className="analysis-period-sample__values">{samples.map(({ key, label }) => <span key={key}>
-          {label} <strong>{formatRecentMetric(key, result.metrics[key])}</strong></span>)}</div> :
+          <MetricLabel metric={key} label={label} /> <strong>{formatRecentMetric(key, result.metrics[key])}</strong></span>)}</div> :
           <p className="muted">保存済みの出場記録なし</p>}
         <small className={`analysis-period-coverage analysis-period-coverage--${coverage.status}`}>
           {coverageNames[coverage.status]}</small>
@@ -59,8 +57,7 @@ export function NpbPlayerAnalysisScreen({ payload, state }: { payload: PlayerPer
   const hasFacts = payload && comparisonPeriods.some((period) =>
     payload.periods[period].batting || payload.periods[period].pitching);
   return <div className="analysis-screen npb-player-analysis">
-    <PageHeading eyebrow="NPB / 選手分析" title="最近の傾向" level={2}
-      detail="保存済みの試合成績から、直近7・14・30日を同時に比較" />
+    <PageHeading eyebrow="NPB / 選手分析" title="期間比較" level={2} />
     {state === "loading" && <div aria-live="polite"><LoadingSkeleton /></div>}
     {state === "error" && <DataState kind="source-unavailable" title="分析データを取得できませんでした" />}
     {state === "missing" && <DataState kind="no-data" title="分析できる試合データがまだありません" />}
@@ -103,10 +100,10 @@ function HomeAwayRole({ role, rows }: { role: Role; rows: PlayerHomeAway[Role] }
       return <div className="analysis-split-card" key={side} role="group" aria-label={`${label} ${sideName}`}>
         <h4>{sideName}</h4>{result ? <>
           <div className="analysis-split-primary">{primary.map(({ key, label: name }) => <div key={key}>
-            <span>{name}</span><strong>{splitMetric(result, key)}</strong></div>)}</div>
+            <MetricLabel metric={key} label={name} /><strong>{splitMetric(result, key)}</strong></div>)}</div>
           {role === "pitching" && <p className="analysis-split-sample">{splitMetric(result, "appearances")}登板 · BF {splitMetric(result, "BF")}</p>}
           <details className="analysis-split-details"><summary>詳しい成績</summary>
-            <dl>{splitDetails[role].map(({ key, label: name }) => <div key={key}><dt>{name}</dt>
+            <dl>{splitDetails[role].map(({ key, label: name }) => <div key={key}><dt><MetricLabel metric={key} label={name} /></dt>
               <dd>{splitMetric(result, key)}</dd></div>)}</dl></details>
         </> : <p className="muted">保存済み{sideName}成績なし</p>}</div>;
     })}</div>
@@ -118,7 +115,6 @@ export function NpbPlayerHomeAwaySection({ payload, state }: { payload: PlayerHo
   const hasFacts = payload && (payload.batting.totalFactCount > 0 || payload.pitching.totalFactCount > 0);
   return <section className="analysis-home-away" aria-label="ホーム・ビジター条件別分析">
     <SectionHeader title="ホーム / ビジター" />
-    <p className="analysis-period-note">保存済みの直近30日試合成績を、開催側で分けて比較します。</p>
     {state === "loading" && <div aria-live="polite"><LoadingSkeleton /></div>}
     {state === "error" && <DataState kind="source-unavailable" title="ホーム・ビジター成績を取得できませんでした" />}
     {state === "missing" && <DataState kind="no-data" title="分析できる試合データがまだありません" />}
@@ -163,11 +159,11 @@ function OpponentRole({ role, selected, total, teamName }: { role: Role; selecte
     <div className="analysis-opponent-table" role="group" aria-label={`${teamName}戦と分類できた30日全体の比較`}>
       <div className="analysis-opponent-table__head"><span>指標</span><strong>対{teamName}</strong><strong>30日全体</strong></div>
       {opponentPrimary[role].map(({ key, label: name }) => <div className="analysis-opponent-table__row" key={key}>
-        <span>{name}</span><strong>{splitMetric(selected, key)}</strong><span>{splitMetric(total, key)}</span>
+        <MetricLabel metric={key} label={name} /><strong>{splitMetric(selected, key)}</strong><span>{splitMetric(total, key)}</span>
       </div>)}
     </div>
     <details className="analysis-split-details"><summary>詳しい成績</summary>
-      <dl>{opponentDetails[role].map(({ key, label: name }) => <div key={key}><dt>{name}</dt>
+      <dl>{opponentDetails[role].map(({ key, label: name }) => <div key={key}><dt><MetricLabel metric={key} label={name} /></dt>
         <dd>{splitMetric(selected, key)}</dd></div>)}</dl></details>
   </section>;
 }
@@ -238,11 +234,11 @@ export function NpbPlayerBattingOrderSection({ payload, state, battingAvailable 
             <div className="analysis-opponent-table__head"><span>指標</span><strong>{selected.battingOrder}番</strong><strong>30日全体</strong></div>
             {([{ key: "OPS", label: "OPS" }, { key: "AVG", label: "AVG" }, { key: "PA", label: "PA" },
               { key: "G", label: "試合" }, { key: "HR", label: "HR" }] as const).map(({ key, label }) =>
-              <div className="analysis-opponent-table__row" key={key}><span>{label}</span>
+              <div className="analysis-opponent-table__row" key={key}><MetricLabel metric={key} label={label} />
                 <strong>{splitMetric(selected.stats, key)}</strong><span>{splitMetric(payload.classifiedTotal, key)}</span></div>)}
           </div>
           <details className="analysis-split-details"><summary>詳しい成績</summary><dl>
-            {opponentDetails.batting.map(({ key, label }) => <div key={key}><dt>{label}</dt>
+            {opponentDetails.batting.map(({ key, label }) => <div key={key}><dt><MetricLabel metric={key} label={label} /></dt>
               <dd>{splitMetric(selected.stats, key)}</dd></div>)}
           </dl></details>
         </section>
@@ -290,11 +286,11 @@ export function NpbPlayerBatterRoleSection({ payload, state, battingAvailable }:
             <div className="analysis-split-primary">{([
               { key: "OPS", label: "OPS" }, { key: "AVG", label: "AVG" },
               { key: "PA", label: "PA" }, { key: "G", label: "試合" },
-            ] as const).map(({ key, label }) => <div key={key}><span>{label}</span>
+            ] as const).map(({ key, label }) => <div key={key}><MetricLabel metric={key} label={label} />
               <strong>{splitMetric(result,key)}</strong></div>)}</div>
             <p className="analysis-split-sample">{splitMetric(result,"G")}試合 · {splitMetric(result,"PA")}打席</p>
             <details className="analysis-split-details"><summary>詳しい成績</summary><dl>
-              {batterRoleDetails.map(({ key, label }) => <div key={key}><dt>{label}</dt>
+              {batterRoleDetails.map(({ key, label }) => <div key={key}><dt><MetricLabel metric={key} label={label} /></dt>
                 <dd>{splitMetric(result,key)}</dd></div>)}
             </dl></details>
           </> : <p className="muted">保存済み{name}成績なし</p>}</div>;
@@ -327,12 +323,12 @@ export function NpbPlayerPitcherRoleSection({ payload, state, pitchingAvailable 
               { key: "ERA", label: "ERA" }, { key: "K9", label: "K/9" },
               { key: "outsRecorded", label: "IP" },
               role === "starter" ? { key: "GS", label: "先発" } : { key: "appearances", label: "登板" },
-            ] as const).map(({ key, label }) => <div key={key}><span>{label}</span>
+            ] as const).map(({ key, label }) => <div key={key}><MetricLabel metric={key} label={label} />
               <strong>{splitMetric(result, key)}</strong></div>)}</div>
             <p className="analysis-split-sample">{role === "starter" ? `先発 ${splitMetric(result, "GS")}` :
               `登板 ${splitMetric(result, "appearances")}`} · IP {splitMetric(result, "outsRecorded")} · BF {splitMetric(result, "BF")}</p>
             <details className="analysis-split-details"><summary>詳しい成績</summary><dl>
-              {pitcherRoleDetails.map(({ key, label }) => <div key={key}><dt>{label}</dt>
+              {pitcherRoleDetails.map(({ key, label }) => <div key={key}><dt><MetricLabel metric={key} label={label} /></dt>
                 <dd>{splitMetric(result, key)}</dd></div>)}
             </dl></details>
           </> : <p className="muted">保存済み{name}登板なし</p>}</div>;

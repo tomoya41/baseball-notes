@@ -2,8 +2,7 @@ import { ChevronRight } from "lucide-react";
 import type { PlayerRecentResponse, RecentPeriod } from "../domain/player-recent";
 import { formatDate } from "../presentation/formatters";
 import { formatRecentMetric } from "../presentation/recent-formatter";
-import { DataState, LoadingSkeleton, SectionHeader, MetricInfo } from "./components";
-import { metrics } from "../domain/metrics";
+import { DataState, LoadingSkeleton, SectionHeader, MetricLabel } from "./components";
 
 type PeriodStats = NonNullable<PlayerRecentResponse["batting"]>;
 type RecentState = "loading" | "ready" | "missing" | "error";
@@ -26,7 +25,7 @@ const labels: Record<string, string> = { G: "試合", PA: "打席", AB: "打数"
 
 export function StatTiles({ stats, keys, labelOverrides = {} }: { stats: PeriodStats; keys: readonly string[]; labelOverrides?: Record<string,string> }) {
   return <div className="metric-grid recent-metrics">{keys.map((key) => <div className="metric-tile" key={key}>
-    <span className="metric-tile__label">{labelOverrides[key] ?? labels[key] ?? key}{["AVG", "OPS", "ERA", "K9", "outsRecorded"].includes(key) && metrics[key === "outsRecorded" ? "outs" : key.toLowerCase()] && <MetricInfo definition={metrics[key === "outsRecorded" ? "outs" : key.toLowerCase()]!} />}</span>
+    <span className="metric-tile__label"><MetricLabel metric={key} label={labelOverrides[key] ?? labels[key] ?? key} /></span>
     <strong className="metric-tile__value">{formatRecentMetric(key, stats.metrics[key])}</strong>
   </div>)}</div>;
 }

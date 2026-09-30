@@ -4,13 +4,12 @@ import type { GameSurfaceReader } from "../application/game-surface";
 import { shiftGameDate,type GameDateIndex,type GameManifest,type GameIndexRow } from "../domain/npb-game-index";
 import type { NpbRecords } from "../domain/npb-records";
 import { DataState,LoadingSkeleton,PageHeading,SectionHeader } from "./components";
+import { ScoreboardRow } from "./design-system";
 const statusLabel={final:"試合終了",scheduled:"開始前",postponed:"延期",canceled:"中止",suspended:"中断",unknown:"状態未確認"};
-export function GameLinks({games}:{games:readonly GameIndexRow[]}){return <div className="surface-games">{games.map(g=><Link key={g.gameId}
-  className="surface-game" to={`/NPB/games/${encodeURIComponent(g.gameId)}`}>
-  <span>{g.date} · {statusLabel[g.status]}{g.gameNumber>1?` · 第${g.gameNumber}試合`:""}{g.scheduledTime?` · ${g.scheduledTime} JST`:""}</span>
-  <strong>ビジター {g.away.name} <b>{g.away.score??"—"}</b></strong><strong>ホーム {g.home.name} <b>{g.home.score??"—"}</b></strong>
-  {g.status==="final"&&g.completeness!=="complete"&&<small>一部データ確認中</small>}<small>試合詳細を見る</small>
-</Link>)}</div>;}
+export function GameLinks({games}:{games:readonly GameIndexRow[]}){return <div className="scoreboard-list">{games.map(g=><ScoreboardRow key={g.gameId}
+  to={`/NPB/games/${encodeURIComponent(g.gameId)}`} away={g.away.name} home={g.home.name} awayScore={g.away.score} homeScore={g.home.score}
+  date={g.date.slice(5).replace("-","/")} status={g.status === "scheduled" && g.scheduledTime ? `${g.scheduledTime} JST` : statusLabel[g.status]}
+  gameNumber={g.gameNumber > 1 ? g.gameNumber : undefined} partial={g.status === "final" && g.completeness !== "complete"} />)}</div>;}
 export function GameDateView({payload}:{payload:GameDateIndex}){return <>
   {(payload.coverage==="partial"||payload.coverage==="failed")&&<p role="status">一部データ確認中です。保存済みの試合を表示します。</p>}
   {payload.games.length?<GameLinks games={payload.games}/>:<DataState kind="no-data"
@@ -26,7 +25,7 @@ export function NpbScheduleScreen({repository}:{repository:GameSurfaceReader}){
     if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||date<manifest.from||date>manifest.to){void Promise.resolve().then(()=>{if(active)setState("error");});return()=>{active=false;};}
     void repository.date(date).then(v=>{if(active){setPayload(v);setState("ready");}}).catch(()=>{if(active)setState("error");});return()=>{active=false;};},[date,manifest,repository]);
   const change=(next:string)=>{setState("loading");setPayload(null);setParams({date:next});};
-  return <div className="screen game-schedule"><PageHeading eyebrow="NPB" title="日程・結果" detail="保存済みの試合予定と結果。速報ではありません。"/>
+  return <div className="screen game-schedule"><PageHeading eyebrow="NPB" title="日程・結果"/>
     <nav className="profile-tabs" aria-label="試合の種類"><Link to="/NPB/schedule" aria-current="page">公式戦</Link><Link to="/NPB/preseason">オープン戦 <span className="soon-badge">Soon</span></Link></nav>
     {manifest&&date&&<div className="surface-date-nav"><button disabled={date<=manifest.from} onClick={()=>change(shiftGameDate(date,-1))}>前日</button>
       <label>試合日<input type="date" aria-label="試合日" min={manifest.from} max={manifest.to} value={date} onChange={e=>{if(e.target.value)change(e.target.value);}}/></label>
@@ -37,7 +36,7 @@ export function NpbScheduleScreen({repository}:{repository:GameSurfaceReader}){
 }
 export function NpbRecentGames({repository}:{repository:GameSurfaceReader}){
   const [games,setGames]=useState<GameIndexRow[]|null>(null),[error,setError]=useState(false);
-  useEffect(()=>{let active=true;void repository.recent().then(p=>{if(active)setGames(p.games.slice(0,2));}).catch(()=>{if(active)setError(true);});return()=>{active=false;};},[repository]);
+  useEffect(()=>{let active=true;void repository.recent().then(p=>{if(active)setGames(p.games.slice(0,3));}).catch(()=>{if(active)setError(true);});return()=>{active=false;};},[repository]);
   return <section className="home-section"><SectionHeader title="最近の試合" action="日程・結果" to="/NPB/schedule"/>
     {error?<DataState kind="source-unavailable" title="試合結果を読み込めません"/>:games?<GameLinks games={games}/>:<LoadingSkeleton/>}</section>;
 }

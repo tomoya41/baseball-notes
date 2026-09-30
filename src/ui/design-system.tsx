@@ -30,11 +30,21 @@ export function PlayerTabs({ base, section, search = "" }: { base: string; secti
       <Link key={tab.part} to={`${base}${tab.part ? `/${tab.part}` : ""}${search}`} aria-current={(section ?? "") === tab.part ? "page" : undefined}>{tab.label}</Link>)}
   </nav>;
 }
-export function Hero({ eyebrow, title, detail, children }: { eyebrow: string; title: ReactNode; detail: string; children?: ReactNode }) {
-  return <header className="editorial-hero"><span className="hero-diamond" aria-hidden="true" /><p className="eyebrow">{eyebrow}</p><h1>{title}</h1><p className="hero-detail">{detail}</p>{children}</header>;
+export function CompetitionHeader({ league, context, children }: { league: string; context: string; children?: ReactNode }) {
+  return <header className="competition-header"><div><p className="eyebrow">{context}</p><h1>{league}</h1></div>{children}</header>;
+}
+export function ScoreboardRow({ to, away, home, awayScore, homeScore, status, date, gameNumber, partial = false }: {
+  to: string; away: string; home: string; awayScore: number | null; homeScore: number | null;
+  status: string; date?: string; gameNumber?: number | undefined; partial?: boolean;
+}) {
+  return <Link className="scoreboard-row" to={to}>
+    <span className="scoreboard-teams"><span className={awayScore !== null && homeScore !== null && awayScore > homeScore ? "scoreboard-winner" : ""}><span className="scoreboard-mark" aria-hidden="true">{away.slice(0,1)}</span><span><span className="sr-only">ビジター </span>{away}</span><strong>{awayScore ?? "—"}</strong></span>
+      <span className={awayScore !== null && homeScore !== null && homeScore > awayScore ? "scoreboard-winner" : ""}><span className="scoreboard-mark" aria-hidden="true">{home.slice(0,1)}</span><span><span className="sr-only">ホーム </span>{home}</span><strong>{homeScore ?? "—"}</strong></span></span>
+    <span className="scoreboard-status"><span>{date}</span><strong>{status}</strong>{gameNumber !== undefined && gameNumber > 0 && <small>第{gameNumber}試合</small>}{partial && <small>一部データ確認中</small>}<ArrowUpRight size={15} aria-hidden="true" /></span>
+  </Link>;
 }
 export function Shortcut({ to, title, detail }: { to: string; title: string; detail: string }) {
-  return <Link className="shortcut" to={to}><span><strong>{title}</strong><small>{detail}</small></span><ArrowUpRight size={21} aria-hidden="true" /></Link>;
+  return <Link className="shortcut" to={to}><span><strong>{title}</strong>{detail && <small>{detail}</small>}</span><ArrowUpRight size={21} aria-hidden="true" /></Link>;
 }
 export function MySettings() {
   return <div className="my-settings"><ThemeSettings /><section className="settings-panel"><h2>このアプリについて</h2>

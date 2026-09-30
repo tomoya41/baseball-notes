@@ -2,18 +2,18 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { matchesMlbPlayerName } from "../domain/mlb-japanese-display";
 import type { AdvancedPlayerPayload, PaAnalysisLine } from "../domain/mlb-pa-analysis";
-import { DataState, LoadingSkeleton } from "./components";
+import { DataState, LoadingSkeleton, MetricLabel } from "./components";
 import { useHistoricalStatic } from "./use-mlb-historical";
 
 const labels: Record<string, string> = { "inning:1–3": "1〜3回", "inning:4–6": "4〜6回", "inning:7–9": "7〜9回", "inning:extra": "延長",
   "outs:0": "0アウト", "outs:1": "1アウト", "outs:2": "2アウト", "bases:empty": "走者なし", "bases:runners": "走者あり", "bases:risp": "得点圏に走者",
   "score:ahead": "リード", "score:tied": "同点", "score:behind": "ビハインド" };
 export function PaMetricTable({ metrics, pitching = false }: { metrics: PaAnalysisLine; pitching?: boolean }) {
-  return <><div className="metric-grid metric-primary-grid">{(["PA","H","HR","AVG","OBP","OPS"] as const).map(key => <div className="metric-tile" key={key}><span className="metric-tile__label">{key === "AVG" && pitching ? "被打率" : key === "PA" ? "対戦打席" : key}</span><strong className="metric-tile__value">{metrics[key] === null ? "—" : ["AVG","OBP","OPS"].includes(key) ? metrics[key].toFixed(3) : metrics[key]}</strong></div>)}</div>
+  return <><div className="metric-grid metric-primary-grid">{(["PA","H","HR","AVG","OBP","OPS"] as const).map(key => <div className="metric-tile" key={key}><span className="metric-tile__label"><MetricLabel metric={key} label={key === "AVG" && pitching ? "被打率" : key === "PA" ? "PA" : key} /></span><strong className="metric-tile__value">{metrics[key] === null ? "—" : ["AVG","OBP","OPS"].includes(key) ? metrics[key].toFixed(3) : metrics[key]}</strong></div>)}</div>
     <details><summary>対戦打撃成績の詳細</summary><div className="mlb-stat-scroll"><table>
-      <thead><tr>{Object.keys(metrics).map(key => <th key={key}>{key}</th>)}</tr></thead><tbody><tr>{Object.entries(metrics).map(([key, value]) =>
+      <thead><tr>{Object.keys(metrics).map(key => <th key={key}><MetricLabel metric={key} /></th>)}</tr></thead><tbody><tr>{Object.entries(metrics).map(([key, value]) =>
         <td key={key}>{value === null ? "—" : ["AVG", "OBP", "SLG", "OPS"].includes(key) ? value.toFixed(3) : value}</td>)}</tr></tbody>
-    </table></div><p className="inline-note">PAは対戦打席数。AVGは安打/打数、OBPは出塁率、SLGは長打率、OPSはOBPとSLGの合計です。投手表示は相手打者の打撃成績です。</p></details></>;
+    </table></div>{pitching && <p className="inline-note">対戦打者の打撃成績</p>}</details></>;
 }
 export function HistoricalAdvancedAnalysis({ playerId, season, hasBatting, hasPitching }: {
   playerId: string; season: number; hasBatting: boolean; hasPitching: boolean;
@@ -47,7 +47,7 @@ export function HistoricalAdvancedAnalysis({ playerId, season, hasBatting, hasPi
             <input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="相手の名前で絞り込む" /></label>
           <p className="inline-note">{opponents.length}人。実際に対戦した相手だけを表示します。</p>
           {opponent && <div><h3>{opponent.name}</h3><PaMetricTable metrics={opponent.metrics} pitching={role === "pitching"} />
-            <Link to={`/MLB/players/${encodeURIComponent(opponent.playerId)}`}>選手ページへ</Link></div>}
+            <Link className="text-link" to={`/MLB/players/${encodeURIComponent(opponent.playerId)}?season=${season}`}>選手ページへ</Link></div>}
           <div className="row-list">{opponents.slice(0, 40).map(row => <button className="ranking-entry" type="button" key={row.playerId}
             aria-pressed={row.playerId === opponentId} onClick={() => setOpponentId(row.playerId)}>{row.name} · {row.metrics.PA} PA</button>)}</div>
           {!opponents.length && <DataState kind="no-data" title="該当する対戦相手はいません" />}
@@ -56,6 +56,7 @@ export function HistoricalAdvancedAnalysis({ playerId, season, hasBatting, hasPi
           <DataState kind="no-data" title="この条件の打席はありません" /> : <>
             <label className="mlb-asof">状況<select value={split.key} onChange={event => setSplitKey(event.target.value)}>
               {splits.map(row => <option key={row.key} value={row.key}>{labels[row.key] ?? row.key}</option>)}</select></label>
+            {split.key === "bases:risp" && <MetricLabel metric="RISP" label="得点圏（RISP）" />}
             <PaMetricTable metrics={split.metrics} pitching={role === "pitching"} />
             {split.unknownPa > 0 && <p className="inline-note">開始状況を確定できない{split.unknownPa}打席はこの分類から除外しています。</p>}
             <p className="inline-note">PA開始時の状況。得点差は選手の所属球団を基準にします。</p>

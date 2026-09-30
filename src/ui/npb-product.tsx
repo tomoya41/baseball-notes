@@ -7,7 +7,7 @@ import type { NpbLatestStandings } from "../domain/standings";
 import { positionDefinitions } from "../domain/baseball-terms";
 import { formatDate, formatGamesBehind, formatWinningPercentage } from "../presentation/formatters";
 import { DataState, LoadingSkeleton, SectionHeader } from "./components";
-import { Hero, Monogram, Shortcut } from "./design-system";
+import { CompetitionHeader, Monogram, Shortcut } from "./design-system";
 import { NpbRecentGames } from "./npb-game-surface";
 import { NpbSavedPlayers } from "./npb-my";
 import { NpbHotSection } from "./npb-hot";
@@ -30,11 +30,11 @@ export function NpbStandings({ services }: { services: Services }) {
   </section>;
 }
 export function NpbHome({ services, favorites, toggle, saving }: { services: Services; favorites: Favorite[]; toggle: (target: Target) => void; saving: boolean }) {
-  const date = new Intl.DateTimeFormat("ja-JP", { month: "long", day: "numeric", weekday: "short", timeZone: "Asia/Tokyo" }).format(new Date());
-  return <div className="screen home-screen"><Hero eyebrow={`NPB · ${date}`} title="野球がある、毎日。" detail="試合を振り返る。選手の今を知る。"><Link className="hero-link" to="/NPB/schedule">日程・結果を見る ↗</Link></Hero>
+  const season = new Intl.DateTimeFormat("ja-JP", { year: "numeric", timeZone: "Asia/Tokyo" }).format(new Date());
+  return <div className="screen home-screen"><CompetitionHeader league="NPB" context={`${season} · 公式戦`}><Link className="text-link" to="/NPB/schedule">日程・結果 ↗</Link></CompetitionHeader>
     <div className="home-columns"><div><NpbRecentGames repository={services.gameSurface} /><NpbStandings services={services} /></div><div>
-      <section className="home-section"><SectionHeader title="追いかけたい選手" action="Myへ" to="/NPB/my" /><NpbSavedPlayers repository={services.directory} favorites={favorites} toggle={toggle} saving={saving} compact /></section>
-      <div className="shortcut-grid"><Shortcut to="/NPB/search" title="選手を見つける" detail="名前・球団から探す" /><Shortcut to="/NPB/records" title="シーズン記録" detail="集計の公開状態を見る" /></div>
+      <section className="home-section"><SectionHeader title="お気に入り選手" action="Myへ" to="/NPB/my" /><NpbSavedPlayers repository={services.directory} favorites={favorites} toggle={toggle} saving={saving} compact /></section>
+      <div className="shortcut-grid"><Shortcut to="/NPB/search" title="選手検索" detail="" /><Shortcut to="/NPB/records" title="個人成績" detail="2026シーズン" /></div>
       <NpbHotSection repository={services.hot} />
     </div></div></div>;
 }

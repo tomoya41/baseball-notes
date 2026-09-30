@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { PlayerTabs, Monogram } from "../src/ui/design-system";
+import { PlayerTabs, Monogram, ScoreboardRow } from "../src/ui/design-system";
+import { MetricLabel } from "../src/ui/components";
+import { metricHelp } from "../src/presentation/metric-help";
 import { ExploreScreen, FutureFeatureScreen, PlayerFutureLinks } from "../src/ui/future-surfaces";
 import { futureSections } from "../src/presentation/future-features";
 import { historicalPositions, collectedSeasonsLabel } from "../src/presentation/historical-player";
@@ -70,5 +72,28 @@ describe("verified Japanese cohort and display", () => {
   });
   it("falls back to the system theme for unavailable or corrupt settings", () => {
     expect(parseTheme(null)).toBe("system"); expect(parseTheme("broken")).toBe("system"); expect(parseTheme("dark")).toBe("dark"); expect(parseTheme("light")).toBe("light");
+  });
+});
+
+describe("compact scoreboards and contextual metric help", () => {
+  it("preserves score zero, unknown score, canonical routes and confirmed partial status", () => {
+    const html = wrap(<ScoreboardRow to="/NPB/games/npb%3Agame%3Aone" home="阪神" away="DeNA" homeScore={0} awayScore={null} status="開始前" gameNumber={2} partial />);
+    expect(html).toContain("npb%3Agame%3Aone"); expect(html).toContain("<strong>0</strong>"); expect(html).toContain("<strong>—</strong>");
+    expect(html).toContain("第2試合"); expect(html).toContain("一部データ確認中"); expect(html).not.toContain("scoreboard-winner");
+  });
+  it("marks a known leading score without inventing a game completion state", () => {
+    const html = wrap(<ScoreboardRow to="/MLB/games/canonical" home="ホーム" away="ビジター" homeScore={1} awayScore={2} status="中断" />);
+    expect(html).toContain("scoreboard-winner"); expect(html).toContain("中断"); expect(html).not.toContain("試合終了");
+  });
+  it.each(["OPS", "OBP", "SLG", "K9", "K/9", "BF", "RISP", "PA", "AB", "IP", "outsRecorded"])("%s has a local accessible explanation", key => {
+    const definition = metricHelp(key)!; expect(definition.description).toBeTruthy(); expect(definition.interpretation).toBeTruthy();
+    const html = wrap(<MetricLabel metric={key} />);
+    expect(html).toContain(`aria-label="${definition.name}の説明"`); expect(html).toContain("<dialog"); expect(html).toContain('method="dialog"'); expect(html).not.toMatch(/href=|<img/);
+  });
+  it("explains OBP denominator, SLG meaning and RISP context without evaluative labels", () => {
+    expect(metricHelp("OBP")!.description).toContain("打数＋四球＋死球＋犠飛");
+    expect(metricHelp("SLG")!.interpretation).toContain("長打の割合そのものではありません");
+    expect(metricHelp("bases:risp")).toEqual(metricHelp("RISP")); expect(metricHelp("BF")!.interpretation).toContain("良し悪しは判断しません");
+    expect(metricHelp("unknown-metric")).toBeUndefined();
   });
 });

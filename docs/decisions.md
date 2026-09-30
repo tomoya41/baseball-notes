@@ -1,5 +1,9 @@
 # Durable Decisions
 
+## 2026-10-01: Data-first sports presentation and contextual metric help
+
+Results use a shared aligned scoreboard; primary statistics and rankings use ruled rows, explicit season/sample context and tabular values. Decorative hero copy is removed. Metric definitions live in local accessible dialogs next to their labels; qualification rules remain a separate disclosure. This changes presentation only, with existing calculations, null semantics and capability gates retained. See `docs/sports-ui-research.md` for first-party research and the app-specific interpretation.
+
 ## 2026-09-30: Android-first contextual navigation
 
 The user authorized a zero-based UI redesign, superseding earlier visual layouts. Home/Games/Players/Records/My are the five primary destinations; Analysis is contextual to a Player. Upcoming capabilities use purpose-specific routes under Explore or Profile, never mock metrics or dominant Home placeholders. Retain canonical hash routes, league isolation and native Back/deep links. Theme preferences share the native/Web preference adapter. Verified Japanese MLB discovery is small reviewed CC0 identity metadata, separate from statistics and membership. No data migration or Production Gate change; reverting UI commits restores the previous presentation. See `docs/ui-redesign.md`.
