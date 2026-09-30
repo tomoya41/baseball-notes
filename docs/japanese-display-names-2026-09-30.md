@@ -5,7 +5,7 @@
 - MLB全30球団を日本語表示。
 - 2020〜2025収録の日本人選手23人を漢字表示（ダルビッシュ有を含む）。筒香嘉智のSource表示 `Yoshi Tsutsugo`、加藤豪将も含む。
 - 選手全2,840人中2,577人の日本語表示名を収録。外国人はカタカナ。
-- 未確認263人は原名を維持。そのうち18人はWikidataのIDとRegister側のWikidata IDの相違を検出し自動採用しない。これは表示名の参照不一致であり、canonical identityやFactの変更ではない。
+- 未確認263人は原名を維持。そのうち19人はWikidataのIDとRegister側のWikidata IDの相違を検出し自動採用しない。これは表示名の参照不一致であり、canonical identityやFactの変更ではない。
 - 日本語名と英字原名でSearch/BvP検索可能。大文字小文字、アクセント、空白、中黒を吸収。
 - Profile、Game Detail、Records、My、BvPへ共通適用。成績・順位の並び・Favorite保存Keyは変わらない。
 
@@ -30,3 +30,11 @@ npx tsx scripts/update-mlb-japanese-names.ts --fetch > .data/mlb-japanese-names-
 ネット取得なしの再生成は `--fetch` を外す。生成したreference registryは差分をreviewしてcommitする。通常のData collectorには接続しない。日付・件数のdocsは更新時に実値へ追従させる。外部API不調・参照不一致でも原名が表示できる。自動音写で未確認の読みを作らない。
 
 公開は既存MLB Historical workflowの `app-only` を使い、検証済みデータを維持したままアプリを更新する。Scheduled証拠やInfrastructure判定には使用しない。
+
+## 検証
+
+- 全433 tests / lint / typecheck / build / Vercel build PASS。
+- 360pxで漢字検索 `大谷` と英語検索 `SHOHEI OHTANI` が同じcanonical Profileに到達。大谷翔平の55HR・727PA、BvP対フランバー・バルデス39PA/4H/1HR/AVG .125を維持。
+- ページ幅345px（viewport 360px、scrollbarを除く）に対しscrollWidth345px。横方向のページoverflowなし。
+- 名前辞書を含むMLB画面をlazy load。NPB側の初回main chunkは163.13KB gzip（変更前174.58KB）。MLB chunkは140.80KB gzip。読み込み中は既存Loading Skeleton。
+- 通常表示でWikidata request追加0、DB write0。既存Favoritesのcanonical Key・NPB Facts・Coverage・HOT/Ranking/Infrastructure Gate変更0。
