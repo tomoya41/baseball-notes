@@ -17,6 +17,7 @@ adb shell input keyevent KEYCODE_HOME
 adb shell am start -W -n com.tomoya41.baseballnotes/jp.baseballdata.app.MainActivity > .data/android-emulator/warm-launch.txt
 adb shell am instrument -w com.tomoya41.baseballnotes.test/androidx.test.runner.AndroidJUnitRunner > .data/android-emulator/instrumentation.txt
 cat .data/android-emulator/instrumentation.txt
+adb logcat -d -s System.out:I > .data/android-emulator/performance.txt
 grep -q 'OK (' .data/android-emulator/instrumentation.txt
 adb shell dumpsys meminfo com.tomoya41.baseballnotes > .data/android-emulator/memory.txt
 adb shell am start -W -a android.intent.action.VIEW -d 'baseballnotes://MLB/players/mlb%3Aplayer%3Ae70b8d12-aa41-50c0-9c1b-d468d451355f' com.tomoya41.baseballnotes > .data/android-emulator/deep-link.txt
