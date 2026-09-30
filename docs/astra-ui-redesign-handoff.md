@@ -52,6 +52,8 @@ Required adopted granularity unavailable: NPB Direct BvP, pitch-level, canonical
 
 Gate pending: NPB HOT, counting/rate Ranking and Records. Use brief user wording (“集計を確認中” / “HOTランキング準備中”) with diagnostics behind development tools. No mock rows. Manual backfill/publish is not Scheduled proof. Rain-shortened six Games remain partial; do not convert them to complete to decorate a UI.
 
+Publication audit on 2026-09-30: the stored horizon is **2026-09-29**, and March 27–September 29 comprises **187 days: 156 complete, 25 confirmed no_games, 6 partial, 0 unknown**. The original five rain-shortened days remain partial. September 28 is an additional partial day: three stored final Game headers have no verified participant/completeness record (`expected_participants_unverified`). Do not label that day “試合なし” from its zero verified final count. Current-Fact validation passes 827 Games, retains six shortened Games as partial and three September 28 Games as unverified. Latest September 23–29 coverage is therefore partial. These were observed in existing data; Batch G made zero canonical writes and did not repair or relax them. Astra can proceed with explicit partial states; Production HOT/Ranking cannot ignore them.
+
 ## Visual asset contract
 
 All NPB `photo.usage` and `logo.usage` currently equal `unavailable`, URL/attribution/licence URL null. Show name or team abbreviation. Exact licensed Commons candidates are documented separately; a Wikidata P18 link is not itself a grant. Do not make a browser hotlink as a rights workaround. Approved later assets can populate the existing allowed-asset structure with required credit/licence without rebuilding the domain.
@@ -68,7 +70,7 @@ Web base: `https://tomoya41.github.io/baseball-notes/`. Existing hash router sta
 | NPB Player | `#/NPB/players/<canonical UUID>` with `/stats`, `/analysis`, `/more` sections |
 | NPB Schedule | `#/NPB/schedule?date=YYYY-MM-DD` |
 | NPB Game | `#/NPB/games/<encoded canonical Game ID>` |
-| MLB Player | `#/MLB/players/<canonical UUID>`; selected historical Season/as-of controls |
+| MLB Player | `#/MLB/players/<URL-encoded canonical Player ID>` (including the `mlb:player:` namespace); selected historical Season/as-of controls |
 | MLB Schedule | `#/MLB/schedule?season=2025&date=2025-09-20` |
 | MLB Game | `#/MLB/games/<canonical Game ID>` |
 | Sources / Privacy | `#/MLB/sources`, `#/privacy` |
