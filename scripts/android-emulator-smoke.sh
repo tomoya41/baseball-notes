@@ -4,12 +4,15 @@ mkdir -p .data/android-emulator
 wait_screen() {
   local expected="$1" target="$2"
   for attempt in $(seq 1 15); do
-    adb shell uiautomator dump /sdcard/window.xml >/dev/null
-    adb pull /sdcard/window.xml "$target" >/dev/null
-    if grep -q "$expected" "$target"; then return 0; fi
+    adb shell rm -f /sdcard/window.xml
+    if adb shell uiautomator dump /sdcard/window.xml >/dev/null &&
+       adb pull /sdcard/window.xml "$target" >/dev/null &&
+       grep -q "$expected" "$target"; then return 0; fi
     sleep 2
   done
   echo "Expected screen not visible: $expected" >&2
+  adb exec-out screencap -p > .data/android-emulator/screen-timeout.png
+  adb logcat -d -s AndroidRuntime:E Capacitor:V Capacitor/Console:V > .data/android-emulator/screen-timeout.txt
   return 1
 }
 adb install artifacts/apk/debug/app-debug.apk
