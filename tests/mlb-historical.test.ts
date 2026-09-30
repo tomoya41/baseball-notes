@@ -116,6 +116,8 @@ describe("Retrosheet Historical normalization", () => {
       date: game.date, season: 2025, home: true, opponentTeamId: game.awayTeamId }], game.date, game.date);
     expect(pitching.metrics.outsRecorded.value).toBe(27);
     expect(pitching.metrics.ERA.value).toBe(0);
+    expect(pitching.metrics.HLD).toMatchObject({ value: null, status: "unavailable" });
+    expect(pitching.metrics).not.toHaveProperty("WHIP");
     expect(dateWindow("2025-09-20", 7)).toEqual({ from: "2025-09-14", to: "2025-09-20" });
   });
   it("uses explicit PBP batter/pitcher pairs for direct BvP", async () => {

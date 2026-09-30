@@ -36,13 +36,16 @@ export function pitchingAggregate(playerId: string, rows: readonly DatedPitcher[
   const window: PeriodWindow = { from, to, timeZone: "source-local" };
   const result = aggregatePitching({ playerId, asOfDate: to, period: "30d" }, facts, calculatedAt, undefined, window);
   // Retrosheet supplies independent W/L/SV flags. Do not compress them into one decision.
-  for (const [metric, field] of [["W", "win"], ["L", "loss"], ["SV", "save"]] as const) {
+  for (const [metric, field] of [["W", "win"], ["L", "loss"], ["SV", "save"], ["HLD", "hold"]] as const) {
     const known = filtered.filter(row => row[field] !== null);
     result.metrics[metric] = { value: known.length === filtered.length && filtered.length > 0
       ? known.filter(row => row[field]).length : null,
-    status: filtered.length === 0 ? "unavailable" : known.length === filtered.length ? "complete" : "partial",
+    status: known.length === 0 ? "unavailable" : known.length === filtered.length ? "complete" : "partial",
     observedFacts: known.length, factCount: filtered.length };
   }
+  // The historical Core exposes only its selected metrics; do not inherit WHIP
+  // or infer a known zero HLD from the shared single-decision representation.
+  Reflect.deleteProperty(result.metrics, "WHIP");
   return result;
 }
 
