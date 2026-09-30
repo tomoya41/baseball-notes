@@ -1,6 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 mkdir -p .data/android-emulator
+wait_screen() {
+  local expected="$1" target="$2"
+  for attempt in $(seq 1 15); do
+    adb shell uiautomator dump /sdcard/window.xml >/dev/null
+    adb pull /sdcard/window.xml "$target" >/dev/null
+    if grep -q "$expected" "$target"; then return 0; fi
+    sleep 2
+  done
+  echo "Expected screen not visible: $expected" >&2
+  return 1
+}
 adb install artifacts/apk/debug/app-debug.apk
 adb install artifacts/apk/androidTest/debug/app-debug-androidTest.apk
 adb shell wm size 360x800
@@ -9,7 +20,7 @@ adb shell wm density 160
 adb shell svc wifi disable
 adb shell svc data disable
 adb shell am start -W -n com.tomoya41.baseballnotes/jp.baseballdata.app.MainActivity > .data/android-emulator/cold-launch.txt
-sleep 3
+wait_screen 'BASEBALL' .data/android-emulator/offline-first-launch.xml
 adb exec-out screencap -p > .data/android-emulator/offline-first-launch.png
 adb shell svc wifi enable
 adb shell svc data enable
@@ -21,16 +32,17 @@ adb logcat -d -s System.out:I > .data/android-emulator/performance.txt
 adb logcat -d -s Capacitor:V Capacitor/Console:V > .data/android-emulator/bridge.txt
 adb exec-out screencap -p > .data/android-emulator/instrumentation-screen.png
 grep -q 'OK (' .data/android-emulator/instrumentation.txt
-adb shell dumpsys meminfo com.tomoya41.baseballnotes > .data/android-emulator/memory.txt
 adb shell svc wifi disable
 adb shell svc data disable
 adb shell am force-stop com.tomoya41.baseballnotes
 adb shell am start -W -a android.intent.action.VIEW -d 'baseballnotes://MLB/players/mlb%3Aplayer%3Ae70b8d12-aa41-50c0-9c1b-d468d451355f' com.tomoya41.baseballnotes > .data/android-emulator/deep-link.txt
-sleep 3
+wait_screen '大谷翔平' .data/android-emulator/offline-process-restart.xml
+grep -q '保存済みデータ' .data/android-emulator/offline-process-restart.xml
 adb exec-out screencap -p > .data/android-emulator/offline-process-restart.png
+adb shell dumpsys meminfo com.tomoya41.baseballnotes > .data/android-emulator/memory.txt
 adb shell svc wifi enable
 adb shell svc data enable
-sleep 2
+wait_screen '大谷翔平' .data/android-emulator/online-restored.xml
 adb shell run-as com.tomoya41.baseballnotes du -k . > .data/android-emulator/storage.txt
 adb exec-out screencap -p > .data/android-emulator/android-360.png
 adb shell cmd uimode night yes
@@ -41,4 +53,5 @@ adb shell wm size 600x1000
 sleep 2
 adb exec-out screencap -p > .data/android-emulator/android-600.png
 adb logcat -d -s AndroidRuntime:E > .data/android-emulator/crashes.txt
+adb logcat -d -s Capacitor:V Capacitor/Console:V > .data/android-emulator/bridge.txt
 ! grep -q 'FATAL EXCEPTION' .data/android-emulator/crashes.txt

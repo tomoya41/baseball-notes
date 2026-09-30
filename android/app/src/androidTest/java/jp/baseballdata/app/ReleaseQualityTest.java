@@ -33,6 +33,7 @@ public class ReleaseQualityTest {
     @Test public void shellDeepLinksBackAndHistorical() throws Exception {
         long start = System.currentTimeMillis(); scenario = ActivityScenario.launch(MainActivity.class);
         waitText("BASEBALL"); System.out.println("PERF shell_ms=" + (System.currentTimeMillis()-start));
+        scenario.onActivity(activity -> assertNull("Shared UI has no native action bar", activity.getSupportActionBar()));
         assertEquals("true", js("document.documentElement.scrollWidth <= window.innerWidth"));
         js("location.hash='#/privacy'"); waitText("プライバシー・データ");
         js("document.body.insertAdjacentHTML('beforeend','<dialog id=qatest>QA</dialog>');document.getElementById('qatest').showModal()");
@@ -57,6 +58,9 @@ public class ReleaseQualityTest {
         System.out.println("PERF game_detail_ms=" + waitText("試合結果"));
         waitText("PA");
         assertEquals("true", js("document.documentElement.scrollWidth <= window.innerWidth"));
+        js("new Promise(resolve=>{const q=indexedDB.open('baseball-public-responses-v1');q.onsuccess=()=>{const db=q.result;if(!db.objectStoreNames.length){resolve(0);return;}const r=db.transaction(db.objectStoreNames[0]).objectStore(db.objectStoreNames[0]).openCursor();let max=0;r.onsuccess=()=>{const c=r.result;if(c){max=Math.max(max,c.value.bytes||0);c.continue();}else resolve(max);};};}).then(n=>document.documentElement.dataset.cachemax=String(n))");
+        for (int i=0; i<100 && js("document.documentElement.dataset.cachemax").equals("undefined"); i++) Thread.sleep(50);
+        System.out.println("PERF largest_cached_response_bytes=" + js("document.documentElement.dataset.cachemax"));
         js("location.hash='#/MLB/search'"); System.out.println("PERF search_ms=" + waitText("選手を探す"));
         // Real last-validated Player/manifest cache must survive a process/activity restart.
         shell("svc wifi disable"); shell("svc data disable"); Thread.sleep(1500);
