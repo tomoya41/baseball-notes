@@ -31,15 +31,15 @@ export function PlayerTabs({ base, section, search = "" }: { base: string; secti
   </nav>;
 }
 export function CompetitionHeader({ league, context, children }: { league: string; context: string; children?: ReactNode }) {
-  return <header className="competition-header"><div><p className="eyebrow">{context}</p><h1>{league}</h1></div>{children}</header>;
+  return <header className="competition-header"><div><h1>{league}</h1><p className="eyebrow">{context}</p></div>{children}</header>;
 }
 export function ScoreboardRow({ to, away, home, awayScore, homeScore, status, date, gameNumber, partial = false }: {
   to: string; away: string; home: string; awayScore: number | null; homeScore: number | null;
   status: string; date?: string; gameNumber?: number | undefined; partial?: boolean;
 }) {
   return <Link className="scoreboard-row" to={to}>
-    <span className="scoreboard-teams"><span className={awayScore !== null && homeScore !== null && awayScore > homeScore ? "scoreboard-winner" : ""}><span className="scoreboard-mark" aria-hidden="true">{away.slice(0,1)}</span><span><span className="sr-only">ビジター </span>{away}</span><strong>{awayScore ?? "—"}</strong></span>
-      <span className={awayScore !== null && homeScore !== null && homeScore > awayScore ? "scoreboard-winner" : ""}><span className="scoreboard-mark" aria-hidden="true">{home.slice(0,1)}</span><span><span className="sr-only">ホーム </span>{home}</span><strong>{homeScore ?? "—"}</strong></span></span>
+    <span className="scoreboard-teams"><span className={awayScore !== null && homeScore !== null && awayScore > homeScore ? "scoreboard-winner" : ""}><span><span className="sr-only">ビジター </span>{away}</span><strong>{awayScore ?? "—"}</strong></span>
+      <span className={awayScore !== null && homeScore !== null && homeScore > awayScore ? "scoreboard-winner" : ""}><span><span className="sr-only">ホーム </span>{home}</span><strong>{homeScore ?? "—"}</strong></span></span>
     <span className="scoreboard-status"><span>{date}</span><strong>{status}</strong>{gameNumber !== undefined && gameNumber > 0 && <small>第{gameNumber}試合</small>}{partial && <small>一部データ確認中</small>}<ArrowUpRight size={15} aria-hidden="true" /></span>
   </Link>;
 }

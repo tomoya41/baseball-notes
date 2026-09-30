@@ -201,10 +201,9 @@ main { outline: none; }
 .scoreboard-row + .scoreboard-row { border-top:1px solid var(--color-border); }
 .scoreboard-row:hover { background:var(--brand-soft); color:var(--color-text); }
 .scoreboard-teams { display:grid; gap:7px; }
-.scoreboard-teams > span { display:grid; grid-template-columns:24px minmax(0,1fr) 26px; gap:8px; align-items:center; font-size:.8rem; line-height:1.35; font-weight:600; }
+.scoreboard-teams > span { display:grid; grid-template-columns:minmax(0,1fr) 26px; gap:8px; align-items:center; font-size:.8rem; line-height:1.35; font-weight:600; }
 .scoreboard-teams strong { font-size:1.55rem; line-height:1.15; text-align:right; font-variant-numeric:tabular-nums; font-weight:750; }
 .scoreboard-winner strong { color:var(--brand); font-weight:900; }
-.scoreboard-mark { display:grid; place-items:center; width:24px; height:24px; border:1px solid var(--color-border); border-radius:6px; font-size:.65rem; color:var(--color-muted); }
 .scoreboard-status { border-left:1px solid var(--color-border); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; color:var(--color-muted); font-size:.66rem; text-align:center; }
 .scoreboard-status strong { font-size:.64rem; font-weight:550; }.scoreboard-status small { font-size:.6rem; }.scoreboard-status svg { margin-top:4px; }
 .metric-label { display:inline-flex; gap:0; align-items:center; vertical-align:middle; min-height:36px; white-space:nowrap; }
@@ -229,3 +228,68 @@ main { outline: none; }
 .analysis-split-details dl > div { display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--color-border); }
 .analysis-split-details dd { font-variant-numeric:tabular-nums; }.analysis-split-primary .metric-label { font-size:.68rem; }
 @media (min-width:720px) { .metric-grid .metric-tile:nth-child(3n + 1) { border-left:1px solid var(--color-border); }.metric-grid .metric-tile:nth-child(6n + 1) { border-left:0; } }
+
+/* Phone layouts are a compact browsing surface, not scaled desktop cards.
+   Keep 44px interaction targets independently of the visual type size. */
+@media (max-width:719px) {
+  :root { --type-title:1.375rem; --type-body:.8125rem; }
+  body { font-size:var(--type-body); line-height:1.5; }
+  h1 { font-weight:750; letter-spacing:-.025em; }
+  h2 { font-size:1rem; font-weight:700; margin-bottom:10px; }
+  h3 { font-size:.8125rem; margin-bottom:8px; }
+  .app-shell { padding-left:14px; padding-right:14px; }
+  .app-header { min-height:calc(56px + env(safe-area-inset-top)); }
+  .brand { gap:7px; }.brand-mark { width:30px; height:30px; border-radius:7px; }.brand-mark svg { width:19px; height:19px; }
+  .brand strong { font-size:.68rem; letter-spacing:.08em; }.brand small { font-size:.52rem; letter-spacing:.22em; }
+  .league-switch { border:0; padding:0; gap:0; background:var(--color-surface); border-radius:8px; }
+  .league-switch a { min-width:48px; border-radius:7px; font-size:.7rem; }
+  .bottom-nav { gap:0; padding:4px 8px calc(5px + env(safe-area-inset-bottom)); }
+  .bottom-nav a { min-height:48px; border-radius:0; font-size:.625rem; gap:2px; border-top:2px solid transparent; }
+  .bottom-nav a[aria-current] { background:transparent; border-top-color:var(--brand); }.bottom-nav a[aria-current] svg { stroke-width:2.2; }
+  .page-heading { padding:10px 0 4px; margin-bottom:12px; }.eyebrow { font-size:.625rem; margin-bottom:6px; }
+  .competition-header { padding:8px 0 12px; border-bottom:1px solid var(--color-border); margin-bottom:12px; gap:10px; min-height:54px; }
+  .competition-header > div { display:flex; align-items:baseline; gap:9px; min-width:0; }
+  .competition-header h1 { font-size:1.25rem; font-weight:800; letter-spacing:-.025em; }
+  .competition-header .eyebrow { margin:0; font-size:.59rem; letter-spacing:0; font-weight:550; }
+  .competition-season select { font-size:.75rem; min-width:82px; padding:6px 9px; min-height:44px; border-radius:7px; }
+  .section-header { margin-bottom:6px; min-height:38px; }.section-header h2 { font-size:.94rem; }.section-action,.text-link { font-size:.69rem; }
+  .home-section,.japan-panel { margin-bottom:20px; }.japan-panel .row-list { margin-top:0; }
+  .row-list { border:0; border-radius:0; border-top:1px solid var(--color-border); border-bottom:1px solid var(--color-border); background:transparent; }
+  .player-row,.surface-favorite,.mlb-player-row { min-height:56px; gap:8px; }
+  .player-row { padding:8px 2px; }.player-row__body { gap:2px; }.player-row__body strong,.mlb-player-row strong { font-size:.8125rem; font-weight:650; }
+  .player-row__body small,.mlb-player-row small { font-size:.65rem; line-height:1.5; }
+  .mlb-player-row { padding:6px 0; }.mlb-player-row > a { gap:9px; min-height:44px; }
+  .monogram { width:32px; height:36px; border-radius:6px; font-size:.74rem; font-weight:650; }
+  .favorite-button { border-radius:7px; }.favorite-button svg { width:18px; height:18px; }
+  .japan-panel .row-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .japan-panel .mlb-player-row { padding:5px 4px; gap:0; min-height:58px; }
+  .japan-panel .mlb-player-row:nth-child(odd) { border-right:1px solid var(--color-border); }
+  .japan-panel .mlb-player-row:nth-child(n+3) { border-bottom:0; }
+  .japan-panel .monogram { display:none; }.japan-panel .mlb-player-row > a { gap:0; }
+  .japan-panel .mlb-player-row strong { font-size:.75rem; overflow-wrap:anywhere; }.japan-panel .mlb-player-row small { font-size:.625rem; }
+  .scoreboard-list { background:transparent; border:0; border-radius:0; border-top:1px solid var(--color-border); border-bottom:1px solid var(--color-border); }
+  .scoreboard-row { grid-template-columns:minmax(0,1fr) 54px; gap:12px; padding:10px 2px; min-height:72px; }
+  .scoreboard-teams { gap:4px; }.scoreboard-teams > span { font-size:.78125rem; font-weight:550; grid-template-columns:minmax(0,1fr) 25px; line-height:1.4; }
+  .scoreboard-teams strong { font-size:1.25rem; font-weight:650; }.scoreboard-winner strong { font-weight:750; }
+  .scoreboard-status { border:0; align-items:flex-end; font-size:.6rem; }.scoreboard-status strong { font-size:.59rem; }.scoreboard-status svg { display:none; }
+  .profile-header { background:transparent; color:var(--color-text); border-radius:0; border-bottom:1px solid var(--color-border); padding:12px 0 16px; gap:12px; margin:0 0 4px; }
+  .profile-header h1 { font-size:1.375rem; font-weight:750; margin-bottom:4px; }
+  .profile-header p { color:var(--color-muted); font-size:.6875rem; }.profile-header .eyebrow { color:var(--brand); font-size:.6rem; margin-bottom:5px; }
+  .profile-header__body { padding-right:40px; }.profile-header .favorite-button { top:8px; right:0; color:var(--color-muted); background:transparent; }.profile-header .favorite-button[aria-pressed=true] { color:var(--brand); }
+  .monogram--large,.profile-photo { width:48px; height:58px; border-radius:7px; font-size:1.0625rem; background:var(--color-surface); color:var(--color-muted); border-color:var(--color-border); }
+  .profile-tabs { gap:0; margin-bottom:14px; }.profile-tabs a { flex:1; text-align:center; min-height:44px; padding:12px 4px; font-size:.7rem; border-bottom-width:2px; }
+  .surface-card,.stats-section,.analysis-period-role,.settings-panel { padding:14px 0; margin-bottom:14px; }
+  .mlb-controls { gap:8px; margin-bottom:12px; font-size:.6875rem; }.mlb-controls select,.mlb-controls input { font-size:.75rem; }
+  .metric-tile { padding:4px 7px 10px; }.metric-label,.metric-tile__label { min-height:30px; }.metric-tile__label { font-size:.625rem; }
+  .metric-info-button { margin:-7px 0; }.metric-info-button svg { width:13px; height:13px; }
+  .metric-tile__value { font-size:1.5rem; font-weight:750; letter-spacing:-.025em; }.metric-primary-grid { margin:10px 0; }
+  .stat-role-label { margin-top:12px; font-size:.66rem; }.recent-group { margin-top:12px; }
+  .leaderboard { border-top:1px solid var(--color-border); }.leaderboard li > a { min-height:60px; padding:10px 4px; gap:10px; }
+  .leaderboard li:first-child { background:transparent; }.leaderboard li:first-child a { padding-left:4px; padding-right:4px; }
+  .rank-person { font-size:.8125rem; }.rank-number { min-width:20px; font-size:.8125rem; }.rank-value { font-size:1.375rem; font-weight:750; }
+  .search-field { min-height:48px; margin:8px 0 12px; border-radius:8px; }.search-field input { font-size:.8125rem; }
+  .segmented { border-radius:8px; margin-bottom:12px; padding:2px; }.segmented button { font-size:.6875rem; border-radius:6px; }
+  .mlb-stat-scroll table { font-size:.72rem; }.mlb-stat-scroll th,.mlb-stat-scroll td { padding:8px 7px; }
+  .standings-table { font-size:.72rem; }.standings-table th,.standings-table td { padding:8px 5px; }
+  .metric-dialog { padding:20px; border-radius:12px; }.metric-dialog h2 { font-size:1.375rem; }.metric-dialog h2 span { font-size:.8125rem; }.metric-dialog p { font-size:.8125rem; }
+}

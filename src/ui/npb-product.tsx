@@ -31,7 +31,7 @@ export function NpbStandings({ services }: { services: Services }) {
 }
 export function NpbHome({ services, favorites, toggle, saving }: { services: Services; favorites: Favorite[]; toggle: (target: Target) => void; saving: boolean }) {
   const season = new Intl.DateTimeFormat("ja-JP", { year: "numeric", timeZone: "Asia/Tokyo" }).format(new Date());
-  return <div className="screen home-screen"><CompetitionHeader league="NPB" context={`${season} · 公式戦`}><Link className="text-link" to="/NPB/schedule">日程・結果 ↗</Link></CompetitionHeader>
+  return <div className="screen home-screen"><CompetitionHeader league="NPB" context={`${season} · 公式戦`} />
     <div className="home-columns"><div><NpbRecentGames repository={services.gameSurface} /><NpbStandings services={services} /></div><div>
       <section className="home-section"><SectionHeader title="お気に入り選手" action="Myへ" to="/NPB/my" /><NpbSavedPlayers repository={services.directory} favorites={favorites} toggle={toggle} saving={saving} compact /></section>
       <div className="shortcut-grid"><Shortcut to="/NPB/search" title="選手検索" detail="" /><Shortcut to="/NPB/records" title="個人成績" detail="2026シーズン" /></div>
