@@ -154,8 +154,6 @@ Favorite v1 already stores league and canonical entity ID; no destructive migrat
 
 ## MLB Historical release import
 
-Android版は既存Web UIを共有するCapacitor shellです。`npm run android:sync`でShellのみを同期し、SDK/JDK設定後に`npm run android:apk` / `npm run android:aab`を使用します。無料の公開repo Actions `android-beta.yml`でもAPK・unsigned AABを生成可能です。Firebase・署名・App Linksは別manual gateです。[Android手順と権利・Privacy・Release Gate](docs/android-release-2026-09-30.md)を参照してください。
-
 MLBの公開画面はRetrosheetの2020〜2025年公式戦を対象にします。2026 Currentの試合結果・選手成績は未対応です。権利根拠と指定creditは [Historical source evidence](docs/mlb-historical-source-evidence-2026-09-30.md) を参照してください。Chadwick Registerは選手ID照合だけに使用します。Lahmanは不要です。
 
 `npx tsx scripts/import-mlb-historical.ts --download --cache .data --db .data/mlb-historical.sqlite --output .data/mlb-public` で公式Season ZIPとRegisterを取得し、ローカルSQLiteへcanonical Game/Player/Fact/mappingを保存します。ダウンロード済みarchiveは再利用します。Game・Playerのcontent hashが同じならDBを書きません。`npx tsx scripts/backup-mlb-historical.ts` はschema・JSONL.gz・manifest/hashを出力し、空のScratch SQLiteへ復元して検証します。
@@ -175,3 +173,9 @@ npx tsx scripts/backup-mlb-historical.ts
 PAはローカルrelease SQLiteに保存し、Tursoへ投入しません。Game単位hashによる再投入はwrite 0、訂正時はそのGameのPAをatomicに置換します。BvP・状況別の公開には全Seasonのboxscore照合と状態検証を要求し、Clientへは選手・Season別のaggregateのみ返します。MLB RecordsのAVG/OBP/SLGはRule 9.22の不足PA例外を個別評価。OPS/K9は通常規定相当のsample条件を使うアプリ統計で、公式タイトルとは区別します。[公式規定の根拠](docs/mlb-ranking-rule-2026-09-30.md)と[Batch E検証報告](docs/mlb-batch-e-2026-09-30.md)を参照してください。
 
 同workflowの `mode=app-only` はUI更新用です。既に公開されたHistorical aggregate archiveのhashを検証して保持し、Retrosheet source archive再取得・PA再import・DB writeを行いません。公開aggregateの保持copyはcontent-addressed GitHub Release assetへ置き、Pagesの小さな `historical-release.json` にURLとSHA256を保存します。Archive内の `ATTRIBUTION.txt` とRelease説明にも必要な出典・ライセンス通知を含めます。NPBのPages更新時もhash検証して復元します。旧Pages内archiveは移行時のみ読み取れます。Raw PA/DB/source archiveをReleaseやPagesへ公開しません。新しいRetrosheet releaseを取り込む場合は既定の `mode=release` を使用してください。
+
+## Android Beta / Release
+
+Android版は既存Web UIを共有するCapacitor shellです。`npm run android:sync`でShellのみを同期し、SDK/JDK設定後に`npm run android:apk` / `npm run android:aab`を使用します。無料の公開repo Actions `android-beta.yml`でもAPK・unsigned AABを生成可能です。Firebase・署名・App Linksは別manual gateです。
+
+[Android手順とPrivacy・Release Gate](docs/android-release-2026-09-30.md)、[Batch F検証報告](docs/android-batch-f-2026-09-30.md)を参照してください。Google Playへの自動公開は行いません。
