@@ -111,7 +111,7 @@ export function NpbPlayer({ services, favorites, toggle, saving }: { services: S
       <FavoriteButton active={isFavorite} saving={saving} label={player.name} onClick={() => toggle({ league: "NPB", kind: "player", entityId: player.id })} />
     </header>
     <PlayerTabs base={base} section={section} />
-    {!section && <div className="profile-content"><PlayerSeasonView payload={season} state={seasonState} /><PlayerRecentView period={period} onPeriodChange={next => { setRecentState("loading"); setPeriod(next); }} payload={recent} state={recentState} noFactKnown={directoryPlayer?.recentAvailable === false} />
+    {!section && <div className="profile-content"><PlayerSeasonView payload={season} state={seasonState} /><PlayerRecentView period={period} onPeriodChange={next => { if (next === period) return; setRecentState("loading"); setPeriod(next); }} payload={recent} state={recentState} noFactKnown={directoryPlayer?.recentAvailable === false} />
       <PlayerGameLogView payload={gameLog ? { ...gameLog, batting: gameLog.batting.slice(0, 3), pitching: gameLog.pitching.slice(0, 3) } : null} state={gameLogState} teams={gameLogTeams} /><Link className="button button--secondary" to={`${base}/game-log`}>すべての試合別成績を見る</Link></div>}
     {section === "stats" && <PlayerSeasonView payload={season} state={seasonState} />}
     {section === "game-log" && <PlayerGameLogView payload={gameLog} state={gameLogState} teams={gameLogTeams} />}

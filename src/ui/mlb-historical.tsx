@@ -149,24 +149,24 @@ export function MlbHistoricalGame({ manifest }: { manifest: Manifest }) {
       .sort((a, b) => (a.appearanceOrder ?? 99) - (b.appearanceOrder ?? 99));
     return <section className="mlb-box-team" key={teamId} aria-label={`${label} ${teamName(manifest, teamId)}`}>
       <h2>{label} · {teamName(manifest, teamId)}</h2><h3>打撃</h3>
-      <div className="mlb-stat-scroll"><table><thead><tr><th>打順</th><th>選手</th><th>PA</th><th>AB</th><th>H</th><th>HR</th><th>RBI</th></tr></thead>
+      <p className="table-scroll-hint">横にスワイプして成績を見る →</p><div className="mlb-stat-scroll box-primary" tabIndex={0} role="region" aria-label={`${teamName(manifest, teamId)}の打撃成績。横スクロールできます`}><table><thead><tr><th>打順</th><th>選手</th><th>PA</th><th>AB</th><th>H</th><th>HR</th><th>RBI</th></tr></thead>
         <tbody>{batting.map(row => <tr key={row.playerId}><td>{format(row.battingOrder)}</td>
           <th scope="row"><Link to={`/MLB/players/${encodeURIComponent(row.playerId)}`}>{row.name ?? "選手"}</Link>
             {row.starter === false && <small>途中出場</small>}</th>
           <td>{format(row.pa)}</td><td>{format(row.ab)}</td><td>{format(row.hits)}</td>
           <td>{format(row.homeRuns)}</td><td>{format(row.rbi)}</td></tr>)}</tbody></table></div>
-      <details><summary>打撃の詳細項目</summary><div className="mlb-stat-scroll"><table>
+      <details><summary>打撃の詳細項目</summary><div className="mlb-stat-scroll" tabIndex={0} role="region" aria-label={`${teamName(manifest, teamId)}の打撃詳細`}><table>
         <thead><tr><th>選手</th><th>R</th><th>2B</th><th>3B</th><th>BB</th><th>HBP</th><th>SH</th><th>SF</th><th>SO</th><th>SB</th><th>CS</th></tr></thead>
         <tbody>{batting.map(row => <tr key={row.playerId}><th scope="row">{row.name}</th>
           {[row.runs, row.doubles, row.triples, row.bb, row.hbp, row.sh, row.sf, row.so, row.sb, row.cs]
             .map((item, index) => <td key={index}>{format(item)}</td>)}</tr>)}</tbody></table></div></details>
-      <h3>投球</h3><div className="mlb-stat-scroll"><table><thead><tr>
+      <h3>投球</h3><div className="mlb-stat-scroll box-primary" tabIndex={0} role="region" aria-label={`${teamName(manifest, teamId)}の投球成績。横スクロールできます`}><table><thead><tr>
         <th>役割</th><th>選手</th><th>IP</th><th>BF</th><th>H</th><th>HR</th><th>SO</th><th>R</th><th>ER</th></tr></thead>
         <tbody>{pitching.map(row => <tr key={row.playerId}><td>{row.role === "starter" ? "先発" : row.role === "reliever" ? "救援" : "不明"}</td>
           <th scope="row"><Link to={`/MLB/players/${encodeURIComponent(row.playerId)}`}>{row.name ?? "選手"}</Link></th>
           <td>{row.outsRecorded === null ? "—" : `${Math.floor(row.outsRecorded / 3)}.${row.outsRecorded % 3}`}</td>
           {[row.bf, row.hits, row.homeRuns, row.so, row.runs, row.er].map((item, index) => <td key={index}>{format(item)}</td>)}</tr>)}</tbody></table></div>
-      <details><summary>投球の詳細項目</summary><div className="mlb-stat-scroll"><table>
+      <details><summary>投球の詳細項目</summary><div className="mlb-stat-scroll" tabIndex={0} role="region" aria-label={`${teamName(manifest, teamId)}の投球詳細`}><table>
         <thead><tr><th>選手</th><th>BB</th><th>HBP</th><th>W</th><th>L</th><th>SV</th><th>HLD</th><th>球数</th></tr></thead>
         <tbody>{pitching.map(row => <tr key={row.playerId}><th scope="row">{row.name}</th>
           {[row.bb, row.hbp, row.win === null ? null : Number(row.win), row.loss === null ? null : Number(row.loss),
@@ -390,8 +390,7 @@ function MlbHistoricalDataRoutes({ favorites, toggle, saving }: HistoricalRouteP
   const manifest = result.value!;
   return <Routes>
     <Route path="explore" element={<ExploreScreen league="MLB" />} />
-    {(["milestones", "moves", "talent", "preseason", "watch"] as const).map(feature => <Route key={feature} path={`${feature}/*`} element={<FutureFeatureScreen feature={feature} league="MLB" />} />)}
-    <Route path="matchup" element={<Navigate to="/MLB/search?focus=japan" replace />} />
+    {(["milestones", "moves", "talent", "preseason", "watch", "matchup"] as const).map(feature => <Route key={feature} path={`${feature}/*`} element={<FutureFeatureScreen feature={feature} league="MLB" />} />)}
     <Route path="home" element={<MlbHistoricalHome manifest={manifest} favorites={favorites} toggle={toggle} saving={saving} />} />
     <Route path="search" element={<MlbHistoricalSearch manifest={manifest} favorites={favorites} toggle={toggle} saving={saving} />} />
     <Route path="schedule" element={<MlbHistoricalSchedule manifest={manifest} />} />

@@ -36,7 +36,7 @@ These routes have internal structure and explicit Coming Soon output, without da
 | `/:league/moves` | Registration/movement / FA / Posting | Explore |
 | `/:league/talent` | Draft / prospects | Explore |
 | `/:league/preseason` | Schedule/results / stats | NPB schedule / Explore |
-| `/NPB/matchup` | Matchup / player comparison | Explore |
+| `/:league/matchup` | Matchup discovery / player comparison | Explore; MLB also links to existing player BvP |
 | `/:league/watch` | Game / player context | Explore |
 
 Explore groups games, records, player journeys and matchup discovery; future features do not occupy Home cards. MLB's real player BvP remains functional. Data can later populate the prepared destinations without restructuring primary navigation. A route is a UI plan, not a Production/rights availability claim.
@@ -47,4 +47,12 @@ UI, presentation metadata, composition and a native deep-link allowlist for Stat
 
 ## Verification
 
-The added suite checks canonical tab/context links, future no-data screens, native parent/deep links, theme parsing, verified identity and neutral visuals. Existing calculation, provider, cache and favorites suites remain. Final browser/build evidence is recorded after validation.
+The added suite checks canonical tab/context links, future no-data screens (including invalid tab parameters), native parent/deep links, theme parsing, verified identity and neutral visuals. Existing calculation, provider, cache, portable backup/restore and favorites suites remain.
+
+Local verification on 2026-10-01: **490 tests / 50 files, lint, typecheck, Web build, Vercel build and Capacitor sync PASS**. The main JS bundle is 506.96 kB (151.03 kB gzip); the lazy MLB chunk is 474.06 kB (144.36 kB gzip); CSS is 29.36 kB (6.40 kB gzip). Vite's 500 kB chunk advisory remains; advanced payloads are loaded on request, never raw PA rows. The development server excludes `.data` and Android generated outputs from its watcher to avoid OneDrive image locks and generated-asset reloads.
+
+Browser verification used real published payloads: NPB Home, standings/team, search, Player/Season/Recent, the shared 7/14/30 and all conditional splits, 9/25 and 9/26 Game Details, schedule previous-date navigation and gated Records.坂本 retains PA 3 / AB 2 / BB 1; zero-PA substitutes and repeated batting slots remain present. MLB Home/Japanese filter, Ohtani's two roles, favorites after reload, 2020 Rate/2025 Counting Records, exact Ohtani–Darvish BvP (2025: PA 5 / H 1 / HR 0 / AVG .250 / OBP .400 / OPS .650), and inning situations were checked. No DB/Facts/Coverage/production Gate writes were made.
+
+Android API 36 emulator and debug/release APK/unsigned AAB passed in [manual CI 36727319479](https://github.com/tomoya41/baseball-notes/actions/runs/36727319479). Both instrumentation tests passed: modal/history Back, canonical cold deep link, NPB/MLB, preferences/favorites restart, no-cache offline shell, cached-player offline restart and reconnect. Native Light/Dark 360px and 600px screenshots show no page overflow or platform title bar. This manual build is UI evidence, **not Scheduled Production proof**. UI refinement after this run receives another compile check on the PR.
+
+Measured emulator timings are environment-specific: shell 5,024 ms; historical player 2,367 ms; Analysis 1,363 ms; BvP 166 ms; Game Detail 310 ms; Search 41 ms; cached offline Player 2,290 ms. Largest measured cached response: 218,268 bytes. Screenshots and instrumentation evidence are kept in ignored `.data/ui-redesign/`, with the CI artifact retained for seven days.

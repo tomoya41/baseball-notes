@@ -29,6 +29,12 @@ describe("new navigation and future surfaces", () => {
     for (const path of ["schedule", "records", "moves", "talent", "preseason", "matchup", "watch", "milestones"]) expect(html).toContain(`/NPB/${path}`);
     for (const label of ["選手移動・FA・Posting", "ドラフト・プロスペクト"]) expect(html).toContain(label);
   });
+  it("selects a valid default section when a future-screen link contains an invalid tab", () => {
+    for (const tab of ["99", "-1", "broken"]) {
+      const html = renderToStaticMarkup(<MemoryRouter initialEntries={[`/NPB/moves?tab=${tab}`]}><FutureFeatureScreen feature="moves" league="NPB" /></MemoryRouter>);
+      expect(html).toMatch(/aria-current="page"[^>]*href="[^"]+\?tab=0"/);
+    }
+  });
   it("places NPB career and advanced preparation in player context, without replacing MLB's real features", () => {
     expect(wrap(<PlayerFutureLinks base={`/NPB/players/${id}`} />)).toContain(`/players/${id}/career`);
     expect(wrap(<PlayerFutureLinks base={`/MLB/players/${mlb}`} historical />)).not.toContain("Direct BvP");

@@ -5,6 +5,9 @@ export default defineConfig({
   plugins: [react()],
   base: "./",
   // Local UI development uses the published, validated data; never fixture fallback.
-  server: { proxy: { "/data": { target: "https://tomoya41.github.io/baseball-notes", changeOrigin: true } } },
+  server: {
+    watch: { ignored: ["**/.data/**", "**/android/**"] },
+    proxy: { "/data": { target: "https://tomoya41.github.io/baseball-notes", changeOrigin: true } },
+  },
   test: { environment: "node", include: ["tests/**/*.test.{ts,tsx}"] },
 });
