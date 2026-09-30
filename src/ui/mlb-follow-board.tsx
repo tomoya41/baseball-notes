@@ -37,6 +37,6 @@ export function MlbFollowPlayer({ player, season, favorites, toggle, saving }: {
       {hasBatting && totals?.batting && <FollowStatLine values={totals.batting} pitching={false} />}
       {totals?.pitching && <FollowStatLine values={totals.pitching} pitching />}
       {!hasBatting && !totals?.pitching && <small>{season}年の成績は未収録</small>}
-    </> : <small>{profile.status === "loading" ? "成績を読み込み中" : "成績を読み込めません"}</small>}</div>
+    </> : <><small>{profile.status === "loading" ? "成績を読み込み中" : "成績を読み込めません"}</small>{profile.status === "error" && <button className="text-button" onClick={profile.retry} aria-label={`${player.name}の成績を再読み込み`}>再読み込み</button>}</>}</div>
   </article>;
 }

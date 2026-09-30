@@ -42,8 +42,8 @@ type FavoriteTarget = Pick<Favorite, "kind" | "entityId" | "league">;
 
 function Status({ state, missing = "データがありません" }: { state: ReturnType<typeof useStatic<unknown>>; missing?: string }) {
   return state.status === "loading" ? <LoadingSkeleton /> :
-    <DataState kind={state.status === "error" ? "source-unavailable" : "no-data"}
-      title={state.status === "error" ? "データを読み込めません" : missing} />;
+    <><DataState kind={state.status === "error" ? "source-unavailable" : "no-data"}
+      title={state.status === "error" ? "データを読み込めません" : missing} />{state.status === "error" && <button className="text-button" type="button" onClick={state.retry}>再読み込み</button>}</>;
 }
 const format = (value: number | null | undefined) => value === null || value === undefined ? "—" : String(value);
 const teamName = (manifest: Manifest, id: string) => manifest.teams.find(team => team.id === id)?.name ?? "球団不明";

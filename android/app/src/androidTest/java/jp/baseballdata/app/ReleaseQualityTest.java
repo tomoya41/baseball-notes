@@ -32,6 +32,19 @@ public class ReleaseQualityTest {
     private void shell(String command) throws Exception {
         InstrumentationRegistry.getInstrumentation().getUiAutomation().executeShellCommand(command).close();
     }
+    private void waitHomeStatistics() throws Exception {
+        long start = System.currentTimeMillis(); int retries = 0;
+        while (System.currentTimeMillis() - start < 60000) {
+            String text = js("document.body?.innerText || ''");
+            if (text.contains("1.014") && text.contains("0.696")) return;
+            if (text.contains("再読み込み") && retries < 5) {
+                Thread.sleep(3000);
+                js("Array.from(document.querySelectorAll('button')).filter(b=>b.textContent==='再読み込み').forEach(b=>b.click())"); retries++;
+            }
+            Thread.sleep(200);
+        }
+        fail("Historical Home statistics did not load: " + js("document.body?.innerText || ''"));
+    }
     private void screenshot(String name) throws Exception {
         File dir = new File(InstrumentationRegistry.getInstrumentation().getTargetContext().getExternalFilesDir(null), "ui-redesign");
         assertTrue(dir.isDirectory() || dir.mkdirs());
@@ -60,7 +73,7 @@ public class ReleaseQualityTest {
         shell("svc wifi enable"); shell("svc data enable");
         long homeStart = System.currentTimeMillis(); js("location.hash='#/MLB/home'");
         waitText("日本人選手");
-        waitText("1.014"); waitText("0.696");
+        waitHomeStatistics();
         System.out.println("PERF mlb_home_ms=" + (System.currentTimeMillis() - homeStart));
         assertEquals("Four actual Player summaries", "4", js("document.querySelectorAll('.follow-player').length"));
         assertEquals("true", js("document.documentElement.scrollWidth <= window.innerWidth"));
