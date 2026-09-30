@@ -26,7 +26,10 @@ public class ReleaseQualityTest {
         while (System.currentTimeMillis() - start < 40000) { if (js("document.body.innerText").contains(text)) return System.currentTimeMillis()-start; Thread.sleep(100); }
         fail("Screen did not load: " + text + " / " + js("document.body.innerText")); return 0;
     }
-    @After public void close() { if (scenario != null) scenario.close(); }
+    private void shell(String command) throws Exception {
+        InstrumentationRegistry.getInstrumentation().getUiAutomation().executeShellCommand(command).close();
+    }
+    @After public void close() throws Exception { shell("svc wifi enable"); shell("svc data enable"); if (scenario != null) scenario.close(); }
     @Test public void shellDeepLinksBackAndHistorical() throws Exception {
         long start = System.currentTimeMillis(); scenario = ActivityScenario.launch(MainActivity.class);
         waitText("BASEBALL"); System.out.println("PERF shell_ms=" + (System.currentTimeMillis()-start));
@@ -42,10 +45,22 @@ public class ReleaseQualityTest {
         scenario.close(); scenario = ActivityScenario.launch(intent);
         long player = waitText("大谷翔平"); System.out.println("PERF historical_player_ms=" + player);
         assertTrue(js("location.hash").contains("e70b8d12"));
+        assertEquals("true", js("!!document.querySelector('button[aria-label=\"大谷翔平をお気に入りに追加\"]')"));
+        js("document.querySelector('button[aria-label=\"大谷翔平をお気に入りに追加\"]').click()");
+        waitText("お気に入りを保存しました");
         js("location.hash='#/MLB/players/mlb%3Aplayer%3Ae70b8d12-aa41-50c0-9c1b-d468d451355f/analysis'");
         System.out.println("PERF analysis_ms=" + waitText("高度分析"));
         assertEquals("true", js("document.documentElement.scrollWidth <= window.innerWidth"));
         js("location.hash='#/MLB/search'"); System.out.println("PERF search_ms=" + waitText("選手を探す"));
+        // Real last-validated Player/manifest cache must survive a process/activity restart.
+        shell("svc wifi disable"); shell("svc data disable"); Thread.sleep(1500);
+        scenario.close(); scenario = ActivityScenario.launch(intent);
+        long offline = waitText("大谷翔平"); waitText("保存済みデータ");
+        System.out.println("PERF offline_player_ms=" + offline);
+        assertEquals("true", js("!!document.querySelector('button[aria-label=\"大谷翔平をお気に入りから削除\"]')"));
+        assertEquals("true", js("document.documentElement.scrollWidth <= window.innerWidth"));
+        shell("svc wifi enable"); shell("svc data enable");
+        js("location.hash='#/MLB/my'"); waitText("大谷翔平");
     }
     @Test public void nativePreferencesSurviveRestartAndFirebaseDisabled() throws Exception {
         scenario = ActivityScenario.launch(MainActivity.class); waitText("BASEBALL");

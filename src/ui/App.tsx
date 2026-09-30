@@ -592,8 +592,9 @@ export function App({ services }: { services: Services }) {
     {favoriteMessage && <p className={`toast${favoriteError ? " toast--error" : ""}`}
       role={favoriteError ? "alert" : "status"}>{favoriteMessage}</p>}
     <RuntimeStatus />
+    <main id="main-content" tabIndex={-1}>
     <NotificationSettings favorites={favorites} ready={favoritesReady} visible={section === "my"} />
-    <main id="main-content" tabIndex={-1}><Routes key={refreshVersion}>
+    <Routes key={refreshVersion}>
       <Route path="/privacy" element={<PrivacyScreen />} />
       <Route path="/NPB/games/:gameId" element={<NpbGameDetailScreen key={location.pathname} repository={services.gameDetail} />} />
       <Route path="/NPB/*" element={<LeagueView key="NPB" league="NPB" services={services}

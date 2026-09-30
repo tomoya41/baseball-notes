@@ -1,0 +1,4 @@
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/baseball_brand_blue" />
+    <foreground android:drawable="@drawable/baseball_brand" />
+</adaptive-icon>

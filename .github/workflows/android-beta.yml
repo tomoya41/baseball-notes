@@ -33,7 +33,7 @@ jobs:
       - run: npx tsx scripts/scan-release-assets.ts .data/android-web
       - name: Debug APK and unsigned release AAB
         working-directory: android
-        run: bash gradlew assembleDebug assembleRelease bundleRelease assembleDebugAndroidTest --no-daemon
+        run: bash gradlew :app:assembleDebug :app:assembleRelease :app:bundleRelease :app:assembleDebugAndroidTest --no-daemon
       - name: Scan packaged assets and record sizes
         run: |
           mkdir -p .data/apk-inspection
