@@ -1,3 +1,4 @@
+import { publicDataFetch, rememberPublicResponse } from "../public-response-cache";
 import { playerPeriodComparisonSchema, type PlayerPeriodComparison } from "../../domain/player-period-comparison";
 
 export interface PlayerPeriodComparisonReader {
@@ -6,7 +7,7 @@ export interface PlayerPeriodComparisonReader {
 
 export class HttpPlayerPeriodComparisonRepository implements PlayerPeriodComparisonReader {
   constructor(private readonly baseUrl: string,
-    private readonly fetcher: typeof fetch = (input, init) => fetch(input, init)) {}
+    private readonly fetcher: typeof fetch = publicDataFetch) {}
 
   async find(playerId: string): Promise<PlayerPeriodComparison | null> {
     const url = new URL("api/npb/analysis", this.baseUrl.endsWith("/") ? this.baseUrl : `${this.baseUrl}/`);
@@ -16,6 +17,7 @@ export class HttpPlayerPeriodComparisonRepository implements PlayerPeriodCompari
     if (!response.ok) throw new Error(`Player Analysis HTTP ${response.status}`);
     const value = playerPeriodComparisonSchema.parse(await response.json());
     if (value.player.id !== playerId) throw new Error("Player Analysis identity mismatch");
+    await rememberPublicResponse(response);
     return value;
   }
 }

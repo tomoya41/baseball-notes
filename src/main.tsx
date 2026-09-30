@@ -4,9 +4,11 @@ import { HashRouter } from "react-router-dom";
 import { App } from "./ui/App";
 import { services } from "./app/services";
 import { installAndroidBackHandler } from "./app/android-back";
+import { installPlatformRuntime } from "./app/platform";
 import "./ui/styles.css";
 
 void installAndroidBackHandler();
+void installPlatformRuntime().catch(() => undefined);
 const root = document.getElementById("root");
 if (!root) throw new Error("App root missing");
 ReactDOM.createRoot(root).render(

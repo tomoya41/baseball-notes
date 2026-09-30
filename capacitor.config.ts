@@ -1,8 +1,9 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
-  appId: "jp.baseballdata.app",
+  appId: "com.tomoya41.baseballnotes",
   appName: "Baseball Notes",
-  webDir: "dist",
+  webDir: ".data/android-web",
+  plugins: { SystemBars: { insetsHandling: "native" } },
 };
 export default config;

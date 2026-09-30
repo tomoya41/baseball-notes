@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { validStaticPayload } from "../domain/mlb-historical-public";
 import { japaneseHistoricalPayload } from "../domain/mlb-japanese-display";
+import { publicAssetBase } from "../app/platform";
+import { publicDataFetch, rememberPublicResponse } from "../app/mobile-services";
 
-const base = `${import.meta.env.BASE_URL}data/mlb/historical/`;
+const base = `${publicAssetBase()}data/mlb/historical/`;
 export function useHistoricalStatic<T>(path: string | null) {
   const [state, setState] = useState<{ path: string | null; status: "loading" | "ready" | "missing" | "error"; value: T | null }>({
     path: null, status: "loading", value: null,
@@ -10,7 +12,7 @@ export function useHistoricalStatic<T>(path: string | null) {
   useEffect(() => {
     if (!path) return;
     let active = true;
-    void fetch(`${base}${path}.gz`).then(async response => {
+    void publicDataFetch(`${base}${path}.gz`).then(async response => {
       if (!active) return;
       if (response.status === 404) { setState({ path, status: "missing", value: null }); return; }
       if (!response.ok) throw new Error(`MLB payload ${response.status}`);
@@ -20,6 +22,7 @@ export function useHistoricalStatic<T>(path: string | null) {
         : new TextDecoder().decode(bytes);
       const value = JSON.parse(text) as T;
       if (!validStaticPayload(path, value)) throw new Error("Invalid MLB public payload");
+      await rememberPublicResponse(response);
       if (active) setState({ path, status: "ready", value: japaneseHistoricalPayload(path, value) });
     }).catch(() => { if (active) setState({ path, status: "error", value: null }); });
     return () => { active = false; };

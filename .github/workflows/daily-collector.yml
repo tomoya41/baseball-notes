@@ -207,3 +207,13 @@ jobs:
           TARGET_DATE: ${{ needs.collect.outputs.date }}
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+      - name: Optional published EOD favorite notifications
+        if: vars.NPB_DAY_FACTS_ENABLED == 'true' && (github.event_name == 'schedule' || inputs.mode == 'ingest')
+        continue-on-error: true
+        run: npx tsx scripts/send-eod-notifications.ts
+        env:
+          TARGET_DATE: ${{ needs.collect.outputs.date }}
+          NPB_NOTIFICATIONS_ENABLED: ${{ vars.NPB_NOTIFICATIONS_ENABLED }}
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}

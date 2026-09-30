@@ -1,16 +1,15 @@
+import { publicDataFetch, rememberPublicResponse } from "../public-response-cache";
 import type { StandingsRepository, Standing } from "../../domain/standings";
 import { npbLatestStandingsSchema, standingsPayloadSchema, type NpbLatestStandings } from "../../domain/standings";
 
 type SmallCache = Pick<Storage, "getItem" | "setItem">;
-function browserCache(): SmallCache | null {
-  try { return globalThis.localStorage ?? null; } catch { return null; }
-}
+function browserCache(): SmallCache | null { return null; }
 
 // The app reads our generated payload, never the original baseball source or a DB token.
 export class StaticStandingsRepository implements StandingsRepository {
   constructor(
     private readonly baseUrl: string,
-    private readonly request: typeof fetch = (input, init) => fetch(input, init),
+    private readonly request: typeof fetch = publicDataFetch,
     private readonly npbBaseUrl = baseUrl,
     private readonly cache: SmallCache | null = browserCache(),
   ) {}
@@ -21,6 +20,7 @@ export class StaticStandingsRepository implements StandingsRepository {
     if (!response.ok) throw new Error(`Standings payload HTTP ${response.status}`);
     const payload = standingsPayloadSchema.parse(await response.json() as unknown);
     if (payload.league !== league || payload.throughDate !== date) throw new Error("Standings payload identity mismatch");
+    await rememberPublicResponse(response);
     return payload.standings;
   }
   async findLatestNpb(): Promise<NpbLatestStandings | null> {
@@ -38,6 +38,7 @@ export class StaticStandingsRepository implements StandingsRepository {
       const payload = npbLatestStandingsSchema.parse(await response.json() as unknown);
       if (cached && cached.throughDate > payload.throughDate) return cached;
       try { this.cache?.setItem(cacheKey, JSON.stringify(payload)); } catch { /* The remote payload remains usable. */ }
+      await rememberPublicResponse(response);
       return payload;
     } catch (error) {
       if (cached) return cached;

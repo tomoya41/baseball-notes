@@ -102,6 +102,10 @@ small { font-size: var(--type-caption); }
 .subtle-label { color: var(--color-muted); font-size: var(--type-caption); white-space: nowrap; }
 .inline-note { color: var(--color-muted); font-size: .8rem; margin: var(--space-2) 0; }
 .app-shell { width: min(100%, 820px); min-height: 100dvh; margin: auto; padding: 0 var(--space-4) calc(96px + env(safe-area-inset-bottom)); }
+.runtime-status { font-size: .85rem; padding: 10px 12px; background: var(--color-elevated); border-radius: 8px; }
+.notification-settings { padding: 16px 0; border-bottom: 1px solid var(--color-border); }
+.notification-settings p { font-size: .85rem; }
+.notification-settings .button { min-height: 44px; margin-bottom: 12px; }
 .skip-link { position: fixed; top: -100px; left: var(--space-4); z-index: 20; padding: var(--space-3); background: var(--brand-strong); color: white; }
 .skip-link:focus { top: var(--space-4); }
 .app-header { display: flex; align-items: center; justify-content: space-between; height: calc(72px + env(safe-area-inset-top)); padding-top: env(safe-area-inset-top); border-bottom: 1px solid var(--color-border); }

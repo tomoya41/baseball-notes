@@ -1,0 +1,81 @@
+name: Android beta build and release quality
+on:
+  push:
+    branches: [main, "codex/**"]
+    paths: ["android/**", "src/**", "scripts/prepare-android-web.ts", "scripts/scan-release-assets.ts", "package*.json", "capacitor.config.ts", ".github/workflows/android-beta.yml"]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      emulator:
+        description: Run Android 36 emulator smoke and performance tests
+        type: boolean
+        default: true
+permissions:
+  contents: read
+concurrency:
+  group: android-beta-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  build:
+    if: github.event.repository.private == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@v7
+        with: { node-version-file: .nvmrc, cache: npm }
+      - uses: actions/setup-java@v5
+        with: { distribution: temurin, java-version: "21" }
+      - run: npm ci
+      - run: npm run check
+      - run: npx tsx scripts/prepare-android-web.ts && npx cap sync android
+      - run: npx tsx scripts/scan-release-assets.ts .data/android-web
+      - name: Debug APK and unsigned release AAB
+        working-directory: android
+        run: bash gradlew assembleDebug assembleRelease bundleRelease assembleDebugAndroidTest --no-daemon
+      - name: Scan packaged assets and record sizes
+        run: |
+          mkdir -p .data/apk-inspection
+          unzip -q android/app/build/outputs/apk/debug/app-debug.apk 'assets/*' -d .data/apk-inspection
+          npx tsx scripts/scan-release-assets.ts .data/apk-inspection
+          find android/app/build/outputs -name '*.apk' -o -name '*.aab' | xargs stat --format='%n %s bytes'
+          unzip -l android/app/build/outputs/apk/debug/app-debug.apk | grep -E '\.so$' || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-beta-unsigned
+          path: |
+            android/app/build/outputs/apk/debug/*.apk
+            android/app/build/outputs/apk/release/*.apk
+            android/app/build/outputs/bundle/release/*.aab
+            android/app/build/outputs/apk/androidTest/debug/*.apk
+          retention-days: 7
+  emulator:
+    needs: build
+    if: github.event_name == 'workflow_dispatch' && inputs.emulator
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+        with: { persist-credentials: false }
+      - uses: actions/download-artifact@v4
+        with: { name: android-beta-unsigned, path: artifacts }
+      - name: Enable KVM on free Linux runner
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
+        with:
+          api-level: 36
+          arch: x86_64
+          profile: pixel_2
+          target: google_apis
+          disable-animations: true
+          script: bash scripts/android-emulator-smoke.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: android-emulator-evidence
+          path: .data/android-emulator
+          retention-days: 7

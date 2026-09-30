@@ -1,13 +1,12 @@
+import { publicDataFetch, rememberPublicResponse } from "../public-response-cache";
 import { npbPlayerDirectorySchema, type NpbPlayerDirectory } from "../../domain/npb-player-directory";
 
 type SmallCache = Pick<Storage, "getItem" | "setItem">;
-function browserCache(): SmallCache | null {
-  try { return globalThis.localStorage ?? null; } catch { return null; }
-}
+function browserCache(): SmallCache | null { return null; }
 
 export class StaticPlayerDirectoryRepository {
   constructor(private readonly baseUrl: string,
-    private readonly request: typeof fetch = (input, init) => fetch(input, init),
+    private readonly request: typeof fetch = publicDataFetch,
     private readonly cache: SmallCache | null = browserCache()) {}
 
   async findLatestNpb(): Promise<NpbPlayerDirectory> {
@@ -24,6 +23,7 @@ export class StaticPlayerDirectoryRepository {
       const value = npbPlayerDirectorySchema.parse(await response.json() as unknown);
       if (cached && cached.generatedAt > value.generatedAt) return cached;
       try { this.cache?.setItem(cacheKey, JSON.stringify(value)); } catch { /* Remote result remains usable. */ }
+      await rememberPublicResponse(response);
       return value;
     } catch (error) {
       if (cached) return cached;

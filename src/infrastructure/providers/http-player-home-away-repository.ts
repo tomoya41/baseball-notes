@@ -1,8 +1,9 @@
+import { publicDataFetch, rememberPublicResponse } from "../public-response-cache";
 import { playerHomeAwaySchema, type PlayerHomeAway } from "../../domain/player-home-away";
 
 export class HttpPlayerHomeAwayRepository {
   constructor(private readonly baseUrl: string,
-    private readonly fetcher: typeof fetch = (input, init) => fetch(input, init)) {}
+    private readonly fetcher: typeof fetch = publicDataFetch) {}
 
   async find(playerId: string): Promise<PlayerHomeAway | null> {
     const url = new URL("api/npb/home-away", this.baseUrl.endsWith("/") ? this.baseUrl : `${this.baseUrl}/`);
@@ -12,6 +13,7 @@ export class HttpPlayerHomeAwayRepository {
     if (!response.ok) throw new Error(`Player Home/Away HTTP ${response.status}`);
     const value = playerHomeAwaySchema.parse(await response.json());
     if (value.player.id !== playerId) throw new Error("Player Home/Away identity mismatch");
+    await rememberPublicResponse(response);
     return value;
   }
 }

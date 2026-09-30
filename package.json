@@ -16,7 +16,7 @@
     "vercel-build": "npm run build && node scripts/build-recent-api.mjs",
     "preview": "vite preview --host 127.0.0.1",
     "check": "npm run lint && npm run typecheck && npm test && npm run build",
-    "android:sync": "npm run build && cap sync android",
+    "android:sync": "npm run build && tsx scripts/prepare-android-web.ts && cap sync android",
     "android:open": "cap open android",
     "collector:import": "tsx scripts/collect-standings.ts",
     "collector:daily": "tsx scripts/collect-standings.ts --daily",
@@ -34,13 +34,17 @@
     "generate:npb:hot:diagnostic": "tsx scripts/generate-npb-hot-payload.ts",
     "monitor:npb:freshness": "tsx scripts/check-npb-freshness.ts",
     "verify:npb:remote": "tsx scripts/verify-npb-database.ts",
-    "publish:npb:remote": "tsx scripts/publish-npb-payload.ts"
+    "publish:npb:remote": "tsx scripts/publish-npb-payload.ts",
+    "android:apk": "npm run android:sync && cd android && gradlew.bat assembleDebug",
+    "android:aab": "npm run android:sync && cd android && gradlew.bat bundleRelease"
   },
   "dependencies": {
-    "@capacitor/android": "8.4.3",
-    "@capacitor/app": "^8.1.1",
-    "@capacitor/core": "8.4.3",
-    "@capacitor/preferences": "^8.0.1",
+    "@capacitor/android": "8.5.2",
+    "@capacitor/app": "8.1.1",
+    "@capacitor/browser": "8.0.4",
+    "@capacitor/core": "8.5.2",
+    "@capacitor/network": "8.0.1",
+    "@capacitor/preferences": "8.0.1",
     "@libsql/client": "^0.18.0",
     "cheerio": "^1.2.0",
     "csv-parse": "^7.0.2",
@@ -52,7 +56,7 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@capacitor/cli": "8.4.3",
+    "@capacitor/cli": "8.5.2",
     "@eslint/js": "10.0.1",
     "@types/node": "^24.13.6",
     "@types/react": "^19.3.0",

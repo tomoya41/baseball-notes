@@ -1,3 +1,4 @@
+import { publicDataFetch, rememberPublicResponse } from "../public-response-cache";
 import { playerGameLogResponseSchema, type PlayerGameLogResponse } from "../../domain/player-game-log";
 
 export interface PlayerGameLogReader {
@@ -6,7 +7,7 @@ export interface PlayerGameLogReader {
 
 export class HttpPlayerGameLogRepository implements PlayerGameLogReader {
   constructor(private readonly baseUrl: string,
-    private readonly fetcher: typeof fetch = (input, init) => fetch(input, init)) {}
+    private readonly fetcher: typeof fetch = publicDataFetch) {}
 
   async find(playerId: string, limit = 10, offset = 0): Promise<PlayerGameLogResponse | null> {
     const url = new URL("api/npb/game-log", this.baseUrl.endsWith("/") ? this.baseUrl : `${this.baseUrl}/`);
@@ -19,6 +20,7 @@ export class HttpPlayerGameLogRepository implements PlayerGameLogReader {
     const payload = playerGameLogResponseSchema.parse(await response.json());
     if (payload.playerId !== playerId || payload.limit !== limit || payload.offset !== offset)
       throw new Error("Game Log response identity mismatch");
+    await rememberPublicResponse(response);
     return payload;
   }
 }

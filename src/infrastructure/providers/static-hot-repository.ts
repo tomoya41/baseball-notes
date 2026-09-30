@@ -1,13 +1,12 @@
+import { publicDataFetch, rememberPublicResponse } from "../public-response-cache";
 import { npbHotPayloadSchema, type NpbHotPayload } from "../../application/npb-hot-payload";
 
 type SmallCache = Pick<Storage, "getItem" | "setItem">;
-function browserCache(): SmallCache | null {
-  try { return globalThis.localStorage ?? null; } catch { return null; }
-}
+function browserCache(): SmallCache | null { return null; }
 
 export class StaticHotRepository {
   constructor(private readonly baseUrl: string,
-    private readonly request: typeof fetch = (input, init) => fetch(input, init),
+    private readonly request: typeof fetch = publicDataFetch,
     private readonly cache: SmallCache | null = browserCache()) {}
 
   async findLatestNpb(): Promise<NpbHotPayload> {
@@ -25,6 +24,7 @@ export class StaticHotRepository {
       if (cached && (cached.effectiveDate > value.effectiveDate ||
         cached.effectiveDate === value.effectiveDate && cached.generatedAt > value.generatedAt)) return cached;
       try { this.cache?.setItem(cacheKey, JSON.stringify(value)); } catch { /* Remote payload is still usable. */ }
+      await rememberPublicResponse(response);
       return value;
     } catch (error) {
       if (cached) return cached;

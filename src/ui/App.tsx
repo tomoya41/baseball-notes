@@ -27,6 +27,7 @@ import { PlayerGameLogView } from "./player-game-log";
 import { NpbGameDetailScreen } from "./npb-game-detail";
 import { NpbScheduleScreen,NpbRecentGames,NpbRecordsScreen } from "./npb-game-surface";
 import { NpbSavedPlayers } from "./npb-my";
+import { NotificationSettings, PrivacyScreen, RuntimeStatus } from "./runtime-status";
 import { NpbPlayerAnalysisScreen, NpbPlayerHomeAwaySection, NpbPlayerOpponentSection,
   NpbPlayerBattingOrderSection, NpbPlayerPitcherRoleSection, NpbPlayerBatterRoleSection } from "./npb-player-analysis";
 import { NpbHotSection } from "./npb-hot";
@@ -554,12 +555,16 @@ export function App({ services }: { services: Services }) {
     : section === "players" || section === "teams" ? "search"
     : section === "favorites" ? "my" : section;
   const [favorites, setFavorites] = useState<Favorite[]>([]);
+  const [favoritesReady, setFavoritesReady] = useState(false);
+  const [refreshVersion, setRefreshVersion] = useState(0);
+  useEffect(() => { const refresh = () => setRefreshVersion(v => v + 1);
+    window.addEventListener("baseball:refresh-data", refresh); return () => window.removeEventListener("baseball:refresh-data", refresh); }, []);
   const [saving, setSaving] = useState(false);
   const [favoriteMessage, setFavoriteMessage] = useState("");
   const [favoriteError, setFavoriteError] = useState(false);
   useEffect(() => {
     let active = true;
-    void services.favorites.list().then((items) => { if (active) setFavorites(items); })
+    void services.favorites.list().then((items) => { if (active) { setFavorites(items); setFavoritesReady(true); } })
       .catch(() => { if (active) { setFavoriteMessage("お気に入りを読み込めません。保存データは保持しています。"); setFavoriteError(true); } });
     return () => { active = false; };
   }, [services]);
@@ -586,7 +591,10 @@ export function App({ services }: { services: Services }) {
     </nav>
     {favoriteMessage && <p className={`toast${favoriteError ? " toast--error" : ""}`}
       role={favoriteError ? "alert" : "status"}>{favoriteMessage}</p>}
-    <main id="main-content" tabIndex={-1}><Routes>
+    <RuntimeStatus />
+    <NotificationSettings favorites={favorites} ready={favoritesReady} visible={section === "my"} />
+    <main id="main-content" tabIndex={-1}><Routes key={refreshVersion}>
+      <Route path="/privacy" element={<PrivacyScreen />} />
       <Route path="/NPB/games/:gameId" element={<NpbGameDetailScreen key={location.pathname} repository={services.gameDetail} />} />
       <Route path="/NPB/*" element={<LeagueView key="NPB" league="NPB" services={services}
         favorites={favorites} toggle={toggle} saving={saving} />} />

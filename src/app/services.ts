@@ -16,16 +16,16 @@ import { HttpPlayerPeriodComparisonRepository } from "../infrastructure/provider
 import { HttpPlayerHomeAwayRepository } from "../infrastructure/providers/http-player-home-away-repository";
 import { HttpPlayerOpponentRepository } from "../infrastructure/providers/http-player-opponent-repository";
 import { HttpPlayerAnalysisBundleRepository } from "../infrastructure/providers/http-player-analysis-bundle-repository";
-import { Capacitor } from "@capacitor/core";
+import { publicAssetBase } from "./platform";
 import { StaticGameSurfaceRepository } from "../infrastructure/providers/static-game-surface-repository";
 import { StaticLeagueAvailabilityRepository } from "../infrastructure/providers/static-league-availability-repository";
 
 // Composition root: replace adapters here, never inside a screen.
 const npbDataBaseUrl = import.meta.env.VITE_NPB_DATA_BASE_URL?.trim() ||
-  (Capacitor.isNativePlatform() ? "https://tomoya41.github.io/baseball-notes/" : import.meta.env.BASE_URL);
+  publicAssetBase();
 
 export const services = {
-  leagueAvailability: new StaticLeagueAvailabilityRepository(import.meta.env.BASE_URL),
+  leagueAvailability: new StaticLeagueAvailabilityRepository(publicAssetBase()),
   players: new PlayerRepository(new SampleProvider(), new IndexedDbCache()),
   analysis: new UnavailableAnalysisProvider(foundationAnalysisCapabilities) as AnalysisProvider,
   watch: new UnavailableWatchProvider(),

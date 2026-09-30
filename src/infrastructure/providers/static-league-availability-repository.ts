@@ -1,3 +1,4 @@
+import { publicDataFetch, rememberPublicResponse } from "../public-response-cache";
 import { leagueSchema } from "../../domain/models";
 import type { League } from "../../domain/models";
 import { leagueAvailabilitySchema } from "../../domain/league-availability";
@@ -6,7 +7,7 @@ import type { LeagueAvailabilityRepository } from "../../application/league-avai
 
 export class StaticLeagueAvailabilityRepository implements LeagueAvailabilityRepository {
   private readonly pending = new Map<League, Promise<LeagueAvailability>>();
-  constructor(private readonly baseUrl: string, private readonly request: typeof fetch = (u, i) => fetch(u, i)) {}
+  constructor(private readonly baseUrl: string, private readonly request: typeof fetch = publicDataFetch) {}
 
   find(league: League): Promise<LeagueAvailability> {
     leagueSchema.parse(league);
@@ -22,6 +23,7 @@ export class StaticLeagueAvailabilityRepository implements LeagueAvailabilityRep
     if (!response.ok) throw new Error(`League availability HTTP ${response.status}`);
     const value = leagueAvailabilitySchema.parse(await response.json() as unknown);
     if (value.league !== league) throw new Error("League availability mismatch");
+    await rememberPublicResponse(response);
     return value;
   }
 }
