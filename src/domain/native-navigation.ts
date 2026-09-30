@@ -7,7 +7,7 @@ export function canonicalDeepLink(input: string): string | null {
     const route = uri.protocol === "baseballnotes:" ? `/${uri.hostname}${uri.pathname}` :
       uri.hash.startsWith("#/") ? uri.hash.slice(1) : uri.pathname.replace(/^\/baseball-notes/, "");
     const [leagueRaw, resource, encoded, child, ...extra] = route.split("?")[0]!.replace(/^\//, "").split("/");
-    if (extra.length || (child && !["analysis", "game-log"].includes(child))) return null;
+    if (extra.length || (child && !["analysis", "game-log", "stats", "more"].includes(child))) return null;
     const league = leagueRaw?.toUpperCase();
     const kind = resource === "players" ? "player" : resource === "games" ? "game" : undefined;
     const parsed = canonicalEntityRefSchema.safeParse({ league, kind, id: decodeURIComponent(encoded ?? "") });

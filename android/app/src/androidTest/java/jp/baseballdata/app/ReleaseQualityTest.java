@@ -42,7 +42,8 @@ public class ReleaseQualityTest {
         scenario.onActivity(activity -> activity.getOnBackPressedDispatcher().onBackPressed());
         Thread.sleep(300); assertEquals("false", js("document.getElementById('qatest').open"));
         scenario.onActivity(activity -> activity.getOnBackPressedDispatcher().onBackPressed());
-        waitText("今日の野球");
+        waitText("野球がある、毎日。");
+        assertTrue("Back returns to the league Home", js("location.hash").contains("/NPB/home"));
         shell("svc wifi disable"); shell("svc data disable");
         js("location.hash='#/MLB/sources'"); waitText("Retrosheet"); waitText("Chadwick");
         shell("svc wifi enable"); shell("svc data enable");

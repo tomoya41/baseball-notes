@@ -1,0 +1,35 @@
+import { Link, useLocation, useParams } from "react-router-dom";
+import type { League } from "../domain/models";
+import { CalendarDays, ArrowLeftRight, GraduationCap, Trophy, ScanLine, ChevronRight } from "lucide-react";
+import { PageHeading } from "./components";
+
+import { futureSections } from "../presentation/future-features";
+import type { FutureSection } from "../presentation/future-features";
+export function FutureFeatureScreen({ feature, league }: { feature: FutureSection; league: League }) {
+  const value = futureSections[feature], { playerId } = useParams(), location = useLocation();
+  const base = playerId && ["career", "advanced"].includes(feature) ? `/${league}/players/${encodeURIComponent(playerId)}/${feature}` : `/${league}/${feature}`;
+  const params = new URLSearchParams(location.search), tab = Number(params.get("tab") ?? 0);
+  return <div className="screen"><Link className="back-link" to={playerId ? `/${league}/players/${encodeURIComponent(playerId)}` : `/${league}/explore`}>← {playerId ? "選手ページ" : "野球をもっと知る"}</Link>
+    <PageHeading eyebrow={`${league} · 今後の機能`} title={value.title} detail={value.detail} />
+    <nav className="profile-tabs" aria-label={`${value.title}の表示切替`}>{value.tabs.map((label,index) => <Link key={label} to={`${base}?tab=${index}`} aria-current={tab === index ? "page" : undefined}>{label}</Link>)}</nav>
+    <section className="coming-soon" aria-labelledby="future-title"><span className="coming-label">COMING SOON</span><h2 id="future-title">準備ができたら、ここに。</h2><p>{value.requirement}</p><p className="inline-note">現在、この機能のデータは表示していません。</p>
+      <Link className="button button--secondary" to={playerId ? `/${league}/players/${encodeURIComponent(playerId)}/analysis` : `/${league}/home`}>{playerId ? "現在使える分析を見る" : "ホームへ戻る"}</Link>
+    </section></div>;
+}
+export function ExploreScreen({ league }: { league: League }) {
+  return <div className="screen"><PageHeading eyebrow={`${league} · EXPLORE`} title="野球をもっと知る" detail="試合、記録、選手の歩み。気になることから。" />
+    <div className="explore-groups">{[
+      { title: "試合を楽しむ", icon: CalendarDays, rows: [{ to: "schedule", label: "日程・結果", detail: league === "MLB" ? "収録済みの歴史を振り返る" : "保存済みの試合を振り返る", soon: false }, { to: "preseason", label: "オープン戦", detail: "公式戦とは別のシーズン前データ", soon: true }, { to: "watch", label: "WATCH", detail: "観戦のおともに", soon: true }] },
+      { title: "記録を知る", icon: Trophy, rows: [{ to: "records", label: "シーズン記録", detail: "成績と集計状態を確認", soon: false }, { to: "milestones", label: "達成記録", detail: "シーズン・キャリアの節目", soon: true }] },
+      { title: "選手の歩み", icon: ArrowLeftRight, rows: [{ to: "moves", label: "選手移動・FA・Posting", detail: "所属と登録の変化をたどる", soon: true }, { to: "talent", label: "ドラフト・プロスペクト", detail: "次の世代を探す", soon: true }] },
+      { title: "対戦を深く見る", icon: ScanLine, rows: [{ to: league === "MLB" ? "search?focus=japan" : "matchup", label: "MATCHUP", detail: league === "MLB" ? "選手の「分析」から実対戦成績へ" : "打者と投手の対戦を知る", soon: league === "NPB" }] },
+    ].map(group => <section className="surface-card" key={group.title}><h2 className="icon-heading"><group.icon size={19} aria-hidden="true" />{group.title}</h2><div className="explore-list">{group.rows.map(row => <Link key={row.to} to={`/${league}/${row.to}`}><span><strong>{row.label}</strong><small>{row.detail}</small></span>{row.soon && <span className="soon-badge">Coming Soon</span>}<ChevronRight size={17} aria-hidden="true" /></Link>)}</div></section>)}</div>
+    <p className="inline-note">キャリアや高度分析は、各選手ページから利用します。</p></div>;
+}
+export function PlayerFutureLinks({ base, historical = false }: { base: string; historical?: boolean }) {
+  return <details className="future-player-tools"><summary><GraduationCap size={17} aria-hidden="true" />選手の歩み・これからの分析</summary><div className="explore-list">
+    {!historical && <Link to={`${base}/career`}><span><strong>キャリア・過去シーズン</strong><small>年ごとの成績と収録期間合計</small></span><span className="soon-badge">Coming Soon</span></Link>}
+    {!historical && <Link to={`${base}/advanced`}><span><strong>対戦・高度分析</strong><small>Direct BvPと状況別の成績</small></span><span className="soon-badge">Coming Soon</span></Link>}
+    <Link to={`/${historical ? "MLB" : "NPB"}/milestones`}><span><strong>達成記録</strong><small>確認済み記録の節目をたどる</small></span><span className="soon-badge">Coming Soon</span></Link>
+  </div></details>;
+}

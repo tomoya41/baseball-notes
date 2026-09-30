@@ -9,7 +9,7 @@ const labels: Record<string, string> = { "inning:1–3": "1〜3回", "inning:4�
   "outs:0": "0アウト", "outs:1": "1アウト", "outs:2": "2アウト", "bases:empty": "走者なし", "bases:runners": "走者あり", "bases:risp": "得点圏に走者",
   "score:ahead": "リード", "score:tied": "同点", "score:behind": "ビハインド" };
 export function PaMetricTable({ metrics, pitching = false }: { metrics: PaAnalysisLine; pitching?: boolean }) {
-  return <><p>{metrics.PA} PA · {metrics.H} 安打 · {metrics.HR} 本塁打 · {pitching ? "被打率" : "AVG"} {metrics.AVG?.toFixed(3) ?? "—"}</p>
+  return <><div className="metric-grid metric-primary-grid">{(["PA","H","HR","AVG","OBP","OPS"] as const).map(key => <div className="metric-tile" key={key}><span className="metric-tile__label">{key === "AVG" && pitching ? "被打率" : key === "PA" ? "対戦打席" : key}</span><strong className="metric-tile__value">{metrics[key] === null ? "—" : ["AVG","OBP","OPS"].includes(key) ? metrics[key].toFixed(3) : metrics[key]}</strong></div>)}</div>
     <details><summary>対戦打撃成績の詳細</summary><div className="mlb-stat-scroll"><table>
       <thead><tr>{Object.keys(metrics).map(key => <th key={key}>{key}</th>)}</tr></thead><tbody><tr>{Object.entries(metrics).map(([key, value]) =>
         <td key={key}>{value === null ? "—" : ["AVG", "OBP", "SLG", "OPS"].includes(key) ? value.toFixed(3) : value}</td>)}</tr></tbody>

@@ -1,5 +1,9 @@
 # Durable Decisions
 
+## 2026-09-30: Android-first contextual navigation
+
+The user authorized a zero-based UI redesign, superseding earlier visual layouts. Home/Games/Players/Records/My are the five primary destinations; Analysis is contextual to a Player. Upcoming capabilities use purpose-specific routes under Explore or Profile, never mock metrics or dominant Home placeholders. Retain canonical hash routes, league isolation and native Back/deep links. Theme preferences share the native/Web preference adapter. Verified Japanese MLB discovery is small reviewed CC0 identity metadata, separate from statistics and membership. No data migration or Production Gate change; reverting UI commits restores the previous presentation. See `docs/ui-redesign.md`.
+
 This file records decisions that should survive individual implementation tasks.
 
 ## 2026-09-26 — Verified NPB Player Master and compact static Profile

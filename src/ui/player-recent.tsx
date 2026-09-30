@@ -2,15 +2,16 @@ import { ChevronRight } from "lucide-react";
 import type { PlayerRecentResponse, RecentPeriod } from "../domain/player-recent";
 import { formatDate } from "../presentation/formatters";
 import { formatRecentMetric } from "../presentation/recent-formatter";
-import { DataState, LoadingSkeleton, SectionHeader } from "./components";
+import { DataState, LoadingSkeleton, SectionHeader, MetricInfo } from "./components";
+import { metrics } from "../domain/metrics";
 
 type PeriodStats = NonNullable<PlayerRecentResponse["batting"]>;
 type RecentState = "loading" | "ready" | "missing" | "error";
 
-const battingPrimary = ["G", "PA", "AVG", "OBP", "SLG", "OPS", "H", "HR", "RBI", "BB", "SO"] as const;
-const battingDetail = ["AB", "R", "2B", "3B", "HBP", "SH", "SF", "SB", "CS"] as const;
-const pitchingPrimary = ["G", "GS", "outsRecorded", "ERA", "SO", "K9", "BF", "H", "HR", "R", "ER", "pitchCount"] as const;
-const pitchingDetail = ["W", "L", "HLD", "SV"] as const;
+const battingPrimary = ["OPS", "AVG", "HR", "RBI", "PA", "H"] as const;
+const battingDetail = ["G", "AB", "R", "2B", "3B", "OBP", "SLG", "BB", "HBP", "SH", "SF", "SO", "SB", "CS"] as const;
+const pitchingPrimary = ["ERA", "K9", "outsRecorded", "SO", "G", "GS"] as const;
+const pitchingDetail = ["BF", "H", "HR", "R", "ER", "pitchCount", "W", "L", "HLD", "SV"] as const;
 const periodOptions: { id: RecentPeriod; label: string; accessible: string }[] = [
   { id: "7d", label: "7日", accessible: "直近7日" },
   { id: "14d", label: "14日", accessible: "直近14日" },
@@ -25,7 +26,7 @@ const labels: Record<string, string> = { G: "試合", PA: "打席", AB: "打数"
 
 export function StatTiles({ stats, keys, labelOverrides = {} }: { stats: PeriodStats; keys: readonly string[]; labelOverrides?: Record<string,string> }) {
   return <div className="metric-grid recent-metrics">{keys.map((key) => <div className="metric-tile" key={key}>
-    <span className="metric-tile__label">{labelOverrides[key] ?? labels[key] ?? key}</span>
+    <span className="metric-tile__label">{labelOverrides[key] ?? labels[key] ?? key}{["AVG", "OPS", "ERA", "K9", "outsRecorded"].includes(key) && metrics[key === "outsRecorded" ? "outs" : key.toLowerCase()] && <MetricInfo definition={metrics[key === "outsRecorded" ? "outs" : key.toLowerCase()]!} />}</span>
     <strong className="metric-tile__value">{formatRecentMetric(key, stats.metrics[key])}</strong>
   </div>)}</div>;
 }
@@ -72,7 +73,7 @@ export function PlayerRecentView({ period, onPeriodChange, payload, state, noFac
       {payload.pitching && <div className="recent-group"><h3>投球</h3>
         <StatTiles stats={payload.pitching} keys={pitchingPrimary} />
         <CoverageNote stats={payload.pitching} period={period} />
-        <details className="advanced-disclosure"><summary>勝敗・セーブ<ChevronRight size={18} aria-hidden="true" /></summary>
+        <details className="advanced-disclosure"><summary>詳細成績・勝敗<ChevronRight size={18} aria-hidden="true" /></summary>
           <StatTiles stats={payload.pitching} keys={pitchingDetail} /></details>
       </div>}
     </>}

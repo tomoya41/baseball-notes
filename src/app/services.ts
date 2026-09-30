@@ -1,11 +1,5 @@
-import { PlayerRepository } from "../application/player-repository";
 import { Favorites } from "../application/favorites";
-import { SampleProvider } from "../infrastructure/providers/sample-provider";
-import { UnavailableAnalysisProvider } from "../infrastructure/providers/unavailable-analysis-provider";
-import { UnavailableWatchProvider } from "../infrastructure/providers/unavailable-watch-provider";
-import type { AnalysisProvider } from "../application/ports";
-import { foundationAnalysisCapabilities } from "./analysis-policy";
-import { IndexedDbCache, PreferenceStore } from "../infrastructure/storage";
+import { PreferenceStore } from "../infrastructure/storage";
 import { StaticStandingsRepository } from "../infrastructure/providers/static-standings-repository";
 import { StaticHotRepository } from "../infrastructure/providers/static-hot-repository";
 import { StaticPlayerDirectoryRepository } from "../infrastructure/providers/static-player-directory-repository";
@@ -19,6 +13,7 @@ import { HttpPlayerAnalysisBundleRepository } from "../infrastructure/providers/
 import { publicAssetBase } from "./platform";
 import { StaticGameSurfaceRepository } from "../infrastructure/providers/static-game-surface-repository";
 import { StaticLeagueAvailabilityRepository } from "../infrastructure/providers/static-league-availability-repository";
+import { StaticNpbProductRepository } from "../infrastructure/providers/static-npb-product-repository";
 
 // Composition root: replace adapters here, never inside a screen.
 const npbDataBaseUrl = import.meta.env.VITE_NPB_DATA_BASE_URL?.trim() ||
@@ -26,12 +21,10 @@ const npbDataBaseUrl = import.meta.env.VITE_NPB_DATA_BASE_URL?.trim() ||
 
 export const services = {
   leagueAvailability: new StaticLeagueAvailabilityRepository(publicAssetBase()),
-  players: new PlayerRepository(new SampleProvider(undefined, publicAssetBase()), new IndexedDbCache()),
-  analysis: new UnavailableAnalysisProvider(foundationAnalysisCapabilities) as AnalysisProvider,
-  watch: new UnavailableWatchProvider(),
   standings: new StaticStandingsRepository(import.meta.env.BASE_URL, undefined, npbDataBaseUrl),
   hot: new StaticHotRepository(npbDataBaseUrl),
   directory: new StaticPlayerDirectoryRepository(npbDataBaseUrl),
+  product: new StaticNpbProductRepository(npbDataBaseUrl),
   gameSurface: new StaticGameSurfaceRepository(npbDataBaseUrl),
   recent: new HttpPlayerRecentRepository(import.meta.env.VITE_NPB_PLAYER_API_BASE_URL?.trim() || "https://baseball-notes-recent.vercel.app/"),
   gameLog: new HttpPlayerGameLogRepository(import.meta.env.VITE_NPB_PLAYER_API_BASE_URL?.trim() || "https://baseball-notes-recent.vercel.app/"),

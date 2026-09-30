@@ -27,6 +27,7 @@ export function NpbScheduleScreen({repository}:{repository:GameSurfaceReader}){
     void repository.date(date).then(v=>{if(active){setPayload(v);setState("ready");}}).catch(()=>{if(active)setState("error");});return()=>{active=false;};},[date,manifest,repository]);
   const change=(next:string)=>{setState("loading");setPayload(null);setParams({date:next});};
   return <div className="screen game-schedule"><PageHeading eyebrow="NPB" title="日程・結果" detail="保存済みの試合予定と結果。速報ではありません。"/>
+    <nav className="profile-tabs" aria-label="試合の種類"><Link to="/NPB/schedule" aria-current="page">公式戦</Link><Link to="/NPB/preseason">オープン戦 <span className="soon-badge">Soon</span></Link></nav>
     {manifest&&date&&<div className="surface-date-nav"><button disabled={date<=manifest.from} onClick={()=>change(shiftGameDate(date,-1))}>前日</button>
       <label>試合日<input type="date" aria-label="試合日" min={manifest.from} max={manifest.to} value={date} onChange={e=>{if(e.target.value)change(e.target.value);}}/></label>
       <button disabled={date>=manifest.to} onClick={()=>change(shiftGameDate(date,1))}>翌日</button></div>}
@@ -51,6 +52,6 @@ export function RecordsView({payload}:{payload:NpbRecords}){return <><p>2026シ�
 export function NpbRecordsScreen({repository}:{repository:GameSurfaceReader}){
   const [payload,setPayload]=useState<NpbRecords|null>(null),[error,setError]=useState(false);
   useEffect(()=>{let active=true;void repository.records().then(v=>{if(active)setPayload(v);}).catch(()=>{if(active)setError(true);});return()=>{active=false;};},[repository]);
-  return <div className="screen"><PageHeading eyebrow="NPB" title="シーズン記録"/>{error?<DataState kind="source-unavailable" title="記録データを読み込めません"/>:
+  return <div className="screen"><PageHeading eyebrow="NPB" title="シーズン記録"/><nav className="profile-tabs" aria-label="記録の種類"><Link to="/NPB/records" aria-current="page">シーズン成績</Link><Link to="/NPB/milestones">達成記録</Link></nav>{error?<DataState kind="source-unavailable" title="記録データを読み込めません"/>:
     payload?<RecordsView payload={payload}/>:<LoadingSkeleton/>}</div>;
 }

@@ -104,6 +104,8 @@ The app should change emphasis across the baseball calendar rather than present 
 
 Final navigation may evolve during UI design, but the information architecture should support:
 
+Implemented redesign (2026-09-30): Home / Games / Players / Records / My. Player-context tabs contain Analysis; Explore and Profile contain structured future destinations marked Coming Soon. MLB emphasizes verified Japanese-player discovery within its imported historical scope. See `docs/ui-redesign.md`. This supersedes prior screen/card layouts, not data capabilities or source rights.
+
 - Home
 - Hot / Rankings
 - Players
