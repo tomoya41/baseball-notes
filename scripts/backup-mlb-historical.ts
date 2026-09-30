@@ -14,6 +14,8 @@ const hash = (input: Uint8Array | string) => createHash("sha256").update(input).
 const quote = (name: string) => `"${name.replaceAll('"', '""')}"`;
 await mkdir(destination, { recursive: true });
 const client = openDataClient(`file:${original}`);
+const paTable = await client.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='mlb_historical_plate_appearances'");
+if (paTable.rows.length) tables.push("mlb_historical_plate_appearances", "mlb_historical_pa_games");
 const sql = await client.execute(`SELECT sql FROM sqlite_master WHERE sql IS NOT NULL AND type IN ('table','index')
   AND name NOT LIKE 'sqlite_%' ORDER BY CASE type WHEN 'table' THEN 0 ELSE 1 END,name`);
 const schema = sql.rows.map(row => `${row.sql};`).join("\n") + "\n";
@@ -24,11 +26,17 @@ for (const table of tables) {
   const countResult = await client.execute(`SELECT COUNT(*) AS n FROM ${quote(table)}`);
   const count = Number(countResult.rows[0]?.n);
   const chunks = [];
-  for (let offset = 0; offset < count; offset += 250) {
-    const result = await client.execute(`SELECT * FROM ${quote(table)} ORDER BY rowid LIMIT 250 OFFSET ${offset}`);
+  const pa = table === "mlb_historical_plate_appearances", size = pa ? 2000 : 250;
+  let lastGame = "", lastSequence = 0;
+  for (let offset = 0; offset < count; offset += size) {
+    // PA uses WITHOUT ROWID and keyset paging; no million-row OFFSET scans.
+    const result = pa ? await client.execute({ sql: `SELECT * FROM ${quote(table)}
+      WHERE (gameId,sequence)>(?,?) ORDER BY gameId,sequence LIMIT ?`, args: [lastGame, lastSequence, size] }) :
+      await client.execute(`SELECT * FROM ${quote(table)} ORDER BY rowid LIMIT ${size} OFFSET ${offset}`);
+    if (pa) { lastGame = String(result.rows.at(-1)?.gameId); lastSequence = Number(result.rows.at(-1)?.sequence); }
     const content = result.rows.map(row => JSON.stringify(row)).join("\n") + "\n";
     const compressed = gzipSync(Buffer.from(content));
-    const file = `${table}-${String(offset / 250).padStart(4, "0")}.jsonl.gz`;
+    const file = `${table}-${String(offset / size).padStart(4, "0")}.jsonl.gz`;
     await writeFile(join(destination, file), compressed);
     chunks.push({ file, sha256: hash(compressed), rows: result.rows.length });
   }
@@ -70,7 +78,15 @@ const restoredSeasons = await restore.execute("SELECT season,COUNT(*) AS games F
 const restoredReleases = await restore.execute("SELECT season,games FROM mlb_historical_releases ORDER BY season");
 if (JSON.stringify(restoredSeasons.rows) !== JSON.stringify(restoredReleases.rows))
   throw new Error("Restored Season repository readback failed");
+let representativePa: unknown = null;
+if (paTable.rows.length) {
+  const restoredPa = await restore.execute("SELECT * FROM mlb_historical_plate_appearances ORDER BY gameId,sequence LIMIT 1");
+  const source = openDataClient(`file:${original}`);
+  const originalPa = await source.execute("SELECT * FROM mlb_historical_plate_appearances ORDER BY gameId,sequence LIMIT 1");
+  if (!restoredPa.rows.length || JSON.stringify(restoredPa.rows) !== JSON.stringify(originalPa.rows)) throw new Error("Restored PA readback mismatch");
+  representativePa = restoredPa.rows[0]; source.close();
+}
 restore.close();
 console.log(JSON.stringify({ backup: destination, scratch, tables: manifest.tables.map(item => ({ name: item.name, count: item.count })),
   representativeGame: representative.rows[0]?.game_id, representativePlayer: restoredPlayer.rows[0]?.player_id,
-  seasons: restoredSeasons.rows, schemaSha256: manifest.schemaSha256 }));
+  seasons: restoredSeasons.rows, representativePa, schemaSha256: manifest.schemaSha256 }));

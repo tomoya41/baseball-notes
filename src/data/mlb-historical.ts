@@ -68,7 +68,7 @@ const date = (value: string): string => {
 };
 
 // UUID-shaped internal IDs are derived from a versioned namespace, never exposed source keys.
-export function historicalId(kind: "game" | "player" | "team", sourceIdentity: string): string {
+export function historicalId(kind: "game" | "player" | "team" | "pa", sourceIdentity: string): string {
   const bytes = createHash("sha256").update(`baseball-notes:mlb:${kind}:v1:${sourceIdentity}`).digest().subarray(0, 16);
   bytes[6] = (bytes[6]! & 0x0f) | 0x50;
   bytes[8] = (bytes[8]! & 0x3f) | 0x80;

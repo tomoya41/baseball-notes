@@ -26,13 +26,25 @@ jobs:
           mkdir -p .data
           npx tsx scripts/import-mlb-historical.ts --download --cache .data --output .data/mlb-public --db .data/mlb-historical.sqlite > .data/mlb-import-report.json
           cat .data/mlb-import-report.json
+          npx tsx scripts/import-mlb-plate-appearances.ts --cache .data --db .data/mlb-historical.sqlite --report .data/mlb-pa-validation.json
+          npx tsx scripts/generate-mlb-rate-rankings.ts --db .data/mlb-historical.sqlite --output .data/mlb-public
+          npx tsx scripts/generate-mlb-advanced.ts --db .data/mlb-historical.sqlite --output .data/mlb-public --validation .data/mlb-pa-validation.json
+          npx tsx scripts/verify-mlb-advanced-public.ts --output .data/mlb-public
+          npx tsx scripts/verify-mlb-advanced-performance.ts
           npx tsx scripts/backup-mlb-historical.ts --db .data/mlb-historical.sqlite --output .data/mlb-backup --scratch .data/mlb-restored.sqlite > .data/mlb-backup-report.json
           cat .data/mlb-backup-report.json
       - uses: actions/upload-artifact@v4
         with:
-          name: mlb-historical-portable-backup
-          path: .data/mlb-backup
+          name: mlb-advanced-validation
+          path: |
+            .data/mlb-pa-validation.json
+            .data/mlb-ranking-validation.json
+            .data/mlb-advanced-public-audit.json
+            .data/mlb-advanced-performance.json
+            .data/mlb-backup-report.json
           retention-days: 7
+      # The encrypted combined artifact below contains the same portable MLB
+      # export. Avoid retaining a second 65 MB copy of the PA backup.
       - name: Read and preserve current NPB public data
         env:
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
@@ -72,6 +84,7 @@ jobs:
       - uses: actions/upload-pages-artifact@v4
         with:
           path: dist
+          retention-days: 1
   deploy:
     needs: stage
     runs-on: ubuntu-latest
@@ -87,4 +100,5 @@ jobs:
         id: deployment
       - name: Verify public Historical and NPB payloads
         run: |
+          # Public static contract/readback, no database credentials on deploy.
           node --input-type=module -e "import{gunzipSync}from'node:zlib';const b='https://tomoya41.github.io/baseball-notes/';const [m,n]=await Promise.all([fetch(b+'data/mlb/historical/manifest.json.gz?v='+Date.now()),fetch(b+'data/npb/season/2026/latest.json?v='+Date.now())]);if(m.status!==200||n.status!==200)throw Error('public HTTP');const p=JSON.parse(gunzipSync(Buffer.from(await m.arrayBuffer())));if(p.seasons.length!==6||p.current2026!=='unavailable')throw Error('Historical public contract');console.log(JSON.stringify({mlb:m.status,npb:n.status,seasons:p.seasons.length}))"

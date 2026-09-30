@@ -158,4 +158,16 @@ MLBの公開画面はRetrosheetの2020〜2025年公式戦を対象にします�
 
 `npx tsx scripts/import-mlb-historical.ts --download --cache .data --db .data/mlb-historical.sqlite --output .data/mlb-public` で公式Season ZIPとRegisterを取得し、ローカルSQLiteへcanonical Game/Player/Fact/mappingを保存します。ダウンロード済みarchiveは再利用します。Game・Playerのcontent hashが同じならDBを書きません。`npx tsx scripts/backup-mlb-historical.ts` はschema・JSONL.gz・manifest/hashを出力し、空のScratch SQLiteへ復元して検証します。
 
-手動の `mlb-historical-publish.yml` はrelease import・検証・NPB/MLB両方のBackup/Restore・Pages公開を行います。MLB daily collectionはありません。公開payloadは `/data/mlb/historical/` 下のmanifest、Player別、日付別、Game別、Season別、Records別gzipです。Raw全量やSource IDは公開しません。Playerの合計は「2020〜2025収録期間合計」であり、MLB通算ではありません。Counting recordsと率指標の公開資格は独立しています。Rate rankingは例外規定対応まで閉じています。
+手動の `mlb-historical-publish.yml` はrelease import・検証・NPB/MLB両方のBackup/Restore・Pages公開を行います。MLB daily collectionはありません。公開payloadは `/data/mlb/historical/` 下のmanifest、Player別、日付別、Game別、Season別、Records別gzipです。Raw全量やSource IDは公開しません。Playerの合計は「2020〜2025収録期間合計」であり、MLB通算ではありません。Counting recordsと率指標の公開資格は独立しています。
+
+Batch Eの高度分析は以下の順に明示実行します。既存のSeason ZIPを再利用し、新たなGame別HTTPやMLB Current収集は行いません。
+
+```sh
+npx tsx scripts/import-mlb-plate-appearances.ts --db .data/mlb-historical.sqlite --cache .data
+npx tsx scripts/generate-mlb-rate-rankings.ts --db .data/mlb-historical.sqlite --output .data/mlb-public
+npx tsx scripts/generate-mlb-advanced.ts --db .data/mlb-historical.sqlite --output .data/mlb-public
+npx tsx scripts/verify-mlb-advanced-performance.ts
+npx tsx scripts/backup-mlb-historical.ts
+```
+
+PAはローカルrelease SQLiteに保存し、Tursoへ投入しません。Game単位hashによる再投入はwrite 0、訂正時はそのGameのPAをatomicに置換します。BvP・状況別の公開には全Seasonのboxscore照合と状態検証を要求し、Clientへは選手・Season別のaggregateのみ返します。MLB RecordsのAVG/OBP/SLGはRule 9.22の不足PA例外を個別評価。OPS/K9は通常規定相当のsample条件を使うアプリ統計で、公式タイトルとは区別します。[公式規定の根拠](docs/mlb-ranking-rule-2026-09-30.md)と[Batch E検証報告](docs/mlb-batch-e-2026-09-30.md)を参照してください。

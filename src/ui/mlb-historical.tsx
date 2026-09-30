@@ -1,20 +1,21 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, Navigate, Route, Routes, useParams, useSearchParams } from "react-router-dom";
 import type { Favorite } from "../domain/models";
 import { normalizePlayerSearch } from "../domain/cross-league";
 import { battingAggregate, dateWindow, pitchingAggregate } from "../domain/mlb-historical-aggregate";
 import type { DatedBatter, DatedPitcher } from "../domain/mlb-historical-aggregate";
 import type { HistoricalGame, HistoricalPlayer } from "../data/mlb-historical";
-import { validStaticPayload } from "../domain/mlb-historical-public";
 import { RETROSHEET_ATTRIBUTION } from "../data/source-registry";
 import { DataState, FavoriteButton, LoadingSkeleton, PageHeading } from "./components";
+import { HistoricalAdvancedAnalysis } from "./mlb-historical-advanced";
+import { useHistoricalStatic as useStatic } from "./use-mlb-historical";
 
-const base = `${import.meta.env.BASE_URL}data/mlb/historical/`;
 const canonicalGameId = /^mlb:game:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const canonicalPlayerId = /^mlb:player:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 type Season = { season: number; firstDate: string; lastDate: string; games: number; coverage: string; playerCount: number };
 type Manifest = { schemaVersion: 1; league: "MLB"; seasons: Season[];
-  teams: { id: string; name: string }[]; current2026: "unavailable" };
+  teams: { id: string; name: string }[]; current2026: "unavailable";
+  features?: { directBvp?: string; situationalAnalysis?: string } };
 type IndexPlayer = Pick<HistoricalPlayer, "id" | "name" | "positions" | "seasons" | "teamIds">;
 type Profile = { player: HistoricalPlayer; collectedRange: string;
   collectedRangeTotals: { batting: Record<string, { value: number | null }> | null;
@@ -32,29 +33,6 @@ type Detail = { game: Omit<HistoricalGame, "batting" | "pitching"> & {
 } };
 type FavoriteTarget = Pick<Favorite, "kind" | "entityId" | "league">;
 
-function useStatic<T>(path: string | null) {
-  const [state, setState] = useState<{ path: string | null; status: "loading" | "ready" | "missing" | "error"; value: T | null }>({
-    path: null, status: "loading", value: null,
-  });
-  useEffect(() => {
-    if (!path) return;
-    let active = true;
-    void fetch(`${base}${path}.gz`).then(async response => {
-      if (!active) return;
-      if (response.status === 404) { setState({ path, status: "missing", value: null }); return; }
-      if (!response.ok) throw new Error(`MLB payload ${response.status}`);
-      const bytes = new Uint8Array(await response.arrayBuffer());
-      const text = bytes[0] === 0x1f && bytes[1] === 0x8b
-        ? await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"))).text()
-        : new TextDecoder().decode(bytes);
-      const value = JSON.parse(text) as T;
-      if (!validStaticPayload(path, value)) throw new Error("Invalid MLB public payload");
-      if (active) setState({ path, status: "ready", value });
-    }).catch(() => { if (active) setState({ path, status: "error", value: null }); });
-    return () => { active = false; };
-  }, [path]);
-  return state.path === path ? state : { path, status: "loading" as const, value: null };
-}
 function Status({ state, missing = "データがありません" }: { state: ReturnType<typeof useStatic<unknown>>; missing?: string }) {
   return state.status === "loading" ? <LoadingSkeleton /> :
     <DataState kind={state.status === "error" ? "source-unavailable" : "no-data"}
@@ -295,6 +273,9 @@ export function MlbHistoricalPlayer({ manifest, favorites, toggle, saving }: {
       <MetricDetails title="期間・条件別の投球詳細" metrics={pitching.metrics} pitching />
       <p className="inline-note">選択基準日までの期間。出場記録がない条件は—です。</p>
     </section>
+    {(manifest.features?.directBvp === "available" || manifest.features?.situationalAnalysis === "available") &&
+      <HistoricalAdvancedAnalysis playerId={player.id} season={selected} hasBatting={games.some(row => (row.pa ?? 0) > 0)}
+        hasPitching={pitches.length > 0} />}
     <section className="surface-card"><h2>試合別成績</h2><div className="row-list">
       {log.map(row => <Link className="ranking-entry" key={row.gameId} to={`/MLB/games/${encodeURIComponent(row.gameId)}`}>
         {row.date} · {row.home ? "ホーム" : "アウェー"} · 対 {teamName(manifest, row.opponentTeamId)}
@@ -306,22 +287,37 @@ export function MlbHistoricalPlayer({ manifest, favorites, toggle, saving }: {
 function MlbHistoricalRecords({ manifest }: { manifest: Manifest }) {
   const [season, setSeason] = useState(2025);
   const [metricId, setMetricId] = useState("batting:HR");
+  const [category, setCategory] = useState<"counting" | "rate">("counting");
+  const [group, setGroup] = useState("AL");
   const result = useStatic<{ coverage: string; counting: string; rate: string;
-    records: { metric: string; role: string; rows: { playerId: string; name: string; value: number; rank: number }[] }[]
+    requiredPa?: number; requiredOuts?: number;
+    records: { metric: string; role: string; classification?: string; group?: string;
+      rows: { playerId: string; name: string; value: number; rank: number; sample?: number; qualification?: string }[] }[]
   }>(`records/${season}.json`);
-  const selected = result.value?.records.find(record => `${record.role}:${record.metric}` === metricId);
+  const records = result.value?.records.filter(record => category === "counting" ? record.classification !== "rate" : record.classification === "rate" && record.group === group) ?? [];
+  const selected = records.find(record => `${record.role}:${record.metric}` === metricId) ?? records[0];
   return <div className="screen"><PageHeading eyebrow="MLB / 過去記録" title="シーズン記録" detail="収録済み公式戦の集計順位" />
     <div className="mlb-controls"><label>シーズン<select value={season} onChange={event => setSeason(Number(event.target.value))}>
       {manifest.seasons.map(item => <option key={item.season}>{item.season}</option>)}</select></label></div>
     {result.status !== "ready" ? <Status state={result} /> : <>
-      <p className="inline-note">率指標の規定資格は確認中です。ここには件数指標だけを表示します。</p>
-      <div className="chip-list" role="group" aria-label="記録指標">{result.value!.records.map(record =>
+      <div className="chip-list" role="group" aria-label="ランキングの種類">{(["counting", "rate"] as const).map(value =>
+        <button className="filter-chip" type="button" key={value} aria-pressed={category === value}
+          onClick={() => setCategory(value)}>{value === "counting" ? "件数指標" : "率指標"}</button>)}</div>
+      {category === "rate" && <label className="mlb-asof">リーグ<select value={group} onChange={event => setGroup(event.target.value)}>
+        <option value="AL">アメリカン・リーグ</option><option value="NL">ナショナル・リーグ</option></select></label>}
+      {category === "rate" && result.value!.rate !== "ready" ? <DataState kind="unsupported" title="率指標の集計を確認中です" /> : <>
+      {category === "rate" && <p className="inline-note">規定{result.value!.requiredPa} PA / {Math.floor((result.value!.requiredOuts ?? 0) / 3)} IP到達者が対象。AVG・OBP・SLGには公式の不足PA例外を適用します。OPS・K9は同じ最低サンプルを使う統計順位です。</p>}
+      {category === "rate" && <details><summary>率指標の見方</summary><p className="inline-note">AVGは打数に対する安打の割合、OBPは安打・四球・死球による出塁の割合、SLGは1打数あたりの塁打数です。OPSはOBPとSLGの合計で、出塁と長打を合わせて見る指標です。ERAは9回あたりの自責点、K9は9回あたりの奪三振数。値が高いほど、その指標の出来事が多いことを表します。率だけでなく打席数・投球回と合わせて確認できます。</p></details>}
+      <div className="chip-list" role="group" aria-label="記録指標">{records.map(record =>
         <button className="filter-chip" type="button" key={`${record.role}:${record.metric}`}
-          aria-pressed={metricId === `${record.role}:${record.metric}`}
+          aria-pressed={selected === record}
           onClick={() => setMetricId(`${record.role}:${record.metric}`)}>{record.role === "batting" ? "打撃" : "投球"} {record.metric}</button>)}</div>
       <ol className="row-list">{selected?.rows.map(row => <li key={row.playerId}>
         <Link className="ranking-entry" to={`/MLB/players/${encodeURIComponent(row.playerId)}`}>
-          {row.rank}位 · {row.name} · {row.value}</Link></li>)}</ol>
+          {row.rank}位 · {row.name} · {category === "rate" ? row.value.toFixed(selected.metric === "ERA" || selected.metric === "K9" ? 2 : 3) : row.value}
+          {category === "rate" && <small>{selected.role === "batting" ? `${row.sample} PA` : `${row.sample} アウト`}
+            {row.qualification === "qualified_by_exception" && " · 不足PA例外で規定資格を満たす"}</small>}</Link></li>)}</ol>
+      </>}
     </>}
     <Link to="/MLB/sources">データ提供元</Link></div>;
 }
