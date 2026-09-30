@@ -113,9 +113,11 @@ public class ReleaseQualityTest {
         assertEquals("true", js("document.documentElement.scrollWidth <= window.innerWidth"));
         setTheme("light", "ライト"); waitViewport(360); screenshot("mlb-home-360-light");
         setTheme("dark", "ダーク"); waitViewport(360); screenshot("mlb-home-360-dark");
-        setTheme("light", "ライト"); shell("wm size 600x1000"); waitViewport(600); waitHomeStatistics();
+        setTheme("light", "ライト"); shell("wm size 600x1000");
+        // A recreated Surface prevents the emulator compositor retaining the old 360px buffer.
+        scenario.recreate(); waitText("BASEBALL"); js("location.hash='#/MLB/home'"); waitViewport(600); waitHomeStatistics();
         assertEquals("true", js("document.documentElement.scrollWidth <= window.innerWidth")); screenshot("mlb-home-600");
-        shell("wm size 360x800"); waitViewport(360);
+        shell("wm size 360x800"); scenario.recreate(); waitText("BASEBALL"); waitViewport(360);
         js("location.hash='#/MLB/schedule?season=2025&date=2025-09-28'");
         waitCondition("Historical schedule rendered", "location.hash.includes('/MLB/schedule') && !!document.querySelector('.date-ribbon') && document.querySelectorAll('.scoreboard-row').length===15 && !document.querySelector('.skeleton-page')");
         assertEquals("true", js("!!document.querySelector('button[aria-label=\"前日\"]')"));
@@ -140,6 +142,7 @@ public class ReleaseQualityTest {
         long gameStart = System.currentTimeMillis();
         waitCondition("Loaded Game score and participants", "location.hash.includes('0000523f') && !!document.querySelector('.score-hero') && document.querySelectorAll('.mlb-box-team').length===2 && document.querySelectorAll('.mlb-box-team tbody tr').length>18 && !document.querySelector('.skeleton-page')");
         System.out.println("PERF game_detail_ms=" + (System.currentTimeMillis()-gameStart));
+        waitCondition("Transient favorite confirmation dismissed", "!document.querySelector('.toast')");
         assertEquals("true", js("document.documentElement.scrollWidth <= window.innerWidth"));
         screenshot("mlb-game-360");
         js("new Promise(resolve=>{const q=indexedDB.open('baseball-public-responses-v1');q.onsuccess=()=>{const db=q.result;if(!db.objectStoreNames.length){resolve(0);return;}const r=db.transaction(db.objectStoreNames[0]).objectStore(db.objectStoreNames[0]).openCursor();let max=0;r.onsuccess=()=>{const c=r.result;if(c){max=Math.max(max,c.value.bytes||0);c.continue();}else resolve(max);};};}).then(n=>document.documentElement.dataset.cachemax=String(n))");

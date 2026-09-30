@@ -85,6 +85,12 @@ describe("compact scoreboards and contextual metric help", () => {
     const html = wrap(<ScoreboardRow to="/MLB/games/canonical" home="ホーム" away="ビジター" homeScore={1} awayScore={2} status="中断" />);
     expect(html).toContain("scoreboard-winner"); expect(html).toContain("中断"); expect(html).not.toContain("試合終了");
   });
+  it("retains full club identity while giving long Japanese names a readable line boundary", () => {
+    const html = wrap(<ScoreboardRow to="/MLB/games/canonical" home="ロサンゼルス・エンゼルス" away="ヒューストン・アストロズ" homeScore={2} awayScore={6} status="試合終了" />);
+    expect(html).toContain("ビジター ヒューストン・アストロズ 6、ホーム ロサンゼルス・エンゼルス 2");
+    expect(html).toContain('class="club-context">ヒューストン');
+    expect(html).toContain('<span>アストロズ</span>');
+  });
   it("keeps the central game hero's zero and unavailable scores distinct", () => {
     const html = wrap(<ScoreHero home="阪神" away="DeNA" homeScore={0} awayScore={null} status="中断" />);
     expect(html).toContain('role="group"'); expect(html).toContain("得点未確認");
