@@ -179,3 +179,9 @@ PAはローカルrelease SQLiteに保存し、Tursoへ投入しません。Game�
 Android版は既存Web UIを共有するCapacitor shellです。`npm run android:sync`でShellのみを同期し、SDK/JDK設定後に`npm run android:apk` / `npm run android:aab`を使用します。無料の公開repo Actions `android-beta.yml`でもAPK・unsigned AABを生成可能です。Firebase・署名・App Linksは別manual gateです。
 
 [Android手順とPrivacy・Release Gate](docs/android-release-2026-09-30.md)、[Batch F検証報告](docs/android-batch-f-2026-09-30.md)を参照してください。Google Playへの自動公開は行いません。
+
+## Astra向けNPBデータContract
+
+[Data Contract Freeze / Astra Handoff](docs/astra-ui-redesign-handoff.md) と [NPB Source・Visual権利監査](docs/npb-batch-g-rights.md) を参照してください。既存Directory v2等は維持し、新規 `/data/npb/catalog/latest.json`・`capabilities.json`・`teams/season/2026/latest.json` はversion 1の追加read modelです。Profile基本情報は共通catalogを1回取得し、画像・背番号・履歴の未知値を推測しません。
+
+手動 `npb-season-publish.yml` は既存のread-only監査・Backup/Restoreと同時に新Contract生成・2回生成のhash一致・Pages HTTP確認を行います。新たなnf3取得やTurso writeはありません。CC0プロフィール補足の変更は `npx tsx scripts/review-npb-measurements.ts` の明示review後に限ります。公開アプリやDaily collectorからWikidataへ追加アクセスしません。

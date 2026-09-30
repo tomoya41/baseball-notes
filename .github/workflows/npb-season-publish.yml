@@ -34,6 +34,7 @@ jobs:
           npm run publish:npb:remote -- --payload-root .data/publish
           npx tsx scripts/generate-npb-player-directory.ts --require-remote --payload-root=.data/publish
           npx tsx scripts/generate-npb-game-surface.ts > .data/batch-b/game-surface.json
+          npx tsx scripts/verify-npb-product-idempotency.ts > .data/batch-b/product-idempotency.json
       - name: Encrypt portable export; never publish raw backup
         env:
           NPB_BACKUP_ENCRYPTION_KEY: ${{ secrets.NPB_BACKUP_ENCRYPTION_KEY }}
@@ -81,3 +82,4 @@ jobs:
       - name: Public HTTP and schema identity
         run: |
           node --input-type=module -e "const r=await fetch('https://tomoya41.github.io/baseball-notes/data/npb/season/2026/latest.json?v='+Date.now());if(r.status!==200)throw Error('Season HTTP');const p=await r.json();if(p.schemaVersion!==1||p.season!==2026||!p.players.length||p.rankings.batting.length||p.rankings.pitching.length)throw Error('Season contract');console.log(JSON.stringify({http:r.status,effectiveDate:p.effectiveDate,coverage:p.coverage,readiness:p.readiness,players:p.players.length}))"
+          node --input-type=module -e "let date;for(const path of ['catalog/latest.json','capabilities.json','teams/season/2026/latest.json']){const r=await fetch('https://tomoya41.github.io/baseball-notes/data/npb/'+path+'?v='+Date.now());if(r.status!==200)throw Error('Product HTTP');const text=await r.text();const p=JSON.parse(text);if(p.schemaVersion!==1||p.league!=='NPB'||date&&date!==p.effectiveDate)throw Error('Product identity');date=p.effectiveDate;if(path.startsWith('catalog')&&p.players.some(x=>x.visual.photo.url||x.membership.uniformNumber!==null))throw Error('Unapproved profile asset');console.log(JSON.stringify({path,http:r.status,effectiveDate:date,bytes:Buffer.byteLength(text)}))}"
