@@ -23,7 +23,7 @@ adb shell wm density 160
 adb shell svc wifi disable
 adb shell svc data disable
 adb shell am start -W -n com.tomoya41.baseballnotes/jp.baseballdata.app.MainActivity > .data/android-emulator/cold-launch.txt
-wait_screen 'BASEBALL' .data/android-emulator/offline-first-launch.xml
+wait_screen 'オフライン' .data/android-emulator/offline-first-launch.xml
 adb exec-out screencap -p > .data/android-emulator/offline-first-launch.png
 adb shell svc wifi enable
 adb shell svc data enable
