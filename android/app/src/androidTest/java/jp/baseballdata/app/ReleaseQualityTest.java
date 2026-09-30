@@ -34,6 +34,8 @@ public class ReleaseQualityTest {
         long start = System.currentTimeMillis(); scenario = ActivityScenario.launch(MainActivity.class);
         waitText("BASEBALL"); System.out.println("PERF shell_ms=" + (System.currentTimeMillis()-start));
         scenario.onActivity(activity -> assertNull("Shared UI has no native action bar", activity.getSupportActionBar()));
+        scenario.onActivity(activity -> assertTrue("No platform title bar obscures the shared header",
+            activity.getActionBar() == null || !activity.getActionBar().isShowing()));
         assertEquals("true", js("document.documentElement.scrollWidth <= window.innerWidth"));
         js("location.hash='#/privacy'"); waitText("プライバシー・データ");
         js("document.body.insertAdjacentHTML('beforeend','<dialog id=qatest>QA</dialog>');document.getElementById('qatest').showModal()");
@@ -59,7 +61,8 @@ public class ReleaseQualityTest {
         waitText("PA");
         assertEquals("true", js("document.documentElement.scrollWidth <= window.innerWidth"));
         js("new Promise(resolve=>{const q=indexedDB.open('baseball-public-responses-v1');q.onsuccess=()=>{const db=q.result;if(!db.objectStoreNames.length){resolve(0);return;}const r=db.transaction(db.objectStoreNames[0]).objectStore(db.objectStoreNames[0]).openCursor();let max=0;r.onsuccess=()=>{const c=r.result;if(c){max=Math.max(max,c.value.bytes||0);c.continue();}else resolve(max);};};}).then(n=>document.documentElement.dataset.cachemax=String(n))");
-        for (int i=0; i<100 && js("document.documentElement.dataset.cachemax").equals("undefined"); i++) Thread.sleep(50);
+        for (int i=0; i<100 && js("document.documentElement.dataset.cachemax || 'pending'").equals("pending"); i++) Thread.sleep(50);
+        assertTrue("Persistent public response cache measured", Long.parseLong(js("document.documentElement.dataset.cachemax")) > 0);
         System.out.println("PERF largest_cached_response_bytes=" + js("document.documentElement.dataset.cachemax"));
         js("location.hash='#/MLB/search'"); System.out.println("PERF search_ms=" + waitText("選手を探す"));
         // Real last-validated Player/manifest cache must survive a process/activity restart.
