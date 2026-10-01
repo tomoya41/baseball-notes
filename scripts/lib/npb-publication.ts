@@ -1,5 +1,7 @@
 import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
+import { createHash } from "node:crypto";
+import { gameManifestSchema, gameDateIndexSchema, shiftGameDate } from "../../src/domain/npb-game-index";
 import { validateNpbPublication, validateNpbPublishedGameDates } from "../../src/application/npb-publication-consistency";
 
 export async function readNpbPublication(root: string) {
@@ -34,4 +36,33 @@ export async function writeNpbProfileProjections(root: string, input: Parameters
   }
   // File errors abort the job: only a fully validated Pages artifact may be uploaded.
   await readNpbPublication(root);
+}
+
+export async function npbPublicationHashes(root: string) {
+  const p = await readNpbPublication(root);
+  const paths = ["players/latest.json", "catalog/latest.json", "capabilities.json", "season/2026/latest.json",
+    "hot/latest.json", "teams/season/2026/latest.json", "records/2026/latest.json", "games/manifest.json", "games/recent.json"];
+  if (p.milestones) paths.push(`milestones/${p.season.season}/latest.json`);
+  const manifest = gameManifestSchema.parse(p.gameManifest);
+  for (let date = manifest.from; date <= manifest.to; date = shiftGameDate(date, 1)) {
+    if (paths.length > 410) throw Error("NPB publication date range exceeds one season");
+    paths.push(`games/dates/${date}.json`);
+  }
+  return Object.fromEntries(await Promise.all(paths.map(async path => {
+    const body = await readFile(join(root, "data/npb", path));
+    if (path.startsWith("games/dates/")) {
+      const day = gameDateIndexSchema.parse(JSON.parse(body.toString("utf8")));
+      if (path !== `games/dates/${day.date}.json` || day.generatedAt !== manifest.generatedAt)
+        throw Error(`Staged Game generation mismatch: ${path}`);
+    }
+    return [path, createHash("sha256").update(body).digest("hex")];
+  })));
+}
+
+export function verifyNpbPublicationHash(expected: unknown, path: string, body: Uint8Array) {
+  if (!expected || typeof expected !== "object") throw Error("Expected staged NPB hashes required");
+  const hash = (expected as Record<string, unknown>)[path];
+  if (typeof hash !== "string" || !/^[a-f0-9]{64}$/.test(hash) ||
+    createHash("sha256").update(body).digest("hex") !== hash)
+    throw Error(`Published NPB projection differs from staged artifact: ${path}`);
 }

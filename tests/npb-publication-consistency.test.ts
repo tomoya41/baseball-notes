@@ -14,7 +14,8 @@ import { npbSeasonPayloadSchema, seasonBattingKeys } from "../src/application/np
 import { validateNpbPublication, validateNpbPublishedGameDates } from "../src/application/npb-publication-consistency";
 import { npbHotPayloadSchema } from "../src/application/npb-hot-payload";
 import { buildNpbRecords } from "../src/application/npb-records-payload";
-import { readNpbPublication, writeNpbProfileProjections } from "../scripts/lib/npb-publication";
+import { readNpbPublication, writeNpbProfileProjections, npbPublicationHashes, verifyNpbPublicationHash } from "../scripts/lib/npb-publication";
+import { shiftGameDate } from "../src/domain/npb-game-index";
 import type { NpbPlayerDirectory } from "../src/domain/npb-player-directory";
 import hotFixture from "./fixtures/npb-hot-ready.json";
 
@@ -54,6 +55,11 @@ async function stage(root: string, p: ReturnType<typeof family>) {
     [`games/dates/${p.directory.effectiveDate}.json`]: { schemaVersion: 1, league: "NPB", date: p.directory.effectiveDate,
       generatedAt: p.gameManifest.generatedAt, coverage: "partial", games: [] } })) {
     const file = join(root, "data/npb", path); await mkdir(dirname(file), { recursive: true }); await writeFile(file, JSON.stringify(value));
+  }
+  for (let date = p.gameManifest.from; date <= p.gameManifest.to; date = shiftGameDate(date, 1)) {
+    const file = join(root, `data/npb/games/dates/${date}.json`); await mkdir(dirname(file), { recursive: true });
+    await writeFile(file, JSON.stringify({ schemaVersion: 1, league: "NPB", date,
+      generatedAt: p.gameManifest.generatedAt, coverage: date === p.directory.effectiveDate ? "partial" : "unknown", games: [] }));
   }
 }
 const run = (script: string, ...args: string[]) => execFileSync(process.execPath,
@@ -208,6 +214,23 @@ describe("coordinated NPB publication", () => {
       expect(await readNpbPublication(root)).toEqual(validateNpbPublication(p));
     } finally { await rm(root, { recursive: true, force: true }); }
   });
+  it("binds regenerated and deliberately preserved Team Season to the exact staged artifact", async () => {
+    const root = await mkdtemp(join(tmpdir(), "npb-hash-publication-"));
+    try {
+      const p = family(); await stage(root, p);
+      const hashes = await npbPublicationHashes(root), path = "teams/season/2026/latest.json";
+      const old = await readFile(join(root, "data/npb", path));
+      expect(() => verifyNpbPublicationHash(hashes, path, old)).not.toThrow();
+      const refreshed = Buffer.from(JSON.stringify({ ...p.teamSeason, generatedAt: "2026-10-01T02:00:00.000Z" }));
+      expect(() => verifyNpbPublicationHash(hashes, path, refreshed)).toThrow(/staged artifact/);
+      await writeFile(join(root, "data/npb", path), refreshed);
+      const next = await npbPublicationHashes(root);
+      expect(() => verifyNpbPublicationHash(next, path, refreshed)).not.toThrow();
+      expect(() => verifyNpbPublicationHash(next, path, old)).toThrow(/staged artifact/);
+      for (const key of ["season/2026/latest.json", "hot/latest.json", "records/2026/latest.json", "games/dates/2026-09-25.json"])
+        expect(hashes[key]).toMatch(/^[a-f0-9]{64}$/);
+    } finally { await rm(root, { recursive: true, force: true }); }
+  });
 });
 
 type Workflow = { jobs: Record<string, { steps: { run?: string; uses?: string; if?: string }[] }> };
@@ -244,5 +267,13 @@ describe("all Pages publication entry points", () => {
     expect(stage).not.toContain("preserve-published-npb");
     expect(stage).toContain("preserve-mlb-historical.ts");
     expect(workflow("npb-hot-publish").jobs.deploy!.steps.some(s => s.run?.includes("verify-published-npb-player-directory.ts"))).toBe(true);
+  });
+  it.each(["npb-player-directory-publish", "npb-hot-publish"])("%s passes staged hashes to the deploy verifier", name => {
+    const w = parse(readFileSync(`.github/workflows/${name}.yml`, "utf8")) as {
+      jobs: Record<string, { outputs?: Record<string, string>; steps: { id?: string; run?: string; env?: Record<string, string> }[] }> };
+    expect(w.jobs.stage!.steps.find(s => s.run?.includes("verify-npb-publication.ts"))?.id).toBe("publication");
+    expect(w.jobs.stage!.outputs?.projection_hashes).toBe("${{ steps.publication.outputs.projection_hashes }}");
+    expect(w.jobs.deploy!.steps.find(s => s.run?.includes("verify-published-npb-player-directory.ts"))?.env?.EXPECTED_PROJECTION_HASHES)
+      .toBe("${{ needs.stage.outputs.projection_hashes }}");
   });
 });

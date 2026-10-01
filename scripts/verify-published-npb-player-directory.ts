@@ -1,7 +1,13 @@
 import { npbPlayerDirectorySchema } from "../src/domain/npb-player-directory";
 import { validateNpbPublication, validateNpbPublishedGameDates } from "../src/application/npb-publication-consistency";
+import { verifyNpbPublicationHash } from "./lib/npb-publication";
 
 const expected = process.env.EXPECTED_GENERATED_AT;
+const hashes = process.env.EXPECTED_PROJECTION_HASHES ? JSON.parse(process.env.EXPECTED_PROJECTION_HASHES) as Record<string, string> : null;
+if (process.env.GITHUB_ACTIONS === "true" && !hashes) throw Error("Staged projection hashes required for deployment verification");
+if (hashes && (Object.keys(hashes).length > 410 || Object.keys(hashes).some(path =>
+  !/^(players\/latest|catalog\/latest|capabilities|season\/2026\/latest|hot\/latest|teams\/season\/2026\/latest|records\/2026\/latest|games\/manifest|games\/recent|milestones\/2026\/latest|games\/dates\/\d{4}-\d{2}-\d{2})\.json$/.test(path))))
+  throw Error("Invalid staged publication paths");
 if (!expected) throw new Error("EXPECTED_GENERATED_AT is required");
 const url = "https://tomoya41.github.io/baseball-notes/data/npb/players/latest.json";
 let lastError: unknown;
@@ -9,14 +15,18 @@ for (let attempt = 0; attempt < 12; attempt++) {
   try {
   const response = await fetch(`${url}?verify=${Date.now()}`, { cache: "no-store" });
   if (response.ok) {
-    const payload = npbPlayerDirectorySchema.parse(await response.json() as unknown);
+    const directoryBody = new Uint8Array(await response.arrayBuffer());
+    if (hashes) verifyNpbPublicationHash(hashes, "players/latest.json", directoryBody);
+    const payload = npbPlayerDirectorySchema.parse(JSON.parse(Buffer.from(directoryBody).toString("utf8")) as unknown);
     if (payload.generatedAt === expected) {
       const base = "https://tomoya41.github.io/baseball-notes/data/npb/";
       const read = async (path: string, optional = false) => {
         const r = await fetch(`${base}${path}?verify=${Date.now()}`, { cache: "no-store" });
         if (optional && r.status === 404) return undefined;
         if (!r.ok) throw Error(`Published projection HTTP ${r.status}: ${path}`);
-        return r.json() as Promise<unknown>;
+        const body = new Uint8Array(await r.arrayBuffer());
+        if (hashes) verifyNpbPublicationHash(hashes, path, body);
+        return JSON.parse(Buffer.from(body).toString("utf8")) as unknown;
       };
       const [catalog, capabilities, season, hot, teamSeason, milestones, gameManifest, gameRecent, records] = await Promise.all([
         read("catalog/latest.json"), read("capabilities.json"), read("season/2026/latest.json"),
@@ -26,6 +36,11 @@ for (let attempt = 0; attempt < 12; attempt++) {
       const publication = validateNpbPublication({ directory: payload, catalog, capabilities, season, hot, teamSeason, milestones, gameManifest, gameRecent, records });
       const dates = [...new Set([payload.effectiveDate, ...publication.gameRecent!.games.map(g => g.date)])];
       validateNpbPublishedGameDates(publication, await Promise.all(dates.map(date => read(`games/dates/${date}.json`))));
+      // Check all remaining dated payloads against the exact staged artifact with bounded CDN requests.
+      if (hashes) {
+        const paths = Object.keys(hashes).filter(path => path.startsWith("games/dates/") && !dates.some(date => path === `games/dates/${date}.json`));
+        for (let i = 0; i < paths.length; i += 8) await Promise.all(paths.slice(i, i + 8).map(path => read(path)));
+      }
       process.stdout.write(`${JSON.stringify({ url, httpStatus: response.status,
         effectiveDate: payload.effectiveDate, players: payload.players.length,
         teams: payload.teams.length })}\n`);

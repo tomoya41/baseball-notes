@@ -20,6 +20,7 @@ jobs:
       effective_date: ${{ steps.identity.outputs.effective_date }}
       generated_at: ${{ steps.identity.outputs.generated_at }}
       directory_generated_at: ${{ steps.projections.outputs.generated_at }}
+      projection_hashes: ${{ steps.publication.outputs.projection_hashes }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -77,6 +78,7 @@ jobs:
           npx tsx scripts/preserve-mlb-historical.ts dist/data/mlb
       - uses: actions/configure-pages@v5
       - name: Validate coordinated NPB projections before artifact upload
+        id: publication
         run: npx tsx scripts/verify-npb-publication.ts dist
       - uses: actions/upload-pages-artifact@v4
         with:
@@ -111,4 +113,5 @@ jobs:
       - name: Verify coordinated public projection family
         env:
           EXPECTED_GENERATED_AT: ${{ needs.stage.outputs.directory_generated_at }}
+          EXPECTED_PROJECTION_HASHES: ${{ needs.stage.outputs.projection_hashes }}
         run: npx tsx scripts/verify-published-npb-player-directory.ts
