@@ -9,11 +9,13 @@ import { buildNpbSeasonMilestones } from "./npb-season-milestones";
 import { gameManifestSchema, recentGamesSchema, gameDateIndexSchema } from "../domain/npb-game-index";
 import { recordsSchema } from "../domain/npb-records";
 import { buildNpbRecords } from "./npb-records-payload";
+import { npbLatestStandingsSchema } from "../domain/standings";
 
 export type NpbPublicationInputs = {
   directory: unknown; catalog: unknown; capabilities: unknown; season: unknown;
   hot: unknown; teamSeason: unknown; milestones?: unknown;
   gameManifest?: unknown; gameRecent?: unknown; records?: unknown;
+  standings?: unknown;
 };
 const requireEqual = (actual: unknown, expected: unknown, label: string) => {
   if (!isDeepStrictEqual(actual, expected)) throw Error(`NPB publication mismatch: ${label}`);
@@ -27,8 +29,13 @@ export function validateNpbPublication(input: NpbPublicationInputs) {
   const season = npbSeasonPayloadSchema.parse(input.season);
   const hot = npbHotPayloadSchema.parse(input.hot);
   const teamSeason = npbTeamSeasonSchema.parse(input.teamSeason);
+  const standings = input.standings === undefined ? undefined : npbLatestStandingsSchema.parse(input.standings);
   for (const payload of [catalog, capabilities, season, hot, teamSeason])
     requireEqual(payload.effectiveDate, directory.effectiveDate, "effectiveDate; use a coordinated Season publication to advance the date");
+  if (standings) {
+    requireEqual(standings.effectiveDate, directory.effectiveDate, "Standings effectiveDate");
+    requireEqual(standings.standings.map(t => t.teamId).sort(), directory.teams.map(t => t.id).sort(), "Standings Team IDs");
+  }
   for (const payload of [catalog, capabilities])
     requireEqual(payload.generatedAt, directory.generatedAt, "profile projection generation");
   requireEqual(teamSeason.season, season.season, "season identity");
@@ -74,7 +81,7 @@ export function validateNpbPublication(input: NpbPublicationInputs) {
       gameRecent.games.some(g => g.date > directory.effectiveDate || g.status !== "final" || !teams.has(g.home.id) || !teams.has(g.away.id)))
       throw Error("NPB publication mismatch: Recent Games");
   }
-  return { directory, catalog, capabilities, season, hot, teamSeason, milestones, gameManifest, gameRecent, records };
+  return { directory, catalog, capabilities, season, hot, teamSeason, milestones, gameManifest, gameRecent, records, standings };
 }
 
 // A dated schedule has no effectiveDate of its own; bind it to the manifest generation.

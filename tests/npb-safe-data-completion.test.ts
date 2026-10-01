@@ -144,8 +144,8 @@ describe("saved-season checkpoints, independently of rankings/career", () => {
     const repository = new StaticNpbProductRepository("https://example.test/", async url => {
       calls++; expect(String(url)).toContain("data/npb/milestones/"); return Response.json(p);
     });
-    expect(await repository.seasonMilestones(2026)).toEqual(p); expect(calls).toBe(1);
-    await expect(repository.seasonMilestones(2025)).rejects.toThrow(/mismatch/);
-    await expect(repository.seasonMilestones(Number.NaN)).rejects.toThrow(/Season/);
+    expect(await repository.seasonMilestones(2026, p)).toEqual(p); expect(calls).toBe(1);
+    await expect(repository.seasonMilestones(2025, p)).rejects.toThrow(/mismatch/);
+    await expect(repository.seasonMilestones(Number.NaN, p)).rejects.toThrow(/Season/);
   });
 });

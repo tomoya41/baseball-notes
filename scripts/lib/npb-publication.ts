@@ -17,7 +17,8 @@ export async function readNpbPublication(root: string) {
   const [gameManifest, gameRecent, records] = await Promise.all([
     read("games/manifest.json"), read("games/recent.json"), read("records/2026/latest.json"),
   ]);
-  const publication = validateNpbPublication({ directory, catalog, capabilities, season, hot, teamSeason, milestones, gameManifest, gameRecent, records });
+  const standings = JSON.parse(await readFile(join(root, "data/standings/npb/latest.json"), "utf8")) as unknown;
+  const publication = validateNpbPublication({ directory, catalog, capabilities, season, hot, teamSeason, milestones, gameManifest, gameRecent, records, standings });
   const dates = [...new Set([publication.directory.effectiveDate, ...publication.gameRecent!.games.map(g => g.date)])];
   validateNpbPublishedGameDates(publication, await Promise.all(dates.map(date => read(`games/dates/${date}.json`))));
   return publication;
@@ -41,7 +42,7 @@ export async function writeNpbProfileProjections(root: string, input: Parameters
 export async function npbPublicationHashes(root: string) {
   const p = await readNpbPublication(root);
   const paths = ["players/latest.json", "catalog/latest.json", "capabilities.json", "season/2026/latest.json",
-    "hot/latest.json", "teams/season/2026/latest.json", "records/2026/latest.json", "games/manifest.json", "games/recent.json"];
+    "hot/latest.json", "teams/season/2026/latest.json", "records/2026/latest.json", "games/manifest.json", "games/recent.json", "standings/npb/latest.json"];
   if (p.milestones) paths.push(`milestones/${p.season.season}/latest.json`);
   const manifest = gameManifestSchema.parse(p.gameManifest);
   for (let date = manifest.from; date <= manifest.to; date = shiftGameDate(date, 1)) {
@@ -49,7 +50,7 @@ export async function npbPublicationHashes(root: string) {
     paths.push(`games/dates/${date}.json`);
   }
   return Object.fromEntries(await Promise.all(paths.map(async path => {
-    const body = await readFile(join(root, "data/npb", path));
+    const body = await readFile(path === "standings/npb/latest.json" ? join(root, "data", path) : join(root, "data/npb", path));
     if (path.startsWith("games/dates/")) {
       const day = gameDateIndexSchema.parse(JSON.parse(body.toString("utf8")));
       if (path !== `games/dates/${day.date}.json` || day.generatedAt !== manifest.generatedAt)

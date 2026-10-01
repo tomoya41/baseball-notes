@@ -142,3 +142,6 @@ Current master/schedule projections do not provide historical as-of snapshots. E
 
 All six Pages publication entry points now carry the final staged hashes into shared post-deploy HTTP family verification, including Season, Daily, EOD and MLB's preserved NPB projection. Daily/EOD publication markers and optional notifications follow that verification. Collector behavior and schedules are unchanged. Accepted supplemental positions also update the Directory's derived playerType; stored batting/pitching Fact availability remains unchanged.
 
+
+The publication identity includes the same-origin standings payload as well, with its effective date and canonical Team IDs validated. Milestones consumers require both the Capabilities effectiveDate and generatedAt before display or response-cache commit; offline fallback is revalidated against that same identity. No public JSON contract/schema changes are introduced.
+

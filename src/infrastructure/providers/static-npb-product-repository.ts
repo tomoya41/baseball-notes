@@ -1,5 +1,5 @@
 import { npbCatalogSchema, npbCapabilitiesSchema, npbTeamSeasonSchema } from "../../domain/npb-product-contract";
-import type { NpbCatalog } from "../../domain/npb-product-contract";
+import type { NpbCatalog, NpbCapabilities } from "../../domain/npb-product-contract";
 import { npbSeasonMilestonesSchema } from "../../domain/npb-season-milestones";
 import { publicDataFetch, rememberPublicResponse } from "../public-response-cache";
 
@@ -37,10 +37,12 @@ export class StaticNpbProductRepository {
     if (value.season !== season) throw Error("Season payload mismatch");
     await rememberPublicResponse(result.response); return value;
   }
-  async seasonMilestones(season: number) {
+  async seasonMilestones(season: number, expected: Pick<NpbCapabilities, "effectiveDate" | "generatedAt">) {
     if (!Number.isInteger(season) || season < 2000 || season > 9999) throw Error("Invalid Season");
     const result = await this.read(`milestones/${season}/latest.json`), value = npbSeasonMilestonesSchema.parse(result.value);
     if (value.season !== season) throw Error("Milestone Season payload mismatch");
+    if (value.effectiveDate !== expected.effectiveDate || value.generatedAt !== expected.generatedAt)
+      throw Error("Milestone publication generation mismatch");
     await rememberPublicResponse(result.response); return value;
   }
 }

@@ -6,6 +6,7 @@ import { MemoryRouter } from "react-router-dom";
 import { npbSeasonMilestonesSchema } from "../src/domain/npb-season-milestones";
 import { NpbMilestonesScreen } from "../src/ui/npb-milestones";
 import { StaticNpbProductRepository } from "../src/infrastructure/providers/static-npb-product-repository";
+import { createPublicFetch, type CachedResponse } from "../src/infrastructure/public-response-cache";
 
 const payload = npbSeasonMilestonesSchema.parse({ schemaVersion: 1, league: "NPB", season: 2026,
   effectiveDate: "2026-09-30", generatedAt: "2026-10-01T00:00:00Z", period: { from: "2026-03-27", to: "2026-09-30" },
@@ -13,12 +14,13 @@ const payload = npbSeasonMilestonesSchema.parse({ schemaVersion: 1, league: "NPB
     summary: { dates: 1, complete: 0, noGames: 0, partial: 1, unknown: 0, failed: 0 } },
   players: [{ playerId: "00000000-0000-4000-8000-000000000001", displayName: "保存済み選手", teamId: null, teamName: null,
     checkpoints: [{ role: "batting", metric: "H", count: 51, previousCheckpoint: 50, nextCheckpoint: 100 }] }] });
-function request(overrides: { disabled?: boolean; failure?: boolean; stale?: boolean; empty?: boolean } = {}): typeof fetch {
+function request(overrides: { disabled?: boolean; failure?: boolean; stale?: boolean; staleGeneration?: boolean; empty?: boolean } = {}): typeof fetch {
   return async url => String(url).endsWith("capabilities.json") ? Response.json({ schemaVersion: 1, league: "NPB",
     effectiveDate: "2026-09-30", generatedAt: payload.generatedAt, coverage: payload.coverage,
     data: { seasonMilestones: { available: !overrides.disabled, status: overrides.disabled ? "source_unavailable" : "partially_available", reasons: [], known: null, total: null } } }) :
     overrides.failure ? new Response(null, { status: 503 }) : Response.json({ ...payload,
       effectiveDate: overrides.stale ? "2026-09-29" : payload.effectiveDate,
+      generatedAt: overrides.staleGeneration ? "2026-09-30T00:00:00Z" : payload.generatedAt,
       period: { ...payload.period, to: overrides.stale ? "2026-09-29" : payload.period.to }, players: overrides.empty ? [] : payload.players });
 }
 let container: HTMLDivElement, root: Root;
@@ -46,9 +48,25 @@ describe("Season milestone connection without changing the finished UI", () => {
     await mount(request({ disabled: true })); expect(container.textContent).toContain("シーズンの節目は準備中");
     expect(container.textContent).not.toContain("保存済み選手");
   });
-  it.each([{ failure: true }, { stale: true }])("handles HTTP/stale data safely: %s", async override => {
+  it.each([{ failure: true }, { stale: true }, { staleGeneration: true }])("handles HTTP/stale data safely: %s", async override => {
     await mount(request(override)); expect(container.querySelector('[role="alert"]')?.textContent).toContain("読み込めません");
     expect(container.textContent).not.toContain("保存済み選手");
+  });
+  it("commits only generation-matched milestones and validates offline fallback again", async () => {
+    const saved = new Map<string, CachedResponse>(); let online = true, body = { ...payload, generatedAt: "2026-09-30T00:00:00Z" };
+    const store = { get: async (url: string) => saved.get(url), put: async (row: CachedResponse) => { saved.set(row.url, row); },
+      remove: async (url: string) => { saved.delete(url); } };
+    const fetcher = createPublicFetch(store, async () => Response.json(body), () => online);
+    const repository = new StaticNpbProductRepository("https://example.test/", fetcher);
+    await expect(repository.seasonMilestones(2026, payload)).rejects.toThrow(/generation mismatch/);
+    expect(saved.size).toBe(0);
+    body = payload; expect(await repository.seasonMilestones(2026, payload)).toEqual(payload);
+    expect(saved.size).toBe(1); const good = [...saved.values()][0]!.body;
+    body = { ...payload, generatedAt: "2026-09-30T00:00:00Z" };
+    await expect(repository.seasonMilestones(2026, payload)).rejects.toThrow(/generation mismatch/);
+    expect([...saved.values()][0]!.body).toEqual(good);
+    online = false; expect(await repository.seasonMilestones(2026, payload)).toEqual(payload);
+    await expect(repository.seasonMilestones(2026, { ...payload, generatedAt: "2026-10-02T00:00:00Z" })).rejects.toThrow(/generation mismatch/);
   });
   it("shows empty data instead of fabricating progress", async () => {
     await mount(request({ empty: true })); expect(container.textContent).toContain("表示できる保存済み成績はありません");

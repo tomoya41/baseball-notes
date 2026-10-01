@@ -39,8 +39,9 @@ export function NpbMilestonesScreen({ repository }: { repository: NpbSeasonMiles
     let active = true;
     void Promise.resolve().then(() => { if (active) setState("loading"); return repository.capabilities(); }).then(async capability => {
       if (!capability.data.seasonMilestones?.available) { if (active) setState("unavailable"); return; }
-      const value = await repository.seasonMilestones(Number(capability.effectiveDate.slice(0, 4)));
-      if (value.effectiveDate !== capability.effectiveDate) throw Error("Milestone effective date mismatch");
+      const value = await repository.seasonMilestones(Number(capability.effectiveDate.slice(0, 4)), capability);
+      if (value.effectiveDate !== capability.effectiveDate || value.generatedAt !== capability.generatedAt)
+        throw Error("Milestone publication generation mismatch");
       if (active) { setPayload(value); setState("ready"); }
     }).catch(() => { if (active) setState("error"); });
     return () => { active = false; };

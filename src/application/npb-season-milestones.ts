@@ -3,7 +3,7 @@ import type { NpbCapabilities, NpbCatalog } from "../domain/npb-product-contract
 import type { NpbSeasonPayload } from "./npb-season-payload";
 export interface NpbSeasonMilestonesReader {
   capabilities(): Promise<NpbCapabilities>;
-  seasonMilestones(season: number): Promise<NpbSeasonMilestones>;
+  seasonMilestones(season: number, expected: Pick<NpbCapabilities, "effectiveDate" | "generatedAt">): Promise<NpbSeasonMilestones>;
 }
 
 // Reuses already-calculated Season counting metrics: zero additional SELECTs or formulas.

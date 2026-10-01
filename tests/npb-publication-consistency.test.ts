@@ -44,10 +44,19 @@ function family() {
     milestones: buildNpbSeasonMilestones(season, catalog),
     gameManifest: { schemaVersion: 1, league: "NPB", from: date, to: "2026-10-07", effectiveDate: date, generatedAt: at },
     gameRecent: { schemaVersion: 1, league: "NPB", effectiveDate: date, generatedAt: at, games: [] },
-    records: buildNpbRecords(season) };
+    records: buildNpbRecords(season),
+    standings: { schemaVersion: 1, league: "NPB", throughDate: date, effectiveDate: date, generatedAt: at,
+      collectedAt: at, sourceUpdatedAt: null, sourceKey: "nf3", attribution: "Fixture",
+      teams: Object.fromEntries(directory.teams.map(t => [t.id, { name: t.name, short: t.shortName }])),
+      standings: catalog.teams.map(t => ({ date, season: 2026, league: "NPB", competitionGroup: t.division,
+        teamId: t.teamId, rank: catalog.teams.filter(x => x.division === t.division).findIndex(x => x.teamId === t.teamId) + 1,
+        wins: 0, losses: 0, ties: 0, gamesPlayed: 0, pct: 0, gamesBehindLeader: 0, streak: 0,
+        sourceKey: "nf3", collectedAt: at, calculatedAt: at })) } };
 }
 
 async function stage(root: string, p: ReturnType<typeof family>) {
+  await mkdir(join(root, "data/standings/npb"), { recursive: true });
+  await writeFile(join(root, "data/standings/npb/latest.json"), JSON.stringify(p.standings));
   for (const [path, value] of Object.entries({ "players/latest.json": p.directory, "catalog/latest.json": p.catalog,
     "capabilities.json": p.capabilities, "season/2026/latest.json": p.season, "hot/latest.json": p.hot,
     "teams/season/2026/latest.json": p.teamSeason, "milestones/2026/latest.json": p.milestones,
@@ -132,6 +141,8 @@ describe("coordinated NPB publication", () => {
     p.directory.generatedAt = "2026-09-27T00:00:00.000Z";
     p.season.effectiveDate = date; p.season.period.to = date;
     p.teamSeason.effectiveDate = date; p.teamSeason.period.to = date;
+    p.standings.effectiveDate = p.standings.throughDate = date;
+    for (const row of p.standings.standings) row.date = date;
     p.gameManifest.effectiveDate = date; p.gameRecent.effectiveDate = date; p.records.effectiveDate = date;
     p.catalog = buildNpbCatalog(p.directory, reviewedMeasurements);
     p.capabilities = buildNpbCapabilities(p.catalog, p.season, p.hot.readiness);
@@ -234,7 +245,16 @@ describe("coordinated NPB publication", () => {
       expect(() => verifyNpbPublicationHash(next, path, old)).toThrow(/staged artifact/);
       for (const key of ["season/2026/latest.json", "hot/latest.json", "records/2026/latest.json", "games/dates/2026-09-25.json"])
         expect(hashes[key]).toMatch(/^[a-f0-9]{64}$/);
+      const standings = Buffer.from(JSON.stringify(p.standings));
+      expect(() => verifyNpbPublicationHash(hashes, "standings/npb/latest.json", standings)).not.toThrow();
+      const correction = structuredClone(p.standings); correction.standings[0]!.wins = 1; correction.standings[0]!.gamesPlayed = 1;
+      expect(() => verifyNpbPublicationHash(hashes, "standings/npb/latest.json", Buffer.from(JSON.stringify(correction)))).toThrow(/staged artifact/);
     } finally { await rm(root, { recursive: true, force: true }); }
+  });
+  it("rejects a standings date ahead of the coordinated family", () => {
+    const p = family(); p.standings.effectiveDate = p.standings.throughDate = "2026-09-26";
+    for (const row of p.standings.standings) row.date = "2026-09-26";
+    expect(() => validateNpbPublication(p)).toThrow(/Standings effectiveDate/);
   });
 });
 
