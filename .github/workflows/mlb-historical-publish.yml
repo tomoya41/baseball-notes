@@ -110,11 +110,11 @@ jobs:
           mkdir -p dist/data/mlb
           npx tsx scripts/preserve-mlb-historical.ts dist/data/mlb
           if [ "$MLB_PUBLISH_MODE" = 'release' ]; then
-            cp -R .data/mlb-public/data/mlb/historical dist/data/mlb/
+            npx tsx scripts/stage-mlb-historical.ts --competition regular --source .data/mlb-public/data/mlb/historical --target dist/data/mlb/historical
           elif [ "$MLB_PUBLISH_MODE" = 'postseason' ]; then
             npx tsx scripts/verify-mlb-postseason.ts --root .data/postseason-public/data/mlb/historical --regular-root dist/data/mlb/historical
             npx tsx scripts/verify-postseason-preservation.ts before dist/data/mlb/historical
-            cp -R .data/postseason-public/data/mlb/historical/postseason dist/data/mlb/historical/
+            npx tsx scripts/stage-mlb-historical.ts --competition postseason --source .data/postseason-public/data/mlb/historical --target dist/data/mlb/historical
             npx tsx scripts/verify-postseason-preservation.ts after dist/data/mlb/historical
           fi
           if [ "$MLB_PUBLISH_MODE" = 'app-only' ]; then
