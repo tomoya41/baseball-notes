@@ -18,6 +18,9 @@ jobs:
     permissions:
       contents: write
     timeout-minutes: 35
+    outputs:
+      generated_at: ${{ steps.publication.outputs.generated_at }}
+      projection_hashes: ${{ steps.publication.outputs.projection_hashes }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -56,13 +59,9 @@ jobs:
       # The encrypted combined artifact below contains the same portable MLB
       # export. Avoid retaining a second 65 MB copy of the PA backup.
       - name: Read and preserve current NPB public data
-        env:
-          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
-          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
         run: |
-          npm run publish:npb:remote -- --payload-root .data/publish
           npm run build
-          cp -R .data/publish/data dist/
+          npx tsx scripts/preserve-published-npb-standings.ts dist
           npx tsx scripts/preserve-published-npb-season.ts
           npx tsx scripts/preserve-published-npb-player-directory.ts
           npx tsx scripts/preserve-published-npb-hot.ts
@@ -99,6 +98,9 @@ jobs:
           npx tsx scripts/publish-mlb-public-archive.ts dist/data/mlb
           node --input-type=module -e "import{readFileSync}from'node:fs';import{gunzipSync}from'node:zlib';const p=JSON.parse(gunzipSync(readFileSync('dist/data/mlb/historical/manifest.json.gz')));if(p.seasons.length!==6||p.current2026!=='unavailable'||p.seasons.some(s=>s.coverage!=='complete'))throw Error('Historical manifest');console.log(JSON.stringify({seasons:p.seasons.length,games:p.seasons.reduce((n,s)=>n+s.games,0)}))"
       - uses: actions/configure-pages@v5
+      - name: Validate preserved NPB projections before artifact upload
+        id: publication
+        run: npx tsx scripts/verify-npb-publication.ts dist
       - uses: actions/upload-pages-artifact@v4
         with:
           path: dist
@@ -114,8 +116,21 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
       - uses: actions/deploy-pages@v4
         id: deployment
+      - name: Verify preserved NPB public projection family
+        env:
+          EXPECTED_GENERATED_AT: ${{ needs.stage.outputs.generated_at }}
+          EXPECTED_PROJECTION_HASHES: ${{ needs.stage.outputs.projection_hashes }}
+        run: npx tsx scripts/verify-published-npb-player-directory.ts
       - name: Verify public Historical and NPB payloads
         run: |
           # Public static contract/readback, no database credentials on deploy.

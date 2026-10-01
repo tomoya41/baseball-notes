@@ -10,8 +10,10 @@ const divisions: Record<string, "Central" | "Pacific"> = Object.fromEntries([
   ...["tigers", "giants", "baystars", "dragons", "carp", "swallows"].map(t => [`npb:team:${t}`, "Central"]),
   ...["hawks", "fighters", "buffaloes", "eagles", "lions", "marines"].map(t => [`npb:team:${t}`, "Pacific"]),
 ]) as Record<string, "Central" | "Pacific">;
-export function buildNpbCatalog(directory: NpbPlayerDirectory, measurements: ReviewedMeasurements): NpbCatalog {
-  const known = new Map(measurements.players.map(p => [p.playerId, p]));
+export function buildNpbCatalog(directory: NpbPlayerDirectory, measurements: ReviewedMeasurements,
+  additionalMeasurements?: ReviewedMeasurements): NpbCatalog {
+  const known = new Map([additionalMeasurements, measurements].flatMap(snapshot => snapshot?.players.map(p =>
+    [p.playerId, { ...p, observedAt: snapshot.observedAt, effectiveDate: snapshot.effectiveDate }] as const) ?? []));
   return npbCatalogSchema.parse({ schemaVersion: 1, league: "NPB", effectiveDate: directory.effectiveDate,
     generatedAt: directory.generatedAt, teams: directory.teams.map(t => ({ teamId: t.id, name: t.name,
       shortName: t.shortName, abbreviation: t.shortName, division: divisions[t.id], homeLocation: null, homeStadium: null,
@@ -23,8 +25,8 @@ export function buildNpbCatalog(directory: NpbPlayerDirectory, measurements: Rev
         profile: { position: p.position, bats: p.bats, throws: p.throws, birthDate: p.birthDate,
           birthPlace: p.birthPlace, nationality: p.nationality, ageYears: ageOnDate(p.birthDate, directory.effectiveDate),
           ageAsOfDate: directory.effectiveDate, heightCm: measurement?.heightCm ?? null,
-          weightKg: measurement?.weightKg ?? null, measurementsObservedAt: hasMeasurement ? measurements.observedAt : null,
-          measurementsEffectiveDate: hasMeasurement ? measurements.effectiveDate : null,
+          weightKg: measurement?.weightKg ?? null, measurementsObservedAt: hasMeasurement ? measurement!.observedAt : null,
+          measurementsEffectiveDate: hasMeasurement ? measurement!.effectiveDate : null,
           draftYear: null, draftRound: null, careerHistory: [] },
         membership: { teamId: p.teamId, scope: "latest_stored_affiliation", uniformNumber: null,
           uniformNumberObservedAt: null, uniformNumberEffectiveDate: null },
@@ -56,6 +58,7 @@ export function buildNpbCapabilities(catalog: NpbCatalog, season: NpbSeasonPaylo
   set("historicalSeason", "blocked_by_rights", ["source_exists_reuse_permission_and_longevity_not_verified"]);
   set("careerStats", "blocked_by_rights", ["full_career_coverage_and_reusable_source_required"]);
   set("milestones", "blocked_by_rights", ["full_career_coverage_required_not_collected_range_total"]);
+  set("seasonMilestones", "partially_available", ["stored_season_checkpoints_not_career_or_official_achievement", "coverage_separate_no_achievement_date"]);
   for (const key of ["playerPhoto", "teamLogo", "officialTeamColors"])
     set(key, "blocked_by_rights", ["asset_specific_permission_required"], 0, key === "playerPhoto" ? catalog.players.length : 12);
   for (const key of ["directBvP", "pitchLevel", "inningScore", "substitutionOrder", "reliefOrder"])

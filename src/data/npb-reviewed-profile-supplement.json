@@ -1,0 +1,77 @@
+{
+  "observedAt": "2026-10-01T02:21:20.925Z",
+  "players": [
+    {
+      "playerId": "7996a107-69eb-4950-820d-913760f6669e",
+      "position": "P",
+      "birthDate": null,
+      "birthPlace": "飛騨市",
+      "nationality": "日本",
+      "heightCm": null,
+      "weightKg": null
+    },
+    {
+      "playerId": "35e631df-8103-4fe3-8b9c-2231f8cf5247",
+      "position": null,
+      "birthDate": "2006-04-18",
+      "birthPlace": "飯塚市",
+      "nationality": "日本",
+      "heightCm": null,
+      "weightKg": null
+    },
+    {
+      "playerId": "79e33d14-9021-4db8-a976-74c9d02df328",
+      "position": "C",
+      "birthDate": "1996-05-28",
+      "birthPlace": "マタンサス",
+      "nationality": "キューバ",
+      "heightCm": 190,
+      "weightKg": 95
+    },
+    {
+      "playerId": "d4f78de4-1e08-4f51-9f18-9e064968866f",
+      "position": "C",
+      "birthDate": "1998-09-11",
+      "birthPlace": "大正区",
+      "nationality": "日本",
+      "heightCm": 180,
+      "weightKg": 78
+    },
+    {
+      "playerId": "3095455f-01b8-452a-9b8a-fdd8991bfba3",
+      "position": "OF",
+      "birthDate": "1998-04-13",
+      "birthPlace": "白老町",
+      "nationality": "日本",
+      "heightCm": null,
+      "weightKg": null
+    },
+    {
+      "playerId": "2ef0916f-a072-42fa-90ba-9b897506e86c",
+      "position": "P",
+      "birthDate": "1999-05-15",
+      "birthPlace": "富谷市",
+      "nationality": "日本",
+      "heightCm": 181,
+      "weightKg": 88
+    },
+    {
+      "playerId": "a66dfd52-1ae2-4245-b849-558f263e6422",
+      "position": "P",
+      "birthDate": "1998-07-06",
+      "birthPlace": "横芝光町",
+      "nationality": "日本",
+      "heightCm": 180,
+      "weightKg": 76
+    },
+    {
+      "playerId": "a4d2116b-07d3-4a7a-8f8e-32f6d28759e4",
+      "position": "P",
+      "birthDate": "1995-02-07",
+      "birthPlace": "フアン・ホセ・リオス",
+      "nationality": "メキシコ",
+      "heightCm": 188,
+      "weightKg": null
+    }
+  ]
+}

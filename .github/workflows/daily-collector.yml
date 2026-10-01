@@ -29,6 +29,8 @@ jobs:
     outputs:
       skip: ${{ steps.safety.outputs.skip }}
       date: ${{ steps.safety.outputs.target_date }}
+      generated_at: ${{ steps.publication.outputs.generated_at }}
+      projection_hashes: ${{ steps.publication.outputs.projection_hashes }}
     steps:
       - name: Capture runner start
         run: echo "NPB_RUNNER_STARTED_AT=$(date -u +%FT%TZ)" >> "$GITHUB_ENV"
@@ -169,6 +171,10 @@ jobs:
       - name: Preserve released MLB historical data
         if: steps.safety.outputs.skip != 'true' && (github.event_name == 'schedule' || inputs.mode == 'ingest' || inputs.mode == 'publish')
         run: npx tsx scripts/preserve-mlb-historical.ts dist/data/mlb
+      - name: Validate coordinated NPB projections before artifact upload
+        id: publication
+        if: steps.safety.outputs.skip != 'true' && (github.event_name == 'schedule' || inputs.mode == 'ingest' || inputs.mode == 'publish')
+        run: npx tsx scripts/verify-npb-publication.ts dist
       - name: Upload complete site as one Pages artifact
         if: steps.safety.outputs.skip != 'true' && (github.event_name == 'schedule' || inputs.mode == 'ingest' || inputs.mode == 'publish')
         uses: actions/upload-pages-artifact@v4
@@ -190,16 +196,18 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
       - uses: actions/checkout@v7
-        if: vars.NPB_DAY_FACTS_ENABLED == 'true' && (github.event_name == 'schedule' || inputs.mode == 'ingest')
         with:
           persist-credentials: false
       - uses: actions/setup-node@v7
-        if: vars.NPB_DAY_FACTS_ENABLED == 'true' && (github.event_name == 'schedule' || inputs.mode == 'ingest')
         with:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-        if: vars.NPB_DAY_FACTS_ENABLED == 'true' && (github.event_name == 'schedule' || inputs.mode == 'ingest')
+      - name: Verify coordinated public projection family
+        env:
+          EXPECTED_GENERATED_AT: ${{ needs.collect.outputs.generated_at }}
+          EXPECTED_PROJECTION_HASHES: ${{ needs.collect.outputs.projection_hashes }}
+        run: npx tsx scripts/verify-published-npb-player-directory.ts
       - name: Record successful safety-net publication after public readback
         if: vars.NPB_DAY_FACTS_ENABLED == 'true' && (github.event_name == 'schedule' || inputs.mode == 'ingest')
         run: npx tsx scripts/npb-eod.ts --action=mark-published --date="$TARGET_DATE"

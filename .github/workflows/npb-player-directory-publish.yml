@@ -18,6 +18,7 @@ jobs:
     timeout-minutes: 15
     outputs:
       generated_at: ${{ steps.identity.outputs.generated_at }}
+      projection_hashes: ${{ steps.publication.outputs.projection_hashes }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -53,14 +54,18 @@ jobs:
         shell: bash
         run: |
           npm run build
-          mkdir -p dist/data/standings/npb dist/data/npb/players
+          mkdir -p dist/data/standings/npb
           cp .data/publish/data/standings/npb/latest.json dist/data/standings/npb/latest.json
-          cp .data/publish/data/npb/players/latest.json dist/data/npb/players/latest.json
           npx tsx scripts/preserve-published-npb-hot.ts
           npx tsx scripts/preserve-published-npb-season.ts
+          npx tsx scripts/preserve-published-npb-player-directory.ts
           npx tsx scripts/preserve-published-npb-game-surface.ts
+          npx tsx scripts/refresh-npb-profile-projections.ts .data/publish/data/npb/players/latest.json dist
           npx tsx scripts/preserve-mlb-historical.ts dist/data/mlb
       - uses: actions/configure-pages@v5
+      - name: Validate coordinated NPB projections before artifact upload
+        id: publication
+        run: npx tsx scripts/verify-npb-publication.ts dist
       - uses: actions/upload-pages-artifact@v4
         with:
           path: dist
@@ -89,4 +94,5 @@ jobs:
       - name: Verify public Player Directory HTTP
         env:
           EXPECTED_GENERATED_AT: ${{ needs.stage.outputs.generated_at }}
+          EXPECTED_PROJECTION_HASHES: ${{ needs.stage.outputs.projection_hashes }}
         run: npx tsx scripts/verify-published-npb-player-directory.ts

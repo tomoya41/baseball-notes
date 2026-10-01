@@ -3,7 +3,10 @@ import { join } from "node:path";
 import { openDataClient, type DataClient } from "../src/data/database";
 import { NpbPlayerDirectoryRepository } from "../src/data/npb-player-directory";
 import { writeNpbPlayerDirectoryAtomically } from "../src/data/npb-player-directory-payload";
-import { normalizePlayerSearch } from "../src/domain/npb-player-directory";
+import { normalizePlayerSearch, npbPlayerDirectorySchema } from "../src/domain/npb-player-directory";
+import { supplementNpbDirectory } from "../src/application/npb-profile-supplement";
+import supplement from "../src/data/npb-reviewed-profile-supplement.json";
+import { npbLatestPublicationDate } from "./lib/npb-publication-date";
 
 function option(name: string): string | null {
   return process.argv.find((value) => value.startsWith(`${name}=`))?.slice(name.length + 1) ?? null;
@@ -26,7 +29,11 @@ const client = new Proxy(source, { get(target, property) {
 
 try {
   const started = performance.now();
-  const directory = await new NpbPlayerDirectoryRepository(client).read();
+  const storedDirectory = await new NpbPlayerDirectoryRepository(client).read();
+  // Latest affiliation cannot be safely labelled as an earlier publication snapshot.
+  const projection = supplementNpbDirectory(npbPlayerDirectorySchema.parse({ ...storedDirectory,
+    effectiveDate: npbLatestPublicationDate(storedDirectory.effectiveDate, option("--date")) }), supplement);
+  const directory = projection.directory;
   const readMs = Math.round(performance.now() - started);
   const path = join(option("--payload-root") ?? ".data/publish", "data", "npb", "players", "latest.json");
   const bytes = await writeNpbPlayerDirectoryAtomically(path, directory);
@@ -48,6 +55,6 @@ try {
     throwsKnown: directory.players.filter((player) => player.throws).length,
     birthDateKnown: directory.players.filter((player) => player.birthDate).length,
     birthPlaceKnown: directory.players.filter((player) => player.birthPlace).length,
-    duplicateNameCandidates,
+    duplicateNameCandidates, profileConflicts: projection.conflicts, canonicalWrites: 0,
     bytes, queryCount, readMs, totalMs: Math.round(performance.now() - started) })}\n`);
 } finally { source.close(); }

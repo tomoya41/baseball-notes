@@ -8,6 +8,7 @@ import { inspectLatestScheduledAction } from "../src/data/npb-freshness";
 import { writeNpbHotPayloadAtomically } from "../src/data/npb-hot-payload";
 import { NpbPeriodCoverageRepository } from "../src/data/npb-period-coverage-repository";
 import { NpbRepository } from "../src/data/npb-repository";
+import { npbLatestPublicationDate } from "./lib/npb-publication-date";
 
 function option(name: string): string | null {
   const argument = process.argv.find((value) => value.startsWith(`${name}=`));
@@ -58,9 +59,7 @@ async function displayMetadata(repository: NpbRepository): Promise<Map<string, H
 try {
   const before = await protectedCounts();
   const repository = new NpbRepository(client);
-  const asOfDate = option("--date") ?? (await repository.findLatestStandings())[0]?.date;
-  if (!asOfDate || !/^\d{4}-\d{2}-\d{2}$/.test(asOfDate))
-    throw new Error("A valid completed JST date is required");
+  const asOfDate = npbLatestPublicationDate((await repository.findLatestStandings())[0]?.date, option("--date"));
   const started = performance.now();
   const batch = await new PlayerPeriodBatchService(repository, new NpbPeriodCoverageRepository(client))
     .aggregate({ asOfDate, period: "7d" });
