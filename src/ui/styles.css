@@ -282,8 +282,8 @@ h1 { font-size:1.375rem; font-weight:750; letter-spacing:-.025em; } h2 { font-si
 .app-footer { margin-top:24px; padding-top:16px; letter-spacing:0; }.availability-note { font-size:.625rem; }.metric-dialog { padding:20px; border-radius:10px; }.metric-dialog h2 { font-size:1.25rem; }.metric-dialog p { font-size:.8125rem; }
 @media (min-width:720px) { .app-shell { padding-left:112px; padding-right:30px; }.profile-header { margin-left:0; margin-right:0; }.profile-tabs { margin-left:0; margin-right:0; }.follow-board { max-width:660px; }.metric-grid { grid-template-columns:repeat(6,minmax(0,1fr)); }.scoreboard-row { grid-template-columns:1fr 94px 1fr; }.scoreboard-club { font-size:.875rem; }.bottom-nav { box-shadow:none; }.home-mode-nav { max-width:660px; margin-left:0; margin-right:0; padding:0; }.home-hub { max-width:780px; } }
 .period-control { max-width:330px; margin:12px 0; }
-.analysis-condition { display:flex; align-items:center; gap:16px; margin:12px 0; font-size:.75rem; color:var(--color-muted); }
-.analysis-condition select { flex:1; min-width:0; max-width:330px; font-size:.75rem; }
+label.analysis-condition { display:flex; align-items:center; gap:16px; margin:12px 0; font-size:.75rem; color:var(--color-muted); }
+label.analysis-condition select { flex:1; min-width:0; max-width:330px; font-size:.75rem; }
 .follow-statline > div:last-child { border-left:1px solid var(--color-border); padding-left:12px; }
 .follow-statline strong { font-size:1.1875rem; }
 .profile-header { background:linear-gradient(115deg,var(--hero),#1c3157); }
