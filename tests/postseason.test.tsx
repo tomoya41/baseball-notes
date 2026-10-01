@@ -5,7 +5,8 @@ import { strToU8, zipSync } from "fflate";
 import { buildPostseasonHub, mlbPostseasonBestOf } from "../src/data/mlb-postseason";
 import { historicalId, historicalTeamId, importHistoricalSeason, retrosheetRound, type HistoricalGame } from "../src/data/mlb-historical";
 import { competitionFromSearch, postseasonHubSchema, seriesSchema, seriesStanding, type PostseasonRound } from "../src/domain/competition";
-import { postseasonCapabilities } from "../src/domain/postseason-capabilities";
+import { postseasonCapabilities, capabilitiesForVerifiedPostseason } from "../src/domain/postseason-capabilities";
+import { historicalRouteCompetition, historicalSearchPath } from "../src/ui/historical-competition-context";
 import { validStaticPayload } from "../src/domain/mlb-historical-public";
 import { PostseasonBracket, PostseasonUnavailable } from "../src/ui/postseason";
 import { canonicalDeepLink, parentNativeRoute } from "../src/domain/native-navigation";
@@ -105,8 +106,31 @@ describe("scope isolation and capabilities", () => {
   it("keeps Current rights and historical analysis admission independent", () => {
     expect(postseasonCapabilities.leagues.NPB.current.status).toBe("unavailable");
     expect(postseasonCapabilities.leagues.MLB.current.reason).toBe("Source rights pending");
-    expect(postseasonCapabilities.leagues.MLB.historical.status).toBe("available");
+    expect(postseasonCapabilities.leagues.MLB.historical.status).toBe("not_ready");
+    expect(postseasonCapabilities.leagues.MLB.historicalSeasons).toEqual([]);
     expect(historicalAdvancedGate([]).directBvp).toBe("not_ready");
+  });
+  it("keeps the directory redirect, search filters and profile-list return in the selected competition", () => {
+    const query = "?competition=postseason&season=2025&focus=japan";
+    expect(historicalSearchPath(query)).toBe(`/MLB/search${query}`);
+    for (const path of ["/MLB/players", "/MLB/search", "/MLB/players/id/analysis"])
+      expect(historicalRouteCompetition(path, query)).toBe("postseason");
+    expect(historicalRouteCompetition("/MLB/search", "?season=2025")).toBe("regular");
+    expect(historicalRouteCompetition("/MLB/home", query)).toBe("regular");
+  });
+  it("advertises only a complete verified release and keeps analysis/current gates independent", () => {
+    expect(capabilitiesForVerifiedPostseason([]).leagues.MLB.postseasonGames.status).toBe("not_ready");
+    expect(() => capabilitiesForVerifiedPostseason([bracket()])).toThrow("Incomplete");
+    const hubs = [2020,2021,2022,2023,2024,2025].map(season => {
+      const h = bracket();
+      return { ...h, season, series: h.series.map(s => ({ ...s, season, games: s.games.map(g => ({ ...g, date: `${season}${g.date.slice(4)}` })) })),
+        analysis: { status: "available" as const, reason: null } };
+    });
+    const cap = capabilitiesForVerifiedPostseason(hubs).leagues.MLB;
+    expect(cap.historicalSeasons).toEqual([2020,2021,2022,2023,2024,2025]);
+    expect(cap.postseasonPlayerStats.status).toBe("available"); expect(cap.current.status).toBe("unavailable");
+    expect(capabilitiesForVerifiedPostseason(hubs.map(h => ({ ...h, analysis: { status:"not_ready", reason:"pending" } }))).leagues.MLB.postseasonAnalysis.status).toBe("not_ready");
+    expect(() => capabilitiesForVerifiedPostseason(hubs.map(h => ({ ...h, coverage:"partial" })))).toThrow("Incomplete");
   });
   it("maintains canonical deep-link/Back scope and does not carry IDs across leagues", () => {
     const id = historicalId("player","example");

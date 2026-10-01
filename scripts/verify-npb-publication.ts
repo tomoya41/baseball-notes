@@ -1,6 +1,9 @@
 import { appendFile } from "node:fs/promises";
 import { readNpbPublication, npbPublicationHashes } from "./lib/npb-publication";
+import { finalizePostseasonCapabilities } from "./lib/postseason-publication";
 const root = process.argv[2] ?? "dist", payload = await readNpbPublication(root);
+// All whole-site publish paths share this final artifact guard. NPB semantics stay unchanged.
+await finalizePostseasonCapabilities(root);
 const hashes = await npbPublicationHashes(root);
 if (process.env.GITHUB_OUTPUT) await appendFile(process.env.GITHUB_OUTPUT,
   `generated_at=${payload.directory.generatedAt}\nprojection_hashes=${JSON.stringify(hashes)}\n`);

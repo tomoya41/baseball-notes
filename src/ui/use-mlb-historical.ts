@@ -36,7 +36,9 @@ export function useHistoricalStatic<T>(path: string | null) {
   return { ...(state.path === resolvedPath && state.attempt === attempt ? state : { path: resolvedPath, status: "loading" as const, value: null }), retry };
 }
 export function useHistoricalDirectory() {
+  const competition = useHistoricalCompetition();
   const regular = useHistoricalStatic<{ players: HistoricalDirectoryPlayer[] }>("players/index.json");
-  const postseason = useHistoricalStatic<{ players: HistoricalDirectoryPlayer[] }>("postseason/players/index.json");
+  const postseason = useHistoricalStatic<{ players: HistoricalDirectoryPlayer[] }>(competition === "regular" ? "postseason/players/index.json" : null);
+  if (competition === "postseason") return regular;
   return { ...regular, value: regular.value ? { players: mergeHistoricalDirectory(regular.value.players, postseason.value?.players ?? []) } : null };
 }

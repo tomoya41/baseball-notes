@@ -17,8 +17,7 @@ import { ExploreScreen, FutureFeatureScreen, PlayerFutureLinks } from "./future-
 
 import { MlbFollowPlayer } from "./mlb-follow-board";
 import { CompetitionTabs } from "./historical-competition";
-import { HistoricalCompetitionContext, useHistoricalCompetition } from "./historical-competition-context";
-import { competitionFromSearch } from "../domain/competition";
+import { HistoricalCompetitionContext, useHistoricalCompetition, historicalRouteCompetition, historicalSearchPath } from "./historical-competition-context";
 import { MlbPostseasonScreen } from "./postseason";
 
 const canonicalGameId = /^mlb:game:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -91,6 +90,7 @@ export function MlbHistoricalHome({ manifest, favorites, toggle, saving }: { man
     <p className="inline-note availability-note">過去記録 2020–2025 · 2026年の試合結果・選手成績は未対応</p></div>;
 }
 export function MlbHistoricalSearch({ manifest, favorites, toggle, saving }: { manifest: Manifest; favorites: Favorite[]; toggle: (target: FavoriteTarget) => void; saving: boolean }) {
+  const competition = useHistoricalCompetition();
   const result = useHistoricalDirectory();
   const [params,setParams] = useSearchParams();
   const query = params.get("q") ?? "", focus = params.get("focus") === "japan";
@@ -103,7 +103,7 @@ export function MlbHistoricalSearch({ manifest, favorites, toggle, saving }: { m
     <label className="search-field"><Search size={19} aria-hidden="true" /><span className="sr-only">選手名を検索</span><input type="search" placeholder="選手名を入力" value={query} onChange={e => { update("q",e.target.value);setLimit(80); }} /></label>
     <div className="mlb-controls"><label>シーズン<select value={selectedSeason} onChange={e => { update("season",e.target.value);setLimit(80); }}><option value="all">収録期間すべて</option>{manifest.seasons.map(s => <option key={s.season} value={s.season}>{s.season}年</option>)}</select></label><label>所属した球団<select value={team} onChange={e => { update("team",e.target.value);setLimit(80); }}><option value="">すべての球団</option>{manifest.teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</select></label></div>
     <div className="list-heading"><strong>{focus ? "確認済みの日本人選手" : "選手一覧"}</strong><span>{rows.length}人</span></div>
-    {result.status !== "ready" ? <Status state={result} /> : !rows.length ? <DataState kind="no-data" title="一致する選手がいません" detail="名前や絞り込み条件を変えてみてください。" /> : <div className="row-list">{rows.slice(0,limit).map(p => <div className="mlb-player-row" key={p.id}><Link to={`/MLB/players/${encodeURIComponent(p.id)}?${selectedSeason === "all" ? "" : `season=${Number(selectedSeason)}`}${p.postseasonOnly ? "&competition=postseason" : ""}`}><Monogram name={p.name} /><span><strong>{p.name}</strong><small>{historicalPositions(p.positions) || "守備位置未登録"} · {collectedSeasonsLabel(p.seasons)}{p.postseasonOnly && " · Postseason"}</small></span></Link><FavoriteButton active={favorites.some(f => f.league === "MLB" && f.entityId === p.id)} saving={saving} label={p.name} onClick={() => toggle({league:"MLB",kind:"player",entityId:p.id})} /></div>)}</div>}
+    {result.status !== "ready" ? <Status state={result} /> : !rows.length ? <DataState kind="no-data" title="一致する選手がいません" detail="名前や絞り込み条件を変えてみてください。" /> : <div className="row-list">{rows.slice(0,limit).map(p => <div className="mlb-player-row" key={p.id}><Link to={`/MLB/players/${encodeURIComponent(p.id)}?${selectedSeason === "all" ? "" : `season=${Number(selectedSeason)}`}${competition === "postseason" || p.postseasonOnly ? "&competition=postseason" : ""}`}><Monogram name={p.name} /><span><strong>{p.name}</strong><small>{historicalPositions(p.positions) || "守備位置未登録"} · {collectedSeasonsLabel(p.seasons)}{p.postseasonOnly && " · Postseason"}</small></span></Link><FavoriteButton active={favorites.some(f => f.league === "MLB" && f.entityId === p.id)} saving={saving} label={p.name} onClick={() => toggle({league:"MLB",kind:"player",entityId:p.id})} /></div>)}</div>}
     {rows.length > limit && <button className="button button--secondary" onClick={() => setLimit(n => n+80)}>さらに80人を表示</button>}
     {focus && <p className="inline-note">国籍情報と選手IDを照合・確認できた選手を表示しています。未確認の選手は「すべての選手」から探せます。</p>}
   </div>;
@@ -253,7 +253,7 @@ export function MlbHistoricalPlayer({ manifest, favorites, toggle, saving }: {
     .sort((a, b) => b.date.localeCompare(a.date)).slice(0, 30);
   const base = `/MLB/players/${encodeURIComponent(player.id)}`;
   if (section && !["stats","analysis","game-log","more"].includes(section)) return <Navigate to={base} replace />;
-  return <div className="screen player-screen"><Link className="back-link" to="/MLB/search">← 選手一覧</Link><header className="profile-header"><Monogram name={player.name} large /><div className="profile-header__body"><p className="eyebrow">MLB{isVerifiedJapanPlayer(player.id) ? " · 日本人選手" : " · 過去記録"}</p><h1>{player.name}</h1><p>{historicalPositions(player.positions)} · {player.seasons[0]}—{player.seasons.at(-1)} 収録</p></div><FavoriteButton active={favorites.some(f => f.league === "MLB" && f.entityId === player.id)} saving={saving} label={player.name} onClick={() => toggle({league:"MLB",kind:"player",entityId:player.id})} /></header>
+  return <div className="screen player-screen"><Link className="back-link" to={historicalSearchPath(competition === "postseason" ? `?season=${selected}&competition=postseason` : "")}>← 選手一覧</Link><header className="profile-header"><Monogram name={player.name} large /><div className="profile-header__body"><p className="eyebrow">MLB{isVerifiedJapanPlayer(player.id) ? " · 日本人選手" : " · 過去記録"}</p><h1>{player.name}</h1><p>{historicalPositions(player.positions)} · {player.seasons[0]}—{player.seasons.at(-1)} 収録</p></div><FavoriteButton active={favorites.some(f => f.league === "MLB" && f.entityId === player.id)} saving={saving} label={player.name} onClick={() => toggle({league:"MLB",kind:"player",entityId:player.id})} /></header>
     <PlayerTabs base={base} section={section} search={`?season=${selected}${asOf ? `&asOfDate=${selectedAsOf}` : ""}${scopeQuery}`} />
     {section !== "more" && <div className="mlb-controls"><label>シーズン<select value={selected} onChange={e => context("season",e.target.value)}>{player.seasons.map(s => <option key={s}>{s}</option>)}</select></label></div>}
     {(!section || section === "stats") && <>
@@ -380,8 +380,7 @@ type HistoricalRouteProps = {
 export function MlbHistoricalRoutes(props: HistoricalRouteProps) {
   const location = useLocation();
   // Attribution belongs to the bundled app, not a successfully fetched manifest.
-  const scoped = ["players", "schedule", "records", "games"].includes(location.pathname.split("/")[2] ?? "");
-  const competition = scoped ? competitionFromSearch(new URLSearchParams(location.search)) : "regular";
+  const competition = historicalRouteCompetition(location.pathname, location.search);
   return location.pathname === "/MLB/sources" ? <MlbDataSources /> : <HistoricalCompetitionContext.Provider value={competition}>
     <MlbHistoricalDataRoutes key={`${competition}:${location.pathname.split("/")[2]}`} {...props} />
   </HistoricalCompetitionContext.Provider>;
@@ -395,7 +394,7 @@ function MlbHistoricalDataRoutes({ favorites, toggle, saving }: HistoricalRouteP
     <DataState kind="unsupported" title="2026年の試合結果・選手成績は未対応" />
   </div>;
   const manifest = result.value!;
-  const competitionTabs = ["players", "schedule", "records"].includes(location.pathname.split("/")[2] ?? "");
+  const competitionTabs = ["players", "search", "schedule", "records"].includes(location.pathname.split("/")[2] ?? "");
   return <>{competitionTabs && <CompetitionTabs />}<Routes>
     <Route path="postseason" element={<MlbPostseasonScreen />} />
     <Route path="postseason/series/:seriesId" element={<MlbPostseasonScreen />} />
@@ -412,7 +411,7 @@ function MlbHistoricalDataRoutes({ favorites, toggle, saving }: HistoricalRouteP
     <Route path="ranking" element={<Navigate to="/MLB/records" replace />} />
     <Route path="sources" element={<MlbDataSources />} />
     <Route path="favorites" element={<Navigate to="/MLB/my" replace />} />
-    <Route path="players" element={<Navigate to="/MLB/search" replace />} />
+    <Route path="players" element={<Navigate to={historicalSearchPath(location.search)} replace />} />
     <Route path="*" element={<Navigate to="/MLB/home" replace />} />
   </Routes></>;
 }
