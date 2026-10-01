@@ -19,6 +19,7 @@ jobs:
     outputs:
       effective_date: ${{ steps.identity.outputs.effective_date }}
       generated_at: ${{ steps.identity.outputs.generated_at }}
+      directory_generated_at: ${{ steps.projections.outputs.generated_at }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -56,16 +57,23 @@ jobs:
         run: |
           echo "effective_date=$(node -p "require('./.data/publish/data/npb/hot/latest.json').effectiveDate")" >> "$GITHUB_OUTPUT"
           echo "generated_at=$(node -p "require('./.data/publish/data/npb/hot/latest.json').generatedAt")" >> "$GITHUB_OUTPUT"
+      - name: Regenerate dependent projections at the HOT effective date
+        id: projections
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+        shell: bash
+        run: |
+          date=$(node -p "require('./.data/publish/data/npb/hot/latest.json').effectiveDate")
+          npx tsx scripts/generate-npb-season.ts --date="$date" --payload-root=.data/publish
+          npx tsx scripts/generate-npb-player-directory.ts --require-remote --date="$date" --payload-root=.data/publish
+          npx tsx scripts/generate-npb-game-surface.ts --date="$date" --payload-root=.data/publish
+          echo "generated_at=$(node -p "require('./.data/publish/data/npb/players/latest.json').generatedAt")" >> "$GITHUB_OUTPUT"
       - name: Build app and stage complete Pages site
         shell: bash
         run: |
           npm run build
-          mkdir -p dist/data/standings/npb dist/data/npb/hot
-          cp .data/publish/data/standings/npb/latest.json dist/data/standings/npb/latest.json
-          cp .data/publish/data/npb/hot/latest.json dist/data/npb/hot/latest.json
-          npx tsx scripts/preserve-published-npb-player-directory.ts
-          npx tsx scripts/preserve-published-npb-season.ts
-          npx tsx scripts/preserve-published-npb-game-surface.ts
+          cp -R .data/publish/data dist/
           npx tsx scripts/preserve-mlb-historical.ts dist/data/mlb
       - uses: actions/configure-pages@v5
       - name: Validate coordinated NPB projections before artifact upload
@@ -100,3 +108,7 @@ jobs:
           EXPECTED_EFFECTIVE_DATE: ${{ needs.stage.outputs.effective_date }}
           EXPECTED_GENERATED_AT: ${{ needs.stage.outputs.generated_at }}
         run: npx tsx scripts/verify-published-npb-hot.ts
+      - name: Verify coordinated public projection family
+        env:
+          EXPECTED_GENERATED_AT: ${{ needs.stage.outputs.directory_generated_at }}
+        run: npx tsx scripts/verify-published-npb-player-directory.ts

@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { openDataClient, type DataClient } from "../src/data/database";
 import { NpbPlayerDirectoryRepository } from "../src/data/npb-player-directory";
 import { writeNpbPlayerDirectoryAtomically } from "../src/data/npb-player-directory-payload";
-import { normalizePlayerSearch } from "../src/domain/npb-player-directory";
+import { normalizePlayerSearch, npbPlayerDirectorySchema } from "../src/domain/npb-player-directory";
 import { supplementNpbDirectory } from "../src/application/npb-profile-supplement";
 import supplement from "../src/data/npb-reviewed-profile-supplement.json";
 
@@ -28,7 +28,10 @@ const client = new Proxy(source, { get(target, property) {
 
 try {
   const started = performance.now();
-  const projection = supplementNpbDirectory(await new NpbPlayerDirectoryRepository(client).read(), supplement);
+  const storedDirectory = await new NpbPlayerDirectoryRepository(client).read();
+  // Affiliation is explicitly latest_stored_affiliation; only the publication context is dated.
+  const projection = supplementNpbDirectory(npbPlayerDirectorySchema.parse({ ...storedDirectory,
+    effectiveDate: option("--date") ?? storedDirectory.effectiveDate }), supplement);
   const directory = projection.directory;
   const readMs = Math.round(performance.now() - started);
   const path = join(option("--payload-root") ?? ".data/publish", "data", "npb", "players", "latest.json");

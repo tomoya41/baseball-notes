@@ -12,6 +12,7 @@ import { buildNpbCatalog, buildNpbCapabilities } from "../src/application/npb-pr
 import { buildNpbSeasonMilestones } from "../src/application/npb-season-milestones";
 import { npbSeasonPayloadSchema, seasonBattingKeys } from "../src/application/npb-season-payload";
 import { validateNpbPublication } from "../src/application/npb-publication-consistency";
+import { npbHotPayloadSchema } from "../src/application/npb-hot-payload";
 import { readNpbPublication, writeNpbProfileProjections } from "../scripts/lib/npb-publication";
 import type { NpbPlayerDirectory } from "../src/domain/npb-player-directory";
 import hotFixture from "./fixtures/npb-hot-ready.json";
@@ -97,6 +98,30 @@ describe("coordinated NPB publication", () => {
     expect(buildNpbSeasonMilestones(p.season, p.catalog).generatedAt).toBe(p.directory.generatedAt);
     expect(validateNpbPublication(p).season.generatedAt).toBe(p.season.generatedAt);
   });
+  it("requires regenerated Capabilities when HOT readiness changes on the same date", () => {
+    const p = { ...family(), hot: npbHotPayloadSchema.parse(hotFixture) };
+    expect(() => validateNpbPublication(p)).toThrow(/Capability hot/);
+    p.capabilities = buildNpbCapabilities(p.catalog, p.season, p.hot.readiness);
+    expect(validateNpbPublication(p).hot.readiness.status).toBe("ready");
+    expect(p.season.readiness.status).toBe("not_ready");
+  });
+  it("accepts date advancement only after the whole dependent family is regenerated", () => {
+    const p = family(), date = "2026-09-26";
+    p.hot.effectiveDate = date;
+    p.hot.period = { ...p.hot.period, from: "2026-09-20", to: date };
+    expect(() => validateNpbPublication(p)).toThrow(/effectiveDate/);
+    p.directory.effectiveDate = date;
+    p.directory.generatedAt = "2026-09-27T00:00:00.000Z";
+    p.season.effectiveDate = date; p.season.period.to = date;
+    p.teamSeason.effectiveDate = date; p.teamSeason.period.to = date;
+    p.catalog = buildNpbCatalog(p.directory, reviewedMeasurements);
+    p.capabilities = buildNpbCapabilities(p.catalog, p.season, p.hot.readiness);
+    p.milestones = buildNpbSeasonMilestones(p.season, p.catalog);
+    const result = validateNpbPublication(p);
+    expect(result.directory.effectiveDate).toBe(date);
+    expect(result.milestones!.effectiveDate).toBe(date);
+    expect(result.capabilities.data.hot!.available).toBe(false);
+  });
   it("runs the Directory publication refresh end-to-end, preserving base payloads and rerun values", async () => {
     const root = await mkdtemp(join(tmpdir(), "npb-profile-publication-"));
     try {
@@ -149,5 +174,21 @@ describe("all Pages publication entry points", () => {
     expect(run.indexOf("preserve-published-npb-game-surface.ts")).toBeLessThan(run.indexOf("refresh-npb-profile-projections.ts"));
     expect(run.indexOf("refresh-npb-profile-projections.ts")).toBeLessThan(run.indexOf("verify-npb-publication.ts"));
     expect(run).not.toContain("cp .data/publish/data/npb/players/latest.json");
+  });
+  it("HOT publisher regenerates the dated family from the actual HOT date before staging", () => {
+    const steps = workflow("npb-hot-publish").jobs.stage!.steps;
+    const hot = steps.findIndex(s => s.run?.includes("publish-npb-hot.ts"));
+    const projection = steps.findIndex(s => s.run?.includes("generate-npb-game-surface.ts"));
+    const build = steps.findIndex(s => s.run?.includes("npm run build"));
+    expect(projection).toBeGreaterThan(hot); expect(build).toBeGreaterThan(projection);
+    const generate = steps[projection]!.run!;
+    expect(generate).toContain(".data/publish/data/npb/hot/latest.json').effectiveDate");
+    for (const script of ["generate-npb-season.ts", "generate-npb-player-directory.ts", "generate-npb-game-surface.ts"])
+      expect(generate.split("\n").find(line => line.includes(script))).toContain('--date="$date"');
+    const stage = steps[build]!.run!;
+    expect(stage).toContain("cp -R .data/publish/data dist/");
+    expect(stage).not.toContain("preserve-published-npb");
+    expect(stage).toContain("preserve-mlb-historical.ts");
+    expect(workflow("npb-hot-publish").jobs.deploy!.steps.some(s => s.run?.includes("verify-published-npb-player-directory.ts"))).toBe(true);
   });
 });

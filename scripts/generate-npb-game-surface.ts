@@ -11,6 +11,7 @@ import supplement from "../src/data/npb-reviewed-profile-supplement.json";
 import { supplementNpbDirectory, supplementNpbMeasurements } from "../src/application/npb-profile-supplement";
 import { buildNpbSeasonMilestones } from "../src/application/npb-season-milestones";
 import { readNpbTeamSeason } from "../src/data/npb-team-season-repository";
+import { z } from "zod";
 const url=process.env.TURSO_DATABASE_URL,token=process.env.TURSO_AUTH_TOKEN;
 if(!url||url.startsWith("file:")||!token)throw Error("Remote read-only connection required");
 const source=openDataClient(url,token),root=process.argv.find(a=>a.startsWith("--payload-root="))?.slice(15)??".data/publish";
@@ -19,7 +20,8 @@ const client=new Proxy(source,{get(target,key){if(key==="execute")return async(s
   const sql=typeof statement==="string"?statement:statement.sql;if(!/^\s*SELECT\b/i.test(sql))throw Error("Read-only Game projection required");
   queries++;return target.execute(statement);};const value=Reflect.get(target,key);return typeof value==="function"?value.bind(target):value;}}) as DataClient;
 try {const latest=await client.execute("SELECT MAX(snapshot_date) AS date FROM standings_daily WHERE league='NPB'");
-  const effectiveDate=latest.rows[0]?.date?String(latest.rows[0].date):null;if(!effectiveDate)throw Error("Missing completed date");
+  const requestedDate=process.argv.find(a=>a.startsWith("--date="))?.slice(7);
+  const effectiveDate=z.iso.date().parse(requestedDate ?? (latest.rows[0]?.date?String(latest.rows[0].date):null));
   const index=await readNpbGameIndex(client,effectiveDate),path=`${root}/data/npb/games`;await mkdir(`${path}/dates`,{recursive:true});
   let bytes=0;for(const d of index.days){const json=JSON.stringify(d);bytes+=Buffer.byteLength(json);await writeFile(`${path}/dates/${d.date}.json`,json);}
   await writeFile(`${path}/manifest.json`,JSON.stringify({schemaVersion:1,league:"NPB",from:index.from,to:index.to,effectiveDate,generatedAt:index.generatedAt}));
