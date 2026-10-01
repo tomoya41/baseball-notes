@@ -18,7 +18,8 @@ import { ExploreScreen, FutureFeatureScreen, PlayerFutureLinks } from "./future-
 import { MlbFollowPlayer } from "./mlb-follow-board";
 import { CompetitionTabs } from "./historical-competition";
 import { HistoricalCompetitionContext, useHistoricalCompetition, historicalRouteCompetition, historicalSearchPath } from "./historical-competition-context";
-import { MlbPostseasonScreen } from "./postseason";
+import { MlbPostseasonScreen, PostseasonPublicationState } from "./postseason";
+import { PostseasonAvailabilityContext, usePublishedPostseasonCapabilities, usePostseasonAvailability, hasHistoricalPostseason } from "./postseason-availability";
 
 const canonicalGameId = /^mlb:game:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const canonicalPlayerId = /^mlb:player:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -68,6 +69,7 @@ export function MlbDataSources() {
     </section></div>;
 }
 export function MlbHistoricalHome({ manifest, favorites, toggle, saving }: { manifest: Manifest; favorites: Favorite[]; toggle: (target: FavoriteTarget) => void; saving: boolean }) {
+  const postseason = usePostseasonAvailability();
   const [params, setParams] = useSearchParams();
   const selectedYear = Number(params.get("season") ?? manifest.seasons.at(-1)!.season);
   const view = ["japan","follow","league"].includes(params.get("view") ?? "") ? params.get("view")! : "japan";
@@ -86,7 +88,7 @@ export function MlbHistoricalHome({ manifest, favorites, toggle, saving }: { man
     <HomeModeNav active={view} onChange={v => change("view",v)} modes={[{id:"japan",label:"日本人選手"},{id:"follow",label:"フォロー"},{id:"league",label:"リーグ"}]} />
     {view !== "league" ? <section className="follow-board"><SectionHeader title={`${latest.season} シーズン`} action={view === "follow" ? "My" : "すべての日本人選手"} to={view === "follow" ? "/MLB/my" : `/MLB/search?focus=japan&season=${latest.season}`} />{index.status !== "ready" ? <Status state={index} /> : players.length ? players.slice(0,4).map(p => <MlbFollowPlayer key={`${p.id}:${latest.season}`} player={p} season={latest.season} favorites={favorites} toggle={toggle} saving={saving} />) : <DataState kind="no-data" title={view === "follow" ? "お気に入りの選手をここに" : "この年の日本人選手は未収録"} action="選手を探す" to={`/MLB/search?season=${latest.season}`} />}</section> : <><section className="home-section"><SectionHeader title="試合結果" action="日程・結果" to={`/MLB/schedule?season=${latest.season}&date=${latest.lastDate}`} />{results.status === "ready" ? <div className="scoreboard-list">{results.value!.games.map(game => <ScoreboardRow key={game.id} to={`/MLB/games/${encodeURIComponent(game.id)}`} away={teamName(manifest,game.awayTeamId)} home={teamName(manifest,game.homeTeamId)} awayScore={game.awayRuns} homeScore={game.homeRuns} date={latest.lastDate.slice(5).replace("-","/")} status="試合終了" gameNumber={game.number} partial={!game.complete} />)}</div> : <Status state={results} />}</section><section className="home-section"><SectionHeader title="本塁打" action="個人成績" to={`/MLB/records?season=${latest.season}`} />{leaders ? <ol className="row-list leaderboard">{leaders.map(player => <li key={player.playerId}><Link to={`/MLB/players/${encodeURIComponent(player.playerId)}?season=${latest.season}`}><strong className="rank-number">{player.rank}</strong><span className="rank-person"><strong>{player.name}</strong></span><strong className="rank-value">{player.value}</strong></Link></li>)}</ol> : <DataState kind="unsupported" title="集計を確認中" />}</section></>}
     {view !== "league" && <Link className="hub-game-entry" to={`/MLB/schedule?season=${latest.season}&date=${latest.lastDate}`}><span><small>{latest.lastDate.replaceAll("-",".")}</small><strong>試合結果</strong></span><span>{results.value?.games.length ?? "—"}<small>試合 →</small></span></Link>}
-    <div className="hub-links"><Link to={`/MLB/postseason?season=${latest.season}`}>Postseason <span>→</span></Link></div>
+    {hasHistoricalPostseason(postseason, latest.season) && <div className="hub-links"><Link to={`/MLB/postseason?season=${latest.season}`}>Postseason <span>→</span></Link></div>}
     <p className="inline-note availability-note">過去記録 2020–2025 · 2026年の試合結果・選手成績は未対応</p></div>;
 }
 export function MlbHistoricalSearch({ manifest, favorites, toggle, saving }: { manifest: Manifest; favorites: Favorite[]; toggle: (target: FavoriteTarget) => void; saving: boolean }) {
@@ -379,15 +381,21 @@ type HistoricalRouteProps = {
 };
 export function MlbHistoricalRoutes(props: HistoricalRouteProps) {
   const location = useLocation();
+  const availability = usePublishedPostseasonCapabilities();
   // Attribution belongs to the bundled app, not a successfully fetched manifest.
   const competition = historicalRouteCompetition(location.pathname, location.search);
-  return location.pathname === "/MLB/sources" ? <MlbDataSources /> : <HistoricalCompetitionContext.Provider value={competition}>
+  return location.pathname === "/MLB/sources" ? <MlbDataSources /> : <PostseasonAvailabilityContext.Provider value={availability}><HistoricalCompetitionContext.Provider value={competition}>
     <MlbHistoricalDataRoutes key={`${competition}:${location.pathname.split("/")[2]}`} {...props} />
-  </HistoricalCompetitionContext.Provider>;
+  </HistoricalCompetitionContext.Provider></PostseasonAvailabilityContext.Provider>;
 }
 function MlbHistoricalDataRoutes({ favorites, toggle, saving }: HistoricalRouteProps) {
   const location = useLocation();
-  const result = useStatic<Manifest>("manifest.json");
+  const availability = usePostseasonAvailability(), competition = useHistoricalCompetition();
+  const allowed = competition !== "postseason" || hasHistoricalPostseason(availability);
+  const hubRoute = location.pathname.split("/")[2] === "postseason";
+  const result = useStatic<Manifest>(allowed && !hubRoute ? "manifest.json" : null);
+  if (!allowed) return <PostseasonPublicationState />;
+  if (hubRoute) return <Routes><Route path="postseason" element={<MlbPostseasonScreen />} /><Route path="postseason/series/:seriesId" element={<MlbPostseasonScreen />} /></Routes>;
   if (result.status !== "ready") return <div className="screen">
     <PageHeading eyebrow="MLB" title="過去の記録" />
     <Status state={result} missing="歴史データを準備中です" />
@@ -396,8 +404,6 @@ function MlbHistoricalDataRoutes({ favorites, toggle, saving }: HistoricalRouteP
   const manifest = result.value!;
   const competitionTabs = ["players", "search", "schedule", "records"].includes(location.pathname.split("/")[2] ?? "");
   return <>{competitionTabs && <CompetitionTabs />}<Routes>
-    <Route path="postseason" element={<MlbPostseasonScreen />} />
-    <Route path="postseason/series/:seriesId" element={<MlbPostseasonScreen />} />
     <Route path="explore" element={<ExploreScreen league="MLB" />} />
     {(["milestones", "moves", "talent", "preseason", "watch", "matchup"] as const).map(feature => <Route key={feature} path={`${feature}/*`} element={<FutureFeatureScreen feature={feature} league="MLB" />} />)}
     <Route path="home" element={<MlbHistoricalHome manifest={manifest} favorites={favorites} toggle={toggle} saving={saving} />} />

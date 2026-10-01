@@ -5,6 +5,7 @@ import { publicAssetBase } from "../app/platform";
 import { publicDataFetch, rememberPublicResponse } from "../app/mobile-services";
 import { useHistoricalCompetition } from "./historical-competition-context";
 import { mergeHistoricalDirectory, type HistoricalDirectoryPlayer } from "../domain/historical-directory";
+import { hasHistoricalPostseason, usePostseasonAvailability } from "./postseason-availability";
 
 const base = `${publicAssetBase()}data/mlb/historical/`;
 export function useHistoricalStatic<T>(path: string | null) {
@@ -37,8 +38,9 @@ export function useHistoricalStatic<T>(path: string | null) {
 }
 export function useHistoricalDirectory() {
   const competition = useHistoricalCompetition();
+  const availability = usePostseasonAvailability();
   const regular = useHistoricalStatic<{ players: HistoricalDirectoryPlayer[] }>("players/index.json");
-  const postseason = useHistoricalStatic<{ players: HistoricalDirectoryPlayer[] }>(competition === "regular" ? "postseason/players/index.json" : null);
+  const postseason = useHistoricalStatic<{ players: HistoricalDirectoryPlayer[] }>(competition === "regular" && hasHistoricalPostseason(availability) ? "postseason/players/index.json" : null);
   if (competition === "postseason") return regular;
   return { ...regular, value: regular.value ? { players: mergeHistoricalDirectory(regular.value.players, postseason.value?.players ?? []) } : null };
 }
