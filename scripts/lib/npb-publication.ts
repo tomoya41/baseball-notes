@@ -3,6 +3,17 @@ import { dirname, join } from "node:path";
 import { createHash } from "node:crypto";
 import { gameManifestSchema, gameDateIndexSchema, shiftGameDate } from "../../src/domain/npb-game-index";
 import { validateNpbPublication, validateNpbPublishedGameDates } from "../../src/application/npb-publication-consistency";
+import { npbLatestStandingsSchema } from "../../src/domain/standings";
+
+export async function preserveNpbPublicStandings(root: string, request: typeof fetch = fetch) {
+  const response = await request(`https://tomoya41.github.io/baseball-notes/data/standings/npb/latest.json?v=${Date.now()}`,
+    { cache: "no-store", signal: AbortSignal.timeout(15_000) });
+  if (!response.ok) throw Error(`Standings preservation HTTP ${response.status}`);
+  const body = await response.text(), payload = npbLatestStandingsSchema.parse(JSON.parse(body));
+  const path = join(root, "data/standings/npb/latest.json");
+  await mkdir(dirname(path), { recursive: true }); await writeFile(path, body);
+  return { effectiveDate: payload.effectiveDate, canonicalWrites: 0 };
+}
 
 export async function readNpbPublication(root: string) {
   const read = async (path: string) => JSON.parse(await readFile(join(root, "data/npb", path), "utf8")) as unknown;

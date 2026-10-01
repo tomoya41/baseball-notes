@@ -14,7 +14,7 @@ import { npbSeasonPayloadSchema, seasonBattingKeys } from "../src/application/np
 import { validateNpbPublication, validateNpbPublishedGameDates } from "../src/application/npb-publication-consistency";
 import { npbHotPayloadSchema } from "../src/application/npb-hot-payload";
 import { buildNpbRecords } from "../src/application/npb-records-payload";
-import { readNpbPublication, writeNpbProfileProjections, npbPublicationHashes, verifyNpbPublicationHash } from "../scripts/lib/npb-publication";
+import { readNpbPublication, writeNpbProfileProjections, npbPublicationHashes, verifyNpbPublicationHash, preserveNpbPublicStandings } from "../scripts/lib/npb-publication";
 import { shiftGameDate } from "../src/domain/npb-game-index";
 import type { NpbPlayerDirectory } from "../src/domain/npb-player-directory";
 import hotFixture from "./fixtures/npb-hot-ready.json";
@@ -256,11 +256,30 @@ describe("coordinated NPB publication", () => {
     for (const row of p.standings.standings) row.date = "2026-09-26";
     expect(() => validateNpbPublication(p)).toThrow(/Standings effectiveDate/);
   });
+  it("preserves the published standings bytes rather than a newer database snapshot", async () => {
+    const root = await mkdtemp(join(tmpdir(), "npb-public-standing-"));
+    try {
+      const p = family(); await stage(root, p); const body = JSON.stringify(p.standings, null, 2);
+      const result = await preserveNpbPublicStandings(root, async () => new Response(body));
+      expect(result).toEqual({ effectiveDate: p.directory.effectiveDate, canonicalWrites: 0 });
+      expect(await readFile(join(root, "data/standings/npb/latest.json"), "utf8")).toBe(body);
+      expect((await readNpbPublication(root)).standings!.effectiveDate).toBe(p.directory.effectiveDate);
+      for (const response of [new Response(null, { status: 503 }), Response.json({ invalid: true })])
+        await expect(preserveNpbPublicStandings(root, async () => response)).rejects.toThrow();
+      expect(await readFile(join(root, "data/standings/npb/latest.json"), "utf8")).toBe(body);
+    } finally { await rm(root, { recursive: true, force: true }); }
+  });
 });
 
 type Workflow = { jobs: Record<string, { steps: { run?: string; uses?: string; if?: string }[] }> };
 const workflow = (name: string) => parse(readFileSync(`.github/workflows/${name}.yml`, "utf8")) as Workflow;
 describe("all Pages publication entry points", () => {
+  it("MLB-only publication preserves the public NPB standings before its dependent family", () => {
+    const run = workflow("mlb-historical-publish").jobs.stage!.steps.map(s => s.run ?? "").join("\n");
+    expect(run).not.toContain("publish:npb:remote");
+    expect(run.indexOf("preserve-published-npb-standings.ts")).toBeLessThan(run.indexOf("preserve-published-npb-hot.ts"));
+    expect(run.indexOf("preserve-published-npb-standings.ts")).toBeLessThan(run.indexOf("verify-npb-publication.ts"));
+  });
   it.each(["npb-player-directory-publish", "npb-season-publish", "npb-hot-publish", "daily-collector",
     "npb-eod-watcher", "mlb-historical-publish"])("%s validates the final family before uploading one artifact", name => {
     const steps = Object.values(workflow(name).jobs).flatMap(j => j.steps);

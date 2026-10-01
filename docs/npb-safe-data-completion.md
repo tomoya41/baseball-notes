@@ -145,3 +145,6 @@ All six Pages publication entry points now carry the final staged hashes into sh
 
 The publication identity includes the same-origin standings payload as well, with its effective date and canonical Team IDs validated. Milestones consumers require both the Capabilities effectiveDate and generatedAt before display or response-cache commit; offline fallback is revalidated against that same identity. No public JSON contract/schema changes are introduced.
 
+
+MLB-only publication preserves validated public NPB standings bytes with the public NPB family instead of reading a possibly newer un-published DB snapshot. Invalid/unavailable preservation fails closed; it does not silently substitute current data. No NPB DB credentials or queries are needed for that preservation step.
+

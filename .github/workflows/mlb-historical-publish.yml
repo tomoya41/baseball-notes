@@ -59,13 +59,9 @@ jobs:
       # The encrypted combined artifact below contains the same portable MLB
       # export. Avoid retaining a second 65 MB copy of the PA backup.
       - name: Read and preserve current NPB public data
-        env:
-          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
-          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
         run: |
-          npm run publish:npb:remote -- --payload-root .data/publish
           npm run build
-          cp -R .data/publish/data dist/
+          npx tsx scripts/preserve-published-npb-standings.ts dist
           npx tsx scripts/preserve-published-npb-season.ts
           npx tsx scripts/preserve-published-npb-player-directory.ts
           npx tsx scripts/preserve-published-npb-hot.ts
