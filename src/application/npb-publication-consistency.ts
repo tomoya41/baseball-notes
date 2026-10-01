@@ -6,10 +6,13 @@ import { npbSeasonPayloadSchema } from "./npb-season-payload";
 import { npbHotPayloadSchema } from "./npb-hot-payload";
 import { buildNpbCapabilities } from "./npb-product-payload";
 import { buildNpbSeasonMilestones } from "./npb-season-milestones";
+import { gameManifestSchema, recentGamesSchema, gameDateIndexSchema } from "../domain/npb-game-index";
+import { recordsSchema } from "../domain/npb-records";
 
 export type NpbPublicationInputs = {
   directory: unknown; catalog: unknown; capabilities: unknown; season: unknown;
   hot: unknown; teamSeason: unknown; milestones?: unknown;
+  gameManifest?: unknown; gameRecent?: unknown; records?: unknown;
 };
 const requireEqual = (actual: unknown, expected: unknown, label: string) => {
   if (!isDeepStrictEqual(actual, expected)) throw Error(`NPB publication mismatch: ${label}`);
@@ -56,5 +59,34 @@ export function validateNpbPublication(input: NpbPublicationInputs) {
     const expected = buildNpbSeasonMilestones(season, catalog);
     requireEqual(milestones, expected, "Milestones generation/date/identity/counts");
   }
-  return { directory, catalog, capabilities, season, hot, teamSeason, milestones };
+  const gameManifest = input.gameManifest === undefined ? undefined : gameManifestSchema.parse(input.gameManifest);
+  const gameRecent = input.gameRecent === undefined ? undefined : recentGamesSchema.parse(input.gameRecent);
+  const records = input.records === undefined ? undefined : recordsSchema.parse(input.records);
+  if (gameManifest || gameRecent || records) {
+    if (!gameManifest || !gameRecent || !records) throw Error("NPB publication mismatch: incomplete Game surface");
+    for (const payload of [gameManifest, gameRecent, records])
+      requireEqual(payload.effectiveDate, directory.effectiveDate, "Game surface effectiveDate");
+    requireEqual(gameRecent.generatedAt, gameManifest.generatedAt, "Game surface generation");
+    requireEqual([records.season, records.coverage, records.readiness, records.qualifierStatus, records.reasons],
+      [season.season, season.coverage.status, season.readiness.status, season.readiness.rateQualifier, season.readiness.reasons], "Records Gate");
+    for (const category of records.categories) for (const row of category.rows) {
+      const player = season.players.find(p => p.playerId === row.playerId), metric = player?.[category.role]?.metrics[category.metric];
+      requireEqual([row.displayName, row.value, metric?.status], [player?.displayName, metric?.value, "complete"], "Records Player metric");
+    }
+    if (new Set(gameRecent.games.map(g => g.gameId)).size !== gameRecent.games.length ||
+      gameRecent.games.some(g => g.date > directory.effectiveDate || g.status !== "final" || !teams.has(g.home.id) || !teams.has(g.away.id)))
+      throw Error("NPB publication mismatch: Recent Games");
+  }
+  return { directory, catalog, capabilities, season, hot, teamSeason, milestones, gameManifest, gameRecent, records };
+}
+
+// A dated schedule has no effectiveDate of its own; bind it to the manifest generation.
+export function validateNpbPublishedGameDates(publication: ReturnType<typeof validateNpbPublication>, input: unknown[]) {
+  if (!publication.gameManifest || !publication.gameRecent) throw Error("Game surface required");
+  const days = input.map(value => gameDateIndexSchema.parse(value));
+  const expectedDates = new Set([publication.directory.effectiveDate, ...publication.gameRecent.games.map(g => g.date)]);
+  requireEqual(days.map(d => d.date).sort(), [...expectedDates].sort(), "published Game dates");
+  for (const day of days) requireEqual(day.generatedAt, publication.gameManifest.generatedAt, "dated Game generation");
+  for (const game of publication.gameRecent.games)
+    requireEqual(days.find(d => d.date === game.date)?.games.find(g => g.gameId === game.gameId), game, "dated Recent Game");
 }

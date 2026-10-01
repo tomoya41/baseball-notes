@@ -1,5 +1,5 @@
 import { npbPlayerDirectorySchema } from "../src/domain/npb-player-directory";
-import { validateNpbPublication } from "../src/application/npb-publication-consistency";
+import { validateNpbPublication, validateNpbPublishedGameDates } from "../src/application/npb-publication-consistency";
 
 const expected = process.env.EXPECTED_GENERATED_AT;
 if (!expected) throw new Error("EXPECTED_GENERATED_AT is required");
@@ -18,11 +18,14 @@ for (let attempt = 0; attempt < 12; attempt++) {
         if (!r.ok) throw Error(`Published projection HTTP ${r.status}: ${path}`);
         return r.json() as Promise<unknown>;
       };
-      const [catalog, capabilities, season, hot, teamSeason, milestones] = await Promise.all([
+      const [catalog, capabilities, season, hot, teamSeason, milestones, gameManifest, gameRecent, records] = await Promise.all([
         read("catalog/latest.json"), read("capabilities.json"), read("season/2026/latest.json"),
         read("hot/latest.json"), read("teams/season/2026/latest.json"), read("milestones/2026/latest.json", true),
+        read("games/manifest.json"), read("games/recent.json"), read("records/2026/latest.json"),
       ]);
-      validateNpbPublication({ directory: payload, catalog, capabilities, season, hot, teamSeason, milestones });
+      const publication = validateNpbPublication({ directory: payload, catalog, capabilities, season, hot, teamSeason, milestones, gameManifest, gameRecent, records });
+      const dates = [...new Set([payload.effectiveDate, ...publication.gameRecent!.games.map(g => g.date)])];
+      validateNpbPublishedGameDates(publication, await Promise.all(dates.map(date => read(`games/dates/${date}.json`))));
       process.stdout.write(`${JSON.stringify({ url, httpStatus: response.status,
         effectiveDate: payload.effectiveDate, players: payload.players.length,
         teams: payload.teams.length })}\n`);

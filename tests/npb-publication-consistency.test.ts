@@ -11,7 +11,7 @@ import { reviewedMeasurements } from "../src/data/npb-reviewed-measurements";
 import { buildNpbCatalog, buildNpbCapabilities } from "../src/application/npb-product-payload";
 import { buildNpbSeasonMilestones } from "../src/application/npb-season-milestones";
 import { npbSeasonPayloadSchema, seasonBattingKeys } from "../src/application/npb-season-payload";
-import { validateNpbPublication } from "../src/application/npb-publication-consistency";
+import { validateNpbPublication, validateNpbPublishedGameDates } from "../src/application/npb-publication-consistency";
 import { npbHotPayloadSchema } from "../src/application/npb-hot-payload";
 import { readNpbPublication, writeNpbProfileProjections } from "../scripts/lib/npb-publication";
 import type { NpbPlayerDirectory } from "../src/domain/npb-player-directory";
@@ -39,13 +39,20 @@ function family() {
   return { directory, catalog, season, hot, capabilities: buildNpbCapabilities(catalog, season, hot.readiness),
     teamSeason: { schemaVersion: 1, league: "NPB", season: 2026, competition: "regular", effectiveDate: date, generatedAt: at,
       period: season.period, scope: "stored_final_games", coverage, teams: [] },
-    milestones: buildNpbSeasonMilestones(season, catalog) };
+    milestones: buildNpbSeasonMilestones(season, catalog),
+    gameManifest: { schemaVersion: 1, league: "NPB", from: date, to: "2026-10-07", effectiveDate: date, generatedAt: at },
+    gameRecent: { schemaVersion: 1, league: "NPB", effectiveDate: date, generatedAt: at, games: [] },
+    records: { schemaVersion: 1, league: "NPB", season: 2026, effectiveDate: date, coverage: season.coverage.status,
+      readiness: season.readiness.status, qualifierStatus: season.readiness.rateQualifier, reasons: season.readiness.reasons, categories: [] } };
 }
 
 async function stage(root: string, p: ReturnType<typeof family>) {
   for (const [path, value] of Object.entries({ "players/latest.json": p.directory, "catalog/latest.json": p.catalog,
     "capabilities.json": p.capabilities, "season/2026/latest.json": p.season, "hot/latest.json": p.hot,
-    "teams/season/2026/latest.json": p.teamSeason, "milestones/2026/latest.json": p.milestones })) {
+    "teams/season/2026/latest.json": p.teamSeason, "milestones/2026/latest.json": p.milestones,
+    "games/manifest.json": p.gameManifest, "games/recent.json": p.gameRecent, "records/2026/latest.json": p.records,
+    [`games/dates/${p.directory.effectiveDate}.json`]: { schemaVersion: 1, league: "NPB", date: p.directory.effectiveDate,
+      generatedAt: p.gameManifest.generatedAt, coverage: "partial", games: [] } })) {
     const file = join(root, "data/npb", path); await mkdir(dirname(file), { recursive: true }); await writeFile(file, JSON.stringify(value));
   }
 }
@@ -114,6 +121,7 @@ describe("coordinated NPB publication", () => {
     p.directory.generatedAt = "2026-09-27T00:00:00.000Z";
     p.season.effectiveDate = date; p.season.period.to = date;
     p.teamSeason.effectiveDate = date; p.teamSeason.period.to = date;
+    p.gameManifest.effectiveDate = date; p.gameRecent.effectiveDate = date; p.records.effectiveDate = date;
     p.catalog = buildNpbCatalog(p.directory, reviewedMeasurements);
     p.capabilities = buildNpbCapabilities(p.catalog, p.season, p.hot.readiness);
     p.milestones = buildNpbSeasonMilestones(p.season, p.catalog);
@@ -121,6 +129,24 @@ describe("coordinated NPB publication", () => {
     expect(result.directory.effectiveDate).toBe(date);
     expect(result.milestones!.effectiveDate).toBe(date);
     expect(result.capabilities.data.hot!.available).toBe(false);
+  });
+  it.each(["gameManifest", "gameRecent", "records"] as const)("rejects stale %s even after all profile projections advance", key => {
+    const p = family(); p[key].effectiveDate = "2026-09-24";
+    expect(() => validateNpbPublication(p)).toThrow(/Game surface effectiveDate/);
+  });
+  it("rejects stale same-date Recent generation and inconsistent Records gates", () => {
+    const p = family(); p.gameRecent.generatedAt = "2026-09-25T01:00:00.000Z";
+    expect(() => validateNpbPublication(p)).toThrow(/Game surface generation/);
+    const q = family(); q.records.reasons = ["stale_reason"];
+    expect(() => validateNpbPublication(q)).toThrow(/Records Gate/);
+  });
+  it("requires the effective day's schedule to propagate to the manifest generation", () => {
+    const p = validateNpbPublication(family());
+    const day = { schemaVersion: 1, league: "NPB", date: p.directory.effectiveDate,
+      generatedAt: p.gameManifest!.generatedAt, coverage: "partial", games: [] };
+    expect(() => validateNpbPublishedGameDates(p, [day])).not.toThrow();
+    expect(() => validateNpbPublishedGameDates(p, [])).toThrow(/published Game dates/);
+    expect(() => validateNpbPublishedGameDates(p, [{ ...day, generatedAt: "2026-09-25T01:00:00.000Z" }])).toThrow(/dated Game generation/);
   });
   it("runs the Directory publication refresh end-to-end, preserving base payloads and rerun values", async () => {
     const root = await mkdtemp(join(tmpdir(), "npb-profile-publication-"));

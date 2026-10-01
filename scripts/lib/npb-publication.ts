@@ -1,6 +1,6 @@
 import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
-import { validateNpbPublication } from "../../src/application/npb-publication-consistency";
+import { validateNpbPublication, validateNpbPublishedGameDates } from "../../src/application/npb-publication-consistency";
 
 export async function readNpbPublication(root: string) {
   const read = async (path: string) => JSON.parse(await readFile(join(root, "data/npb", path), "utf8")) as unknown;
@@ -12,7 +12,13 @@ export async function readNpbPublication(root: string) {
     if (error.code !== "ENOENT") throw error;
     return undefined;
   });
-  return validateNpbPublication({ directory, catalog, capabilities, season, hot, teamSeason, milestones });
+  const [gameManifest, gameRecent, records] = await Promise.all([
+    read("games/manifest.json"), read("games/recent.json"), read("records/2026/latest.json"),
+  ]);
+  const publication = validateNpbPublication({ directory, catalog, capabilities, season, hot, teamSeason, milestones, gameManifest, gameRecent, records });
+  const dates = [...new Set([publication.directory.effectiveDate, ...publication.gameRecent!.games.map(g => g.date)])];
+  validateNpbPublishedGameDates(publication, await Promise.all(dates.map(date => read(`games/dates/${date}.json`))));
+  return publication;
 }
 
 export async function writeNpbProfileProjections(root: string, input: Parameters<typeof validateNpbPublication>[0]) {
