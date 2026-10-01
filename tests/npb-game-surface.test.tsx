@@ -21,7 +21,7 @@ const records=(ready=false)=>recordsSchema.parse({schemaVersion:1,league:"NPB",s
   categories:[{role:"batting",metric:"HR",rows:ready?[{playerId:"canonical",displayName:"実選手",rank:1,value:20}]:[]}]});
 describe("canonical dated Game surface",()=>{
   it("lists partial Game headers with safe canonical detail links",()=>{const text=html(<GameDateView payload={date([row()])}/>);
-    expect(text).toContain("一部データ確認中");expect(text).toContain("npb%3Agame%3Aone");expect(text).toContain("ホーム 阪神");expect(text).toContain("ビジター DeNA");});
+    expect(text).toContain("一部データ確認中");expect(text).toContain("npb%3Agame%3Aone");expect(text).toContain("<small>ホーム</small><span>阪神</span>");expect(text).toContain("<small>ビジター</small><span>DeNA</span>");});
   it("distinguishes confirmed no-games from unavailable schedule",()=>{
     expect(html(<GameDateView payload={date([],"no_games")}/>)).toContain("試合なし");
     expect(html(<GameDateView payload={date([],"unknown")}/>)).toContain("確認できていません");});

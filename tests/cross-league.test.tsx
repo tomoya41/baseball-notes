@@ -31,9 +31,12 @@ describe("canonical league boundaries", () => {
     expect(canonicalEntityRefSchema.safeParse({ league: "BAD", kind: "player", id: uuid }).success).toBe(false);
   });
   it("keeps schedule date but drops entity and source routes when switching", () => {
-    expect(leagueSwitchPath("/NPB/schedule", "?date=2026-09-25", "MLB")).toBe("/MLB/schedule?date=2026-09-25");
+    expect(leagueSwitchPath("/NPB/schedule", "?date=2026-09-25", "MLB")).toBe("/MLB/schedule");
     expect(leagueSwitchPath(`/NPB/players/${uuid}`, "?source=secret", "MLB")).toBe("/MLB/search");
     expect(leagueSwitchPath("/MLB/my", "", "NPB")).toBe("/NPB/my");
+    expect(leagueSwitchPath("/MLB/schedule", "?season=2020&date=2020-09-20", "NPB")).toBe("/NPB/schedule");
+    expect(leagueSwitchPath("/MLB/records", "?season=2020", "MLB")).toBe("/MLB/records?season=2020");
+    expect(leagueSwitchPath("/NPB/schedule", "?date=2026-09-25", "NPB")).toBe("/NPB/schedule?date=2026-09-25");
   });
   it("normalizes case, space and accents without merging player identity", () => {
     expect(normalizePlayerSearch("  JOSÉ   Ramírez ")).toBe("jose ramirez");

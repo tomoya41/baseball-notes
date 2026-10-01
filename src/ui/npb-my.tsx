@@ -4,6 +4,7 @@ import type { Favorite } from "../domain/models";
 import type { NpbPlayerDirectory } from "../domain/npb-player-directory";
 import { positionDefinitions } from "../domain/baseball-terms";
 import { DataState,FavoriteButton,LoadingSkeleton,PageHeading } from "./components";
+import { Monogram } from "./design-system";
 type Target=Pick<Favorite,"entityId"|"kind"|"league">;
 export function NpbSavedPlayers({repository,favorites,toggle,saving,compact=false}:{repository:{findLatestNpb():Promise<NpbPlayerDirectory>};
   favorites:Favorite[];toggle:(t:Target)=>void;saving:boolean;compact?:boolean}){
@@ -15,7 +16,7 @@ export function NpbSavedPlayers({repository,favorites,toggle,saving,compact=fals
     {error?<DataState kind="source-unavailable" title="お気に入り選手の情報を読み込めません"/>:!directory?<LoadingSkeleton/>:
       !ids.length?<DataState kind="no-data" title="お気に入りはまだありません" action="選手を探す" to="/NPB/search"/>:
         <div className="row-list">{visible.map((p,i)=><div className="surface-favorite" key={ids[i]}>
-          {p?<Link className="player-row" to={`/NPB/players/${encodeURIComponent(p.playerId)}`}><span className="player-row__body"><strong>{p.displayName}</strong>
+          {p?<Link className="player-row" to={`/NPB/players/${encodeURIComponent(p.playerId)}`}><Monogram name={p.displayName} /><span className="player-row__body"><strong>{p.displayName}</strong>
             <small>{directory.teams.find(t=>t.id===p.teamId)?.shortName??"所属球団未登録"}{p.position?` · ${positionDefinitions[p.position]}`:""}</small></span></Link>:
             <span>選手情報を確認できません</span>}
           <FavoriteButton active saving={saving} label={p?.displayName??"登録済み選手"} onClick={()=>toggle({kind:"player",league:"NPB",entityId:ids[i]!})}/>

@@ -1,5 +1,13 @@
 # Durable Decisions
 
+## 2026-10-01: Data-first sports presentation and contextual metric help
+
+Results use a shared aligned scoreboard; primary statistics and rankings use ruled rows, explicit season/sample context and tabular values. Decorative hero copy is removed. Metric definitions live in local accessible dialogs next to their labels; qualification rules remain a separate disclosure. This changes presentation only, with existing calculations, null semantics and capability gates retained. See `docs/sports-ui-research.md` for first-party research and the app-specific interpretation.
+
+## 2026-09-30: Android-first contextual navigation
+
+The user authorized a zero-based UI redesign, superseding earlier visual layouts. Home/Games/Players/Records/My are the five primary destinations; Analysis is contextual to a Player. Upcoming capabilities use purpose-specific routes under Explore or Profile, never mock metrics or dominant Home placeholders. Retain canonical hash routes, league isolation and native Back/deep links. Theme preferences share the native/Web preference adapter. Verified Japanese MLB discovery is small reviewed CC0 identity metadata, separate from statistics and membership. No data migration or Production Gate change; reverting UI commits restores the previous presentation. See `docs/ui-redesign.md`.
+
 This file records decisions that should survive individual implementation tasks.
 
 ## 2026-09-26 — Verified NPB Player Master and compact static Profile
@@ -268,3 +276,7 @@ For the Japanese audience, MLB Japanese players use their established kanji name
 Keep existing Directory v2, Season/Game/Records v1 and source collectors stable. Add three source-independent version 1 public projections: basic catalog (Player/Profile/Membership/Visual/Team), data capabilities and 12-team saved-season aggregates. Reuse existing rates and separate stored scope, metric status and Season Coverage. Uniform numbers belong to affiliation context with nullable observation/effective dates. No copied photo/logo or official palette without an exact reusable asset grant; use canonical names/abbreviations and neutral visuals.
 
 nf3 remains provisional; finding more pages is not a redistribution licence. Expand only CC0 Wikidata measurements through the existing reviewed canonical identity bridges; conflicting claims remain null, no name-only mass matching, no daily Wikidata traffic or canonical Fact mutation. Profile supplement is a small reviewed source-data registry in Git, not a new canonical table. No migration is needed. HOT/Ranking/Infrastructure and rain-shortened partials stay unchanged. Rollback removes additive projections/repository/generation/preservation hooks; established payloads and Facts remain intact. See `docs/astra-ui-redesign-handoff.md` and `docs/npb-batch-g-rights.md`.
+
+## 2026-10-01 — Android-first task surfaces and followed-player statistics
+
+Keep five primary destinations (Home, Games, Players, Records, My) and place Analysis in canonical Player context. Future capabilities get secondary structured routes with explicit Coming Soon, never mock Home previews. Home separates Scores/Standings/Follow in NPB and Japanese Players/Follow/League in MLB. Verified Japanese identity is presentation metadata; names are not nationality evidence. The historical watch board loads at most four existing Player payloads and displays their selected-year metrics, without fetching the whole Season aggregate. Game browsing uses a bounded calendar and symmetric score hierarchy. Preserve all source/data contracts, Favorite keys, rate/BvP semantics, NPB Gates and Android adapters. Revert the UI commits for rollback; no database migration is involved.

@@ -1,9 +1,12 @@
 import { useId, useRef } from "react";
 import type { ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { ChevronRight, Info, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import { metrics } from "../domain/metrics";
-import type { Favorite, MetricDefinition, Player, PlayerCatalog, Statistics, Team } from "../domain/models";
+import type { Favorite, Player, PlayerCatalog, Statistics, Team } from "../domain/models";
+import { metricHelp } from "../presentation/metric-help";
+import type { MetricHelp } from "../presentation/metric-help";
 import { formatMetric, formatPlayerName, formatPositions, formatTeamName } from "../presentation/formatters";
 import { TeamBrand } from "./branding";
 
@@ -68,20 +71,26 @@ export function FavoriteButton({ active, saving, onClick, label }: {
   </button>;
 }
 
-export function MetricInfo({ definition }: { definition: MetricDefinition }) {
+export function MetricInfo({ definition }: { definition: MetricHelp }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const titleId = useId();
+  const content = <dialog className="metric-dialog" ref={dialog} aria-labelledby={titleId}>
+    <p className="eyebrow">指標ガイド</p><h2 id={titleId}>{definition.name} <span>{definition.fullName}</span></h2>
+    <p>{definition.description}</p>
+    <p>{definition.interpretation}</p>
+    {definition.caveat && <p className="muted">{definition.caveat}</p>}
+    <form method="dialog"><button className="button">閉じる</button></form>
+  </dialog>;
   return <>
     <button className="metric-info-button" type="button" aria-label={`${definition.name}の説明`}
       onClick={() => dialog.current?.showModal()}><Info size={17} aria-hidden="true" /></button>
-    <dialog className="metric-dialog" ref={dialog} aria-labelledby={titleId}>
-      <h2 id={titleId}>{definition.name}（{definition.fullName}）</h2>
-      <p>{definition.description}</p>
-      <p>{definition.interpretation}</p>
-      {definition.caveat && <p className="muted">{definition.caveat}</p>}
-      <form method="dialog"><button className="button">閉じる</button></form>
-    </dialog>
+    {typeof document === "undefined" ? content : createPortal(content, document.body)}
   </>;
+}
+
+export function MetricLabel({ metric, label }: { metric: string; label?: string }) {
+  const definition = metricHelp(metric);
+  return <span className="metric-label"><span>{label ?? metric}</span>{definition && <MetricInfo definition={definition} />}</span>;
 }
 
 export function MetricGrid({ stats, advanced = false }: { stats: Statistics; advanced?: boolean }) {
@@ -90,7 +99,7 @@ export function MetricGrid({ stats, advanced = false }: { stats: Statistics; adv
       const definition = metrics[id];
       if (!definition || definition.advanced !== advanced) return null;
       return <div className="metric-tile" key={id}>
-        <div className="metric-tile__label"><span>{definition.name}</span>{advanced && <MetricInfo definition={definition} />}</div>
+        <div className="metric-tile__label"><MetricLabel metric={id} label={definition.name} /></div>
         <strong className="metric-tile__value">{formatMetric(value, definition)}</strong>
         {value.status !== "available" && <small className="metric-tile__note">{value.reason}</small>}
       </div>;

@@ -1,0 +1,30 @@
+{
+  "license": "CC0-1.0",
+  "accessedDate": "2026-09-30",
+  "criterion": "Wikidata P27 includes Japan (Q17); exact Retrosheet/MLBAM to Chadwick mapping; reviewed entity allowlist; not name inference",
+  "players": {
+    "mlb:player:f89361e2-d9fc-5e5b-b37a-1a4b430526ea": "https://www.wikidata.org/entity/Q11603072",
+    "mlb:player:d363f42b-7afd-5298-abf7-54aa6a571a16": "https://www.wikidata.org/entity/Q71678901",
+    "mlb:player:d6c42d5b-99de-5612-adc7-599a5cc74883": "https://www.wikidata.org/entity/Q911463",
+    "mlb:player:9b508a82-becf-5daf-b399-383e23482464": "https://www.wikidata.org/entity/Q11529198",
+    "mlb:player:9d2707f1-3e52-5ba3-a080-2c00f5beb05a": "https://www.wikidata.org/entity/Q11359505",
+    "mlb:player:82c22d5c-a630-5781-b7da-de7bd884cf94": "https://www.wikidata.org/entity/Q22127310",
+    "mlb:player:d387319a-8ea1-5c5d-a72e-eec21be82578": "https://www.wikidata.org/entity/Q8061867",
+    "mlb:player:e70b8d12-aa41-50c0-9c1b-d468d451355f": "https://www.wikidata.org/entity/Q4391858",
+    "mlb:player:e11d59b2-5eb7-5861-b2e2-bb3ff9af196d": "https://www.wikidata.org/entity/Q22117936",
+    "mlb:player:c5761af9-ac61-52fa-9edb-030fca957feb": "https://www.wikidata.org/entity/Q392329",
+    "mlb:player:71607e64-6bef-5a6f-bf34-f12c04f0f66f": "https://www.wikidata.org/entity/Q11406818",
+    "mlb:player:a3f4cb52-16ba-59fd-91bd-4ea6e0a0d07d": "https://www.wikidata.org/entity/Q22120815",
+    "mlb:player:98da2dce-84a2-5eac-a6d8-10503271350b": "https://www.wikidata.org/entity/Q11649272",
+    "mlb:player:337dcf6a-dcd8-5e6a-b2f2-74f426d6df05": "https://www.wikidata.org/entity/Q940215",
+    "mlb:player:3b1edfd8-9165-5e9f-ab80-f2fea343b98b": "https://www.wikidata.org/entity/Q11595041",
+    "mlb:player:325516ab-003d-5387-a9d4-a467a40c3a6b": "https://www.wikidata.org/entity/Q16265263",
+    "mlb:player:75b86cf4-461d-5973-865b-75fc3e9597cb": "https://www.wikidata.org/entity/Q5366727",
+    "mlb:player:1c2f7d24-a1cc-51e4-908e-274adb43ae68": "https://www.wikidata.org/entity/Q7820345",
+    "mlb:player:183c34b6-e8c3-5f99-85b1-e160b7b8b020": "https://www.wikidata.org/entity/Q8056072",
+    "mlb:player:975aecb3-0f8c-583c-a136-2164809c46e0": "https://www.wikidata.org/entity/Q866139",
+    "mlb:player:361727b1-f326-5bf1-9d1b-adba3157c9ac": "https://www.wikidata.org/entity/Q30935992",
+    "mlb:player:276ad804-29ed-57e2-9e2e-2de9492449f6": "https://www.wikidata.org/entity/Q18621182",
+    "mlb:player:f7f93dec-37d9-5a8b-9daa-36029b1d1f12": "https://www.wikidata.org/entity/Q968290"
+  }
+}
