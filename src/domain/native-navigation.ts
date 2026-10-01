@@ -31,7 +31,7 @@ export function parentNativeRoute(path: string): string | null {
   }
   const suffix = scope.size ? `?${scope}` : "";
   if (segments[1] === "players" && segments.length > 3) return `/${league}/players/${segments[2]}${suffix}`;
-  if (segments[1] === "players") return `/${league}/search`;
+  if (segments[1] === "players") return `/${league}/search${suffix}`;
   if (segments[1] === "games") return `/${league}/schedule${suffix}`;
   if (segments[1] === "postseason" && segments.length > 2) return `/${league}/postseason${source.get("season")?.match(/^20\d{2}$/) ? `?season=${source.get("season")}` : ""}`;
   if (segments[1] !== "home") return `/${league}/home`;
