@@ -32,9 +32,9 @@ export function NpbScheduleScreen({repository}:{repository:GameSurfaceReader}){
     {state==="ready"&&payload&&payload.date===date&&<GameDateView payload={payload}/>}
   </div>;
 }
-export function NpbRecentGames({repository}:{repository:GameSurfaceReader}){
+export function NpbRecentGames({repository,onEffectiveDate}:{repository:GameSurfaceReader;onEffectiveDate?:(date:string)=>void}){
   const [games,setGames]=useState<GameIndexRow[]|null>(null),[error,setError]=useState(false);
-  useEffect(()=>{let active=true;void repository.recent().then(p=>{if(active)setGames(p.games.slice(0,3));}).catch(()=>{if(active)setError(true);});return()=>{active=false;};},[repository]);
+  useEffect(()=>{let active=true;void repository.recent().then(p=>{if(active){setGames(p.games.slice(0,3));onEffectiveDate?.(p.effectiveDate);}}).catch(()=>{if(active)setError(true);});return()=>{active=false;};},[repository,onEffectiveDate]);
   return <section className="home-section"><SectionHeader title="最近の試合" action="日程・結果" to="/NPB/schedule"/>
     {error?<DataState kind="source-unavailable" title="試合結果を読み込めません"/>:games?<GameLinks games={games}/>:<LoadingSkeleton/>}</section>;
 }

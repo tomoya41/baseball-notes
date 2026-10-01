@@ -13,12 +13,12 @@ import { NpbSavedPlayers } from "./npb-my";
 import { NpbHotSection } from "./npb-hot";
 
 type Target = Pick<Favorite, "kind" | "entityId" | "league">;
-export function NpbStandings({ services }: { services: Services }) {
+export function NpbStandings({ services, onEffectiveDate }: { services: Services; onEffectiveDate?: (date: string) => void }) {
   const [payload, setPayload] = useState<NpbLatestStandings | null>(null);
   const [error, setError] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [division, setDivision] = useState<"Central" | "Pacific">("Central");
-  useEffect(() => { let active = true; void services.standings.findLatestNpb().then(value => { if (active) { setPayload(value); setLoaded(true); } }).catch(() => { if (active) setError(true); }); return () => { active = false; }; }, [services]);
+  useEffect(() => { let active = true; void services.standings.findLatestNpb().then(value => { if (active) { setPayload(value); setLoaded(true); if (value) onEffectiveDate?.(value.effectiveDate); } }).catch(() => { if (active) setError(true); }); return () => { active = false; }; }, [services, onEffectiveDate]);
   return <section className="home-section standings-section"><SectionHeader title="ペナントレース" />
     <div className="segmented" role="group" aria-label="順位表のリーグ">{(["Central", "Pacific"] as const).map(value => <button key={value} aria-pressed={division === value} onClick={() => setDivision(value)}>{value === "Central" ? "セ・リーグ" : "パ・リーグ"}</button>)}</div>
     {error ? <DataState kind="source-unavailable" title="順位表を読み込めません" /> : !payload ? loaded ? <DataState kind="no-data" title="保存済みの順位表はありません" /> : <LoadingSkeleton /> : <>
@@ -31,11 +31,15 @@ export function NpbStandings({ services }: { services: Services }) {
 }
 export function NpbHome({ services, favorites, toggle, saving }: { services: Services; favorites: Favorite[]; toggle: (target: Target) => void; saving: boolean }) {
   const [view,setView] = useState("scores");
-  const season = new Intl.DateTimeFormat("ja-JP", { year: "numeric", timeZone: "Asia/Tokyo" }).format(new Date());
-  return <div className="screen home-screen home-hub"><CompetitionHeader league="NPB" context={`${season} · 公式戦`} />
-    <HomeModeNav active={view} onChange={setView} modes={[{id:"scores",label:"スコア"},{id:"standings",label:"順位表"},{id:"follow",label:"フォロー"}]} />
-    {view === "scores" && <NpbRecentGames repository={services.gameSurface} />}
-    {view === "standings" && <NpbStandings services={services} />}
+  const [effectiveDate, setEffectiveDate] = useState<string | null>(null);
+  const changeView = (next: string) => {
+    if (next !== view && next !== "follow") setEffectiveDate(null);
+    setView(next);
+  };
+  return <div className="screen home-screen home-hub"><CompetitionHeader league="NPB" context={effectiveDate ? `${effectiveDate.slice(0, 4)}年 · 公式戦` : "公式戦"} />
+    <HomeModeNav active={view} onChange={changeView} modes={[{id:"scores",label:"スコア"},{id:"standings",label:"順位表"},{id:"follow",label:"フォロー"}]} />
+    {view === "scores" && <NpbRecentGames repository={services.gameSurface} onEffectiveDate={setEffectiveDate} />}
+    {view === "standings" && <NpbStandings services={services} onEffectiveDate={setEffectiveDate} />}
     {view === "follow" && <section className="home-section"><SectionHeader title="お気に入り選手" action="My" to="/NPB/my" /><NpbSavedPlayers repository={services.directory} favorites={favorites} toggle={toggle} saving={saving} compact /></section>}
     <div className="hub-links"><Link to="/NPB/search">選手を探す <span>→</span></Link><Link to="/NPB/records">個人成績 <span>→</span></Link></div>
     <div className="hub-readiness"><NpbHotSection repository={services.hot} /></div>
@@ -53,12 +57,29 @@ export function NpbProfileDetails({ player }: { player: NpbCatalog["players"][nu
 export function NpbTeam({ services }: { services: Services }) {
   const { teamId } = useParams();
   const [catalog, setCatalog] = useState<NpbCatalog | null>(null), [season, setSeason] = useState<NpbTeamSeason | null>(null), [error, setError] = useState(false);
-  useEffect(() => { let active = true; void services.product.catalog().then(value => { if (!active) return; setCatalog(value); return services.product.teamSeason(Number(value.effectiveDate.slice(0, 4))).then(stats => { if (active) setSeason(stats); }); }).catch(() => { if (active) setError(true); }); return () => { active = false; }; }, [services]);
+  const [seasonState, setSeasonState] = useState<"loading" | "ready" | "error">("loading");
+  useEffect(() => {
+    let active = true;
+    void services.product.catalog().then(value => {
+      if (!active) return;
+      setCatalog(value); setSeason(null); setSeasonState("loading");
+      return services.product.teamSeason(Number(value.effectiveDate.slice(0, 4)))
+        .then(stats => { if (active) { setSeason(stats); setSeasonState("ready"); } })
+        .catch(() => { if (active) setSeasonState("error"); });
+    }).catch(() => { if (active) setError(true); });
+    return () => { active = false; };
+  }, [services]);
   if (!catalog) return error ? <DataState kind="source-unavailable" title="球団情報を読み込めません" /> : <LoadingSkeleton />;
   const team = catalog.teams.find(t => t.teamId === teamId), stats = season?.teams.find(t => t.teamId === teamId);
   if (!team) return <DataState kind="no-data" title="球団が見つかりません" />;
   return <div className="screen"><Link className="back-link" to="/NPB/home">← ホーム</Link><header className="profile-header"><Monogram name={team.abbreviation} large /><div><p className="eyebrow">NPB · {team.division === "Central" ? "セ・リーグ" : "パ・リーグ"}</p><h1>{team.name}</h1></div></header>
-    {stats && <section className="surface-card"><h2>{season!.season}シーズン</h2><p className="inline-note">{season!.effectiveDate}までの保存済み試合 · {season!.coverage.status === "complete" ? "確認済み" : "一部データ確認中"}</p><div className="metric-grid">{[["試合", stats.G], ["勝", stats.W], ["敗", stats.L], ["引分", stats.T], ["得点", stats.runsFor], ["失点", stats.runsAgainst]].map(([label, value]) => <div className="metric-tile" key={label}><span className="metric-tile__label">{label}</span><strong className="metric-tile__value">{value ?? "—"}</strong></div>)}</div></section>}
+    <section className="surface-card"><h2>{season ? `${season.season}シーズン` : "シーズン成績"}</h2>
+      {seasonState === "loading" ? <LoadingSkeleton /> : seasonState === "error" ?
+        <DataState kind="source-unavailable" title="シーズン成績を読み込めません" /> : season && stats ? <>
+        <p className="inline-note">{season.effectiveDate}までの保存済み試合 · {season.coverage.status === "complete" ? "確認済み" : "一部データ確認中"}</p>
+        <div className="metric-grid">{[["試合", stats.G], ["勝", stats.W], ["敗", stats.L], ["引分", stats.T], ["得点", stats.runsFor], ["失点", stats.runsAgainst]].map(([label, value]) => <div className="metric-tile" key={label}><span className="metric-tile__label">{label}</span><strong className="metric-tile__value">{value ?? "—"}</strong></div>)}</div>
+      </> : <DataState kind="no-data" title="保存済みのシーズン成績はありません" />}
+    </section>
     <section className="surface-card"><h2>所属選手</h2><p className="inline-note">保存済みの所属情報。現在の登録公示を示すものではありません。</p><div className="row-list">{catalog.players.filter(p => p.membership.teamId === teamId).map(p => <Link className="player-row" key={p.playerId} to={`/NPB/players/${p.playerId}`}><Monogram name={p.displayName} /><span className="player-row__body"><strong>{p.displayName}</strong>{p.profile.position && <small>{positionDefinitions[p.profile.position]}</small>}</span><span aria-hidden="true">↗</span></Link>)}</div></section>
   </div>;
 }
