@@ -46,7 +46,7 @@ try {const latest=await client.execute("SELECT MAX(snapshot_date) AS date FROM s
   const teamSeason=await readNpbTeamSeason(client,catalog,index.coverage);
   const capabilities=buildNpbCapabilities(catalog,season,hot.readiness);
   const milestones=buildNpbSeasonMilestones(season,catalog);
-  const productFiles={"catalog/latest.json":catalog,"teams/season/2026/latest.json":teamSeason,"capabilities.json":capabilities,
+  const productFiles={"players/latest.json":enriched.directory,"catalog/latest.json":catalog,"teams/season/2026/latest.json":teamSeason,"capabilities.json":capabilities,
     [`milestones/${season.season}/latest.json`]:milestones};
   const productBytes:Record<string,number>={};
   for(const [file,value] of Object.entries(productFiles)){

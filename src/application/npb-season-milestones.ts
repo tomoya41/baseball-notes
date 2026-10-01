@@ -23,6 +23,6 @@ export function buildNpbSeasonMilestones(season: NpbSeasonPayload, catalog?: Npb
       teamName: p.teamId ? teams.get(p.teamId) ?? null : null, checkpoints };
   }).filter(p => p.checkpoints.length).sort((a, b) => a.displayName.localeCompare(b.displayName, "ja") || a.playerId.localeCompare(b.playerId));
   return npbSeasonMilestonesSchema.parse({ schemaVersion: 1, league: "NPB", season: season.season,
-    effectiveDate: season.effectiveDate, generatedAt: season.generatedAt, period: season.period,
+    effectiveDate: season.effectiveDate, generatedAt: catalog?.generatedAt ?? season.generatedAt, period: season.period,
     scope: "stored_regular_season_facts", careerAvailable: false, coverage: season.coverage, players });
 }

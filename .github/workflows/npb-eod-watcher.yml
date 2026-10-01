@@ -116,6 +116,9 @@ jobs:
       - name: Preserve released MLB historical data
         if: steps.watch.outputs.publish == 'true'
         run: npx tsx scripts/preserve-mlb-historical.ts dist/data/mlb
+      - name: Validate coordinated NPB projections before artifact upload
+        if: steps.watch.outputs.publish == 'true'
+        run: npx tsx scripts/verify-npb-publication.ts dist
       - uses: actions/upload-pages-artifact@v4
         if: steps.watch.outputs.publish == 'true'
         with:

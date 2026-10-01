@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-const paths = ["catalog/latest.json", "capabilities.json", "teams/season/2026/latest.json"];
+const paths = ["players/latest.json", "catalog/latest.json", "capabilities.json", "milestones/2026/latest.json", "teams/season/2026/latest.json"];
 const digest = async (path: string) => createHash("sha256").update(await readFile(`.data/publish/data/npb/${path}`)).digest("hex");
 const before = await Promise.all(paths.map(digest));
 const report = JSON.parse(execFileSync(process.execPath, ["node_modules/tsx/dist/cli.mjs", "scripts/generate-npb-game-surface.ts"],

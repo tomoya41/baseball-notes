@@ -68,6 +68,8 @@ jobs:
           npx tsx scripts/preserve-published-npb-game-surface.ts
           npx tsx scripts/preserve-mlb-historical.ts dist/data/mlb
       - uses: actions/configure-pages@v5
+      - name: Validate coordinated NPB projections before artifact upload
+        run: npx tsx scripts/verify-npb-publication.ts dist
       - uses: actions/upload-pages-artifact@v4
         with:
           path: dist

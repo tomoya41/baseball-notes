@@ -169,6 +169,9 @@ jobs:
       - name: Preserve released MLB historical data
         if: steps.safety.outputs.skip != 'true' && (github.event_name == 'schedule' || inputs.mode == 'ingest' || inputs.mode == 'publish')
         run: npx tsx scripts/preserve-mlb-historical.ts dist/data/mlb
+      - name: Validate coordinated NPB projections before artifact upload
+        if: steps.safety.outputs.skip != 'true' && (github.event_name == 'schedule' || inputs.mode == 'ingest' || inputs.mode == 'publish')
+        run: npx tsx scripts/verify-npb-publication.ts dist
       - name: Upload complete site as one Pages artifact
         if: steps.safety.outputs.skip != 'true' && (github.event_name == 'schedule' || inputs.mode == 'ingest' || inputs.mode == 'publish')
         uses: actions/upload-pages-artifact@v4

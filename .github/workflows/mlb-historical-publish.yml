@@ -99,6 +99,8 @@ jobs:
           npx tsx scripts/publish-mlb-public-archive.ts dist/data/mlb
           node --input-type=module -e "import{readFileSync}from'node:fs';import{gunzipSync}from'node:zlib';const p=JSON.parse(gunzipSync(readFileSync('dist/data/mlb/historical/manifest.json.gz')));if(p.seasons.length!==6||p.current2026!=='unavailable'||p.seasons.some(s=>s.coverage!=='complete'))throw Error('Historical manifest');console.log(JSON.stringify({seasons:p.seasons.length,games:p.seasons.reduce((n,s)=>n+s.games,0)}))"
       - uses: actions/configure-pages@v5
+      - name: Validate preserved NPB projections before artifact upload
+        run: npx tsx scripts/verify-npb-publication.ts dist
       - uses: actions/upload-pages-artifact@v4
         with:
           path: dist
