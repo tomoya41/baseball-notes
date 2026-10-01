@@ -59,8 +59,8 @@ export function MlbDataSources() {
       <p>Contains information from <a href="https://github.com/chadwickbureau/register">Chadwick Register</a> which is made available under the <a href="https://opendatacommons.org/licenses/by/1-0/">ODC Attribution License 1.0</a>.</p>
       <p>選手IDの照合に使用しています。</p>
     </section>
-    <section className="surface-card"><h2>日本語の選手名</h2>
-      <p>日本語表示名の確認に<a href="https://www.wikidata.org/">Wikidata</a>の構造化データ（<a href="https://www.wikidata.org/wiki/Wikidata:Licensing">CC0</a>）を利用しています。</p>
+    <section className="surface-card"><h2>選手名・プロフィール</h2>
+      <p>日本語表示名と、一部のNPBプロフィールに<a href="https://www.wikidata.org/">Wikidata</a>の構造化データ（<a href="https://www.wikidata.org/wiki/Wikidata:Licensing">CC0</a>）を利用しています。確認済みの選手IDに紐づく項目だけを表示します。</p>
       <p>日本人選手は漢字、その他の選手は確認できるカタカナ表記を表示します。表記未確認の選手は原名を表示します。</p>
       <p>日本人選手の絞り込みは、国籍情報とRetrosheet・Chadwickの選手IDを照合し、確認できた選手だけを対象にしています。</p>
     </section></div>;

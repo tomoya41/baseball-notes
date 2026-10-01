@@ -102,3 +102,6 @@ NPB favorite EOD notification code is opt-in and FCM topic-based; no token DB, n
 ## Verification / redesign acceptance
 
 Use real payloads and capability/null fixtures; test offline empty and saved data, long names, narrow tables, loading/error, 360px Light/Dark and keyboard/TalkBack. Preserve existing source credits. A contract change requires revisiting consumers, strict validation, offline cache, preservation workflows, tests and this handoff. The current UI was not redesigned in Batch G; Astra is a separate explicitly authorized next batch.
+## Post-redesign data supplement (2026-10-01)
+
+The finished design stays intact. See [NPB safe data completion](npb-safe-data-completion.md) for the current inventory and rights evidence. Directory v2 / Catalog v1 now fill additional reviewed CC0 profile nulls; IDs, memberships, visuals and unknown bats/throws/numbers stay intact. Additive `seasonMilestones` capability and `/data/npb/milestones/<season>/latest.json` connect the existing Season milestone destination. This is stored-scope checkpoint progress, not career/official achievements or rankings. Career and other future tabs remain unavailable/Coming Soon; no mock or Gate change.

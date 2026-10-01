@@ -22,7 +22,7 @@ export function ExploreScreen({ league }: { league: League }) {
   return <div className="screen"><PageHeading eyebrow={`${league} · EXPLORE`} title="野球をもっと知る" detail="試合、記録、選手の歩み。気になることから。" />
     <div className="explore-groups">{[
       { title: "試合を楽しむ", icon: CalendarDays, rows: [{ to: "schedule", label: "日程・結果", detail: league === "MLB" ? "収録済みの歴史を振り返る" : "保存済みの試合を振り返る", soon: false }, { to: "preseason", label: "オープン戦", detail: "公式戦とは別のシーズン前データ", soon: true }, { to: "watch", label: "WATCH", detail: "観戦のおともに", soon: true }] },
-      { title: "記録を知る", icon: Trophy, rows: [{ to: "records", label: "シーズン記録", detail: "成績と集計状態を確認", soon: false }, { to: "milestones", label: "達成記録", detail: "シーズン・キャリアの節目", soon: true }] },
+      { title: "記録を知る", icon: Trophy, rows: [{ to: "records", label: "シーズン記録", detail: "成績と集計状態を確認", soon: false }, { to: "milestones", label: "達成記録", detail: league === "NPB" ? "保存済みシーズン成績の節目" : "シーズン・キャリアの節目", soon: league !== "NPB" }] },
       { title: "選手の歩み", icon: ArrowLeftRight, rows: [{ to: "moves", label: "選手移動・FA・Posting", detail: "所属と登録の変化をたどる", soon: true }, { to: "talent", label: "ドラフト・プロスペクト", detail: "次の世代を探す", soon: true }] },
       { title: "対戦を深く見る", icon: ScanLine, rows: [{ to: "matchup", label: "MATCHUP", detail: "選手をまたいで対戦を探す", soon: true }] },
     ].map(group => <section className="surface-card" key={group.title}><h2 className="icon-heading"><group.icon size={19} aria-hidden="true" />{group.title}</h2><div className="explore-list">{group.rows.map(row => <Link key={row.to} to={`/${league}/${row.to}`}><span><strong>{row.label}</strong><small>{row.detail}</small></span>{row.soon && <span className="soon-badge">Coming Soon</span>}<ChevronRight size={17} aria-hidden="true" /></Link>)}</div></section>)}</div>
@@ -32,6 +32,6 @@ export function PlayerFutureLinks({ base, historical = false }: { base: string; 
   return <details className="future-player-tools"><summary><GraduationCap size={17} aria-hidden="true" />選手の歩み・これからの分析</summary><div className="explore-list">
     {!historical && <Link to={`${base}/career`}><span><strong>キャリア・過去シーズン</strong><small>年ごとの成績と収録期間合計</small></span><span className="soon-badge">Coming Soon</span></Link>}
     {!historical && <Link to={`${base}/advanced`}><span><strong>対戦・高度分析</strong><small>Direct BvPと状況別の成績</small></span><span className="soon-badge">Coming Soon</span></Link>}
-    <Link to={`/${historical ? "MLB" : "NPB"}/milestones`}><span><strong>達成記録</strong><small>確認済み記録の節目をたどる</small></span><span className="soon-badge">Coming Soon</span></Link>
+    <Link to={`/${historical ? "MLB" : "NPB"}/milestones`}><span><strong>達成記録</strong><small>{historical ? "確認済み記録の節目をたどる" : "保存済みシーズン成績の節目"}</small></span>{historical && <span className="soon-badge">Coming Soon</span>}</Link>
   </div></details>;
 }

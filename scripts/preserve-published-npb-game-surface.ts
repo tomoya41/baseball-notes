@@ -3,6 +3,7 @@ import { dirname } from "node:path";
 import { gameManifestSchema,gameDateIndexSchema,recentGamesSchema,shiftGameDate } from "../src/domain/npb-game-index";
 import { recordsSchema } from "../src/domain/npb-records";
 import { npbCatalogSchema,npbCapabilitiesSchema,npbTeamSeasonSchema } from "../src/domain/npb-product-contract";
+import { npbSeasonMilestonesSchema } from "../src/domain/npb-season-milestones";
 const base="https://tomoya41.github.io/baseball-notes/data/npb/";
 async function fetchJson(path:string){const r=await fetch(base+path,{cache:"no-cache",signal:AbortSignal.timeout(15000)});
   if(!r.ok)throw Error(`Surface preservation HTTP ${r.status}`);return r.json() as Promise<unknown>;}
@@ -26,6 +27,13 @@ else {if(!response.ok)throw Error("Game manifest preservation failed");const man
       throw Error("Product contract preservation effective dates disagree");
     await save("catalog/latest.json",catalog);await save("capabilities.json",capabilities);
     await save("teams/season/2026/latest.json",teamSeason);
+    // Legacy deployments do not have this additive capability. Once advertised, losing it is a publish error.
+    if(capabilities.data.seasonMilestones?.available){
+      const path=`milestones/${teamSeason.season}/latest.json`,milestones=npbSeasonMilestonesSchema.parse(await fetchJson(path));
+      if(milestones.season!==teamSeason.season||milestones.effectiveDate!==catalog.effectiveDate)
+        throw Error("Milestone preservation identity mismatch");
+      await save(path,milestones);
+    }
   }
   await save("games/manifest.json",manifest);console.log(`Preserved ${dates.length} validated dated Game payloads`);
 }

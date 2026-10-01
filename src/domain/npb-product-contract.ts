@@ -48,7 +48,7 @@ export type NpbCatalog = z.infer<typeof npbCatalogSchema>;
 const metricSchema = z.strictObject({ value: z.number().finite().nonnegative().nullable(),
   status: z.enum(["complete", "partial", "unavailable"]), observedFacts: z.number().int().nonnegative(),
   factCount: z.number().int().nonnegative() });
-const coverageSchema = z.strictObject({ status: z.enum(["complete", "partial", "unknown", "unavailable"]),
+export const coverageSchema = z.strictObject({ status: z.enum(["complete", "partial", "unknown", "unavailable"]),
   summary: z.strictObject({ dates: z.number().int().nonnegative(), complete: z.number().int().nonnegative(),
     noGames: z.number().int().nonnegative(), partial: z.number().int().nonnegative(),
     unknown: z.number().int().nonnegative(), failed: z.number().int().nonnegative() }) });
@@ -79,3 +79,4 @@ export const npbCapabilitiesSchema = z.strictObject({ schemaVersion: z.literal(1
       ctx.addIssue({ code: "custom", message: "Capability contradicts availability" });
   }
 });
+export type NpbCapabilities = z.infer<typeof npbCapabilitiesSchema>;
