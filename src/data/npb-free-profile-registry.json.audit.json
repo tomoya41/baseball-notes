@@ -1,0 +1,433 @@
+{
+  "observedAt": "2026-10-01T21:56:00.000Z",
+  "identities": 116,
+  "entries": 726,
+  "humanReviewed": 0,
+  "sourceHashes": {
+    "claims": "02e2e4f66907b86d2c62c41dc8e0acb9fc587e6e5e88de3b0c3463ba5da66e7f",
+    "labels": "a1127d446ca05e40edf76a772e7fc030d5cf7f07d1be6206c529d625ebc8adc7",
+    "bridges": "dcd3e5e00b7f3dee6219a3489e983656bbe128b2bcf27fd03110d49fa70d5bdb"
+  },
+  "rejected": [
+    {
+      "playerId": "cb20f231-e6f6-47ad-9469-34b9c4ee17ac",
+      "field": "weightKg",
+      "reason": "conflicting_or_insufficient_claim",
+      "values": [
+        {
+          "amount": "+60",
+          "unit": "http://www.wikidata.org/entity/Q11570"
+        },
+        {
+          "amount": "+61",
+          "unit": "http://www.wikidata.org/entity/Q11570"
+        }
+      ]
+    },
+    {
+      "playerId": "866df134-7a63-40f5-92ba-221757097466",
+      "field": "weightKg",
+      "reason": "conflicting_or_insufficient_claim",
+      "values": [
+        {
+          "amount": "+78",
+          "unit": "http://www.wikidata.org/entity/Q11570"
+        },
+        {
+          "amount": "+79",
+          "unit": "http://www.wikidata.org/entity/Q11570"
+        }
+      ]
+    },
+    {
+      "playerId": "7344da93-565d-4841-8f8f-d1a61ff4e0c4",
+      "field": "weightKg",
+      "reason": "conflicting_or_insufficient_claim",
+      "values": [
+        {
+          "amount": "+79",
+          "unit": "http://www.wikidata.org/entity/Q11570"
+        },
+        {
+          "amount": "+85",
+          "unit": "http://www.wikidata.org/entity/Q11570"
+        }
+      ]
+    },
+    {
+      "playerId": "0849d339-1434-46b4-9382-a748c1c797a0",
+      "field": "weightKg",
+      "reason": "conflicting_or_insufficient_claim",
+      "values": [
+        {
+          "amount": "+87",
+          "unit": "http://www.wikidata.org/entity/Q11570"
+        },
+        {
+          "amount": "+90",
+          "unit": "http://www.wikidata.org/entity/Q11570"
+        }
+      ]
+    },
+    {
+      "playerId": "fa30a3e1-ce05-48b0-9399-68f4ccb4d02f",
+      "field": "heightCm",
+      "reason": "conflicting_or_insufficient_claim",
+      "values": [
+        {
+          "amount": "+181",
+          "unit": "http://www.wikidata.org/entity/Q174728"
+        },
+        {
+          "amount": "+182",
+          "unit": "http://www.wikidata.org/entity/Q174728"
+        }
+      ]
+    },
+    {
+      "playerId": "fa30a3e1-ce05-48b0-9399-68f4ccb4d02f",
+      "field": "weightKg",
+      "reason": "conflicting_or_insufficient_claim",
+      "values": [
+        {
+          "amount": "+83",
+          "unit": "http://www.wikidata.org/entity/Q11570"
+        },
+        {
+          "amount": "+84",
+          "unit": "http://www.wikidata.org/entity/Q11570"
+        }
+      ]
+    },
+    {
+      "playerId": "54f9b289-4717-4fb8-b1c3-7c8cf37e2e42",
+      "field": "weightKg",
+      "reason": "conflicting_or_insufficient_claim",
+      "values": [
+        {
+          "amount": "+83",
+          "unit": "http://www.wikidata.org/entity/Q11570"
+        },
+        {
+          "amount": "+85",
+          "unit": "http://www.wikidata.org/entity/Q11570"
+        }
+      ]
+    },
+    {
+      "playerId": "3ce62d7e-da0f-4ce7-84dc-c165e8910188",
+      "field": "heightCm",
+      "reason": "conflicting_or_insufficient_claim",
+      "values": [
+        {
+          "amount": "+182",
+          "unit": "http://www.wikidata.org/entity/Q174728"
+        },
+        {
+          "amount": "+181",
+          "unit": "http://www.wikidata.org/entity/Q174728"
+        }
+      ]
+    },
+    {
+      "playerId": "3ce62d7e-da0f-4ce7-84dc-c165e8910188",
+      "field": "weightKg",
+      "reason": "conflicting_or_insufficient_claim",
+      "values": [
+        {
+          "amount": "+74",
+          "unit": "http://www.wikidata.org/entity/Q11570"
+        },
+        {
+          "amount": "+85",
+          "unit": "http://www.wikidata.org/entity/Q11570"
+        }
+      ]
+    },
+    {
+      "playerId": "0ab4a0fb-486e-4b91-87f6-de0b8e3bd038",
+      "field": "heightCm",
+      "reason": "conflicting_or_insufficient_claim",
+      "values": [
+        {
+          "amount": "+175",
+          "unit": "http://www.wikidata.org/entity/Q174728"
+        },
+        {
+          "amount": "+176",
+          "unit": "http://www.wikidata.org/entity/Q174728"
+        }
+      ]
+    },
+    {
+      "playerId": "0ab4a0fb-486e-4b91-87f6-de0b8e3bd038",
+      "field": "weightKg",
+      "reason": "conflicting_or_insufficient_claim",
+      "values": [
+        {
+          "amount": "+83",
+          "unit": "http://www.wikidata.org/entity/Q11570"
+        },
+        {
+          "amount": "+84",
+          "unit": "http://www.wikidata.org/entity/Q11570"
+        }
+      ]
+    },
+    {
+      "playerId": "d48ba8ac-1dba-4c8e-92a0-389363760263",
+      "field": "heightCm",
+      "reason": "conflicting_or_insufficient_claim",
+      "values": [
+        {
+          "amount": "+181",
+          "unit": "http://www.wikidata.org/entity/Q174728"
+        },
+        {
+          "amount": "+179",
+          "unit": "http://www.wikidata.org/entity/Q174728"
+        }
+      ]
+    },
+    {
+      "playerId": "d48ba8ac-1dba-4c8e-92a0-389363760263",
+      "field": "weightKg",
+      "reason": "conflicting_or_insufficient_claim",
+      "values": [
+        {
+          "amount": "+85",
+          "unit": "http://www.wikidata.org/entity/Q11570"
+        },
+        {
+          "amount": "+86",
+          "unit": "http://www.wikidata.org/entity/Q11570"
+        }
+      ]
+    },
+    {
+      "playerId": "31058dd9-88ae-45f0-be04-e875c8a62142",
+      "field": "weightKg",
+      "reason": "conflicting_or_insufficient_claim",
+      "values": [
+        {
+          "amount": "+78",
+          "unit": "http://www.wikidata.org/entity/Q11570"
+        },
+        {
+          "amount": "+79",
+          "unit": "http://www.wikidata.org/entity/Q11570"
+        }
+      ]
+    },
+    {
+      "playerId": "006bb66d-f182-4e5a-8a19-e4a2a717841d",
+      "field": "birthDate",
+      "reason": "conflicting_or_insufficient_claim",
+      "values": [
+        {
+          "time": "+2001-01-01T00:00:00Z",
+          "timezone": 0,
+          "before": 0,
+          "after": 0,
+          "precision": 9,
+          "calendarmodel": "http://www.wikidata.org/entity/Q1985727"
+        }
+      ]
+    },
+    {
+      "playerId": "7216dc32-06f7-45d3-b949-3a5ca31dc8bd",
+      "field": "weightKg",
+      "reason": "conflicting_or_insufficient_claim",
+      "values": [
+        {
+          "amount": "+70",
+          "unit": "http://www.wikidata.org/entity/Q11570"
+        },
+        {
+          "amount": "+72",
+          "unit": "http://www.wikidata.org/entity/Q11570"
+        }
+      ]
+    },
+    {
+      "playerId": "939f51e3-88fe-4ed5-8426-2b60510a27a2",
+      "field": "weightKg",
+      "reason": "conflicting_or_insufficient_claim",
+      "values": [
+        {
+          "amount": "+92",
+          "unit": "http://www.wikidata.org/entity/Q11570"
+        },
+        {
+          "amount": "+94",
+          "unit": "http://www.wikidata.org/entity/Q11570"
+        }
+      ]
+    },
+    {
+      "playerId": "5744ec2f-7bd0-4892-a619-ae68593ca345",
+      "field": "weightKg",
+      "reason": "conflicting_or_insufficient_claim",
+      "values": [
+        {
+          "amount": "+76",
+          "unit": "http://www.wikidata.org/entity/Q11570"
+        },
+        {
+          "amount": "+80",
+          "unit": "http://www.wikidata.org/entity/Q11570"
+        }
+      ]
+    },
+    {
+      "playerId": "4b76bac2-4d04-4626-96fd-364cea1ded6f",
+      "field": "heightCm",
+      "reason": "conflicting_or_insufficient_claim",
+      "values": [
+        {
+          "amount": "+190",
+          "unit": "http://www.wikidata.org/entity/Q174728"
+        },
+        {
+          "amount": "+193",
+          "unit": "http://www.wikidata.org/entity/Q174728"
+        }
+      ]
+    },
+    {
+      "playerId": "4b76bac2-4d04-4626-96fd-364cea1ded6f",
+      "field": "weightKg",
+      "reason": "conflicting_or_insufficient_claim",
+      "values": [
+        {
+          "amount": "+90",
+          "unit": "http://www.wikidata.org/entity/Q11570"
+        },
+        {
+          "amount": "+93",
+          "unit": "http://www.wikidata.org/entity/Q11570"
+        }
+      ]
+    },
+    {
+      "playerId": "d66f7bfd-5bb2-4e24-9b71-4bf7a9865e6e",
+      "field": "weightKg",
+      "reason": "conflicting_or_insufficient_claim",
+      "values": [
+        {
+          "amount": "+70",
+          "unit": "http://www.wikidata.org/entity/Q11570"
+        },
+        {
+          "amount": "+72",
+          "unit": "http://www.wikidata.org/entity/Q11570"
+        }
+      ]
+    },
+    {
+      "playerId": "dc165f2e-9539-4ad0-b206-5d75794fee96",
+      "field": "weightKg",
+      "reason": "conflicting_or_insufficient_claim",
+      "values": [
+        {
+          "amount": "+93",
+          "unit": "http://www.wikidata.org/entity/Q11570"
+        },
+        {
+          "amount": "+92",
+          "unit": "http://www.wikidata.org/entity/Q11570"
+        }
+      ]
+    },
+    {
+      "playerId": "ab560a5b-a442-47b1-8014-ac7d8af7a4e1",
+      "field": "weightKg",
+      "reason": "conflicting_or_insufficient_claim",
+      "values": [
+        {
+          "amount": "+100",
+          "unit": "http://www.wikidata.org/entity/Q11570"
+        },
+        {
+          "amount": "+108",
+          "unit": "http://www.wikidata.org/entity/Q11570"
+        }
+      ]
+    },
+    {
+      "playerId": "ef8d896f-00a0-46ff-a362-78a1c8d72b77",
+      "field": "heightCm",
+      "reason": "conflicting_or_insufficient_claim",
+      "values": [
+        {
+          "amount": "+177",
+          "unit": "http://www.wikidata.org/entity/Q174728"
+        },
+        {
+          "amount": "+178",
+          "unit": "http://www.wikidata.org/entity/Q174728"
+        }
+      ]
+    },
+    {
+      "playerId": "ef8d896f-00a0-46ff-a362-78a1c8d72b77",
+      "field": "weightKg",
+      "reason": "conflicting_or_insufficient_claim",
+      "values": [
+        {
+          "amount": "+72",
+          "unit": "http://www.wikidata.org/entity/Q11570"
+        },
+        {
+          "amount": "+75",
+          "unit": "http://www.wikidata.org/entity/Q11570"
+        }
+      ]
+    },
+    {
+      "playerId": "3deea6d2-3347-430e-93c3-26ca2ebf15fa",
+      "field": "weightKg",
+      "reason": "conflicting_or_insufficient_claim",
+      "values": [
+        {
+          "amount": "+86",
+          "unit": "http://www.wikidata.org/entity/Q11570"
+        },
+        {
+          "amount": "+89",
+          "unit": "http://www.wikidata.org/entity/Q11570"
+        }
+      ]
+    },
+    {
+      "playerId": "bbc05bca-2b40-457a-9c8b-96194fe896d0",
+      "field": "weightKg",
+      "reason": "conflicting_or_insufficient_claim",
+      "values": [
+        {
+          "amount": "+82",
+          "unit": "http://www.wikidata.org/entity/Q11570"
+        },
+        {
+          "amount": "+84",
+          "unit": "http://www.wikidata.org/entity/Q11570"
+        }
+      ]
+    },
+    {
+      "playerId": "3f3fa891-0eee-4fc2-b54d-bef80f8f9572",
+      "field": "weightKg",
+      "reason": "conflicting_or_insufficient_claim",
+      "values": [
+        {
+          "amount": "+85",
+          "unit": "http://www.wikidata.org/entity/Q11570"
+        },
+        {
+          "amount": "+84",
+          "unit": "http://www.wikidata.org/entity/Q11570"
+        }
+      ]
+    }
+  ]
+}

@@ -2,6 +2,10 @@ name: Publish NPB Player Directory
 on:
   workflow_dispatch:
     inputs:
+      profile_projection_only:
+        description: Preserve published IDs/date/affiliation; update licensed profile projections without canonical DB access
+        type: boolean
+        default: false
       import_verified_profiles:
         description: Import only the four reviewed Wikidata identities before publication
         type: boolean
@@ -29,21 +33,26 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Import reviewed Player Master v2 profiles
-        if: inputs.import_verified_profiles == true
+        if: inputs.import_verified_profiles == true && inputs.profile_projection_only != true
         env:
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
         run: npx tsx scripts/import-npb-player-master-v2.ts --apply --confirmed-mapping
       - name: Generate validated Player Directory from read-only queries
+        if: inputs.profile_projection_only != true
         env:
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
         run: npx tsx scripts/generate-npb-player-directory.ts --require-remote --payload-root=.data/publish
       - name: Stage current standings without source access
+        if: inputs.profile_projection_only != true
         env:
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
         run: npm run publish:npb:remote -- --payload-root .data/publish
+      - name: Stage published Directory and standings without canonical DB access
+        if: inputs.profile_projection_only == true
+        run: npx tsx scripts/stage-npb-profile-only-directory.ts .data/publish
       - name: Validate Player Directory and record identity
         id: identity
         shell: bash

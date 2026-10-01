@@ -1,0 +1,1046 @@
+[
+  {
+    "playerId": "d80892a6-ef36-4296-993b-32a055d4b6a3",
+    "teamId": "npb:team:giants",
+    "npbId": "21625151",
+    "wikidataId": "Q77934682",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "b776a63053290f32f13e4de7c199aac979459d85d7c58abbfd89f08fb683da97",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "1a8753fd-726e-4769-8780-c3f8a3f25519",
+    "teamId": "npb:team:carp",
+    "npbId": "91995157",
+    "wikidataId": "Q116936507",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "d6750060026cfebd6601df4d1acff51e27e505c64b7dc63df3fcbc58b6cf8623",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "cb20f231-e6f6-47ad-9469-34b9c4ee17ac",
+    "teamId": "npb:team:hawks",
+    "npbId": "11715132",
+    "wikidataId": "Q27921240",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "6b8e5a52db9d0a05f98f765340cc18d0f8e897c285cedb1daaff555626ec84ec",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "866df134-7a63-40f5-92ba-221757097466",
+    "teamId": "npb:team:giants",
+    "npbId": "21625135",
+    "wikidataId": "Q11530918",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "b4e32eb017aa578f8fca4235d3fb0e982f84b19a886f6aba8a6f62f353a8d5e1",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "7344da93-565d-4841-8f8f-d1a61ff4e0c4",
+    "teamId": "npb:team:dragons",
+    "npbId": "91395139",
+    "wikidataId": "Q16264443",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "b48437845d8a01732decb1c194c4a4431777737cc2b3e54b2424840e4407d089",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "b1908499-7d15-4a93-9fe8-0ba8ccc362e1",
+    "teamId": "npb:team:giants",
+    "npbId": "81285132",
+    "wikidataId": "Q22119726",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "20eab9da0fda2b694378cf39bdb04d3516e94b515e82b7d09c7670f56e502b49",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "f2f6d5b2-603d-4952-9d1d-59a8f5b1eb75",
+    "teamId": "npb:team:marines",
+    "npbId": "31635138",
+    "wikidataId": "Q59134414",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "94bdab7a40fe4b4945d75da3d7b163ea77cd16bb84ee7e8bd4e924d5df46202a",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "0849d339-1434-46b4-9382-a748c1c797a0",
+    "teamId": "npb:team:buffaloes",
+    "npbId": "41645139",
+    "wikidataId": "Q17216222",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "5760f76700dbd0a2fc5d818d59c42e6537041fe3df45709c95b6653118f248b1",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "dc52792a-0be5-4c6b-9609-1558b86004a1",
+    "teamId": "npb:team:dragons",
+    "npbId": "41245157",
+    "wikidataId": "Q115529807",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "862979fe2e4d8a78b9f66922f57b583ee55684bc2e5a3a13c2dc9808809bfea7",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "8b61708f-c67d-4ddf-959e-f537470a6867",
+    "teamId": "npb:team:buffaloes",
+    "npbId": "91295157",
+    "wikidataId": "Q115529256",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "863110f4ea8bc883d56fdca3aabf3eb9bc7d120a48135619e6dcc7cd65b33fe0",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "fa30a3e1-ce05-48b0-9399-68f4ccb4d02f",
+    "teamId": "npb:team:dragons",
+    "npbId": "11915130",
+    "wikidataId": "Q18817569",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "6669bf48dd02137ce09e799dbe760581247c3edf284e59a828778f041838ca4c",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "a45480c8-466a-45b0-bc28-e7fde0144769",
+    "teamId": "npb:team:dragons",
+    "npbId": "53355153",
+    "wikidataId": "Q104538790",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "c962ce8a364ff7209c65778c2cb980e03d34d04d581f81320745f36ad1e30cb5",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "6a38acac-803b-46c4-a641-22d389beb5fc",
+    "teamId": "npb:team:lions",
+    "npbId": "61665157",
+    "wikidataId": "Q115529279",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "44b155d308295d6e2bea748572a846e171a3d31a1b6bbd052b805044608c99c1",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "54f9b289-4717-4fb8-b1c3-7c8cf37e2e42",
+    "teamId": "npb:team:hawks",
+    "npbId": "41745135",
+    "wikidataId": "Q11638712",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "740034c1a4e8e1fc6fde4a5f90cd8661ef8331a0189335bac52103b0297bce93",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "cdd951ef-64f9-48ed-94d4-07114db82c42",
+    "teamId": "npb:team:lions",
+    "npbId": "53755150",
+    "wikidataId": "Q107031409",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "0bb7d3a9bbc739d0cf227c46ef547ba1f153aae7e66ded4f1f8f0349575c61b7",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "3ce62d7e-da0f-4ce7-84dc-c165e8910188",
+    "teamId": "npb:team:carp",
+    "npbId": "11415134",
+    "wikidataId": "Q30925059",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "77d9192be1c3cd3cc3542d74c80b2f98bf240124198350c15ba2f9c2dbad353f",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "92a02594-a4f7-498c-bb83-8a41855b4645",
+    "teamId": "npb:team:tigers",
+    "npbId": "43145157",
+    "wikidataId": "Q79808914",
+    "archiveDate": "2026-09-25",
+    "archiveHash": "c21c7e14bd8c5523e5c2278642fbddde99b352d68817c77b6bfa133dfcf230a8",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "a8956893-2616-411c-9149-21c4282021db",
+    "teamId": "npb:team:dragons",
+    "npbId": "61865157",
+    "wikidataId": "Q115530174",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "c7582035d888f4281215733fa39aaeaad17d9b48fde05279d8d929027dc68daa",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "4ed35a51-97aa-4c65-a04f-ff11bcdae9f2",
+    "teamId": "npb:team:marines",
+    "npbId": "91895138",
+    "wikidataId": "Q65095763",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "7dc7358966ace9c9bd8d320c1efb073cb50f1b90e6cd24b35dea79634ea4ce0e",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "1581526b-5601-4a6b-8b4e-021709be1e47",
+    "teamId": "npb:team:giants",
+    "npbId": "11515157",
+    "wikidataId": "Q116937243",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "588663edc9fdaad063e3311c4d03ff9f142702b93fc90ad88d599dc18460e00f",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "0ab4a0fb-486e-4b91-87f6-de0b8e3bd038",
+    "teamId": "npb:team:hawks",
+    "npbId": "11215116",
+    "wikidataId": "Q4701163",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "cc2a5c85c450ac4457a1cf4b866f390df93bc7bc97eeeabb898c0d7ff170a5dd",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "7b4d2cea-01cc-4f7d-8a7c-43d41fc11508",
+    "teamId": "npb:team:dragons",
+    "npbId": "03105157",
+    "wikidataId": "Q115529802",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "230de5700455a2e749c34518b7f1e2c0f2e129c178fd5e6136b3e9c6fd31321c",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "6d5c52f5-bc85-4964-ad21-44603e013bd2",
+    "teamId": "npb:team:carp",
+    "npbId": "81585152",
+    "wikidataId": "Q137965384",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "5bacb1de261e269b3bb6cd0cfd1fe9d42f5a3a7b6bed4e8858d76a12727f0e1d",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "a7d70de3-4dc7-40f5-b8d9-f80da0d41859",
+    "teamId": "npb:team:marines",
+    "npbId": "51455159",
+    "wikidataId": "Q123406162",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "98a4278b65267bbe0e519868b9b462e11d544539b569daacd38ac435081d1b26",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "c3ca14ec-a2fb-4b72-8220-760ce1d85f10",
+    "teamId": "npb:team:carp",
+    "npbId": "51055155",
+    "wikidataId": "Q111113104",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "65c806287f1a6814637f7019dbdebd28af1af702c64d7976389fcd82a8a2ae13",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "fe036654-2cac-480e-b2ef-80f2cb2fb479",
+    "teamId": "npb:team:carp",
+    "npbId": "11015150",
+    "wikidataId": "Q130728165",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "e332a6150e7d9688df2d7ca2e0b785d708184d4604cac5ba82760cba5edfe011",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "ce88ef02-62bb-4096-a35c-636855df9e86",
+    "teamId": "npb:team:lions",
+    "npbId": "51255155",
+    "wikidataId": "Q111113410",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "25d29398d80e2ea2aefa6562b33e20351c557335a8e3ef8be18e97be2452ae21",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "d48ba8ac-1dba-4c8e-92a0-389363760263",
+    "teamId": "npb:team:dragons",
+    "npbId": "31835134",
+    "wikidataId": "Q30925577",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "079b615add68705dd1946b325221ed080f51326fccb570d6497c324e9d4b5244",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "329a6066-b3a7-4d13-8057-49cb4cd4870c",
+    "teamId": "npb:team:hawks",
+    "npbId": "91095153",
+    "wikidataId": "Q102246680",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "c322a5b3b6f77e845fba55f15d69a13d1eb73054334235c04e5d298e4da4c2e8",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "e3a6da3d-d85c-4dae-9c3d-ef48eb848aec",
+    "teamId": "npb:team:marines",
+    "npbId": "11715153",
+    "wikidataId": "Q105258584",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "ba62718748af8a6ddfebcca9bc6103ce1b208002ce316a15dfdaad0b6f5c7bd5",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "822e3e5d-b156-4208-925c-5f702da095c0",
+    "teamId": "npb:team:buffaloes",
+    "npbId": "11815130",
+    "wikidataId": "Q18818206",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "da9bc40ab0fa7728bdf8da04e8e4577fed5d7c1f20daf4cdda186775cdb7d8f0",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "31058dd9-88ae-45f0-be04-e875c8a62142",
+    "teamId": "npb:team:dragons",
+    "npbId": "91395132",
+    "wikidataId": "Q22117887",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "f1444499ad39bb79c994487afa29b7179b93b89fed5ab21f563064577666d699",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "fcc018ad-8dca-4d2e-8155-d13cc56a538b",
+    "teamId": "npb:team:giants",
+    "npbId": "41645159",
+    "wikidataId": "Q130725981",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "80a7f3066af2b9c4f132861f078b6819fc5d8ff88cf98e14e273b1cc91ddc3b4",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "006bb66d-f182-4e5a-8a19-e4a2a717841d",
+    "teamId": "npb:team:buffaloes",
+    "npbId": "91395138",
+    "wikidataId": "Q60685552",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "edd652fbe7c7f743fe1f355b3ee6a8d6797286b1d9e87a9e00258e0b86123a9e",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "e237bab7-1e8b-407b-a18e-02883af0fae2",
+    "teamId": "npb:team:hawks",
+    "npbId": "73175151",
+    "wikidataId": "Q79017594",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "27b0a623f90ccda7b82824d1eef1a79ab424a8cac6faa068348330c9e2b54a08",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "81274950-7b73-4369-be1b-d974252e615a",
+    "teamId": "npb:team:carp",
+    "npbId": "43545152",
+    "wikidataId": "Q113543693",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "0179dd1f0abb81bf0e77c2b7421e2a0c0a76e1925a543c24344ced751c59fe89",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "fe8517c7-3081-4cb7-bf2d-684776ec82a3",
+    "teamId": "npb:team:buffaloes",
+    "npbId": "51955153",
+    "wikidataId": "Q104538775",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "c05f53f775ad7c2ce1b7b9b75df6cfd4e511efa96ab75363a5665d39c2507709",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "7216dc32-06f7-45d3-b949-3a5ca31dc8bd",
+    "teamId": "npb:team:buffaloes",
+    "npbId": "71475132",
+    "wikidataId": "Q24874120",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "f61d53d44296b8f2f314d84a86741f1561d471cd11ec00979738db545dd0c8e7",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "24a531df-c242-459c-86cb-047237076ae1",
+    "teamId": "npb:team:tigers",
+    "npbId": "71075138",
+    "wikidataId": "Q58420244",
+    "archiveDate": "2026-09-25",
+    "archiveHash": "4327790baa1df0e29d570e6e46564773bc0665b1310b6d6950a38dc63c4efbcb",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "939f51e3-88fe-4ed5-8426-2b60510a27a2",
+    "teamId": "npb:team:buffaloes",
+    "npbId": "61965132",
+    "wikidataId": "Q24861657",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "48e0ba9646dd9c8e876272999ff80ff8c95b483580d63fcb165ce5eded2ba550",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "30713738-447d-4f08-a1fa-00cb6a76e6a1",
+    "teamId": "npb:team:carp",
+    "npbId": "71975159",
+    "wikidataId": "Q126926245",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "13c9af6fbe23a18a247779a7af5c568153ececfe0d1ea29b2fa33c1535c53c06",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "213762c1-9d47-4927-bfd4-14c263a482b7",
+    "teamId": "npb:team:marines",
+    "npbId": "73175136",
+    "wikidataId": "Q48764200",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "e0dc6c0404239eb71f048d345f0689bf20a57e76926c2defdd8ac6c5495e313a",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "fb02f374-e69a-4126-a317-1167a595b03d",
+    "teamId": "npb:team:marines",
+    "npbId": "81885136",
+    "wikidataId": "Q47581853",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "1b79c58c3a0034d88a5c0c7c2db8bcee900e9cde6b573b4810014731a543a120",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "c04ffb32-9c72-4f3a-bdc0-fbf3715f9632",
+    "teamId": "npb:team:dragons",
+    "npbId": "61165132",
+    "wikidataId": "Q22961634",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "b66ffe43f32c10fce136ba9e58102e70f12d3aa7b7c5f507f53ea262bd5bf8c6",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "7ab2a80c-b5d0-4984-849e-45c0699ff5c1",
+    "teamId": "npb:team:lions",
+    "npbId": "51955151",
+    "wikidataId": "Q55522897",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "30672ccffdf6afeac4a40a8f12d322e8047e1af6c18a9787820bb6c1f13c6352",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "53651cb1-d24c-48f4-a5d7-1c639b1402e5",
+    "teamId": "npb:team:hawks",
+    "npbId": "01205150",
+    "wikidataId": "Q130726930",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "7d4a65c9cb175cd42716706cfcb5305a1152d4463270c24754426534c9a2118f",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "d467c53d-51a2-4a61-928b-0735b75cc4c8",
+    "teamId": "npb:team:carp",
+    "npbId": "81285136",
+    "wikidataId": "Q38277650",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "13520869cbe1a2b8133641541d5b953bd315e87ba044b70038172967423b4348",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "a9f908d4-ff56-446d-9c2a-7c7d1fd2c1cb",
+    "teamId": "npb:team:giants",
+    "npbId": "63565152",
+    "wikidataId": "Q25135343",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "3fb946f5be734d6acee996e25ed51862783c282373a09d4f68a6eec660c0cac1",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "ae44f92d-c4be-4d52-a5ab-aa44f323b67b",
+    "teamId": "npb:team:lions",
+    "npbId": "41745152",
+    "wikidataId": "Q136653733",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "3f5d43430dd7fde229d5d773b138543f8e97ad0bb8f8c6e4e49773ffe6505bd0",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "4877e79e-a4fd-48fe-8239-f81a9a8d99da",
+    "teamId": "npb:team:carp",
+    "npbId": "01405130",
+    "wikidataId": "Q18817949",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "3a859c2042187da441655e5a76d463a9b6fcc1fed7fdf8cbe96ff4cc835b97e7",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "76e9c0fb-fc2e-4f62-9881-5fa5f9c17262",
+    "teamId": "npb:team:dragons",
+    "npbId": "81685157",
+    "wikidataId": "Q115530157",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "c7d8850645d59b264338cb5a40039bd0b752ad3b022571a39e3b2c604c8003f6",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "2be28a37-8bb2-4b93-8c05-10ed4b9eea19",
+    "teamId": "npb:team:giants",
+    "npbId": "01605138",
+    "wikidataId": "Q62085291",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "c23f0d6664f43809ab7bc3d0f5a528d1655f5279fb196ec9f7dbfcdbca7f5808",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "ea5cc59c-d76d-4e57-8ce4-d213b1292a58",
+    "teamId": "npb:team:carp",
+    "npbId": "53955150",
+    "wikidataId": "Q111830121",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "becb882d34a5680dfad07614cff5af8e392eef3a57eccda286df24bf9deccb6c",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "0b28d983-d75c-49df-b4a4-ecd57ebba488",
+    "teamId": "npb:team:giants",
+    "npbId": "71275152",
+    "wikidataId": "Q138411568",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "db7162ec1e6aba81f1e4bb5bcfa8fc6efff2ddfab613f34587da50520eca3aba",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "81e5b33e-4279-4518-b037-0203746ec235",
+    "teamId": "npb:team:giants",
+    "npbId": "51955114",
+    "wikidataId": "Q1038888",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "255b571227a056dc3e82a88b37972bee0c30e1816f931a7d60ecedde382de9b2",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "ecec27aa-857e-4c4d-ab52-0ef3f5d2f9a6",
+    "teamId": "npb:team:hawks",
+    "npbId": "81585153",
+    "wikidataId": "Q106480213",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "11b1f794a16d80209eed0cfa22ea47ee83e916df3a14489c0f9b5b370ceefb20",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "208c8b11-76dc-4b47-b153-f2e489597d59",
+    "teamId": "npb:team:carp",
+    "npbId": "61565135",
+    "wikidataId": "Q11619815",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "d5d550e4bc750307f856e302355685cf3a57fb4faff9cf2b8f50f4cae3176425",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "5744ec2f-7bd0-4892-a619-ae68593ca345",
+    "teamId": "npb:team:lions",
+    "npbId": "91695132",
+    "wikidataId": "Q26132048",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "35416801cfbb9c7f516bc2fe7f2f487a495a4807a916735a1a1d58fe30f6fd06",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "ef95708c-fa82-46c6-90c2-44141b9540ec",
+    "teamId": "npb:team:dragons",
+    "npbId": "21425151",
+    "wikidataId": "Q79017827",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "94c5052510931867d93e3742e938dda8b79cf68ed9f6c61115ec78b3cf6f4005",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "4b76bac2-4d04-4626-96fd-364cea1ded6f",
+    "teamId": "npb:team:giants",
+    "npbId": "23925134",
+    "wikidataId": "Q29033600",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "6338eaed0f2538295a499fd169c1a831884f76a4b60d2c540ecde9f37e5b9272",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "f7581921-c62b-4926-94f1-0a5d0bffd48b",
+    "teamId": "npb:team:buffaloes",
+    "npbId": "33335150",
+    "wikidataId": "Q131472722",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "d4e9a25551879f6289eea1b86a93791240029b0112d96e59edaa4724990cb853",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "82b3fd6f-774f-4352-b60d-a0f6647f8c40",
+    "teamId": "npb:team:giants",
+    "npbId": "61065136",
+    "wikidataId": "Q57538561",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "61d8e9cd78b3752d7afe7c0646f43d69be9684860b24802bc75b70960d2de0fb",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "319b3bf5-5e3c-43f7-846d-b9c573e6425a",
+    "teamId": "npb:team:giants",
+    "npbId": "21325136",
+    "wikidataId": "Q45819989",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "544d76a88fe20d0a9f149e093442958f32fa0568c2c63fe8bbb619a393a899a7",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "6294da4c-056c-4c57-afff-e923dba33a9f",
+    "teamId": "npb:team:dragons",
+    "npbId": "91195151",
+    "wikidataId": "Q73585754",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "bae656be475e2db14dff722a3811cccd6b16e06d3d214fcbce5b440669557dee",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "1d082765-8a89-46f9-ab8c-78dd3771e2fe",
+    "teamId": "npb:team:giants",
+    "npbId": "91095155",
+    "wikidataId": "Q109599314",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "9d870af6522194f2b9e8b9b1e4dd47eab36005cb3f83abf505bb72b83968024b",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "d66f7bfd-5bb2-4e24-9b71-4bf7a9865e6e",
+    "teamId": "npb:team:hawks",
+    "npbId": "61465133",
+    "wikidataId": "Q11570375",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "63478a04d4561005698b12c794380360e5f062763bfe6ba05da6dee26efeb143",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "f318e602-d87e-4c5c-acd9-c4fdf5fb0f43",
+    "teamId": "npb:team:dragons",
+    "npbId": "21925152",
+    "wikidataId": "Q137351794",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "db1e360e5e6026947d3da1977f9fe1220816628c8871e667cd768fc26a247604",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "dc165f2e-9539-4ad0-b206-5d75794fee96",
+    "teamId": "npb:team:hawks",
+    "npbId": "31835133",
+    "wikidataId": "Q11534568",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "caf24a1fe0a73e30a4e3276606a0ff011b2687f8b76034cdfe8851057c9167ff",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "dcfccb8d-da5f-4a04-ac40-e1a4d571b8ac",
+    "teamId": "npb:team:carp",
+    "npbId": "31135133",
+    "wikidataId": "Q11595041",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "096305f68e5f1da9a35dd44b331b92cee07e75310894b5eb8661b1d6123009b4",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "54b38557-dac1-4dde-a802-f7f5d83586b5",
+    "teamId": "npb:team:dragons",
+    "npbId": "31835155",
+    "wikidataId": "Q111113515",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "2b294118af5c79ce3d8b5a7e06fe8689e703e9125f6d75d076fa9bffb73cb997",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "5117301a-2181-4852-b46e-d4bcb6ac90e0",
+    "teamId": "npb:team:carp",
+    "npbId": "43745150",
+    "wikidataId": "Q130237267",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "e0cfee29cd3d09b75c9d01fa46757ba472d28dee60862cdd4edfd3610484506a",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "a6e9a47f-aa10-4c7c-bcf3-36ddaddf9bb7",
+    "teamId": "npb:team:buffaloes",
+    "npbId": "33135150",
+    "wikidataId": "Q130726790",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "dab925592d3679f44c8d7168c70411fa24cc1d36ef23d00eb8e7d3cb4fc2f9a3",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "15a2dfe0-1d35-4287-a24c-70c1c76ec1cd",
+    "teamId": "npb:team:lions",
+    "npbId": "71775134",
+    "wikidataId": "Q27918037",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "ec7ecde58f19a26bef7e638476b0a3162875732a7630b7bd9071a30af689801e",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "d4f78de4-1e08-4f51-9f18-9e064968866f",
+    "teamId": "npb:team:hawks",
+    "npbId": "23125136",
+    "wikidataId": "Q43426179",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "4105ff4fe83b894518328af8d120f6716c3633e735eb851a847ca0bd4fafaee7",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "ab560a5b-a442-47b1-8014-ac7d8af7a4e1",
+    "teamId": "npb:team:hawks",
+    "npbId": "21425139",
+    "wikidataId": "Q15304363",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "7cbc6dfb8832321e7f25955b31ddda1fba5b98c58782428794bbb3f6dfaa85bd",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "1bd6b4af-8691-4e6e-b1ac-e1b259fa094b",
+    "teamId": "npb:team:lions",
+    "npbId": "81785155",
+    "wikidataId": "Q110403244",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "11830af132c1cfd5cbc0cd22abb3143305b1fb7961bd346bce35ca7efd563d08",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "b9c5f474-90e0-4603-8ce1-4853e5fc00f7",
+    "teamId": "npb:team:carp",
+    "npbId": "61065151",
+    "wikidataId": "Q81032204",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "1cd380561ee24acc3d509fef5b68aee211131d224f5a1148b45bf1ff63f6ff14",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "e3b0b3f5-e490-4e5b-8c34-e9783dbefd3d",
+    "teamId": "npb:team:hawks",
+    "npbId": "93195138",
+    "wikidataId": "Q62601660",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "db583943e223684df840c621b69e8871de2435ff79b15da13e106adacfcb961b",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "d7ec25b2-3353-4552-b67e-838f2e3cfdac",
+    "teamId": "npb:team:lions",
+    "npbId": "33935152",
+    "wikidataId": "Q67932705",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "0ae69d0c67cb8f353b88744152477875b5b4e1b2510ced1339553ddd9f05a888",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "d0c71a0e-910b-4a23-96ea-474c108c1d30",
+    "teamId": "npb:team:marines",
+    "npbId": "03505136",
+    "wikidataId": "Q6987041",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "32c63aa03c96b8505b2e445f78953db2c52eb72d3a4c221d7b84aea6df65aead",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "bca24d20-e00a-4bd1-bb44-b8dc7c7907df",
+    "teamId": "npb:team:lions",
+    "npbId": "23325152",
+    "wikidataId": "Q110403054",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "cebd30a61f3a37d690680124b1208b463a58e7655c0e7ef167752252c06474b2",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "eea2c7eb-6c0b-46e0-b5c0-56814b8da317",
+    "teamId": "npb:team:lions",
+    "npbId": "81085115",
+    "wikidataId": "Q903022",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "d69e521a9495c88f5d739bac6137eae00de8a5b23d57a9fcb67dfa07087f4d07",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "2b12a74a-afc9-4c43-ae06-428ea91fa168",
+    "teamId": "npb:team:giants",
+    "npbId": "61165159",
+    "wikidataId": "Q123406056",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "35a233dd9ea2db1e470e72cf6e671e24921e6e4fe8c14aeea267779491673f19",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "ef8d896f-00a0-46ff-a362-78a1c8d72b77",
+    "teamId": "npb:team:hawks",
+    "npbId": "01705130",
+    "wikidataId": "Q18817497",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "9bb9c74d790c6a9a1aed7288cbf0d6bd5ce98abd4c2d2f242cf4e0895a9b58d1",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "993cf60e-7f38-4a57-a600-77b7fb6cf526",
+    "teamId": "npb:team:dragons",
+    "npbId": "91095135",
+    "wikidataId": "Q11671106",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "b4346d047d731e1c990b9388d959ed88ad080fc45e52063b8855f39cc6f72245",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "823a98cd-513f-4a54-b41c-401f76ffae33",
+    "teamId": "npb:team:carp",
+    "npbId": "81885151",
+    "wikidataId": "Q98395431",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "753d5fdf65fc1ad4f2bca4fe665123afe24db44bb999c58e3941446c8a6bc574",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "c771af85-8201-4dfd-96c4-111fd67a32c1",
+    "teamId": "npb:team:marines",
+    "npbId": "71375159",
+    "wikidataId": "Q123405929",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "fc26b2af48d4b8b8c6adf9ce4141d3f310e8501676f43af9faffbdf6a41448a2",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "5050a7b5-249c-43c8-8b27-eed67c4ca8ab",
+    "teamId": "npb:team:giants",
+    "npbId": "73375134",
+    "wikidataId": "Q27920883",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "5a1cebd35d5bdb879a28e523a25588dc9b53128683e07bda8bb7ee55588eb3d2",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "be43afb9-ee5d-4dbb-a885-137771a0aa3f",
+    "teamId": "npb:team:buffaloes",
+    "npbId": "91995151",
+    "wikidataId": "Q76284016",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "5111eb65a4a2dbd87621880a9c644a2c29599114e78843f2b38961208c573d5b",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "bb59956a-99ed-47d8-b1f9-5e2c229e87a3",
+    "teamId": "npb:team:dragons",
+    "npbId": "81585151",
+    "wikidataId": "Q79735790",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "6b2865b66c79da4e532c3dff02b318ca4edae387698c8eedb193876081e21ffc",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "3deea6d2-3347-430e-93c3-26ca2ebf15fa",
+    "teamId": "npb:team:dragons",
+    "npbId": "61765139",
+    "wikidataId": "Q17159900",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "fa1073322295d7b9b7876cd3f4cb35490a40e1b3851af3aa91ee153b6935b5f3",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "8a40cb70-babb-4b4e-9b4d-b9646c5c667a",
+    "teamId": "npb:team:buffaloes",
+    "npbId": "63565155",
+    "wikidataId": "Q111113402",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "19aab060700418c6f32c3263c6a1592c83ecf4fe150c65a0a82169703a5f15b9",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "b222fd66-da38-4cd0-8ed6-9671a7f93d09",
+    "teamId": "npb:team:buffaloes",
+    "npbId": "41145155",
+    "wikidataId": "Q111113327",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "752aaa641d1ea294593855965ddc77955243dd3a7ff08ad3817c2fa9241fb976",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "18f28f0f-a0b1-4970-aa9a-cce98530eac8",
+    "teamId": "npb:team:giants",
+    "npbId": "43345159",
+    "wikidataId": "Q123405953",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "f5c3329028944e44ae931eabaae83a91a5217fd850202c8415253dd1fb2edfeb",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "e7733422-2213-46f8-9b5f-4d12cf85c086",
+    "teamId": "npb:team:marines",
+    "npbId": "21625150",
+    "wikidataId": "Q130643745",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "9fadd2d57aa07f15fa704a29e7005fb609dd96e5a7e33a08228ca2413508d6e7",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "d7c6d2b7-52c0-4a01-9065-d9118a8c7acf",
+    "teamId": "npb:team:marines",
+    "npbId": "71075151",
+    "wikidataId": "Q76970320",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "05f19b1f6494f7e03c389d213679a10ac41234cc77fd4f89d829226592eb8eab",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "bbc05bca-2b40-457a-9c8b-96194fe896d0",
+    "teamId": "npb:team:carp",
+    "npbId": "11915134",
+    "wikidataId": "Q29526420",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "b30bc45ee011ac59619166d2b53809b72159a28e6647efddd1822ad87df995d9",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "b6d6bb3f-ff18-4418-a1b2-9e90de66907f",
+    "teamId": "npb:team:buffaloes",
+    "npbId": "81485155",
+    "wikidataId": "Q111113756",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "5b6f411e2b7d4a330bff2158acf7b9b576bfaf0e00a7eda9edaef74715d2d7ed",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "e95a1564-902e-4172-bed6-4f8b4ba85736",
+    "teamId": "npb:team:giants",
+    "npbId": "51955159",
+    "wikidataId": "Q123406000",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "317dac5362464ecb82dd82eb76cbeb74f7037fecdd78491b006c244708bd41e9",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "e32fd9dc-8f4c-474e-9aa3-ef86927a1839",
+    "teamId": "npb:team:dragons",
+    "npbId": "93395150",
+    "wikidataId": "Q130647399",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "32421f0d2c579c6770438783883e64fe486b12e4720029929f174f047dad164f",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "1c52b85a-eeb9-4800-9f87-c7f15161527f",
+    "teamId": "npb:team:dragons",
+    "npbId": "21125150",
+    "wikidataId": "Q130726863",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "92604cca1c990ddb6d2f6299f4409a6c30917b1401bd44ee4c8bee69ee93cf43",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "f19b2b9d-b148-4aee-9378-18fd5ad155fd",
+    "teamId": "npb:team:lions",
+    "npbId": "83385150",
+    "wikidataId": "Q130643763",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "76cd813d46d8124ecf0a67fdd1038a58e5c706c8137b9d1006b9124a025d6186",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "64cca0c6-45e4-4794-9e44-58acb49466d1",
+    "teamId": "npb:team:dragons",
+    "npbId": "61465152",
+    "wikidataId": "Q138419081",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "1bce06349af851d68e128723a11d231146129c78da2ce32ace22f93d72e4f747",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "13d72197-1645-4334-8bd0-e6dbfb108aae",
+    "teamId": "npb:team:lions",
+    "npbId": "91495155",
+    "wikidataId": "Q112239535",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "e076e74a2bf59c36dd41a490b7023eccedaffa224f9b8de66fb86e277a804566",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "9e4c41ed-b0a4-4fcf-9ab8-38032fb30ef9",
+    "teamId": "npb:team:lions",
+    "npbId": "81685153",
+    "wikidataId": "Q108110509",
+    "archiveDate": "2026-09-23",
+    "archiveHash": "ae3117fcd0716d9be71d94e2c4583086ec5cb84b70ef921f50dd45c78b994b88",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "1561b2f5-7f5c-49c7-ba02-e5789ece5a16",
+    "teamId": "npb:team:tigers",
+    "npbId": "41245153",
+    "wikidataId": "Q102246739",
+    "archiveDate": "2026-09-25",
+    "archiveHash": "a3ba8248d8b2856b3eb1f155d1ecdc473d5dea37ab5e9f3cd2543f09c6fcb741",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "2d760a27-b58a-47a5-80df-6b0aa3571ef5",
+    "teamId": "npb:team:tigers",
+    "npbId": "11915132",
+    "wikidataId": "Q22118838",
+    "archiveDate": "2026-09-25",
+    "archiveHash": "5e23312e1c9e9729d1dab909c031834cb94a560386f208bbb397484806c2f149",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "f9a4d3bf-4ac0-410c-aa47-e89cfe822e27",
+    "teamId": "npb:team:tigers",
+    "npbId": "13315153",
+    "wikidataId": "Q102246761",
+    "archiveDate": "2026-09-25",
+    "archiveHash": "d4ed223b76b0cae3954e4b6e5155389eaefd45a10bcfff83aeb24be638c0c311",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "735ad4b3-5db7-4432-9d39-c490965078ce",
+    "teamId": "npb:team:tigers",
+    "npbId": "31735138",
+    "wikidataId": "Q59551782",
+    "archiveDate": "2026-09-25",
+    "archiveHash": "4d3890727be1a8f85c9e38736e25d0f7cdcd23d1e2e28267bd1828fd86f0e45c",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "3bb40c75-3819-4563-b111-f29b7219471b",
+    "teamId": "npb:team:tigers",
+    "npbId": "21825155",
+    "wikidataId": "Q108776592",
+    "archiveDate": "2026-09-25",
+    "archiveHash": "7e9dac34d22ccc558e4bcba5e16cfc42340143186e546b6817c8445bd80ea1fe",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "3f3fa891-0eee-4fc2-b54d-bef80f8f9572",
+    "teamId": "npb:team:tigers",
+    "npbId": "21325134",
+    "wikidataId": "Q28687821",
+    "archiveDate": "2026-09-25",
+    "archiveHash": "8631d4d205ea65aa88f5211e08fa166e71cfc72f204e59fe091bda53a3fff9f7",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "a36fb2ce-adb2-4536-9bb5-d78953b8cd41",
+    "teamId": "npb:team:tigers",
+    "npbId": "41145153",
+    "wikidataId": "Q104013392",
+    "archiveDate": "2026-09-25",
+    "archiveHash": "0fd3c043137040999a91b65bb8c4d9f4dfe591aa2f6bf1631474728a4e106f99",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "8811daa2-c28e-4b73-a3b7-5764a56d17e6",
+    "teamId": "npb:team:tigers",
+    "npbId": "33335153",
+    "wikidataId": "Q105258368",
+    "archiveDate": "2026-09-25",
+    "archiveHash": "fb919d4e3dc12523a77863dce191e57903153ea090249042bfad2851cee79e44",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "bf427baa-53be-488f-b388-4c5139fd3383",
+    "teamId": "npb:team:tigers",
+    "npbId": "41445153",
+    "wikidataId": "Q102247137",
+    "archiveDate": "2026-09-25",
+    "archiveHash": "b4196364646db739a93d7942b73eabb79ccdf0073d61e76e00ebc082482b19d3",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "5adb8a97-5c1f-4ea0-b62a-1bfc63eef6c5",
+    "teamId": "npb:team:tigers",
+    "npbId": "01305130",
+    "wikidataId": "Q18700699",
+    "archiveDate": "2026-09-25",
+    "archiveHash": "0c088f3b8e3989e8ded3c55ec56cce89b05a7af172364956b5d7fa4add856058",
+    "verificationStatus": "source_verified"
+  },
+  {
+    "playerId": "a1ca7cac-f9be-4993-a78c-bcd1e1ae3399",
+    "teamId": "npb:team:tigers",
+    "npbId": "41045153",
+    "wikidataId": "Q102246661",
+    "archiveDate": "2026-09-25",
+    "archiveHash": "2df1a4cc3faa378a16b310b96860ad75877ac1ad290ccc523ca45e085d49a491",
+    "verificationStatus": "source_verified"
+  }
+]

@@ -6,11 +6,9 @@ import { npbPlayerDirectorySchema } from "../src/domain/npb-player-directory";
 import { npbCatalogSchema, npbCapabilitiesSchema } from "../src/domain/npb-product-contract";
 import { npbSeasonPayloadSchema } from "../src/application/npb-season-payload";
 import { npbHotPayloadSchema } from "../src/application/npb-hot-payload";
-import { supplementNpbDirectory, supplementNpbMeasurements } from "../src/application/npb-profile-supplement";
-import { buildNpbCatalog, buildNpbCapabilities } from "../src/application/npb-product-payload";
+import { projectNpbFreeProfiles } from "../src/application/npb-profile-projection";
+import { buildNpbCapabilities } from "../src/application/npb-product-payload";
 import { buildNpbSeasonMilestones } from "../src/application/npb-season-milestones";
-import supplement from "../src/data/npb-reviewed-profile-supplement.json";
-import { reviewedMeasurements } from "../src/data/npb-reviewed-measurements";
 
 // Local regression over downloaded production contracts. Never connects to canonical storage.
 const [input, output] = process.argv.slice(2);
@@ -23,10 +21,10 @@ const season = npbSeasonPayloadSchema.parse(await read("season-2026-latest.json"
 const hot = npbHotPayloadSchema.parse(await read("hot-latest.json"));
 assert.equal(before.effectiveDate, directory.effectiveDate); assert.equal(season.effectiveDate, directory.effectiveDate);
 assert.equal(hot.effectiveDate, directory.effectiveDate); assert.equal(oldCapabilities.effectiveDate, directory.effectiveDate);
-const started = performance.now(), projection = supplementNpbDirectory(directory, supplement);
-const catalog = buildNpbCatalog(projection.directory, reviewedMeasurements, supplementNpbMeasurements(reviewedMeasurements, supplement));
+const started = performance.now(), projection = projectNpbFreeProfiles(directory, before);
+const catalog = projection.catalog;
 const capabilities = buildNpbCapabilities(catalog, season, hot.readiness), milestones = buildNpbSeasonMilestones(season, catalog);
-assert.deepEqual(projection.directory, supplementNpbDirectory(projection.directory, supplement).directory);
+assert.deepEqual(projection.directory, projectNpbFreeProfiles(projection.directory).directory);
 assert.deepEqual(milestones, buildNpbSeasonMilestones(season, catalog));
 assert.deepEqual(catalog.teams, before.teams);
 assert.deepEqual(catalog.players.map(p => p.playerId), before.players.map(p => p.playerId));

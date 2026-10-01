@@ -42,7 +42,8 @@ export function readNpbProfileSupplements(raw: unknown, rawLabels: unknown, brid
     const matches = Object.entries(entities).filter(([, item]) => values(item.claims.P4260).includes(b.npbId));
     if (!e || unique(values(e.claims.P4260).map(v => typeof v === "string" ? v : null)) !== b.npbId ||
         matches.length !== 1 || matches[0]?.[0] !== b.wikidataId) throw Error(`NPB external-ID identity mismatch: ${b.playerId}`);
-    const positions: Record<string, z.infer<typeof positionCodeSchema>> = { Q1048902: "P", Q1050571: "C", Q1142885: "OF" };
+    const positions: Record<string, z.infer<typeof positionCodeSchema>> = { Q1048902: "P", Q1050571: "C", Q1142885: "OF",
+      Q1149868: "LF", Q727270: "DH", Q1326154: "1B", Q1368170: "3B", Q1143358: "SS", Q1368195: "2B" };
     return { playerId: b.playerId,
       position: unique(values(e.claims.P413).map(v => {
         const p = z.object({ id: z.string() }).safeParse(v); return p.success ? positions[p.data.id] ?? null : null;

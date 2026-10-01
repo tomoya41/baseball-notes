@@ -55,6 +55,19 @@ export function buildNpbCapabilities(catalog: NpbCatalog, season: NpbSeasonPaylo
   }
   for (const key of ["uniformNumber", "draft", "teamHistory", "transactions", "FA", "posting", "retirement", "prospects", "preseason", "camp"])
     set(key, "blocked_by_rights", ["source_exists_reuse_permission_not_verified"]);
+  const partialProfile = (key: string, count: number, reason: string) =>
+    set(key, count === catalog.players.length ? "available" : count ? "partially_available" : "blocked_by_rights",
+      count < catalog.players.length ? [reason] : [], count, catalog.players.length);
+  partialProfile("profile", catalog.players.filter(p => p.profile.birthDate !== null || p.profile.position !== null).length, "profile_fields_partial");
+  partialProfile("handedness", catalog.players.filter(p => p.profile.bats !== null && p.profile.throws !== null).length, "baseball_specific_handedness_evidence_required");
+  partialProfile("knownPositions", catalog.players.filter(p => !!p.profile.knownPositions?.length || p.profile.position !== null).length, "primary_position_not_inferred_from_multiple_positions");
+  partialProfile("schools", catalog.players.filter(p => !!p.profile.schools?.length).length, "school_attendance_not_graduation");
+  partialProfile("originPlace", catalog.players.filter(p => p.profile.originPlace != null).length, "origin_place_distinct_from_birth_place");
+  partialProfile("draft", catalog.players.filter(p => p.profile.draftYear !== null || p.profile.draftRound !== null || p.profile.draftTeamId != null).length, "individual_draft_fields_not_complete_draft_registry");
+  partialProfile("teamHistory", catalog.players.filter(p => !!p.profile.affiliations?.length).length, "partial_affiliation_history_not_full_career_or_current_roster");
+  data.rosterHistory = { ...data.teamHistory! };
+  partialProfile("uniformNumber", catalog.players.filter(p => p.membership.uniformNumber !== null).length, "dated_team_specific_current_number_evidence_required");
+  partialProfile("careerIdentity", catalog.players.filter(p => !!p.profile.identityLinked).length, "exact_external_id_bridge_partial_not_career_stats");
   set("historicalSeason", "blocked_by_rights", ["source_exists_reuse_permission_and_longevity_not_verified"]);
   set("careerStats", "blocked_by_rights", ["full_career_coverage_and_reusable_source_required"]);
   set("milestones", "blocked_by_rights", ["full_career_coverage_required_not_collected_range_total"]);
