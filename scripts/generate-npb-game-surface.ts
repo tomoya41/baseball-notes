@@ -2,7 +2,7 @@ import { mkdir,writeFile,readFile } from "node:fs/promises";
 import { openDataClient,type DataClient } from "../src/data/database";
 import { readNpbGameIndex } from "../src/data/npb-game-index-repository";
 import { npbSeasonPayloadSchema } from "../src/application/npb-season-payload";
-import { recordsSchema } from "../src/domain/npb-records";
+import { buildNpbRecords } from "../src/application/npb-records-payload";
 import { npbPlayerDirectorySchema } from "../src/domain/npb-player-directory";
 import { npbHotPayloadSchema } from "../src/application/npb-hot-payload";
 import { buildNpbCatalog,buildNpbCapabilities } from "../src/application/npb-product-payload";
@@ -28,12 +28,7 @@ try {const latest=await client.execute("SELECT MAX(snapshot_date) AS date FROM s
   await writeFile(`${path}/recent.json`,JSON.stringify({schemaVersion:1,league:"NPB",effectiveDate,generatedAt:index.generatedAt,games:index.recent}));
   const season=npbSeasonPayloadSchema.parse(JSON.parse(await readFile(`${root}/data/npb/season/2026/latest.json`,"utf8")));
   // Reuse existing Season aggregates; do not publish internal candidates while gate is closed.
-  const categories=([['batting','HR'],['batting','H'],['batting','RBI'],['batting','SB'],['pitching','SO'],['pitching','W'],['pitching','SV'],['pitching','HLD']] as const)
-    .map(([role,metric])=>{const entries=season.readiness.status==="ready"?season.players.filter(p=>p[role]?.metrics[metric]?.status==="complete")
-      .map(p=>({playerId:p.playerId,displayName:p.displayName,value:p[role]!.metrics[metric]!.value!})).sort((a,b)=>b.value-a.value||a.playerId.localeCompare(b.playerId)):[];
-      return {role,metric,rows:entries.map(p=>({...p,rank:1+entries.filter(x=>x.value>p.value).length}))};});
-  const records=recordsSchema.parse({schemaVersion:1,league:"NPB",season:2026,effectiveDate:season.effectiveDate,
-    coverage:season.coverage.status,readiness:season.readiness.status,qualifierStatus:season.readiness.rateQualifier,reasons:season.readiness.reasons,categories});
+  const records=buildNpbRecords(season);
   const recordPath=`${root}/data/npb/records/2026`;await mkdir(recordPath,{recursive:true});const recordJson=JSON.stringify(records);await writeFile(`${recordPath}/latest.json`,recordJson);
   const directory=npbPlayerDirectorySchema.parse(JSON.parse(await readFile(`${root}/data/npb/players/latest.json`,"utf8")));
   const hotBody=await readFile(".data/hot-diagnostics/npb-hot-7d.json","utf8").catch((error:NodeJS.ErrnoException)=>{

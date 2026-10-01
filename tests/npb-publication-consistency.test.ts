@@ -13,6 +13,7 @@ import { buildNpbSeasonMilestones } from "../src/application/npb-season-mileston
 import { npbSeasonPayloadSchema, seasonBattingKeys } from "../src/application/npb-season-payload";
 import { validateNpbPublication, validateNpbPublishedGameDates } from "../src/application/npb-publication-consistency";
 import { npbHotPayloadSchema } from "../src/application/npb-hot-payload";
+import { buildNpbRecords } from "../src/application/npb-records-payload";
 import { readNpbPublication, writeNpbProfileProjections } from "../scripts/lib/npb-publication";
 import type { NpbPlayerDirectory } from "../src/domain/npb-player-directory";
 import hotFixture from "./fixtures/npb-hot-ready.json";
@@ -42,8 +43,7 @@ function family() {
     milestones: buildNpbSeasonMilestones(season, catalog),
     gameManifest: { schemaVersion: 1, league: "NPB", from: date, to: "2026-10-07", effectiveDate: date, generatedAt: at },
     gameRecent: { schemaVersion: 1, league: "NPB", effectiveDate: date, generatedAt: at, games: [] },
-    records: { schemaVersion: 1, league: "NPB", season: 2026, effectiveDate: date, coverage: season.coverage.status,
-      readiness: season.readiness.status, qualifierStatus: season.readiness.rateQualifier, reasons: season.readiness.reasons, categories: [] } };
+    records: buildNpbRecords(season) };
 }
 
 async function stage(root: string, p: ReturnType<typeof family>) {
@@ -138,7 +138,35 @@ describe("coordinated NPB publication", () => {
     const p = family(); p.gameRecent.generatedAt = "2026-09-25T01:00:00.000Z";
     expect(() => validateNpbPublication(p)).toThrow(/Game surface generation/);
     const q = family(); q.records.reasons = ["stale_reason"];
-    expect(() => validateNpbPublication(q)).toThrow(/Records Gate/);
+    expect(() => validateNpbPublication(q)).toThrow(/Records projection/);
+  });
+  it("rejects missing or reordered categories even while the Records gate is closed", () => {
+    const p = family(); p.records.categories = [];
+    expect(() => validateNpbPublication(p)).toThrow(/Records projection/);
+    const q = family(); q.records.categories.reverse();
+    expect(() => validateNpbPublication(q)).toThrow(/Records projection/);
+  });
+  it("compares complete ready Records including tied membership, order, values and ranks", () => {
+    const p = family(), id = "00000000-0000-4000-8000-000000000999";
+    p.directory.players.push({ ...p.directory.players[0]!, playerId: id, displayName: "別選手" });
+    p.season.players.push({ ...structuredClone(p.season.players[0]!), playerId: id, displayName: "別選手" });
+    p.season.coverage = { status: "complete", summary: { dates: 1, complete: 1, noGames: 0, partial: 0, unknown: 0, failed: 0 } };
+    p.season.readiness = { status: "ready", counting: "ready", rateQualifier: "verified", reasons: [] };
+    p.teamSeason.coverage = p.season.coverage;
+    p.catalog = buildNpbCatalog(p.directory, reviewedMeasurements);
+    p.capabilities = buildNpbCapabilities(p.catalog, p.season, p.hot.readiness);
+    p.milestones = buildNpbSeasonMilestones(p.season, p.catalog);
+    p.records = buildNpbRecords(p.season);
+    expect(p.records.categories[1]!.rows.map(r => r.rank)).toEqual([1, 1]);
+    expect(() => validateNpbPublication(p)).not.toThrow();
+    for (const damage of ["missing", "rank", "value", "order"] as const) {
+      const bad = structuredClone(p), rows = bad.records.categories[1]!.rows;
+      if (damage === "missing") rows.pop();
+      else if (damage === "order") rows.reverse();
+      else if (damage === "rank") rows[0]!.rank = 2;
+      else rows[0]!.value++;
+      expect(() => validateNpbPublication(bad)).toThrow(/Records projection/);
+    }
   });
   it("requires the effective day's schedule to propagate to the manifest generation", () => {
     const p = validateNpbPublication(family());
