@@ -11,6 +11,7 @@ import { npbLatestStandingsSchema } from "../src/domain/standings";
 import { StaticGameSurfaceRepository } from "../src/infrastructure/providers/static-game-surface-repository";
 import { StaticHotRepository } from "../src/infrastructure/providers/static-hot-repository";
 import { StaticNpbProductRepository } from "../src/infrastructure/providers/static-npb-product-repository";
+import { StaticPlayerDirectoryRepository } from "../src/infrastructure/providers/static-player-directory-repository";
 import { StaticStandingsRepository } from "../src/infrastructure/providers/static-standings-repository";
 import { NpbHome, NpbTeam } from "../src/ui/npb-product";
 
@@ -32,6 +33,7 @@ const recent = (effectiveDate = date) => ({ schemaVersion: 1, league: "NPB", eff
 const unavailable: typeof fetch = async () => new Response(null, { status: 503 });
 const homeServices = (request: typeof fetch) => ({ ...defaults,
   gameSurface: new StaticGameSurfaceRepository("https://example.test/", request),
+  directory: new StaticPlayerDirectoryRepository("https://example.test/", unavailable),
   hot: new StaticHotRepository("https://example.test/", unavailable) });
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -96,6 +98,9 @@ describe("NPB Home saved Season context", () => {
         gamesBehindLeader: 0, streak: 0, sourceKey: "nf3", collectedAt: at, calculatedAt: at })) });
     await act(async () => { response.resolve(Response.json(standings)); });
     expect(context()).toBe("2025年 · 公式戦"); expect(request).toHaveBeenCalledTimes(1);
+    const follow = [...container.querySelectorAll("button")].find(b => b.textContent === "フォロー")!;
+    await act(async () => { follow.click(); });
+    expect(context()).toBe("公式戦");
   });
 });
 

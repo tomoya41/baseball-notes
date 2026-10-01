@@ -33,7 +33,7 @@ export function NpbHome({ services, favorites, toggle, saving }: { services: Ser
   const [view,setView] = useState("scores");
   const [effectiveDate, setEffectiveDate] = useState<string | null>(null);
   const changeView = (next: string) => {
-    if (next !== view && next !== "follow") setEffectiveDate(null);
+    if (next !== view) setEffectiveDate(null);
     setView(next);
   };
   return <div className="screen home-screen home-hub"><CompetitionHeader league="NPB" context={effectiveDate ? `${effectiveDate.slice(0, 4)}年 · 公式戦` : "公式戦"} />
