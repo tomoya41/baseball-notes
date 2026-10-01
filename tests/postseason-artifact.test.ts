@@ -1,0 +1,63 @@
+import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
+import { gzipSync } from "node:zlib";
+import { describe, expect, it } from "vitest";
+import { auditHistoricalPostseason } from "../scripts/lib/mlb-postseason-audit";
+import { historicalId, historicalTeamId } from "../src/data/mlb-historical";
+
+async function fixture(root: string) {
+  const id = historicalId("player", "audit"), home = historicalTeamId("ATL"), away = historicalTeamId("HOU"), years = [2020,2021,2022,2023,2024,2025];
+  const player = { id, name:"Player", positions:[], seasons:years, teamIds:[home], bats:null, throws:null };
+  const slug = id.replaceAll(":", "_"), totals = { batting:null, pitching:null };
+  async function put(path: string, data: object, regular = false) {
+    const file = join(root, regular ? path : `postseason/${path}`);
+    await mkdir(dirname(file),{recursive:true});
+    await writeFile(`${file}.gz`,gzipSync(JSON.stringify({schemaVersion:1,league:"MLB",...(!regular ? {competitionType:"postseason"} : {}),...data})));
+  }
+  await put("players/index.json",{players:[player]},true);
+  await put("players/index.json",{players:[player]});
+  await put(`players/${slug}.json`,{player,collectedRange:"2020–2025",collectedRangeTotals:totals,seasonTotals:Object.fromEntries(years.map(s => [s,totals])),batting:[],pitching:[]});
+  const advanced = {directBvp:"ready",situations:"ready"};
+  await put("advanced/capabilities.json",{...advanced,scope:"2020–2025",rawPaPublic:false,unknownContexts:[],timesThroughOrder:"evaluate",count:"evaluate",statcast:"unavailable"});
+  for(const scope of ["range",...years.map(String)]) await put(`advanced/${scope}/${slug}.json`,{...advanced,scope,playerId:id,batting:{opponents:[],splits:[]},pitching:{opponents:[],splits:[]}});
+  const seasons = [];
+  for(const season of years) {
+    const date = `${season}-10-01`, gameId = historicalId("game",String(season));
+    const game = {id:gameId,season,date,homeTeamId:home,awayTeamId:away,homeRuns:1,awayRuns:0,number:0,innings:9,batting:[],pitching:[],competitionType:"postseason"};
+    await put(`games/${gameId.replaceAll(":","_")}.json`,{game});
+    await put(`schedule/${season}/${date}.json`,{season,date,games:[{...game,status:"final",complete:true}]});
+    await put(`seasons/${season}.json`,{season,coverage:"complete",firstDate:date,lastDate:date,gameCount:1,players:[{playerId:id,...totals}]});
+    await put(`records/${season}.json`,{season,coverage:"complete",counting:"ready",rate:"not_ready",records:[]});
+    await put(`hub/${season}.json`,{season,coverage:"complete",effectiveDate:date,generatedAt:"2026-10-01T00:00:00.000Z",games:1,battingFacts:0,pitchingFacts:0,
+      playerStats:{status:"available",reason:null},analysis:{status:"available",reason:null},provenance:{provider:"Retrosheet",archiveSha256:"a".repeat(64),verifiedAt:"2026-10-01T00:00:00.000Z"},
+      series:[{id:historicalId("series",String(season)),league:"MLB",season,competitionType:"postseason",round:"world_series",name:"Test",bestOf:1,winsRequired:1,
+        teams:[{teamId:home,playedWins:1,advantageWins:0,seriesTotal:1},{teamId:away,playedWins:0,advantageWins:0,seriesTotal:0}],
+        games:[{gameId,date,gameNumber:1,homeTeamId:home,awayTeamId:away,homeRuns:1,awayRuns:0,status:"final",scheduledAt:null,winnerId:home}],
+        status:"complete",winnerId:home,clinched:true,advancesToSeriesId:null,effectiveDate:date}]});
+    seasons.push({season,firstDate:date,lastDate:date,games:1,coverage:"complete",playerCount:1});
+  }
+  await put("manifest.json",{current2026:"unavailable",seasons,teams:[{id:home,name:"Home"},{id:away,name:"Away"}],features:{directBvp:"available",situationalAnalysis:"available"}});
+  return slug;
+}
+
+describe("complete advertised Postseason artifact", () => {
+  it.each(["schedule","records","seasons","advanced","profile","advanced-year","advanced-range","hub","manifest"]) ("rejects missing %s even when surviving Game/Hub counts agree", async missing => {
+    const root = await mkdtemp(join(tmpdir(),"postseason-audit-"));
+    try {
+      const slug = await fixture(root);
+      expect((await auditHistoricalPostseason(root,root)).report.result).toBe("PASS");
+      const path = missing === "profile" ? `players/${slug}.json.gz` : missing === "advanced-year" ? `advanced/2025/${slug}.json.gz` : missing === "advanced-range" ? `advanced/range/${slug}.json.gz` : missing === "hub" ? "hub/2025.json.gz" : missing === "manifest" ? "manifest.json.gz" : missing;
+      await rm(join(root,"postseason",path),{recursive:true});
+      await expect(auditHistoricalPostseason(root,root)).rejects.toThrow("Missing advertised");
+    } finally { await rm(root,{recursive:true,force:true}); }
+  });
+  it("rejects a surviving schedule that omits an advertised Game",async () => {
+    const root = await mkdtemp(join(tmpdir(),"postseason-audit-"));
+    try {
+      await fixture(root);
+      await writeFile(join(root,"postseason/schedule/2025/2025-10-01.json.gz"),gzipSync(JSON.stringify({schemaVersion:1,league:"MLB",competitionType:"postseason",season:2025,date:"2025-10-01",games:[]})));
+      await expect(auditHistoricalPostseason(root,root)).rejects.toThrow("Schedule/detail mismatch");
+    } finally { await rm(root,{recursive:true,force:true}); }
+  });
+});

@@ -1,6 +1,18 @@
 import { createHash } from "node:crypto";
 import { parse } from "csv-parse/sync";
+import type { CompetitionType, PostseasonRound } from "../domain/competition";
+import { mlb2025Teams } from "./retrosheet";
 import { unzipSync } from "fflate";
+
+export const POSTSEASON_GAME_TYPES = ["wildcard", "divisionseries", "lcs", "worldseries"];
+export function retrosheetRound(type: string, homeTeam: string): PostseasonRound {
+  if (type === "wildcard") return "wild_card";
+  if (type === "divisionseries") return "division_series";
+  if (type === "worldseries") return "world_series";
+  const group = mlb2025Teams.find(team => team.sourceId === (homeTeam === "OAK" ? "ATH" : homeTeam))?.group;
+  if (type === "lcs" && group) return group.startsWith("AL") ? "alcs" : "nlcs";
+  throw new Error("Unknown postseason type/team group");
+}
 
 export const HISTORICAL_SEASONS = [2020, 2021, 2022, 2023, 2024, 2025] as const;
 export type HistoricalSeason = typeof HISTORICAL_SEASONS[number];
@@ -16,6 +28,8 @@ export interface HistoricalPlayer {
   chadwickMapped: boolean;
 }
 export interface HistoricalGame {
+  competitionType?: "postseason";
+  postseasonRound?: PostseasonRound;
   id: string;
   season: number;
   date: string;
@@ -68,7 +82,7 @@ const date = (value: string): string => {
 };
 
 // UUID-shaped internal IDs are derived from a versioned namespace, never exposed source keys.
-export function historicalId(kind: "game" | "player" | "team" | "pa", sourceIdentity: string): string {
+export function historicalId(kind: "game" | "player" | "team" | "pa" | "series", sourceIdentity: string): string {
   const bytes = createHash("sha256").update(`baseball-notes:mlb:${kind}:v1:${sourceIdentity}`).digest().subarray(0, 16);
   bytes[6] = (bytes[6]! & 0x0f) | 0x50;
   bytes[8] = (bytes[8]! & 0x3f) | 0x80;
@@ -177,8 +191,9 @@ export function validateHistoricalGame(game: HistoricalGame, teams: readonly Csv
 }
 
 export function importHistoricalSeason(zip: Uint8Array, season: HistoricalSeason,
-  bridge: ReadonlyMap<string, string>): HistoricalImport {
-  const info = readHistoricalCsv(zip, season, "gameinfo").filter(row => row.gametype === "regular");
+  bridge: ReadonlyMap<string, string>, competition: CompetitionType = "regular"): HistoricalImport {
+  const info = readHistoricalCsv(zip, season, "gameinfo").filter(row => competition === "regular"
+    ? row.gametype === "regular" : POSTSEASON_GAME_TYPES.includes(row.gametype ?? ""));
   const sourceGames = new Map<string, HistoricalGame>();
   const sourceGameInfo = new Map<string, CsvRow>();
   for (const row of info) {
@@ -188,6 +203,7 @@ export function importHistoricalSeason(zip: Uint8Array, season: HistoricalSeason
     const homeRuns = count(row.hruns), awayRuns = count(row.vruns);
     if (homeRuns === null || awayRuns === null) throw new Error(`Final score unavailable: ${gid}`);
     sourceGames.set(gid, {
+      ...(competition === "postseason" ? { competitionType: "postseason" as const, postseasonRound: retrosheetRound(row.gametype!, row.hometeam!) } : {}),
       id: historicalId("game", gid), season, date: date(row.date ?? ""),
       homeTeamId: historicalTeamId(row.hometeam ?? ""),
       awayTeamId: historicalTeamId(row.visteam ?? ""), homeRuns, awayRuns,
@@ -247,8 +263,16 @@ export function importHistoricalSeason(zip: Uint8Array, season: HistoricalSeason
     const rows = teamRows.get(gid) ?? [];
     rows.push(row); teamRows.set(gid, rows);
   }
-  for (const [gid, game] of sourceGames) game.validationIssues =
-    validateHistoricalGame(game, teamRows.get(gid) ?? []);
+  for (const [gid, game] of sourceGames) {
+    const teams = teamRows.get(gid) ?? [];
+    if (competition === "postseason") {
+      // gameinfo.innings is scheduled innings. Actual ending comes from the line score.
+      const observed = teams.flatMap(row => Array.from({ length: 28 }, (_, i) => i + 1)
+        .filter(n => row[`inn${n}`] !== undefined && row[`inn${n}`] !== ""));
+      game.innings = observed.length ? Math.max(...observed) : null;
+    }
+    game.validationIssues = validateHistoricalGame(game, teams);
+  }
   return { season, games: [...sourceGames.values()], players: [...people.values()],
     unresolvedRetrosheetIds: [...unresolved].sort(),
     validationIssueCount: [...sourceGames.values()].reduce((n, game) => n + game.validationIssues.length, 0) };

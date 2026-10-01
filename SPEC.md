@@ -2,6 +2,8 @@
 
 Status: Architecture selected; Phase 0 vertical proof and Analysis A foundation. Live data providers remain subject to the documented adoption gate.
 
+Competition scope: Regular Season and Postseason are first-class, separate scopes. Absent legacy scope means Regular Season. Postseason has canonical Series, explicit rounds, rule advantages and independently admitted stats/analysis; its numbers never enter regular Season/Recent/Records/rankings. NPB CS Final advantage is not a played Game. Current/Historical availability depends on each league's verified source rights. See `docs/postseason.md`.
+
 ---
 
 ## 1. Product vision

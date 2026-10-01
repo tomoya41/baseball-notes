@@ -1,6 +1,6 @@
 import { Readable } from "node:stream";
 import { parse } from "csv-parse";
-import { extractHistoricalCsv, historicalId, historicalTeamId } from "./mlb-historical";
+import { extractHistoricalCsv, historicalId, historicalTeamId, POSTSEASON_GAME_TYPES } from "./mlb-historical";
 import type { HistoricalGame } from "./mlb-historical";
 import { addPaCounts, emptyPaCounts, type HistoricalPlateAppearance, type PaCounts } from "../domain/mlb-plate-appearance";
 
@@ -18,10 +18,11 @@ const baseState = (row: RetrosheetPlay, suffix: "pre" | "post") =>
 const chunks = function* (bytes: Uint8Array) {
   for (let offset = 0; offset < bytes.length; offset += 65536) yield Buffer.from(bytes.subarray(offset, offset + 65536));
 };
-export async function* historicalPlays(zip: Uint8Array, season: number): AsyncGenerator<RetrosheetPlay> {
+export async function* historicalPlays(zip: Uint8Array, season: number, competition: "regular" | "postseason" = "regular"): AsyncGenerator<RetrosheetPlay> {
   const stream = Readable.from(chunks(extractHistoricalCsv(zip, season, "plays")))
     .pipe(parse({ columns: true, bom: true, skip_empty_lines: true }));
-  for await (const row of stream as AsyncIterable<RetrosheetPlay>) if (row.gametype === "regular") yield row;
+  for await (const row of stream as AsyncIterable<RetrosheetPlay>) if (competition === "regular"
+    ? row.gametype === "regular" : POSTSEASON_GAME_TYPES.includes(row.gametype ?? "")) yield row;
 }
 /** Keeps runner-only plays inside their PA. Substitution makes start context unknown,
  * rather than assigning the previous batter's/pitcher's situation to a replacement. */

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { postseasonHubSchema } from "./competition";
 
 export const historicalCanonicalGameId = z.string().regex(/^mlb:game:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
 export const historicalCanonicalPlayerId = z.string().regex(/^mlb:player:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
@@ -32,7 +33,26 @@ const paMetrics = z.object({ PA: count, AB: count, H: count, "2B": count, "3B": 
 const advancedSection = z.object({ opponents: z.array(z.object({ playerId: historicalCanonicalPlayerId, name: z.string(), metrics: paMetrics })),
   splits: z.array(z.object({ key: z.string().regex(/^(inning|outs|bases|score):/), metrics: paMetrics, unknownPa: count })) });
 
-export function validStaticPayload(path: string, value: unknown): boolean {
+export function validStaticPayload(path: string, value: unknown, expectedScope: "regular" | "postseason" = "regular"): boolean {
+  if (path.startsWith("postseason/")) {
+    const scopedPath = path.slice("postseason/".length);
+    if (!value || typeof value !== "object" || (value as { competitionType?: string }).competitionType !== "postseason") return false;
+    if (/^hub\/\d{4}\.json$/.test(scopedPath)) {
+      const parsed = postseasonHubSchema.safeParse(value);
+      return parsed.success && scopedPath === `hub/${parsed.data.season}.json`;
+    }
+    if (scopedPath.startsWith("games/") && (value as { game?: { competitionType?: string } }).game?.competitionType !== "postseason") return false;
+    const data = value as { player?: { id?: string }; game?: { id?: string }; playerId?: string; scope?: string; season?: number; date?: string };
+    if (scopedPath.startsWith("games/") && scopedPath !== `games/${data.game?.id?.replaceAll(":", "_")}.json`) return false;
+    if (scopedPath.startsWith("players/") && scopedPath !== "players/index.json" && scopedPath !== `players/${data.player?.id?.replaceAll(":", "_")}.json`) return false;
+    if (scopedPath.startsWith("advanced/") && scopedPath !== "advanced/capabilities.json" && scopedPath !== `advanced/${data.scope}/${data.playerId?.replaceAll(":", "_")}.json`) return false;
+    if (scopedPath.startsWith("schedule/") && scopedPath !== `schedule/${data.season}/${data.date}.json`) return false;
+    if (scopedPath.startsWith("records/") && scopedPath !== `records/${data.season}.json`) return false;
+    if (scopedPath.startsWith("seasons/") && scopedPath !== `seasons/${data.season}.json`) return false;
+    return validStaticPayload(scopedPath, value, "postseason");
+  }
+  if (expectedScope === "regular" && value && typeof value === "object" &&
+    ((value as { competitionType?: string }).competitionType === "postseason" || (value as { game?: { competitionType?: string } }).game?.competitionType === "postseason")) return false;
   if (path === "advanced/capabilities.json") return base.extend({ directBvp: z.enum(["ready", "not_ready"]),
     situations: z.enum(["ready", "not_ready"]), scope: z.string(), rawPaPublic: z.literal(false),
     unknownContexts: z.array(z.object({ season, pa: count })), timesThroughOrder: z.literal("evaluate"),
@@ -59,6 +79,8 @@ export function validStaticPayload(path: string, value: unknown): boolean {
     batting: z.array(batter.extend({ name: z.string().nullable() })), pitching: z.array(pitcher.extend({ name: z.string().nullable() })) }) }).safeParse(value).success;
   if (path.startsWith("schedule/")) return base.extend({ season, date: z.iso.date(), games: z.array(gameHeader.extend({
     status: z.literal("final"), complete: z.boolean() })) }).safeParse(value).success;
+  if (path.startsWith("seasons/")) return base.extend({ season, coverage: z.literal("complete"), firstDate: z.iso.date(),
+    lastDate: z.iso.date(), gameCount: count, players: z.array(z.object({ playerId: historicalCanonicalPlayerId, batting: metrics, pitching: metrics })) }).safeParse(value).success;
   if (path.startsWith("records/")) return base.extend({ coverage: z.literal("complete"), counting: z.literal("ready"),
     rate: z.enum(["ready", "not_ready"]), records: z.array(z.object({ metric: z.string(), role: z.enum(["batting", "pitching"]),
       classification: z.enum(["rate", "counting"]).optional(), group: z.enum(["AL", "NL"]).optional(),
