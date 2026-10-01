@@ -5,26 +5,32 @@ import { openDataClient } from "../src/data/database";
 import { HISTORICAL_SEASONS } from "../src/data/mlb-historical";
 import { historicalAdvancedGate, paAnalysisMetrics, type AdvancedPlayerPayload } from "../src/domain/mlb-pa-analysis";
 import { paCountFields, type PaCounts } from "../src/domain/mlb-plate-appearance";
+import { competitionTypeSchema } from "../src/domain/competition";
 
 const args = process.argv.slice(2), get = (name: string, fallback: string) => args.includes(name) ? args[args.indexOf(name) + 1] ?? fallback : fallback;
-const root = join(get("--output", ".data/mlb-public"), "data/mlb/historical");
+const competition = competitionTypeSchema.parse(get("--competition", "regular"));
+const root = join(get("--output", ".data/mlb-public"), "data/mlb/historical", ...(competition === "postseason" ? ["postseason"] : []));
 const client = openDataClient(`file:${get("--db", ".data/mlb-historical.sqlite")}`);
 const started = performance.now();
 const validation = JSON.parse(await readFile(get("--validation", ".data/mlb-pa-validation.json"), "utf8"));
+if ((validation.competition ?? "regular") !== competition) throw new Error("Advanced competition validation mismatch");
+const storedScope = await client.execute("SELECT DISTINCT COALESCE(json_extract(payload_json,'$.competitionType'),'regular') AS scope FROM mlb_historical_games");
+if (storedScope.rows.some(row => row.scope !== competition)) throw new Error("Advanced database competition mismatch");
 const gate = historicalAdvancedGate(validation.seasons);
 const playerSeasons = new Map<string, number[]>();
 const players = new Map((await client.execute("SELECT player_id,payload_json FROM mlb_historical_players")).rows.map(row => {
   const player = JSON.parse(String(row.payload_json)); playerSeasons.set(String(row.player_id), player.seasons);
   return [String(row.player_id), String(player.name)];
 }));
-let selects = 1, payloadBytes = 0, payloadFiles = 0, largestPayload = 0;
+let selects = 2, payloadBytes = 0, payloadFiles = 0, largestPayload = 0;
 const rangePairs = new Map<string, { batterId: string; pitcherId: string; counts: PaCounts }>();
 const rangeSplits = new Map<string, { playerId: string; role: "batting" | "pitching"; key: string; counts: PaCounts }>();
 const sumColumns = `COUNT(*) AS PA,${paCountFields.map(field => `SUM(${field}) AS ${field}`).join(",")}`;
 const counts = (row: Record<string, unknown>): PaCounts => Object.fromEntries(["PA", ...paCountFields].map(field => [field, Number(row[field])])) as PaCounts;
 const add = (target: PaCounts, source: PaCounts) => { target.PA += source.PA; for (const field of paCountFields) target[field] += source[field]; };
 async function json(relative: string, payload: unknown) {
-  const file = join(root, `${relative}.gz`), bytes = gzipSync(Buffer.from(JSON.stringify(payload)), { level: 9 });
+  const scoped = competition === "postseason" ? { ...(payload as object), competitionType: "postseason" } : payload;
+  const file = join(root, `${relative}.gz`), bytes = gzipSync(Buffer.from(JSON.stringify(scoped)), { level: 9 });
   await mkdir(dirname(file), { recursive: true }); await writeFile(file, bytes);
   payloadBytes += bytes.length; largestPayload = Math.max(largestPayload, bytes.length); payloadFiles++;
 }
@@ -86,6 +92,11 @@ for (const season of HISTORICAL_SEASONS) {
     if (existing) add(existing.counts, split.counts); else rangeSplits.set(key, { ...split, counts: { ...split.counts } });
   }
   await publish(String(season), pairs, splits);
+  if (competition === "postseason") {
+    const path = join(root, `hub/${season}.json.gz`);
+    const hub = JSON.parse(gunzipSync(await readFile(path)).toString("utf8"));
+    await json(`hub/${season}.json`, { ...hub, analysis: { status: gate.directBvp === "ready" && gate.situations === "ready" ? "available" : "not_ready", reason: gate.directBvp === "ready" && gate.situations === "ready" ? null : "PA validation gate pending" } });
+  }
 }
 await publish("range", rangePairs.values(), rangeSplits.values());
 const manifestPath = join(root, "manifest.json.gz"), manifest = JSON.parse(gunzipSync(await readFile(manifestPath)).toString("utf8"));

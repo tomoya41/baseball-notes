@@ -17,6 +17,8 @@ if (attribution !== HISTORICAL_PUBLIC_ARCHIVE_ATTRIBUTION) {
   // Migrate the legacy public copy into an attributed immutable archive.
   existing = null;
 }
+// Explicit release replacement; app-only preservation must never rebuild the archive.
+if (process.argv.includes("--refresh")) existing = null;
 if (existing) console.log(JSON.stringify({ reused: true, ...existing }));
 else {
   await mkdir(".data", { recursive: true });

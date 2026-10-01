@@ -41,7 +41,7 @@ export function NpbHome({ services, favorites, toggle, saving }: { services: Ser
     {view === "scores" && <NpbRecentGames repository={services.gameSurface} onEffectiveDate={setEffectiveDate} />}
     {view === "standings" && <NpbStandings services={services} onEffectiveDate={setEffectiveDate} />}
     {view === "follow" && <section className="home-section"><SectionHeader title="お気に入り選手" action="My" to="/NPB/my" /><NpbSavedPlayers repository={services.directory} favorites={favorites} toggle={toggle} saving={saving} compact /></section>}
-    <div className="hub-links"><Link to="/NPB/search">選手を探す <span>→</span></Link><Link to="/NPB/records">個人成績 <span>→</span></Link></div>
+    <div className="hub-links"><Link to="/NPB/search">選手を探す <span>→</span></Link><Link to="/NPB/records">個人成績 <span>→</span></Link><Link to="/NPB/postseason">Postseason <span>→</span></Link></div>
     <div className="hub-readiness"><NpbHotSection repository={services.hot} /></div>
   </div>;
 }

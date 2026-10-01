@@ -174,6 +174,12 @@ PAはローカルrelease SQLiteに保存し、Tursoへ投入しません。Game�
 
 同workflowの `mode=app-only` はUI更新用です。既に公開されたHistorical aggregate archiveのhashを検証して保持し、Retrosheet source archive再取得・PA再import・DB writeを行いません。公開aggregateの保持copyはcontent-addressed GitHub Release assetへ置き、Pagesの小さな `historical-release.json` にURLとSHA256を保存します。Archive内の `ATTRIBUTION.txt` とRelease説明にも必要な出典・ライセンス通知を含めます。NPBのPages更新時もhash検証して復元します。旧Pages内archiveは移行時のみ読み取れます。Raw PA/DB/source archiveをReleaseやPagesへ公開しません。新しいRetrosheet releaseを取り込む場合は既定の `mode=release` を使用してください。
 
+## Postseason release
+
+Postseasonは独立competitionです。[Source/rights・Contract・Coverage・運用](docs/postseason.md) を参照してください。Retrosheet 2020〜2025は専用SQLiteへimportし、`/data/mlb/historical/postseason/`へ公開します。Hubは`#/MLB/postseason?season=2025`、選手/日程/Recordsは`competition=postseason`で切り替えます。Regular Seasonに数字を混ぜません。NPBとMLB 2026 CurrentはSource rights pendingです。
+
+手動 `mlb-historical-publish.yml mode=postseason` はimport/PBP検証/再import write 0/restoreを行い、公開済みRegular payload全hashを保持してcoordinated publishします。`mode=app-only`は両competitionを保持。Daily MLB収集/Production Pushは追加しません。
+
 ## Android Beta / Release
 
 Android版は既存Web UIを共有するCapacitor shellです。`npm run android:sync`でShellのみを同期し、SDK/JDK設定後に`npm run android:apk` / `npm run android:aab`を使用します。無料の公開repo Actions `android-beta.yml`でもAPK・unsigned AABを生成可能です。Firebase・署名・App Linksは別manual gateです。

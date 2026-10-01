@@ -4,6 +4,7 @@ import { matchesMlbPlayerName } from "../domain/mlb-japanese-display";
 import type { AdvancedPlayerPayload, PaAnalysisLine } from "../domain/mlb-pa-analysis";
 import { DataState, LoadingSkeleton, MetricLabel } from "./components";
 import { useHistoricalStatic } from "./use-mlb-historical";
+import { useHistoricalCompetition } from "./historical-competition-context";
 
 const labels: Record<string, string> = { "inning:1–3": "1〜3回", "inning:4–6": "4〜6回", "inning:7–9": "7〜9回", "inning:extra": "延長",
   "outs:0": "0アウト", "outs:1": "1アウト", "outs:2": "2アウト", "bases:empty": "走者なし", "bases:runners": "走者あり", "bases:risp": "得点圏に走者",
@@ -18,6 +19,7 @@ export function PaMetricTable({ metrics, pitching = false }: { metrics: PaAnalys
 export function HistoricalAdvancedAnalysis({ playerId, season, hasBatting, hasPitching }: {
   playerId: string; season: number; hasBatting: boolean; hasPitching: boolean;
 }) {
+  const competition = useHistoricalCompetition();
   const [open, setOpen] = useState(false), [scope, setScope] = useState<"season" | "range">("season");
   const [selectedRole, setSelectedRole] = useState<"batting" | "pitching">("batting");
   const [mode, setMode] = useState<"bvp" | "inning" | "outs" | "bases" | "score">("bvp");
@@ -47,7 +49,7 @@ export function HistoricalAdvancedAnalysis({ playerId, season, hasBatting, hasPi
             <input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="相手の名前で絞り込む" /></label>
           <p className="inline-note">{opponents.length}人。実際に対戦した相手だけを表示します。</p>
           {opponent && <div><h3>{opponent.name}</h3><PaMetricTable metrics={opponent.metrics} pitching={role === "pitching"} />
-            <Link className="text-link" to={`/MLB/players/${encodeURIComponent(opponent.playerId)}?season=${season}`}>選手ページへ</Link></div>}
+            <Link className="text-link" to={`/MLB/players/${encodeURIComponent(opponent.playerId)}?season=${season}${competition === "postseason" ? "&competition=postseason" : ""}`}>選手ページへ</Link></div>}
           <div className="row-list matchup-opponents">{opponents.slice(0, 40).map(row => <button className="ranking-entry" type="button" key={row.playerId}
             aria-pressed={row.playerId === opponentId} onClick={() => setOpponentId(row.playerId)}><span>{row.name}</span><span><strong>{row.metrics.PA}</strong><small>PA</small></span></button>)}</div>
           {!opponents.length && <DataState kind="no-data" title="該当する対戦相手はいません" />}

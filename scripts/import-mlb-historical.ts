@@ -10,6 +10,8 @@ import type { HistoricalGame, HistoricalPlayer } from "../src/data/mlb-historica
 import { battingAggregate, pitchingAggregate } from "../src/domain/mlb-historical-aggregate";
 import { mlbBattingQualification, mlbPitchingQualification } from "../src/domain/mlb-ranking-qualification";
 import type { DatedBatter, DatedPitcher } from "../src/domain/mlb-historical-aggregate";
+import { competitionTypeSchema } from "../src/domain/competition";
+import { buildPostseasonHub } from "../src/data/mlb-postseason";
 
 const args = process.argv.slice(2);
 const value = (name: string, fallback: string) => {
@@ -18,11 +20,12 @@ const value = (name: string, fallback: string) => {
 };
 const cache = value("--cache", ".data");
 const output = value("--output", ".data/mlb-public");
-const database = value("--db", ".data/mlb-historical.sqlite");
+const competition = competitionTypeSchema.parse(value("--competition", "regular"));
+const database = value("--db", competition === "postseason" ? ".data/mlb-postseason.sqlite" : ".data/mlb-historical.sqlite");
 const download = args.includes("--download");
 const sha = (bytes: Uint8Array | string) => createHash("sha256").update(bytes).digest("hex");
 const source = "https://www.retrosheet.org/downloads";
-const root = join(output, "data", "mlb", "historical");
+const root = join(output, "data", "mlb", "historical", ...(competition === "postseason" ? ["postseason"] : []));
 const started = performance.now();
 let requests = 0;
 let downloadBytes = 0;
@@ -46,7 +49,8 @@ async function archive(path: string, url: string): Promise<Uint8Array> {
 async function json(relative: string, payload: unknown) {
   const path = join(root, `${relative}.gz`);
   await mkdir(dirname(path), { recursive: true });
-  await writeFile(path, gzipSync(Buffer.from(JSON.stringify(payload)), { level: 9 }));
+  const scoped = competition === "postseason" ? { ...(payload as object), competitionType: "postseason" } : payload;
+  await writeFile(path, gzipSync(Buffer.from(JSON.stringify(scoped)), { level: 9 }));
 }
 const register = await archive(join(cache, "chadwick-register.zip"),
   "https://codeload.github.com/chadwickbureau/register/zip/refs/heads/master");
@@ -76,6 +80,9 @@ await client.executeMultiple(`
   );
 `);
 const registerHash = sha(register);
+const scopes = await client.execute("SELECT DISTINCT COALESCE(json_extract(payload_json,'$.competitionType'),'regular') AS scope FROM mlb_historical_games");
+if (scopes.rows.some(row => row.scope !== competition))
+  throw new Error("Competition database isolation required; select a different --db");
 const gameHashes = new Map((await client.execute("SELECT game_id,content_sha256 FROM mlb_historical_games")).rows
   .map(row => [String(row.game_id), String(row.content_sha256)]));
 const playerHashes = new Map((await client.execute("SELECT player_id,content_sha256 FROM mlb_historical_players")).rows
@@ -95,13 +102,14 @@ for (const season of HISTORICAL_SEASONS) {
   const bytes = await archive(join(cache, `${season}csvs.zip`), `${source}/${season}/${season}csvs.zip`);
   extractedBytes += Object.values(unzipSync(bytes)).reduce((n, content) => n + content.byteLength, 0);
   const parsedAt = performance.now();
-  const result = importHistoricalSeason(bytes, season, bridge);
+  const result = importHistoricalSeason(bytes, season, bridge, competition);
   parsingMs += performance.now() - parsedAt;
   if (result.unresolvedRetrosheetIds.length || result.validationIssueCount) {
     throw new Error(`${season} blocked: ${result.unresolvedRetrosheetIds.length} identity, ${result.validationIssueCount} validation`);
   }
-  if (result.games.length < (season === 2020 ? 850 : 2400) || result.games.length > 2500)
+  if (competition === "regular" && (result.games.length < (season === 2020 ? 850 : 2400) || result.games.length > 2500))
     throw new Error(`${season} implausible Game count: ${result.games.length}`);
+  if (competition === "postseason") await json(`hub/${season}.json`, buildPostseasonHub(result.games, sha(bytes), new Date().toISOString()));
   games.push(...result.games);
   for (const player of result.players) {
     const current = players.get(player.id);
@@ -211,8 +219,8 @@ for (const season of HISTORICAL_SEASONS) {
     const b = batting.length ? battingAggregate(player.id, batting, from, to).metrics : null;
     const p = pitching.length ? pitchingAggregate(player.id, pitching, from, to).metrics : null;
     return { playerId: player.id, batting: b, pitching: p,
-      battingQualification: mlbBattingQualification(season, b?.PA.value ?? null),
-      pitchingQualification: mlbPitchingQualification(season, p?.outsRecorded.value ?? null) };
+      battingQualification: competition === "regular" ? mlbBattingQualification(season, b?.PA.value ?? null) : { status: "unknown", reason: "Postseason leaders; no regular-season qualification" },
+      pitchingQualification: competition === "regular" ? mlbPitchingQualification(season, p?.outsRecorded.value ?? null) : { status: "unknown", reason: "Postseason leaders; no regular-season qualification" } };
   });
   await json(`seasons/${season}.json`, { schemaVersion: 1, league: "MLB", season,
     coverage: "complete", firstDate: from, lastDate: to,
@@ -271,6 +279,7 @@ await json("manifest.json", { schemaVersion: 1, league: "MLB", scope: "historica
 });
 const dbBytes = (await stat(database)).size;
 console.log(JSON.stringify({ seasons: releases, players: playerRows.length, games: games.length,
+  competition,
   battingFacts: [...batterFacts.values()].reduce((n, rows) => n + rows.length, 0),
   pitchingFacts: [...pitcherFacts.values()].reduce((n, rows) => n + rows.length, 0),
   mappings: mappingKeys.size, requests, downloadBytes, extractedBytes,

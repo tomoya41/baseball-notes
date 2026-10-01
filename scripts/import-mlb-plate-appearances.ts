@@ -6,10 +6,12 @@ import { HISTORICAL_SEASONS, historicalId, type HistoricalGame } from "../src/da
 import { historicalPlays, RetrosheetPaParser, validatePaGame } from "../src/data/mlb-retrosheet-pa";
 import { createHistoricalPaTables, replaceHistoricalPaGame } from "../src/data/mlb-pa-repository";
 import type { HistoricalPlateAppearance } from "../src/domain/mlb-plate-appearance";
+import { competitionTypeSchema } from "../src/domain/competition";
 
 const args = process.argv.slice(2);
 const value = (key: string, fallback: string) => args.includes(key) ? args[args.indexOf(key) + 1] ?? fallback : fallback;
 const database = value("--db", ".data/mlb-historical.sqlite"), cache = value("--cache", ".data");
+const competition = competitionTypeSchema.parse(value("--competition", "regular"));
 const seasonFilter = Number(value("--season", "0"));
 const started = performance.now(), beforeBytes = (await stat(database)).size;
 const client = openDataClient(`file:${database}`);
@@ -24,6 +26,7 @@ for (const season of HISTORICAL_SEASONS.filter(year => !seasonFilter || year ===
     WHERE g.season=? AND r.validation_issues=0`, args: [season] })).rows;
   const games = new Map(gameRows
     .map(row => [String(row.game_id), JSON.parse(String(row.payload_json)) as HistoricalGame]));
+  if ([...games.values()].some(game => (game.competitionType ?? "regular") !== competition)) throw new Error("PA competition database mismatch");
   dbReads++;
   const seen = new Set<string>();
   const report = { season, expectedGames: Number(gameRows[0]?.expected_games ?? 0), games: games.size, gamesWithPbp: 0, reconstructedGames: 0, paRows: 0, skippedGames: 0,
@@ -55,7 +58,7 @@ for (const season of HISTORICAL_SEASONS.filter(year => !seasonFilter || year ===
     dbWrites += await replaceHistoricalPaGame(client, currentId, season, rows, hash, gameReport); dbReads++;
   };
   const bytes = await readFile(join(cache, `${season}csvs.zip`));
-  for await (const row of historicalPlays(bytes, season)) {
+  for await (const row of historicalPlays(bytes, season, competition)) {
     const gameId = historicalId("game", row.gid!);
     // Retrosheet game identity uses the same adapter namespace as the Core.
     if (gameId !== currentId) {
@@ -75,7 +78,7 @@ for (const season of HISTORICAL_SEASONS.filter(year => !seasonFilter || year ===
     mismatches: report.mismatches.length, stateIssues: report.stateIssues, failed: report.failed.slice(0, 3) }));
 }
 await client.execute("PRAGMA wal_checkpoint(TRUNCATE)");
-const total = { seasons, dbReads, dbWrites, beforeBytes, afterBytes: (await stat(database)).size,
+const total = { competition, seasons, dbReads, dbWrites, beforeBytes, afterBytes: (await stat(database)).size,
   httpRequests: 0, retries: 0, runtimeMs: Math.round(performance.now() - started) };
 await writeFile(value("--report", ".data/mlb-pa-validation.json"), JSON.stringify(total, null, 2));
 console.log(JSON.stringify({ dbWrites, dbReads, beforeBytes, afterBytes: total.afterBytes, runtimeMs: total.runtimeMs }));

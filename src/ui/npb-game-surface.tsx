@@ -26,7 +26,7 @@ export function NpbScheduleScreen({repository}:{repository:GameSurfaceReader}){
     void repository.date(date).then(v=>{if(active){setPayload(v);setState("ready");}}).catch(()=>{if(active)setState("error");});return()=>{active=false;};},[date,manifest,repository]);
   const change=(next:string)=>{setState("loading");setPayload(null);setParams({date:next});};
   return <div className="screen game-schedule"><PageHeading eyebrow="NPB" title="日程・結果"/>
-    <nav className="profile-tabs" aria-label="試合の種類"><Link to="/NPB/schedule" aria-current="page">公式戦</Link><Link to="/NPB/preseason">オープン戦 <span className="soon-badge">Soon</span></Link></nav>
+    <nav className="profile-tabs" aria-label="試合の種類"><Link to="/NPB/schedule" aria-current="page">公式戦</Link><Link to="/NPB/postseason">Postseason</Link><Link to="/NPB/preseason">オープン戦 <span className="soon-badge">Soon</span></Link></nav>
     {manifest&&date&&/^\d{4}-\d{2}-\d{2}$/.test(date)&&date>=manifest.from&&date<=manifest.to&&<DateRibbon date={date} min={manifest.from} max={manifest.to} onChange={change} />}
     {state==="loading"&&<LoadingSkeleton/>}{state==="error"&&<DataState kind="source-unavailable" title="日程を読み込めません"/>}
     {state==="ready"&&payload&&payload.date===date&&<GameDateView payload={payload}/>}

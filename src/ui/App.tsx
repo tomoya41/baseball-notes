@@ -16,11 +16,13 @@ import { NpbGameDetailScreen } from "./npb-game-detail";
 import { NpbSavedPlayers } from "./npb-my";
 import { ExploreScreen, FutureFeatureScreen } from "./future-surfaces";
 import { NpbMilestonesScreen } from "./npb-milestones";
+import { PostseasonUnavailable } from "./postseason";
 type FavoriteTarget = Pick<Favorite, "kind" | "entityId" | "league">;
 const MlbLeagueView = lazy(() => import("./mlb-foundation").then(module => ({ default: module.MlbLeagueView })));
 function NpbRoutes({ services, favorites, toggle, saving }: { services: Services; favorites: Favorite[]; toggle: (target: FavoriteTarget) => void; saving: boolean }) {
   const location = useLocation();
   return <Routes>
+    <Route path="postseason/*" element={<PostseasonUnavailable league="NPB" />} />
     <Route path="explore" element={<ExploreScreen league="NPB" />} />
     <Route path="milestones/*" element={<NpbMilestonesScreen repository={services.product} />} />
     {(["moves", "talent", "preseason", "matchup", "watch"] as const).map(feature => <Route key={feature} path={`${feature}/*`} element={<FutureFeatureScreen feature={feature} league="NPB" />} />)}
@@ -48,7 +50,7 @@ export function App({ services }: { services: Services }) {
   useEffect(() => { window.scrollTo(0, 0); }, [location.pathname]);
   const league: League = location.pathname.split("/")[1] === "MLB" ? "MLB" : "NPB";
   const section = location.pathname.split("/")[2] ?? "home";
-  const currentNav = ["games", "schedule"].includes(section) ? "schedule" : ["ranking", "milestones"].includes(section) ? "records" : ["players", "teams", "analysis"].includes(section) ? "search" : section === "favorites" ? "my" : section;
+  const currentNav = ["games", "schedule", "postseason"].includes(section) ? "schedule" : ["ranking", "milestones"].includes(section) ? "records" : ["players", "teams", "analysis"].includes(section) ? "search" : section === "favorites" ? "my" : section;
   const [favorites, setFavorites] = useState<Favorite[]>([]);
   const [favoritesReady, setFavoritesReady] = useState(false);
   const [refreshVersion, setRefreshVersion] = useState(0);
