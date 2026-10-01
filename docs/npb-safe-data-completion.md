@@ -134,3 +134,8 @@ The staged and post-deploy verification also cover Records, Game manifest, Recen
 Records generation and verification share the extracted existing eight-category projector. The whole result is compared, including category ordering, all qualified counting rows, deterministic tied ordering and competition ranks. Missing categories/rows or altered ranks cannot pass, even when the public Gate is closed. No Records formula or eligibility semantics changed.
 
 Directory and HOT deploy verification receive the SHA256s of the final validated artifact, including all dated Game indexes. Every HTTP body must match those staged bytes; the check is mandatory in Actions. This binds same-date Team Season/Season/HOT corrections to the intended release while allowing Directory publication to preserve its baseline aggregates. Hashes stay in job outputs, not a new public contract. CDN checks are bounded, batched eight at a time and never access a provider or canonical DB.
+
+### Review: latest-only publication cutoff
+
+Current master/schedule projections do not provide historical as-of snapshots. Explicit publication dates must therefore equal the latest stored NPB standings date. HOT publication rejects older/future dates before aggregation; Directory and Game Surface independently enforce the same policy before output writes. Future scheduled entries keep their existing semantics. No canonical Fact, Coverage, validator, HOT eligibility or ranking rule changes are involved. A historical replay requires separately versioned source state and is intentionally unsupported.
+

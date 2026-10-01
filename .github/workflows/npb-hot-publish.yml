@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       as_of_date:
-        description: "Completed JST date (YYYY-MM-DD); blank uses latest stored standings"
+        description: "Latest stored standings date (YYYY-MM-DD); blank uses latest. Historical replay is unsupported."
         required: false
         type: string
 permissions:

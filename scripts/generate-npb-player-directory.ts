@@ -6,6 +6,7 @@ import { writeNpbPlayerDirectoryAtomically } from "../src/data/npb-player-direct
 import { normalizePlayerSearch, npbPlayerDirectorySchema } from "../src/domain/npb-player-directory";
 import { supplementNpbDirectory } from "../src/application/npb-profile-supplement";
 import supplement from "../src/data/npb-reviewed-profile-supplement.json";
+import { npbLatestPublicationDate } from "./lib/npb-publication-date";
 
 function option(name: string): string | null {
   return process.argv.find((value) => value.startsWith(`${name}=`))?.slice(name.length + 1) ?? null;
@@ -29,9 +30,9 @@ const client = new Proxy(source, { get(target, property) {
 try {
   const started = performance.now();
   const storedDirectory = await new NpbPlayerDirectoryRepository(client).read();
-  // Affiliation is explicitly latest_stored_affiliation; only the publication context is dated.
+  // Latest affiliation cannot be safely labelled as an earlier publication snapshot.
   const projection = supplementNpbDirectory(npbPlayerDirectorySchema.parse({ ...storedDirectory,
-    effectiveDate: option("--date") ?? storedDirectory.effectiveDate }), supplement);
+    effectiveDate: npbLatestPublicationDate(storedDirectory.effectiveDate, option("--date")) }), supplement);
   const directory = projection.directory;
   const readMs = Math.round(performance.now() - started);
   const path = join(option("--payload-root") ?? ".data/publish", "data", "npb", "players", "latest.json");
