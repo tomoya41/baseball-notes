@@ -42,7 +42,21 @@ describe("reviewed CC0 profile supplement", () => {
   it("uses an exact external-ID bridge even when display names differ", () => {
     const r = supplementNpbDirectory(directory, reviewed).directory.players[0]!;
     expect(r.displayName).toBe("マルティネス"); expect(r.position).toBe("C"); expect(r.birthDate).toBe("1996-05-28");
+    expect(r.playerType).toBe("fielder");
     expect(r.teamId).toBe(directory.players[0]!.teamId); expect(r.pitchingAvailable).toBe(false);
+  });
+  it("derives playerType from an accepted position without inventing Fact availability", () => {
+    const player = reviewed.players[0]!;
+    const input = { ...directory, players: [{ ...directory.players[0]!, playerId: player.playerId,
+      battingAvailable: false, pitchingAvailable: false, recentAvailable: false }] };
+    const result = supplementNpbDirectory(input, reviewed).directory;
+    expect(result.players[0]).toMatchObject({ position: "P", playerType: "pitcher",
+      battingAvailable: false, pitchingAvailable: false, recentAvailable: false });
+    expect(supplementNpbDirectory(result, reviewed).directory).toEqual(result);
+    const unknown = { ...reviewed, players: [{ ...player, position: null }] };
+    expect(supplementNpbDirectory(input, unknown).directory.players[0]!.playerType).toBeNull();
+    const conflict = { ...input, players: [{ ...input.players[0]!, position: "C" as const, playerType: "fielder" as const }] };
+    expect(supplementNpbDirectory(conflict, reviewed).directory.players[0]).toMatchObject({ position: "C", playerType: "fielder" });
   });
   it("rejects a name-only match and a mismatched bridge", () => {
     const raw = structuredClone(source); Reflect.deleteProperty(raw.entities.Q52083715.claims, "P4260");

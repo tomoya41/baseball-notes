@@ -42,6 +42,7 @@ export function validateNpbPublication(input: NpbPublicationInputs) {
   requireEqual([...players.keys()].sort(), directory.players.map(p => p.playerId).sort(), "Player IDs");
   for (const p of directory.players) {
     const c = players.get(p.playerId)!;
+    requireEqual(p.playerType, p.position === "P" ? "pitcher" : p.position ? "fielder" : null, `Player type ${p.playerId}`);
     requireEqual([c.displayName, c.membership.teamId, c.battingAvailable, c.pitchingAvailable],
       [p.displayName, p.teamId, p.battingAvailable, p.pitchingAvailable], `Player context ${p.playerId}`);
     for (const key of ["position", "birthDate", "birthPlace", "nationality", "bats", "throws"] as const)

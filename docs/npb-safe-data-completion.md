@@ -139,3 +139,6 @@ Directory and HOT deploy verification receive the SHA256s of the final validated
 
 Current master/schedule projections do not provide historical as-of snapshots. Explicit publication dates must therefore equal the latest stored NPB standings date. HOT publication rejects older/future dates before aggregation; Directory and Game Surface independently enforce the same policy before output writes. Future scheduled entries keep their existing semantics. No canonical Fact, Coverage, validator, HOT eligibility or ranking rule changes are involved. A historical replay requires separately versioned source state and is intentionally unsupported.
 
+
+All six Pages publication entry points now carry the final staged hashes into shared post-deploy HTTP family verification, including Season, Daily, EOD and MLB's preserved NPB projection. Daily/EOD publication markers and optional notifications follow that verification. Collector behavior and schedules are unchanged. Accepted supplemental positions also update the Directory's derived playerType; stored batting/pitching Fact availability remains unchanged.
+

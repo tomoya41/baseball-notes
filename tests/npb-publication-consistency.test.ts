@@ -71,8 +71,13 @@ describe("coordinated NPB publication", () => {
     expect(validateNpbPublication(p).directory).toEqual(p.directory); expect(JSON.stringify(p)).toBe(before);
   });
   it("rejects same-date Directory-only enrichment even when timestamps match", () => {
-    const p = family(); p.directory.players[0]!.position = "C";
+    const p = family(); p.directory.players[0]!.position = "C"; p.directory.players[0]!.playerType = "fielder";
     expect(() => validateNpbPublication(p)).toThrow(/Player position/);
+  });
+  it("rejects an enriched position with a stale Directory playerType", () => {
+    const p = family();
+    p.directory.players[0]!.position = "P"; p.catalog.players[0]!.profile.position = "P";
+    expect(() => validateNpbPublication(p)).toThrow(/Player type/);
   });
   it("rejects different generations on the same date even without a field change", () => {
     const p = family(); p.directory.generatedAt = "2026-09-26T01:00:00.000Z";
@@ -268,12 +273,20 @@ describe("all Pages publication entry points", () => {
     expect(stage).toContain("preserve-mlb-historical.ts");
     expect(workflow("npb-hot-publish").jobs.deploy!.steps.some(s => s.run?.includes("verify-published-npb-player-directory.ts"))).toBe(true);
   });
-  it.each(["npb-player-directory-publish", "npb-hot-publish"])("%s passes staged hashes to the deploy verifier", name => {
+  it.each(["npb-player-directory-publish", "npb-hot-publish", "npb-season-publish", "daily-collector",
+    "npb-eod-watcher", "mlb-historical-publish"])("%s passes staged hashes to the deploy verifier", name => {
     const w = parse(readFileSync(`.github/workflows/${name}.yml`, "utf8")) as {
       jobs: Record<string, { outputs?: Record<string, string>; steps: { id?: string; run?: string; env?: Record<string, string> }[] }> };
-    expect(w.jobs.stage!.steps.find(s => s.run?.includes("verify-npb-publication.ts"))?.id).toBe("publication");
-    expect(w.jobs.stage!.outputs?.projection_hashes).toBe("${{ steps.publication.outputs.projection_hashes }}");
+    const stageName = name === "daily-collector" ? "collect" : name === "npb-eod-watcher" ? "watch" : "stage";
+    expect(w.jobs[stageName]!.steps.find(s => s.run?.includes("verify-npb-publication.ts"))?.id).toBe("publication");
+    expect(w.jobs[stageName]!.outputs?.projection_hashes).toBe("${{ steps.publication.outputs.projection_hashes }}");
     expect(w.jobs.deploy!.steps.find(s => s.run?.includes("verify-published-npb-player-directory.ts"))?.env?.EXPECTED_PROJECTION_HASHES)
-      .toBe("${{ needs.stage.outputs.projection_hashes }}");
+      .toBe(`\${{ needs.${stageName}.outputs.projection_hashes }}`);
+    const steps = w.jobs.deploy!.steps;
+    const check = steps.findIndex(s => s.run?.includes("verify-published-npb-player-directory.ts"));
+    expect(check).toBeGreaterThan(steps.findIndex(s => s.run === "npm ci"));
+    for (const operation of ["--action=mark-published", "send-eod-notifications.ts"])
+      if (steps.some(s => s.run?.includes(operation)))
+        expect(steps.findIndex(s => s.run?.includes(operation))).toBeGreaterThan(check);
   });
 });

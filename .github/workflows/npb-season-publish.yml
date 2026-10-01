@@ -10,6 +10,9 @@ jobs:
   stage:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    outputs:
+      generated_at: ${{ steps.publication.outputs.generated_at }}
+      projection_hashes: ${{ steps.publication.outputs.projection_hashes }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -64,6 +67,7 @@ jobs:
         run: npx tsx scripts/preserve-mlb-historical.ts dist/data/mlb
       - uses: actions/configure-pages@v5
       - name: Validate coordinated NPB projections before artifact upload
+        id: publication
         run: npx tsx scripts/verify-npb-publication.ts dist
       - uses: actions/upload-pages-artifact@v4
         with:
@@ -79,8 +83,21 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
       - uses: actions/deploy-pages@v4
         id: deployment
+      - name: Verify coordinated public projection family
+        env:
+          EXPECTED_GENERATED_AT: ${{ needs.stage.outputs.generated_at }}
+          EXPECTED_PROJECTION_HASHES: ${{ needs.stage.outputs.projection_hashes }}
+        run: npx tsx scripts/verify-published-npb-player-directory.ts
       - name: Public HTTP and schema identity
         run: |
           node --input-type=module -e "const r=await fetch('https://tomoya41.github.io/baseball-notes/data/npb/season/2026/latest.json?v='+Date.now());if(r.status!==200)throw Error('Season HTTP');const p=await r.json();if(p.schemaVersion!==1||p.season!==2026||!p.players.length||p.rankings.batting.length||p.rankings.pitching.length)throw Error('Season contract');console.log(JSON.stringify({http:r.status,effectiveDate:p.effectiveDate,coverage:p.coverage,readiness:p.readiness,players:p.players.length}))"

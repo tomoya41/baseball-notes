@@ -16,7 +16,11 @@ export function supplementNpbDirectory(directory: NpbPlayerDirectory, raw: unkno
       }
       // Never present a future DOB as an observed historical profile.
       if (key === "birthDate" && incoming !== null && incoming > directory.effectiveDate) continue;
-      if (result[key] === null) Object.assign(result, { [key]: incoming });
+      if (result[key] === null) {
+        Object.assign(result, { [key]: incoming });
+        if (key === "position" && incoming !== null)
+          result.playerType = incoming === "P" ? "pitcher" : "fielder";
+      }
     }
     // Role availability still comes exclusively from stored Facts, not profile position.
     return result;
