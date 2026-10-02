@@ -60,6 +60,29 @@ describe("rights-safe field registry", () => {
     const b = { ...a, name: "球団B", from: "2021", to: "2022" };
     expect(apply([entry("affiliations", [a, b]), entry("affiliations", [b, a])]).conflicts).toHaveLength(1);
   });
+  it("blocks contradictory primary positions even when the listed-position group already conflicts", () => {
+    const rows = [entry("position", "P"), entry("knownPositions", ["投手"]), entry("knownPositions", ["三塁手", "一塁手", "二塁手"])];
+    for (const ordered of [rows, [...rows].reverse()]) {
+      const r = apply(ordered);
+      expect(r.directory.players[0]!.position).toBeNull(); expect(r.directory.players[0]!.playerType).toBeNull();
+      expect(r.catalog.players[0]!.profile.position).toBeNull();
+      expect(r.catalog.players[0]!.profile.knownPositions).toBeUndefined();
+      expect(r.conflicts.map(v => v.reason).sort()).toEqual(["competing_source_values", "cross_field_position_conflict"]);
+    }
+    const d = structuredClone(directory); d.players[0]!.position = "3B";
+    const c = catalog(); c.players[0]!.profile.position = "3B";
+    const known = applyNpbProfileRegistry(d, c, snapshot(rows));
+    expect(known.directory.players[0]!.position).toBe("3B"); expect(known.catalog.players[0]!.profile.position).toBe("3B");
+  });
+  it("supports broad position labels but rejects incompatible source lists in either direction", () => {
+    for (const [position, knownPositions] of [["3B", ["内野手"]], ["RF", ["外野手"]], ["OF", ["右翼手", "中堅手"]]] as const)
+      expect(apply([entry("position", position), entry("knownPositions", knownPositions)]).conflicts).toEqual([]);
+    const bad = apply([entry("position", "C"), entry("knownPositions", ["投手"])]);
+    expect(bad.directory.players[0]!.position).toBeNull(); expect(bad.catalog.players[0]!.profile.knownPositions).toBeUndefined();
+    expect(bad.conflicts).toHaveLength(2);
+    const blocked = apply([entry("position", "C"), entry("knownPositions", ["投手"], { publicReuseAllowed: false })]);
+    expect(blocked.directory.players[0]!.position).toBe("C"); expect(blocked.conflicts).toEqual([]);
+  });
   it("renders origin and birthplace as separate profile facts", () => {
     const r = apply([entry("originPlace", "出身の地域"), entry("birthPlace", "出生した地域")]);
     const html = renderToStaticMarkup(createElement(NpbProfileDetails, { player: r.catalog.players[0]! }));
@@ -156,5 +179,13 @@ describe("documented Wikimedia adapters", () => {
     const entries = [...profileRegistrySchema.parse(registry).entries, ...profileRegistrySchema.parse(wikipedia).entries];
     expect(new Set(entries.map(e => e.playerId)).size).toBe(116); expect(entries.every(e => e.publicReuseAllowed)).toBe(true);
     expect(entries.filter(e => e.verificationStatus === "human_reviewed")).toHaveLength(0);
+  });
+  it("does not publish the bundled Ishikawa position contradiction", () => {
+    const playerId = "6294da4c-056c-4c57-afff-e923dba33a9f";
+    const d = structuredClone(directory); d.players[0]!.playerId = playerId;
+    const c = buildNpbCatalog(d, { observedAt: at, effectiveDate: null, players: [] });
+    const r = applyNpbProfileRegistry(d, c, { ...registry, entries: [...registry.entries, ...wikipedia.entries] });
+    expect(r.directory.players[0]!.position).toBeNull();
+    expect(r.conflicts).toContainEqual(expect.objectContaining({ field: "position", reason: "cross_field_position_conflict" }));
   });
 });

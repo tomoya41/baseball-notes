@@ -2,6 +2,7 @@ import { isDeepStrictEqual } from "node:util";
 import { eligibleProfileEntries, profileRegistrySchema, type ProfileRegistry, type ProfileField } from "../domain/npb-profile-registry";
 import { npbPlayerDirectorySchema, type NpbPlayerDirectory } from "../domain/npb-player-directory";
 import { npbCatalogSchema, type NpbCatalog } from "../domain/npb-product-contract";
+import { positionDefinitions, type PositionCode } from "../domain/baseball-terms";
 
 export type ProfileConflict = { playerId: string; field: ProfileField; existing: unknown; incoming: unknown; reason: string };
 // These fields describe sets; their source order does not imply chronology or priority.
@@ -9,6 +10,12 @@ const comparableValue = (field: ProfileField, value: unknown) => field === "know
   ? [...new Set(value as string[])].sort() : value;
 const sameValue = (field: ProfileField, left: unknown, right: unknown) =>
   isDeepStrictEqual(comparableValue(field, left), comparableValue(field, right));
+// Generic infield/outfield labels support their explicit positions without choosing one.
+const positionSupported = (position: PositionCode, listed: string[]) => listed.some(label =>
+  label === positionDefinitions[position] ||
+  (["1B", "2B", "3B", "SS"].includes(position) && label === "内野手") ||
+  (["LF", "CF", "RF"].includes(position) && label === "外野手") ||
+  (position === "OF" && ["左翼手", "中堅手", "右翼手"].includes(label)));
 export function applyNpbProfileRegistry(directory: NpbPlayerDirectory, catalog: NpbCatalog, raw: unknown) {
   const registry: ProfileRegistry = profileRegistrySchema.parse(raw), conflicts: ProfileConflict[] = [];
   const nextDirectory = structuredClone(directory), nextCatalog = structuredClone(catalog);
@@ -24,6 +31,19 @@ export function applyNpbProfileRegistry(directory: NpbPlayerDirectory, catalog: 
       conflicts.push({ playerId: e.playerId, field: e.field, existing: null, incoming: entries.map(v => v.value), reason: "competing_source_values" }); continue;
     }
     const field = e.field;
+    // Check ALL eligible evidence, including lists that disagree with each other. A
+    // conflict in knownPositions must not let a contradictory primary position through.
+    const primary = groups.get(`${e.playerId}:position`) ?? [];
+    const listed = groups.get(`${e.playerId}:knownPositions`) ?? [];
+    const knownPosition = c.profile.position;
+    const knownList = c.profile.knownPositions;
+    if ((field === "position" && [...listed.map(v => v.value as string[]), ...(knownList?.length ? [knownList] : [])]
+      .some(v => !positionSupported(e.value as PositionCode, v))) ||
+      (field === "knownPositions" && [...primary.map(v => v.value as PositionCode), ...(knownPosition ? [knownPosition] : [])]
+        .some(v => !positionSupported(v, e.value as string[])))) {
+      conflicts.push({ playerId: e.playerId, field, existing: Reflect.get(c.profile, field) ?? null,
+        incoming: [...primary, ...listed].map(v => ({ field: v.field, value: v.value })), reason: "cross_field_position_conflict" }); continue;
+    }
     const target = field === "uniformNumber" || field === "registrationClass" ? c.membership : c.profile;
     const existing = Reflect.get(target, field === "affiliations" ? "affiliations" : field);
     c.profile.identityLinked = true;

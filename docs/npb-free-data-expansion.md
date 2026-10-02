@@ -61,7 +61,7 @@ Baseline public generation: effectiveDate 2026-10-01 (refreshed after the unrela
 | Current dated uniform number | 0 | 0 |
 | Bats | 0 | 116 |
 | Throws | 0 | 116 |
-| Canonical primary position | 9 | 81 |
+| Canonical primary position | 9 | 80 |
 | Additional source-listed positions | 0 | 89 |
 | Birth date | 10 | 121 |
 | Birthplace | 10 | 104 |
@@ -80,7 +80,7 @@ Baseline public generation: effectiveDate 2026-10-01 (refreshed after the unrela
 | Current dated registered/developmental class | 0 | 0 |
 | Exact additional career identity bridge | 0 | 116 |
 
-No existing non-null field is overwritten. All valid competing values remain in the registry; they block null supplementation rather than letting source priority or recency choose a winner. Source-listed positions and schools are sets, so reordered equal lists agree; other fields retain strict comparison. Registry observations are not effective dates. Unknowns remain null/absent. Multiple positions are not reduced to a guessed primary position. School lists are not an inferred graduation/chronology claim. Affiliation lists are incomplete; missing end/period remains explicitly unknown. Origin and birthplace are displayed as separate facts when both are known.
+No existing non-null field is overwritten. All valid competing values remain in the registry; they block null supplementation rather than letting source priority or recency choose a winner. Source-listed positions and schools are sets, so reordered equal lists agree; other fields retain strict comparison. Primary positions are cross-checked against all eligible position lists, including conflicting lists: an incompatible list blocks supplementation of the primary position as well. Generic infield/outfield labels can support explicit matching positions but never select a primary position. The bundled 石川昂弥 contradiction remains unresolved rather than publishing him as a pitcher. Registry observations are not effective dates. Unknowns remain null/absent. Multiple positions are not reduced to a guessed primary position. School lists are not an inferred graduation/chronology claim. Affiliation lists are incomplete; missing end/period remains explicitly unknown. Origin and birthplace are displayed as separate facts when both are known.
 
 1,878 source-verified candidate field records across the two licensed registries; 116 linked Players. **Actual human-reviewed additions: 0.** Codex source checks are not misrepresented as human review. `verificationStatus` distinguishes `source_verified`, `human_reviewed`, `pending`, `conflict`; the human workflow is implemented but unreviewed manual entries are not published. Disagreements/unsupported claims are retained in audit reports rather than silently accepted.
 
