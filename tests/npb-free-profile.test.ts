@@ -1,4 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { NpbProfileDetails } from "../src/ui/npb-product";
 import { profileRegistrySchema, type ProfileRegistryEntry } from "../src/domain/npb-profile-registry";
 import { applyNpbProfileRegistry } from "../src/application/npb-free-profile";
 import { buildNpbCatalog, buildNpbCapabilities } from "../src/application/npb-product-payload";
@@ -40,6 +43,29 @@ describe("rights-safe field registry", () => {
   it("does not select one conflicting source, even if the other has priority/recency", () => {
     const r = apply([entry("heightCm", 180), entry("heightCm", 181, { verifiedAt: "2026-10-02T01:00:00.000Z" })]);
     expect(r.catalog.players[0]!.profile.heightCm).toBeNull(); expect(r.conflicts[0]!.reason).toBe("competing_source_values");
+  });
+  it("compares position/school sets independently of source order, preserving known arrays", () => {
+    const rows = [entry("knownPositions", ["外野手", "一塁手"]), entry("knownPositions", ["一塁手", "外野手"]),
+      entry("schools", ["学校B", "学校A"]), entry("schools", ["学校A", "学校B"])];
+    const r = apply(rows); expect(r.conflicts).toEqual([]);
+    expect(r.catalog.players[0]!.profile.knownPositions).toEqual(["一塁手", "外野手"]);
+    const known = catalog(); known.players[0]!.profile.knownPositions = ["外野手", "一塁手"];
+    const again = applyNpbProfileRegistry(directory, known, snapshot(rows));
+    expect(again.catalog.players[0]!.profile.knownPositions).toEqual(["外野手", "一塁手"]);
+    expect(again.conflicts).toEqual([]);
+    expect(apply([entry("knownPositions", ["外野手"]), entry("knownPositions", ["一塁手"])]).conflicts).toHaveLength(1);
+  });
+  it("keeps strict comparison for scalar values and other array fields", () => {
+    const a = { name: "球団A", teamId: null, from: "2020", to: "2021", uniformNumber: null };
+    const b = { ...a, name: "球団B", from: "2021", to: "2022" };
+    expect(apply([entry("affiliations", [a, b]), entry("affiliations", [b, a])]).conflicts).toHaveLength(1);
+  });
+  it("renders origin and birthplace as separate profile facts", () => {
+    const r = apply([entry("originPlace", "出身の地域"), entry("birthPlace", "出生した地域")]);
+    const html = renderToStaticMarkup(createElement(NpbProfileDetails, { player: r.catalog.players[0]! }));
+    expect(html).toContain("<dt>出身</dt><dd>出身の地域</dd>");
+    expect(html).toContain("<dt>出生地</dt><dd>出生した地域</dd>");
+    expect(renderToStaticMarkup(createElement(NpbProfileDetails, { player: catalog().players[0]! }))).not.toContain("<dt>出生地</dt>");
   });
   it("ignores pending/rights-blocked/future evidence and never creates absent players", () => {
     const r = apply([entry("bats", "left", { verificationStatus: "pending" }), entry("throws", "right", { publicReuseAllowed: false }),

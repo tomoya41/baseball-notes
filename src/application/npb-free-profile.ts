@@ -4,6 +4,11 @@ import { npbPlayerDirectorySchema, type NpbPlayerDirectory } from "../domain/npb
 import { npbCatalogSchema, type NpbCatalog } from "../domain/npb-product-contract";
 
 export type ProfileConflict = { playerId: string; field: ProfileField; existing: unknown; incoming: unknown; reason: string };
+// These fields describe sets; their source order does not imply chronology or priority.
+const comparableValue = (field: ProfileField, value: unknown) => field === "knownPositions" || field === "schools"
+  ? [...new Set(value as string[])].sort() : value;
+const sameValue = (field: ProfileField, left: unknown, right: unknown) =>
+  isDeepStrictEqual(comparableValue(field, left), comparableValue(field, right));
 export function applyNpbProfileRegistry(directory: NpbPlayerDirectory, catalog: NpbCatalog, raw: unknown) {
   const registry: ProfileRegistry = profileRegistrySchema.parse(raw), conflicts: ProfileConflict[] = [];
   const nextDirectory = structuredClone(directory), nextCatalog = structuredClone(catalog);
@@ -15,7 +20,7 @@ export function applyNpbProfileRegistry(directory: NpbPlayerDirectory, catalog: 
   }
   for (const entries of groups.values()) {
     const e = entries[0]!, p = players.get(e.playerId), c = catalogPlayers.get(e.playerId); if (!p || !c) continue;
-    if (entries.some(v => !isDeepStrictEqual(v.value, e.value))) {
+    if (entries.some(v => !sameValue(e.field, v.value, e.value))) {
       conflicts.push({ playerId: e.playerId, field: e.field, existing: null, incoming: entries.map(v => v.value), reason: "competing_source_values" }); continue;
     }
     const field = e.field;
@@ -31,7 +36,7 @@ export function applyNpbProfileRegistry(directory: NpbPlayerDirectory, catalog: 
       }
     };
     if (existing != null && !(Array.isArray(existing) && existing.length === 0)) {
-      if (!isDeepStrictEqual(existing, e.value)) conflicts.push({ playerId: e.playerId, field, existing, incoming: e.value, reason: "known_value_preserved" });
+      if (!sameValue(field, existing, e.value)) conflicts.push({ playerId: e.playerId, field, existing, incoming: e.value, reason: "known_value_preserved" });
       else recordCredits();
       continue;
     }
@@ -39,7 +44,7 @@ export function applyNpbProfileRegistry(directory: NpbPlayerDirectory, catalog: 
       (field === "draftTeamId" ? !directory.teams.some(t => t.id === e.value) :
         (e.value as { teamId: string | null }[]).some(a => a.teamId && !directory.teams.some(t => t.id === a.teamId))))
       throw Error("Unknown canonical profile Team");
-    Reflect.set(target, field, structuredClone(e.value));
+    Reflect.set(target, field, structuredClone(comparableValue(field, e.value)));
     if (field === "draftTeamId") c.profile.draftTeamName = directory.teams.find(t => t.id === e.value)!.name;
     if (["position", "bats", "throws", "birthDate", "birthPlace", "nationality"].includes(field)) Reflect.set(p, field, e.value);
     if (field === "position" && p.playerType === null) p.playerType = e.value === "P" ? "pitcher" : "fielder";
