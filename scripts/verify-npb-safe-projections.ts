@@ -31,8 +31,8 @@ assert.deepEqual(catalog.players.map(p => p.playerId), before.players.map(p => p
 for (const p of before.players) {
   const after = catalog.players.find(v => v.playerId === p.playerId)!;
   assert.equal(after.displayName, p.displayName); assert.deepEqual(after.membership, p.membership); assert.deepEqual(after.visual, p.visual);
-  for (const key of ["position", "birthDate", "birthPlace", "nationality", "bats", "throws", "heightCm", "weightKg"] as const)
-    if (p.profile[key] !== null) assert.equal(after.profile[key], p.profile[key]);
+  for (const [key, value] of Object.entries(p.profile))
+    if (value != null && key !== "credits" && !(Array.isArray(value) && !value.length)) assert.deepEqual(Reflect.get(after.profile, key), value, `${p.playerId}:${key}`);
 }
 for (const key of ["hot", "countingRanking", "rateRanking", "records", "milestones", "careerStats", "directBvP"])
   assert.deepEqual(capabilities.data[key], oldCapabilities.data[key]);

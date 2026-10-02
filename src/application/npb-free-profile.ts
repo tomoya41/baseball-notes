@@ -52,10 +52,11 @@ export function applyNpbProfileRegistry(directory: NpbPlayerDirectory, catalog: 
     const existing = Reflect.get(target, field === "affiliations" ? "affiliations" : field);
     c.profile.identityLinked = true;
     const recordCredits = () => {
-      for (const source of entries) if (source.license === "CC-BY-SA-4.0" || source.license === "CC-BY-4.0") {
+      for (const source of entries) if (["CC-BY-SA-4.0", "CC-BY-4.0", "ODC-BY-1.0"].includes(source.license)) {
         const credits = c.profile.credits ??= [], existingCredit = credits.find(v => v.url === source.sourceUrl);
         if (existingCredit) { if (!existingCredit.fields.includes(field)) existingCredit.fields.push(field); }
-        else credits.push({ name: source.sourceName, url: source.sourceUrl, licenseUrl: source.license === "CC-BY-SA-4.0" ?
+        else credits.push({ name: source.sourceName, url: source.sourceUrl, licenseUrl: source.license === "ODC-BY-1.0" ?
+          "https://opendatacommons.org/licenses/by/1-0/" : source.license === "CC-BY-SA-4.0" ?
           "https://creativecommons.org/licenses/by-sa/4.0/" : "https://creativecommons.org/licenses/by/4.0/", fields: [field], modified: true });
       }
     };

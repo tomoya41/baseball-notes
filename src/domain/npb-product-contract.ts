@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { positionCodeSchema } from "./baseball-terms";
-import { profileAffiliationSchema } from "./npb-profile-registry";
+import { profileAffiliationSchema, amateurHistorySchema } from "./npb-profile-registry";
 
 export const dataAvailabilitySchema = z.enum(["available", "partially_available", "source_available_not_implemented",
   "blocked_by_rights", "source_unavailable", "production_gate_pending"]);
@@ -38,6 +38,8 @@ export const npbCatalogSchema = z.strictObject({ schemaVersion: z.literal(1), le
       joinedYear: z.number().int().nullable().optional(), debutYear: z.number().int().nullable().optional(),
       identityLinked: z.boolean().optional(), originPlace: z.string().nullable().optional(),
       draftTeamName: z.string().nullable().optional(),
+      amateurHistory: amateurHistorySchema.optional(), npbDebutYear: z.number().int().nullable().optional(),
+      draftType: z.enum(["regular", "developmental"]).nullable().optional(),
       credits: z.array(z.strictObject({ name: z.string().min(1), url: z.url(), licenseUrl: z.url(),
         fields: z.array(z.string()).min(1), modified: z.literal(true) })).optional() }),
     membership: z.strictObject({ teamId: z.string().nullable(), scope: z.literal("latest_stored_affiliation"),

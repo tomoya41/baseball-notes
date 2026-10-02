@@ -8,6 +8,9 @@ export const profilePeriodSchema = z.string().regex(/^\d{4}(-\d{2}(-\d{2})?)?$/)
 });
 export const profileAffiliationSchema = z.strictObject({ name: z.string().min(1), teamId: z.string().nullable(),
   from: profilePeriodSchema.nullable(), to: profilePeriodSchema.nullable(), uniformNumber: z.string().regex(/^\d{1,3}$/).nullable() });
+export const amateurHistorySchema = z.array(z.strictObject({ name: z.string().min(1),
+  category: z.enum(["high_school", "university", "industrial", "independent"]),
+  from: profilePeriodSchema.nullable(), to: profilePeriodSchema.nullable() })).min(1);
 export const profileFieldSchemas = {
   position: positionCodeSchema, knownPositions: z.array(z.string().min(1)).min(1),
   bats: z.enum(["right", "left", "switch"]), throws: z.enum(["right", "left"]), birthDate: z.iso.date(),
@@ -17,14 +20,19 @@ export const profileFieldSchemas = {
   draftRound: z.string().min(1), draftTeamId: z.string().min(1), joinedYear: z.number().int().min(1936).max(2100),
   debutYear: z.number().int().min(1936).max(2100), registrationClass: z.enum(["registered", "developmental"]),
   uniformNumber: z.string().regex(/^\d{1,3}$/),
+  amateurHistory: amateurHistorySchema, npbDebutYear: z.number().int().min(1936).max(2100),
+  draftType: z.enum(["regular", "developmental"]),
 } as const;
 export type ProfileField = keyof typeof profileFieldSchemas;
 export const profileRegistrySchema = z.strictObject({ schemaVersion: z.literal(1), observedAt: z.iso.datetime(),
   entries: z.array(z.strictObject({ playerId: z.uuid(), field: z.enum(Object.keys(profileFieldSchemas) as [ProfileField, ...ProfileField[]]),
-    value: z.unknown(), sourceName: z.string().min(1), sourceUrl: z.url(), license: z.enum(["CC0", "CC-BY-4.0", "CC-BY-SA-4.0", "individual_fact"]),
+    value: z.unknown(), sourceName: z.string().min(1), sourceUrl: z.url(), license: z.enum(["CC0", "CC-BY-4.0", "CC-BY-SA-4.0", "ODC-BY-1.0", "individual_fact"]),
     rightsEvidenceUrl: z.url(), publicReuseAllowed: z.boolean(), verifiedAt: z.iso.datetime(),
     effectiveFrom: profilePeriodSchema.nullable(), effectiveTo: profilePeriodSchema.nullable(),
     verificationStatus: z.enum(["source_verified", "human_reviewed", "pending", "conflict"]), reviewer: z.string().nullable(),
+    verificationMethod: z.enum(["automated", "source_verified", "codex_assisted", "human_reviewed"]).optional(),
+    sourceRevision: z.union([z.string(), z.number().int()]).nullable().optional(), observedAt: z.iso.datetime().optional(),
+    transformation: z.string().optional(),
     notes: z.string(), additionalSourceUrls: z.array(z.url()) }))
 }).superRefine((r, ctx) => {
   for (const e of r.entries) {
@@ -32,6 +40,8 @@ export const profileRegistrySchema = z.strictObject({ schemaVersion: z.literal(1
       ctx.addIssue({ code: "custom", message: `Invalid ${e.field} value` });
     if (e.verificationStatus === "human_reviewed" && (!e.reviewer || /codex|automated|agent/i.test(e.reviewer)))
       ctx.addIssue({ code: "custom", message: "Human review requires an actual named human reviewer" });
+    if (e.verificationMethod === "human_reviewed" && e.verificationStatus !== "human_reviewed")
+      ctx.addIssue({ code: "custom", message: "Human method requires actual human review" });
     if (e.license === "individual_fact" && e.verificationStatus !== "human_reviewed")
       ctx.addIssue({ code: "custom", message: "Individual factual verification requires human review" });
     if (e.license === "individual_fact" && e.additionalSourceUrls.length < 1)

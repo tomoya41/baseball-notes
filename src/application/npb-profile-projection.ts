@@ -4,6 +4,9 @@ import { applyNpbProfileRegistry } from "./npb-free-profile";
 import supplement from "../data/npb-reviewed-profile-supplement.json";
 import registry from "../data/npb-free-profile-registry.json";
 import wikipedia from "../data/npb-wikipedia-profile-registry.json";
+import curated from "../data/npb-curated-profile-registry.json";
+import assisted from "../data/npb-codex-assisted-profile-registry.json";
+import identities from "../data/npb-free-profile-identities.json";
 import { reviewedMeasurements } from "../data/npb-reviewed-measurements";
 import type { NpbPlayerDirectory } from "../domain/npb-player-directory";
 import type { NpbCatalog } from "../domain/npb-product-contract";
@@ -27,6 +30,9 @@ export function projectNpbFreeProfiles(directory: NpbPlayerDirectory, savedCatal
         Reflect.set(p.profile, key, structuredClone(value));
   }
   const result = applyNpbProfileRegistry(legacy.directory, catalog, { ...registry,
-    observedAt: wikipedia.observedAt, entries: [...registry.entries, ...wikipedia.entries] });
+    observedAt: curated.observedAt, entries: [...registry.entries, ...wikipedia.entries, ...curated.entries, ...assisted.entries] });
+  // A verified bridge is useful even when every profile value remains unavailable/conflicted.
+  const linked = new Set(identities.map(b => b.playerId));
+  for (const p of result.catalog.players) if (linked.has(p.playerId)) p.profile.identityLinked = true;
   return { ...result, conflicts: [...legacy.conflicts, ...result.conflicts] };
 }

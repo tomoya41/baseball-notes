@@ -14,6 +14,7 @@ import { npbSeasonPayloadSchema, seasonBattingKeys } from "../src/application/np
 import { validateNpbPublication, validateNpbPublishedGameDates } from "../src/application/npb-publication-consistency";
 import { npbHotPayloadSchema } from "../src/application/npb-hot-payload";
 import { buildNpbRecords } from "../src/application/npb-records-payload";
+import { npbCapabilitiesSchema } from "../src/domain/npb-product-contract";
 import { readNpbPublication, writeNpbProfileProjections, npbPublicationHashes, verifyNpbPublicationHash, preserveNpbPublicStandings } from "../scripts/lib/npb-publication";
 import { shiftGameDate } from "../src/domain/npb-game-index";
 import type { NpbPlayerDirectory } from "../src/domain/npb-player-directory";
@@ -101,6 +102,33 @@ describe("coordinated NPB publication", () => {
     expect(() => validateNpbPublication(p)).toThrow(/Capability position/);
     const q = family(); q.capabilities.data.hot!.reasons = [];
     expect(() => validateNpbPublication(q)).toThrow(/Capability hot/);
+  });
+  it("rejects stale advertised field-specific curated counts", () => {
+    for (const key of ["draftYear", "draftRound", "draftTeamId", "draftType", "joinedYear", "npbDebutYear", "rosterStatus", "schools"]) {
+      const p = family(); p.capabilities.data[key]!.known = 1;
+      expect(() => validateNpbPublication(p)).toThrow(/Capability/);
+    }
+  });
+  it("rejects advertised capabilities with null counts and inconsistent metadata", () => {
+    for (const key of ["draftType", "rosterStatus", "schools", "uniformNumber"]) {
+      const p = family(); p.capabilities.data[key]!.known = null;
+      expect(() => validateNpbPublication(p)).toThrow(new RegExp(`Capability ${key}`));
+      for (const change of ["available", "status", "total", "reasons"] as const) {
+        const bad = structuredClone(p), capability = bad.capabilities.data[key]!;
+        if (change === "available") { capability.available = true; capability.status = "available"; }
+        else if (change === "status") { capability.available = false; capability.status = "production_gate_pending"; }
+        else if (change === "total") capability.total = 999;
+        else capability.reasons = ["incorrect_projection_reason"];
+        expect(() => npbCapabilitiesSchema.parse(bad.capabilities)).not.toThrow();
+        expect(() => validateNpbPublication(bad)).toThrow(new RegExp(`Capability ${key}`));
+      }
+    }
+  });
+  it("accepts older releases that omit the additive field capabilities", () => {
+    const p = family();
+    for (const key of ["draftYear", "draftRound", "draftTeamId", "draftType", "joinedYear", "npbDebutYear", "rosterStatus"])
+      delete p.capabilities.data[key];
+    expect(() => validateNpbPublication(p)).not.toThrow();
   });
   it("rejects missing/damaged advertised Milestones and changed counts", () => {
     const p = family(), { milestones: omitted, ...without } = p;
