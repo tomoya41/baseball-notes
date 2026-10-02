@@ -31,6 +31,10 @@ export function applyNpbProfileRegistry(directory: NpbPlayerDirectory, catalog: 
       conflicts.push({ playerId: e.playerId, field: e.field, existing: null, incoming: entries.map(v => v.value), reason: "competing_source_values" }); continue;
     }
     const field = e.field;
+    if (field === "position" && p.playerType !== null && p.playerType !== (e.value === "P" ? "pitcher" : "fielder")) {
+      conflicts.push({ playerId: e.playerId, field, existing: { position: p.position, playerType: p.playerType },
+        incoming: e.value, reason: "known_player_type_conflict" }); continue;
+    }
     // Check ALL eligible evidence, including lists that disagree with each other. A
     // conflict in knownPositions must not let a contradictory primary position through.
     const primary = groups.get(`${e.playerId}:position`) ?? [];

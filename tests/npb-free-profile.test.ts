@@ -119,9 +119,19 @@ describe("rights-safe field registry", () => {
     const r = apply([number, affiliation, competing]);
     expect(r.catalog.players[0]!.membership.uniformNumber).toBeNull(); expect(r.conflicts).toHaveLength(1);
   });
-  it("keeps a known player classification while filling an unknown profile position", () => {
-    const d = structuredClone(directory); d.players[0]!.playerType = "fielder";
-    expect(applyNpbProfileRegistry(d, catalog(), snapshot([entry("position", "P")])).directory.players[0]!.playerType).toBe("fielder");
+  it("rejects a position that contradicts a known player classification without rewriting it", () => {
+    for (const [playerType, position] of [["fielder", "P"], ["pitcher", "3B"]] as const) {
+      const d = structuredClone(directory); d.players[0]!.playerType = playerType;
+      const r = applyNpbProfileRegistry(d, catalog(), snapshot([entry("position", position)]));
+      expect(r.directory.players[0]).toMatchObject({ playerType, position: null });
+      expect(r.catalog.players[0]!.profile.position).toBeNull();
+      expect(r.conflicts).toContainEqual(expect.objectContaining({ reason: "known_player_type_conflict" }));
+    }
+    for (const [playerType, position] of [["fielder", "3B"], ["pitcher", "P"]] as const) {
+      const d = structuredClone(directory); d.players[0]!.playerType = playerType;
+      const r = applyNpbProfileRegistry(d, catalog(), snapshot([entry("position", position)]));
+      expect(r.directory.players[0]).toMatchObject({ playerType, position }); expect(r.conflicts).toEqual([]);
+    }
   });
   it("rejects unknown canonical Teams and wrong units/types", () => {
     expect(() => apply([entry("draftTeamId", "npb:team:unknown")])).toThrow(/canonical/);
