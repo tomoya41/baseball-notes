@@ -274,6 +274,15 @@ describe("coordinated NPB publication", () => {
 type Workflow = { jobs: Record<string, { steps: { run?: string; uses?: string; if?: string }[] }> };
 const workflow = (name: string) => parse(readFileSync(`.github/workflows/${name}.yml`, "utf8")) as Workflow;
 describe("all Pages publication entry points", () => {
+  it("profile-only publication skips every DB path and retains the coordinated artifact checks", () => {
+    const steps = workflow("npb-player-directory-publish").jobs.stage!.steps;
+    for (const script of ["import-npb-player-master-v2.ts", "generate-npb-player-directory.ts", "publish:npb:remote"]) {
+      expect(steps.find(s => s.run?.includes(script))?.if).toContain("inputs.profile_projection_only != true");
+    }
+    expect(steps.find(s => s.run?.includes("stage-npb-profile-only-directory.ts"))?.if).toBe("inputs.profile_projection_only == true");
+    expect(steps.some(s => s.run?.includes("refresh-npb-profile-projections.ts"))).toBe(true);
+    expect(steps.some(s => s.run?.includes("verify-npb-publication.ts"))).toBe(true);
+  });
   it("MLB-only publication preserves the public NPB standings before its dependent family", () => {
     const run = workflow("mlb-historical-publish").jobs.stage!.steps.map(s => s.run ?? "").join("\n");
     expect(run).not.toContain("publish:npb:remote");

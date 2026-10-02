@@ -4,8 +4,7 @@ import { openDataClient, type DataClient } from "../src/data/database";
 import { NpbPlayerDirectoryRepository } from "../src/data/npb-player-directory";
 import { writeNpbPlayerDirectoryAtomically } from "../src/data/npb-player-directory-payload";
 import { normalizePlayerSearch, npbPlayerDirectorySchema } from "../src/domain/npb-player-directory";
-import { supplementNpbDirectory } from "../src/application/npb-profile-supplement";
-import supplement from "../src/data/npb-reviewed-profile-supplement.json";
+import { projectNpbFreeProfiles } from "../src/application/npb-profile-projection";
 import { npbLatestPublicationDate } from "./lib/npb-publication-date";
 
 function option(name: string): string | null {
@@ -31,8 +30,8 @@ try {
   const started = performance.now();
   const storedDirectory = await new NpbPlayerDirectoryRepository(client).read();
   // Latest affiliation cannot be safely labelled as an earlier publication snapshot.
-  const projection = supplementNpbDirectory(npbPlayerDirectorySchema.parse({ ...storedDirectory,
-    effectiveDate: npbLatestPublicationDate(storedDirectory.effectiveDate, option("--date")) }), supplement);
+  const projection = projectNpbFreeProfiles(npbPlayerDirectorySchema.parse({ ...storedDirectory,
+    effectiveDate: npbLatestPublicationDate(storedDirectory.effectiveDate, option("--date")) }));
   const directory = projection.directory;
   const readMs = Math.round(performance.now() - started);
   const path = join(option("--payload-root") ?? ".data/publish", "data", "npb", "players", "latest.json");

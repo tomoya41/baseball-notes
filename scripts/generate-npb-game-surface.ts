@@ -5,10 +5,8 @@ import { npbSeasonPayloadSchema } from "../src/application/npb-season-payload";
 import { buildNpbRecords } from "../src/application/npb-records-payload";
 import { npbPlayerDirectorySchema } from "../src/domain/npb-player-directory";
 import { npbHotPayloadSchema } from "../src/application/npb-hot-payload";
-import { buildNpbCatalog,buildNpbCapabilities } from "../src/application/npb-product-payload";
-import { reviewedMeasurements } from "../src/data/npb-reviewed-measurements";
-import supplement from "../src/data/npb-reviewed-profile-supplement.json";
-import { supplementNpbDirectory, supplementNpbMeasurements } from "../src/application/npb-profile-supplement";
+import { buildNpbCapabilities } from "../src/application/npb-product-payload";
+import { projectNpbFreeProfiles } from "../src/application/npb-profile-projection";
 import { buildNpbSeasonMilestones } from "../src/application/npb-season-milestones";
 import { readNpbTeamSeason } from "../src/data/npb-team-season-repository";
 import { npbLatestPublicationDate } from "./lib/npb-publication-date";
@@ -38,8 +36,8 @@ try {const latest=await client.execute("SELECT MAX(snapshot_date) AS date FROM s
   const hot=npbHotPayloadSchema.parse(JSON.parse(hotBody));
   if(directory.effectiveDate!==effectiveDate || season.effectiveDate!==effectiveDate || hot.effectiveDate!==effectiveDate)
     throw Error("Product projections require matching effective dates");
-  const enriched=supplementNpbDirectory(directory,supplement);
-  const catalog=buildNpbCatalog(enriched.directory,reviewedMeasurements,supplementNpbMeasurements(reviewedMeasurements,supplement));
+  const enriched=projectNpbFreeProfiles(directory);
+  const catalog=enriched.catalog;
   const teamSeason=await readNpbTeamSeason(client,catalog,index.coverage);
   const capabilities=buildNpbCapabilities(catalog,season,hot.readiness);
   const milestones=buildNpbSeasonMilestones(season,catalog);

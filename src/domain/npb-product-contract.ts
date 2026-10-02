@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { positionCodeSchema } from "./baseball-terms";
+import { profileAffiliationSchema } from "./npb-profile-registry";
 
 export const dataAvailabilitySchema = z.enum(["available", "partially_available", "source_available_not_implemented",
   "blocked_by_rights", "source_unavailable", "production_gate_pending"]);
@@ -30,10 +31,18 @@ export const npbCatalogSchema = z.strictObject({ schemaVersion: z.literal(1), le
       nationality: z.string().nullable(), ageYears: z.number().int().nonnegative().nullable(), ageAsOfDate: z.iso.date(),
       heightCm: z.number().positive().nullable(), weightKg: z.number().positive().nullable(),
       measurementsObservedAt: z.iso.datetime().nullable(), measurementsEffectiveDate: z.iso.date().nullable(),
-      draftYear: z.number().int().nullable(), draftRound: z.string().nullable(), careerHistory: z.array(z.unknown()).max(0) }),
+      draftYear: z.number().int().nullable(), draftRound: z.string().nullable(), careerHistory: z.array(z.unknown()).max(0),
+      // Additive v1 fields: earlier releases may omit them. No complete Career/roster claim.
+      knownPositions: z.array(z.string()).optional(), schools: z.array(z.string()).optional(),
+      affiliations: z.array(profileAffiliationSchema).optional(), draftTeamId: z.string().nullable().optional(),
+      joinedYear: z.number().int().nullable().optional(), debutYear: z.number().int().nullable().optional(),
+      identityLinked: z.boolean().optional(), originPlace: z.string().nullable().optional(),
+      draftTeamName: z.string().nullable().optional(),
+      credits: z.array(z.strictObject({ name: z.string().min(1), url: z.url(), licenseUrl: z.url(),
+        fields: z.array(z.string()).min(1), modified: z.literal(true) })).optional() }),
     membership: z.strictObject({ teamId: z.string().nullable(), scope: z.literal("latest_stored_affiliation"),
       uniformNumber: z.string().nullable(), uniformNumberObservedAt: z.iso.datetime().nullable(),
-      uniformNumberEffectiveDate: z.iso.date().nullable() }),
+      uniformNumberEffectiveDate: z.iso.date().nullable(), registrationClass: z.enum(["registered", "developmental"]).nullable().optional() }),
     visual: z.strictObject({ photo: visualSchema, fallback: z.literal("name") }),
     battingAvailable: z.boolean(), pitchingAvailable: z.boolean() })),
 }).superRefine((v, ctx) => {
@@ -42,6 +51,9 @@ export const npbCatalogSchema = z.strictObject({ schemaVersion: z.literal(1), le
     ctx.addIssue({ code: "custom", message: "Duplicate/missing canonical entity" });
   for (const p of v.players) if (p.membership.teamId !== null && !ids.has(p.membership.teamId))
     ctx.addIssue({ code: "custom", message: "Unknown canonical affiliation" });
+  for (const p of v.players) if ((p.profile.draftTeamId && !ids.has(p.profile.draftTeamId)) ||
+    p.profile.affiliations?.some(a => a.teamId !== null && !ids.has(a.teamId)))
+    ctx.addIssue({ code: "custom", message: "Unknown canonical profile Team" });
 });
 export type NpbCatalog = z.infer<typeof npbCatalogSchema>;
 
