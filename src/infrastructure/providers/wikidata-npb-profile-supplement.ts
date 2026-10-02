@@ -18,7 +18,7 @@ function values(claims: Claim[] = []) {
 function unique<T>(items: (T | null)[]): T | null {
   return items.length && items.every(v => v !== null) && new Set(items).size === 1 ? items[0]! : null;
 }
-// A reviewed canonical -> NPB ID bridge is required. Labels/names never establish identity.
+// A verified canonical -> NPB ID bridge is required. Names alone never establish identity.
 // This reads structured CC0 claims only; it does not fetch NPB pages, images or article text.
 export function readNpbProfileSupplements(raw: unknown, rawLabels: unknown, bridges: readonly NpbProfileBridge[], observedAt: string) {
   const { entities } = responseSchema.parse(raw), labels = labelsSchema.parse(rawLabels).entities;

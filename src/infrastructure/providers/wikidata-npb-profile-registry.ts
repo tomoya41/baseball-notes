@@ -5,7 +5,7 @@ import { profileRegistrySchema, type ProfileRegistryEntry, type ProfileField } f
 const snak = z.object({ datavalue: z.object({ value: z.unknown() }).optional() });
 const claim = z.object({ rank: z.enum(["normal", "preferred", "deprecated"]).optional(), mainsnak: snak,
   qualifiers: z.record(z.string(), z.array(snak)).optional() });
-const response = z.object({ entities: z.record(z.string(), z.object({ claims: z.record(z.string(), z.array(claim)) })) });
+const response = z.object({ entities: z.record(z.string(), z.object({ lastrevid: z.number().int().optional(), claims: z.record(z.string(), z.array(claim)) })) });
 const labelResponse = z.object({ entities: z.record(z.string(), z.object({ labels: z.record(z.string(), z.object({ value: z.string() })) })) });
 type Claim = z.infer<typeof claim>;
 const entityId = (value: unknown) => z.object({ id: z.string().regex(/^Q\d+$/) }).safeParse(value).data?.id;
@@ -33,6 +33,8 @@ export function readNpbProfileRegistry(raw: unknown, rawLabels: unknown, bridges
       entries.push({ playerId: b.playerId, field, value, sourceName: "Wikidata", sourceUrl: `https://www.wikidata.org/wiki/${b.wikidataId}`,
         license: "CC0", rightsEvidenceUrl: "https://www.wikidata.org/wiki/Wikidata:Licensing", publicReuseAllowed: true,
         verifiedAt: observedAt, effectiveFrom: null, effectiveTo: null, verificationStatus: "source_verified", reviewer: "Codex",
+        verificationMethod: "automated", sourceRevision: e.lastrevid ?? null,
+        observedAt, transformation: "Validated CC0 claims normalized to canonical profile fields",
         notes, additionalSourceUrls: [] });
     };
     for (const field of ["position", "birthDate", "birthPlace", "nationality", "heightCm", "weightKg"] as const) add(field, p[field]);

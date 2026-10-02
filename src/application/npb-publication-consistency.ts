@@ -61,7 +61,8 @@ export function validateNpbPublication(input: NpbPublicationInputs) {
     "hot", "countingRanking", "rateRanking", "records"])
     requireEqual(capabilities.data[key], expectedCapabilities.data[key], `Capability ${key}`);
   // Additive capabilities are mandatory/consistent once advertised, while older saved releases remain readable.
-  for (const key of ["profile", "handedness", "knownPositions", "schools", "originPlace", "draft", "teamHistory", "rosterHistory", "uniformNumber", "careerIdentity"])
+  for (const key of ["profile", "handedness", "knownPositions", "schools", "originPlace", "draft", "teamHistory", "rosterHistory", "uniformNumber", "careerIdentity",
+    "draftYear", "draftRound", "draftTeamId", "draftType", "joinedYear", "npbDebutYear", "rosterStatus"])
     if (capabilities.data[key]?.known !== null && capabilities.data[key] !== undefined)
       requireEqual(capabilities.data[key], expectedCapabilities.data[key], `Capability ${key}`);
   // Older releases did not advertise Season checkpoints. Once advertised, it is mandatory.

@@ -102,6 +102,12 @@ describe("coordinated NPB publication", () => {
     const q = family(); q.capabilities.data.hot!.reasons = [];
     expect(() => validateNpbPublication(q)).toThrow(/Capability hot/);
   });
+  it("rejects stale advertised field-specific curated counts", () => {
+    for (const key of ["draftYear", "draftRound", "draftTeamId", "draftType", "joinedYear", "npbDebutYear", "rosterStatus", "schools"]) {
+      const p = family(); p.capabilities.data[key]!.known = 1;
+      expect(() => validateNpbPublication(p)).toThrow(/Capability/);
+    }
+  });
   it("rejects missing/damaged advertised Milestones and changed counts", () => {
     const p = family(), { milestones: omitted, ...without } = p;
     expect(omitted.players).toHaveLength(1);
