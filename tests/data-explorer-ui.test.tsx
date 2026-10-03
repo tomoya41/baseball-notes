@@ -18,7 +18,10 @@ import type { GameDateIndex } from "../src/domain/npb-game-index";
 const staticValues = vi.hoisted(() => new Map<string, unknown>());
 const reader = vi.hoisted(() => vi.fn());
 const npbReader = vi.hoisted(() => vi.fn());
-vi.mock("../src/ui/use-mlb-historical", () => ({ useHistoricalStatic: (path: string | null) => ({ path, status: path && staticValues.has(path) ? "ready" : "missing", value: path ? staticValues.get(path) ?? null : null, retry: vi.fn() }) }));
+vi.mock("../src/ui/use-mlb-historical", () => ({ useHistoricalStatic: (path: string | null) => {
+  const value = path ? staticValues.get(path) : null;
+  return { path, status: value instanceof Error ? "error" : path && staticValues.has(path) ? "ready" : "missing", value: value instanceof Error ? null : value ?? null, retry: vi.fn() };
+} }));
 vi.mock("../src/app/historical-products", () => ({ readHistoricalProduct: reader }));
 vi.mock("../src/application/explorer-readers", () => ({ readNpbExplorerSeason: npbReader }));
 const id = "mlb:player:00000000-0000-4000-8000-000000000001", id2 = "mlb:player:00000000-0000-4000-8000-000000000002", npbId = id.split("player:")[1]!;
@@ -190,6 +193,20 @@ describe("discovery and glossary", () => {
   it("refuses historical game data from another date", async () => {
     staticValues.set("schedule/2025/2025-09-28.json", { season: 2025, date: "2024-09-28", games: [] });
     await mount(<MlbDiscovery manifest={manifest} />, "/MLB/search?kind=game&season=2025"); expect(container.textContent).toContain("日付・シーズンが一致しません");
+  });
+  it("distinguishes an absent off-day file in complete Historical coverage from unavailable data", async () => {
+    await mount(<MlbDiscovery manifest={manifest} />, "/MLB/search?kind=game&season=2025&date=2025-09-01");
+    expect(container.textContent).toContain("確認済み · 試合なし");
+    expect(container.textContent).not.toContain("指定範囲の保存済み情報を取得できません");
+    expect(container.querySelector('input[type="date"]')).not.toBeNull();
+    const partial = { ...manifest, seasons: manifest.seasons.map(s => ({ ...s, coverage: "partial" })) };
+    await mount(<MlbDiscovery manifest={partial} />, "/MLB/search?kind=game&season=2025&date=2025-09-01");
+    expect(container.textContent).not.toContain("確認済み · 試合なし");
+    expect(container.textContent).toContain("指定範囲の保存済み情報を取得できません");
+    staticValues.set("schedule/2025/2025-09-01.json", new Error("Temporary request/validation failure"));
+    await mount(<MlbDiscovery manifest={manifest} />, "/MLB/search?kind=game&season=2025&date=2025-09-01");
+    expect(container.textContent).not.toContain("確認済み · 試合なし");
+    expect(container.textContent).toContain("指定範囲の保存済み情報を取得できません");
   });
   it("uses only actual metrics and offers formula and scope beside their names", async () => {
     await mount(<StatGlossary league="MLB" />, "/MLB/glossary?q=OPS");
