@@ -5,7 +5,7 @@ import { MemoryRouter, useLocation } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GameRecap, NpbGamePreview, GameTeamLinks, PostseasonGameContext } from "../src/ui/game-story";
 import { HistoricalCompetitionContext, historicalRouteCompetition } from "../src/ui/historical-competition-context";
-import { NpbToday } from "../src/ui/daily-dashboard";
+import { NpbToday, NpbFavoriteRecent } from "../src/ui/daily-dashboard";
 import { MlbPersonalDashboard } from "../src/ui/mlb-personal-dashboard";
 import { MlbHistoricalMy } from "../src/ui/mlb-historical";
 import { NpbGameDetailView } from "../src/ui/npb-game-detail";
@@ -25,6 +25,19 @@ const render = async (child: ReactNode, initialEntries = ["/"]) => { await act(a
 function LocationProbe() { return <output data-testid="location">{useLocation().search}</output>; }
 const actions = { favorites: [], toggle: vi.fn(), saving: false };
 describe("daily product surfaces", () => {
+  it.each([false, true])("does not label an absent batting role as partial (pitching present: %s)", async present => {
+    const recent = { asOfDate: manifest.effectiveDate, batting: null, pitching: present ? { from: "2026-09-26", games: 1, factCount: 1, coverage: { status: "complete" }, metrics: {} } : null } as Awaited<ReturnType<typeof services.recent.find>>;
+    await render(<NpbFavoriteRecent services={{ ...services, recent: { find: async () => recent } as unknown as typeof services.recent, gameLog: { find: async () => ({ batting: [], pitching: [] }) } as unknown as typeof services.gameLog }} playerId="one" name="投手" expectedDate={manifest.effectiveDate} />);
+    expect(container.textContent).not.toContain("保存済み分");
+    expect(container.textContent).toContain(present ? "登板 1" : "出場成績はありません");
+  });
+  it("retains Recent numbers and reports a failed game-log request", async () => {
+    const recent = { asOfDate: manifest.effectiveDate, batting: null, pitching: { from: "2026-09-26", games: 1, factCount: 1, coverage: { status: "complete" }, metrics: {} } } as Awaited<ReturnType<typeof services.recent.find>>;
+    await render(<NpbFavoriteRecent services={{ ...services, recent: { find: async () => recent } as unknown as typeof services.recent, gameLog: { find: async () => { throw new Error("HTTP 503"); } } as unknown as typeof services.gameLog }} playerId="one" name="投手" expectedDate={manifest.effectiveDate} />);
+    expect(container.textContent).toContain("登板 1");
+    expect(container.textContent).toContain("試合別成績を読み込めません。Recent集計のみ表示");
+    expect(container.textContent).not.toContain("試合別成績を読み込み中");
+  });
   it("retains prior game results and distinguishes a failed Team Season request", async () => {
     const date = async (d: string): Promise<GameDateIndex> => ({ schemaVersion: 1, league: "NPB", date: d, generatedAt: manifest.generatedAt, coverage: "complete", games: d === row.date ? [row] : [] });
     await render(<NpbGamePreview game={game} favorites={[]} services={{ ...services, product: { ...services.product, teamSeason: async () => { throw new Error("HTTP 503"); } } as unknown as typeof services.product, gameSurface: { ...services.gameSurface, manifest: async () => manifest, date } as unknown as typeof services.gameSurface }} />);
