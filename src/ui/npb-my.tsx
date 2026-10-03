@@ -6,13 +6,13 @@ import { positionDefinitions } from "../domain/baseball-terms";
 import { DataState,FavoriteButton,LoadingSkeleton,PageHeading } from "./components";
 import { Monogram } from "./design-system";
 type Target=Pick<Favorite,"entityId"|"kind"|"league">;
-export function NpbSavedPlayers({repository,favorites,toggle,saving,compact=false}:{repository:{findLatestNpb():Promise<NpbPlayerDirectory>};
-  favorites:Favorite[];toggle:(t:Target)=>void;saving:boolean;compact?:boolean}){
+export function NpbSavedPlayers({repository,favorites,toggle,saving,compact=false,heading=true}:{repository:{findLatestNpb():Promise<NpbPlayerDirectory>};
+  favorites:Favorite[];toggle:(t:Target)=>void;saving:boolean;compact?:boolean;heading?:boolean}){
   const [directory,setDirectory]=useState<NpbPlayerDirectory|null>(null),[error,setError]=useState(false);
   useEffect(()=>{let active=true;void repository.findLatestNpb().then(v=>{if(active)setDirectory(v);}).catch(()=>{if(active)setError(true);});return()=>{active=false;};},[repository]);
   const ids=[...new Set(favorites.filter(f=>f.league==="NPB"&&f.kind==="player").map(f=>f.entityId))];
   const players=ids.map(id=>directory?.players.find(p=>p.playerId===id));const visible=compact?players.slice(0,2):players;
-  return <>{!compact&&<PageHeading eyebrow="NPB / My" title="お気に入り選手" detail="この端末に保存しています"/>}
+  return <>{!compact&&(heading?<PageHeading eyebrow="NPB / My" title="お気に入り選手" detail="この端末に保存しています"/>:<h2>お気に入り選手</h2>)}
     {error?<DataState kind="source-unavailable" title="お気に入り選手の情報を読み込めません"/>:!directory?<LoadingSkeleton/>:
       !ids.length?<DataState kind="no-data" title="お気に入りはまだありません" action="選手を探す" to="/NPB/search"/>:
         <div className="row-list">{visible.map((p,i)=><div className="surface-favorite" key={ids[i]}>

@@ -32,7 +32,8 @@ const season = npbTeamSeasonSchema.parse({ schemaVersion: 1, league: "NPB", seas
 const recent = (effectiveDate = date) => ({ schemaVersion: 1, league: "NPB", effectiveDate, generatedAt: at, games: [] });
 const unavailable: typeof fetch = async () => new Response(null, { status: 503 });
 const homeServices = (request: typeof fetch) => ({ ...defaults,
-  gameSurface: new StaticGameSurfaceRepository("https://example.test/", request),
+  gameSurface: new StaticGameSurfaceRepository("https://example.test/", async (...args) => { const r=await request(...args); if (!r.ok) return r; const v=await r.json(); return Response.json({ schemaVersion: 1, league: "NPB", from: v.effectiveDate, to: v.effectiveDate, effectiveDate: v.effectiveDate, generatedAt: v.generatedAt }); }),
+  product: new StaticNpbProductRepository("https://example.test/", unavailable),
   directory: new StaticPlayerDirectoryRepository("https://example.test/", unavailable),
   hot: new StaticHotRepository("https://example.test/", unavailable) });
 function deferred<T>() {
@@ -78,7 +79,7 @@ describe("NPB Home saved Season context", () => {
     const request: typeof fetch = failure === "HTTP failure" ? unavailable : async () => Response.json(recent("2026-02-30"));
     await mount(<NpbHome services={homeServices(request)} favorites={[]} toggle={() => {}} saving={false} />);
     expect(context()).toBe("公式戦");
-    expect(container.textContent).toContain("試合結果を読み込めません");
+    expect(container.textContent).toContain("試合情報を読み込めません");
   });
   it("updates context from the loaded standings when changing Home mode", async () => {
     const response = deferred<Response>(), request = vi.fn<typeof fetch>(() => response.promise);

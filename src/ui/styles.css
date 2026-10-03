@@ -330,3 +330,23 @@ label.analysis-condition select { flex:1; min-width:0; max-width:330px; font-siz
 .team-standing { display:flex; align-items:center; gap:16px; }.team-standing > strong { font-size:2rem; font-variant-numeric:tabular-nums; }.team-standing small { font-size:.75rem; }.team-standing > span { font-size:.75rem; color:var(--color-muted); }
 .team-favorites-filter { display:flex; align-items:center; gap:10px; min-height:44px; font-size:.75rem; }.team-favorites-filter input { width:20px; height:20px; }
 .surface-favorite > .compare-add,.mlb-player-row > .compare-add { flex:0 0 44px; display:inline-flex; justify-content:center; min-height:44px; font-size:.6875rem; font-weight:650; padding:0; gap:0; }
+
+/* Daily viewing: retain the existing scoreboard and editorial row hierarchy. */
+.today-board h3,.game-preview h3,.game-recap h3 { font-size:.8125rem; margin:18px 0 8px; }
+.daily-player,.daily-team { border-bottom:1px solid var(--color-border); padding:8px 0 12px; min-width:0; }
+.daily-player .player-row,.daily-team .player-row { justify-content:space-between; }
+.daily-numbers { display:flex; flex-wrap:wrap; gap:6px 14px; font-size:.8125rem; font-variant-numeric:tabular-nums; }
+.daily-links { display:flex; flex-wrap:wrap; gap:0 18px; }
+.daily-links a { display:inline-flex; align-items:center; min-height:44px; font-size:.75rem; font-weight:650; }
+.daily-team-actions summary,.game-recap summary,.daily-player summary { min-height:44px; align-content:center; font-size:.75rem; cursor:pointer; }
+.daily-player details p,.game-recap details p { font-size:.75rem; color:var(--color-muted); line-height:1.7; }
+.daily-recap-row { min-height:58px; display:flex; flex-direction:column; justify-content:center; gap:4px; padding:10px 0; }
+.daily-recap-row strong { font-size:.875rem; overflow-wrap:anywhere; }
+.daily-recap-row > span { font-size:.75rem; color:var(--color-muted); font-variant-numeric:tabular-nums; }
+.daily-metric-help { display:flex; flex-wrap:wrap; gap:8px; font-size:.6875rem; }
+.preview-team-grid { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:16px; padding:12px 0; border-block:1px solid var(--color-border); }
+.preview-team-grid > div { display:flex; flex-direction:column; gap:6px; min-width:0; }
+.preview-team-grid strong { font-size:1rem; font-variant-numeric:tabular-nums; }
+.preview-team-grid a,.preview-team-grid span { font-size:.8125rem; overflow-wrap:anywhere; }
+.preview-team-grid small { font-size:.6875rem; color:var(--color-muted); }
+.match-team-links { margin:12px 0 20px; }

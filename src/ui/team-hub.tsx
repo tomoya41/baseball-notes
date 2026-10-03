@@ -15,6 +15,7 @@ import { useHistoricalCompetition } from "./historical-competition-context";
 import { DataState, LoadingSkeleton, MetricLabel, PageHeading, SectionHeader } from "./components";
 import { Monogram, ScoreboardRow } from "./design-system";
 import { hasHistoricalPostseason, usePostseasonAvailability } from "./postseason-availability";
+import { TeamFavorite, type FavoriteActions } from "./team-favorite";
 
 export function TeamMetrics({ batting, pitching }: { batting: CompareMetrics; pitching: CompareMetrics }) {
   return <section className="stats-section"><h2>チームの主要成績</h2>{([["打撃", batting, ["PA", "H", "HR", "AVG", "OPS"]], ["投球", pitching, ["outsRecorded", "SO", "R", "ERA", "K9"]]] as const).map(([title, metrics, keys]) => <div key={title}><h3 className="stat-role-label">{title}</h3><div className="metric-grid">{keys.map(k => { const m = metrics[k]; return <div className="metric-tile" key={k}><MetricLabel metric={k} label={k === "outsRecorded" ? "IP" : k === "K9" ? "K/9" : k} /><strong className="metric-tile__value">{m?.value == null ? "—" : k === "outsRecorded" ? `${Math.floor(m.value / 3)}.${m.value % 3}` : m.value.toFixed(["AVG", "OPS"].includes(k) ? 3 : ["ERA", "K9"].includes(k) ? 2 : 0)}</strong>{m?.status === "partial" && <small>一部</small>}</div>; })}</div></div>)}</section>;
@@ -45,7 +46,7 @@ export function MlbTeams({ manifest }: { manifest: HistoricalProductManifest }) 
   const season = params.get("season") ?? String(manifest.seasons.at(-1)!.season);
   return <div className="screen"><PageHeading eyebrow={`MLB · ${season} · ${competition === "postseason" ? "POSTSEASON" : "HISTORICAL"}`} title="球団" /><div className="row-list">{manifest.teams.map(t => <Link className="player-row" key={t.id} to={`/MLB/teams/${encodeURIComponent(t.id)}?season=${encodeURIComponent(season)}${competition === "postseason" ? "&competition=postseason" : ""}`}><Monogram name={t.name} /><strong>{t.name}</strong><span>→</span></Link>)}</div></div>;
 }
-export function MlbTeamHub({ manifest, favorites }: { manifest: HistoricalProductManifest; favorites: Favorite[] }) {
+export function MlbTeamHub({ manifest, favorites, toggle, saving = false }: { manifest: HistoricalProductManifest; favorites: Favorite[]; toggle?: FavoriteActions["toggle"]; saving?: boolean }) {
   const competition = useHistoricalCompetition(), availability = usePostseasonAvailability();
   const { teamId } = useParams(), [params, setParams] = useSearchParams();
   const selected = params.has("season") ? Number(params.get("season")) : manifest.seasons.at(-1)!.season;
@@ -61,6 +62,7 @@ export function MlbTeamHub({ manifest, favorites }: { manifest: HistoricalProduc
   const names = (id: string) => manifest.teams.find(t => t.id === id)?.name ?? "球団不明";
   const roster = (hub?.players ?? []).filter(p => p[mode] && (!onlyFavorites || favoritesSet.has(p.playerId))).sort((a, b) => a.name.localeCompare(b.name, "ja"));
   return <div className="screen team-hub"><Link className="back-link" to={`/MLB/teams?season=${selected}${competition === "postseason" ? "&competition=postseason" : ""}`}>← 球団一覧</Link><header className="profile-header"><Monogram name={team.name} large /><div><p className="eyebrow">MLB · {competition === "postseason" ? "POSTSEASON" : "REGULAR SEASON"}</p><h1>{team.name}</h1></div></header>
+    {toggle && <TeamFavorite league="MLB" teamId={team.id} name={team.name} favorites={favorites} toggle={toggle} saving={saving} />}
     <div className="mlb-controls"><label>シーズン<select value={selected} onChange={e => { const next = new URLSearchParams(params); next.set("season", e.target.value); setParams(next); }}>{!knownSeason && <option value={selected}>{selected} 未収録</option>}{manifest.seasons.map(s => <option key={s.season}>{s.season}</option>)}</select></label></div>
     {!knownSeason ? <DataState kind="unsupported" title={selected === 2026 ? "2026年の試合結果・選手成績は未対応" : "このシーズンは未収録です"} /> : result.status !== "ready" || !hub ? result.status === "loading" ? <LoadingSkeleton /> : <DataState kind="source-unavailable" title="球団成績を読み込めません" /> : <>
     <section className="stats-section"><h2>{selected} {competition === "postseason" ? "Postseason" : "シーズン"}</h2><p className="inline-note">{hub.effectiveDate}まで · {hub.coverage === "complete" ? "収録済み全試合" : "一部データ確認中"}</p><div className="metric-grid">{[["試合", hub.G], ["勝", hub.W], ["敗", hub.L], ["得点", hub.runsFor], ["失点", hub.runsAgainst]].map(([k, v]) => <div className="metric-tile" key={k}><span>{k}</span><strong className="metric-tile__value">{v}</strong></div>)}</div></section>

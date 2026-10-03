@@ -3,8 +3,9 @@ import { Link,useSearchParams } from "react-router-dom";
 import type { GameSurfaceReader } from "../application/game-surface";
 import { type GameDateIndex,type GameManifest,type GameIndexRow } from "../domain/npb-game-index";
 import type { NpbRecords } from "../domain/npb-records";
-import { DataState,LoadingSkeleton,PageHeading,SectionHeader } from "./components";
+import { DataState,LoadingSkeleton,PageHeading } from "./components";
 import { DateRibbon, ScoreboardRow } from "./design-system";
+import { TeamFavorite, type FavoriteActions } from "./team-favorite";
 const statusLabel={final:"試合終了",scheduled:"開始前",postponed:"延期",canceled:"中止",suspended:"中断",unknown:"状態未確認"};
 export function GameLinks({games}:{games:readonly GameIndexRow[]}){return <div className="scoreboard-list">{games.map(g=><ScoreboardRow key={g.gameId}
   to={`/NPB/games/${encodeURIComponent(g.gameId)}`} away={g.away.name} home={g.home.name} awayScore={g.away.score} homeScore={g.home.score}
@@ -15,7 +16,7 @@ export function GameDateView({payload}:{payload:GameDateIndex}){return <>
   {payload.games.length?<GameLinks games={payload.games}/>:<DataState kind="no-data"
     title={payload.coverage==="no_games"?"試合なし":"この日の試合予定を確認できていません"}/>}
 </>;}
-export function NpbScheduleScreen({repository}:{repository:GameSurfaceReader}){
+export function NpbScheduleScreen({repository,favorites=[],toggle,saving=false}:{repository:GameSurfaceReader;favorites?:FavoriteActions["favorites"];toggle?:FavoriteActions["toggle"];saving?:boolean}){
   const [params,setParams]=useSearchParams(),dateParam=params.get("date");
   const [manifest,setManifest]=useState<GameManifest|null>(null),[payload,setPayload]=useState<GameDateIndex|null>(null);
   const [state,setState]=useState<"loading"|"ready"|"error">("loading");
@@ -30,13 +31,8 @@ export function NpbScheduleScreen({repository}:{repository:GameSurfaceReader}){
     {manifest&&date&&/^\d{4}-\d{2}-\d{2}$/.test(date)&&date>=manifest.from&&date<=manifest.to&&<DateRibbon date={date} min={manifest.from} max={manifest.to} onChange={change} />}
     {state==="loading"&&<LoadingSkeleton/>}{state==="error"&&<DataState kind="source-unavailable" title="日程を読み込めません"/>}
     {state==="ready"&&payload&&payload.date===date&&<GameDateView payload={payload}/>}
+    {state==="ready"&&payload&&payload.date===date&&toggle&&<details><summary>この日の球団をフォロー</summary><div className="row-list">{[...new Map(payload.games.flatMap(g=>[g.away,g.home]).map(t=>[t.id,t])).values()].map(t=><div className="surface-favorite" key={t.id}><Link className="player-row" to={`/NPB/teams/${encodeURIComponent(t.id)}`}>{t.name}</Link><TeamFavorite league="NPB" teamId={t.id} name={t.name} favorites={favorites} toggle={toggle} saving={saving}/></div>)}</div></details>}
   </div>;
-}
-export function NpbRecentGames({repository,onEffectiveDate}:{repository:GameSurfaceReader;onEffectiveDate?:(date:string)=>void}){
-  const [games,setGames]=useState<GameIndexRow[]|null>(null),[error,setError]=useState(false);
-  useEffect(()=>{let active=true;void repository.recent().then(p=>{if(active){setGames(p.games.slice(0,3));onEffectiveDate?.(p.effectiveDate);}}).catch(()=>{if(active)setError(true);});return()=>{active=false;};},[repository,onEffectiveDate]);
-  return <section className="home-section"><SectionHeader title="最近の試合" action="日程・結果" to="/NPB/schedule"/>
-    {error?<DataState kind="source-unavailable" title="試合結果を読み込めません"/>:games?<GameLinks games={games}/>:<LoadingSkeleton/>}</section>;
 }
 export function RecordsView({payload}:{payload:NpbRecords}){return <><p>2026シーズン · {payload.effectiveDate}までの保存済み成績</p>
   {payload.readiness!=="ready"?<><DataState kind="unsupported" title="2026年シーズン集計を確認中" detail="確認が完了したカテゴリから表示します。"/>

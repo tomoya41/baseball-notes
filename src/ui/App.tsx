@@ -19,6 +19,7 @@ import { NpbMilestonesScreen } from "./npb-milestones";
 import { PostseasonUnavailable } from "./postseason";
 import { NpbPlayerCompare } from "./player-compare";
 import { NpbTeams } from "./team-hub";
+import { NpbPersonalDashboard } from "./daily-dashboard";
 type FavoriteTarget = Pick<Favorite, "kind" | "entityId" | "league">;
 const MlbLeagueView = lazy(() => import("./mlb-foundation").then(module => ({ default: module.MlbLeagueView })));
 function NpbRoutes({ services, favorites, toggle, saving }: { services: Services; favorites: Favorite[]; toggle: (target: FavoriteTarget) => void; saving: boolean }) {
@@ -30,16 +31,16 @@ function NpbRoutes({ services, favorites, toggle, saving }: { services: Services
     {(["moves", "talent", "preseason", "matchup", "watch"] as const).map(feature => <Route key={feature} path={`${feature}/*`} element={<FutureFeatureScreen feature={feature} league="NPB" />} />)}
     {(["career", "advanced"] as const).map(feature => <Route key={feature} path={`players/:playerId/${feature}`} element={<FutureFeatureScreen feature={feature} league="NPB" />} />)}
     <Route path="home" element={<NpbHome services={services} favorites={favorites} toggle={toggle} saving={saving} />} />
-    <Route path="schedule" element={<NpbScheduleScreen repository={services.gameSurface} />} />
+    <Route path="schedule" element={<NpbScheduleScreen repository={services.gameSurface} favorites={favorites} toggle={toggle} saving={saving} />} />
     <Route path="search" element={<NpbPlayerSearch repository={services.directory} favorites={favorites} toggle={toggle} saving={saving} />} />
     <Route path="analysis" element={<Navigate to="/NPB/search" replace />} />
     <Route path="players/:playerId/:section?" element={<NpbPlayer key={location.pathname.split("/")[3]} services={services} favorites={favorites} toggle={toggle} saving={saving} />} />
-    <Route path="teams/:teamId" element={<NpbTeam services={services} hub favorites={favorites} />} />
+    <Route path="teams/:teamId" element={<NpbTeam services={services} hub favorites={favorites} toggle={toggle} saving={saving} />} />
     <Route path="teams" element={<NpbTeams services={services} />} />
     <Route path="compare" element={<NpbPlayerCompare services={services} />} />
     <Route path="records" element={<NpbRecordsScreen repository={services.gameSurface} />} />
     <Route path="ranking" element={<Navigate to="/NPB/records" replace />} />
-    <Route path="my" element={<div className="screen"><NpbSavedPlayers repository={services.directory} favorites={favorites} toggle={toggle} saving={saving} /></div>} />
+    <Route path="my" element={<div className="screen"><header><p className="eyebrow">NPB / My</p><h1>フォローダッシュボード</h1></header><NpbPersonalDashboard services={services} favorites={favorites} toggle={toggle} saving={saving} /><NpbSavedPlayers heading={false} repository={services.directory} favorites={favorites} toggle={toggle} saving={saving} /></div>} />
     <Route path="favorites" element={<Navigate to="/NPB/my" replace />} />
     <Route path="players" element={<Navigate to="/NPB/search" replace />} />
     <Route path="*" element={<Navigate to="/NPB/home" replace />} />
@@ -98,7 +99,7 @@ export function App({ services }: { services: Services }) {
 
     <Routes key={refreshVersion}>
       <Route path="/privacy" element={<PrivacyScreen />} />
-      <Route path="/NPB/games/:gameId" element={<NpbGameDetailScreen key={location.pathname} repository={services.gameDetail} />} />
+      <Route path="/NPB/games/:gameId" element={<NpbGameDetailScreen key={location.pathname} repository={services.gameDetail} services={services} favorites={favorites} toggle={toggle} saving={saving} />} />
       <Route path="/NPB/*" element={<NpbRoutes services={services}
         favorites={favorites} toggle={toggle} saving={saving} />} />
       <Route path="/MLB/*" element={<Suspense fallback={<LoadingSkeleton />}><MlbLeagueView key="MLB"
