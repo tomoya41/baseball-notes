@@ -1,4 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
+import "fake-indexeddb/auto";
+import { PublicResponseStore, createPublicFetch } from "../src/infrastructure/public-response-cache";
+import { StaticGameSurfaceRepository } from "../src/infrastructure/providers/static-game-surface-repository";
 import { dailyGames, recapNumbers, seriesAfterGame, tokyoToday, dailyProductCapabilities } from "../src/domain/product-daily";
 import { readDailyDashboard } from "../src/application/daily-dashboard";
 import { Favorites } from "../src/application/favorites";
@@ -37,5 +40,19 @@ describe("Team Favorites preserve the existing v1 player store", () => {
     const npb: Favorite = { ...player, kind: "team", entityId: "npb:team:tigers" }, mlb: Favorite = { ...npb, league: "MLB", entityId: "mlb:team:00000000-0000-4000-8000-000000000002" };
     const store = new Favorites(storage, () => Date.parse("2026-10-03T00:00:00Z")); await store.add(npb); await store.add(npb); await store.add(mlb);
     expect(storage.set).toHaveBeenCalledTimes(2); const reload = new Favorites(storage); expect((await reload.list()).map(f => ({...f,addedAt:player.addedAt}))).toEqual([player, npb, mlb]); await reload.remove(npb); expect((await reload.list()).map(f => ({...f,addedAt:player.addedAt}))).toEqual([player, mlb]);
+  });
+});
+describe("daily data through the existing persistent cache", () => {
+  it("restores validated dated indexes offline after repository/store restart", async () => {
+    const name = "product-daily-persistent";
+    const request = vi.fn<typeof fetch>(async url => String(url).endsWith("manifest.json") ? Response.json({ schemaVersion: 1, league: "NPB", from: "2026-10-02", to: "2026-10-03", effectiveDate: "2026-10-02", generatedAt: "2026-10-03T00:00:00Z" }) : String(url).includes("2026-10-02") ? Response.json(page("2026-10-02", [row("past", "2026-10-02")], "complete")) : Response.json(page("2026-10-03", [row("next", "2026-10-03", "scheduled")])));
+    const online = new StaticGameSurfaceRepository("https://public.test/", createPublicFetch(new PublicResponseStore(name), request, () => true));
+    const before = await readDailyDashboard(online, "2026-10-03");
+    const offline = new StaticGameSurfaceRepository("https://public.test/", createPublicFetch(new PublicResponseStore(name), request, () => false));
+    const after = await readDailyDashboard(offline, "2026-10-03"); expect(after).toEqual(before); expect(request).toHaveBeenCalledTimes(3);
+  });
+  it("does not fabricate a dashboard on uncached first launch offline", async () => {
+    const request = vi.fn<typeof fetch>(); const reader = new StaticGameSurfaceRepository("https://empty.test/", createPublicFetch(new PublicResponseStore("product-daily-empty"), request, () => false));
+    await expect(readDailyDashboard(reader, "2026-10-03")).rejects.toThrow("Offline"); expect(request).not.toHaveBeenCalled();
   });
 });
