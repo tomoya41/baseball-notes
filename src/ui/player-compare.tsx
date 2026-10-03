@@ -112,5 +112,5 @@ export function MlbPlayerCompare({ manifest }: { manifest: HistoricalProductMani
     return { id, date: to, metrics: stats.factCount ? stats.metrics : null, notice: !stats.factCount ? "この条件の記録なし" : season.coverage !== "complete" ? "一部データ確認中" : null };
   }, [cache, competition, manifest]);
   if (directory.status !== "ready") return directory.status === "loading" ? <LoadingSkeleton /> : <DataState kind="source-unavailable" title="選手一覧を読み込めません" />;
-  return <CompareWorkspace league="MLB" competition={competition} players={directory.value!.players.map(p => ({ id: p.id, name: p.name, seasons: p.seasons, ...historicalCompareRoles(p.positions) }))} teams={manifest.teams} seasons={manifest.seasons.map(s => s.season)} loader={loader} advanced={manifest.features?.directBvp === "available" || manifest.features?.situationalAnalysis === "available"} />;
+  return <CompareWorkspace league="MLB" competition={competition} players={directory.value!.players.filter(p => competition === "postseason" || !p.postseasonOnly).map(p => ({ id: p.id, name: p.name, seasons: p.seasons, ...historicalCompareRoles(p.positions) }))} teams={manifest.teams} seasons={manifest.seasons.map(s => s.season)} loader={loader} advanced={manifest.features?.directBvp === "available" || manifest.features?.situationalAnalysis === "available"} />;
 }

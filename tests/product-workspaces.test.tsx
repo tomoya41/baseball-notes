@@ -3,10 +3,14 @@ import { act, type ComponentProps } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { CompareWorkspace } from "../src/ui/player-compare";
+import { CompareWorkspace, MlbPlayerCompare } from "../src/ui/player-compare";
 import { PlayerTrends } from "../src/ui/player-trends";
 const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
 const players = Array.from({ length: 5 }, (_, i) => ({ id: id(i + 1), name: `選手${i + 1}`, batting: true, pitching: true }));
+vi.mock("../src/ui/use-mlb-historical", () => ({ useHistoricalDirectory: () => ({ status: "ready", value: { players: [
+  { id: "mlb:player:00000000-0000-4000-8000-000000000001", name: "Regular player", positions: ["DH"], seasons: [2025] },
+  { id: "mlb:player:00000000-0000-4000-8000-000000000002", name: "Postseason only", positions: ["DH"], seasons: [2025], postseasonOnly: true },
+] } }) }));
 type Loader = ComponentProps<typeof CompareWorkspace>["loader"];
 const loader = vi.fn<Loader>(async id => ({ id, date: "2026-10-02", metrics: { PA: { value: 10 }, H: { value: 0 }, OPS: { value: null } }, notice: null }));
 let container: HTMLDivElement, root: Root;
@@ -14,6 +18,12 @@ beforeEach(() => { vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true); container = 
 afterEach(async () => { await act(async () => root.unmount()); container.remove(); vi.unstubAllGlobals(); });
 const render = async (path = `/NPB/compare?players=${id(1)},${id(2)}`, read: Loader = loader) => { await act(async () => root.render(<MemoryRouter initialEntries={[path]}><CompareWorkspace league="NPB" players={players} teams={[]} seasons={[2026]} loader={read} /></MemoryRouter>)); };
 describe("comparison workspace", () => {
+  it("does not offer postseason-only identities in a regular-season comparison or BvP selector", async () => {
+    await act(async () => root.render(<MemoryRouter initialEntries={["/MLB/compare?season=2025&condition=bvp"]}><MlbPlayerCompare manifest={{ seasons: [{ season: 2025, firstDate: "2025-03-18", lastDate: "2025-09-28", coverage: "complete" }], teams: [], features: { directBvp: "available" } }} /></MemoryRouter>));
+    expect(container.textContent).toContain("Regular player");
+    expect(container.querySelector('.compare-search')?.textContent).not.toContain("Postseason only");
+    expect(container.querySelector('[value="mlb:player:00000000-0000-4000-8000-000000000002"]')).toBeNull();
+  });
   it("shows known zero and null independently with two player columns", async () => { await render(); expect(container.querySelectorAll("table thead th")).toHaveLength(3); const rows = [...container.querySelectorAll("tbody tr")]; expect(rows.find(r => r.querySelector("th")?.textContent === "H")?.textContent).toBe("H00"); expect(rows.find(r => r.querySelector("th")?.textContent?.startsWith("OPS"))?.textContent).toContain("——"); expect(loader).toHaveBeenCalledTimes(2); });
   it("rejects a mixed publication date instead of comparing generations", async () => { await render(undefined, vi.fn(async pid => ({ id: pid, date: pid === id(1) ? "2026-10-01" : "2026-10-02", metrics: {}, notice: null }))); expect(container.textContent).toContain("集計の基準日が揃っていません"); expect(container.querySelector("table")).toBeNull(); });
   it("never falls back to another year", async () => { await render(`/NPB/compare?season=2025&players=${id(1)}`); expect(loader).not.toHaveBeenCalled(); expect(container.textContent).toContain("指定のシーズンは未収録"); });
