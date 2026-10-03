@@ -28,7 +28,7 @@ export function leagueSwitchPath(pathname: string, search: string, next: League)
   leagueSchema.parse(next);
   if (pathname.split("/")[1] === next) return `${pathname}${search}`;
   const section = pathname.split("/")[2] ?? "home";
-  const destination = ["home", "search", "analysis", "records", "my", "ranking", "schedule", "postseason"].includes(section)
+  const destination = ["home", "search", "analysis", "records", "my", "ranking", "schedule", "postseason", "compare"].includes(section)
     ? section : "search";
   // IDs and date/season context never cross leagues: NPB Current and MLB
   // Historical have different available calendars. The target selects its own.

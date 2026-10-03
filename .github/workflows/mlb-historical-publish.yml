@@ -117,6 +117,9 @@ jobs:
             npx tsx scripts/stage-mlb-historical.ts --competition postseason --source .data/postseason-public/data/mlb/historical --target dist/data/mlb/historical
             npx tsx scripts/verify-postseason-preservation.ts after dist/data/mlb/historical
           fi
+          if [ "$MLB_PUBLISH_MODE" != 'app-only' ]; then
+            npx tsx scripts/generate-historical-team-hubs.ts dist/data/mlb/historical
+          fi
           if [ "$MLB_PUBLISH_MODE" = 'app-only' ]; then
             npx tsx scripts/publish-mlb-public-archive.ts dist/data/mlb
           else

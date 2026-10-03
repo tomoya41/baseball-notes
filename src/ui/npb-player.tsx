@@ -15,6 +15,7 @@ import { NpbPlayerProfileFacts } from "./npb-player-profile";
 import { PlayerRecentView } from "./player-recent";
 import { PlayerSeasonView } from "./player-season";
 import { PlayerGameLogView } from "./player-game-log";
+import { NpbPlayerTrends } from "./player-trends";
 import { NpbPlayerAnalysisScreen, NpbPlayerHomeAwaySection, NpbPlayerOpponentSection, NpbPlayerBattingOrderSection, NpbPlayerPitcherRoleSection, NpbPlayerBatterRoleSection } from "./npb-player-analysis";
 export function NpbPlayer({ services, favorites, toggle, saving }: { services: Services; favorites: Favorite[]; toggle: (target: Pick<Favorite, "kind" | "entityId" | "league">) => void; saving: boolean }) {
   const { playerId, section } = useParams();
@@ -99,7 +100,7 @@ export function NpbPlayer({ services, favorites, toggle, saving }: { services: S
   if (!directoryPlayer && !identity && directoryState === "loading") return <LoadingSkeleton />;
   const player = { id: playerId!, name: directoryPlayer?.displayName ?? identity?.name ?? product?.displayName };
   if (!player.name) return <DataState kind={directoryState === "error" ? "source-unavailable" : "no-data"} title={directoryState === "error" ? "選手情報を読み込めません" : "選手が見つかりません"} action="選手を探す" to="/NPB/search" />;
-  if (section && !["stats", "analysis", "more", "game-log"].includes(section)) return <Navigate to={`/NPB/players/${player.id}`} replace />;
+  if (section && !["stats", "analysis", "more", "game-log", "trends"].includes(section)) return <Navigate to={`/NPB/players/${player.id}`} replace />;
   const base = `/NPB/players/${player.id}`;
   const gameLogTeams = new Map(directoryTeams.map(t => [t.id, t.shortName]));
   const isFavorite = favorites.some(f => f.league === "NPB" && f.kind === "player" && f.entityId === player.id);
@@ -111,6 +112,8 @@ export function NpbPlayer({ services, favorites, toggle, saving }: { services: S
       <FavoriteButton active={isFavorite} saving={saving} label={player.name} onClick={() => toggle({ league: "NPB", kind: "player", entityId: player.id })} />
     </header>
     <PlayerTabs base={base} section={section} />
+    <nav className="player-tools" aria-label="選手の比較と推移"><Link to={`/NPB/compare?players=${encodeURIComponent(player.id)}`}>比較に追加</Link><Link to={`${base}/trends`} aria-current={section === "trends" ? "page" : undefined}>推移・連続記録</Link>{directoryTeam && <Link to={`/NPB/teams/${encodeURIComponent(directoryTeam.id)}`}>球団を見る</Link>}</nav>
+    {section === "trends" && <NpbPlayerTrends services={services} playerId={player.id} />}
     {!section && <div className="profile-content"><PlayerSeasonView payload={season} state={seasonState} /><PlayerRecentView period={period} onPeriodChange={next => { if (next === period) return; setRecentState("loading"); setPeriod(next); }} payload={recent} state={recentState} noFactKnown={directoryPlayer?.recentAvailable === false} />
       <PlayerGameLogView payload={gameLog ? { ...gameLog, batting: gameLog.batting.slice(0, 3), pitching: gameLog.pitching.slice(0, 3) } : null} state={gameLogState} teams={gameLogTeams} /><Link className="button button--secondary" to={`${base}/game-log`}>すべての試合別成績を見る</Link></div>}
     {section === "stats" && <PlayerSeasonView payload={season} state={seasonState} />}

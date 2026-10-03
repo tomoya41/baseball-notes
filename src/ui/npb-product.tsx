@@ -11,6 +11,7 @@ import { CompetitionHeader, HomeModeNav, Monogram } from "./design-system";
 import { NpbRecentGames } from "./npb-game-surface";
 import { NpbSavedPlayers } from "./npb-my";
 import { NpbHotSection } from "./npb-hot";
+import { NpbTeamActivity, TeamMetrics } from "./team-hub";
 
 type Target = Pick<Favorite, "kind" | "entityId" | "league">;
 export function NpbStandings({ services, onEffectiveDate }: { services: Services; onEffectiveDate?: (date: string) => void }) {
@@ -41,7 +42,7 @@ export function NpbHome({ services, favorites, toggle, saving }: { services: Ser
     {view === "scores" && <NpbRecentGames repository={services.gameSurface} onEffectiveDate={setEffectiveDate} />}
     {view === "standings" && <NpbStandings services={services} onEffectiveDate={setEffectiveDate} />}
     {view === "follow" && <section className="home-section"><SectionHeader title="お気に入り選手" action="My" to="/NPB/my" /><NpbSavedPlayers repository={services.directory} favorites={favorites} toggle={toggle} saving={saving} compact /></section>}
-    <div className="hub-links"><Link to="/NPB/search">選手を探す <span>→</span></Link><Link to="/NPB/records">個人成績 <span>→</span></Link><Link to="/NPB/postseason">Postseason <span>→</span></Link></div>
+    <div className="hub-links"><Link to="/NPB/search">選手を探す <span>→</span></Link><Link to="/NPB/teams">球団Hub <span>→</span></Link><Link to="/NPB/compare">選手比較 <span>→</span></Link><Link to="/NPB/records">個人成績 <span>→</span></Link><Link to="/NPB/postseason">Postseason <span>→</span></Link></div>
     <div className="hub-readiness"><NpbHotSection repository={services.hot} /></div>
   </div>;
 }
@@ -57,7 +58,7 @@ export function NpbProfileDetails({ player }: { player: NpbCatalog["players"][nu
     {player.visual.photo.usage === "allowed" && <p className="inline-note">写真: <a href={player.visual.photo.licenseUrl!}>{player.visual.photo.attribution}</a></p>}
   </section>;
 }
-export function NpbTeam({ services }: { services: Services }) {
+export function NpbTeam({ services, hub = false, favorites = [] }: { services: Services; hub?: boolean; favorites?: Favorite[] }) {
   const { teamId } = useParams();
   const [catalog, setCatalog] = useState<NpbCatalog | null>(null), [season, setSeason] = useState<NpbTeamSeason | null>(null), [error, setError] = useState(false);
   const [seasonState, setSeasonState] = useState<"loading" | "ready" | "error">("loading");
@@ -83,6 +84,7 @@ export function NpbTeam({ services }: { services: Services }) {
         <div className="metric-grid">{[["試合", stats.G], ["勝", stats.W], ["敗", stats.L], ["引分", stats.T], ["得点", stats.runsFor], ["失点", stats.runsAgainst]].map(([label, value]) => <div className="metric-tile" key={label}><span className="metric-tile__label">{label}</span><strong className="metric-tile__value">{value ?? "—"}</strong></div>)}</div>
       </> : <DataState kind="no-data" title="保存済みのシーズン成績はありません" />}
     </section>
-    <section className="surface-card"><h2>所属選手</h2><p className="inline-note">保存済みの所属情報。現在の登録公示を示すものではありません。</p><div className="row-list">{catalog.players.filter(p => p.membership.teamId === teamId).map(p => <Link className="player-row" key={p.playerId} to={`/NPB/players/${p.playerId}`}><Monogram name={p.displayName} /><span className="player-row__body"><strong>{p.displayName}</strong>{p.profile.position && <small>{positionDefinitions[p.profile.position]}</small>}</span><span aria-hidden="true">↗</span></Link>)}</div></section>
+    {hub && <>{stats && <TeamMetrics batting={stats.batting} pitching={stats.pitching} />}<NpbTeamActivity key={team.teamId} services={services} teamId={team.teamId} /><div className="hub-links"><Link to="/NPB/compare">選手比較 →</Link><Link to="/NPB/my">お気に入り →</Link></div></>}
+    <section className="surface-card"><h2>所属選手</h2><p className="inline-note">保存済みの所属情報。現在の登録公示を示すものではありません。</p><div className="row-list">{catalog.players.filter(p => p.membership.teamId === teamId).map(p => <Link className="player-row" key={p.playerId} to={`/NPB/players/${p.playerId}`}><Monogram name={p.displayName} /><span className="player-row__body"><strong>{favorites.some(f => f.league === "NPB" && f.kind === "player" && f.entityId === p.playerId) && "★ "}{p.displayName}</strong>{p.profile.position && <small>{positionDefinitions[p.profile.position]}</small>}</span><span aria-hidden="true">↗</span></Link>)}</div></section>
   </div>;
 }

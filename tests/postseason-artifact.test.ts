@@ -5,6 +5,9 @@ import { gzipSync } from "node:zlib";
 import { describe, expect, it } from "vitest";
 import { auditHistoricalPostseason } from "../scripts/lib/mlb-postseason-audit";
 import { historicalId, historicalTeamId } from "../src/data/mlb-historical";
+import { generateHistoricalTeamHubs } from "../scripts/generate-historical-team-hubs";
+import { readFile } from "node:fs/promises";
+import { gunzipSync } from "node:zlib";
 
 async function fixture(root: string) {
   const id = historicalId("player", "audit"), home = historicalTeamId("ATL"), away = historicalTeamId("HOU"), years = [2020,2021,2022,2023,2024,2025];
@@ -24,7 +27,7 @@ async function fixture(root: string) {
   const seasons = [];
   for(const season of years) {
     const date = `${season}-10-01`, gameId = historicalId("game",String(season));
-    const game = {id:gameId,season,date,homeTeamId:home,awayTeamId:away,homeRuns:1,awayRuns:0,number:0,innings:9,batting:[],pitching:[],competitionType:"postseason"};
+    const game = {id:gameId,season,date,homeTeamId:home,awayTeamId:away,homeRuns:1,awayRuns:0,number:0,innings:9,batting:[],pitching:[],validationIssues:[],competitionType:"postseason"};
     await put(`games/${gameId.replaceAll(":","_")}.json`,{game});
     await put(`schedule/${season}/${date}.json`,{season,date,games:[{...game,status:"final",complete:true}]});
     await put(`seasons/${season}.json`,{season,coverage:"complete",firstDate:date,lastDate:date,gameCount:1,players:[{playerId:id,...totals}]});
@@ -42,6 +45,22 @@ async function fixture(root: string) {
 }
 
 describe("complete advertised Postseason artifact", () => {
+  it("accepts complete derived products but rejects partial publication and altered results", async () => {
+    const root = await mkdtemp(join(tmpdir(), "postseason-product-audit-"));
+    try {
+      await fixture(root);
+      await generateHistoricalTeamHubs(root);
+      expect((await auditHistoricalPostseason(root, root)).report.result).toBe("PASS");
+      const file = join(root, `postseason/teams/2025/${historicalTeamId("ATL").replaceAll(":", "_")}.json.gz`);
+      const data = JSON.parse(gunzipSync(await readFile(file)).toString());
+      data.runsFor++;
+      await writeFile(file, gzipSync(JSON.stringify(data)));
+      await expect(auditHistoricalPostseason(root, root)).rejects.toThrow("Derived Team/detail mismatch");
+      await generateHistoricalTeamHubs(root);
+      await rm(file);
+      await expect(auditHistoricalPostseason(root, root)).rejects.toThrow("Missing advertised");
+    } finally { await rm(root, { recursive: true, force: true }); }
+  });
   it.each(["schedule","records","seasons","advanced","profile","advanced-year","advanced-range","hub","manifest"]) ("rejects missing %s even when surviving Game/Hub counts agree", async missing => {
     const root = await mkdtemp(join(tmpdir(),"postseason-audit-"));
     try {
