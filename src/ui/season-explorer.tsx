@@ -39,8 +39,9 @@ export function MlbSeasonExplorer({ manifest }: { manifest: ExplorerManifest }) 
 }
 export function NpbSeasonExplorer() {
   const [data, setData] = useState<NpbSeasonPayload | null>(null), [failed, setFailed] = useState(false), [params, setParams] = useSearchParams();
-  useEffect(() => { let active = true; void readNpbExplorerSeason(2026).then(value => { if (active) setData(value); }).catch(() => { if (active) setFailed(true); }); return () => { active = false; }; }, []);
+  const supported = params.get("competition") !== "postseason" && (!params.has("season") || params.get("season") === "2026");
+  useEffect(() => { if (!supported) return; let active = true; void readNpbExplorerSeason(2026).then(value => { if (active) setData(value); }).catch(() => { if (active) setFailed(true); }); return () => { active = false; }; }, [supported]);
   const query = params.get("q") ?? "";
-  if (params.get("competition") === "postseason" || (params.has("season") && params.get("season") !== "2026")) return <DataState kind="unsupported" title="指定したNPBシーズンは未収録です" />;
+  if (!supported) return <DataState kind="unsupported" title="指定したNPBシーズンは未収録です" />;
   return <div className="screen"><PageHeading eyebrow="NPB" title="保存済みシーズン履歴" /><ExplorerLinks league="NPB" /><p className="inline-note">現在は2026年の公式戦のみ収録。Career・過去年度の成績ではありません。</p>{failed ? <DataState kind="source-unavailable" title="保存済みシーズンを取得できません" /> : !data ? <LoadingSkeleton /> : <><h2>{data.season}年 · {data.effectiveDate}まで</h2><p>Coverage {data.coverage.status === "complete" ? "確認済み" : "一部未確認"}</p><div className="hub-links"><Link to="/NPB/data?season=2026">年度の成績を探索 →</Link><Link to="/NPB/teams">球団別Season →</Link><Link to="/NPB/schedule">日程・Game →</Link></div><label className="search-field"><span className="sr-only">履歴を調べる選手</span><input type="search" value={query} placeholder="選手名を入力" onChange={e => setParams(previous => { const next = new URLSearchParams(previous); next.set("q", e.target.value); return next; })} /></label>{query.trim() && <div className="row-list">{data.players.filter(p => normalizePlayerSearch(p.displayName).includes(normalizePlayerSearch(query))).slice(0, 20).map(p => <Link className="player-row" key={p.playerId} to={`/NPB/players/${encodeURIComponent(p.playerId)}/stats`}>{p.displayName} · 2026 Season →</Link>)}</div>}</>}</div>;
 }

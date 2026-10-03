@@ -100,8 +100,9 @@ export function DataExplorerView({ league, rows, teams, season, years, effective
 
 export function NpbDataExplorer({ services }: { services: Services }) {
   const [params] = useSearchParams(), year = Number(params.get("season") ?? 2026);
+  const supported = year === 2026 && params.get("competition") !== "postseason";
   const [data, setData] = useState<{ season: NpbSeasonPayload; directory: NpbPlayerDirectory } | null>(null), [failed, setFailed] = useState(false);
-  useEffect(() => { let active = true; void Promise.all([readNpbExplorerSeason(2026), services.directory.findLatestNpb()]).then(([season, directory]) => { if (season.effectiveDate !== directory.effectiveDate) throw Error("Projection dates differ"); if (active) setData({ season, directory }); }).catch(() => { if (active) setFailed(true); }); return () => { active = false; }; }, [services]);
+  useEffect(() => { if (!supported) return; let active = true; void Promise.all([readNpbExplorerSeason(2026), services.directory.findLatestNpb()]).then(([season, directory]) => { if (season.effectiveDate !== directory.effectiveDate) throw Error("Projection dates differ"); if (active) setData({ season, directory }); }).catch(() => { if (active) setFailed(true); }); return () => { active = false; }; }, [services, supported]);
   const rows = useMemo<ExplorerRow[]>(() => data?.season.players.map(p => ({ playerId: p.playerId, name: p.displayName, teamId: p.teamId, batting: p.batting?.metrics ?? null, pitching: p.pitching?.metrics ?? null })) ?? [], [data]);
   const readOne = useMemo(() => cachedExplorerRead(async (id: string, days: 7 | 14 | 30): Promise<RecentRow> => {
     const value = await services.recent.find(id, `${days}d`);
@@ -112,7 +113,7 @@ export function NpbDataExplorer({ services }: { services: Services }) {
       coverage: [value.batting, value.pitching].filter(Boolean).every(p => p!.coverage.status === "complete") ? "complete" : "partial" };
   }), [services, data]);
   const readRecent = useCallback((ids: string[], days: 7 | 14 | 30) => boundedExplorerRead(ids, id => readOne(id, days)), [readOne]);
-  if (year !== 2026 || params.get("competition") === "postseason") return <DataState kind="unsupported" title="指定したNPBシーズン・Postseasonの成績は未収録です" />;
+  if (!supported) return <DataState kind="unsupported" title="指定したNPBシーズン・Postseasonの成績は未収録です" />;
   if (failed) return <DataState kind="source-unavailable" title="整合した保存済みSeasonを取得できません" />;
   if (!data) return <LoadingSkeleton />;
   if (params.get("team") && !data.directory.teams.some(t => t.id === params.get("team"))) return <DataState kind="unsupported" title="指定した球団は未収録です" />;
@@ -124,7 +125,7 @@ export function MlbDataExplorer({ manifest }: { manifest: ExplorerManifest }) {
   const descriptor = manifest.seasons.find(s => s.season === year), team = manifest.teams.find(t => t.id === teamId);
   const season = useHistoricalStatic<SeasonProjection>(descriptor && !teamId ? `seasons/${year}.json` : null);
   const teamResult = useHistoricalStatic<HistoricalTeamHub>(descriptor && team ? `teams/${year}/${teamId.replaceAll(":", "_")}.json` : null);
-  const directory = useHistoricalStatic<{ players: HistoricalDirectoryPlayer[] }>("players/index.json");
+  const directory = useHistoricalStatic<{ players: HistoricalDirectoryPlayer[] }>(descriptor && (!teamId || team) ? "players/index.json" : null);
   const source = teamId ? teamResult : season;
   const rows = useMemo<ExplorerRow[]>(() => {
     if (teamId) return teamResult.value?.players.map(p => ({ ...p, teamId })) ?? [];

@@ -165,6 +165,14 @@ describe("NPB saved projections and Recent", () => {
   it("does not invent NPB historical seasons or postseason results", async () => {
     seedNpb(); await mount(<NpbSeasonExplorer />, "/NPB/history?season=2025"); expect(container.textContent).toContain("未収録");
     await mount(<NpbDataExplorer services={services} />, "/NPB/data?competition=postseason"); expect(container.textContent).toContain("未収録");
+    expect(npbReader).not.toHaveBeenCalled();
+  });
+  it.each(["season=2025", "season=2026&competition=postseason"])("performs no NPB Season/Directory downloads for unsupported %s", async scope => {
+    const { deps } = seedNpb(), findLatestNpb = vi.fn(deps.directory.findLatestNpb);
+    await mount(<NpbDataExplorer services={{ ...deps, directory: { findLatestNpb } as unknown as typeof services.directory }} />, `/NPB/data?${scope}`);
+    expect(container.textContent).toContain("未収録"); expect(npbReader).not.toHaveBeenCalled(); expect(findLatestNpb).not.toHaveBeenCalled();
+    await mount(<NpbSeasonExplorer />, `/NPB/history?${scope}`);
+    expect(container.textContent).toContain("未収録"); expect(npbReader).not.toHaveBeenCalled();
   });
 });
 describe("discovery and glossary", () => {
