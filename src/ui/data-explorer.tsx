@@ -32,8 +32,9 @@ export function ExplorerLinks({ league, scope = "" }: { league: "NPB" | "MLB"; s
   if (context.get("role") === "pitcher") context.set("role", "pitching");
   if (context.get("role") === "batter") context.set("role", "batting");
   const search = new URLSearchParams(context);
+  const glossary = new URLSearchParams(context); glossary.delete("q");
   if (league === "NPB" && context.get("role")) search.set("role", context.get("role") === "pitching" ? "pitcher" : "batter");
-  return <nav className="explorer-links" aria-label="データを探す"><Link to={`/${league}/search?${search}`}>検索</Link><Link to={`/${league}/data?${context}`}>データ探索</Link><Link to={`/${league}/history?${context}`}>シーズン履歴</Link><Link to={`/${league}/glossary`}>指標ガイド</Link></nav>;
+  return <nav className="explorer-links" aria-label="データを探す"><Link to={`/${league}/search?${search}`}>検索</Link><Link to={`/${league}/data?${context}`}>データ探索</Link><Link to={`/${league}/history?${context}`}>シーズン履歴</Link><Link to={`/${league}/glossary?${glossary}`}>指標ガイド</Link></nav>;
 }
 export function DataExplorerView({ league, rows, teams, season, years, effectiveDate, coverage, readRecent, scope = "" }: {
   league: "NPB" | "MLB"; rows: ExplorerRow[]; teams: { id: string; name: string }[]; season: number; years: number[]; effectiveDate: string; coverage: string;

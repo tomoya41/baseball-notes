@@ -176,6 +176,22 @@ describe("NPB saved projections and Recent", () => {
   });
 });
 describe("discovery and glossary", () => {
+  it("preserves historical competition through glossary entry, metric search and return links", async () => {
+    await mount(<ExplorerLinks league="MLB" scope="?season=2020&competition=postseason&role=pitching&q=Player" />, "/MLB/data?season=2020&competition=postseason", "postseason");
+    const guide = [...container.querySelectorAll("a")].find(a => a.textContent === "指標ガイド")!;
+    const target = guide.getAttribute("href")!;
+    expect(target).toContain("season=2020"); expect(target).toContain("competition=postseason"); expect(target).not.toContain("q=Player");
+    await mount(<StatGlossary league="MLB" />, target, "postseason");
+    const input = container.querySelector("input")!;
+    await act(async () => { Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, "OPS"); input.dispatchEvent(new Event("input", { bubbles: true })); });
+    expect(container.querySelector("[data-location]")?.textContent).toContain("q=OPS");
+    expect(container.querySelector("[data-location]")?.textContent).toContain("season=2020");
+    expect(container.querySelector("[data-location]")?.textContent).toContain("competition=postseason");
+    for (const label of ["検索", "データ探索", "シーズン履歴"]) {
+      const link = [...container.querySelectorAll("a")].find(a => a.textContent === label)!;
+      expect(link.href).toContain("season=2020"); expect(link.href).toContain("competition=postseason"); expect(link.href).not.toContain("q=OPS");
+    }
+  });
   it("does not download Directory or game data for unsupported NPB Postseason discovery", async () => {
     const { deps } = seedNpb(), findLatestNpb = vi.fn(deps.directory.findLatestNpb), manifest = vi.fn(), date = vi.fn();
     await mount(<NpbDiscovery services={{ ...deps, directory: { findLatestNpb } as unknown as typeof services.directory, gameSurface: { manifest, date } as unknown as typeof services.gameSurface }} />, "/NPB/search?kind=game&competition=postseason");
