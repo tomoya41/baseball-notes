@@ -13,7 +13,7 @@ import { services } from "../src/app/services";
 import type { NpbGameDetail } from "../src/domain/npb-game-detail";
 import type { GameDateIndex, GameIndexRow } from "../src/domain/npb-game-index";
 const staticValues = vi.hoisted(() => new Map<string, unknown>());
-vi.mock("../src/ui/use-mlb-historical", () => ({ useHistoricalDirectory: () => ({ status: "ready", value: staticValues.get("directory") ?? { players: [] } }), useHistoricalStatic: (path: string | null) => ({ status: path && staticValues.has(path) ? "ready" : "missing", value: path ? staticValues.get(path) ?? null : null }) }));
+vi.mock("../src/ui/use-mlb-historical", () => ({ useHistoricalDirectory: () => ({ status: "ready", value: staticValues.get("directory") ?? { players: [] } }), useHistoricalStatic: (path: string | null) => ({ status: staticValues.get(`status:${path}`) ?? (path && staticValues.has(path) ? "ready" : "missing"), value: path ? staticValues.get(path) ?? null : null }) }));
 const home = { id: "npb:team:tigers", name: "阪神", shortName: "阪神", score: null, totals: { pa: null, paSource: "unavailable" as const, ab: null, runs: null, hits: null, homeRuns: null } }, away = { ...home, id: "npb:team:baystars", name: "DeNA", shortName: "DeNA" };
 const game: NpbGameDetail = { gameId: "npb:game:scheduled", date: "2026-10-03", gameNumber: 1, status: "scheduled", completeness: null, home, away, batting: { home: [], away: [] }, pitching: { home: [], away: [] } };
 const row: GameIndexRow = { gameId: "npb:game:past", date: "2026-10-02", gameNumber: 1, status: "final", scheduledTime: null, home: { id: home.id, name: home.name, score: 1 }, away: { id: away.id, name: away.name, score: 0 }, completeness: "complete", battingAvailable: true, pitchingAvailable: true, detailAvailable: true };
@@ -25,6 +25,25 @@ const render = async (child: ReactNode, initialEntries = ["/"]) => { await act(a
 function LocationProbe() { return <output data-testid="location">{useLocation().search}</output>; }
 const actions = { favorites: [], toggle: vi.fn(), saving: false };
 describe("daily product surfaces", () => {
+  it("retains prior game results and distinguishes a failed Team Season request", async () => {
+    const date = async (d: string): Promise<GameDateIndex> => ({ schemaVersion: 1, league: "NPB", date: d, generatedAt: manifest.generatedAt, coverage: "complete", games: d === row.date ? [row] : [] });
+    await render(<NpbGamePreview game={game} favorites={[]} services={{ ...services, product: { ...services.product, teamSeason: async () => { throw new Error("HTTP 503"); } } as unknown as typeof services.product, gameSurface: { ...services.gameSurface, manifest: async () => manifest, date } as unknown as typeof services.gameSurface }} />);
+    expect(container.textContent).toContain("球団のシーズン成績を読み込めません");
+    expect(container.textContent).not.toContain("シーズン成績は未収録");
+    expect(container.textContent).toContain("1勝 / 1試合");
+  });
+  it.each([["loading", "この試合終了時のSeries"], ["error", "Series情報を読み込めません"], ["missing", "この年のSeries情報は未収録"]])("shows explicit %s Series state", async (status, text) => {
+    staticValues.set("status:postseason/hub/2025.json", status);
+    await render(<PostseasonGameContext season={2025} gameId="one" names={id => id} />);
+    expect(container.textContent).toContain(text);
+    if (status === "loading") expect(container.querySelector('[aria-label="読み込み中"]')).not.toBeNull();
+  });
+  it("distinguishes an unprovable Series prefix from a missing request", async () => {
+    staticValues.set("postseason/hub/2025.json", { series: [{ teams: [], games: [{ gameId: "prior", status: "scheduled" }, { gameId: "one", status: "final" }] }] });
+    await render(<PostseasonGameContext season={2025} gameId="one" names={id => id} />);
+    expect(container.textContent).toContain("この試合時点のSeries勝敗は未確定");
+    expect(container.textContent).not.toContain("Series決着");
+  });
   it("does not replace a scheduled game's recent window with older saved dates", async () => {
     const date = vi.fn(async (d: string): Promise<GameDateIndex> => ({ schemaVersion: 1, league: "NPB", date: d, generatedAt: manifest.generatedAt, coverage: "complete", games: [{ ...row, date: d }] }));
     await render(<NpbGamePreview game={{ ...game, date: "2026-10-10" }} favorites={[]} services={{ ...services, product: { ...services.product, teamSeason: async () => null } as unknown as typeof services.product, gameSurface: { ...services.gameSurface, manifest: async () => ({ ...manifest, from: "2026-03-27", effectiveDate: "2026-09-20" }), date } as unknown as typeof services.gameSurface }} />);

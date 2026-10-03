@@ -31,11 +31,12 @@ export function GameTeamLinks({ league, teams, scope = "", ...actions }: Favorit
   return <div className="row-list match-team-links">{teams.map(t => <div className="surface-favorite" key={t.id}><Link className="player-row" to={`/${league}/teams/${encodeURIComponent(t.id)}${scope}`}><strong>{t.name}</strong><span>球団Hub →</span></Link><TeamFavorite league={league} teamId={t.id} name={t.name} {...actions} /></div>)}</div>;
 }
 export function NpbGamePreview({ game, services, favorites }: { game: NpbGameDetail; services: Services; favorites: FavoriteActions["favorites"] }) {
-  const [value, setValue] = useState<{ id: string; season: NpbTeamSeason | null; games: GameIndexRow[]; incomplete: boolean } | null>(null), [error, setError] = useState("");
+  const [value, setValue] = useState<{ id: string; season: NpbTeamSeason | null; seasonError: boolean; games: GameIndexRow[]; incomplete: boolean } | null>(null), [error, setError] = useState("");
   useEffect(() => { let active = true; void (async () => {
     const manifest = await services.gameSurface.manifest();
     const until = [shiftGameDate(game.date, -1), manifest.effectiveDate].sort()[0]!;
-    const season = await services.product.teamSeason(Number(game.date.slice(0, 4))).catch(() => null);
+    let seasonError = false;
+    const season = await services.product.teamSeason(Number(game.date.slice(0, 4))).catch(() => { seasonError = true; return null; });
     const windowFrom = shiftGameDate(game.date, -14), windowTo = shiftGameDate(game.date, -1);
     const from = [windowFrom, manifest.from].sort().at(-1)!;
     const dates: string[] = [], games: GameIndexRow[] = []; let incomplete = until < windowTo || manifest.from > windowFrom || manifest.to < windowTo;
@@ -47,13 +48,13 @@ export function NpbGamePreview({ game, services, favorites }: { game: NpbGameDet
       incomplete ||= !["complete", "no_games"].includes(page.coverage);
       games.push(...page.games.filter(g => g.status === "final" && g.date < game.date));
     });
-    return { id: game.gameId, season: season && season.effectiveDate <= until ? season : null, games, incomplete };
+    return { id: game.gameId, season: season && season.effectiveDate <= until ? season : null, seasonError, games, incomplete };
   })().then(v => { if (active) setValue(v); }).catch(() => { if (active) setError(game.gameId); }); return () => { active = false; }; }, [game.gameId, game.date, services]);
   const data = value?.id === game.gameId ? value : null;
   const opponents = data?.games.filter(g => [g.home.id, g.away.id].includes(game.home.id) && [g.home.id, g.away.id].includes(game.away.id)).sort((a, b) => b.date.localeCompare(a.date) || b.gameNumber - a.gameNumber) ?? [];
   return <section className="home-section game-preview"><SectionHeader title="Game Preview" /><p className="inline-note">保存済みの試合前データ。予告先発・出場選手の予測は行いません。</p>
     {error === game.gameId ? <p>プレビューを読み込めません。球団Hubから確認できます。</p> : !data ? <LoadingSkeleton /> : <>
-      {data.season ? <><p className="inline-note">{data.season.effectiveDate}まで · {data.season.coverage.status === "complete" ? "確認済み" : "保存済み分"}</p><div className="preview-team-grid">{[game.away, game.home].map(t => { const s = data.season!.teams.find(v => v.teamId === t.id); return <div key={t.id}><Link to={`/NPB/teams/${encodeURIComponent(t.id)}`}>{t.shortName}</Link><strong>{s ? `${s.W}勝 ${s.L}敗 ${s.T}分` : "成績未確認"}</strong><small>得点 {s?.runsFor ?? "—"} / 失点 {s?.runsAgainst ?? "—"}</small></div>; })}</div></> : <p className="inline-note">試合前時点のシーズン成績は未収録です。</p>}
+      {data.season ? <><p className="inline-note">{data.season.effectiveDate}まで · {data.season.coverage.status === "complete" ? "確認済み" : "保存済み分"}</p><div className="preview-team-grid">{[game.away, game.home].map(t => { const s = data.season!.teams.find(v => v.teamId === t.id); return <div key={t.id}><Link to={`/NPB/teams/${encodeURIComponent(t.id)}`}>{t.shortName}</Link><strong>{s ? `${s.W}勝 ${s.L}敗 ${s.T}分` : "成績未確認"}</strong><small>得点 {s?.runsFor ?? "—"} / 失点 {s?.runsAgainst ?? "—"}</small></div>; })}</div></> : <p className="inline-note" role={data.seasonError ? "status" : undefined}>{data.seasonError ? "球団のシーズン成績を読み込めません。試合結果は読み込めた範囲を表示しています。" : "試合前時点のシーズン成績は未収録です。"}</p>}
       <h3>直近14日間の結果</h3>{data.incomplete && <p className="inline-note">一部データ確認中。未収録試合は含みません。</p>}<div className="preview-team-grid">{[game.away, game.home].map(t => { const rows = data.games.filter(g => [g.home.id, g.away.id].includes(t.id)); const scored = rows.filter(g => g.home.score !== null && g.away.score !== null); const wins = scored.filter(g => g.home.id === t.id ? g.home.score! > g.away.score! : g.away.score! > g.home.score!).length; return <div key={t.id}><span>{t.shortName}</span><strong>{wins}勝 / {scored.length}試合</strong>{rows.length !== scored.length && <small>スコア未確認あり</small>}</div>; })}</div>
       {opponents.length > 0 && <><h3>この期間の直接対戦</h3><GameLinks games={opponents.slice(0, 3)} /></>}
     </>}
@@ -65,7 +66,7 @@ export function PostseasonGameContext({ season, gameId, names }: { season: numbe
   const result = useHistoricalStatic<PostseasonHub>(`postseason/hub/${season}.json`);
   const series = result.value?.series.find(s => s.games.some(g => g.gameId === gameId));
   const standing = series && seriesAfterGame(series, gameId);
-  if (!series || !standing) return null;
+  if (result.status !== "ready" || !series || !standing) return <section className="home-section"><SectionHeader title="この試合終了時のSeries" />{result.status === "loading" ? <LoadingSkeleton /> : <p className="inline-note" role="status">{result.status === "error" ? "Series情報を読み込めません。" : result.status === "missing" ? "この年のSeries情報は未収録です。" : !series ? "この試合のSeriesは未確認です。" : "この試合時点のSeries勝敗は未確定です。"}</p>}</section>;
   const clinched = standing.find(t => t.total >= series.winsRequired);
   return <section className="home-section"><SectionHeader title="この試合終了時のSeries" action="Series詳細" to={`/MLB/postseason/series/${encodeURIComponent(series.id)}?season=${season}`} /><p>{standing.map(t => `${names(t.teamId)} ${t.played}勝${t.advantage ? ` + アドバンテージ ${t.advantage}勝（Series合計 ${t.total}勝）` : ""}`).join(" / ")}</p>{clinched && <p>{names(clinched.teamId)}がSeries決着</p>}</section>;
 }
