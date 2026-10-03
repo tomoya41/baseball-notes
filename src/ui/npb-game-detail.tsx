@@ -5,6 +5,9 @@ import type { NpbGameDetail } from "../domain/npb-game-detail";
 import { formatDate } from "../presentation/formatters";
 import { DataState, LoadingSkeleton, MetricLabel } from "./components";
 import { ScoreHero } from "./design-system";
+import type { Services } from "../app/services";
+import { GameRecap, GameTeamLinks, NpbGamePreview } from "./game-story";
+import type { FavoriteActions } from "./team-favorite";
 
 type DetailState = "loading" | "ready" | "missing" | "error";
 const value = (number: number | null) => number === null ? "—" : String(number);
@@ -23,7 +26,7 @@ const pitchingDetails = [{ key: "bf", label: "BF" }, { key: "hits", label: "被�
   { key: "runs", label: "失点" }, { key: "earnedRuns", label: "自責点" },
   { key: "pitchCount", label: "投球数" }, { key: "walksAndHitByPitch", label: "四死" }] as const;
 
-export function NpbGameDetailView({ payload, state }: { payload: NpbGameDetail | null; state: DetailState }) {
+export function NpbGameDetailView({ payload, state, services, actions }: { payload: NpbGameDetail | null; state: DetailState; services?: Services; actions?: FavoriteActions }) {
   if (state === "loading") return <div className="screen game-detail" aria-label="試合詳細の読み込み中"><LoadingSkeleton /></div>;
   if (state === "missing") return <div className="screen game-detail"><h1>試合詳細</h1>
     <DataState kind="no-data" title="試合が見つかりません" /></div>;
@@ -35,6 +38,9 @@ export function NpbGameDetailView({ payload, state }: { payload: NpbGameDetail |
     <header className="game-detail__header"><p>NPB / 試合詳細</p><h1>{formatDate(payload.date, true)}の試合</h1>
       <p>{statusName[payload.status]}{payload.gameNumber > 1 ? ` · 第${payload.gameNumber}試合` : ""}</p></header>
     <ScoreHero away={payload.away.shortName} home={payload.home.shortName} awayScore={payload.away.score} homeScore={payload.home.score} status={statusName[payload.status]} />
+    {actions && <GameTeamLinks league="NPB" teams={[payload.away, payload.home]} {...actions} />}
+    {payload.status === "scheduled" && services && <NpbGamePreview game={payload} services={services} favorites={actions?.favorites ?? []} />}
+    {hasBox && <GameRecap league="NPB" complete={payload.completeness === "complete"} favorites={actions?.favorites ?? []} batting={[...payload.batting.away, ...payload.batting.home]} pitching={[...payload.pitching.away, ...payload.pitching.home].map(p => ({ ...p, outs: p.outsRecorded, so: p.strikeouts }))} />}
     {payload.status !== "final" && <p className="game-detail__note">{statusName[payload.status]}のため、試合別成績はありません。</p>}
     {hasBox && payload.completeness !== "complete" && <p className="game-detail__note" role="status">
       {payload.completeness === "partial" || payload.completeness === "failed" ?
@@ -60,7 +66,7 @@ export function NpbGameDetailView({ payload, state }: { payload: NpbGameDetail |
   </div>;
 }
 
-export function NpbGameDetailScreen({ repository }: { repository: { find(gameId: string): Promise<NpbGameDetail | null> } }) {
+export function NpbGameDetailScreen({ repository, services, favorites = [], toggle, saving = false }: { repository: { find(gameId: string): Promise<NpbGameDetail | null> }; services?: Services; favorites?: FavoriteActions["favorites"]; toggle?: FavoriteActions["toggle"]; saving?: boolean }) {
   const { gameId } = useParams();
   const [payload, setPayload] = useState<NpbGameDetail | null>(null);
   const [state, setState] = useState<DetailState>("loading");
@@ -72,5 +78,5 @@ export function NpbGameDetailScreen({ repository }: { repository: { find(gameId:
     }).catch(() => { if (active) setState("error"); });
     return () => { active = false; };
   }, [gameId, repository]);
-  return <NpbGameDetailView payload={payload} state={state} />;
+  return <NpbGameDetailView payload={payload} state={state} {...services ? { services } : {}} {...toggle ? { actions: { favorites, toggle, saving } } : {}} />;
 }

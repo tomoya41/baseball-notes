@@ -8,10 +8,11 @@ import { positionDefinitions } from "../domain/baseball-terms";
 import { formatDate, formatGamesBehind, formatWinningPercentage } from "../presentation/formatters";
 import { DataState, LoadingSkeleton, SectionHeader } from "./components";
 import { CompetitionHeader, HomeModeNav, Monogram } from "./design-system";
-import { NpbRecentGames } from "./npb-game-surface";
 import { NpbSavedPlayers } from "./npb-my";
 import { NpbHotSection } from "./npb-hot";
 import { NpbTeamActivity, TeamMetrics } from "./team-hub";
+import { NpbToday, NpbPersonalDashboard } from "./daily-dashboard";
+import { TeamFavorite } from "./team-favorite";
 
 type Target = Pick<Favorite, "kind" | "entityId" | "league">;
 export function NpbStandings({ services, onEffectiveDate }: { services: Services; onEffectiveDate?: (date: string) => void }) {
@@ -39,9 +40,9 @@ export function NpbHome({ services, favorites, toggle, saving }: { services: Ser
   };
   return <div className="screen home-screen home-hub"><CompetitionHeader league="NPB" context={effectiveDate ? `${effectiveDate.slice(0, 4)}年 · 公式戦` : "公式戦"} />
     <HomeModeNav active={view} onChange={changeView} modes={[{id:"scores",label:"スコア"},{id:"standings",label:"順位表"},{id:"follow",label:"フォロー"}]} />
-    {view === "scores" && <NpbRecentGames repository={services.gameSurface} onEffectiveDate={setEffectiveDate} />}
+    {view === "scores" && <><NpbToday services={services} favorites={favorites} toggle={toggle} saving={saving} onEffectiveDate={setEffectiveDate} /><NpbPersonalDashboard services={services} favorites={favorites} toggle={toggle} saving={saving} compact /></>}
     {view === "standings" && <NpbStandings services={services} onEffectiveDate={setEffectiveDate} />}
-    {view === "follow" && <section className="home-section"><SectionHeader title="お気に入り選手" action="My" to="/NPB/my" /><NpbSavedPlayers repository={services.directory} favorites={favorites} toggle={toggle} saving={saving} compact /></section>}
+    {view === "follow" && <><NpbToday services={services} favorites={favorites} toggle={toggle} saving={saving} personal /><NpbPersonalDashboard services={services} favorites={favorites} toggle={toggle} saving={saving} compact /><section className="home-section"><SectionHeader title="お気に入り選手" action="My" to="/NPB/my" /><NpbSavedPlayers repository={services.directory} favorites={favorites} toggle={toggle} saving={saving} compact /></section></>}
     <div className="hub-links"><Link to="/NPB/search">選手を探す <span>→</span></Link><Link to="/NPB/teams">球団Hub <span>→</span></Link><Link to="/NPB/compare">選手比較 <span>→</span></Link><Link to="/NPB/records">個人成績 <span>→</span></Link><Link to="/NPB/postseason">Postseason <span>→</span></Link></div>
     <div className="hub-readiness"><NpbHotSection repository={services.hot} /></div>
   </div>;
@@ -58,7 +59,7 @@ export function NpbProfileDetails({ player }: { player: NpbCatalog["players"][nu
     {player.visual.photo.usage === "allowed" && <p className="inline-note">写真: <a href={player.visual.photo.licenseUrl!}>{player.visual.photo.attribution}</a></p>}
   </section>;
 }
-export function NpbTeam({ services, hub = false, favorites = [] }: { services: Services; hub?: boolean; favorites?: Favorite[] }) {
+export function NpbTeam({ services, hub = false, favorites = [], toggle, saving = false }: { services: Services; hub?: boolean; favorites?: Favorite[]; toggle?: (target: Target) => void; saving?: boolean }) {
   const { teamId } = useParams();
   const [catalog, setCatalog] = useState<NpbCatalog | null>(null), [season, setSeason] = useState<NpbTeamSeason | null>(null), [error, setError] = useState(false);
   const [seasonState, setSeasonState] = useState<"loading" | "ready" | "error">("loading");
@@ -77,6 +78,7 @@ export function NpbTeam({ services, hub = false, favorites = [] }: { services: S
   const team = catalog.teams.find(t => t.teamId === teamId), stats = season?.teams.find(t => t.teamId === teamId);
   if (!team) return <DataState kind="no-data" title="球団が見つかりません" />;
   return <div className="screen"><Link className="back-link" to="/NPB/home">← ホーム</Link><header className="profile-header"><Monogram name={team.abbreviation} large /><div><p className="eyebrow">NPB · {team.division === "Central" ? "セ・リーグ" : "パ・リーグ"}</p><h1>{team.name}</h1></div></header>
+    {toggle && <div className="team-follow-action"><TeamFavorite league="NPB" teamId={team.teamId} name={team.name} favorites={favorites} toggle={toggle} saving={saving} /><span>球団をフォロー</span></div>}
     <section className="surface-card"><h2>{season ? `${season.season}シーズン` : "シーズン成績"}</h2>
       {seasonState === "loading" ? <LoadingSkeleton /> : seasonState === "error" ?
         <DataState kind="source-unavailable" title="シーズン成績を読み込めません" /> : season && stats ? <>
