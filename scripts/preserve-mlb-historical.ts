@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { mkdir, mkdtemp, readFile, unlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { parseHistoricalPublicArchive, validateHistoricalArchiveMembers, verifyHistoricalArchive } from "../src/data/mlb-public-archive";
+import { generateHistoricalTeamHubs } from "./generate-historical-team-hubs";
 
 const base = "https://tomoya41.github.io/baseball-notes/data/mlb/";
 const target = process.argv[2] ?? "dist/data/mlb";
@@ -42,4 +43,5 @@ else {
   await writeFile(join(target, "historical-payload.sha256"), `${expected}\n`);
 }
 await unlink(archivePath);
+await generateHistoricalTeamHubs(join(target, "historical"));
 console.log(JSON.stringify({ archiveBytes: archive.length, sha256: expected, files: members.length, releaseAsset: Boolean(pointer) }));

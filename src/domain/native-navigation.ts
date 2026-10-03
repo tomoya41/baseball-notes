@@ -7,9 +7,9 @@ export function canonicalDeepLink(input: string): string | null {
     const route = uri.protocol === "baseballnotes:" ? `/${uri.hostname}${uri.pathname}` :
       uri.hash.startsWith("#/") ? uri.hash.slice(1) : uri.pathname.replace(/^\/baseball-notes/, "");
     const [leagueRaw, resource, encoded, child, ...extra] = route.split("?")[0]!.replace(/^\//, "").split("/");
-    if (extra.length || (child && !["analysis", "game-log", "stats", "more"].includes(child))) return null;
+    if (extra.length || (child && !["analysis", "game-log", "stats", "more", "trends"].includes(child))) return null;
     const league = leagueRaw?.toUpperCase();
-    const kind = resource === "players" ? "player" : resource === "games" ? "game" : undefined;
+    const kind = resource === "players" ? "player" : resource === "games" ? "game" : resource === "teams" ? "team" : undefined;
     const parsed = canonicalEntityRefSchema.safeParse({ league, kind, id: decodeURIComponent(encoded ?? "") });
     if (!parsed.success || (child && kind !== "player")) return null;
     const sourceParams = new URLSearchParams(route.split("?")[1] ?? uri.search);
@@ -33,6 +33,7 @@ export function parentNativeRoute(path: string): string | null {
   if (segments[1] === "players" && segments.length > 3) return `/${league}/players/${segments[2]}${suffix}`;
   if (segments[1] === "players") return `/${league}/search${suffix}`;
   if (segments[1] === "games") return `/${league}/schedule${suffix}`;
+  if (segments[1] === "teams" && segments.length > 2) return league === "MLB" ? `/MLB/teams${suffix}` : "/NPB/home";
   if (segments[1] === "postseason" && segments.length > 2) return `/${league}/postseason${source.get("season")?.match(/^20\d{2}$/) ? `?season=${source.get("season")}` : ""}`;
   if (segments[1] !== "home") return `/${league}/home`;
   return null;

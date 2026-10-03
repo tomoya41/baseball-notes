@@ -9,7 +9,7 @@ export async function finalizePostseasonCapabilities(root: string) {
   try { present = (await stat(subtree)).isDirectory(); }
   catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; }
   // A partial/corrupt existing subtree aborts publication rather than declaring availability.
-  const audit = present ? await auditHistoricalPostseason(historical, historical) : null;
+  const audit = present ? await auditHistoricalPostseason(historical, historical, { requireDerivedProducts: true }) : null;
   const capabilities = capabilitiesForVerifiedPostseason(audit?.hubs ?? []);
   await mkdir(join(root, "data/postseason"), { recursive: true });
   await writeFile(join(root, "data/postseason/capabilities.json"), JSON.stringify(capabilities));

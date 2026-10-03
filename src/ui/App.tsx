@@ -17,6 +17,8 @@ import { NpbSavedPlayers } from "./npb-my";
 import { ExploreScreen, FutureFeatureScreen } from "./future-surfaces";
 import { NpbMilestonesScreen } from "./npb-milestones";
 import { PostseasonUnavailable } from "./postseason";
+import { NpbPlayerCompare } from "./player-compare";
+import { NpbTeams } from "./team-hub";
 type FavoriteTarget = Pick<Favorite, "kind" | "entityId" | "league">;
 const MlbLeagueView = lazy(() => import("./mlb-foundation").then(module => ({ default: module.MlbLeagueView })));
 function NpbRoutes({ services, favorites, toggle, saving }: { services: Services; favorites: Favorite[]; toggle: (target: FavoriteTarget) => void; saving: boolean }) {
@@ -32,7 +34,9 @@ function NpbRoutes({ services, favorites, toggle, saving }: { services: Services
     <Route path="search" element={<NpbPlayerSearch repository={services.directory} favorites={favorites} toggle={toggle} saving={saving} />} />
     <Route path="analysis" element={<Navigate to="/NPB/search" replace />} />
     <Route path="players/:playerId/:section?" element={<NpbPlayer key={location.pathname.split("/")[3]} services={services} favorites={favorites} toggle={toggle} saving={saving} />} />
-    <Route path="teams/:teamId" element={<NpbTeam services={services} />} />
+    <Route path="teams/:teamId" element={<NpbTeam services={services} hub favorites={favorites} />} />
+    <Route path="teams" element={<NpbTeams services={services} />} />
+    <Route path="compare" element={<NpbPlayerCompare services={services} />} />
     <Route path="records" element={<NpbRecordsScreen repository={services.gameSurface} />} />
     <Route path="ranking" element={<Navigate to="/NPB/records" replace />} />
     <Route path="my" element={<div className="screen"><NpbSavedPlayers repository={services.directory} favorites={favorites} toggle={toggle} saving={saving} /></div>} />
@@ -50,7 +54,7 @@ export function App({ services }: { services: Services }) {
   useEffect(() => { window.scrollTo(0, 0); }, [location.pathname]);
   const league: League = location.pathname.split("/")[1] === "MLB" ? "MLB" : "NPB";
   const section = location.pathname.split("/")[2] ?? "home";
-  const currentNav = ["games", "schedule", "postseason"].includes(section) ? "schedule" : ["ranking", "milestones"].includes(section) ? "records" : ["players", "teams", "analysis"].includes(section) ? "search" : section === "favorites" ? "my" : section;
+  const currentNav = ["games", "schedule", "postseason"].includes(section) ? "schedule" : ["ranking", "milestones"].includes(section) ? "records" : ["players", "teams", "analysis", "compare"].includes(section) ? "search" : section === "favorites" ? "my" : section;
   const [favorites, setFavorites] = useState<Favorite[]>([]);
   const [favoritesReady, setFavoritesReady] = useState(false);
   const [refreshVersion, setRefreshVersion] = useState(0);

@@ -25,6 +25,7 @@ export function NpbPlayerSearchView({ directory, state, query, onQueryChange, te
   const visibleLimit = expandedKey === filterKey ? limit : 80;
   return <div className="screen npb-player-search">
     <PageHeading eyebrow="NPB" title="選手" />
+    <Link className="text-link" to="/NPB/compare">選手比較 →</Link>
     {state === "loading" && <LoadingSkeleton />}
     {state === "error" && <DataState kind="source-unavailable" title="選手一覧を取得できませんでした" />}
     {state === "ready" && directory && <>
@@ -58,7 +59,7 @@ export function NpbPlayerSearchView({ directory, state, query, onQueryChange, te
                 ` · ${[player.battingAvailable && "打撃", player.pitchingAvailable && "投球"].filter(Boolean).join("・")}データあり` :
                 " · 最近の成績なし"}</small>
           </span><ChevronRight className="row-chevron" size={19} aria-hidden="true" />
-        </Link>{toggle&&<FavoriteButton active={favorites.some(f=>f.league==="NPB"&&f.kind==="player"&&f.entityId===player.playerId)}
+        </Link><Link className="compare-add" aria-label={`${player.displayName}を比較に追加`} to={`/NPB/compare?players=${encodeURIComponent(player.playerId)}&role=${player.pitchingAvailable && !player.battingAvailable ? "pitching" : "batting"}`}>比較</Link>{toggle&&<FavoriteButton active={favorites.some(f=>f.league==="NPB"&&f.kind==="player"&&f.entityId===player.playerId)}
           saving={saving} label={player.displayName} onClick={()=>toggle({kind:"player",league:"NPB",entityId:player.playerId})}/>}</div>)}</div> : <DataState kind="no-data" title="該当する選手が見つかりません" />}
       {players.length > visibleLimit && <button className="button button--secondary" onClick={() => { setExpandedKey(filterKey); setLimit(visibleLimit + 80); }}>さらに80人を表示</button>}
       <p className="npb-directory-note">保存済み選手情報から表示しています。守備位置が未登録の選手は表示を省略します。</p>

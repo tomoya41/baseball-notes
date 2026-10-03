@@ -27,6 +27,7 @@ export function japaneseHistoricalPayload<T>(path: string, payload: T): T {
     teams: (value.teams as { id: string; name: string }[]).map(row => ({ ...row, name: japaneseMlbTeamName(row.id, row.name) })),
   } as T;
   if (path === "players/index.json") return { ...value, players: (value.players as Named[]).map(player) } as T;
+  if (path.startsWith("teams/")) return { ...value, players: (value.players as Named[]).map(player) } as T;
   if (path.startsWith("players/")) return { ...value, player: player(value.player as Named) } as T;
   if (path.startsWith("games/")) {
     const game = value.game as { batting: Named[]; pitching: Named[] };

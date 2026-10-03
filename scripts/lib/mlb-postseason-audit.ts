@@ -4,13 +4,15 @@ import { join, relative } from "node:path";
 import { gunzipSync } from "node:zlib";
 import { validStaticPayload } from "../../src/domain/mlb-historical-public";
 import { postseasonHubSchema } from "../../src/domain/competition";
+import { buildHistoricalTeamHub } from "../../src/data/mlb-team-product";
+import type { HistoricalGame } from "../../src/data/mlb-historical";
 
-type Player = { id: string; seasons: number[] };
+type Player = { id: string; name: string; seasons: number[] };
 type Game = { id: string; season: number; date: string; homeTeamId: string; awayTeamId: string; homeRuns: number; awayRuns: number; number: number; batting: { playerId: string }[]; pitching: { playerId: string }[] };
 type DatedFact = { playerId: string; gameId: string; season: number; date: string };
 const seasons = [2020, 2021, 2022, 2023, 2024, 2025];
 
-export async function auditHistoricalPostseason(root: string, regular: string) {
+export async function auditHistoricalPostseason(root: string, regular: string, options: { requireDerivedProducts?: boolean } = {}) {
   const target = join(root, "postseason"), files: string[] = [];
   async function walk(directory: string) {
     for (const entry of await readdir(directory, { withFileTypes: true })) {
@@ -35,7 +37,7 @@ export async function auditHistoricalPostseason(root: string, regular: string) {
     // The public runtime schema was checked above before any cross-file access.
     return payloads.get(path) as T;
   }
-  const manifest = requirePayload<{ seasons: { season: number; firstDate: string; lastDate: string; games: number; playerCount: number; coverage: string }[]; features: { directBvp: string; situationalAnalysis?: string } }>("manifest.json");
+  const manifest = requirePayload<{ seasons: { season: number; firstDate: string; lastDate: string; games: number; playerCount: number; coverage: "complete" | "partial" | "unavailable" }[]; teams: { id: string }[]; features: { directBvp: string; situationalAnalysis?: string } }>("manifest.json");
   if (manifest.seasons.length !== seasons.length || seasons.some(year => manifest.seasons.filter(s => s.season === year).length !== 1)) throw new Error("Incomplete/duplicate manifest seasons");
   const postPlayers = requirePayload<{ players: Player[] }>("players/index.json").players;
   const postIds = new Set(postPlayers.map(p => p.id));
@@ -96,6 +98,23 @@ export async function auditHistoricalPostseason(root: string, regular: string) {
     }
   }
   if (profileBatting !== batting || profilePitching !== pitching) throw new Error("Profile/detail Fact count mismatch");
+  // Legacy source archives can omit products before generation. The final publication
+  // guard requires them even when the whole family is absent.
+  if (options.requireDerivedProducts || [...payloads.keys()].some(path => path.startsWith("teams/") || path.startsWith("chronology/"))) {
+    const canonicalGames = [...games.values()] as HistoricalGame[];
+    const names = new Map(postPlayers.map(p => [p.id, p.name]));
+    for (const info of manifest.seasons) {
+      const chronological = requirePayload<{ games: { gameId: string; date: string; number: number }[] }>(`chronology/${info.season}.json`).games;
+      const actualGames = canonicalGames.filter(g => g.season === info.season);
+      if (chronological.length !== actualGames.length || chronological.some(r => { const g = games.get(r.gameId); return !g || g.season !== info.season || r.date !== g.date || r.number !== g.number; })) throw new Error("Derived chronology/detail mismatch");
+      for (const team of manifest.teams) {
+        const path = `teams/${info.season}/${team.id.replaceAll(":", "_")}.json`;
+        const actual = requirePayload(path);
+        const derived = buildHistoricalTeamHub(canonicalGames, names, { teamId: team.id, season: info.season, competitionType: "postseason", coverage: info.coverage, effectiveDate: info.lastDate });
+        if (JSON.stringify(actual) !== JSON.stringify(derived)) throw new Error(`Derived Team/detail mismatch: ${path}`);
+      }
+    }
+  }
   if (expected.size !== payloads.size || [...payloads.keys()].some(path => !expected.has(path))) throw new Error("Unadvertised/stale postseason payload");
   const expectedRegular = JSON.parse(gunzipSync(await readFile(join(regular, "players/index.json.gz"))).toString()).players as { id: string }[];
   const regularIds = new Set(expectedRegular.map(p => p.id)), sha256 = createHash("sha256");

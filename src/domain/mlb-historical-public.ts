@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { postseasonHubSchema } from "./competition";
+import { historicalTeamHubSchema } from "./team-hub";
+import { historicalChronologySchema } from "./game-chronology";
 
 export const historicalCanonicalGameId = z.string().regex(/^mlb:game:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
 export const historicalCanonicalPlayerId = z.string().regex(/^mlb:player:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
@@ -53,6 +55,14 @@ export function validStaticPayload(path: string, value: unknown, expectedScope: 
   }
   if (expectedScope === "regular" && value && typeof value === "object" &&
     ((value as { competitionType?: string }).competitionType === "postseason" || (value as { game?: { competitionType?: string } }).game?.competitionType === "postseason")) return false;
+  if (path.startsWith("teams/")) {
+    const parsed = historicalTeamHubSchema.safeParse(value);
+    return parsed.success && parsed.data.competitionType === expectedScope && path === `teams/${parsed.data.season}/${parsed.data.teamId.replaceAll(":", "_")}.json`;
+  }
+  if (path.startsWith("chronology/")) {
+    const parsed = historicalChronologySchema.safeParse(value);
+    return parsed.success && parsed.data.competitionType === expectedScope && path === `chronology/${parsed.data.season}.json`;
+  }
   if (path === "advanced/capabilities.json") return base.extend({ directBvp: z.enum(["ready", "not_ready"]),
     situations: z.enum(["ready", "not_ready"]), scope: z.string(), rawPaPublic: z.literal(false),
     unknownContexts: z.array(z.object({ season, pa: count })), timesThroughOrder: z.literal("evaluate"),
