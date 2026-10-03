@@ -42,6 +42,17 @@ const pitcher: HistoricalPitcher = { playerId: player, teamId: team, role: "star
 const game: HistoricalGame = { id: `mlb:game:${uuid(4)}`, season: 2025, date: "2025-09-01", homeTeamId: team, awayTeamId: other, homeRuns: 1, awayRuns: 0, innings: 9, number: 0, batting: [batter], pitching: [pitcher], validationIssues: [] };
 const input = { teamId: team, season: 2025, competitionType: "regular" as const, coverage: "complete" as const, effectiveDate: "2025-09-28" };
 describe("historical team projection", () => {
+  it("keeps different players' batting and independent pitching decisions separate", () => {
+    const second = `mlb:player:${uuid(7)}`;
+    const multiple = { ...game, batting: [batter, { ...batter, playerId: second, hits: 1, homeRuns: 0 }], pitching: [pitcher, { ...pitcher, playerId: second, role: "reliever" as const, outsRecorded: 3, so: 2, win: false, save: true }] };
+    const hub = buildHistoricalTeamHub([multiple], new Map(), input);
+    const first = hub.players.find(r => r.playerId === player)!, next = hub.players.find(r => r.playerId === second)!;
+    expect(hub.batting.H!.value).toBe(3);
+    expect(first.batting!.H!.value).toBe(2); expect(next.batting!.H!.value).toBe(1);
+    expect(first.pitching!.SO!.value).toBe(10); expect(next.pitching!.SO!.value).toBe(2);
+    expect(first.pitching!.W!.value).toBe(1); expect(next.pitching!.W!.value).toBe(0);
+    expect(first.pitching!.SV!.value).toBe(0); expect(next.pitching!.SV!.value).toBe(1);
+  });
   it("separates a traded player's actual team Facts", () => { const trade = { ...game, id: `mlb:game:${uuid(5)}`, batting: [{ ...batter, teamId: other, hits: 3 }], pitching: [] }; const hub = buildHistoricalTeamHub([game, trade], new Map([[player, "選手"]]), input); expect(hub.players[0]!.batting!.H!.value).toBe(2); expect(hub.batting.H!.value).toBe(2); });
   it("separates regular and postseason while preserving source Games", () => { const post = { ...game, id: `mlb:game:${uuid(6)}`, competitionType: "postseason" as const }; const original = JSON.stringify([game, post]); const regular = buildHistoricalTeamHub([game, post], new Map(), input); const postseason = buildHistoricalTeamHub([game, post], new Map(), { ...input, competitionType: "postseason" }); expect(regular.G).toBe(1); expect(postseason.G).toBe(1); expect(JSON.stringify([game, post])).toBe(original); });
   it("handles empty scope and nullable pitchCount without zeros", () => { const hub = buildHistoricalTeamHub([game], new Map(), input); expect(hub.pitching.pitchCount!.value).toBeNull(); expect(buildHistoricalTeamHub([], new Map(), input).batting.H!.value).toBeNull(); });

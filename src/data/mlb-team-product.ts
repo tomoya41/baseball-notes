@@ -22,6 +22,9 @@ export function buildHistoricalTeamHub(games: readonly HistoricalGame[], names: 
     batting: battingAggregate(input.teamId, bats.map(r => ({ ...r, playerId: input.teamId })), from, to).metrics,
     pitching: pitchingAggregate(input.teamId, pitches.map(r => ({ ...r, playerId: input.teamId })), from, to).metrics,
     games: [...selected].sort((a, b) => b.date.localeCompare(a.date) || b.number - a.number || a.id.localeCompare(b.id)).slice(0, 12).map(g => ({ gameId: g.id, date: g.date, number: g.number, homeTeamId: g.homeTeamId, awayTeamId: g.awayTeamId, homeRuns: g.homeRuns, awayRuns: g.awayRuns, complete: g.validationIssues.length === 0 })),
-    players: ids.map(id => ({ playerId: id, name: names.get(id) ?? "名称未確認", batting: bats.some(r => r.playerId === id) ? battingAggregate(id, bats, from, to).metrics : null, pitching: pitches.some(r => r.playerId === id) ? pitchingAggregate(id, pitches, from, to).metrics : null })),
+    players: ids.map(id => {
+      const playerBats = bats.filter(r => r.playerId === id), playerPitches = pitches.filter(r => r.playerId === id);
+      return { playerId: id, name: names.get(id) ?? "名称未確認", batting: playerBats.length ? battingAggregate(id, playerBats, from, to).metrics : null, pitching: playerPitches.length ? pitchingAggregate(id, playerPitches, from, to).metrics : null };
+    }),
   });
 }
