@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { z } from "zod";
 import { Link, useSearchParams } from "react-router-dom";
 import type { Services } from "../app/services";
 import type { NpbPlayerDirectory } from "../domain/npb-player-directory";
@@ -27,24 +28,26 @@ function DiscoveryList({ league, teams, scope, games, series, message }: { leagu
 }
 export function NpbDiscovery({ services }: { services: Services }) {
   const [params, setParams] = useSearchParams(), kind = params.get("kind");
+  const supported = kind !== "series" && params.get("competition") !== "postseason";
   const [directory, setDirectory] = useState<NpbPlayerDirectory | null>(null), [manifest, setManifest] = useState<GameManifest | null>(null), [failedKind, setFailedKind] = useState<string | null>(null);
   const [dates, setDates] = useState<{ date: string; value: GameDateIndex | null; error: boolean } | null>(null);
   const date = params.get("date") ?? manifest?.effectiveDate ?? "";
-  const validDate = !!manifest && date >= manifest.from && date <= manifest.to && /^\d{4}-\d{2}-\d{2}$/.test(date);
+  const validDate = !!manifest && date >= manifest.from && date <= manifest.to && z.iso.date().safeParse(date).success;
   useEffect(() => {
+    if (!supported) return;
     let active = true;
     if (kind === "team") void services.directory.findLatestNpb().then(value => { if (active) { setDirectory(value); setFailedKind(null); } }).catch(() => { if (active) setFailedKind(kind); });
     if (kind === "game") void services.gameSurface.manifest().then(value => { if (active) { setManifest(value); setFailedKind(null); } }).catch(() => { if (active) setFailedKind(kind); });
     return () => { active = false; };
-  }, [services, kind]);
-  useEffect(() => { if (kind !== "game" || !validDate) return; let active = true; void services.gameSurface.date(date).then(value => { if (active) setDates({ date, value, error: false }); }).catch(() => { if (active) setDates({ date, value: null, error: true }); }); return () => { active = false; }; }, [kind, validDate, date, services]);
-  if (kind === "series" || params.get("competition") === "postseason") return <div className="screen"><PageHeading eyebrow="NPB" title="探す" /><DiscoveryNavigation league="NPB" /><DataState kind="unsupported" title="NPB PostseasonはSource rights pendingです" action="利用状況" to="/NPB/postseason" /></div>;
+  }, [services, kind, supported]);
+  useEffect(() => { if (!supported || kind !== "game" || !validDate) return; let active = true; void services.gameSurface.date(date).then(value => { if (active) setDates({ date, value, error: false }); }).catch(() => { if (active) setDates({ date, value: null, error: true }); }); return () => { active = false; }; }, [kind, validDate, date, services, supported]);
+  if (!supported) return <div className="screen"><PageHeading eyebrow="NPB" title="探す" /><DiscoveryNavigation league="NPB" /><DataState kind="unsupported" title="NPB PostseasonはSource rights pendingです" action="利用状況" to="/NPB/postseason" /></div>;
   return <div className="screen"><PageHeading eyebrow="NPB" title="探す" /><DiscoveryNavigation league="NPB" />{failedKind === kind ? <DataState kind="source-unavailable" title="検索用データを取得できません" /> : (kind === "team" ? !directory : !manifest) ? <LoadingSkeleton /> : <>{kind === "game" && manifest && <label>保存済み試合日<input type="date" value={date} min={manifest.from} max={manifest.to} onChange={e => setParams(previous => { const next = new URLSearchParams(previous); next.set("date", e.target.value); return next; })} /></label>}{kind === "game" && (!validDate ? <DataState kind="unsupported" title="指定日は保存済み範囲外です" /> : dates?.date !== date ? <LoadingSkeleton /> : dates.error ? <DataState kind="source-unavailable" title="指定日の試合情報を取得できません" /> : dates.value?.coverage === "no_games" ? <p>確認済み · 試合なし</p> : dates.value?.coverage !== "complete" && <p className="inline-note">この日のデータは一部確認中です。</p>)}{kind !== "game" || (validDate && dates?.date === date && dates.value) ? <DiscoveryList league="NPB" scope="" teams={directory?.teams.map(t => ({ id: t.id, name: t.name })) ?? []} games={dates?.value?.games.map(g => ({ id: g.gameId, home: g.home.name, away: g.away.name, homeScore: g.home.score, awayScore: g.away.score, state: g.status }))} /> : null}</>}</div>;
 }
 export function MlbDiscovery({ manifest }: { manifest: ExplorerManifest }) {
   const [params, setParams] = useSearchParams(), kind = params.get("kind"), competition = useHistoricalCompetition();
   const season = Number(params.get("season") ?? manifest.seasons.at(-1)!.season), descriptor = manifest.seasons.find(s => s.season === season), date = params.get("date") ?? descriptor?.lastDate ?? "";
-  const validDate = !!descriptor && /^\d{4}-\d{2}-\d{2}$/.test(date) && date >= descriptor.firstDate && date <= descriptor.lastDate;
+  const validDate = !!descriptor && z.iso.date().safeParse(date).success && date >= descriptor.firstDate && date <= descriptor.lastDate;
   const games = useHistoricalStatic<{ date: string; season: number; games: { id: string; homeTeamId: string; awayTeamId: string; homeRuns: number; awayRuns: number; status: string }[] }>(kind === "game" && validDate ? `schedule/${season}/${date}.json` : null);
   const series = useHistoricalStatic<PostseasonHub>(kind === "series" && descriptor ? `postseason/hub/${season}.json` : null);
   const scope = `?season=${season}${competition === "postseason" ? "&competition=postseason" : ""}`;

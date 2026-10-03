@@ -176,6 +176,12 @@ describe("NPB saved projections and Recent", () => {
   });
 });
 describe("discovery and glossary", () => {
+  it("does not download Directory or game data for unsupported NPB Postseason discovery", async () => {
+    const { deps } = seedNpb(), findLatestNpb = vi.fn(deps.directory.findLatestNpb), manifest = vi.fn(), date = vi.fn();
+    await mount(<NpbDiscovery services={{ ...deps, directory: { findLatestNpb } as unknown as typeof services.directory, gameSurface: { manifest, date } as unknown as typeof services.gameSurface }} />, "/NPB/search?kind=game&competition=postseason");
+    expect(container.textContent).toContain("Source rights pending");
+    expect(findLatestNpb).not.toHaveBeenCalled(); expect(manifest).not.toHaveBeenCalled(); expect(date).not.toHaveBeenCalled();
+  });
   it("keeps team discovery independent of an unavailable game manifest", async () => {
     const { deps } = seedNpb();
     const manifest = vi.fn(async () => { throw Error("Game manifest unavailable"); });
@@ -201,6 +207,11 @@ describe("discovery and glossary", () => {
   it("refuses historical game data from another date", async () => {
     staticValues.set("schedule/2025/2025-09-28.json", { season: 2025, date: "2024-09-28", games: [] });
     await mount(<MlbDiscovery manifest={manifest} />, "/MLB/search?kind=game&season=2025"); expect(container.textContent).toContain("日付・シーズンが一致しません");
+  });
+  it("rejects nonexistent calendar dates instead of confirming a phantom off-day", async () => {
+    await mount(<MlbDiscovery manifest={manifest} />, "/MLB/search?kind=game&season=2025&date=2025-06-31");
+    expect(container.textContent).toContain("指定日は収録範囲外です");
+    expect(container.textContent).not.toContain("確認済み · 試合なし");
   });
   it("distinguishes an absent off-day file in complete Historical coverage from unavailable data", async () => {
     await mount(<MlbDiscovery manifest={manifest} />, "/MLB/search?kind=game&season=2025&date=2025-09-01");
