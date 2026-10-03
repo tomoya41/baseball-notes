@@ -6,7 +6,8 @@ import { battingAggregate, pitchingAggregate } from "../domain/mlb-historical-ag
 import { shiftGameDate } from "../domain/npb-game-index";
 import { DataState, LoadingSkeleton, SectionHeader } from "./components";
 import { ScoreboardRow } from "./design-system";
-import { useHistoricalDirectory, useHistoricalStatic } from "./use-mlb-historical";
+import { useHistoricalStatic } from "./use-mlb-historical";
+import type { useHistoricalDirectory } from "./use-mlb-historical";
 import { TeamFavorite, type FavoriteActions } from "./team-favorite";
 import { hasHistoricalPostseason, usePostseasonAvailability } from "./postseason-availability";
 import type { HistoricalChronology } from "../domain/game-chronology";
@@ -38,8 +39,8 @@ function HistoricalFavoriteRecent({ id, name, year, lastDate, chronology, comple
     </>}
   </article>;
 }
-export function MlbPersonalDashboard({ manifest, season, compact = false, ...actions }: FavoriteActions & { manifest: HistoricalProductManifest; season: number; compact?: boolean }) {
-  const directory = useHistoricalDirectory(), availability = usePostseasonAvailability();
+export function MlbPersonalDashboard({ manifest, season, directory, compact = false, ...actions }: FavoriteActions & { manifest: HistoricalProductManifest; season: number; directory: Pick<ReturnType<typeof useHistoricalDirectory>, "status" | "value">; compact?: boolean }) {
+  const availability = usePostseasonAvailability();
   const selected = manifest.seasons.find(s => s.season === season);
   const teams = actions.favorites.filter(f => f.league === "MLB" && f.kind === "team"), players = actions.favorites.filter(f => f.league === "MLB" && f.kind === "player");
   const chronology = useHistoricalStatic<HistoricalChronology>(selected && !compact && players.length ? `chronology/${season}.json` : null);
