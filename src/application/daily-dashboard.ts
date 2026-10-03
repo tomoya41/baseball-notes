@@ -7,10 +7,14 @@ export async function readDailyDashboard(reader: GameSurfaceReader, today: strin
   const manifest = await reader.manifest();
   const from = [shiftGameDate(today, -7), manifest.from].sort().at(-1)!;
   const to = [shiftGameDate(today, 7), manifest.to].sort()[0]!;
-  const pages: GameDateIndex[] = [], failedDates: string[] = [];
-  for (let date = from; date <= to; date = shiftGameDate(date, 1)) {
-    try { const p = await reader.date(date); if (p.date !== date) throw Error("Date mismatch"); pages.push(p); }
-    catch { failedDates.push(date); }
-  }
+  const dates: string[] = [], pages: GameDateIndex[] = [], failedDates: string[] = [];
+  for (let date = from; date <= to; date = shiftGameDate(date, 1)) dates.push(date);
+  // Independent static Pages requests, never collector/provider requests.
+  const results = await Promise.allSettled(dates.map(date => reader.date(date)));
+  results.forEach((result, index) => {
+    const date = dates[index]!;
+    if (result.status === "fulfilled" && result.value.date === date) pages.push(result.value);
+    else failedDates.push(date);
+  });
   return { manifest, pages, failedDates, ...dailyGames(today, pages, manifest.effectiveDate) };
 }

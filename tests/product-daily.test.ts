@@ -19,6 +19,19 @@ describe("current daily semantics", () => {
   it("only lists explicitly scheduled future games", () => { const rows = [row("a", "2026-10-04", "postponed"), row("b", "2026-10-04", "unknown"), row("c", "2026-10-05", "scheduled")]; expect(dailyGames("2026-10-03", [page("2026-10-04", rows)], "2026-10-02").next.map(r => r.gameId)).toEqual(["npb:game:c"]); });
   it("clips lookaround to saved bounds, limits requests, and preserves failed-date state", async () => { const date = vi.fn(async (d: string) => { if (d === "2026-10-04") throw Error("offline"); return page(d); }); const reader = { manifest: async () => ({ schemaVersion: 1 as const, league: "NPB" as const, from: "2026-03-27", to: "2026-10-07", effectiveDate: "2026-10-02", generatedAt: "2026-10-03T00:00:00Z" }), date, recent: vi.fn(), records: vi.fn() }; const result = await readDailyDashboard(reader, "2026-10-03"); expect(date).toHaveBeenCalledTimes(12); expect(result.failedDates).toEqual(["2026-10-04"]); expect(reader.recent).not.toHaveBeenCalled(); });
   it("rejects misdated indexes rather than treating them as current evidence", async () => { const result = await readDailyDashboard({ manifest: async () => ({ schemaVersion: 1, league: "NPB", from: "2026-10-03", to: "2026-10-03", effectiveDate: "2026-10-02", generatedAt: "2026-10-03T00:00:00Z" }), date: async () => page("2026-10-02"), recent: vi.fn(), records: vi.fn() }, "2026-10-03"); expect(result.todayState).toBe("unavailable"); expect(result.failedDates).toHaveLength(1); });
+  it("starts independent saved-date requests together and retains ordered failures", async () => {
+    const resolvers = new Map<string, (value: GameDateIndex) => void>();
+    const date = vi.fn((d: string) => new Promise<GameDateIndex>(resolve => resolvers.set(d, resolve)));
+    const pending = readDailyDashboard({ manifest: async () => ({ schemaVersion: 1, league: "NPB", from: "2026-10-02", to: "2026-10-04", effectiveDate: "2026-10-02", generatedAt: "2026-10-03T00:00:00Z" }), date, recent: vi.fn(), records: vi.fn() }, "2026-10-03");
+    await Promise.resolve();
+    expect(date.mock.calls.map(([d]) => d)).toEqual(["2026-10-02", "2026-10-03", "2026-10-04"]);
+    resolvers.get("2026-10-04")!(page("2026-10-04"));
+    resolvers.get("2026-10-03")!(page("wrong-date"));
+    resolvers.get("2026-10-02")!(page("2026-10-02"));
+    const result = await pending;
+    expect(result.pages.map(p => p.date)).toEqual(["2026-10-02", "2026-10-04"]);
+    expect(result.failedDates).toEqual(["2026-10-03"]);
+  });
   it("declares no MLB current Today/Preview capability", () => { expect(dailyProductCapabilities.MLB.today).toBe(false); expect(dailyProductCapabilities.MLB.preview).toBe(false); expect(dailyProductCapabilities.MLB.historicalOnly).toBe(true); });
 });
 describe("objective recap numbers", () => {

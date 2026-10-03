@@ -5,7 +5,7 @@ Home / Today, Game Preview / Recap and followed-team dashboards are derived UI v
 ## Time and capability boundaries
 
 - NPB Today: `Asia/Tokyo` calendar date, recomputed at minute intervals. Never use an old effectiveDate as Today. Empty unknown/partial/failed indexes are unconfirmed, not no_games. Show the saved results effectiveDate next to the current JST date.
-- At most 15 saved date indexes (Today ±7 days, clipped to manifest bounds). Future items must have explicit scheduled status; recent results must be final and no later than effectiveDate. Failed indexes remain visible as a partial-read warning. No next-game assertion beyond that saved range.
+- At most 15 saved date indexes (Today ±7 days, clipped to manifest bounds), fetched concurrently from static Pages with ordered failure tracking. Future items must have explicit scheduled status; recent results must be final and no later than effectiveDate. Failed indexes remain visible as a partial-read warning. No next-game assertion beyond that saved range.
 - MLB: selected historical season only. Never label historical final games as current, live or next. Unsupported years remain unavailable. No MLB Preview because the current data contract contains historical finals only.
 - Additive local product capability matrix in `product-daily.ts`; existing public capabilities and NPB HOT/Ranking/Infrastructure Gates remain untouched.
 
@@ -25,7 +25,7 @@ NPB scheduled Game Detail uses only prior final games within 14 days. Season sum
 
 Recap is rule-based for both leagues: batters with >=2 hits or >=1 HR; pitchers with >=18 outs and <=1 run, or >=3 outs and zero runs. Favorites appear regardless of that threshold. Null stays unknown, zero-out pitchers are not automatically classified as highlights. Show criteria inline on demand; no causal victory/loss prose and no HOT ranking claim.
 
-Postseason Recap preserves competition-scoped Player/Team navigation and shows Series wins only through the selected game's final prefix; eventual Series outcome is not leaked into earlier recaps. Rule advantage wins remain separate and never become artificial Game wins.
+Postseason Recap preserves competition-scoped Player/Team navigation and shows Series wins only through the selected game's final prefix; eventual Series outcome is not leaked into earlier recaps. Played wins and rule-advantage credits have separate labels in Recap. Rule advantage wins remain separate and never become artificial Game wins.
 
 ## Delivery / rollback
 

@@ -37,8 +37,15 @@ export function NpbGamePreview({ game, services, favorites }: { game: NpbGameDet
     const until = [shiftGameDate(game.date, -1), manifest.effectiveDate].sort()[0]!;
     const season = await services.product.teamSeason(Number(game.date.slice(0, 4))).catch(() => null);
     const from = [shiftGameDate(until, -13), manifest.from].sort().at(-1)!;
-    const games: GameIndexRow[] = []; let incomplete = false;
-    for (let d = from; d <= until && d <= manifest.to; d = shiftGameDate(d, 1)) { try { const page = await services.gameSurface.date(d); incomplete ||= !["complete", "no_games"].includes(page.coverage); games.push(...page.games.filter(g => g.status === "final" && g.date < game.date)); } catch { incomplete = true; } }
+    const dates: string[] = [], games: GameIndexRow[] = []; let incomplete = false;
+    for (let d = from; d <= until && d <= manifest.to; d = shiftGameDate(d, 1)) dates.push(d);
+    const results = await Promise.allSettled(dates.map(d => services.gameSurface.date(d)));
+    results.forEach((result, index) => {
+      if (result.status !== "fulfilled" || result.value.date !== dates[index]) { incomplete = true; return; }
+      const page = result.value;
+      incomplete ||= !["complete", "no_games"].includes(page.coverage);
+      games.push(...page.games.filter(g => g.status === "final" && g.date < game.date));
+    });
     return { id: game.gameId, season: season && season.effectiveDate <= until ? season : null, games, incomplete };
   })().then(v => { if (active) setValue(v); }).catch(() => { if (active) setError(game.gameId); }); return () => { active = false; }; }, [game.gameId, game.date, services]);
   const data = value?.id === game.gameId ? value : null;
@@ -59,5 +66,5 @@ export function PostseasonGameContext({ season, gameId, names }: { season: numbe
   const standing = series && seriesAfterGame(series, gameId);
   if (!series || !standing) return null;
   const clinched = standing.find(t => t.total >= series.winsRequired);
-  return <section className="home-section"><SectionHeader title="この試合終了時のSeries" action="Series詳細" to={`/MLB/postseason/series/${encodeURIComponent(series.id)}?season=${season}`} /><p>{standing.map(t => `${names(t.teamId)} ${t.total}勝`).join(" / ")}</p>{clinched && <p>{names(clinched.teamId)}がSeries決着</p>}</section>;
+  return <section className="home-section"><SectionHeader title="この試合終了時のSeries" action="Series詳細" to={`/MLB/postseason/series/${encodeURIComponent(series.id)}?season=${season}`} /><p>{standing.map(t => `${names(t.teamId)} ${t.played}勝${t.advantage ? ` + アドバンテージ ${t.advantage}勝（Series合計 ${t.total}勝）` : ""}`).join(" / ")}</p>{clinched && <p>{names(clinched.teamId)}がSeries決着</p>}</section>;
 }
