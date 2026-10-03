@@ -11,6 +11,12 @@ import type { PostseasonSeries } from "../src/domain/competition";
 const row = (id: string, date: string, status: GameIndexRow["status"] = "final", number = 1): GameIndexRow => ({ gameId: `npb:game:${id}`, date, status, gameNumber: number, scheduledTime: null, home: { id: "npb:team:tigers", name: "阪神", score: null }, away: { id: "npb:team:baystars", name: "DeNA", score: null }, completeness: null, battingAvailable: false, pitchingAvailable: false, detailAvailable: false });
 const page = (date: string, games: GameIndexRow[] = [], coverage: GameDateIndex["coverage"] = "unknown"): GameDateIndex => ({ schemaVersion: 1, league: "NPB", date, games, coverage, generatedAt: "2026-10-03T00:00:00Z" });
 describe("current daily semantics", () => {
+  it.each(["partial", "failed", "unknown", "complete", "no_games"] as const)("retains fulfilled %s coverage independently of HTTP failures", async coverage => {
+    const result = await readDailyDashboard({ manifest: async () => ({ schemaVersion: 1, league: "NPB", from: "2026-10-03", to: "2026-10-03", effectiveDate: "2026-10-02", generatedAt: "2026-10-03T00:00:00Z" }), date: async d => page(d, coverage === "no_games" ? [] : [row("one", d)], coverage), recent: vi.fn(), records: vi.fn() }, "2026-10-03");
+    expect(result.failedDates).toEqual([]);
+    expect(result.incompleteDates).toEqual(coverage === "complete" || coverage === "no_games" ? [] : ["2026-10-03"]);
+    expect(result.today).toHaveLength(coverage === "no_games" ? 0 : 1);
+  });
   it("uses Tokyo midnight independently of UTC and the device timezone", () => { expect(tokyoToday(new Date("2026-10-02T14:59:59Z"))).toBe("2026-10-02"); expect(tokyoToday(new Date("2026-10-02T15:00:00Z"))).toBe("2026-10-03"); });
   it.each(["unknown", "partial", "failed", "complete"] as const)("does not turn empty %s into confirmed no games", status => { expect(dailyGames("2026-10-03", [page("2026-10-03", [], status)], "2026-10-02").todayState).toBe("unconfirmed"); });
   it("distinguishes confirmed no games from a missing current page", () => { expect(dailyGames("2026-10-03", [page("2026-10-03", [], "no_games")], "2026-10-02").todayState).toBe("no_games"); expect(dailyGames("2026-10-03", [], "2026-10-02").todayState).toBe("unavailable"); });

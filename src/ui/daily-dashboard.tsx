@@ -31,6 +31,7 @@ export function NpbToday({ services, favorites, toggle, saving, personal = false
     {error === today ? <DataState kind="source-unavailable" title="試合情報を読み込めません" /> : !value ? <LoadingSkeleton /> : <>
       {games.length ? <GameLinks games={games} /> : <p className="inline-note">{personal && !teams.size ? "球団をお気に入りに追加すると、試合がここに表示されます。" : personal && value.todayState === "games" ? "保存済みの今日の試合にフォロー球団はありません。" : value.todayState === "no_games" ? "今日は試合なし" : "今日の予定は未確認です。"}</p>}
       {value.failedDates.length > 0 && <p className="inline-note">一部の日程を読み込めません。次戦・結果は読み込めた範囲です。</p>}
+      {value.incompleteDates.length > 0 && <p className="inline-note">一部の試合情報は未確定です。日程・結果は保存済みの範囲を表示しています。</p>}
       {next.length > 0 && <><h3>次の試合</h3><GameLinks games={next.slice(0, personal ? 3 : 2)} /></>}
       {recent.length > 0 && <><h3>最近終了した試合</h3><GameLinks games={recent.slice(0, personal ? 3 : 2)} /></>}
       <details className="daily-team-actions"><summary>この期間の球団をフォロー</summary><div className="row-list">{[...new Map([...games, ...next, ...recent].flatMap(g => [g.away, g.home]).map(t => [t.id, t])).values()].map(t => <div className="surface-favorite" key={t.id}><Link className="player-row" to={`/NPB/teams/${encodeURIComponent(t.id)}`}>{t.name}</Link><TeamFavorite league="NPB" teamId={t.id} name={t.name} favorites={favorites} toggle={toggle} saving={saving} /></div>)}</div></details>
@@ -41,8 +42,9 @@ export function NpbFavoriteRecent({ services, playerId, name, expectedDate }: { 
   const [response, setResponse] = useState<PlayerRecentResponse | null>(null), [error, setError] = useState(false), [loaded, setLoaded] = useState(false);
   const [log, setLog] = useState<PlayerGameLogResponse | null>(null);
   const [logError, setLogError] = useState(false);
+  const [logLoaded, setLogLoaded] = useState(false);
   useEffect(() => { let active = true; void services.recent.find(playerId, "7d").then(v => { if (active) { setResponse(v); setLoaded(true); } }).catch(() => { if (active) setError(true); }); return () => { active = false; }; }, [services, playerId]);
-  useEffect(() => { let active = true; void services.gameLog.find(playerId, 50).then(v => { if (active) setLog(v); }).catch(() => { if (active) setLogError(true); }); return () => { active = false; }; }, [services, playerId]);
+  useEffect(() => { let active = true; void services.gameLog.find(playerId, 50).then(v => { if (active) { setLog(v); setLogLoaded(true); } }).catch(() => { if (active) { setLogError(true); setLogLoaded(true); } }); return () => { active = false; }; }, [services, playerId]);
   const valid = response?.asOfDate === expectedDate;
   const batting = response?.batting, pitching = response?.pitching;
   const battingRows = log?.batting.filter(r => r.status === "final" && batting && r.date >= batting.from && r.date <= expectedDate) ?? [];
@@ -53,7 +55,7 @@ export function NpbFavoriteRecent({ services, playerId, name, expectedDate }: { 
   const streak = (count: number | null, atLeast: boolean) => count === null ? "未確定" : `${count}${atLeast ? "+" : ""}`;
   return <article className="daily-player"><Link className="player-row" to={`/NPB/players/${playerId}`}><strong>{name}</strong><span>→</span></Link>
     {error ? <p className="inline-note">最近の成績を読み込めません。</p> : !loaded ? <LoadingSkeleton /> : !response || !valid ? <p className="inline-note">公開日の一致した最近の成績は未確認です。</p> : !batting && !pitching ? <p className="inline-note">直近7日 · {response.asOfDate}までの出場成績はありません。</p> : <><p className="inline-note">直近7日 · {response.asOfDate}まで{batting && batting.coverage.status !== "complete" || pitching && pitching.coverage.status !== "complete" ? " · 保存済み分" : ""}</p><div className="daily-numbers">{batting && <span><MetricLabel metric="PA" /> {batting.metrics.PA?.value ?? "—"} · 安打 {batting.metrics.H?.value ?? "—"} · 本塁打 {batting.metrics.HR?.value ?? "—"}</span>}{pitching && <span>登板 {pitching.games} · 奪三振 {pitching.metrics.SO?.value ?? "—"} · 失点 {pitching.metrics.R?.value ?? "—"}</span>}</div></>}
-    {valid && (batting || pitching) && !log && <p className="inline-note" role="status">{logError ? "試合別成績を読み込めません。Recent集計のみ表示しています。" : "試合別成績を読み込み中です。"}</p>}
+    {valid && (batting || pitching) && !log && <p className="inline-note" role="status">{logError ? "試合別成績を読み込めません。Recent集計のみ表示しています。" : logLoaded ? "試合別成績は未収録です。Recent集計のみ表示しています。" : "試合別成績を読み込み中です。"}</p>}
     {valid && log && <><p className="inline-note daily-streak">{battingRows.length > 0 && `安打のある試合 ${streak(bats.hitting.count, bats.hitting.atLeast)} · 出塁 ${streak(bats.onBase.count, bats.onBase.atLeast)}`}{pitchingRows.length > 0 && ` 無失点登板 ${streak(pitches.scoreless.count, pitches.scoreless.atLeast)}`}</p><details><summary>連続数の範囲</summary><p>直近7日内の保存済み出場の末尾から数えます。出塁は安打＋四球＋死球。「+」は期間より前へ続く可能性。欠測・Coverage不完全時は未確定で、公式連続試合記録ではありません。</p></details></>}
     <div className="daily-links">{valid && last && <Link to={`/NPB/games/${encodeURIComponent(last.gameId)}`}>直近の保存試合 {last.date}</Link>}<Link to={`/NPB/players/${playerId}/trends`}>推移・連続記録</Link><Link to={`/NPB/players/${playerId}/analysis`}>分析</Link></div></article>;
 }

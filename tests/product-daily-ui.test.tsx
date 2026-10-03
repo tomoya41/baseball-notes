@@ -25,6 +25,31 @@ const render = async (child: ReactNode, initialEntries = ["/"]) => { await act(a
 function LocationProbe() { return <output data-testid="location">{useLocation().search}</output>; }
 const actions = { favorites: [], toggle: vi.fn(), saving: false };
 describe("daily product surfaces", () => {
+  it.each([true, false])("uses canonical chronology for the latest historical doubleheader (known: %s)", async known => {
+    const id = "mlb:player:one", teamId = "mlb:team:one";
+    const fact = { date: "2025-09-28", season: 2025, playerId: id, teamId, opponentTeamId: "mlb:team:two", home: true, pa: 4, ab: 3, hits: 1, homeRuns: 0, runs: 1, rbi: 0, doubles: 0, triples: 0, bb: 1, hbp: 0, sh: 0, sf: 0, so: 1, sb: 0, cs: 0, starter: true, battingOrder: 1 };
+    staticValues.set("players/mlb_player_one.json", { batting: [{ ...fact, gameId: "mlb:game:a-first" }, { ...fact, gameId: "mlb:game:z-second" }], pitching: [] });
+    staticValues.set("chronology/2025.json", { games: [{ gameId: "mlb:game:a-first", number: known ? 1 : null }, { gameId: "mlb:game:z-second", number: known ? 2 : null }] });
+    await render(<MlbPersonalDashboard directory={{ status: "ready", value: { players: [{ id, name: "選手", seasons: [2025], positions: [], teamIds: [teamId] }] } }} {...actions} favorites={[{ league: "MLB", kind: "player", entityId: id, addedAt: "2026-10-03T00:00:00Z" }]} season={2025} manifest={{ seasons: [{ season: 2025, firstDate: "2025-03-18", lastDate: "2025-09-28", coverage: "complete" }], teams: [] }} />);
+    const gameLinks = [...container.querySelectorAll("a")].filter(a => a.getAttribute("href")?.includes("/games/"));
+    if (known) expect(gameLinks.map(a => a.getAttribute("href"))).toEqual(["/MLB/games/mlb%3Agame%3Az-second?season=2025"]);
+    else { expect(gameLinks).toHaveLength(0); expect(container.textContent).toContain("最終出場日の試合順は未確認"); }
+    expect(container.textContent).toContain("出場 2");
+  });
+  it("settles a missing game log without remaining in loading state", async () => {
+    const recent = { asOfDate: manifest.effectiveDate, batting: null, pitching: { from: "2026-09-26", games: 1, factCount: 1, coverage: { status: "complete" }, metrics: {} } } as Awaited<ReturnType<typeof services.recent.find>>;
+    await render(<NpbFavoriteRecent services={{ ...services, recent: { find: async () => recent } as unknown as typeof services.recent, gameLog: { find: async () => null } as unknown as typeof services.gameLog }} playerId="one" name="投手" expectedDate={manifest.effectiveDate} />);
+    expect(container.textContent).toContain("試合別成績は未収録です。Recent集計のみ表示");
+    expect(container.textContent).not.toContain("試合別成績を読み込み中");
+    expect(container.textContent).toContain("登板 1");
+  });
+  it.each(["partial", "failed", "unknown"] as const)("warns on loaded %s dates while retaining their games", async coverage => {
+    const date = async (d: string): Promise<GameDateIndex> => ({ schemaVersion: 1, league: "NPB", date: d, generatedAt: manifest.generatedAt, coverage, games: d === game.date ? [{ ...row, date: d }] : [] });
+    await render(<NpbToday {...actions} services={{ ...services, gameSurface: { ...services.gameSurface, manifest: async () => manifest, date } as unknown as typeof services.gameSurface }} />);
+    expect(container.textContent).toContain("一部の試合情報は未確定");
+    expect(container.querySelectorAll(".scoreboard-row")).toHaveLength(1);
+    expect(container.textContent).not.toContain("日程を読み込めません");
+  });
   it.each([false, true])("does not label an absent batting role as partial (pitching present: %s)", async present => {
     const recent = { asOfDate: manifest.effectiveDate, batting: null, pitching: present ? { from: "2026-09-26", games: 1, factCount: 1, coverage: { status: "complete" }, metrics: {} } : null } as Awaited<ReturnType<typeof services.recent.find>>;
     await render(<NpbFavoriteRecent services={{ ...services, recent: { find: async () => recent } as unknown as typeof services.recent, gameLog: { find: async () => ({ batting: [], pitching: [] }) } as unknown as typeof services.gameLog }} playerId="one" name="投手" expectedDate={manifest.effectiveDate} />);
