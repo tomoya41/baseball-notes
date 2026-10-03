@@ -131,6 +131,7 @@ describe("historical identity and competition scope", () => {
     await mount(<MlbSeasonExplorer manifest={manifest} />, `/MLB/history?player=${id}&role=pitching&competition=postseason`, "postseason");
     expect(container.textContent).toContain("保存済みシーズン履歴"); expect(container.textContent).toContain("この出場形態の記録はありません");
     expect([...container.querySelectorAll("a")].map(a => a.getAttribute("href"))).toContain(`/MLB/players/${encodeURIComponent(id)}/stats?season=2020&competition=postseason`);
+    expect([...container.querySelectorAll("a")].map(a => a.getAttribute("href"))).toContain(`/MLB/compare?players=${encodeURIComponent(id)}&season=2025&role=pitching&competition=postseason`);
     expect(container.querySelector(".explorer-values dd")?.textContent).toBe("6.1");
   });
   it("rejects a profile belonging to another canonical identity", async () => {
@@ -164,6 +165,16 @@ describe("NPB saved projections and Recent", () => {
   });
 });
 describe("discovery and glossary", () => {
+  it("keeps team discovery independent of an unavailable game manifest", async () => {
+    const { deps } = seedNpb();
+    const manifest = vi.fn(async () => { throw Error("Game manifest unavailable"); });
+    const date = vi.fn();
+    await mount(<NpbDiscovery services={{ ...deps, gameSurface: { ...services.gameSurface, manifest, date } }} />, "/NPB/search?kind=team");
+    expect(container.textContent).toContain("阪神");
+    expect(container.textContent).not.toContain("検索用データを取得できません");
+    expect(manifest).not.toHaveBeenCalled(); expect(date).not.toHaveBeenCalled();
+    expect(container.querySelector(".player-row")?.getAttribute("href")).toBe("/NPB/teams/npb%3Ateam%3Atigers");
+  });
   it("provides four search destinations, favorites and scope-correct series links", async () => {
     await mount(<DiscoveryNavigation league="MLB" />, "/MLB/search?season=2020&q=保存");
     const link = [...container.querySelectorAll("a")].find(a => a.textContent === "Series")!;
