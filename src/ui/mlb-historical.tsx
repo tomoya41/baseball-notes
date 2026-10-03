@@ -377,7 +377,7 @@ function MlbHistoricalRecords({ manifest }: { manifest: Manifest }) {
     <Link to="/MLB/sources">データ提供元</Link></div>;
 }
 
-function MlbHistoricalMy({ manifest, favorites, toggle, saving }: {
+export function MlbHistoricalMy({ manifest, favorites, toggle, saving }: {
   manifest: Manifest; favorites: Favorite[]; toggle: (target: FavoriteTarget) => void; saving: boolean;
 }) {
   const [params, setParams] = useSearchParams();
@@ -386,7 +386,7 @@ function MlbHistoricalMy({ manifest, favorites, toggle, saving }: {
   const saved = favorites.filter(item => item.league === "MLB" && item.kind === "player");
   const byId = new Map(index.value?.players.map(player => [player.id, player]) ?? []);
   return <div className="screen"><PageHeading eyebrow="MLB / My" title="フォローダッシュボード" detail="この端末に保存しています" />
-    <label className="schedule-season">過去シーズン<select value={season} onChange={e => setParams({ season: e.target.value })}>{!manifest.seasons.some(s => s.season === season) && <option value={season}>未収録</option>}{manifest.seasons.map(s => <option key={s.season}>{s.season}</option>)}</select></label>
+    <label className="schedule-season">過去シーズン<select value={season} onChange={e => setParams(previous => { const next = new URLSearchParams(previous); next.set("season", e.target.value); return next; })}>{!manifest.seasons.some(s => s.season === season) && <option value={season}>未収録</option>}{manifest.seasons.map(s => <option key={s.season}>{s.season}</option>)}</select></label>
     <MlbPersonalDashboard directory={index} manifest={manifest} season={season} favorites={favorites} toggle={toggle} saving={saving} />
     <SectionHeader title="お気に入り選手" />
     <Link className="button" to="/NPB/my">NPBのお気に入りへ</Link>
