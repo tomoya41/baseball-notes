@@ -382,6 +382,7 @@ export function MlbHistoricalMy({ manifest, favorites, toggle, saving }: {
 }) {
   const [params, setParams] = useSearchParams();
   const season = Number(params.get("season") ?? manifest.seasons.at(-1)!.season);
+  const competition = useHistoricalCompetition();
   const index = useHistoricalDirectory();
   const saved = favorites.filter(item => item.league === "MLB" && item.kind === "player");
   const byId = new Map(index.value?.players.map(player => [player.id, player]) ?? []);
@@ -391,9 +392,9 @@ export function MlbHistoricalMy({ manifest, favorites, toggle, saving }: {
     <SectionHeader title="お気に入り選手" />
     <Link className="button" to="/NPB/my">NPBのお気に入りへ</Link>
     {index.status === "loading" ? <LoadingSkeleton /> : !saved.length ?
-      <DataState kind="no-data" title="MLBのお気に入りはまだありません" action="選手を探す" to="/MLB/search" /> :
+      <DataState kind="no-data" title="MLBのお気に入りはまだありません" action="選手を探す" to={`/MLB/search?season=${season}${competition === "postseason" ? "&competition=postseason" : ""}`} /> :
       <div className="row-list">{saved.map(item => <div className="mlb-player-row" key={item.entityId}>
-        {byId.get(item.entityId) ? <Link to={`/MLB/players/${encodeURIComponent(item.entityId)}?season=${season}${byId.get(item.entityId)?.postseasonOnly ? "&competition=postseason" : ""}`}>
+        {byId.get(item.entityId) ? <Link to={`/MLB/players/${encodeURIComponent(item.entityId)}?season=${season}${competition === "postseason" || byId.get(item.entityId)?.postseasonOnly ? "&competition=postseason" : ""}`}>
           <Monogram name={byId.get(item.entityId)!.name} /><span><strong>{byId.get(item.entityId)!.name}</strong><small>{historicalPositions(byId.get(item.entityId)!.positions)}</small></span></Link> :
           <span>選手情報を確認できません</span>}
         <FavoriteButton active saving={saving} label={byId.get(item.entityId)?.name ?? "登録済み選手"}
@@ -427,7 +428,7 @@ function MlbHistoricalDataRoutes({ favorites, toggle, saving }: HistoricalRouteP
     <DataState kind="unsupported" title="2026年の試合結果・選手成績は未対応" />
   </div>;
   const manifest = result.value!;
-  const competitionTabs = ["players", "search", "schedule", "records", "teams", "compare"].includes(location.pathname.split("/")[2] ?? "");
+  const competitionTabs = ["players", "search", "schedule", "records", "teams", "compare", "my"].includes(location.pathname.split("/")[2] ?? "");
   return <>{competitionTabs && <CompetitionTabs />}<Routes>
     <Route path="explore" element={<ExploreScreen league="MLB" />} />
     {(["milestones", "moves", "talent", "preseason", "watch", "matchup"] as const).map(feature => <Route key={feature} path={`${feature}/*`} element={<FutureFeatureScreen feature={feature} league="MLB" />} />)}

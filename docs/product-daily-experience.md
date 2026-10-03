@@ -6,7 +6,7 @@ Home / Today, Game Preview / Recap and followed-team dashboards are derived UI v
 
 - NPB Today: `Asia/Tokyo` calendar date, recomputed at minute intervals. Never use an old effectiveDate as Today. Empty unknown/partial/failed indexes are unconfirmed, not no_games. Show the saved results effectiveDate next to the current JST date.
 - At most 15 saved date indexes (Today ±7 days, clipped to manifest bounds), fetched concurrently from static Pages with ordered failure tracking. Future items must have explicit scheduled status; recent results must be final and no later than effectiveDate. Failed indexes remain visible as a partial-read warning. No next-game assertion beyond that saved range.
-- MLB: selected historical season only. Never label historical final games as current, live or next. Unsupported years remain unavailable. No MLB Preview because the current data contract contains historical finals only.
+- MLB: selected historical season only. Never label historical final games as current, live or next. Unsupported years remain unavailable. My accepts an explicit regular/postseason scope, and all selected-season links and controls retain it; default My remains regular. No MLB Preview because the current data contract contains historical finals only.
 - Additive local product capability matrix in `product-daily.ts`; existing public capabilities and NPB HOT/Ranking/Infrastructure Gates remain untouched.
 
 ## Favorites
