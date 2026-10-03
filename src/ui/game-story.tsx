@@ -36,8 +36,9 @@ export function NpbGamePreview({ game, services, favorites }: { game: NpbGameDet
     const manifest = await services.gameSurface.manifest();
     const until = [shiftGameDate(game.date, -1), manifest.effectiveDate].sort()[0]!;
     const season = await services.product.teamSeason(Number(game.date.slice(0, 4))).catch(() => null);
-    const from = [shiftGameDate(until, -13), manifest.from].sort().at(-1)!;
-    const dates: string[] = [], games: GameIndexRow[] = []; let incomplete = false;
+    const windowFrom = shiftGameDate(game.date, -14), windowTo = shiftGameDate(game.date, -1);
+    const from = [windowFrom, manifest.from].sort().at(-1)!;
+    const dates: string[] = [], games: GameIndexRow[] = []; let incomplete = until < windowTo || manifest.from > windowFrom || manifest.to < windowTo;
     for (let d = from; d <= until && d <= manifest.to; d = shiftGameDate(d, 1)) dates.push(d);
     const results = await Promise.allSettled(dates.map(d => services.gameSurface.date(d)));
     results.forEach((result, index) => {

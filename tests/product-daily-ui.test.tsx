@@ -25,6 +25,24 @@ const render = async (child: ReactNode, initialEntries = ["/"]) => { await act(a
 function LocationProbe() { return <output data-testid="location">{useLocation().search}</output>; }
 const actions = { favorites: [], toggle: vi.fn(), saving: false };
 describe("daily product surfaces", () => {
+  it("does not replace a scheduled game's recent window with older saved dates", async () => {
+    const date = vi.fn(async (d: string): Promise<GameDateIndex> => ({ schemaVersion: 1, league: "NPB", date: d, generatedAt: manifest.generatedAt, coverage: "complete", games: [{ ...row, date: d }] }));
+    await render(<NpbGamePreview game={{ ...game, date: "2026-10-10" }} favorites={[]} services={{ ...services, product: { ...services.product, teamSeason: async () => null } as unknown as typeof services.product, gameSurface: { ...services.gameSurface, manifest: async () => ({ ...manifest, from: "2026-03-27", effectiveDate: "2026-09-20" }), date } as unknown as typeof services.gameSurface }} />);
+    expect(date).not.toHaveBeenCalled();
+    expect(container.textContent).toContain("一部データ確認中");
+    expect(container.querySelectorAll(".scoreboard-row")).toHaveLength(0);
+    expect(container.textContent).not.toContain("この期間の直接対戦");
+  });
+  it.each(["2026-09-01", "2026-11-01"])("keeps the Today schedule action inside saved dates when today is %s", async today => {
+    vi.setSystemTime(new Date(`${today}T00:00:00Z`));
+    const date = vi.fn(async (d: string): Promise<GameDateIndex> => ({ schemaVersion: 1, league: "NPB", date: d, generatedAt: manifest.generatedAt, coverage: "unknown", games: [] }));
+    await render(<NpbToday {...actions} services={{ ...services, gameSurface: { ...services.gameSurface, manifest: async () => manifest, date } as unknown as typeof services.gameSurface }} />);
+    const action = [...container.querySelectorAll("a")].find(a => a.textContent === "日程・結果")!;
+    expect(action.getAttribute("href")).toBe(`/NPB/schedule?date=${today < manifest.from ? manifest.from : manifest.to}`);
+    expect(date).not.toHaveBeenCalled();
+    expect(container.textContent).toContain("今日の予定は未確認");
+    expect(container.textContent).not.toContain("今日は試合なし");
+  });
   it("sends canonical team keys and retains accessible add/remove labels", async () => { await render(<GameTeamLinks league="NPB" teams={[home, away]} {...actions} />); const button = container.querySelector<HTMLButtonElement>(`[aria-label="阪神をお気に入りに追加"]`)!; await act(async () => button.click()); expect(actions.toggle).toHaveBeenCalledWith({ league: "NPB", kind: "team", entityId: home.id }); expect(container.querySelector(`a[href='/NPB/teams/${encodeURIComponent(home.id)}']`)).not.toBeNull(); });
   it("includes a favorite with zero PA without inventing missing stats", async () => { const id = "00000000-0000-4000-8000-000000000001"; await render(<GameRecap league="NPB" batting={[{ playerId: id, name: "途中出場", teamId: home.id, pa: 0, hits: null, homeRuns: 0, rbi: null }]} pitching={[]} complete={false} favorites={[{ league: "NPB", kind: "player", entityId: id, addedAt: "2026-10-03T00:00:00Z" }]} />); expect(container.textContent).toContain("PA 0 · 安打 — · 本塁打 0 · 打点 —"); expect(container.textContent).toContain("一部データ確認中"); expect(container.querySelector("details")?.textContent).toContain("選出の根拠"); });
   it("keeps historical recap navigation in the selected competition", async () => { await render(<GameRecap league="MLB" batting={[{ playerId: "mlb:player:one", name: "選手", teamId: "mlb:team:one", hits: 2, homeRuns: 1, pa: 4, rbi: 2 }]} pitching={[]} complete scope="?season=2025&competition=postseason" />); expect(container.querySelector(".daily-recap-row")?.getAttribute("href")).toBe("/MLB/players/mlb%3Aplayer%3Aone?season=2025&competition=postseason"); });

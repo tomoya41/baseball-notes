@@ -26,7 +26,8 @@ export function NpbToday({ services, favorites, toggle, saving, personal = false
   const teams = new Set(favorites.filter(f => f.kind === "team" && f.league === "NPB").map(f => f.entityId));
   const filter = (games: NonNullable<typeof value>["today"]) => personal ? games.filter(g => teams.has(g.home.id) || teams.has(g.away.id)) : games;
   const games = value ? filter(value.today) : [], next = value ? filter(value.next) : [], recent = value ? filter(value.recent) : [];
-  return <section className="home-section today-board"><SectionHeader title={personal ? "フォロー球団の試合" : "今日の試合"} action="日程・結果" to={`/NPB/schedule?date=${today}`} /><p className="inline-note">{today} · 日本時間{value && ` · 結果更新 ${value.manifest.effectiveDate}`}</p>
+  const scheduleDate = value ? today < value.manifest.from ? value.manifest.from : today > value.manifest.to ? value.manifest.to : today : null;
+  return <section className="home-section today-board"><SectionHeader title={personal ? "フォロー球団の試合" : "今日の試合"} action="日程・結果" to={scheduleDate ? `/NPB/schedule?date=${scheduleDate}` : "/NPB/schedule"} /><p className="inline-note">{today} · 日本時間{value && ` · 結果更新 ${value.manifest.effectiveDate}`}</p>
     {error === today ? <DataState kind="source-unavailable" title="試合情報を読み込めません" /> : !value ? <LoadingSkeleton /> : <>
       {games.length ? <GameLinks games={games} /> : <p className="inline-note">{personal && !teams.size ? "球団をお気に入りに追加すると、試合がここに表示されます。" : personal && value.todayState === "games" ? "保存済みの今日の試合にフォロー球団はありません。" : value.todayState === "no_games" ? "今日は試合なし" : "今日の予定は未確認です。"}</p>}
       {value.failedDates.length > 0 && <p className="inline-note">一部の日程を読み込めません。次戦・結果は読み込めた範囲です。</p>}
