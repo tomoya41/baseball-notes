@@ -169,7 +169,7 @@ describe("discovery and glossary", () => {
     const { deps } = seedNpb();
     const manifest = vi.fn(async () => { throw Error("Game manifest unavailable"); });
     const date = vi.fn();
-    await mount(<NpbDiscovery services={{ ...deps, gameSurface: { ...services.gameSurface, manifest, date } }} />, "/NPB/search?kind=team");
+    await mount(<NpbDiscovery services={{ ...deps, gameSurface: { manifest, date } as unknown as typeof services.gameSurface }} />, "/NPB/search?kind=team");
     expect(container.textContent).toContain("阪神");
     expect(container.textContent).not.toContain("検索用データを取得できません");
     expect(manifest).not.toHaveBeenCalled(); expect(date).not.toHaveBeenCalled();
