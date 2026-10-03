@@ -1,6 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { House, Search, Trophy, UserRound, CalendarDays } from "lucide-react";
-import { Link, Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { Link, Navigate, Route, Routes, useLocation, useSearchParams } from "react-router-dom";
 import type { Services } from "../app/services";
 import type { Favorite, League } from "../domain/models";
 import { favoriteMatches, leagueSwitchPath } from "../domain/cross-league";
@@ -20,8 +20,18 @@ import { PostseasonUnavailable } from "./postseason";
 import { NpbPlayerCompare } from "./player-compare";
 import { NpbTeams } from "./team-hub";
 import { NpbPersonalDashboard } from "./daily-dashboard";
+import { NpbDataExplorer } from "./data-explorer";
+import { NpbSeasonExplorer } from "./season-explorer";
+import { NpbDiscovery } from "./discovery";
+import { StatGlossary } from "./stat-glossary";
 type FavoriteTarget = Pick<Favorite, "kind" | "entityId" | "league">;
 const MlbLeagueView = lazy(() => import("./mlb-foundation").then(module => ({ default: module.MlbLeagueView })));
+function NpbSearchEntry(props: Parameters<typeof NpbRoutes>[0]) {
+  const [params] = useSearchParams();
+  return ["team", "game", "series"].includes(params.get("kind") ?? "")
+    ? <NpbDiscovery services={props.services} />
+    : <NpbPlayerSearch repository={props.services.directory} favorites={props.favorites} toggle={props.toggle} saving={props.saving} />;
+}
 function NpbRoutes({ services, favorites, toggle, saving }: { services: Services; favorites: Favorite[]; toggle: (target: FavoriteTarget) => void; saving: boolean }) {
   const location = useLocation();
   return <Routes>
@@ -32,7 +42,10 @@ function NpbRoutes({ services, favorites, toggle, saving }: { services: Services
     {(["career", "advanced"] as const).map(feature => <Route key={feature} path={`players/:playerId/${feature}`} element={<FutureFeatureScreen feature={feature} league="NPB" />} />)}
     <Route path="home" element={<NpbHome services={services} favorites={favorites} toggle={toggle} saving={saving} />} />
     <Route path="schedule" element={<NpbScheduleScreen repository={services.gameSurface} favorites={favorites} toggle={toggle} saving={saving} />} />
-    <Route path="search" element={<NpbPlayerSearch repository={services.directory} favorites={favorites} toggle={toggle} saving={saving} />} />
+    <Route path="search" element={<NpbSearchEntry services={services} favorites={favorites} toggle={toggle} saving={saving} />} />
+    <Route path="data" element={<NpbDataExplorer services={services} />} />
+    <Route path="history" element={<NpbSeasonExplorer />} />
+    <Route path="glossary" element={<StatGlossary league="NPB" />} />
     <Route path="analysis" element={<Navigate to="/NPB/search" replace />} />
     <Route path="players/:playerId/:section?" element={<NpbPlayer key={location.pathname.split("/")[3]} services={services} favorites={favorites} toggle={toggle} saving={saving} />} />
     <Route path="teams/:teamId" element={<NpbTeam services={services} hub favorites={favorites} toggle={toggle} saving={saving} />} />
@@ -55,7 +68,7 @@ export function App({ services }: { services: Services }) {
   useEffect(() => { window.scrollTo(0, 0); }, [location.pathname]);
   const league: League = location.pathname.split("/")[1] === "MLB" ? "MLB" : "NPB";
   const section = location.pathname.split("/")[2] ?? "home";
-  const currentNav = ["games", "schedule", "postseason"].includes(section) ? "schedule" : ["ranking", "milestones"].includes(section) ? "records" : ["players", "teams", "analysis", "compare"].includes(section) ? "search" : section === "favorites" ? "my" : section;
+  const currentNav = ["games", "schedule", "postseason"].includes(section) ? "schedule" : ["ranking", "milestones"].includes(section) ? "records" : ["players", "teams", "analysis", "compare", "data", "history", "glossary"].includes(section) ? "search" : section === "favorites" ? "my" : section;
   const [favorites, setFavorites] = useState<Favorite[]>([]);
   const [favoritesReady, setFavoritesReady] = useState(false);
   const [refreshVersion, setRefreshVersion] = useState(0);

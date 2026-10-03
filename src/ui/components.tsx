@@ -79,6 +79,10 @@ export function MetricInfo({ definition }: { definition: MetricHelp }) {
     <p>{definition.description}</p>
     <p>{definition.interpretation}</p>
     {definition.caveat && <p className="muted">{definition.caveat}</p>}
+    {definition.formula && <p><strong>計算式</strong> {definition.formula}</p>}
+    {definition.data && <p><strong>利用データ</strong> {definition.data}</p>}
+    {definition.sample && <p className="muted">{definition.sample}</p>}
+    {definition.scope && <p className="muted">{definition.scope}</p>}
     <form method="dialog"><button className="button">閉じる</button></form>
   </dialog>;
   return <>
