@@ -24,6 +24,15 @@ describe("comparison workspace", () => {
     expect(container.querySelector('.compare-search')?.textContent).not.toContain("Postseason only");
     expect(container.querySelector('[value="mlb:player:00000000-0000-4000-8000-000000000002"]')).toBeNull();
   });
+  it("drops postseason-only query selections carried into Regular Season by a competition switch", async () => {
+    const postOnly = "mlb:player:00000000-0000-4000-8000-000000000002";
+    await act(async () => root.render(<MemoryRouter initialEntries={[`/MLB/compare?season=2025&condition=bvp&players=${postOnly}&against=${postOnly}`]}><MlbPlayerCompare manifest={{ seasons: [{ season: 2025, firstDate: "2025-03-18", lastDate: "2025-09-28", coverage: "complete" }], teams: [], features: { directBvp: "available" } }} /></MemoryRouter>));
+    expect(container.querySelectorAll('.compare-selection a')).toHaveLength(0);
+    expect(container.querySelector('table')).toBeNull();
+    expect(container.textContent).not.toContain("未収録選手");
+    expect(container.textContent).not.toContain("読み込みに失敗");
+    expect(container.querySelector<HTMLSelectElement>('.mlb-controls label:last-child select')?.value).toBe("");
+  });
   it("shows known zero and null independently with two player columns", async () => { await render(); expect(container.querySelectorAll("table thead th")).toHaveLength(3); const rows = [...container.querySelectorAll("tbody tr")]; expect(rows.find(r => r.querySelector("th")?.textContent === "H")?.textContent).toBe("H00"); expect(rows.find(r => r.querySelector("th")?.textContent?.startsWith("OPS"))?.textContent).toContain("——"); expect(loader).toHaveBeenCalledTimes(2); });
   it("rejects a mixed publication date instead of comparing generations", async () => { await render(undefined, vi.fn(async pid => ({ id: pid, date: pid === id(1) ? "2026-10-01" : "2026-10-02", metrics: {}, notice: null }))); expect(container.textContent).toContain("集計の基準日が揃っていません"); expect(container.querySelector("table")).toBeNull(); });
   it("never falls back to another year", async () => { await render(`/NPB/compare?season=2025&players=${id(1)}`); expect(loader).not.toHaveBeenCalled(); expect(container.textContent).toContain("指定のシーズンは未収録"); });

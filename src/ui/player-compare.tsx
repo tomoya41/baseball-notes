@@ -30,7 +30,9 @@ function metricValue(key: string, m: CompareMetrics[string] | undefined) {
 }
 export function CompareWorkspace({ league, players, teams, seasons, loader, advanced = false, competition = "regular" }: { league: League; players: ComparePlayer[]; teams: { id: string; name: string }[]; seasons: number[]; loader: Loader; advanced?: boolean; competition?: string }) {
   const [params, setParams] = useSearchParams(), [query, setQuery] = useState("");
-  const ids = compareIds(league, params.get("players")), idsKey = ids.join(",");
+  // Scope switches retain URL parameters. Accept only identities with a payload
+  // in the current competition directory, for selected players and BvP opponents.
+  const ids = compareIds(league, params.get("players")).filter(id => players.some(p => p.id === id)), idsKey = ids.join(",");
   const role = params.get("role") === "pitching" ? "pitching" : "batting";
   const season = params.has("season") ? Number(params.get("season")) : seasons.at(-1)!;
   const supportedSeason = seasons.includes(season);
@@ -38,7 +40,7 @@ export function CompareWorkspace({ league, players, teams, seasons, loader, adva
   const choices = ["season", ...(league === "NPB" ? ["7d", "14d", "30d"] : ["total"]), "home", "away", "opponent", ...(role === "batting" ? ["order", "starter", "substitute"] : ["pitcher-starter", "reliever"]), ...(advanced ? Object.keys(conditionLabels).filter(k => k.includes(":") || k === "bvp") : [])];
   const condition = choices.includes(params.get("condition") ?? "") ? params.get("condition")! : "season";
   const opponent = teams.some(t => t.id === params.get("opponent")) ? params.get("opponent")! : teams[0]?.id ?? "";
-  const advancedOpponent = compareIds("MLB", params.get("against"))[0] ?? "";
+  const advancedOpponent = compareIds("MLB", params.get("against")).find(id => players.some(p => p.id === id)) ?? "";
   const battingOrder = /^[1-9]$/.test(params.get("order") ?? "") ? Number(params.get("order")) : 1;
   const controlsKey = JSON.stringify({ role, condition, period, season, opponent, advancedOpponent, battingOrder });
   const key = JSON.stringify([league, competition, idsKey, controlsKey]);
