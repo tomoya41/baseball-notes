@@ -12,7 +12,7 @@ type Game = { id: string; season: number; date: string; homeTeamId: string; away
 type DatedFact = { playerId: string; gameId: string; season: number; date: string };
 const seasons = [2020, 2021, 2022, 2023, 2024, 2025];
 
-export async function auditHistoricalPostseason(root: string, regular: string) {
+export async function auditHistoricalPostseason(root: string, regular: string, options: { requireDerivedProducts?: boolean } = {}) {
   const target = join(root, "postseason"), files: string[] = [];
   async function walk(directory: string) {
     for (const entry of await readdir(directory, { withFileTypes: true })) {
@@ -98,9 +98,9 @@ export async function auditHistoricalPostseason(root: string, regular: string) {
     }
   }
   if (profileBatting !== batting || profilePitching !== pitching) throw new Error("Profile/detail Fact count mismatch");
-  // Legacy archives omit derived products. If present, require the entire advertised
-  // family and verify it against the same canonical Game projections, not just a schema.
-  if ([...payloads.keys()].some(path => path.startsWith("teams/") || path.startsWith("chronology/"))) {
+  // Legacy source archives can omit products before generation. The final publication
+  // guard requires them even when the whole family is absent.
+  if (options.requireDerivedProducts || [...payloads.keys()].some(path => path.startsWith("teams/") || path.startsWith("chronology/"))) {
     const canonicalGames = [...games.values()] as HistoricalGame[];
     const names = new Map(postPlayers.map(p => [p.id, p.name]));
     for (const info of manifest.seasons) {

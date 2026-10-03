@@ -20,6 +20,8 @@ describe("whole-site postseason availability admission", () => {
   it("finalizes availability inside the shared guard used by every whole-site publish path", () => {
     const guard = readFileSync(new URL("../scripts/verify-npb-publication.ts",import.meta.url),"utf8");
     expect(guard).toContain("await finalizePostseasonCapabilities(root)");
+    const finalizer = readFileSync(new URL("../scripts/lib/postseason-publication.ts",import.meta.url),"utf8");
+    expect(finalizer).toContain("{ requireDerivedProducts: true }");
     for(const name of ["daily-collector","npb-eod-watcher","npb-season-publish","npb-player-directory-publish","npb-hot-publish","mlb-historical-publish"]) {
       const workflow = readFileSync(new URL(`../.github/workflows/${name}.yml`,import.meta.url),"utf8");
       expect(workflow.indexOf("verify-npb-publication.ts dist")).toBeLessThan(workflow.indexOf("actions/upload-pages-artifact"));

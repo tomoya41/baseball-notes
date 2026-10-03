@@ -45,6 +45,19 @@ async function fixture(root: string) {
 }
 
 describe("complete advertised Postseason artifact", () => {
+  it("requires the whole derived family at final publication while accepting legacy input archives", async () => {
+    const root = await mkdtemp(join(tmpdir(), "postseason-product-required-"));
+    try {
+      await fixture(root);
+      expect((await auditHistoricalPostseason(root, root)).report.result).toBe("PASS");
+      await expect(auditHistoricalPostseason(root, root, { requireDerivedProducts: true })).rejects.toThrow("Missing advertised postseason payload: chronology/");
+      await generateHistoricalTeamHubs(root);
+      expect((await auditHistoricalPostseason(root, root, { requireDerivedProducts: true })).report.result).toBe("PASS");
+      await rm(join(root, "postseason/teams"), { recursive: true });
+      await rm(join(root, "postseason/chronology"), { recursive: true });
+      await expect(auditHistoricalPostseason(root, root, { requireDerivedProducts: true })).rejects.toThrow("Missing advertised");
+    } finally { await rm(root, { recursive: true, force: true }); }
+  });
   it("accepts complete derived products but rejects partial publication and altered results", async () => {
     const root = await mkdtemp(join(tmpdir(), "postseason-product-audit-"));
     try {
