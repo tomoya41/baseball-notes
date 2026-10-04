@@ -51,6 +51,10 @@ function seedNpb() {
   return { season, directory, deps: { ...services, directory: { findLatestNpb: async () => directory } as unknown as typeof services.directory } };
 }
 describe("compact exploration UI", () => {
+  it("distinguishes unavailable Coverage evidence from partial Coverage", async () => {
+    await mount(<DataExplorerView league="NPB" rows={rows} teams={manifest.teams} season={2026} years={[2026]} effectiveDate="2026-10-03" coverage="complete" readRecent={async () => ({ values: [], failed: [] })} readAllRecent={async () => ({ values: [], failed: [], coverage: "unavailable" })} />, "/NPB/data?period=7");
+    expect(container.textContent).toContain("この期間のCoverage情報を取得できません"); expect(container.textContent).not.toContain("一部未確認");
+  });
   it.each(["deselect", "team", "role"])("retains selected mode for legacy Recent URLs after %s", async action => {
     const all = vi.fn(async () => ({ values: [], failed: [] })), read = vi.fn(async () => ({ values: [], failed: [] }));
     await mount(<DataExplorerView league="NPB" rows={rows} teams={manifest.teams} season={2026} years={[2026]} effectiveDate="2026-10-03" coverage="partial" readRecent={read} readAllRecent={all} />, `/NPB/data?period=14&recentPlayers=${id}`);

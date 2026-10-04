@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PersonalLibrary, PERSONAL_LIBRARY_KEY } from "../src/application/personal-library";
 import { CollectionButton, PersonalLibraryProvider, PersonalLibraryScreen, SaveViewButton } from "../src/ui/personal-library";
 import { services } from "../src/app/services";
+import { leagueSwitchPath } from "../src/domain/cross-league";
 const id = "00000000-0000-4000-8000-000000000001";
 const reader = vi.hoisted(() => vi.fn());
 vi.mock("../src/app/historical-products", () => ({ readHistoricalProduct: reader }));
@@ -23,6 +24,17 @@ const mount = async (child: ReactNode, path = "/NPB/library") => act(async () =>
 const click = async (el: Element) => act(async () => el.dispatchEvent(new MouseEvent("click", { bubbles: true })));
 const fill = async (el: HTMLInputElement, value: string) => act(async () => { Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(el, value); el.dispatchEvent(new Event("input", { bubbles: true })); });
 describe("local organization UI", () => {
+  it("keeps library tabs across leagues without crossing data context", () => {
+    expect(leagueSwitchPath("/NPB/library", "?tab=views&season=2026", "MLB")).toBe("/MLB/library?tab=views");
+    expect(leagueSwitchPath("/MLB/library", "?tab=activity", "NPB")).toBe("/NPB/library?tab=activity");
+  });
+  it("keeps saved entities distinguishable when all metadata is unavailable", async () => {
+    vi.mocked(services.directory.findLatestNpb).mockRejectedValue(Error("offline")); reader.mockRejectedValue(Error("offline"));
+    const c = (await store.createCollection("保存" )).collections[0]!; await store.setPlayer(c.id, { league: "NPB", playerId: id }, true);
+    await mount(<PersonalLibraryScreen league="NPB" />); expect(div.textContent).toContain(id);
+    await store.visit({ league: "NPB", kind: "teams", entityId: "npb:team:tigers", conditions: "", visitedAt: Date.now() });
+    await mount(<PersonalLibraryScreen league="NPB" />, "/NPB/library?tab=activity"); expect(div.textContent).toContain("npb:team:tigers");
+  });
   it("saves explicit conditions and links a reproducible URL with no local ID", async () => {
     await mount(<SaveViewButton league="MLB" params={new URLSearchParams("season=2025&competition=postseason&metric1=HR&value1=2")} />);
     await click(div.querySelector("button")!); await fill(div.querySelector("input")!, "秋の本塁打");
