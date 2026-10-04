@@ -1,8 +1,34 @@
 import { metrics } from "../domain/metrics";
 import type { MetricDefinition } from "../domain/models";
 
-export type MetricHelp = Pick<MetricDefinition, "name" | "fullName" | "description" | "interpretation" | "caveat">;
+export type MetricHelp = Pick<MetricDefinition, "name" | "fullName" | "description" | "interpretation" | "caveat"> & { formula?: string; data?: string; sample?: string; scope?: string };
+const context: Record<string, Pick<MetricHelp, "formula" | "data" | "sample" | "scope">> = {
+  AVG: { formula: "安打 ÷ 打数", data: "保存済みの安打・打数", sample: "打数が少ないほど変動します。探索の最低サンプルと公式規定は別です。" },
+  OBP: { formula: "(安打＋四球＋死球) ÷ (打数＋四球＋死球＋犠飛)", data: "構成項目に欠測がある場合は完全な値として扱いません。", sample: "打席数を確認。出塁の定義に失策・野選は含みません。" },
+  SLG: { formula: "(安打＋二塁打＋三塁打×2＋本塁打×3) ÷ 打数", data: "安打と各長打・打数", sample: "打数と球場・シーズンの違いを確認してください。" },
+  OPS: { formula: "OBP ＋ SLG", data: "保存済みの出塁率・長打率", sample: "少数打席では極端な値になります。走塁・守備の評価は含みません。" },
+  ERA: { formula: "自責点 × 27 ÷ 記録したアウト数", data: "自責点・投手アウト数。失点とは別です。", sample: "少ない投球回では大きく変動。球場・守備等の影響も受けます。" },
+  K9: { formula: "奪三振 × 27 ÷ 記録したアウト数", data: "奪三振・投手アウト数", sample: "短い投球回では変動。失点を抑えたかどうかとは別の観点です。" },
+  IP: { formula: "アウト数 ÷ 3（余りを1/3回単位で表示）", data: "canonicalの投手アウト数", sample: "6.1は6回と1アウト。6.1という小数の投球回ではありません。" },
+};
+export const glossaryKeys = ["G", "GS", "PA", "AB", "H", "2B", "3B", "HR", "R", "RBI", "BB", "HBP", "SH", "SF", "SO", "SB", "CS", "AVG", "OBP", "SLG", "OPS", "IP", "BF", "ER", "ERA", "K9", "W", "L", "SV", "HLD", "RISP"] as const;
 const help: Record<string, MetricHelp> = {
+  G: { name: "G", fullName: "出場・登板数", description: "保存済み成績がある試合数。打者の出場数と投手の登板数は別に集計します。", interpretation: "多さだけで成績の良し悪しは判断しません。" },
+  GS: { name: "GS", fullName: "先発登板数", description: "先発と確認できる投手登板の数。", interpretation: "役割が不明な登板を先発と推定しません。" },
+  "2B": { name: "2B", fullName: "二塁打", description: "対象範囲の二塁打数。", interpretation: "出場機会と合わせて確認します。" },
+  "3B": { name: "3B", fullName: "三塁打", description: "対象範囲の三塁打数。", interpretation: "出場機会と合わせて確認します。" },
+  R: { name: "R", fullName: "得点・失点", description: "打者では得点数、投手では失点数です。", interpretation: "投手の自責点（ER）とは異なります。文脈を確認してください。" },
+  RBI: { name: "RBI", fullName: "打点", description: "打撃によって記録された打点数。", interpretation: "走者のいる機会にも左右されます。値だけで打者全体の評価はできません。" },
+  HBP: { name: "HBP", fullName: "死球・与死球", description: "打者では受けた死球、投手では与えた死球の数。", interpretation: "与四球と混ぜず、出典で分離された値だけを利用します。" },
+  SH: { name: "SH", fullName: "犠打", description: "記録上の犠打数。", interpretation: "打席には含めますが、打数には含めません。" },
+  SF: { name: "SF", fullName: "犠飛", description: "記録上の犠牲フライ数。", interpretation: "打席には含め、打数には含めません。出塁率の分母には含みます。" },
+  SB: { name: "SB", fullName: "盗塁", description: "記録された盗塁数。", interpretation: "盗塁死・機会数も合わせて確認します。" },
+  CS: { name: "CS", fullName: "盗塁死", description: "盗塁に失敗してアウトになった数。", interpretation: "多さだけでなく盗塁機会と合わせて読みます。" },
+  ER: { name: "ER", fullName: "自責点", description: "公式記録上、その投手の責任とされた失点数。", interpretation: "失点すべてが自責点になるわけではありません。防御率の計算に使います。" },
+  W: { name: "W", fullName: "勝利", description: "勝利投手として記録された回数。", interpretation: "投手個人だけでなく打線・継投等にも左右されます。" },
+  L: { name: "L", fullName: "敗戦", description: "敗戦投手として記録された回数。", interpretation: "登板数・失点等と合わせて確認します。" },
+  SV: { name: "SV", fullName: "セーブ", description: "セーブとして記録された登板数。", interpretation: "役割・セーブ機会に左右されます。条件を独自に推測しません。" },
+  HLD: { name: "HLD", fullName: "ホールド", description: "出典でホールドとして記録された数。", interpretation: "リーグ・出典での提供範囲を確認してください。取得できない場合は0としません。" },
   OBP: { name: "OBP", fullName: "出塁率", description: "安打・四球・死球で出塁する割合。（安打＋四球＋死球）÷（打数＋四球＋死球＋犠飛）で計算します。", interpretation: "高いほどアウトにならずに出塁しています。.350なら、この計算の対象機会の35%で出塁。", caveat: "失策や野選による出塁は含みません。打席数と一緒に確認してください。" },
   SLG: { name: "SLG", fullName: "長打率", description: "1打数あたりの塁打数。単打は1、二塁打は2、三塁打は3、本塁打は4として合計し、打数で割ります。", interpretation: "高いほど多くの塁を打撃で獲得しています。.500は1打数あたり0.5塁打。長打の割合そのものではありません。" },
   K9: { name: "K/9", fullName: "9回あたりの奪三振", description: "奪三振数を投球回で割り、9回に換算した値です。", interpretation: "9.00なら9回あたり9奪三振のペース。高いほど三振を奪う頻度が高くなります。", caveat: "短い投球回では大きく変動します。失点の少なさを直接表す指標ではありません。" },
@@ -14,5 +40,6 @@ const help: Record<string, MetricHelp> = {
 const aliases: Record<string, string> = { "K/9": "K9", k9: "K9", outsRecorded: "IP", outs: "IP", bf: "BF", H: "hits", "bases:risp": "RISP" };
 export function metricHelp(key: string): MetricHelp | undefined {
   const normalized = aliases[key] ?? key.toUpperCase();
-  return help[normalized] ?? metrics[key] ?? metrics[normalized === "IP" ? "outs" : normalized.toLowerCase()];
+  const value = help[normalized] ?? metrics[key] ?? metrics[normalized === "IP" ? "outs" : normalized.toLowerCase()];
+  return value ? { ...value, ...context[normalized], scope: "選択したシーズン・期間・条件の保存済み分。Regular SeasonとPostseasonは別集計。未取得は0ではありません。" } : undefined;
 }

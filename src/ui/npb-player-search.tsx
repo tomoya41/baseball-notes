@@ -5,6 +5,7 @@ import { searchNpbPlayers, type NpbPlayerDirectory } from "../domain/npb-player-
 import { positionDefinitions } from "../domain/baseball-terms";
 import type { Favorite } from "../domain/models";
 import { DataState, FavoriteButton, LoadingSkeleton, PageHeading } from "./components";
+import { DiscoveryNavigation } from "./discovery";
 import { Monogram } from "./design-system";
 
 type SearchState = "loading" | "ready" | "error";
@@ -25,6 +26,7 @@ export function NpbPlayerSearchView({ directory, state, query, onQueryChange, te
   const visibleLimit = expandedKey === filterKey ? limit : 80;
   return <div className="screen npb-player-search">
     <PageHeading eyebrow="NPB" title="選手" />
+    <DiscoveryNavigation league="NPB" />
     <Link className="text-link" to="/NPB/compare">選手比較 →</Link>
     {state === "loading" && <LoadingSkeleton />}
     {state === "error" && <DataState kind="source-unavailable" title="選手一覧を取得できませんでした" />}
