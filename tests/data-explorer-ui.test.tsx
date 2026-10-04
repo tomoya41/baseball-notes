@@ -176,6 +176,17 @@ describe("NPB saved projections and Recent", () => {
   });
 });
 describe("discovery and glossary", () => {
+  it("passes the actual pitching Explorer state to glossary and history links", async () => {
+    await mount(<DataExplorerView league="MLB" rows={rows} teams={manifest.teams} season={2020} years={[2020]} effectiveDate="2020-10-27" coverage="complete" readRecent={async () => ({values: [], failed: []})} scope="&competition=postseason" />, "/MLB/data?season=2020&competition=postseason&role=pitching", "postseason");
+    const guide = [...container.querySelectorAll("a")].find(a => a.textContent === "指標ガイド")!;
+    const target = guide.getAttribute("href")!;
+    expect(target).toContain("role=pitching");
+    await mount(<StatGlossary league="MLB" />, target, "postseason");
+    for (const label of ["データ探索", "シーズン履歴"]) {
+      const link = [...container.querySelectorAll("a")].find(a => a.textContent === label)!;
+      expect(link.href).toContain("role=pitching"); expect(link.href).toContain("season=2020"); expect(link.href).toContain("competition=postseason");
+    }
+  });
   it("preserves historical competition through glossary entry, metric search and return links", async () => {
     await mount(<ExplorerLinks league="MLB" scope="?season=2020&competition=postseason&role=pitching&q=Player" />, "/MLB/data?season=2020&competition=postseason", "postseason");
     const guide = [...container.querySelectorAll("a")].find(a => a.textContent === "指標ガイド")!;
