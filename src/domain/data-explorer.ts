@@ -10,14 +10,14 @@ export const explorerMetrics = {
 export type ExplorerRole = keyof typeof explorerMetrics;
 export type ExplorerRule = { metric: string; operator: "gte" | "lte"; value: number };
 export type ExplorerSort = { metric: string; direction: "asc" | "desc" };
-export type ExplorerQuery = { role: ExplorerRole; name: string; teamId: string; minimum: number; rules: ExplorerRule[]; sorts: ExplorerSort[] };
+export type ExplorerQuery = { role: ExplorerRole; name: string; teamId: string; minimum: number; sample?: "G" | "PA" | "outsRecorded"; rules: ExplorerRule[]; sorts: ExplorerSort[] };
 export const MAX_RECENT_PLAYERS = 12;
 export function readableMetric(metric: ExplorerMetric | undefined): number | null {
   return metric?.status === "unavailable" || !Number.isFinite(metric?.value) ? null : metric!.value;
 }
 export function exploreRows(rows: readonly ExplorerRow[], query: ExplorerQuery): ExplorerRow[] {
   const needle = normalizePlayerSearch(query.name);
-  const sampleKey = query.role === "batting" ? "PA" : "outsRecorded";
+  const sampleKey = query.sample ?? (query.role === "batting" ? "PA" : "outsRecorded");
   return rows.filter(row => {
     const values = row[query.role];
     if (!values || (query.teamId && row.teamId !== query.teamId)) return false;
@@ -47,7 +47,7 @@ export function explorerQuery(params: URLSearchParams): ExplorerQuery {
     if (sort && allowed.includes(sort) && !sorts.some(s => s.metric === sort)) sorts.push({ metric: sort, direction: params.get(`dir${index}`) === "asc" ? "asc" : "desc" });
   }
   const rawMinimum = params.get("minimum"), minimum = rawMinimum !== null && rawMinimum.trim() && Number.isFinite(Number(rawMinimum)) && Number(rawMinimum) >= 0 ? Number(rawMinimum) : 0;
-  return { role, name: params.get("q") ?? "", teamId: params.get("team") ?? "", minimum, rules, sorts };
+  return { role, name: params.get("q") ?? "", teamId: params.get("team") ?? "", minimum, sample: params.get("sample") === "G" ? "G" : role === "batting" ? "PA" : "outsRecorded", rules, sorts };
 }
 export function selectedRecentPlayers(params: URLSearchParams, knownIds: ReadonlySet<string>) {
   return [...new Set((params.get("recentPlayers") ?? "").split(",").filter(id => knownIds.has(id)))].slice(0, MAX_RECENT_PLAYERS);

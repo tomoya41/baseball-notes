@@ -10,6 +10,7 @@ import { DataState, LoadingSkeleton, PageHeading } from "./components";
 import { ExplorerLinks, type ExplorerManifest } from "./data-explorer";
 import { useHistoricalStatic } from "./use-mlb-historical";
 import { useHistoricalCompetition } from "./historical-competition-context";
+import { LibraryShortcuts } from "./personal-library";
 
 export function DiscoveryNavigation({ league }: { league: "NPB" | "MLB" }) {
   const [params] = useSearchParams(), active = params.get("kind") ?? "player";
@@ -17,7 +18,7 @@ export function DiscoveryNavigation({ league }: { league: "NPB" | "MLB" }) {
     const next = new URLSearchParams(params); next.set("kind", item.key);
     if (league === "MLB" && item.key === "series") next.set("competition", "postseason");
     return <Link key={item.key} aria-current={active === item.key ? "page" : undefined} to={`/${league}/search?${next}`}>{item.label}</Link>;
-  })}</nav><ExplorerLinks league={league} scope={`?${params}`} /><Link className="text-link" to={`/${league}/my`}>Favoritesから探す →</Link></>;
+  })}</nav><ExplorerLinks league={league} scope={`?${params}`} /><Link className="text-link" to={`/${league}/my`}>Favoritesから探す →</Link><LibraryShortcuts league={league} /></>;
 }
 function DiscoveryList({ league, teams, scope, games, series, message }: { league: "NPB" | "MLB"; teams: { id: string; name: string }[]; scope: string;
   games?: { id: string; home: string; away: string; homeScore: number | null; awayScore: number | null; state: string }[] | undefined; series?: PostseasonHub["series"] | undefined; message?: string }) {

@@ -51,6 +51,32 @@ function seedNpb() {
   return { season, directory, deps: { ...services, directory: { findLatestNpb: async () => directory } as unknown as typeof services.directory } };
 }
 describe("compact exploration UI", () => {
+  it("distinguishes unavailable Coverage evidence from partial Coverage", async () => {
+    await mount(<DataExplorerView league="NPB" rows={rows} teams={manifest.teams} season={2026} years={[2026]} effectiveDate="2026-10-03" coverage="complete" readRecent={async () => ({ values: [], failed: [] })} readAllRecent={async () => ({ values: [], failed: [], coverage: "unavailable" })} />, "/NPB/data?period=7");
+    expect(container.textContent).toContain("この期間のCoverage情報を取得できません"); expect(container.textContent).not.toContain("一部未確認");
+  });
+  it.each(["deselect", "team", "role"])("retains selected mode for legacy Recent URLs after %s", async action => {
+    const all = vi.fn(async () => ({ values: [], failed: [] })), read = vi.fn(async () => ({ values: [], failed: [] }));
+    await mount(<DataExplorerView league="NPB" rows={rows} teams={manifest.teams} season={2026} years={[2026]} effectiveDate="2026-10-03" coverage="partial" readRecent={read} readAllRecent={all} />, `/NPB/data?period=14&recentPlayers=${id}`);
+    if (action === "deselect") await click(container.querySelector(".explorer-candidates input")!);
+    else { const selects = container.querySelectorAll(".explorer-filter-grid select"); await act(async () => { const input = selects[action === "team" ? 2 : 1] as HTMLSelectElement; input.value = action === "team" ? team : "pitching"; input.dispatchEvent(new Event("change", { bubbles: true })); }); }
+    expect(all).not.toHaveBeenCalled(); expect(container.querySelector("[data-location]")?.textContent).toContain("recentMode=selected");
+    expect(container.textContent).toContain("直近を調べる選手を選択してください");
+  });
+  it("uses one all-player projection without selected-player fanout, bounds rows and retains partial coverage", async () => {
+    const all = vi.fn(async () => ({ values: Array.from({ length: 85 }, (_, i) => ({ ...rows[0]!, playerId: `${id}:${i}`, name: `選手${i}`, coverage: "partial" })), failed: [] }));
+    const read = vi.fn(async () => ({ values: [], failed: [] }));
+    await mount(<DataExplorerView league="NPB" rows={rows} teams={manifest.teams} season={2026} years={[2026]} effectiveDate="2026-10-03" coverage="partial" readRecent={read} readAllRecent={all} />, "/NPB/data?period=14&sort1=OPS");
+    expect(all).toHaveBeenCalledExactlyOnceWith(14); expect(read).not.toHaveBeenCalled();
+    expect(container.querySelectorAll(".explorer-result")).toHaveLength(40); expect(container.textContent).toContain("検索結果 85人");
+    expect(container.textContent).toContain("一部未確認"); expect(container.querySelector(".rank-number")).toBeNull();
+    expect(container.textContent).not.toContain("直近を調べる選手 0/12");
+  });
+  it("does not substitute Season values if all-player Recent fetch fails", async () => {
+    const all = vi.fn(async () => { throw Error("network"); }), read = vi.fn(async () => ({ values: [], failed: [] }));
+    await mount(<DataExplorerView league="NPB" rows={rows} teams={manifest.teams} season={2026} years={[2026]} effectiveDate="2026-10-03" coverage="complete" readRecent={read} readAllRecent={all} />, "/NPB/data?period=7");
+    expect(container.textContent).toContain("全選手Recentを読み込めません"); expect(container.querySelectorAll(".explorer-result")).toHaveLength(0); expect(read).not.toHaveBeenCalled();
+  });
   it("does not perform individual reads in Season mode and shows missing as a dash", async () => {
     const read = vi.fn(async () => ({ values: [], failed: [] })); await mount(explorer(read));
     expect(read).not.toHaveBeenCalled(); expect(container.textContent).toContain("公式ランキング・HOTではありません");

@@ -24,6 +24,7 @@ import { NpbDataExplorer } from "./data-explorer";
 import { NpbSeasonExplorer } from "./season-explorer";
 import { NpbDiscovery } from "./discovery";
 import { StatGlossary } from "./stat-glossary";
+import { MyLibrary, PersonalLibraryProvider, PersonalLibraryScreen } from "./personal-library";
 type FavoriteTarget = Pick<Favorite, "kind" | "entityId" | "league">;
 const MlbLeagueView = lazy(() => import("./mlb-foundation").then(module => ({ default: module.MlbLeagueView })));
 function NpbSearchEntry(props: Parameters<typeof NpbRoutes>[0]) {
@@ -53,7 +54,7 @@ function NpbRoutes({ services, favorites, toggle, saving }: { services: Services
     <Route path="compare" element={<NpbPlayerCompare services={services} />} />
     <Route path="records" element={<NpbRecordsScreen repository={services.gameSurface} />} />
     <Route path="ranking" element={<Navigate to="/NPB/records" replace />} />
-    <Route path="my" element={<div className="screen"><header><p className="eyebrow">NPB / My</p><h1>フォローダッシュボード</h1></header><NpbPersonalDashboard services={services} favorites={favorites} toggle={toggle} saving={saving} /><NpbSavedPlayers heading={false} repository={services.directory} favorites={favorites} toggle={toggle} saving={saving} /></div>} />
+    <Route path="my" element={<div className="screen"><header><p className="eyebrow">NPB / My</p><h1>フォローダッシュボード</h1></header><MyLibrary league="NPB" /><NpbPersonalDashboard services={services} favorites={favorites} toggle={toggle} saving={saving} /><NpbSavedPlayers heading={false} repository={services.directory} favorites={favorites} toggle={toggle} saving={saving} /></div>} />
     <Route path="favorites" element={<Navigate to="/NPB/my" replace />} />
     <Route path="players" element={<Navigate to="/NPB/search" replace />} />
     <Route path="*" element={<Navigate to="/NPB/home" replace />} />
@@ -68,7 +69,7 @@ export function App({ services }: { services: Services }) {
   useEffect(() => { window.scrollTo(0, 0); }, [location.pathname]);
   const league: League = location.pathname.split("/")[1] === "MLB" ? "MLB" : "NPB";
   const section = location.pathname.split("/")[2] ?? "home";
-  const currentNav = ["games", "schedule", "postseason"].includes(section) ? "schedule" : ["ranking", "milestones"].includes(section) ? "records" : ["players", "teams", "analysis", "compare", "data", "history", "glossary"].includes(section) ? "search" : section === "favorites" ? "my" : section;
+  const currentNav = ["games", "schedule", "postseason"].includes(section) ? "schedule" : ["ranking", "milestones"].includes(section) ? "records" : ["players", "teams", "analysis", "compare", "data", "history", "glossary"].includes(section) ? "search" : ["favorites", "library"].includes(section) ? "my" : section;
   const [favorites, setFavorites] = useState<Favorite[]>([]);
   const [favoritesReady, setFavoritesReady] = useState(false);
   const [refreshVersion, setRefreshVersion] = useState(0);
@@ -98,7 +99,7 @@ export function App({ services }: { services: Services }) {
       .finally(() => setSaving(false));
   }, [services]);
   const switchPath = (next: League) => leagueSwitchPath(location.pathname, location.search, next);
-  return <div className="app-shell">
+  return <PersonalLibraryProvider store={services.personalLibrary}><div className="app-shell">
     <a className="skip-link" href="#main-content" onClick={(event) => {
       event.preventDefault(); document.getElementById("main-content")?.focus();
     }}>本文へ移動</a>
@@ -111,6 +112,8 @@ export function App({ services }: { services: Services }) {
     <main id="main-content" tabIndex={-1}>
 
     <Routes key={refreshVersion}>
+      <Route path="/NPB/library" element={<PersonalLibraryScreen league="NPB" />} />
+      <Route path="/MLB/library" element={<PersonalLibraryScreen league="MLB" />} />
       <Route path="/privacy" element={<PrivacyScreen />} />
       <Route path="/NPB/games/:gameId" element={<NpbGameDetailScreen key={location.pathname} repository={services.gameDetail} services={services} favorites={favorites} toggle={toggle} saving={saving} />} />
       <Route path="/NPB/*" element={<NpbRoutes services={services}
@@ -125,5 +128,5 @@ export function App({ services }: { services: Services }) {
       <Link key={segment} to={`/${league}/${segment}`} aria-current={currentNav === segment ? "page" : undefined}>
         <Icon size={21} strokeWidth={1.9} aria-hidden="true" /><span>{label}</span>
       </Link>)}</nav>
-  </div>;
+  </div></PersonalLibraryProvider>;
 }

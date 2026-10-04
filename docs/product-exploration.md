@@ -12,6 +12,8 @@ MLB covers the published 2020–2025 Regular and Postseason projections separate
 
 ## Recent requests and cost
 
+Batch 4 supersedes the NPB selected-cohort-only behavior with coordinated all-player Recent projections; see `product-personalization.md`. The original bounded cohort remains available and is still used for MLB Historical.
+
 7/14/30-day exploration requires explicitly choosing at most 12 known players. It is not an all-player Recent ranking. No player profiles are fetched in whole-season mode. NPB reuses the existing Recent API; MLB reuses selected canonical player payloads and the existing null-aware aggregators, filtered to the selected competition/year/team and inclusive date window. MLB dates are source-local historical dates, anchored to the season manifest's lastDate; NPB is anchored to the saved effectiveDate.
 
 Reads are limited to three concurrent requests, deduplicated within the unchanged player/period/scope context, and failed selections remain visibly unavailable. An explicit retry can retry failures. NPB responses with a different player, period, date or window are rejected. Changing team/year/role resets the cohort. A player with no appearances in a historical window is not given synthetic zero rate statistics.
@@ -26,7 +28,7 @@ This batch adds no collectors, source, scheduled workflow, subscription or DB wr
 
 Search now has Player, Team, Game and Series destinations plus Favorites and Explorer shortcuts. Team search uses the existing catalog/manifest. Game search loads one explicitly selected date; it does not fetch the whole historical game corpus. Confirmed no-games, unknown/partial dates, invalid ranges and source errors remain distinct. MLB Series search explicitly enters Postseason and links the canonical series. NPB Series retains its source-rights-pending state.
 
-MLB names use the existing verified Japanese/English aliases and normalization. NPB uses existing canonical display names and whitespace/NFKC normalization. No identity is created or merged from a name. Viewed-history storage and account/cloud discovery are not added; existing local Favorites and URL comparison state provide shortcuts.
+MLB names use the existing verified Japanese/English aliases and normalization. NPB uses existing canonical display names and whitespace/NFKC normalization. No identity is created or merged from a name. Batch 4 adds a separate local Activity/Collections/Saved Views library; account/cloud discovery remains absent. See `product-personalization.md`.
 
 ## Glossary
 
