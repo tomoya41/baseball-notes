@@ -8,6 +8,7 @@ import type { PlayerAnalysisBundle } from "../domain/player-analysis-bundle";
 import type { NpbDirectoryPlayer, NpbPlayerDirectory } from "../domain/npb-player-directory";
 import type { NpbCatalog } from "../domain/npb-product-contract";
 import { FavoriteButton, DataState, LoadingSkeleton } from "./components";
+import { CollectionButton } from "./personal-library";
 import { Monogram, PlayerTabs } from "./design-system";
 import { NpbProfileDetails } from "./npb-product";
 import { PlayerFutureLinks } from "./future-surfaces";
@@ -112,7 +113,7 @@ export function NpbPlayer({ services, favorites, toggle, saving }: { services: S
       <FavoriteButton active={isFavorite} saving={saving} label={player.name} onClick={() => toggle({ league: "NPB", kind: "player", entityId: player.id })} />
     </header>
     <PlayerTabs base={base} section={section} />
-    <nav className="player-tools" aria-label="選手の比較と推移"><Link to={`/NPB/compare?players=${encodeURIComponent(player.id)}`}>比較に追加</Link><Link to={`${base}/trends`} aria-current={section === "trends" ? "page" : undefined}>推移・連続記録</Link>{directoryTeam && <Link to={`/NPB/teams/${encodeURIComponent(directoryTeam.id)}`}>球団を見る</Link>}</nav>
+    <nav className="player-tools" aria-label="選手の比較と推移"><CollectionButton league="NPB" playerId={player.id} name={player.name} /><Link to={`/NPB/compare?players=${encodeURIComponent(player.id)}`}>比較に追加</Link><Link to={`${base}/trends`} aria-current={section === "trends" ? "page" : undefined}>推移・連続記録</Link>{directoryTeam && <Link to={`/NPB/teams/${encodeURIComponent(directoryTeam.id)}`}>球団を見る</Link>}</nav>
     {section === "trends" && <NpbPlayerTrends services={services} playerId={player.id} />}
     {!section && <div className="profile-content"><PlayerSeasonView payload={season} state={seasonState} /><PlayerRecentView period={period} onPeriodChange={next => { if (next === period) return; setRecentState("loading"); setPeriod(next); }} payload={recent} state={recentState} noFactKnown={directoryPlayer?.recentAvailable === false} />
       <PlayerGameLogView payload={gameLog ? { ...gameLog, batting: gameLog.batting.slice(0, 3), pitching: gameLog.pitching.slice(0, 3) } : null} state={gameLogState} teams={gameLogTeams} /><Link className="button button--secondary" to={`${base}/game-log`}>すべての試合別成績を見る</Link></div>}

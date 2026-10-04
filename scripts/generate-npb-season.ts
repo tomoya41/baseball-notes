@@ -7,6 +7,7 @@ import { NpbPlayerDirectoryRepository } from "../src/data/npb-player-directory";
 import { PlayerPeriodBatchService } from "../src/application/player-period-batch";
 import { buildNpbSeasonPayload, npbSeasonPayloadSchema, seasonRankingReadModel } from "../src/application/npb-season-payload";
 import { readSeasonQualifierContext } from "../src/data/npb-season-qualifier";
+import { generateRecentExplorer } from "./lib/npb-recent-explorer";
 const url=process.env.TURSO_DATABASE_URL;
 if(!url || url.startsWith("file:") || !process.env.TURSO_AUTH_TOKEN) throw new Error("Read-only remote connection required");
 const source=openDataClient(url,process.env.TURSO_AUTH_TOKEN);
@@ -29,12 +30,14 @@ try {
   const payload=buildNpbSeasonPayload(batch,directory);
   const serializeStart=performance.now(),json=JSON.stringify(payload),serializationMs=performance.now()-serializeStart;
   const root=process.argv.find(a=>a.startsWith("--payload-root="))?.slice(15) ?? ".data/publish";
+  if(directory.effectiveDate!==date) throw Error("Directory/Season generation date mismatch");
+  const recentExplorer=await generateRecentExplorer(client,directory,root);
   const path=`${root}/data/npb/season/2026/latest.json`;
   await mkdir(dirname(path),{recursive:true});await writeFile(`${path}.tmp`,json);
   npbSeasonPayloadSchema.parse(JSON.parse(await readFile(`${path}.tmp`,"utf8")));await rename(`${path}.tmp`,path);
   const rankings=seasonRankingReadModel(batch,directory,await readSeasonQualifierContext(client,batch.window.from,batch.window.to));
   console.log(JSON.stringify({schemaVersion:1,effectiveDate:date,readiness:payload.readiness,coverage:payload.coverage,
-    playerCount:payload.players.length,summary:batch.summary,queries,timings:{...batch.timings,serializationMs,totalMs:performance.now()-start},
+    playerCount:payload.players.length,summary:batch.summary,queries,recentExplorer,timings:{...batch.timings,serializationMs,totalMs:performance.now()-start},
     bytes:Buffer.byteLength(json),internalCountingCandidates:Object.fromEntries(Object.entries(rankings.counting.batting).map(([k,v])=>[k,v.length])),
     rankingReadiness:rankings.readiness,qualifierCounts:Object.fromEntries(Object.entries(rankings.qualifications).map(([role,players])=>
       [role,Object.fromEntries(["qualified","unqualified","unknown"].map(status=>[status,players.filter(p=>p.status===status).length]))])),

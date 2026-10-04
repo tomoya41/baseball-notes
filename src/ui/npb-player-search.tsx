@@ -7,6 +7,7 @@ import type { Favorite } from "../domain/models";
 import { DataState, FavoriteButton, LoadingSkeleton, PageHeading } from "./components";
 import { DiscoveryNavigation } from "./discovery";
 import { Monogram } from "./design-system";
+import { CollectionButton } from "./personal-library";
 
 type SearchState = "loading" | "ready" | "error";
 type Role = "all" | "batter" | "pitcher";
@@ -61,7 +62,7 @@ export function NpbPlayerSearchView({ directory, state, query, onQueryChange, te
                 ` · ${[player.battingAvailable && "打撃", player.pitchingAvailable && "投球"].filter(Boolean).join("・")}データあり` :
                 " · 最近の成績なし"}</small>
           </span><ChevronRight className="row-chevron" size={19} aria-hidden="true" />
-        </Link><Link className="compare-add" aria-label={`${player.displayName}を比較に追加`} to={`/NPB/compare?players=${encodeURIComponent(player.playerId)}&role=${player.pitchingAvailable && !player.battingAvailable ? "pitching" : "batting"}`}>比較</Link>{toggle&&<FavoriteButton active={favorites.some(f=>f.league==="NPB"&&f.kind==="player"&&f.entityId===player.playerId)}
+        </Link><Link className="compare-add" aria-label={`${player.displayName}を比較に追加`} to={`/NPB/compare?players=${encodeURIComponent(player.playerId)}&role=${player.pitchingAvailable && !player.battingAvailable ? "pitching" : "batting"}`}>比較</Link><CollectionButton league="NPB" playerId={player.playerId} name={player.displayName} />{toggle&&<FavoriteButton active={favorites.some(f=>f.league==="NPB"&&f.kind==="player"&&f.entityId===player.playerId)}
           saving={saving} label={player.displayName} onClick={()=>toggle({kind:"player",league:"NPB",entityId:player.playerId})}/>}</div>)}</div> : <DataState kind="no-data" title="該当する選手が見つかりません" />}
       {players.length > visibleLimit && <button className="button button--secondary" onClick={() => { setExpandedKey(filterKey); setLimit(visibleLimit + 80); }}>さらに80人を表示</button>}
       <p className="npb-directory-note">保存済み選手情報から表示しています。守備位置が未登録の選手は表示を省略します。</p>

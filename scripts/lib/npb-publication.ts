@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import { gameManifestSchema, gameDateIndexSchema, shiftGameDate } from "../../src/domain/npb-game-index";
 import { validateNpbPublication, validateNpbPublishedGameDates } from "../../src/application/npb-publication-consistency";
 import { npbLatestStandingsSchema } from "../../src/domain/standings";
+import { npbRecentExplorerSchema } from "../../src/application/npb-recent-explorer";
 
 export async function preserveNpbPublicStandings(root: string, request: typeof fetch = fetch) {
   const response = await request(`https://tomoya41.github.io/baseball-notes/data/standings/npb/latest.json?v=${Date.now()}`,
@@ -30,9 +31,18 @@ export async function readNpbPublication(root: string) {
   ]);
   const standings = JSON.parse(await readFile(join(root, "data/standings/npb/latest.json"), "utf8")) as unknown;
   const publication = validateNpbPublication({ directory, catalog, capabilities, season, hot, teamSeason, milestones, gameManifest, gameRecent, records, standings });
+  const recent = await Promise.all(([7, 14, 30] as const).map(async days => {
+    const raw = await read(`explorer/recent/${days}.json`).catch((e: NodeJS.ErrnoException) => { if (e.code !== "ENOENT") throw e; return null; });
+    if (raw === null) return null;
+    const p = npbRecentExplorerSchema.parse(raw);
+    if (p.days !== days || p.effectiveDate !== publication.directory.effectiveDate || p.season !== publication.season.season ||
+        p.players.some(r => !publication.directory.players.some(d => d.playerId === r.playerId && d.displayName === r.displayName && d.teamId === r.teamId))) throw Error("Recent publication scope/date/identity mismatch");
+    return p;
+  }));
+  if (recent.some(Boolean) && !recent.every(Boolean)) throw Error("Recent publication family incomplete");
   const dates = [...new Set([publication.directory.effectiveDate, ...publication.gameRecent!.games.map(g => g.date)])];
   validateNpbPublishedGameDates(publication, await Promise.all(dates.map(date => read(`games/dates/${date}.json`))));
-  return publication;
+  return { ...publication, ...(recent.some(Boolean) ? { recentExplorer: recent.filter(p => p !== null) } : {}) };
 }
 
 export async function writeNpbProfileProjections(root: string, input: Parameters<typeof validateNpbPublication>[0]) {
@@ -55,6 +65,7 @@ export async function npbPublicationHashes(root: string) {
   const paths = ["players/latest.json", "catalog/latest.json", "capabilities.json", "season/2026/latest.json",
     "hot/latest.json", "teams/season/2026/latest.json", "records/2026/latest.json", "games/manifest.json", "games/recent.json", "standings/npb/latest.json"];
   if (p.milestones) paths.push(`milestones/${p.season.season}/latest.json`);
+  for (const recent of p.recentExplorer ?? []) paths.push(`explorer/recent/${recent.days}.json`);
   const manifest = gameManifestSchema.parse(p.gameManifest);
   for (let date = manifest.from; date <= manifest.to; date = shiftGameDate(date, 1)) {
     if (paths.length > 410) throw Error("NPB publication date range exceeds one season");

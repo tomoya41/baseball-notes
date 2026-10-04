@@ -1,6 +1,7 @@
 import { npbSeasonPayloadSchema } from "./npb-season-payload";
 import { publicAssetBase } from "../app/platform";
 import { publicDataFetch, rememberPublicResponse } from "../infrastructure/public-response-cache";
+import { npbRecentExplorerSchema } from "./npb-recent-explorer";
 
 export async function readNpbExplorerSeason(year: number, request: typeof fetch = publicDataFetch) {
   if (year !== 2026) throw Error("NPB season unavailable");
@@ -10,4 +11,12 @@ export async function readNpbExplorerSeason(year: number, request: typeof fetch 
   const payload = npbSeasonPayloadSchema.parse(await response.json());
   await rememberPublicResponse(response);
   return payload;
+}
+export async function readNpbRecentExplorer(days: 7 | 14 | 30, date: string, request: typeof fetch = publicDataFetch) {
+  const base = import.meta.env.VITE_NPB_DATA_BASE_URL?.trim() || publicAssetBase();
+  const response = await request(`${base.replace(/\/$/, "")}/data/npb/explorer/recent/${days}.json`, { cache: "no-cache" });
+  if (!response.ok) throw Error(`Recent projection HTTP ${response.status}`);
+  const p = npbRecentExplorerSchema.parse(await response.json());
+  if (p.days !== days || p.effectiveDate !== date) throw Error("Recent projection generation differs");
+  await rememberPublicResponse(response); return p;
 }

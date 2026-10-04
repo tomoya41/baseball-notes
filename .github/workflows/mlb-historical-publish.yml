@@ -7,6 +7,10 @@ on:
         type: choice
         default: release
         options: [release, postseason, app-only]
+      refresh_recent_explorer:
+        description: Generate only new read-only NPB Recent projections at the preserved publication date
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -84,6 +88,12 @@ jobs:
           npx tsx scripts/preserve-published-npb-player-directory.ts
           npx tsx scripts/preserve-published-npb-hot.ts
           npx tsx scripts/preserve-published-npb-game-surface.ts
+      - name: Generate coordinated all-player Recent projections without canonical writes
+        if: inputs.refresh_recent_explorer == true
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+        run: npx tsx scripts/generate-npb-recent-explorer.ts dist
       - name: Verify combined NPB and MLB portable backup
         if: inputs.mode != 'app-only'
         env:

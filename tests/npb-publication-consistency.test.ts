@@ -19,6 +19,7 @@ import { readNpbPublication, writeNpbProfileProjections, npbPublicationHashes, v
 import { shiftGameDate } from "../src/domain/npb-game-index";
 import type { NpbPlayerDirectory } from "../src/domain/npb-player-directory";
 import hotFixture from "./fixtures/npb-hot-ready.json";
+import { npbRecentExplorerSchema } from "../src/application/npb-recent-explorer";
 
 function family() {
   const at = "2026-09-26T00:00:00.000Z", date = "2026-09-25", playerId = supplement.players[2]!.playerId;
@@ -76,6 +77,26 @@ const run = (script: string, ...args: string[]) => execFileSync(process.execPath
   ["node_modules/tsx/dist/cli.mjs", `scripts/${script}.ts`, ...args], { encoding: "utf8", stdio: "pipe" });
 
 describe("coordinated NPB publication", () => {
+  it("admits all three Recent projections only with the same date and canonical Directory metadata", async () => {
+    const root = await mkdtemp(join(tmpdir(), "npb-recent-publication-"));
+    try {
+      const p = family(); await stage(root, p); await mkdir(join(root, "data/npb/explorer/recent"), { recursive: true });
+      const projected = (days: 7 | 14 | 30) => npbRecentExplorerSchema.parse({ schemaVersion: 1, league: "NPB", season: 2026, competition: "regular", days,
+        effectiveDate: p.season.effectiveDate, generatedAt: p.season.generatedAt, period: { from: shiftGameDate(p.season.effectiveDate, 1 - days), to: p.season.effectiveDate },
+        coverage: { status: "partial", summary: { dates: days, complete: 0, noGames: days - 1, partial: 1, unknown: 0, failed: 0 } }, players: p.season.players });
+      await writeFile(join(root, "data/npb/explorer/recent/7.json"), JSON.stringify(projected(7)));
+      await expect(readNpbPublication(root)).rejects.toThrow("family incomplete");
+      for (const days of [14, 30] as const) await writeFile(join(root, `data/npb/explorer/recent/${days}.json`), JSON.stringify(projected(days)));
+      expect((await readNpbPublication(root)).recentExplorer).toHaveLength(3);
+      expect(await npbPublicationHashes(root)).toHaveProperty("explorer/recent/14.json");
+      const bad = projected(14); bad.players[0]!.teamId = "npb:team:tigers";
+      await writeFile(join(root, "data/npb/explorer/recent/14.json"), JSON.stringify(bad));
+      await expect(readNpbPublication(root)).rejects.toThrow("scope/date/identity");
+      const stale = projected(14); stale.effectiveDate = shiftGameDate(stale.effectiveDate, -1); stale.period = { from: shiftGameDate(stale.effectiveDate, -13), to: stale.effectiveDate };
+      await writeFile(join(root, "data/npb/explorer/recent/14.json"), JSON.stringify(stale));
+      await expect(readNpbPublication(root)).rejects.toThrow("scope/date/identity");
+    } finally { await rm(root, { recursive: true, force: true }); }
+  });
   it("validates the released family without changing Facts/Coverage/Gates", () => {
     const p = family(), before = JSON.stringify(p);
     expect(validateNpbPublication(p).directory).toEqual(p.directory); expect(JSON.stringify(p)).toBe(before);
