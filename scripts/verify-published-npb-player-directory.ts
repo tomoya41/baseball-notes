@@ -1,12 +1,12 @@
 import { npbPlayerDirectorySchema } from "../src/domain/npb-player-directory";
 import { validateNpbPublication, validateNpbPublishedGameDates } from "../src/application/npb-publication-consistency";
-import { verifyNpbPublicationHash } from "./lib/npb-publication";
+import { verifyNpbPublicationHash, validNpbPublicationPaths } from "./lib/npb-publication";
+import { validateNpbRecentFamily } from "../src/application/npb-recent-explorer";
 
 const expected = process.env.EXPECTED_GENERATED_AT;
 const hashes = process.env.EXPECTED_PROJECTION_HASHES ? JSON.parse(process.env.EXPECTED_PROJECTION_HASHES) as Record<string, string> : null;
 if (process.env.GITHUB_ACTIONS === "true" && !hashes) throw Error("Staged projection hashes required for deployment verification");
-if (hashes && (Object.keys(hashes).length > 410 || Object.keys(hashes).some(path =>
-  !/^(players\/latest|catalog\/latest|capabilities|season\/2026\/latest|hot\/latest|teams\/season\/2026\/latest|records\/2026\/latest|games\/manifest|games\/recent|milestones\/2026\/latest|standings\/npb\/latest|games\/dates\/\d{4}-\d{2}-\d{2})\.json$/.test(path))))
+if (hashes && !validNpbPublicationPaths(Object.keys(hashes)))
   throw Error("Invalid staged publication paths");
 if (!expected) throw new Error("EXPECTED_GENERATED_AT is required");
 const url = "https://tomoya41.github.io/baseball-notes/data/npb/players/latest.json";
@@ -36,6 +36,11 @@ for (let attempt = 0; attempt < 12; attempt++) {
         read("standings/npb/latest.json"),
       ]);
       const publication = validateNpbPublication({ directory: payload, catalog, capabilities, season, hot, teamSeason, milestones, gameManifest, gameRecent, records, standings });
+      const recentPaths = Object.keys(hashes ?? {}).filter(p => p.startsWith("explorer/recent/"));
+      if (recentPaths.length) {
+        const recent = validateNpbRecentFamily(await Promise.all(recentPaths.map(p => read(p))), payload, publication.season.season);
+        if (recent.some((p, i) => recentPaths[i] !== `explorer/recent/${p.days}.json`)) throw Error("Published Recent file/period mismatch");
+      }
       const dates = [...new Set([payload.effectiveDate, ...publication.gameRecent!.games.map(g => g.date)])];
       validateNpbPublishedGameDates(publication, await Promise.all(dates.map(date => read(`games/dates/${date}.json`))));
       // Check all remaining dated payloads against the exact staged artifact with bounded CDN requests.

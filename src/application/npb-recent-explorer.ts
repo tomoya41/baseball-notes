@@ -20,6 +20,16 @@ export const npbRecentExplorerSchema = z.strictObject({
     ctx.addIssue({ code: "custom", message: "Inconsistent Recent coverage" });
 });
 export type NpbRecentExplorer = z.infer<typeof npbRecentExplorerSchema>;
+export function validateNpbRecentFamily(raw: readonly unknown[], directory: NpbPlayerDirectory, season: number): NpbRecentExplorer[] {
+  const values = raw.filter(p => p !== null && p !== undefined).map(p => npbRecentExplorerSchema.parse(p));
+  if (!values.length) return [];
+  if (values.length !== 3 || [7, 14, 30].some(days => values.filter(p => p.days === days).length !== 1)) throw Error("Recent publication family incomplete");
+  const players = new Map(directory.players.map(p => [p.playerId, p]));
+  if (values.some(p => p.effectiveDate !== directory.effectiveDate || p.season !== season || p.players.some(r => {
+    const d = players.get(r.playerId); return !d || d.displayName !== r.displayName || d.teamId !== r.teamId;
+  }))) throw Error("Recent publication scope/date/identity mismatch");
+  return values;
+}
 export function buildNpbRecentExplorer(batch: PlayerPeriodBatchResult, directory: NpbPlayerDirectory): NpbRecentExplorer {
   if (!["7d", "14d", "30d"].includes(batch.period) || batch.window.to !== directory.effectiveDate)
     throw Error("Coordinated Recent/Directory required");

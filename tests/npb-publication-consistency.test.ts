@@ -20,6 +20,7 @@ import { shiftGameDate } from "../src/domain/npb-game-index";
 import type { NpbPlayerDirectory } from "../src/domain/npb-player-directory";
 import hotFixture from "./fixtures/npb-hot-ready.json";
 import { npbRecentExplorerSchema } from "../src/application/npb-recent-explorer";
+import { validNpbPublicationPaths } from "../scripts/lib/npb-publication";
 
 function family() {
   const at = "2026-09-26T00:00:00.000Z", date = "2026-09-25", playerId = supplement.players[2]!.playerId;
@@ -77,6 +78,12 @@ const run = (script: string, ...args: string[]) => execFileSync(process.execPath
   ["node_modules/tsx/dist/cli.mjs", `scripts/${script}.ts`, ...args], { encoding: "utf8", stdio: "pipe" });
 
 describe("coordinated NPB publication", () => {
+  it("admits only bounded approved Recent paths in deployed HTTP verification", () => {
+    expect(validNpbPublicationPaths(["players/latest.json", "explorer/recent/7.json", "explorer/recent/14.json", "explorer/recent/30.json"])).toBe(true);
+    for (const path of ["explorer/recent/60.json", "../secret.json", "explorer/recent/7.json?url=private"])
+      expect(validNpbPublicationPaths([path])).toBe(false);
+    expect(validNpbPublicationPaths(Array(411).fill("players/latest.json"))).toBe(false);
+  });
   it("admits all three Recent projections only with the same date and canonical Directory metadata", async () => {
     const root = await mkdtemp(join(tmpdir(), "npb-recent-publication-"));
     try {
