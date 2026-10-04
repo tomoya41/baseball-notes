@@ -51,6 +51,14 @@ function seedNpb() {
   return { season, directory, deps: { ...services, directory: { findLatestNpb: async () => directory } as unknown as typeof services.directory } };
 }
 describe("compact exploration UI", () => {
+  it.each(["deselect", "team", "role"])("retains selected mode for legacy Recent URLs after %s", async action => {
+    const all = vi.fn(async () => ({ values: [], failed: [] })), read = vi.fn(async () => ({ values: [], failed: [] }));
+    await mount(<DataExplorerView league="NPB" rows={rows} teams={manifest.teams} season={2026} years={[2026]} effectiveDate="2026-10-03" coverage="partial" readRecent={read} readAllRecent={all} />, `/NPB/data?period=14&recentPlayers=${id}`);
+    if (action === "deselect") await click(container.querySelector(".explorer-candidates input")!);
+    else { const selects = container.querySelectorAll(".explorer-filter-grid select"); await act(async () => { const input = selects[action === "team" ? 2 : 1] as HTMLSelectElement; input.value = action === "team" ? team : "pitching"; input.dispatchEvent(new Event("change", { bubbles: true })); }); }
+    expect(all).not.toHaveBeenCalled(); expect(container.querySelector("[data-location]")?.textContent).toContain("recentMode=selected");
+    expect(container.textContent).toContain("直近を調べる選手を選択してください");
+  });
   it("uses one all-player projection without selected-player fanout, bounds rows and retains partial coverage", async () => {
     const all = vi.fn(async () => ({ values: Array.from({ length: 85 }, (_, i) => ({ ...rows[0]!, playerId: `${id}:${i}`, name: `選手${i}`, coverage: "partial" })), failed: [] }));
     const read = vi.fn(async () => ({ values: [], failed: [] }));

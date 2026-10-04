@@ -6,6 +6,7 @@ import { playerGameBattingSchema, playerGamePitchingSchema } from "../src/domain
 import type { NpbPlayerDirectory } from "../src/domain/npb-player-directory";
 import { evaluatePeriodCoverage, periodDates } from "../src/domain/period-coverage";
 import { explorerQuery, exploreRows } from "../src/domain/data-explorer";
+import { createPublicFetch, type CachedResponse } from "../src/infrastructure/public-response-cache";
 const id = "00000000-0000-4000-8000-000000000001";
 const source = { sourceKey: "nf3", sourceRecordId: "private", collectedAt: "2026-10-04T00:00:00Z" };
 const b = playerGameBattingSchema.parse({ ...source, playerId: id, gameId: "game", teamId: "team", opponentTeamId: "other", battingOrder: 1, pa: 5, ab: 4, runs: 1, hits: 2, doubles: 1, triples: 0, homeRuns: 0, rbi: 1, walks: 1, hbp: 0, sacrificeHits: 0, sacrificeFlies: 0, strikeouts: 1, stolenBases: null, caughtStealing: null, starter: true });
@@ -36,10 +37,24 @@ describe("coordinated all-player Recent projection", () => {
   });
   it("fetches one period file and rejects stale generation without substituting Season results", async () => {
     const { payload } = await build(7); const fetcher = vi.fn<typeof fetch>(async () => new Response(JSON.stringify(payload), { headers: { "Content-Type": "application/json" } }));
-    expect((await readNpbRecentExplorer(7, "2026-10-03", fetcher)).players).toHaveLength(1); expect(fetcher).toHaveBeenCalledTimes(1);
+    expect((await readNpbRecentExplorer(7, directory, fetcher)).players).toHaveLength(1); expect(fetcher).toHaveBeenCalledTimes(1);
     expect(String(fetcher.mock.calls[0]?.[0])).toContain("explorer/recent/7.json");
-    await expect(readNpbRecentExplorer(7, "2026-10-02", fetcher)).rejects.toThrow("generation");
-    await expect(readNpbRecentExplorer(14, "2026-10-03", fetcher)).rejects.toThrow("generation");
+    await expect(readNpbRecentExplorer(7, { ...directory, effectiveDate: "2026-10-02" }, fetcher)).rejects.toThrow("generation");
+    await expect(readNpbRecentExplorer(14, directory, fetcher)).rejects.toThrow("generation");
+  });
+  it("preserves explicit unavailable Coverage when its reader fails", async () => {
+    const batch = await new PlayerPeriodBatchService({ findPeriodPlayerIds: async () => ({ batters: [id], pitchers: [] }), findBattingByPeriod: async () => [b], findPitchingByPeriod: async () => [] }, { findPeriodCoverage: async () => { throw Error("read failure"); } }).aggregate({ asOfDate: directory.effectiveDate, period: "7d" });
+    const payload = buildNpbRecentExplorer(batch, directory);
+    expect(payload.coverage.status).toBe("unavailable"); expect(payload.coverage.summary.dates).toBe(7);
+    expect(payload.coverage.summary.complete).toBe(0); expect(payload.players[0]!.batting!.metrics.PA!.value).toBe(5);
+  });
+  it("does not replace a valid offline cache with mismatched Directory identity", async () => {
+    const { payload } = await build(7); const saved = new Map<string, CachedResponse>();
+    const put = vi.fn(async (r: CachedResponse) => { saved.set(r.url, r); }); let online = true, invalid = false;
+    const request = createPublicFetch({ get: async url => saved.get(url), put, remove: async url => { saved.delete(url); } }, async () => new Response(JSON.stringify(invalid ? { ...payload, players: [{ ...payload.players[0]!, displayName: "wrong" }] } : payload)), () => online);
+    await readNpbRecentExplorer(7, directory, request); expect(put).toHaveBeenCalledTimes(1);
+    invalid = true; await expect(readNpbRecentExplorer(7, directory, request)).rejects.toThrow("identity"); expect(put).toHaveBeenCalledTimes(1);
+    online = false; expect((await readNpbRecentExplorer(7, directory, request)).players[0]!.displayName).toBe("選手");
   });
   it("supports appearance sample limits, preserves zero-outs and null metrics", () => {
     const row = { playerId: id, name: "投手", batting: null, pitching: { G: { value: 3 }, outsRecorded: { value: 0 }, ERA: { value: null } } };

@@ -50,7 +50,9 @@ export function DataExplorerView({ league, rows, teams, season, years, effective
   const [errorKey, setErrorKey] = useState("");
   const [attempt, setAttempt] = useState(0);
   const update = (name: string, value: string) => setParams(previous => {
-    const next = new URLSearchParams(previous); if (value) next.set(name, value); else next.delete(name);
+    const next = new URLSearchParams(previous);
+    if (previous.has("recentPlayers") && !previous.has("recentMode")) next.set("recentMode", "selected");
+    if (value) next.set(name, value); else next.delete(name);
     if (["season", "team", "role"].includes(name)) { next.delete("recentPlayers"); next.delete("compare"); }
     if (name === "role") next.delete("metrics");
     if (name === "role") for (const i of [1, 2]) for (const field of ["metric", "op", "value", "sort", "dir"]) next.delete(`${field}${i}`);
@@ -121,7 +123,7 @@ export function NpbDataExplorer({ services }: { services: Services }) {
       coverage: [value.batting, value.pitching].filter(Boolean).every(p => p!.coverage.status === "complete") ? "complete" : "partial" };
   }), [services, data]);
   const readAllRecent = useCallback(async (days: 7 | 14 | 30) => {
-    const p = await readNpbRecentExplorer(days, data!.season.effectiveDate);
+    const p = await readNpbRecentExplorer(days, data!.directory);
     const byId = new Map(data!.directory.players.map(d => [d.playerId, d]));
     if (p.players.some(r => { const d = byId.get(r.playerId); return !d || d.displayName !== r.displayName || d.teamId !== r.teamId; })) throw Error("Recent directory identity mismatch");
     return { values: p.players.map(r => ({ playerId: r.playerId, name: r.displayName, teamId: r.teamId, batting: r.batting?.metrics ?? null, pitching: r.pitching?.metrics ?? null, coverage: p.coverage.status })), failed: [], coverage: p.coverage.status };

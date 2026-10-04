@@ -15,7 +15,7 @@ export const npbRecentExplorerSchema = z.strictObject({
   if (p.period.from !== window.from || p.period.to !== window.to || new Set(p.players.map(r => r.playerId)).size !== p.players.length)
     ctx.addIssue({ code: "custom", message: "Recent window/identity mismatch" });
   const s = p.coverage.summary;
-  if (s.dates !== s.complete + s.noGames + s.partial + s.unknown + s.failed ||
+  if ((p.coverage.status !== "unavailable" && s.dates !== s.complete + s.noGames + s.partial + s.unknown + s.failed) ||
       (p.coverage.status === "complete" && s.partial + s.unknown + s.failed > 0))
     ctx.addIssue({ code: "custom", message: "Inconsistent Recent coverage" });
 });
