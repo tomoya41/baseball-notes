@@ -142,6 +142,14 @@ describe("historical identity and competition scope", () => {
     await mount(<MlbSeasonExplorer manifest={manifest} />, `/MLB/history?player=${id}`);
     expect(container.textContent).toContain("年度別成績を読み込めません"); expect(container.querySelectorAll(".explorer-result")).toHaveLength(0);
   });
+  it("distinguishes partial yearly metrics from unavailable metrics", async () => {
+    staticValues.set("players/index.json", directory);
+    staticValues.set(`players/${id.replaceAll(":", "_")}.json`, { ...profile, seasonTotals: { "2020": { batting: { PA: {value: 20, status: "complete"}, HR: {value: 1, status: "partial"}, AVG: {value: null, status: "unavailable"}, OPS: {value: .8, status: "partial"} }, pitching: null } } });
+    await mount(<MlbSeasonExplorer manifest={manifest} />, `/MLB/history?player=${id}`);
+    const values = container.querySelectorAll(".explorer-values dd");
+    expect(values[0]?.textContent).toBe("20"); expect(values[1]?.textContent).toContain("一部");
+    expect(values[2]?.textContent).toBe("—"); expect(values[3]?.textContent).toContain("一部");
+  });
 });
 describe("NPB saved projections and Recent", () => {
   it("keeps partial coverage explicit without opening rankings", async () => {
