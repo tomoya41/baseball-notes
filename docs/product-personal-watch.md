@@ -25,9 +25,11 @@ Recent thresholds are descriptive observation thresholds, not HOT, rank, quality
 
 NPB Regular/Postseason never mix. MLB Watch defaults to the latest imported complete regular season (currently 2025); Series use the separate historical Postseason Hub. There is no 2026 MLB Current access. Team Recent and historical saved-condition watches are intentional remaining product gaps.
 
+Record toggles affect record/next-game alerts only. Recent, confirmed streaks, checkpoints and historical Series remain independent: targets are acquired when any applicable enabled rule needs them. Unsupported Saved Views are filtered before the six-condition budget; only NPB 2026 all-player Recent conditions currently qualify.
+
 ## Freshness and publication
 
-NPB effectiveDate must not be future and must be within three JST calendar days. Historical dates may be old by design but must match 2020–2025 season. Future generatedAt and generations older than the effective date are rejected. Older effectiveDate/generation/result sequence cannot roll back the baseline. Content, not regenerated timestamps, determines duplicates.
+NPB effectiveDate must not be future and must be within three JST calendar days. Historical dates may be old by design but must match 2020–2025 season. Future generatedAt and generations whose JST calendar date precedes effectiveDate are rejected (UTC 15:00 is the JST day boundary). Older effectiveDate/generation/result sequence cannot roll back the baseline. Content, not regenerated timestamps, determines duplicates.
 
 Directory and milestone projections must share effectiveDate/generatedAt. Bulk Recent uses its own validated period/generation with Directory effectiveDate + identity checks. Game date pages must share their Game manifest's generatedAt and Directory effectiveDate. Season aggregate and Directory are not incorrectly required to share a timestamp: existing coordinated milestone adapter owns that family check.
 

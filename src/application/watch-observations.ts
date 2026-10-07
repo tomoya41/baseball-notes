@@ -15,11 +15,15 @@ import { seasonCheckpointSteps } from "../domain/npb-season-milestones";
 export function watchTargets(league: League, favorites: readonly Favorite[], library: PersonalState, preferences: WatchPreferences) {
   const favoritePlayers = [...new Set(favorites.filter(f => f.league === league && f.kind === "player").map(f => f.entityId))];
   const collected = preferences.collections ? library.collections.flatMap(c => c.players.filter(p => p.league === league).map(p => p.playerId)) : [];
-  const all = [...new Set([...(preferences.players ? favoritePlayers : []), ...collected])];
-  const players = all.slice(0, WATCH_LIMITS.players).map(id => ({ id, collectionOnly: !favoritePlayers.includes(id) || !preferences.players }));
-  const allTeams = preferences.teams ? [...new Set(favorites.filter(f => f.league === league && f.kind === "team").map(f => f.entityId))] : [];
-  const allViews = preferences.savedViews ? library.views.filter(v => v.league === league) : [];
-  return { players, teams: allTeams.slice(0, WATCH_LIMITS.teams), views: allViews.slice(0, WATCH_LIMITS.views), omitted: Math.max(0, all.length - players.length) + Math.max(0, allTeams.length - WATCH_LIMITS.teams) + Math.max(0, allViews.length - WATCH_LIMITS.views) };
+  const playerRules = preferences.players || preferences.recent || preferences.milestones || (league === "MLB" && preferences.streaks);
+  const all = [...new Set([...(playerRules ? favoritePlayers : []), ...collected])];
+  const players = all.slice(0, WATCH_LIMITS.players).map(id => ({ id, collectionOnly: !favoritePlayers.includes(id) }));
+  const allTeams = preferences.teams || (league === "MLB" && preferences.postseason) ? [...new Set(favorites.filter(f => f.league === league && f.kind === "team").map(f => f.entityId))] : [];
+  const saved = preferences.savedViews ? library.views.filter(v => v.league === league) : [];
+  // Eligibility precedes the read budget: History/selected/unsupported seasons
+  // must never crowd an otherwise valid all-player Recent saved condition out.
+  const allViews = saved.filter(v=>{const p=new URLSearchParams(v.conditions);return league==="NPB" && v.kind==="data" && ["7","14","30"].includes(p.get("period")??"") && p.get("recentMode")!=="selected" && !p.has("recentPlayers") && p.get("competition")!=="postseason" && (!p.has("season")||p.get("season")==="2026") && !explorerInputErrors(p).length;});
+  return { players, teams: allTeams.slice(0, WATCH_LIMITS.teams), views: allViews.slice(0, WATCH_LIMITS.views), unsupportedViews:saved.length-allViews.length, omitted: Math.max(0, all.length - players.length) + Math.max(0, allTeams.length - WATCH_LIMITS.teams) + Math.max(0, allViews.length - WATCH_LIMITS.views) };
 }
 type Profile = { player: { id: string; name: string; seasons: number[] }; seasonTotals: Record<string, { batting: ExplorerValues | null; pitching: ExplorerValues | null }>; batting: DatedBatter[]; pitching: DatedPitcher[] };
 type Manifest = { seasons: { season: number; firstDate: string; lastDate: string; coverage: string }[]; teams: { id: string; name: string }[] };
@@ -51,6 +55,7 @@ export async function readWatchObservations(league: League, favorites: readonly 
     }
   };
   if (targets.omitted) notes.push(`上限により${targets.omitted}対象を今回は確認しません。選手12人・球団4・保存条件6まで。`);
+  if (targets.unsupportedViews) notes.push(`${targets.unsupportedViews}保存条件はWatch未対応です。NPB 2026の全選手・Recent 7/14/30条件だけ検出します。保存条件から再検索できます。`);
   if (!targets.players.length && !targets.teams.length && !targets.views.length) return { observations, activeEntities: [], notes, fetches, targets: 0, elapsedMs: performance.now() - started };
   if (league === "NPB") {
     const directory = await read(() => sources.directory.findLatestNpb());
@@ -62,7 +67,7 @@ export async function readWatchObservations(league: League, favorites: readonly 
     const totals = preferences.milestones && targets.players.length ? await read(() => sources.checkpoints(season, directory)) : null;
     const seasonAligned = totals?.effectiveDate === directory.effectiveDate && totals?.generatedAt === directory.generatedAt;
     if (totals && (!seasonAligned || totals.coverage.status !== "complete")) notes.push("節目の取得世代またはCoverageを確認できないため、節目を判定しません。");
-    const results = await boundedExplorerRead(targets.players.map(p => p.id), async id => { fetches++; return { id, log: await sources.gameLog.find(id, 10, 0) }; });
+    const results = await boundedExplorerRead(targets.players.filter(p=>preferences.players || p.collectionOnly).map(p => p.id), async id => { fetches++; return { id, log: await sources.gameLog.find(id, 10, 0) }; });
     if (results.failed.length) notes.push(`${results.failed.length}選手の試合記録を取得できません。`);
     for (const target of targets.players) {
       const player = directory.players.find(p => p.playerId === target.id); if (!player) { notes.push("Directoryで確認できない選手は判定しません。"); continue; }
@@ -124,11 +129,11 @@ export async function readWatchObservations(league: League, favorites: readonly 
         const b = base("player", target.id, profile.player.name, season, lastDate, "complete", null, target.collectionOnly), bat = profile.batting.filter(r => r.season === season && r.date<=lastDate), pitch = profile.pitching.filter(r => r.season === season && r.date<=lastDate);
         const rows = [...bat.map(r => ({ gameId:r.gameId,date:r.date,H:r.hits,HR:r.homeRuns,PA:r.pa })), ...pitch.map(r => ({ gameId:r.gameId,date:r.date,outsRecorded:r.outsRecorded,ER:r.er,SO:r.so }))].sort((a,c) => c.date.localeCompare(a.date) || (numbers.get(c.gameId) ?? 0)-(numbers.get(a.gameId) ?? 0));
         const latest = rows[0], latestDay = rows.filter(r=>r.date===latest?.date), orderedLatest = latestDay.every(r=>numbers.has(r.gameId)) || new Set(latestDay.map(r=>r.gameId)).size<=1;
-        if (latest && orderedLatest) {
+        if (latest && orderedLatest && (preferences.players || target.collectionOnly)) {
           const result: WatchObservation["values"] = {};
           for (const row of latestDay.filter(r=>r.gameId===latest.gameId)) Object.assign(result,row);
           add({...b,eventDate:latest.date,path:`/MLB/games/${encodeURIComponent(latest.gameId)}?season=${season}`},"result","Game",{...result,gameNumber:numbers.get(latest.gameId)??0});
-        } else if (latest) notes.push("Historical同日複数試合の順序を確認できず、最新試合判定を保留します。");
+        } else if (latest && !orderedLatest) notes.push("Historical同日複数試合の順序を確認できず、最新試合判定を保留します。");
         const w = dateWindow(lastDate, 14);
         if (preferences.recent) recent(b, battingAggregate(target.id, bat, w.from,w.to).metrics, pitchingAggregate(target.id,pitch,w.from,w.to).metrics);
         if (preferences.milestones) { const total = profile.seasonTotals[String(season)]; if (total) milestones(b,total.batting,total.pitching); }
@@ -138,7 +143,7 @@ export async function readWatchObservations(league: League, favorites: readonly 
           for (const [metric,s] of [["安打",batting?.hitting],["出塁",batting?.onBase],["無失点登板",pitching?.scoreless]] as const) if (s?.count !== null && s?.count !== undefined) add(b,"streak",metric,{value:s.count,atLeast:String(s.atLeast)});
         }
       }
-      for (const id of targets.teams) {
+      for (const id of preferences.teams ? targets.teams : []) {
         const team = await read(() => sources.historical<HistoricalTeamHub>(`teams/${season}/${id.replaceAll(":","_")}.json`));
         const name = manifest!.teams.find(t => t.id === id)?.name; if (!team || !name || team.teamId !== id || team.season !== season || team.competitionType !== "regular") continue;
         const g = [...team.games].sort((a,c)=>c.date.localeCompare(a.date)||c.number-a.number)[0];

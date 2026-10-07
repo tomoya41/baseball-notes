@@ -11,7 +11,8 @@ export class PersonalWatch {
       if (value && typeof value === "object" && "schemaVersion" in value && value.schemaVersion === 0) value = { ...value, schemaVersion: 1, seen: [], checkedAt: null };
       const state = watchStateSchema.parse(value);
       // A v0 read-state migration also seeds dedup from retained alerts.
-      return { ...state, seen: [...new Set([...state.seen, ...state.alerts.map(a => a.id)])].slice(-WATCH_LIMITS.seen) };
+      const now = this.now(), oldest = now - 90*86400_000;
+      return { ...state, observations: state.observations.filter(o=>o.observedAt>=oldest && o.observedAt<=now), alerts: state.alerts.filter(a=>a.createdAt>=oldest && a.createdAt<=now), seen: [...new Set([...state.seen, ...state.alerts.map(a => a.id)])].slice(-WATCH_LIMITS.seen) };
     } catch { throw Error("Watchの保存形式を読み込めません。他の保存内容は維持しています。Watchのみリセットできます。"); }
   }
   private change(update: (state: PersonalWatchState) => PersonalWatchState, reset = false) {

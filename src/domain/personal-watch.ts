@@ -17,7 +17,7 @@ export const watchObservationSchema = z.strictObject({
   path: z.string().max(700), metric: z.string().max(40), values,
   members: z.array(z.string().max(160)).max(100).optional(), collectionOnly: z.boolean(), observedAt: z.number().finite().nonnegative(),
 }).superRefine((o, c) => {
-  if (o.kind === "view" ? !z.string().uuid().safeParse(o.entityId).success : !canonicalEntityRefSchema.safeParse({ league: o.league, kind: o.kind, id: o.entityId }).success)
+  if (o.kind === "view" ? !/^[a-zA-Z0-9:_-]+$/.test(o.entityId) : !canonicalEntityRefSchema.safeParse({ league: o.league, kind: o.kind, id: o.entityId }).success)
     c.addIssue({ code: "custom", message: "Watch canonical identity mismatch" });
   const [p, query] = o.path.split("?");
   if (o.kind !== "view" && (!portableRoute(p!, query ?? "") || !o.path.startsWith(`/${o.league}/`))) c.addIssue({ code: "custom", message: "Invalid Watch route" });
@@ -26,7 +26,8 @@ export const watchObservationSchema = z.strictObject({
   if (o.rule !== "next" && o.eventDate && o.eventDate > o.effectiveDate) c.addIssue({ code: "custom", message: "Future result observation" });
   if (o.league === "NPB" && o.competition !== "regular") c.addIssue({ code: "custom", message: "Current Postseason not admitted" });
   if (!o.effectiveDate.startsWith(String(o.season))) c.addIssue({ code: "custom", message: "Watch Season/date mismatch" });
-  if (o.rule === "result" && (!canonicalEntityRefSchema.safeParse({ league: o.league, kind: "game", id: o.values.gameId }).success || decodeURIComponent(p!).split("/")[3] !== o.values.gameId)) c.addIssue({ code: "custom", message: "Canonical result Game link required" });
+  let decodedPath = ""; try { decodedPath = decodeURIComponent(p!); } catch { /* A corrupt route remains invalid, not an exception from safeParse. */ }
+  if (o.rule === "result" && (!canonicalEntityRefSchema.safeParse({ league: o.league, kind: "game", id: o.values.gameId }).success || decodedPath.split("/")[3] !== o.values.gameId)) c.addIssue({ code: "custom", message: "Canonical result Game link required" });
 });
 export type WatchObservation = z.infer<typeof watchObservationSchema>;
 export const watchAlertSchema = z.strictObject({ id: z.string().max(360), observation: watchObservationSchema, previous: values, title: z.string().max(180), priority: z.enum(["high", "normal", "low"]), createdAt: z.number().finite().nonnegative(), read: z.boolean(), dismissed: z.boolean() });
@@ -43,13 +44,12 @@ export function watchFingerprint(value: unknown): string {
 }
 export function watchEnabled(o: WatchObservation, p: WatchPreferences): boolean {
   if (o.kind === "view") return p.savedViews;
-  if (o.kind === "player" && !(o.collectionOnly ? p.collections : p.players)) return false;
-  if (o.kind === "team" && !p.teams) return false;
-  return o.rule === "recent" ? p.recent : o.rule === "streak" ? p.streaks : o.rule === "milestone" ? p.milestones : o.rule === "series" ? p.postseason : true;
+  if (o.collectionOnly && !p.collections) return false;
+  return o.rule === "recent" ? p.recent : o.rule === "streak" ? p.streaks : o.rule === "milestone" ? p.milestones : o.rule === "series" ? p.postseason : o.kind === "team" ? p.teams : o.collectionOnly ? p.collections : p.players;
 }
 export function watchFresh(o: WatchObservation, now: number): boolean {
   const today = new Date(now + 9 * 3600_000).toISOString().slice(0, 10);
-  if (o.generatedAt && (Date.parse(o.generatedAt) > now + 300_000 || Date.parse(o.generatedAt) < Date.parse(`${o.effectiveDate}T00:00:00Z`) - 86400_000)) return false;
+  if (o.generatedAt && (Date.parse(o.generatedAt) > now + 300_000 || new Date(Date.parse(o.generatedAt)+9*3600_000).toISOString().slice(0,10) < o.effectiveDate)) return false;
   if (o.league === "MLB") return o.season >= 2020 && o.season <= 2025 && o.effectiveDate.startsWith(String(o.season));
   return o.effectiveDate <= today && Date.parse(`${today}T00:00:00Z`) - Date.parse(`${o.effectiveDate}T00:00:00Z`) <= 3 * 86400_000;
 }
@@ -92,7 +92,7 @@ export function evaluateWatch(state: PersonalWatchState, input: readonly WatchOb
   const previous = new Map(state.observations.map(o => [o.key, o])), alerts = [...state.alerts], seen = new Set(state.seen);
   for (const raw of input) {
     const next = watchObservationSchema.parse(raw);
-    if (!watchFresh(next, now) || ["unavailable", "unknown"].includes(next.coverage)) continue;
+    if (!watchFresh(next, now) || next.observedAt > now || next.observedAt < now-90*86400_000 || ["unavailable", "unknown"].includes(next.coverage)) continue;
     const old = previous.get(next.key);
     if (old && ["league", "kind", "entityId", "rule", "season", "competition", "metric"].some(k => old[k as keyof WatchObservation] !== next[k as keyof WatchObservation])) throw Error("Watch scope collision");
     // Rollbacks and stale cached generations never replace the newer baseline.

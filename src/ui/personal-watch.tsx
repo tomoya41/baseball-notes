@@ -18,7 +18,8 @@ export function PersonalWatchProvider({ store, children }: { store: PersonalWatc
 }
 export function WatchSummary({ league }: { league: League }) {
   const ctx = useContext(PersonalWatchContext), items = ctx?.state?.alerts.filter(a => !a.dismissed && !a.read && a.observation.league === league) ?? [];
-  return <section className="watch-summary" aria-label="Watchの確認差分"><div className="list-heading"><Link to={`/${league}/watch-center`}><strong>Watch</strong> <span className="watch-count">{items.length} 未読</span></Link><Link to={`/${league}/watch-center`}>すべて見る →</Link></div>{items.slice(0,2).map(a => <Link className="watch-summary-item" key={a.id} to={a.observation.path}>{a.observation.name}<small>{a.title} · {a.observation.effectiveDate}</small></Link>)}</section>;
+  const weight = { high: 0, normal: 1, low: 2 }, summary = [...items].sort((a,b)=>weight[a.priority]-weight[b.priority] || b.createdAt-a.createdAt);
+  return <section className="watch-summary" aria-label="Watchの確認差分"><div className="list-heading"><Link to={`/${league}/watch-center`}><strong>Watch</strong> <span className="watch-count">{items.length} 未読</span></Link><Link to={`/${league}/watch-center`}>すべて見る →</Link></div>{summary.slice(0,2).map(a => <Link className="watch-summary-item" key={a.id} to={a.observation.path}>{a.observation.name}<small>{a.title} · {a.observation.effectiveDate}</small></Link>)}</section>;
 }
 const labels: [keyof WatchPreferences, string][] = [["players","お気に入り選手の試合記録"],["teams","お気に入り球団の試合記録・保存済み次戦"],["recent","Recentの数値変化"],["streaks","確認できる連続記録"],["milestones","保存済みSeasonの節目"],["postseason","Historical Seriesの保存状態"],["collections","Collections内の選手"],["savedViews","保存した全選手Recent条件への新規一致"]];
 export function WatchCenter({ league, services, favorites, ready }: { league: League; services: Services; favorites: Favorite[]; ready: boolean }) {
@@ -58,6 +59,3 @@ export function WatchCenter({ league, services, favorites, ready }: { league: Le
     <details className="library-reset"><summary>Watchの保存領域</summary><p>確認状態・Alert・設定だけをリセットします。Favorites、Collections、保存条件は維持します。最大100件・90日間、端末のみ。</p><label><input type="checkbox" checked={reset} onChange={e=>setReset(e.target.checked)} />Watchのリセットを確認</label><button disabled={!reset || busy} onClick={()=>void ctx.run(()=>ctx.store.reset()).then(ok=>{if(ok){setReset(false);setCheck(null);setMessage("Watchをリセットしました。次回は基準値のみ保存します。");}})}>Watchのみリセット</button></details>
   </div>;
 }
-
-
-
