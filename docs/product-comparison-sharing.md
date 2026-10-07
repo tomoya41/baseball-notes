@@ -96,6 +96,13 @@ permission, so NPB CSV is disabled. NPB portable URL sharing transfers no datase
 
 ## Verification and rollback
 
+Initial Codex Review identified two P2 regressions: dated NPB results could mix
+cache generations, and comparison CSV could drop a no-Facts player. The reader
+now binds every dated page to the Game Manifest generatedAt and fails closed;
+CSV keeps every displayed player with null cells and partial availability.
+Regression tests include one stale yet complete-looking date, a no-Facts/failed
+comparison row, and a Collection Recent window transferred into Compare.
+
 Tests cover scope/identity, generation mismatch, null/sample semantics, bounded
 reads, calendar windows, home/away, preserved source objects, exact predecessor
 delta, direct native links, private local IDs, CSV rights/size/formula protection,

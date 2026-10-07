@@ -16,7 +16,7 @@ import { useHistoricalDirectory } from "./use-mlb-historical";
 import { useHistoricalCompetition } from "./historical-competition-context";
 import { DataState, LoadingSkeleton, MetricLabel, PageHeading } from "./components";
 import { DisplayExportButton } from "./product-sharing";
-import { metricNumber } from "../domain/product-comparison";
+import { comparisonDisplayExport } from "../domain/product-sharing";
 
 export type ComparePlayer = { id: string; name: string; batting: boolean; pitching: boolean; seasons?: number[] };
 export type HistoricalProductProfile = { player: { id: string; name: string; seasons: number[] }; batting: DatedBatter[]; pitching: DatedPitcher[] };
@@ -73,7 +73,7 @@ export function CompareWorkspace({ league, players, teams, seasons, loader, adva
       {loaded.map((r, i) => r.status === "error" || r.value.notice ? <p className="data-notice" key={ids[i]}>{players.find(p => p.id === ids[i])?.name ?? "選手"}：{r.status === "error" ? "読み込みに失敗しました" : r.value.notice}</p> : null)}
       <div className="mlb-stat-scroll compare-table" tabIndex={0} role="region" aria-label="選手比較表。横スクロールできます"><table><thead><tr><th>成績</th>{ids.map(id => <th key={id}>{players.find(p => p.id === id)?.name ?? "未収録"}</th>)}</tr></thead><tbody>{keys.map(k => <tr key={k}><th scope="row"><MetricLabel metric={k} label={k === "outsRecorded" ? "IP" : k === "K9" ? "K/9" : k} /></th>{ids.map((id, i) => { const r = loaded[i], m = r?.status === "ready" ? r.value.metrics?.[k] : undefined; return <td key={id}>{metricValue(k, m)}{m?.status === "partial" && <small>一部</small>}</td>; })}</tr>)}</tbody></table></div>
       <p className="inline-note">規定到達者のランキングではありません。打席・登板数も合わせて確認してください。取得できない値は「—」。</p>
-      {dates.size === 1 && <DisplayExportButton data={{ league, scope: `${season} ${competition} ${role} ${condition} ${period}`, date: [...dates][0]!, coverage: loaded.some(r => r.status === "error" || Object.values(r.value.metrics ?? {}).some(m => m.status !== "complete")) ? "partial" : "complete", columns: ["選手", ...keys], rows: loaded.flatMap(r => r.status === "ready" && r.value.metrics ? [[players.find(p => p.id === r.value.id)?.name ?? r.value.id, ...keys.map(k => metricNumber(r.value.metrics, k))]] : []) }} />}
+      {dates.size === 1 && <DisplayExportButton data={comparisonDisplayExport(league, `${season} ${competition} ${role} ${condition} ${period}`, [...dates][0]!, keys, ids.map((id, i) => { const row = loaded[i]; return { name: players.find(p => p.id === id)?.name ?? id, metrics: row?.status === "ready" ? row.value.metrics : null }; }))} />}
     </>}
   </div>;
 }

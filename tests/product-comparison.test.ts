@@ -6,7 +6,7 @@ vi.mock("../src/app/historical-products", () => ({ readHistoricalProduct: reader
 beforeEach(() => reader.mockReset());
 const date = "2026-10-03", generatedAt = `${date}T10:00:00Z`, team = "npb:team:tigers";
 function npb() {
-  return { product: { catalog: vi.fn().mockResolvedValue({ effectiveDate: date, generatedAt, teams: [{ teamId: team, name: "阪神" }] }), teamSeason: vi.fn().mockResolvedValue({ season: 2026, effectiveDate: date, generatedAt, coverage: { status: "partial" }, teams: [{ teamId: team, G: 1, W: 1, L: 0, T: 0, runsFor: 3, runsAgainst: 1, batting: { H: { value: 8, status: "partial" } }, pitching: {} }] }) }, gameSurface: { manifest: vi.fn().mockResolvedValue({ from: "2026-09-20", effectiveDate: date }), date: vi.fn().mockResolvedValue({ games: [], coverage: "no_games" }) } };
+  return { product: { catalog: vi.fn().mockResolvedValue({ effectiveDate: date, generatedAt, teams: [{ teamId: team, name: "阪神" }] }), teamSeason: vi.fn().mockResolvedValue({ season: 2026, effectiveDate: date, generatedAt, coverage: { status: "partial" }, teams: [{ teamId: team, G: 1, W: 1, L: 0, T: 0, runsFor: 3, runsAgainst: 1, batting: { H: { value: 8, status: "partial" } }, pitching: {} }] }) }, gameSurface: { manifest: vi.fn().mockResolvedValue({ from: "2026-09-20", effectiveDate: date, generatedAt }), date: vi.fn().mockResolvedValue({ games: [], coverage: "no_games", generatedAt }) } };
 }
 describe("bounded read-only comparison", () => {
   it("limits concurrency to three and keeps settled failures in original order", async () => {
@@ -25,13 +25,20 @@ describe("bounded read-only comparison", () => {
     const s = npb(); s.product.catalog.mockResolvedValue({ ...await s.product.catalog(), [k]: "mismatch" }); await expect(readNpbTeamComparison(s as unknown as Services)).rejects.toThrow("generation");
   });
   it("uses final results only, explicit Recent window, and no manufactured batting stats", async () => {
-    const s = npb(); s.gameSurface.date.mockImplementation(async d => ({ coverage: d === date ? "partial" : "no_games", games: d === date ? [{ status: "final", home: { id: team, score: 3 }, away: { id: "npb:team:carp", score: 1 } }, { status: "scheduled", home: { id: team, score: null }, away: { id: "npb:team:carp", score: null } }] : [] }) as never);
+    const s = npb(); s.gameSurface.date.mockImplementation(async d => ({ generatedAt, coverage: d === date ? "partial" : "no_games", games: d === date ? [{ status: "final", home: { id: team, score: 3 }, away: { id: "npb:team:carp", score: 1 } }, { status: "scheduled", home: { id: team, score: null }, away: { id: "npb:team:carp", score: null } }] : [] }) as never);
     const r = await readNpbTeamComparison(s as unknown as Services, "14"); expect(r[0]!.metrics!.G!.value).toBe(1); expect(r[0]!.metrics!.W!.value).toBe(1); expect(r[0]!.metrics).not.toHaveProperty("OPS"); expect(r[0]!.coverage).toBe("partial"); expect(s.gameSurface.date).toHaveBeenCalledTimes(14);
   });
   it("does not turn missing final scores or failed date pages into zeros", async () => {
-    const s = npb(); s.gameSurface.date.mockResolvedValue({ coverage: "partial", games: [{ status: "final", home: { id: team, score: null }, away: { id: "npb:team:carp", score: 1 } }] } as never); const r = await readNpbTeamComparison(s as unknown as Services, "14"); expect(r[0]!.metrics!.W!.value).toBeNull(); expect(r[0]!.metrics!.runsFor!.value).toBeNull(); s.gameSurface.date.mockRejectedValue(Error("offline")); await expect(readNpbTeamComparison(s as unknown as Services, "14")).rejects.toThrow("incomplete");
+    const s = npb(); s.gameSurface.date.mockResolvedValue({ generatedAt, coverage: "partial", games: [{ status: "final", home: { id: team, score: null }, away: { id: "npb:team:carp", score: 1 } }] } as never); const r = await readNpbTeamComparison(s as unknown as Services, "14"); expect(r[0]!.metrics!.W!.value).toBeNull(); expect(r[0]!.metrics!.runsFor!.value).toBeNull(); s.gameSurface.date.mockRejectedValue(Error("offline")); await expect(readNpbTeamComparison(s as unknown as Services, "14")).rejects.toThrow("incomplete");
   });
   it("reads MLB correct competition and treats ungenerated split as unavailable", async () => {
     const id = "mlb:team:00000000-0000-4000-8000-000000000001"; reader.mockResolvedValue({ teamId: id, season: 2025, competitionType: "postseason", effectiveDate: "2025-11-01", coverage: "complete" }); const r = await readMlbTeamComparison(id, "球団", 2025, "postseason", "14"); expect(reader.mock.calls[0]![0]).toMatch(/^postseason\/teams\/2025\//); expect(r.metrics).toBeNull(); await expect(readMlbTeamComparison(id, "球団", 2025, "regular")).rejects.toThrow("context");
+  });
+  it("rejects one stale cached date even when its coverage says complete", async () => {
+    const s = npb(); s.gameSurface.date.mockImplementation(async d => ({ generatedAt: d === date ? "2026-10-01T10:00:00Z" : generatedAt, games: [], coverage: "complete" }));
+    await expect(readNpbTeamComparison(s as unknown as Services, "14")).rejects.toThrow("generation");
+  });
+  it("does not claim complete calendar Coverage when the requested window predates the manifest", async () => {
+    const s = npb(); s.gameSurface.manifest.mockResolvedValue({ from: "2026-10-01", effectiveDate: date, generatedAt }); const r = await readNpbTeamComparison(s as unknown as Services, "14"); expect(r[0]!.coverage).toBe("partial"); expect(s.gameSurface.date).toHaveBeenCalledTimes(3);
   });
 });

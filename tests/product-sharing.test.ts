@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { displayCsv, portableRoute, portableUrl, RETROSHEET_EXPORT_CREDIT, type DisplayExport } from "../src/domain/product-sharing";
+import { comparisonDisplayExport, displayCsv, portableRoute, portableUrl, RETROSHEET_EXPORT_CREDIT, type DisplayExport } from "../src/domain/product-sharing";
 import { collectionSeasonCheckpoint, comparisonValue, metricNumber, previousYearDelta, selectedTeams, selectedYears, type ComparisonRow } from "../src/domain/product-comparison";
 import { canonicalDeepLink, parentNativeRoute } from "../src/domain/native-navigation";
 const id = "00000000-0000-4000-8000-000000000001", team = `mlb:team:${id}`;
@@ -41,6 +41,10 @@ describe("portable comparison state", () => {
 });
 const data: DisplayExport = { league: "MLB", scope: "2025 Regular Season selected players", date: "2025-09-28", coverage: "partial", columns: ["選手", "H", "OPS"], rows: [["大谷翔平", 172, 1.014], ["=unsafe", null, 0], ["quoted \"name\"", -2, null]] };
 describe("bounded derived-result exports", () => {
+  it("keeps every displayed player with null cells and partial coverage for no facts or a failed read", () => {
+    const result = comparisonDisplayExport("MLB", "2025 batting", "2025-09-28", ["H", "OPS"], [{ name: "known", metrics: { H: { value: 2, status: "complete" }, OPS: { value: .9, status: "complete" } } }, { name: "no batting facts", metrics: null }, { name: "read failed", metrics: null }]);
+    expect(result.rows).toEqual([["known", 2, .9], ["no batting facts", null, null], ["read failed", null, null]]); expect(result.coverage).toBe("partial"); expect(displayCsv(result)).toContain('"no batting facts","",""');
+  });
   it("preserves credit, scope, null and real zero; escapes formula/string cells", () => {
     const csv = displayCsv(data); expect(csv).toContain(RETROSHEET_EXPORT_CREDIT.replaceAll('"', '""')); expect(csv).toContain("Chadwick Register"); expect(csv).toContain("Coverage: partial"); expect(csv).toContain('"\'=unsafe","","0"'); expect(csv).toContain('"quoted ""name""","-2",""');
   });

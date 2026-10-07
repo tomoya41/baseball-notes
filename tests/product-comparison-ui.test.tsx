@@ -59,4 +59,11 @@ describe("comparison and collection scope", () => {
     await mount(<Routes><Route path="/NPB/library/collections/:collectionId" element={<CollectionDashboard league="NPB" services={services} favorites={[]} />} /></Routes>, `/NPB/library/collections/${c.id}`);
     expect(div.textContent).toContain("保存した選手は維持"); expect((await store.read()).collections[0]!.players).toHaveLength(1);
   });
+  it("carries the current Recent window into a Collection comparison", async () => {
+    const c = (await store.createCollection("14日")).collections[0]!; for (const n of [1, 2]) await store.setPlayer(c.id, { league: "NPB", playerId: uuid(n) }, true);
+    mocks.recent.mockResolvedValue({ effectiveDate: "2026-10-03", coverage: { status: "partial" }, players: [] });
+    await mount(<Routes><Route path="/NPB/library/collections/:collectionId" element={<CollectionDashboard league="NPB" services={services} favorites={[]} />} /></Routes>, `/NPB/library/collections/${c.id}?period=14`);
+    for (const el of div.querySelectorAll('input[type=checkbox]')) await act(async () => el.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    const link = [...div.querySelectorAll('a')].find(a => a.textContent?.includes("2人を比較"))!; expect(link.getAttribute("href")).toContain("condition=14d"); expect(link.getAttribute("href")).toContain("season=2026");
+  });
 });

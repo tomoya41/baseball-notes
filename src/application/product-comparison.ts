@@ -43,7 +43,8 @@ export async function readNpbTeamComparison(services: Services, view = "season")
   const pages = await boundedComparisonRead(dates, d => services.gameSurface.date(d));
   if (pages.some(p => p.status === "rejected")) throw Error("Recent team results incomplete");
   const ready = pages.flatMap(p => p.status === "fulfilled" ? [p.value] : []);
-  const coverage = ready.every(p => ["complete", "no_games"].includes(p.coverage)) ? "complete" : "partial";
+  if (ready.some(p => p.generatedAt !== manifest.generatedAt)) throw Error("Recent Game publication generation differs");
+  const coverage = from >= manifest.from && ready.every(p => ["complete", "no_games"].includes(p.coverage)) ? "complete" : "partial";
   return catalog.teams.map(t => {
     const games = ready.flatMap(p => p.games).filter(g => g.status === "final" && [g.home.id, g.away.id].includes(t.teamId));
     let W = 0, L = 0, T = 0, runsFor = 0, runsAgainst = 0;

@@ -1,6 +1,7 @@
 import { canonicalEntityRefSchema } from "./cross-league";
 import { compareIds } from "./player-compare";
-import { selectedTeams } from "./product-comparison";
+import { metricNumber, selectedTeams } from "./product-comparison";
+import type { CompareMetrics } from "./player-compare";
 import { viewConditions } from "./portable-conditions";
 import type { League } from "./models";
 
@@ -40,6 +41,11 @@ export function portableRoute(path: string, search = ""): string | null {
 function decodeSafe(value: string) { try { return decodeURIComponent(value); } catch { return ""; } }
 export function portableUrl(path: string, search = "") { const route = portableRoute(path, search); return route ? `${PUBLIC_APP_URL}#${route}` : null; }
 export type DisplayExport = { league: League; scope: string; date: string; coverage: string; columns: string[]; rows: (string | number | null)[][] };
+export function comparisonDisplayExport(league: League, scope: string, date: string, keys: string[], selections: { name: string; metrics: CompareMetrics | null }[]): DisplayExport {
+  return { league, scope, date,
+    coverage: selections.some(r => !r.metrics || keys.some(k => metricNumber(r.metrics, k) === null || r.metrics?.[k]?.status !== "complete")) ? "partial" : "complete",
+    columns: ["選手", ...keys], rows: selections.map(r => [r.name, ...keys.map(k => metricNumber(r.metrics, k))]) };
+}
 export const RETROSHEET_EXPORT_CREDIT = 'The information used here was obtained free of charge from and is copyrighted by Retrosheet. Interested parties may contact Retrosheet at "www.retrosheet.org".';
 export function displayCsv(input: DisplayExport): string {
   if (input.league !== "MLB" || input.rows.length > 40 || input.columns.length > 20 || input.rows.some(r => r.length !== input.columns.length) || !/^20\d{2}-\d{2}-\d{2}$/.test(input.date)) throw Error("Bounded permitted MLB display export required");
