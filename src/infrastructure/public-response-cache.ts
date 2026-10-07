@@ -41,14 +41,16 @@ export class PublicResponseStore implements ResponseStore {
   }
 }
 let stale = false;
+let fallbackRevision = 0;
 let needsRefresh = false;
 let nativeOnline: boolean | undefined;
 export function publicNetworkOnline() { return nativeOnline ?? (typeof navigator === "undefined" || navigator.onLine !== false); }
 export function setPublicNetworkOnline(online: boolean) { nativeOnline = online; }
 export function hasSavedResponseFallback() { return stale; }
+export function publicFallbackRevision() { return fallbackRevision; }
 export function needsPublicDataRefresh() { return needsRefresh || stale; }
 export function clearSavedResponseFallback() { stale = false; needsRefresh = false; }
-function indicateSaved() { stale = true; if (typeof window !== "undefined") window.dispatchEvent(new Event("baseball:saved-data")); }
+function indicateSaved() { stale = true; fallbackRevision++; if (typeof window !== "undefined") window.dispatchEvent(new Event("baseball:saved-data")); }
 const candidates = new WeakMap<Response, () => Promise<void>>();
 export async function rememberPublicResponse(response: Response) { await candidates.get(response)?.().catch(() => undefined); }
 

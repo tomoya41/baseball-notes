@@ -186,6 +186,10 @@ Android版は既存Web UIを共有するCapacitor shellです。`npm run android
 
 [Android手順とPrivacy・Release Gate](docs/android-release-2026-09-30.md)、[Batch F検証報告](docs/android-batch-f-2026-09-30.md)を参照してください。Google Playへの自動公開は行いません。
 
+## In-App Watch
+
+Home / MyのWatchから、Favorites・Collections・保存済みRecent条件の確認差分を見られます。初回は基準値を保存し、Watchを開く／データを確認した際だけ検出します。リアルタイム・バックグラウンドPushではありません。MLBはHistorical保存データの確認差分です。[Contract・設定・Freshness・保存上限](docs/product-personal-watch.md)を参照してください。
+
 ## Astra向けNPBデータContract
 
 [Data Contract Freeze / Astra Handoff](docs/astra-ui-redesign-handoff.md) と [NPB Source・Visual権利監査](docs/npb-batch-g-rights.md) を参照してください。既存Directory v2等は維持し、新規 `/data/npb/catalog/latest.json`・`capabilities.json`・`teams/season/2026/latest.json` はversion 1の追加read modelです。Profile基本情報は共通catalogを1回取得し、画像・背番号・履歴の未知値を推測しません。
