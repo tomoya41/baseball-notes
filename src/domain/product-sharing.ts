@@ -11,7 +11,7 @@ export function portableRoute(path: string, search = ""): string | null {
   const parts = path.split("/").filter(Boolean), league = parts[0];
   if (league !== "NPB" && league !== "MLB") return null;
   const resource = parts[1], source = new URLSearchParams(search), clean = new URLSearchParams();
-  if (parts.length === 2 && ["data", "history"].includes(resource ?? "")) return `/${league}/${resource}${viewConditions(source) ? `?${viewConditions(source)}` : ""}`;
+  if (parts.length === 2 && ["data", "history"].includes(resource ?? "")) { const conditions = viewConditions(source, true, league); return `/${league}/${resource}${conditions ? `?${conditions}` : ""}`; }
   if (parts.length === 2 && ["compare", "team-compare", "season-compare"].includes(resource ?? "")) {
     if (resource === "compare") {
       const ids = compareIds(league, source.get("players")); if (ids.length) clean.set("players", ids.join(","));

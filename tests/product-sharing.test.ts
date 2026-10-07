@@ -4,6 +4,13 @@ import { collectionSeasonCheckpoint, comparisonValue, metricNumber, previousYear
 import { canonicalDeepLink, parentNativeRoute } from "../src/domain/native-navigation";
 const id = "00000000-0000-4000-8000-000000000001", team = `mlb:team:${id}`;
 describe("portable comparison state", () => {
+  it.each(["data", "history"])("sanitizes canonical identity filters in shared %s URLs", section => {
+    const clean = new URLSearchParams(portableRoute(`/MLB/${section}`, `team=local-123&player=private-id&recentPlayers=local-1,mlb:player:${id},${id},mlb:player:${id}&period=14`)!.split("?")[1]);
+    expect(clean.has("team")).toBe(false); expect(clean.has("player")).toBe(false); expect(clean.get("recentPlayers")).toBe(`mlb:player:${id}`);
+    expect(clean.get("period")).toBe("14"); expect(clean.get("recentMode")).toBe("selected");
+    const npb = new URLSearchParams(portableRoute(`/NPB/${section}`, `team=npb:team:tigers&player=${id}&recentPlayers=local-1`)!.split("?")[1]);
+    expect(npb.get("team")).toBe("npb:team:tigers"); expect(npb.get("player")).toBe(id); expect(npb.has("recentPlayers")).toBe(false); expect(npb.get("recentMode")).toBe("selected");
+  });
   it("never copies local, invalid or other-league comparison identities into public URLs", () => {
     const bad = new URLSearchParams(portableRoute("/MLB/compare", "against=local-123&opponent=secret")!.split("?")[1]);
     expect(bad.has("against")).toBe(false); expect(bad.has("opponent")).toBe(false);
