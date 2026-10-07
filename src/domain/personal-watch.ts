@@ -15,7 +15,7 @@ export const watchObservationSchema = z.strictObject({
   effectiveDate: z.iso.date(), generatedAt: z.iso.datetime().nullable(), eventDate: z.iso.date().nullable(),
   coverage: z.enum(["complete", "partial", "unknown", "unavailable"]),
   path: z.string().max(700), metric: z.string().max(40), values,
-  members: z.array(z.string().max(160)).max(100).optional(), collectionOnly: z.boolean(), observedAt: z.number().finite().nonnegative(),
+  members: z.array(z.string().max(160)).max(100).optional(), collectionOnly: z.boolean(), collectionMember: z.boolean().optional(), observedAt: z.number().finite().nonnegative(),
 }).superRefine((o, c) => {
   if (o.kind === "view" ? !/^[a-zA-Z0-9:_-]+$/.test(o.entityId) : !canonicalEntityRefSchema.safeParse({ league: o.league, kind: o.kind, id: o.entityId }).success)
     c.addIssue({ code: "custom", message: "Watch canonical identity mismatch" });
@@ -45,7 +45,7 @@ export function watchFingerprint(value: unknown): string {
 export function watchEnabled(o: WatchObservation, p: WatchPreferences): boolean {
   if (o.kind === "view") return p.savedViews;
   if (o.collectionOnly && !p.collections) return false;
-  return o.rule === "recent" ? p.recent : o.rule === "streak" ? p.streaks : o.rule === "milestone" ? p.milestones : o.rule === "series" ? p.postseason : o.kind === "team" ? p.teams : o.collectionOnly ? p.collections : p.players;
+  return o.rule === "recent" ? p.recent : o.rule === "streak" ? p.streaks : o.rule === "milestone" ? p.milestones : o.rule === "series" ? p.postseason : o.kind === "team" ? p.teams : p.players || ((o.collectionOnly || o.collectionMember === true) && p.collections);
 }
 export function watchFresh(o: WatchObservation, now: number): boolean {
   const today = new Date(now + 9 * 3600_000).toISOString().slice(0, 10);

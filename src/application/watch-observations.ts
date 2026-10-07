@@ -17,7 +17,7 @@ export function watchTargets(league: League, favorites: readonly Favorite[], lib
   const collected = preferences.collections ? library.collections.flatMap(c => c.players.filter(p => p.league === league).map(p => p.playerId)) : [];
   const playerRules = preferences.players || preferences.recent || preferences.milestones || (league === "MLB" && preferences.streaks);
   const all = [...new Set([...(playerRules ? favoritePlayers : []), ...collected])];
-  const players = all.slice(0, WATCH_LIMITS.players).map(id => ({ id, collectionOnly: !favoritePlayers.includes(id) }));
+  const players = all.slice(0, WATCH_LIMITS.players).map(id => ({ id, collectionOnly: !favoritePlayers.includes(id), collectionMember: collected.includes(id) }));
   const allTeams = preferences.teams || (league === "MLB" && preferences.postseason) ? [...new Set(favorites.filter(f => f.league === league && f.kind === "team").map(f => f.entityId))] : [];
   const saved = preferences.savedViews ? library.views.filter(v => v.league === league) : [];
   // Eligibility precedes the read budget: History/selected/unsupported seasons
@@ -67,11 +67,11 @@ export async function readWatchObservations(league: League, favorites: readonly 
     const totals = preferences.milestones && targets.players.length ? await read(() => sources.checkpoints(season, directory)) : null;
     const seasonAligned = totals?.effectiveDate === directory.effectiveDate && totals?.generatedAt === directory.generatedAt;
     if (totals && (!seasonAligned || totals.coverage.status !== "complete")) notes.push("節目の取得世代またはCoverageを確認できないため、節目を判定しません。");
-    const results = await boundedExplorerRead(targets.players.filter(p=>preferences.players || p.collectionOnly).map(p => p.id), async id => { fetches++; return { id, log: await sources.gameLog.find(id, 10, 0) }; });
+    const results = await boundedExplorerRead(targets.players.filter(p=>preferences.players || p.collectionMember).map(p => p.id), async id => { fetches++; return { id, log: await sources.gameLog.find(id, 10, 0) }; });
     if (results.failed.length) notes.push(`${results.failed.length}選手の試合記録を取得できません。`);
     for (const target of targets.players) {
       const player = directory.players.find(p => p.playerId === target.id); if (!player) { notes.push("Directoryで確認できない選手は判定しません。"); continue; }
-      const b = base("player", target.id, player.displayName, season, directory.effectiveDate, "partial", directory.generatedAt, target.collectionOnly);
+      const b = { ...base("player", target.id, player.displayName, season, directory.effectiveDate, "partial", directory.generatedAt, target.collectionOnly), collectionMember: target.collectionMember };
       const log = results.values.find(r => r.id === target.id)?.log;
       const games = log ? [...log.batting.map(r => ({ game: r, values: { H: r.hits, HR: r.homeRuns, PA: r.pa } })), ...log.pitching.map(r => ({ game: r, values: { outsRecorded: r.outsRecorded, ER: r.earnedRuns, SO: r.strikeouts } }))].filter(r => r.game.status === "final" && r.game.date <= directory.effectiveDate && r.game.date.startsWith(String(season))).sort((a, c) => c.game.date.localeCompare(a.game.date) || c.game.gameNumber - a.game.gameNumber) : [];
       if (games[0]) {
@@ -126,10 +126,10 @@ export async function readWatchObservations(league: League, favorites: readonly 
       if (profiles.failed.length) notes.push(`${profiles.failed.length}選手のHistoricalデータを取得できません。`);
       for (const target of targets.players) {
         const profile = profiles.values.find(p => p.player.id === target.id); if (!profile) continue;
-        const b = base("player", target.id, profile.player.name, season, lastDate, "complete", null, target.collectionOnly), bat = profile.batting.filter(r => r.season === season && r.date<=lastDate), pitch = profile.pitching.filter(r => r.season === season && r.date<=lastDate);
+        const b = { ...base("player", target.id, profile.player.name, season, lastDate, "complete", null, target.collectionOnly), collectionMember: target.collectionMember }, bat = profile.batting.filter(r => r.season === season && r.date<=lastDate), pitch = profile.pitching.filter(r => r.season === season && r.date<=lastDate);
         const rows = [...bat.map(r => ({ gameId:r.gameId,date:r.date,H:r.hits,HR:r.homeRuns,PA:r.pa })), ...pitch.map(r => ({ gameId:r.gameId,date:r.date,outsRecorded:r.outsRecorded,ER:r.er,SO:r.so }))].sort((a,c) => c.date.localeCompare(a.date) || (numbers.get(c.gameId) ?? 0)-(numbers.get(a.gameId) ?? 0));
         const latest = rows[0], latestDay = rows.filter(r=>r.date===latest?.date), orderedLatest = latestDay.every(r=>numbers.has(r.gameId)) || new Set(latestDay.map(r=>r.gameId)).size<=1;
-        if (latest && orderedLatest && (preferences.players || target.collectionOnly)) {
+        if (latest && orderedLatest && (preferences.players || target.collectionMember)) {
           const result: WatchObservation["values"] = {};
           for (const row of latestDay.filter(r=>r.gameId===latest.gameId)) Object.assign(result,row);
           add({...b,eventDate:latest.date,path:`/MLB/games/${encodeURIComponent(latest.gameId)}?season=${season}`},"result","Game",{...result,gameNumber:numbers.get(latest.gameId)??0});

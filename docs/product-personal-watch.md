@@ -27,6 +27,8 @@ NPB Regular/Postseason never mix. MLB Watch defaults to the latest imported comp
 
 Record toggles affect record/next-game alerts only. Recent, confirmed streaks, checkpoints and historical Series remain independent: targets are acquired when any applicable enabled rule needs them. Unsupported Saved Views are filtered before the six-condition budget; only NPB 2026 all-player Recent conditions currently qualify.
 
+Collection membership is separate from the Favorite-based threshold classification. A Favorite also in an enabled Collection retains Collection record tracking when the Favorite record toggle is OFF. The optional `collectionMember` observation field preserves version-1 storage compatibility; legacy observations can still be read.
+
 ## Freshness and publication
 
 NPB effectiveDate must not be future and must be within three JST calendar days. Historical dates may be old by design but must match 2020–2025 season. Future generatedAt and generations whose JST calendar date precedes effectiveDate are rejected (UTC 15:00 is the JST day boundary). Older effectiveDate/generation/result sequence cannot roll back the baseline. Content, not regenerated timestamps, determines duplicates.
