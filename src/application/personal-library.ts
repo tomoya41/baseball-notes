@@ -1,19 +1,13 @@
 import { z } from "zod";
 import type { SettingsStore } from "./ports";
 import type { League } from "../domain/models";
+import { viewConditions } from "../domain/portable-conditions";
+export { viewConditions } from "../domain/portable-conditions";
 
 const league = z.enum(["NPB", "MLB"]), id = z.string().min(1).max(160).regex(/^[a-zA-Z0-9:_-]+$/);
 export const libraryTargetSchema = z.strictObject({ league, playerId: id }).refine(p =>
   (p.league === "NPB" ? /^[0-9a-f-]{36}$/i : /^mlb:player:[0-9a-f-]{36}$/i).test(p.playerId), "Canonical player/league mismatch");
 export type LibraryPlayer = z.infer<typeof libraryTargetSchema>;
-const conditionKeys = ["season", "competition", "period", "role", "team", "minimum", "sample", "metric1", "op1", "value1", "metric2", "op2", "value2", "sort1", "dir1", "sort2", "dir2", "metrics", "recentPlayers", "recentMode", "player", "date"];
-export function viewConditions(params: URLSearchParams, includeName = true): string {
-  const clean = new URLSearchParams();
-  for (const key of [...conditionKeys, ...(includeName ? ["q"] : [])]) {
-    const value = params.get(key); if (value && value.length <= 2000) clean.set(key, value);
-  }
-  return clean.toString();
-}
 const viewSchema = z.strictObject({ id, name: z.string().trim().min(1).max(60), league, kind: z.enum(["data", "history"]), conditions: z.string().max(6000), savedAt: z.number().finite() });
 const collectionSchema = z.strictObject({ id, name: z.string().trim().min(1).max(60), players: z.array(libraryTargetSchema).max(100), updatedAt: z.number().finite() });
 const activitySchema = z.strictObject({ league, kind: z.enum(["players", "teams", "games", "series", "data", "history"]), entityId: id.nullable(), conditions: z.string().max(6000), visitedAt: z.number().finite() });

@@ -16,6 +16,7 @@ import { DataState, LoadingSkeleton, MetricLabel, PageHeading } from "./componen
 import { useHistoricalStatic } from "./use-mlb-historical";
 import { CollectionButton, SaveViewButton } from "./personal-library";
 import { useHistoricalCompetition } from "./historical-competition-context";
+import { DisplayExportButton } from "./product-sharing";
 
 export type ExplorerManifest = { seasons: { season: number; firstDate: string; lastDate: string; coverage: string }[]; teams: { id: string; name: string }[] };
 export type ExplorerProfile = { player: { id: string; name: string; seasons: number[] }; seasonTotals: Record<string, { batting: ExplorerValues | null; pitching: ExplorerValues | null }>; batting: DatedBatter[]; pitching: DatedPitcher[] };
@@ -75,7 +76,7 @@ export function DataExplorerView({ league, rows, teams, season, years, effective
   const compare = [...new Set((params.get("compare") ?? "").split(",").filter(id => rows.some(r => r.playerId === id)))].slice(0, 4);
   const toggleId = (name: "recentPlayers" | "compare", id: string) => { const selected = name === "compare" ? compare : ids, maximum = name === "compare" ? 4 : MAX_RECENT_PLAYERS; update(name, (selected.includes(id) ? selected.filter(x => x !== id) : [...selected, id].slice(0, maximum)).join(",")); };
   const keys = explorerMetrics[query.role].filter(k => rows.some(r => readableMetric(r[query.role]?.[k]) !== null)), displayKeys = (params.get("metrics")?.split(",").slice(0, 3) ?? [params.get("sort1") || (query.role === "batting" ? "OPS" : "ERA"), params.get("sort2") || (query.role === "batting" ? "HR" : "SO")]).filter(k => (keys as readonly string[]).includes(k));
-  const periodCoverage = days ? recent?.key === key ? recent.coverage ?? (recent.values.length && recent.values.every(r => r.coverage === "complete") ? "complete" : "unknown") : "unavailable" : coverage;
+  const periodCoverage = days ? recent?.key === key ? recent.failed.length ? "partial" : recent.coverage ?? (recent.values.length && recent.values.every(r => r.coverage === "complete") ? "complete" : "unknown") : "unavailable" : coverage;
   const sampleKey = query.sample ?? (query.role === "batting" ? "PA" : "outsRecorded");
   const linkScope = `?season=${season}${scope}`;
   const savedParams = new URLSearchParams(params); savedParams.set("season", String(season)); if (scope) savedParams.set("competition", "postseason");
@@ -105,6 +106,7 @@ export function DataExplorerView({ league, rows, teams, season, years, effective
         <dd>{formatValue(k, readableMetric(row[query.role]?.[k]))}{row[query.role]?.[k]?.status === "partial" && <small> 一部</small>}</dd>
       </div>)}</dl>
     </article>)}</div>
+    <DisplayExportButton data={{ league, scope: `${season} ${scope ? "postseason" : "regular"} ${query.role} ${days ? `${days} days` : "Season"} 表示ページ`, date: effectiveDate, coverage: periodCoverage, columns: ["選手", ...new Set([sampleKey, ...displayKeys])], rows: visible.slice(page * pageSize, (page + 1) * pageSize).map(r => [r.name, ...[...new Set([sampleKey, ...displayKeys])].map(k => readableMetric(r[query.role]?.[k]))]) }} />
     {pages > 1 && <nav className="explorer-pagination" aria-label="探索結果のページ"><button disabled={page === 0} onClick={() => update("page", String(page - 1))}>前へ</button><span>{page + 1}/{pages}</span><button disabled={page + 1 >= pages} onClick={() => update("page", String(page + 1))}>次へ</button></nav>}
   </div>;
 }

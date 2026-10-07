@@ -5,6 +5,8 @@ import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CompareWorkspace, MlbPlayerCompare } from "../src/ui/player-compare";
 import { PlayerTrends } from "../src/ui/player-trends";
+import { compareBattingKeys } from "../src/domain/player-compare";
+vi.mock("../src/ui/product-sharing", () => ({ DisplayExportButton: ({ data }: { data: { coverage: string } }) => <output data-export-coverage>{data.coverage}</output> }));
 const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
 const players = Array.from({ length: 5 }, (_, i) => ({ id: id(i + 1), name: `選手${i + 1}`, batting: true, pitching: true }));
 vi.mock("../src/ui/use-mlb-historical", () => ({ useHistoricalDirectory: () => ({ status: "ready", value: { players: [
@@ -18,6 +20,11 @@ beforeEach(() => { vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true); container = 
 afterEach(async () => { await act(async () => root.unmount()); container.remove(); vi.unstubAllGlobals(); });
 const render = async (path = `/NPB/compare?players=${id(1)},${id(2)}`, read: Loader = loader) => { await act(async () => root.render(<MemoryRouter initialEntries={[path]}><CompareWorkspace league="NPB" players={players} teams={[]} seasons={[2026]} loader={read} /></MemoryRouter>)); };
 describe("comparison workspace", () => {
+  it("passes archive coverage to CSV even when all displayed metrics are complete", async () => {
+    const pid = "mlb:player:00000000-0000-4000-8000-000000000001";
+    await act(async () => root.render(<MemoryRouter initialEntries={[`/MLB/compare?season=2025&players=${pid}`]}><CompareWorkspace league="MLB" players={[{ id: pid, name: "保存選手", batting: true, pitching: false }]} teams={[]} seasons={[2025]} loader={async selected => ({ id: selected, date: "2025-09-28", coverage: "partial", notice: "一部データ確認中", metrics: Object.fromEntries(compareBattingKeys.map(k => [k, { value: 1, status: "complete" }])) })} /></MemoryRouter>));
+    expect(container.querySelector("[data-export-coverage]")?.textContent).toBe("partial");
+  });
   it("does not offer postseason-only identities in a regular-season comparison or BvP selector", async () => {
     await act(async () => root.render(<MemoryRouter initialEntries={["/MLB/compare?season=2025&condition=bvp"]}><MlbPlayerCompare manifest={{ seasons: [{ season: 2025, firstDate: "2025-03-18", lastDate: "2025-09-28", coverage: "complete" }], teams: [], features: { directBvp: "available" } }} /></MemoryRouter>));
     expect(container.textContent).toContain("Regular player");

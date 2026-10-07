@@ -1178,3 +1178,7 @@ Player Favorites use canonical IDs in the existing SettingsStore/Capacitor Prefe
 ## Product Expansion Batch 4: local organization and Recent exploration
 
 All-player NPB Recent exploration is a read-only, coverage-aware projection, separate from HOT/ranking. Versioned local Activity, Saved Views and Collections supplement Favorites without changing canonical data or competition semantics. See `docs/product-personalization.md`.
+
+## Product Expansion Batch 5: comparisons and portable views
+
+Support bounded 2–4 Team comparisons, saved-season Player/Team comparisons, local Collection dashboards and canonical-condition URL sharing. Displayed MLB aggregate CSV exports are bounded and credited; provisional NPB data is not exported. Preserve Regular/Postseason, historical/current, null, Coverage and ranking boundaries. See `docs/product-comparison-sharing.md`.

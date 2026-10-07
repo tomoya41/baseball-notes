@@ -80,7 +80,7 @@ export function NpbTeam({ services, hub = false, favorites = [], toggle, saving 
   const team = catalog.teams.find(t => t.teamId === teamId), stats = season?.teams.find(t => t.teamId === teamId);
   if (!team) return <DataState kind="no-data" title="球団が見つかりません" />;
   return <div className="screen"><Link className="back-link" to="/NPB/home">← ホーム</Link><header className="profile-header"><Monogram name={team.abbreviation} large /><div><p className="eyebrow">NPB · {team.division === "Central" ? "セ・リーグ" : "パ・リーグ"}</p><h1>{team.name}</h1></div></header>
-    {toggle && <div className="team-follow-action"><TeamFavorite league="NPB" teamId={team.teamId} name={team.name} favorites={favorites} toggle={toggle} saving={saving} /><span>球団をフォロー</span></div>}
+    <div className="hub-links"><Link to={`/NPB/team-compare?teams=${encodeURIComponent(team.teamId)}`}>球団比較へ追加 →</Link><Link to={`/NPB/season-compare?kind=team&entity=${encodeURIComponent(team.teamId)}`}>保存済み年度を比較 →</Link></div>{toggle && <div className="team-follow-action"><TeamFavorite league="NPB" teamId={team.teamId} name={team.name} favorites={favorites} toggle={toggle} saving={saving} /><span>球団をフォロー</span></div>}
     <section className="surface-card"><h2>{season ? `${season.season}シーズン` : "シーズン成績"}</h2>
       {seasonState === "loading" ? <LoadingSkeleton /> : seasonState === "error" ?
         <DataState kind="source-unavailable" title="シーズン成績を読み込めません" /> : season && stats ? <>

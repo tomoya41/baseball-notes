@@ -410,3 +410,22 @@ label.analysis-condition select { flex:1; min-width:0; max-width:330px; font-siz
 .explorer-filter-grid > label, .explorer-result-title > a { min-width: 0; }
 .explorer-filters fieldset { margin-top: 12px; border: 0; padding: 0; }
 .explorer-filters .chip-list label { min-height: 44px; display: flex; align-items: center; gap: 4px; }
+/* Read-only comparisons and local watch dashboards reuse existing tokens. */
+.comparison-bars { margin: 20px 0; padding: 0; }
+.comparison-bars figcaption { margin-bottom: 14px; font-weight: 700; }
+.comparison-bar { display: grid; grid-template-columns: minmax(0, 1fr) 80px 64px; gap: 10px; align-items: center; margin: 14px 0; font-variant-numeric: tabular-nums; font-size: 12px; }
+.comparison-bar strong { overflow-wrap: anywhere; }
+.comparison-bar__track { height: 7px; background: var(--color-border); border-radius: 4px; }
+.comparison-bar__track span { display: block; height: 100%; background: var(--brand); border-radius: 4px; }
+.comparison-bar__track .negative { background: var(--color-negative); }
+.comparison-summary, .collection-watch-row { padding: 18px 0; border-bottom: 1px solid var(--color-border); }
+.comparison-summary h2 { font-size: 17px; overflow-wrap: anywhere; }
+.comparison-years { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 18px 0; }
+.comparison-years label { display: flex; align-items: center; gap: 6px; min-height: 44px; }
+.share-link, .display-export { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 20px 0; }
+.share-link label { width: 100%; }
+.share-link textarea { width: 100%; min-height: 90px; overflow-wrap: anywhere; }
+.share-link button, .display-export button, .collection-watch-row button, .library-pagination button { min-height: 44px; }
+.library-pagination { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 18px 0; }
+.collection-watch-row .list-heading { justify-content: flex-start; }
+.collection-watch-row .list-heading a { overflow-wrap: anywhere; }
