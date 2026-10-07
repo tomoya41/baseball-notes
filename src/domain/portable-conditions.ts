@@ -11,8 +11,8 @@ export function viewConditions(params: URLSearchParams, includeName = true, leag
       const value = clean.get(key);
       if (value && !canonicalEntityRefSchema.safeParse({ league, kind: key, id: value }).success) clean.delete(key);
     }
-    if (clean.has("recentPlayers")) {
-      const players = [...new Set(clean.get("recentPlayers")!.split(",").filter(id => canonicalEntityRefSchema.safeParse({ league, kind: "player", id }).success))].slice(0, 12);
+    if (params.has("recentPlayers")) {
+      const players = [...new Set((clean.get("recentPlayers") ?? "").split(",").filter(id => canonicalEntityRefSchema.safeParse({ league, kind: "player", id }).success))].slice(0, 12);
       if (players.length) clean.set("recentPlayers", players.join(",")); else clean.delete("recentPlayers");
       // Keep selected mode when invalid/empty selections are removed; never
       // turn a shared selection into an all-player Recent exploration.

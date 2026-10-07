@@ -4,6 +4,10 @@ import { collectionSeasonCheckpoint, comparisonValue, metricNumber, previousYear
 import { canonicalDeepLink, parentNativeRoute } from "../src/domain/native-navigation";
 const id = "00000000-0000-4000-8000-000000000001", team = `mlb:team:${id}`;
 describe("portable comparison state", () => {
+  it("keeps an explicitly empty Recent selection in selected mode after sharing", () => {
+    const clean = new URLSearchParams(portableRoute("/NPB/data", "period=14&recentPlayers=")!.split("?")[1]);
+    expect(clean.get("recentMode")).toBe("selected"); expect(clean.has("recentPlayers")).toBe(false);
+  });
   it.each(["data", "history"])("sanitizes canonical identity filters in shared %s URLs", section => {
     const clean = new URLSearchParams(portableRoute(`/MLB/${section}`, `team=local-123&player=private-id&recentPlayers=local-1,mlb:player:${id},${id},mlb:player:${id}&period=14`)!.split("?")[1]);
     expect(clean.has("team")).toBe(false); expect(clean.has("player")).toBe(false); expect(clean.get("recentPlayers")).toBe(`mlb:player:${id}`);
