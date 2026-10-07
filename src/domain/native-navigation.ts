@@ -1,4 +1,5 @@
 import { canonicalEntityRefSchema, canonicalEntityPath } from "./cross-league";
+import { portableRoute } from "./product-sharing";
 export function canonicalDeepLink(input: string): string | null {
   try {
     const uri = new URL(input);
@@ -6,8 +7,11 @@ export function canonicalDeepLink(input: string): string | null {
       uri.pathname.startsWith("/baseball-notes/"))) return null;
     const route = uri.protocol === "baseballnotes:" ? `/${uri.hostname}${uri.pathname}` :
       uri.hash.startsWith("#/") ? uri.hash.slice(1) : uri.pathname.replace(/^\/baseball-notes/, "");
+    const [portablePath, portableSearch] = route.split("?");
+    const expanded = ["data", "history", "compare", "team-compare", "season-compare", "postseason"].includes(portablePath?.split("/")[2] ?? "");
+    if (expanded) return portableRoute(portablePath!, portableSearch ?? uri.search);
     const [leagueRaw, resource, encoded, child, ...extra] = route.split("?")[0]!.replace(/^\//, "").split("/");
-    if (extra.length || (child && !["analysis", "game-log", "stats", "more", "trends"].includes(child))) return null;
+    if (extra.length || (child && !["analysis", "game-log", "stats", "more", "trends", "advanced"].includes(child))) return null;
     const league = leagueRaw?.toUpperCase();
     const kind = resource === "players" ? "player" : resource === "games" ? "game" : resource === "teams" ? "team" : undefined;
     const parsed = canonicalEntityRefSchema.safeParse({ league, kind, id: decodeURIComponent(encoded ?? "") });
@@ -30,6 +34,8 @@ export function parentNativeRoute(path: string): string | null {
     if (/^20\d{2}$/.test(source.get("season") ?? "")) scope.set("season", source.get("season")!);
   }
   const suffix = scope.size ? `?${scope}` : "";
+  if (segments[1] === "library" && segments.length > 2) return `/${league}/library`;
+  if (["compare", "team-compare", "season-compare"].includes(segments[1] ?? "")) return `/${league}/search${suffix}`;
   if (segments[1] === "players" && segments.length > 3) return `/${league}/players/${segments[2]}${suffix}`;
   if (segments[1] === "players") return `/${league}/search${suffix}`;
   if (segments[1] === "games") return `/${league}/schedule${suffix}`;

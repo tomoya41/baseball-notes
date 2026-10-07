@@ -25,6 +25,9 @@ import { NpbSeasonExplorer } from "./season-explorer";
 import { NpbDiscovery } from "./discovery";
 import { StatGlossary } from "./stat-glossary";
 import { MyLibrary, PersonalLibraryProvider, PersonalLibraryScreen } from "./personal-library";
+import { CollectionDashboard } from "./collection-dashboard";
+import { NpbTeamCompare, SeasonCompare } from "./team-season-compare";
+import { ShareLink } from "./product-sharing";
 type FavoriteTarget = Pick<Favorite, "kind" | "entityId" | "league">;
 const MlbLeagueView = lazy(() => import("./mlb-foundation").then(module => ({ default: module.MlbLeagueView })));
 function NpbSearchEntry(props: Parameters<typeof NpbRoutes>[0]) {
@@ -46,6 +49,8 @@ function NpbRoutes({ services, favorites, toggle, saving }: { services: Services
     <Route path="search" element={<NpbSearchEntry services={services} favorites={favorites} toggle={toggle} saving={saving} />} />
     <Route path="data" element={<NpbDataExplorer services={services} />} />
     <Route path="history" element={<NpbSeasonExplorer />} />
+    <Route path="team-compare" element={<NpbTeamCompare services={services} favoriteTeams={favorites.filter(f => f.league === "NPB" && f.kind === "team").map(f => f.entityId)} />} />
+    <Route path="season-compare" element={<SeasonCompare league="NPB" services={services} />} />
     <Route path="glossary" element={<StatGlossary league="NPB" />} />
     <Route path="analysis" element={<Navigate to="/NPB/search" replace />} />
     <Route path="players/:playerId/:section?" element={<NpbPlayer key={location.pathname.split("/")[3]} services={services} favorites={favorites} toggle={toggle} saving={saving} />} />
@@ -69,7 +74,7 @@ export function App({ services }: { services: Services }) {
   useEffect(() => { window.scrollTo(0, 0); }, [location.pathname]);
   const league: League = location.pathname.split("/")[1] === "MLB" ? "MLB" : "NPB";
   const section = location.pathname.split("/")[2] ?? "home";
-  const currentNav = ["games", "schedule", "postseason"].includes(section) ? "schedule" : ["ranking", "milestones"].includes(section) ? "records" : ["players", "teams", "analysis", "compare", "data", "history", "glossary"].includes(section) ? "search" : ["favorites", "library"].includes(section) ? "my" : section;
+  const currentNav = ["games", "schedule", "postseason"].includes(section) ? "schedule" : ["ranking", "milestones"].includes(section) ? "records" : ["players", "teams", "analysis", "compare", "team-compare", "season-compare", "data", "history", "glossary"].includes(section) ? "search" : ["favorites", "library"].includes(section) ? "my" : section;
   const [favorites, setFavorites] = useState<Favorite[]>([]);
   const [favoritesReady, setFavoritesReady] = useState(false);
   const [refreshVersion, setRefreshVersion] = useState(0);
@@ -110,10 +115,12 @@ export function App({ services }: { services: Services }) {
       role={favoriteError ? "alert" : "status"}>{favoriteMessage}</p>}
     <RuntimeStatus />
     <main id="main-content" tabIndex={-1}>
-
+    <ShareLink key={location.pathname + location.search} />
     <Routes key={refreshVersion}>
       <Route path="/NPB/library" element={<PersonalLibraryScreen league="NPB" />} />
       <Route path="/MLB/library" element={<PersonalLibraryScreen league="MLB" />} />
+      <Route path="/NPB/library/collections/:collectionId" element={<CollectionDashboard league="NPB" services={services} favorites={favorites} />} />
+      <Route path="/MLB/library/collections/:collectionId" element={<CollectionDashboard league="MLB" services={services} favorites={favorites} />} />
       <Route path="/privacy" element={<PrivacyScreen />} />
       <Route path="/NPB/games/:gameId" element={<NpbGameDetailScreen key={location.pathname} repository={services.gameDetail} services={services} favorites={favorites} toggle={toggle} saving={saving} />} />
       <Route path="/NPB/*" element={<NpbRoutes services={services}

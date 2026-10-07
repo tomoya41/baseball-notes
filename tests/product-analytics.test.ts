@@ -42,6 +42,13 @@ const pitcher: HistoricalPitcher = { playerId: player, teamId: team, role: "star
 const game: HistoricalGame = { id: `mlb:game:${uuid(4)}`, season: 2025, date: "2025-09-01", homeTeamId: team, awayTeamId: other, homeRuns: 1, awayRuns: 0, innings: 9, number: 0, batting: [batter], pitching: [pitcher], validationIssues: [] };
 const input = { teamId: team, season: 2025, competitionType: "regular" as const, coverage: "complete" as const, effectiveDate: "2025-09-28" };
 describe("historical team projection", () => {
+  it("derives calendar windows and home/away from actual Games while preserving original summaries", () => {
+    const recent = { ...game, id: `mlb:game:${uuid(8)}`, date: "2025-09-28" }, away = { ...game, id: `mlb:game:${uuid(9)}`, date: "2025-09-20", homeTeamId: other, awayTeamId: team, homeRuns: 4, awayRuns: 2 };
+    const source = [game, recent, away], before = JSON.stringify(source), hub = buildHistoricalTeamHub(source, new Map(), input);
+    expect(hub.G).toBe(3); expect(hub.comparisonViews!["7"].G).toBe(1); expect(hub.comparisonViews!["14"].G).toBe(2); expect(hub.comparisonViews!["30"].G).toBe(3);
+    expect(hub.comparisonViews!.home.G).toBe(2); expect(hub.comparisonViews!.away.L).toBe(1); expect(hub.comparisonViews!.away.runsFor).toBe(2); expect(hub.comparisonViews!["7"].batting.H!.value).toBe(2); expect(hub.comparisonViews!["7"].pitching.SO!.value).toBe(10); expect(JSON.stringify(source)).toBe(before);
+    expect(validStaticPayload(`teams/2025/${team.replaceAll(":", "_")}.json`, { ...hub, comparisonViews: { ...hub.comparisonViews, home: { ...hub.comparisonViews!.home, to: "2025-09-27" } } })).toBe(false);
+  });
   it("keeps different players' batting and independent pitching decisions separate", () => {
     const second = `mlb:player:${uuid(7)}`;
     const multiple = { ...game, batting: [batter, { ...batter, playerId: second, hits: 1, homeRuns: 0 }], pitching: [pitcher, { ...pitcher, playerId: second, role: "reliever" as const, outsRecorded: 3, so: 2, win: false, save: true }] };
