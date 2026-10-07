@@ -24,6 +24,7 @@ vi.mock("../src/ui/use-mlb-historical", () => ({ useHistoricalStatic: (path: str
 } }));
 vi.mock("../src/app/historical-products", () => ({ readHistoricalProduct: reader }));
 vi.mock("../src/application/explorer-readers", () => ({ readNpbExplorerSeason: npbReader }));
+vi.mock("../src/ui/product-sharing", () => ({ DisplayExportButton: ({ data }: { data: { coverage: string } }) => <output data-export-coverage>{data.coverage}</output> }));
 const id = "mlb:player:00000000-0000-4000-8000-000000000001", id2 = "mlb:player:00000000-0000-4000-8000-000000000002", npbId = id.split("player:")[1]!;
 const team = "mlb:team:00000000-0000-4000-8000-000000000010";
 const metrics = { PA: { value: 100 }, OPS: { value: .950 }, HR: { value: 20 }, outsRecorded: { value: 19 }, ERA: { value: 2 }, K9: { value: 9 } };
@@ -51,6 +52,12 @@ function seedNpb() {
   return { season, directory, deps: { ...services, directory: { findLatestNpb: async () => directory } as unknown as typeof services.directory } };
 }
 describe("compact exploration UI", () => {
+  it("keeps failed selected Recent reads partial in both the visible notice and CSV", async () => {
+    await mount(explorer(async () => ({ values: [{ ...rows[0]!, coverage: "complete" }], failed: [id2], coverage: "complete" })), `/MLB/data?season=2025&period=14&recentPlayers=${id},${id2}`);
+    expect(container.textContent).toContain("一部の選択選手を読み込めません");
+    expect(container.textContent).toContain("Coverage 一部未確認");
+    expect(container.querySelector("[data-export-coverage]")?.textContent).toBe("partial");
+  });
   it("distinguishes unavailable Coverage evidence from partial Coverage", async () => {
     await mount(<DataExplorerView league="NPB" rows={rows} teams={manifest.teams} season={2026} years={[2026]} effectiveDate="2026-10-03" coverage="complete" readRecent={async () => ({ values: [], failed: [] })} readAllRecent={async () => ({ values: [], failed: [], coverage: "unavailable" })} />, "/NPB/data?period=7");
     expect(container.textContent).toContain("この期間のCoverage情報を取得できません"); expect(container.textContent).not.toContain("一部未確認");

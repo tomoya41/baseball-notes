@@ -4,6 +4,14 @@ import { collectionSeasonCheckpoint, comparisonValue, metricNumber, previousYear
 import { canonicalDeepLink, parentNativeRoute } from "../src/domain/native-navigation";
 const id = "00000000-0000-4000-8000-000000000001", team = `mlb:team:${id}`;
 describe("portable comparison state", () => {
+  it("never copies local, invalid or other-league comparison identities into public URLs", () => {
+    const bad = new URLSearchParams(portableRoute("/MLB/compare", "against=local-123&opponent=secret")!.split("?")[1]);
+    expect(bad.has("against")).toBe(false); expect(bad.has("opponent")).toBe(false);
+    const good = new URLSearchParams(portableRoute("/MLB/compare", `against=mlb:player:${id}&opponent=${team}`)!.split("?")[1]);
+    expect(good.get("against")).toBe(`mlb:player:${id}`); expect(good.get("opponent")).toBe(team);
+    const npb = new URLSearchParams(portableRoute("/NPB/compare", `against=mlb:player:${id}&opponent=${team}`)!.split("?")[1]);
+    expect(npb.has("against")).toBe(false); expect(npb.has("opponent")).toBe(false);
+  });
   it("reuses stored-season checkpoint steps without inventing career or unavailable counts", () => {
     expect(collectionSeasonCheckpoint({ H: { value: 100, status: "partial" }, HR: { value: null } }, "batting")).toBe("安打 100 / 節目 150"); expect(collectionSeasonCheckpoint(null, "pitching")).toBe("");
   });
@@ -42,8 +50,12 @@ describe("portable comparison state", () => {
 const data: DisplayExport = { league: "MLB", scope: "2025 Regular Season selected players", date: "2025-09-28", coverage: "partial", columns: ["選手", "H", "OPS"], rows: [["大谷翔平", 172, 1.014], ["=unsafe", null, 0], ["quoted \"name\"", -2, null]] };
 describe("bounded derived-result exports", () => {
   it("keeps every displayed player with null cells and partial coverage for no facts or a failed read", () => {
-    const result = comparisonDisplayExport("MLB", "2025 batting", "2025-09-28", ["H", "OPS"], [{ name: "known", metrics: { H: { value: 2, status: "complete" }, OPS: { value: .9, status: "complete" } } }, { name: "no batting facts", metrics: null }, { name: "read failed", metrics: null }]);
+    const result = comparisonDisplayExport("MLB", "2025 batting", "2025-09-28", ["H", "OPS"], [{ name: "known", coverage: "complete", metrics: { H: { value: 2, status: "complete" }, OPS: { value: .9, status: "complete" } } }, { name: "no batting facts", coverage: "complete", metrics: null }, { name: "read failed", coverage: "unavailable", metrics: null }]);
     expect(result.rows).toEqual([["known", 2, .9], ["no batting facts", null, null], ["read failed", null, null]]); expect(result.coverage).toBe("partial"); expect(displayCsv(result)).toContain('"no batting facts","",""');
+  });
+  it.each(["partial", "unavailable", "unknown"])("preserves %s source coverage even with complete metric cells", coverage => {
+    const result = comparisonDisplayExport("MLB", "2025 batting", "2025-09-28", ["H"], [{ name: "known", coverage, metrics: { H: { value: 2, status: "complete" } } }]);
+    expect(result.coverage).toBe("partial"); expect(displayCsv(result)).toContain("Coverage: partial");
   });
   it("preserves credit, scope, null and real zero; escapes formula/string cells", () => {
     const csv = displayCsv(data); expect(csv).toContain(RETROSHEET_EXPORT_CREDIT.replaceAll('"', '""')); expect(csv).toContain("Chadwick Register"); expect(csv).toContain("Coverage: partial"); expect(csv).toContain('"\'=unsafe","","0"'); expect(csv).toContain('"quoted ""name""","-2",""');

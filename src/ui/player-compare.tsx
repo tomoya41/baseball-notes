@@ -21,7 +21,7 @@ import { comparisonDisplayExport } from "../domain/product-sharing";
 export type ComparePlayer = { id: string; name: string; batting: boolean; pitching: boolean; seasons?: number[] };
 export type HistoricalProductProfile = { player: { id: string; name: string; seasons: number[] }; batting: DatedBatter[]; pitching: DatedPitcher[] };
 export type HistoricalProductManifest = { seasons: { season: number; firstDate: string; lastDate: string; coverage: string }[]; teams: { id: string; name: string }[]; features?: { directBvp?: string; situationalAnalysis?: string } };
-type Loaded = { id: string; metrics: CompareMetrics | null; date: string; notice: string | null };
+type Loaded = { id: string; metrics: CompareMetrics | null; date: string; notice: string | null; coverage?: string };
 type Controls = { role: "batting" | "pitching"; condition: string; period: string; season: number; opponent: string; advancedOpponent: string; battingOrder: number };
 type Loader = (id: string, controls: Controls) => Promise<Loaded>;
 const conditionLabels: Record<string, string> = { season: "シーズン", total: "期間の成績", home: "ホーム", away: "ビジター", opponent: "対戦球団", order: "打順", starter: "先発出場", substitute: "途中出場", "pitcher-starter": "先発投手", reliever: "救援投手", "bases:empty": "走者なし", "bases:runners": "走者あり", "bases:risp": "得点圏", "outs:0": "0アウト", "outs:1": "1アウト", "outs:2": "2アウト", "inning:1–3": "1〜3回", "inning:4–6": "4〜6回", "inning:7–9": "7〜9回", "inning:extra": "延長", "score:ahead": "リード", "score:tied": "同点", "score:behind": "ビハインド", bvp: "実対戦" };
@@ -73,7 +73,7 @@ export function CompareWorkspace({ league, players, teams, seasons, loader, adva
       {loaded.map((r, i) => r.status === "error" || r.value.notice ? <p className="data-notice" key={ids[i]}>{players.find(p => p.id === ids[i])?.name ?? "選手"}：{r.status === "error" ? "読み込みに失敗しました" : r.value.notice}</p> : null)}
       <div className="mlb-stat-scroll compare-table" tabIndex={0} role="region" aria-label="選手比較表。横スクロールできます"><table><thead><tr><th>成績</th>{ids.map(id => <th key={id}>{players.find(p => p.id === id)?.name ?? "未収録"}</th>)}</tr></thead><tbody>{keys.map(k => <tr key={k}><th scope="row"><MetricLabel metric={k} label={k === "outsRecorded" ? "IP" : k === "K9" ? "K/9" : k} /></th>{ids.map((id, i) => { const r = loaded[i], m = r?.status === "ready" ? r.value.metrics?.[k] : undefined; return <td key={id}>{metricValue(k, m)}{m?.status === "partial" && <small>一部</small>}</td>; })}</tr>)}</tbody></table></div>
       <p className="inline-note">規定到達者のランキングではありません。打席・登板数も合わせて確認してください。取得できない値は「—」。</p>
-      {dates.size === 1 && <DisplayExportButton data={comparisonDisplayExport(league, `${season} ${competition} ${role} ${condition} ${period}`, [...dates][0]!, keys, ids.map((id, i) => { const row = loaded[i]; return { name: players.find(p => p.id === id)?.name ?? id, metrics: row?.status === "ready" ? row.value.metrics : null }; }))} />}
+      {dates.size === 1 && <DisplayExportButton data={comparisonDisplayExport(league, `${season} ${competition} ${role} ${condition} ${period}`, [...dates][0]!, keys, ids.map((id, i) => { const row = loaded[i]; return { name: players.find(p => p.id === id)?.name ?? id, metrics: row?.status === "ready" ? row.value.metrics : null, coverage: row?.status === "ready" ? row.value.coverage ?? "unknown" : "unavailable" }; }))} />}
     </>}
   </div>;
 }
@@ -107,14 +107,14 @@ export function MlbPlayerCompare({ manifest }: { manifest: HistoricalProductMani
       if (data.playerId !== id || data.scope !== String(c.season)) throw Error("Advanced comparison context mismatch");
       const ready = c.condition === "bvp" ? data.directBvp === "ready" : data.situations === "ready";
       const row = ready ? c.condition === "bvp" ? data[c.role].opponents.find(p => p.playerId === c.advancedOpponent)?.metrics : data[c.role].splits.find(p => p.key === c.condition)?.metrics : null;
-      return { id, date: season.lastDate, metrics: row ? Object.fromEntries(Object.entries(row).map(([k, v]) => [k, { value: v }])) : null, notice: !ready ? "利用状況を確認中" : !row ? "この対戦・状況の記録なし" : null };
+      return { id, date: season.lastDate, coverage: season.coverage, metrics: row ? Object.fromEntries(Object.entries(row).map(([k, v]) => [k, { value: v, status: ready ? "complete" : "unavailable" }])) : null, notice: !ready ? "利用状況を確認中" : !row ? "この対戦・状況の記録なし" : null };
     }
     const profile = payload as HistoricalProductProfile;
     if (profile.player.id !== id) throw Error("Comparison identity mismatch");
     const { from, to } = c.condition === "season" || c.period === "season" ? { from: season.firstDate, to: season.lastDate } : dateWindow(season.lastDate, Number(c.period.replace("d", "")) as 7 | 14 | 30);
     const filter = (r: DatedBatter | DatedPitcher) => r.season === c.season && (c.condition === "season" || c.condition === "total" || c.condition === "home" && r.home || c.condition === "away" && !r.home || c.condition === "opponent" && r.opponentTeamId === c.opponent || c.condition === "order" && "battingOrder" in r && r.battingOrder === c.battingOrder || c.condition === "starter" && "starter" in r && r.starter === true || c.condition === "substitute" && "starter" in r && r.starter === false || c.condition === "pitcher-starter" && "role" in r && r.role === "starter" || c.condition === "reliever" && "role" in r && r.role === "reliever");
     const stats = c.role === "batting" ? battingAggregate(id, profile.batting.filter(filter), from, to) : pitchingAggregate(id, profile.pitching.filter(filter), from, to);
-    return { id, date: to, metrics: stats.factCount ? stats.metrics : null, notice: !stats.factCount ? "この条件の記録なし" : season.coverage !== "complete" ? "一部データ確認中" : null };
+    return { id, date: to, coverage: season.coverage, metrics: stats.factCount ? stats.metrics : null, notice: !stats.factCount ? "この条件の記録なし" : season.coverage !== "complete" ? "一部データ確認中" : null };
   }, [cache, competition, manifest]);
   if (directory.status !== "ready") return directory.status === "loading" ? <LoadingSkeleton /> : <DataState kind="source-unavailable" title="選手一覧を読み込めません" />;
   return <CompareWorkspace league="MLB" competition={competition} players={directory.value!.players.filter(p => competition === "postseason" || !p.postseasonOnly).map(p => ({ id: p.id, name: p.name, seasons: p.seasons, ...historicalCompareRoles(p.positions) }))} teams={manifest.teams} seasons={manifest.seasons.map(s => s.season)} loader={loader} advanced={manifest.features?.directBvp === "available" || manifest.features?.situationalAnalysis === "available"} />;

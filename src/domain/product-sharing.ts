@@ -15,7 +15,10 @@ export function portableRoute(path: string, search = ""): string | null {
   if (parts.length === 2 && ["compare", "team-compare", "season-compare"].includes(resource ?? "")) {
     if (resource === "compare") {
       const ids = compareIds(league, source.get("players")); if (ids.length) clean.set("players", ids.join(","));
-      for (const k of ["condition", "period", "role", "opponent", "order", "against"]) { const v = source.get(k); if (v && v.length < 200) clean.set(k, v); }
+      for (const k of ["condition", "period", "role", "order"]) { const v = source.get(k); if (v && v.length < 200) clean.set(k, v); }
+      const opponent = source.get("opponent"), against = source.get("against");
+      if (opponent && canonicalEntityRefSchema.safeParse({ league, kind: "team", id: opponent }).success) clean.set("opponent", opponent);
+      if (league === "MLB" && against && canonicalEntityRefSchema.safeParse({ league, kind: "player", id: against }).success) clean.set("against", against);
     } else if (resource === "team-compare") {
       const ids = selectedTeams(league, source.get("teams")); if (ids.length) clean.set("teams", ids.join(","));
       if (["season", "7", "14", "30", "home", "away"].includes(source.get("view") ?? "")) clean.set("view", source.get("view")!);
@@ -41,9 +44,9 @@ export function portableRoute(path: string, search = ""): string | null {
 function decodeSafe(value: string) { try { return decodeURIComponent(value); } catch { return ""; } }
 export function portableUrl(path: string, search = "") { const route = portableRoute(path, search); return route ? `${PUBLIC_APP_URL}#${route}` : null; }
 export type DisplayExport = { league: League; scope: string; date: string; coverage: string; columns: string[]; rows: (string | number | null)[][] };
-export function comparisonDisplayExport(league: League, scope: string, date: string, keys: string[], selections: { name: string; metrics: CompareMetrics | null }[]): DisplayExport {
+export function comparisonDisplayExport(league: League, scope: string, date: string, keys: string[], selections: { name: string; metrics: CompareMetrics | null; coverage: string }[]): DisplayExport {
   return { league, scope, date,
-    coverage: selections.some(r => !r.metrics || keys.some(k => metricNumber(r.metrics, k) === null || r.metrics?.[k]?.status !== "complete")) ? "partial" : "complete",
+    coverage: selections.length > 0 && selections.every(r => r.coverage === "complete" && r.metrics && keys.every(k => metricNumber(r.metrics, k) !== null && r.metrics?.[k]?.status === "complete")) ? "complete" : "partial",
     columns: ["選手", ...keys], rows: selections.map(r => [r.name, ...keys.map(k => metricNumber(r.metrics, k))]) };
 }
 export const RETROSHEET_EXPORT_CREDIT = 'The information used here was obtained free of charge from and is copyrighted by Retrosheet. Interested parties may contact Retrosheet at "www.retrosheet.org".';

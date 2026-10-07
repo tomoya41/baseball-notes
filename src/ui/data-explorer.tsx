@@ -76,7 +76,7 @@ export function DataExplorerView({ league, rows, teams, season, years, effective
   const compare = [...new Set((params.get("compare") ?? "").split(",").filter(id => rows.some(r => r.playerId === id)))].slice(0, 4);
   const toggleId = (name: "recentPlayers" | "compare", id: string) => { const selected = name === "compare" ? compare : ids, maximum = name === "compare" ? 4 : MAX_RECENT_PLAYERS; update(name, (selected.includes(id) ? selected.filter(x => x !== id) : [...selected, id].slice(0, maximum)).join(",")); };
   const keys = explorerMetrics[query.role].filter(k => rows.some(r => readableMetric(r[query.role]?.[k]) !== null)), displayKeys = (params.get("metrics")?.split(",").slice(0, 3) ?? [params.get("sort1") || (query.role === "batting" ? "OPS" : "ERA"), params.get("sort2") || (query.role === "batting" ? "HR" : "SO")]).filter(k => (keys as readonly string[]).includes(k));
-  const periodCoverage = days ? recent?.key === key ? recent.coverage ?? (recent.values.length && recent.values.every(r => r.coverage === "complete") ? "complete" : "unknown") : "unavailable" : coverage;
+  const periodCoverage = days ? recent?.key === key ? recent.failed.length ? "partial" : recent.coverage ?? (recent.values.length && recent.values.every(r => r.coverage === "complete") ? "complete" : "unknown") : "unavailable" : coverage;
   const sampleKey = query.sample ?? (query.role === "batting" ? "PA" : "outsRecorded");
   const linkScope = `?season=${season}${scope}`;
   const savedParams = new URLSearchParams(params); savedParams.set("season", String(season)); if (scope) savedParams.set("competition", "postseason");

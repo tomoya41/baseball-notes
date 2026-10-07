@@ -102,6 +102,11 @@ now binds every dated page to the Game Manifest generatedAt and fails closed;
 CSV keeps every displayed player with null cells and partial availability.
 Regression tests include one stale yet complete-looking date, a no-Facts/failed
 comparison row, and a Collection Recent window transferred into Compare.
+The follow-up review also requires source/archive coverage in CSV metadata,
+partial status after failed selected Recent reads, and canonical-only opponent
+IDs in shared comparisons. Export coverage now includes the loader's source
+coverage rather than only metric availability; sharing rejects local or
+cross-league opponent identifiers. Each case has a regression test.
 
 Tests cover scope/identity, generation mismatch, null/sample semantics, bounded
 reads, calendar windows, home/away, preserved source objects, exact predecessor
