@@ -35,6 +35,9 @@ describe("portable comparison state", () => {
   it("rejects unsupported years and respects an explicitly empty selection", () => {
     expect(selectedYears(null, [2025, 2020, 2024])).toEqual([2020, 2024, 2025]); expect(selectedYears("", [2025])).toEqual([]); expect(selectedYears("2026", [2025])).toEqual([]); expect(selectedYears("2025,2025", [2025])).toEqual([2025]);
   });
+  it("preserves explicitly empty year selections instead of sharing the default six years", () => {
+    expect(new URLSearchParams(portableRoute("/MLB/season-compare", "years=")!.split("?")[1]).has("years")).toBe(true);
+  });
   it("uses a true prior-year delta, never a previous collected-year delta", () => {
     const row = (season: number, value: number | null): ComparisonRow => ({ id: String(season), name: "選手", season, date: `${season}-09-30`, coverage: "complete", metrics: { H: { value, status: value === null ? "unavailable" : "complete" } } });
     const rows = [row(2020, 20), row(2022, 30), row(2023, 35), row(2024, null)]; expect(previousYearDelta(rows, rows[1]!, "H")).toBeNull(); expect(previousYearDelta(rows, rows[2]!, "H")).toBe(5); expect(previousYearDelta(rows, rows[3]!, "H")).toBeNull();

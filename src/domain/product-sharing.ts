@@ -26,7 +26,7 @@ export function portableRoute(path: string, search = ""): string | null {
     } else {
       const kind = source.get("kind") === "team" ? "team" : "player", entity = source.get("entity");
       if (entity && canonicalEntityRefSchema.safeParse({ league, kind, id: entity }).success) { clean.set("kind", kind); clean.set("entity", entity); }
-      if (/^20\d{2}(,20\d{2}){0,5}$/.test(source.get("years") ?? "")) clean.set("years", source.get("years")!);
+      if (source.has("years") && (source.get("years") === "" || /^20\d{2}(,20\d{2}){0,5}$/.test(source.get("years")!))) clean.set("years", source.get("years")!);
       if (["batting", "pitching"].includes(source.get("role") ?? "")) clean.set("role", source.get("role")!);
       if (/^[A-Za-z0-9]{1,20}$/.test(source.get("metric") ?? "")) clean.set("metric", source.get("metric")!);
     }
