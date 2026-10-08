@@ -24,3 +24,14 @@ The user clarified that **document-level vertical scrolling is also disallowed**
 ## Implementation / verification
 
 Foundation and navigation first, followed by core, analytical and personal surfaces. Keep existing read models and bounded fetching. Split optional route implementations without changing repositories. Verify 360px Light/Dark, tablet and desktop, direct links, keyboard/focus, reduced motion, local persistence, data hashes and Android builds before publishing.
+
+## Review safeguards
+
+- Oversized rows/groups are allowed to fragment into normal document flow when they exceed the available page height; restoring space restores their compact layout. Charts are constrained to page height. This protects short viewports and enlarged text without enabling vertical scrolling.
+- Every remeasurement follows an active keyboard target after asynchronous content moves it to another column. Route changes reset the viewport; query-only edits preserve the existing focus contract.
+- Metric dialogs mount their content and layout observers only while open. Native dialog focus return and Escape handling remain available.
+- The page selector provides direct access in long lists; it is not a local-storage or shared-URL identifier. Filters, selected entities and scope remain in their existing URL contracts.
+
+## Verification record
+
+Local visual checks cover 360×800 Light/Dark, 360×640, 768×1024 and 1280×800, plus a stress case at 360×400 with 200% root text sizing (temporary QA CSS removed). Game box scores, metric explanations, player/season/team comparisons and explorer results remain in the document and reachable through page controls. Automated regressions cover page bounds, reflow, oversized groups, keyboard target movement, dialog open/close and table header associations. Real Android device/TalkBack verification remains a manual release check; Android build success alone does not certify that check.

@@ -19,13 +19,35 @@ export function ViewportPages({ children, resetKey = "" }: { children: ReactNode
   useLayoutEffect(() => {
     const viewport = windowRef.current!, flow = flowRef.current!;
     let frame = 0;
+    const focusedPage = () => {
+      const active = document.activeElement;
+      if (!(active instanceof HTMLElement) || !flow.contains(active)) return null;
+      const target = active.getBoundingClientRect(), bounds = viewport.getBoundingClientRect();
+      return Math.max(0, Math.floor((target.left - bounds.left + viewport.scrollLeft + 1) / sizeRef.current));
+    };
     const measure = () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
-        sizeRef.current = viewport.clientWidth + 24;
-        const pages = Math.max(1, Math.ceil((flow.scrollWidth + 24) / sizeRef.current));
+        const height = viewport.clientHeight;
+        flow.style.setProperty("--page-height", `${height}px`);
+        // Reset before reflow: a row that needed splitting with the keyboard open
+        // can return to its compact layout once the viewport grows again.
+        for (const node of flow.querySelectorAll("[data-page-split],[data-page-table]")) {
+          node.removeAttribute("data-page-split"); node.removeAttribute("data-page-table");
+        }
+        if (height > 0) {
+          const oversized = [...flow.querySelectorAll<HTMLElement>("*")].filter(node =>
+            node instanceof HTMLElement && !node.closest("details:not([open])") &&
+            node.getBoundingClientRect().height > height + 1);
+          for (const node of oversized) {
+            node.setAttribute("data-page-split", "");
+            if (node.matches("tr,th,td")) node.closest("table")?.setAttribute("data-page-table", "");
+          }
+        }
+        sizeRef.current = (viewport.getBoundingClientRect().width || viewport.clientWidth) + 24;
+        const pages = Math.max(1, Math.ceil((flow.scrollWidth + 23) / sizeRef.current));
         setCount(pages);
-        const bounded = Math.min(pageRef.current, pages - 1);
+        const bounded = Math.min(focusedPage() ?? pageRef.current, pages - 1);
         pageRef.current = bounded; setPage(bounded);
         viewport.scrollLeft = bounded * sizeRef.current;
       });

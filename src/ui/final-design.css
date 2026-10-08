@@ -32,13 +32,13 @@ button { background: var(--color-elevated); }
 input,select { font-size: .8125rem; border-radius: var(--radius-sm); min-height:44px; }
 button,a,input,select,summary { touch-action: manipulation; }
 .app-shell { max-width: 1280px; padding: 0 16px calc(90px + env(safe-area-inset-bottom)); }
-.app-header { min-height: calc(64px + env(safe-area-inset-top)); margin:0 0 16px; border-bottom: 1px solid var(--color-border); }
+.app-header { min-height: calc(64px + env(safe-area-inset-top)); margin:0 0 16px; border-bottom: 1px solid var(--color-border); flex-wrap:wrap; row-gap:4px; }
 .brand { gap:8px; }
 .brand-mark { width:26px; height:26px; background:var(--color-text); color:var(--color-bg); border-radius:50%; }
 .brand strong { font-size:.65rem; letter-spacing:.08em; }.brand small { font-size:.52rem; letter-spacing:.23em; }
-.app-header-actions { display:flex; align-items:center; gap:8px; }
+.app-header-actions { display:flex; align-items:center; gap:8px; margin-left:auto; }
 .league-switch { background:var(--color-surface); border:1px solid var(--color-border); padding:2px; border-radius:5px; }
-.league-switch a { min-width:42px; min-height:38px; font-size:.6875rem; border:0; border-radius:3px; }
+.league-switch a { min-width:max(42px,2.75em); min-height:38px; font-size:.6875rem; border:0; border-radius:3px; flex-shrink:0; }
 .league-switch a[aria-current] { background:var(--color-text); color:var(--color-bg); }
 .icon-button { display:grid; place-items:center; min-width:44px; min-height:44px; background:transparent; color:var(--color-muted); border-radius:4px; }
 .share-link--compact { margin:0; position:relative; }
@@ -256,6 +256,7 @@ html,body,#root { height:100%; overflow:hidden; }
 .viewport-pages-controls button { display:flex; gap:4px; align-items:center; min-width:80px; min-height:44px; padding:4px 8px; color:var(--color-text); background:transparent; font-size:.75rem; }
 .viewport-pages-controls small { color:var(--color-muted); font-size:.6875rem; }
 .viewport-page-number { position:relative; display:grid; place-items:center; min-width:72px; min-height:44px; }
+.viewport-page-number::after { content:"⌄"; position:absolute; right:4px; color:var(--color-muted); pointer-events:none; }
 .viewport-page-number select { position:absolute; inset:0; opacity:0; width:100%; cursor:pointer; }
 .viewport-page-number:focus-within { outline:2px solid var(--brand); outline-offset:-2px; }
 .bottom-nav { position:static; flex-shrink:0; margin:0 -16px; }
@@ -271,6 +272,14 @@ html,body,#root { height:100%; overflow:hidden; }
 .library-picker-content strong { display:block; margin-bottom:12px; }
 .viewport-pages-flow :is(a,button,input,select,textarea,label,.row-list > li) { break-inside:avoid; }
 .metric-label { min-height:44px; }
+.stat-table thead { break-inside:avoid; }
+/* A viewport-sized page must never crop an indivisible large row. Decompose
+   oversized flex/grid/table groups into normal fragmentable document flow. */
+.viewport-pages-flow [data-page-split] { display:block !important; break-inside:auto !important; min-height:0 !important; height:auto !important; max-height:none !important; }
+.viewport-pages-flow [data-page-table],.viewport-pages-flow [data-page-table] :is(thead,tbody,tr,th,td) { display:block; break-inside:auto; }
+.viewport-pages-flow [data-page-table] .stat-table-label { display:block; color:var(--color-muted); font-size:.6875rem; }
+.viewport-pages-flow [data-page-split] > :is(th,td) { display:block; margin-bottom:8px; }
+.viewport-pages-flow svg:not(.lucide) { max-height:var(--page-height); }
 #main-content:focus-visible { outline-offset:-1px; outline-width:1px; }
 @media (min-width:720px) {
   .app-shell { padding-bottom:16px; }

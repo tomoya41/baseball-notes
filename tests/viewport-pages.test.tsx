@@ -47,6 +47,28 @@ describe("viewport pages", () => {
     await act(async () => target.dispatchEvent(new FocusEvent("focusin", { bubbles: true })));
     expect(host.querySelector('[role="status"]')!.textContent).toBe("3 / 3");
   });
+  it("splits oversized rows and restores compact layout when space returns", async () => {
+    let height = 200;
+    vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockImplementation(() => height);
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
+      return { height: this.className === "watch-alert" ? 500 : 0, width: 320, left: 0 } as DOMRect;
+    });
+    await act(async () => root.render(<ViewportPages><article className="watch-alert"><h2>確認差分</h2><p>詳細</p><button>確認</button></article></ViewportPages>)); await flush();
+    expect(host.querySelector("article")!.hasAttribute("data-page-split")).toBe(true);
+    expect(host.querySelectorAll("article button")).toHaveLength(1);
+    height = 600; resize(); await flush();
+    expect(host.querySelector("article")!.hasAttribute("data-page-split")).toBe(false);
+  });
+  it("follows the focused control when async content moves it to another page", async () => {
+    await act(async () => root.render(<ViewportPages><a href="/sources">クレジット</a></ViewportPages>)); await flush();
+    const target = host.querySelector("a")!; let left = 0;
+    vi.spyOn(target, "getBoundingClientRect").mockImplementation(() => ({ left } as DOMRect));
+    await act(async () => target.focus());
+    left = 688; resize(); await flush();
+    expect(document.activeElement).toBe(target);
+    expect(host.querySelector('[role="status"]')!.textContent).toBe("3 / 3");
+    expect(host.querySelector(".viewport-pages-window")!.scrollLeft).toBe(688);
+  });
 });
 
 describe("on-demand paged metric help", () => {
