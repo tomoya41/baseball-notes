@@ -16,6 +16,7 @@
 | Dark selected-date text failed normal text contrast | Dark on-brand token changed; explicit/system themes covered by contrast tests |
 | External notification setting could imply delivery readiness and throw during secondary storage reads | Explicit setup/delivery status, disabled unconfigured opt-in, contained read/write failures; no push added |
 | README described obsolete sample/reference screens | Current navigation, actual capabilities and Watch semantics documented |
+| Pages readback logged HTTP success but left a large NPB response unread, keeping Node alive | Drain both responses; bound network acquisition to 60 seconds and deployment to 15 minutes; exercise the actual workflow command against a large local response |
 
 Metric dialogs have accessible names, native focus/Escape restoration and dialog announcement; loading status now includes screen-reader text. Existing reduced-motion, skip link and minimum tap targets remain. Boundary keys are namespaced to avoid collision with the shared-link control during route changes.
 

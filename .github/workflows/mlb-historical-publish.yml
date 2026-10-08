@@ -156,6 +156,7 @@ jobs:
   deploy:
     needs: stage
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
       pages: write
@@ -182,7 +183,7 @@ jobs:
       - name: Verify public Historical and NPB payloads
         run: |
           # Public static contract/readback, no database credentials on deploy.
-          node --input-type=module -e "import{gunzipSync}from'node:zlib';const b='https://tomoya41.github.io/baseball-notes/';const [m,n]=await Promise.all([fetch(b+'data/mlb/historical/manifest.json.gz?v='+Date.now()),fetch(b+'data/npb/season/2026/latest.json?v='+Date.now())]);if(m.status!==200||n.status!==200)throw Error('public HTTP');const p=JSON.parse(gunzipSync(Buffer.from(await m.arrayBuffer())));if(p.seasons.length!==6||p.current2026!=='unavailable')throw Error('Historical public contract');console.log(JSON.stringify({mlb:m.status,npb:n.status,seasons:p.seasons.length}))"
+          node --input-type=module -e "import{gunzipSync}from'node:zlib';const b='https://tomoya41.github.io/baseball-notes/';const signal=AbortSignal.timeout(60000);const [m,n]=await Promise.all([fetch(b+'data/mlb/historical/manifest.json.gz?v='+Date.now(),{signal}),fetch(b+'data/npb/season/2026/latest.json?v='+Date.now(),{signal})]);if(m.status!==200||n.status!==200)throw Error('public HTTP');const [manifest]=await Promise.all([m.arrayBuffer(),n.arrayBuffer()]);const p=JSON.parse(gunzipSync(Buffer.from(manifest)));if(p.seasons.length!==6||p.current2026!=='unavailable')throw Error('Historical public contract');console.log(JSON.stringify({mlb:m.status,npb:n.status,seasons:p.seasons.length}))"
       - name: Verify public Postseason contracts
         if: inputs.mode == 'postseason'
         run: npx tsx scripts/verify-published-postseason.ts
