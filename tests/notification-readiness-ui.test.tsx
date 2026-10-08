@@ -28,6 +28,16 @@ describe("external delivery readiness is separate from in-app Watch", () => {
     expect(button.disabled).toBe(false); await act(async () => button.click());
     expect(notifications.setEnabled).toHaveBeenCalledExactlyOnceWith(false, []); expect(button.getAttribute("aria-checked")).toBe("false");
   });
+  it("retains the saved ON switch and permits opt-out when native readiness rejects", async () => {
+    notifications.enabled.mockResolvedValueOnce(true).mockResolvedValue(false);
+    notifications.readiness.mockRejectedValue(Error("native status unavailable"));
+    await mount();
+    const button = container.querySelector('[role="switch"]') as HTMLButtonElement;
+    expect(button.getAttribute("aria-checked")).toBe("true"); expect(button.disabled).toBe(false);
+    await act(async () => button.click());
+    expect(notifications.setEnabled).toHaveBeenCalledExactlyOnceWith(false, []);
+    expect(button.getAttribute("aria-checked")).toBe("false");
+  });
   it("contains a secondary settings read failure after an unsuccessful toggle", async () => {
     notifications.readiness.mockResolvedValue({ configured: true, granted: false });
     notifications.enabled.mockResolvedValueOnce(false).mockRejectedValue(Error("storage"));
@@ -37,7 +47,9 @@ describe("external delivery readiness is separate from in-app Watch", () => {
     expect(button.getAttribute("aria-checked")).toBe("false");
   });
   it("keeps a first settings read failure safe and makes no browser delivery claim", async () => {
-    notifications.enabled.mockRejectedValue(Error("storage")); await mount(); expect(container.textContent).toContain("設定は保持しています");
+    notifications.enabled.mockRejectedValue(Error("storage")); notifications.readiness.mockResolvedValue({ configured: true });
+    await mount(); expect(container.textContent).toContain("設定は保持しています");
+    expect((container.querySelector('[role="switch"]') as HTMLButtonElement).disabled).toBe(true);
     native.android = false; await mount(); expect(container.textContent).toContain("Webからは配信しません");
   });
 });

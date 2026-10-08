@@ -17,9 +17,12 @@ export function NotificationSettings({ favorites, ready, visible }: { favorites:
   useEffect(() => {
     if (!isAndroid()) return;
     let active = true;
-    void Promise.all([notifications.enabled(), notifications.readiness()]).then(([value, status]) => {
-      if (active) { setEnabled(value); setConfigured(status.configured); }
-    }).catch(() => { if (active) setMessage("通知設定を読み込めません。設定は保持しています。"); })
+    void Promise.allSettled([notifications.enabled(), notifications.readiness()]).then(([preference, status]) => {
+      if (!active) return;
+      if (preference.status === "fulfilled") setEnabled(preference.value);
+      if (status.status === "fulfilled" && preference.status === "fulfilled") setConfigured(status.value.configured);
+      if (preference.status === "rejected" || status.status === "rejected") setMessage("通知設定を読み込めません。設定は保持しています。");
+    })
       .finally(() => { if (active) setChecked(true); });
     return () => { active = false; };
   }, []);
