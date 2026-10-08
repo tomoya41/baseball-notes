@@ -1,6 +1,6 @@
-import { useContext, useEffect, useRef, useState, type ReactNode } from "react";
-import { Link, useLocation, useSearchParams } from "react-router-dom";
-import { activityFromRoute, activityPath, type LibraryPlayer, type PersonalLibrary, type PersonalState } from "../application/personal-library";
+import { useContext, useEffect, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { activityPath, type LibraryPlayer } from "../application/personal-library";
 import type { League } from "../domain/models";
 import { services } from "../app/services";
 import { readHistoricalProduct } from "../app/historical-products";
@@ -8,17 +8,8 @@ import { PageHeading, LoadingSkeleton } from "./components";
 import { ShareLink } from "./product-sharing";
 
 import { LibraryContext } from "./personal-library-context";
-import { WatchSummary } from "./personal-watch";
-export function PersonalLibraryProvider({ store, children }: { store: PersonalLibrary; children: ReactNode }) {
-  const [state, setState] = useState<PersonalState | null>(null), [error, setError] = useState("");
-  const location = useLocation();
-  useEffect(() => { let active = true; void store.read().then(s => { if (active) setState(s); }).catch(e => { if (active) setError(String(e.message)); }); return () => { active = false; }; }, [store]);
-  useEffect(() => { const item = activityFromRoute(location.pathname, location.search, Date.now()); if (!item) return;
-    let active = true; void store.visit(item).then(s => { if (active) { setState(s); setError(""); } }).catch(e => { if (active) setError(String(e.message)); }); return () => { active = false; };
-  }, [store, location.pathname, location.search]);
-  const run = async (operation: () => Promise<PersonalState>) => { try { setState(await operation()); setError(""); return true; } catch (e) { setError(e instanceof Error ? e.message : "端末へ保存できません。保存容量を確認してください。"); return false; } };
-  return <LibraryContext.Provider value={{ state, error, run, store }}>{children}</LibraryContext.Provider>;
-}
+import { WatchSummary } from "./watch-shell";
+import { PagedDialog } from "./paged-dialog";
 export function LibraryShortcuts({ league }: { league: League }) {
   return <nav className="library-shortcuts" aria-label="自分の保存・履歴"><Link to={`/${league}/library?tab=collections`}>Collections</Link><Link to={`/${league}/library?tab=views`}>保存した条件</Link><Link to={`/${league}/library?tab=activity`}>最近見た履歴</Link></nav>;
 }
@@ -28,13 +19,13 @@ export function SaveViewButton({ league, kind = "data", params }: { league: Leag
   return <div className="library-save"><button className="text-button" onClick={() => { setOpen(!open); setSaved(false); }} aria-expanded={open}>この条件を保存</button>{saved && <span role="status">保存しました。<Link to={`/${league}/library?tab=views`}>保存一覧 →</Link></span>}{open && <form onSubmit={e => { e.preventDefault(); if (name.trim()) void ctx.run(() => ctx.store.saveView(name, league, kind, params)).then(ok => { if (ok) { setOpen(false); setSaved(true); setName(""); } }); }}><label>条件の名前<input maxLength={60} value={name} onChange={e => setName(e.target.value)} required placeholder="例：阪神・直近14日" /></label><button type="submit">保存</button><Link to={`/${league}/library?tab=views`}>保存一覧</Link>{ctx.error && <p role="alert">{ctx.error}</p>}</form>}</div>;
 }
 export function CollectionButton({ league, playerId, name }: LibraryPlayer & { name: string }) {
-  const ctx = useContext(LibraryContext), dialog = useRef<HTMLDialogElement>(null), [newName, setNewName] = useState("");
+  const ctx = useContext(LibraryContext), [open, setOpen] = useState(false), [newName, setNewName] = useState("");
   if (!ctx) return null;
-  return <div className="collection-control"><button className="text-button" aria-label={`${name}をコレクションに整理`} aria-haspopup="dialog" onClick={() => dialog.current?.showModal()}>整理</button><dialog ref={dialog} className="metric-dialog library-picker" aria-label={`${name}のコレクション`}><strong>{name}</strong>{ctx.state?.collections.map(c => <label key={c.id}><input type="checkbox" checked={c.players.some(p => p.league === league && p.playerId === playerId)} onChange={e => { const checked = e.target.checked; void ctx.run(() => ctx.store.setPlayer(c.id, { league, playerId }, checked)); }} />{c.name}</label>)}<form onSubmit={e => { e.preventDefault(); if (newName.trim()) void ctx.run(() => ctx.store.createCollection(newName)).then(ok => { if (ok) setNewName(""); }); }}><label>新しいコレクション<input maxLength={60} value={newName} onChange={e => setNewName(e.target.value)} required /></label><button>作成</button></form>{ctx.error && <p role="alert">{ctx.error}</p>}<Link to={`/${league}/library?tab=collections`} onClick={() => dialog.current?.close()}>一覧を開く</Link><button className="button" onClick={() => dialog.current?.close()}>閉じる</button></dialog></div>;
+  return <div className="collection-control"><button className="text-button" aria-label={`${name}をコレクションに整理`} aria-haspopup="dialog" onClick={() => setOpen(true)}>整理</button>{open && <PagedDialog label={`${name}のコレクション`} onClose={() => setOpen(false)}><div className="library-picker-content"><strong>{name}</strong>{ctx.state?.collections.map(c => <label key={c.id}><input type="checkbox" checked={c.players.some(p => p.league === league && p.playerId === playerId)} onChange={e => { const checked = e.target.checked; void ctx.run(() => ctx.store.setPlayer(c.id, { league, playerId }, checked)); }} />{c.name}</label>)}<form onSubmit={e => { e.preventDefault(); if (newName.trim()) void ctx.run(() => ctx.store.createCollection(newName)).then(ok => { if (ok) setNewName(""); }); }}><label>新しいコレクション<input maxLength={60} value={newName} onChange={e => setNewName(e.target.value)} required /></label><button>作成</button></form>{ctx.error && <p role="alert">{ctx.error}</p>}<Link to={`/${league}/library?tab=collections`} onClick={() => setOpen(false)}>一覧を開く</Link></div></PagedDialog>}</div>;
 }
 export function MyLibrary({ league }: { league: League }) {
   const ctx = useContext(LibraryContext);
-  return <section className="my-library"><h2>保存・整理</h2><WatchSummary league={league} /><Link className="text-link" to={`/${league}/team-compare`}>お気に入り球団を比較 →</Link><LibraryShortcuts league={league} /><p className="inline-note">コレクション {ctx?.state?.collections.length ?? 0} · 保存した条件 {ctx?.state?.views.length ?? 0} · 履歴 {ctx?.state?.activity.length ?? 0}</p>{ctx?.error && <p role="alert">{ctx.error}</p>}</section>;
+  return <section className="my-library"><h2>ライブラリ</h2><nav className="personal-destinations" aria-label="保存・整理"><Link to={`/${league}/library?tab=collections`}><span><strong>Collections</strong><small>選手をグループで追う</small></span><b>{ctx?.state?.collections.length ?? "—"}</b></Link><Link to={`/${league}/library?tab=views`}><span><strong>保存した条件</strong><small>探索を再開</small></span><b>{ctx?.state?.views.length ?? "—"}</b></Link><Link to={`/${league}/library?tab=activity`}><span><strong>最近見た履歴</strong><small>前に見た記録へ</small></span><b>{ctx?.state?.activity.length ?? "—"}</b></Link></nav><WatchSummary league={league} /><Link className="text-link" to={`/${league}/team-compare`}>お気に入り球団を比較 →</Link>{ctx?.error && <p role="alert">{ctx.error}</p>}</section>;
 }
 type Name = { name: string; team: string | null; postseasonOnly?: boolean };
 export function PersonalLibraryScreen({ league }: { league: League }) {

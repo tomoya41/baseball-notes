@@ -1,26 +1,14 @@
-import { useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import type { PersonalWatch } from "../application/personal-watch";
 import type { Services } from "../app/services";
 import type { Favorite, League } from "../domain/models";
 import { readWatchObservations, watchSources, type WatchCheck } from "../application/watch-observations";
-import { watchFresh, WATCH_LIMITS, type PersonalWatchState, type WatchPreferences } from "../domain/personal-watch";
+import { watchFresh, WATCH_LIMITS, type WatchPreferences } from "../domain/personal-watch";
 import { PersonalWatchContext } from "./personal-watch-context";
 import { LibraryContext } from "./personal-library-context";
 import { publicFallbackRevision, publicNetworkOnline } from "../app/mobile-services";
 import { LoadingSkeleton, PageHeading, MetricLabel } from "./components";
 
-export function PersonalWatchProvider({ store, children }: { store: PersonalWatch; children: ReactNode }) {
-  const [state, setState] = useState<PersonalWatchState | null>(null), [error, setError] = useState("");
-  useEffect(() => { let active = true; void store.read().then(s => { if (active) setState(s); }).catch(e => { if (active) setError(String(e.message)); }); return () => { active = false; }; }, [store]);
-  const run = async (operation: () => Promise<PersonalWatchState>) => { try { setState(await operation()); setError(""); return true; } catch (e) { setError(e instanceof Error ? e.message : "Watchを保存できません。"); return false; } };
-  return <PersonalWatchContext.Provider value={{ state, error, store, run }}>{children}</PersonalWatchContext.Provider>;
-}
-export function WatchSummary({ league }: { league: League }) {
-  const ctx = useContext(PersonalWatchContext), items = ctx?.state?.alerts.filter(a => !a.dismissed && !a.read && a.observation.league === league) ?? [];
-  const weight = { high: 0, normal: 1, low: 2 }, summary = [...items].sort((a,b)=>weight[a.priority]-weight[b.priority] || b.createdAt-a.createdAt);
-  return <section className="watch-summary" aria-label="Watchの確認差分"><div className="list-heading"><Link to={`/${league}/watch-center`}><strong>Watch</strong> <span className="watch-count">{items.length} 未読</span></Link><Link to={`/${league}/watch-center`}>すべて見る →</Link></div>{summary.slice(0,2).map(a => <Link className="watch-summary-item" key={a.id} to={a.observation.path}>{a.observation.name}<small>{a.title} · {a.observation.effectiveDate}</small></Link>)}</section>;
-}
 const labels: [keyof WatchPreferences, string][] = [["players","お気に入り選手の試合記録"],["teams","お気に入り球団の試合記録・保存済み次戦"],["recent","Recentの数値変化"],["streaks","確認できる連続記録"],["milestones","保存済みSeasonの節目"],["postseason","Historical Seriesの保存状態"],["collections","Collections内の選手"],["savedViews","保存した全選手Recent条件への新規一致"]];
 export function WatchCenter({ league, services, favorites, ready }: { league: League; services: Services; favorites: Favorite[]; ready: boolean }) {
   const ctx = useContext(PersonalWatchContext), library = useContext(LibraryContext), [busy,setBusy] = useState(false), [check,setCheck] = useState<WatchCheck | null>(null), [message,setMessage] = useState(""), [filter,setFilter] = useState("all"), [reset,setReset] = useState(false);

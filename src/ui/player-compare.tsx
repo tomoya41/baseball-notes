@@ -1,3 +1,4 @@
+import { StatTable } from "./stat-table";
 import { useCallback, useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import type { Services } from "../app/services";
@@ -71,7 +72,7 @@ export function CompareWorkspace({ league, players, teams, seasons, loader, adva
     {state.key !== key && ids.length > 0 ? <LoadingSkeleton /> : mismatch ? <DataState kind="source-unavailable" title="集計の基準日が揃っていません。更新後に再確認してください" /> : ids.length > 0 && <>
       {dates.size > 0 && <p className="inline-note">{[...dates][0]}まで</p>}
       {loaded.map((r, i) => r.status === "error" || r.value.notice ? <p className="data-notice" key={ids[i]}>{players.find(p => p.id === ids[i])?.name ?? "選手"}：{r.status === "error" ? "読み込みに失敗しました" : r.value.notice}</p> : null)}
-      <div className="mlb-stat-scroll compare-table" tabIndex={0} role="region" aria-label="選手比較表。横スクロールできます"><table><thead><tr><th>成績</th>{ids.map(id => <th key={id}>{players.find(p => p.id === id)?.name ?? "未収録"}</th>)}</tr></thead><tbody>{keys.map(k => <tr key={k}><th scope="row"><MetricLabel metric={k} label={k === "outsRecorded" ? "IP" : k === "K9" ? "K/9" : k} /></th>{ids.map((id, i) => { const r = loaded[i], m = r?.status === "ready" ? r.value.metrics?.[k] : undefined; return <td key={id}>{metricValue(k, m)}{m?.status === "partial" && <small>一部</small>}</td>; })}</tr>)}</tbody></table></div>
+      <div className="mlb-stat-scroll compare-table" tabIndex={0} role="region" aria-label="選手比較表"><StatTable><thead><tr><th>成績</th>{ids.map(id => <th key={id}>{players.find(p => p.id === id)?.name ?? "未収録"}</th>)}</tr></thead><tbody>{keys.map(k => <tr key={k}><th scope="row"><MetricLabel metric={k} label={k === "outsRecorded" ? "IP" : k === "K9" ? "K/9" : k} /></th>{ids.map((id, i) => { const r = loaded[i], m = r?.status === "ready" ? r.value.metrics?.[k] : undefined; return <td key={id}>{metricValue(k, m)}{m?.status === "partial" && <small>一部</small>}</td>; })}</tr>)}</tbody></StatTable></div>
       <p className="inline-note">規定到達者のランキングではありません。打席・登板数も合わせて確認してください。取得できない値は「—」。</p>
       {dates.size === 1 && <DisplayExportButton data={comparisonDisplayExport(league, `${season} ${competition} ${role} ${condition} ${period}`, [...dates][0]!, keys, ids.map((id, i) => { const row = loaded[i]; return { name: players.find(p => p.id === id)?.name ?? id, metrics: row?.status === "ready" ? row.value.metrics : null, coverage: row?.status === "ready" ? row.value.coverage ?? "unknown" : "unavailable" }; }))} />}
     </>}

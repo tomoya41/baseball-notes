@@ -1,3 +1,4 @@
+import { StatTable } from "./stat-table";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { formatOuts } from "../domain/player-game-log";
@@ -47,21 +48,21 @@ export function NpbGameDetailView({ payload, state, services, actions }: { paylo
         "一部の成績を取得できていません。" : "この試合の成績収集完了を確認できていません。"}</p>}
     {hasBox && (["away", "home"] as const).map((side) => {
       const team = payload[side], batting = payload.batting[side], pitching = payload.pitching[side];
-      return <section className="game-detail__team" key={side} aria-label={`${side === "away" ? "ビジター" : "ホーム"} ${team.shortName}のボックススコア`}>
-        <h2>{side === "away" ? "ビジター" : "ホーム"} · {team.shortName}</h2>
+      return <details className="game-detail__team" key={side} aria-label={`${side === "away" ? "ビジター" : "ホーム"} ${team.shortName}のボックススコア`}>
+        <summary>{side === "away" ? "ビジター" : "ホーム"} · {team.shortName}<span>ボックススコア</span></summary>
         <p className="game-detail__totals">チーム合計：{value(team.totals.runs)}得点 · {value(team.totals.hits)}安打 ·
           {value(team.totals.homeRuns)}本塁打 · PA {value(team.totals.pa)}
           {team.totals.paSource === "opponentBf" ? "（相手投手BFから確認）" : ""} · AB {value(team.totals.ab)}</p>
-        <h3>打撃</h3><p className="table-scroll-hint">横にスワイプして成績を見る →</p>{batting.length ? <>
-          <div className="mlb-stat-scroll box-primary" tabIndex={0} role="region" aria-label={`${team.shortName}の打撃成績。横スクロールできます`}><table><thead><tr><th>打順</th><th>選手</th><th><MetricLabel metric="PA" /></th><th><MetricLabel metric="AB" /></th><th>H</th><th>HR</th><th>RBI</th></tr></thead><tbody>{batting.map(row => <tr key={`${row.playerId}:${row.teamId}`}><td>{row.battingOrder === null ? "—" : `${row.battingOrder}番`}</td><th scope="row"><a href={`#/NPB/players/${encodeURIComponent(row.playerId)}`}>{row.name}</a><small>{row.starter === true ? "先発" : row.starter === false ? "途中出場" : "出場形態未確認"}{row.pa === 0 && row.ab === 0 && " · 打席なし"}</small></th>{[row.pa,row.ab,row.hits,row.homeRuns,row.rbi].map((n,i) => <td key={i}>{value(n)}</td>)}</tr>)}</tbody></table></div>
-          <details><summary>詳しい打撃成績</summary><div className="mlb-stat-scroll" tabIndex={0} role="region" aria-label={`${team.shortName}の打撃詳細`}><table><thead><tr><th>選手</th>{battingDetails.map(c => <th key={c.key}><MetricLabel metric={c.label} /></th>)}</tr></thead><tbody>{batting.map(row => <tr key={`${row.playerId}:${row.teamId}`}><th scope="row">{row.name}</th>{battingDetails.map(c => <td key={c.key}>{value(row[c.key])}</td>)}</tr>)}</tbody></table></div></details>
+        <h3>打撃</h3>{batting.length ? <>
+          <div className="mlb-stat-scroll box-primary" tabIndex={0} role="region" aria-label={`${team.shortName}の打撃成績`}><StatTable><thead><tr><th>打順</th><th>選手</th><th><MetricLabel metric="PA" /></th><th><MetricLabel metric="AB" /></th><th>H</th><th>HR</th><th>RBI</th></tr></thead><tbody>{batting.map(row => <tr key={`${row.playerId}:${row.teamId}`}><td>{row.battingOrder === null ? "—" : `${row.battingOrder}番`}</td><th scope="row"><a href={`#/NPB/players/${encodeURIComponent(row.playerId)}`}>{row.name}</a><small>{row.starter === true ? "先発" : row.starter === false ? "途中出場" : "出場形態未確認"}{row.pa === 0 && row.ab === 0 && " · 打席なし"}</small></th>{[row.pa,row.ab,row.hits,row.homeRuns,row.rbi].map((n,i) => <td key={i}>{value(n)}</td>)}</tr>)}</tbody></StatTable></div>
+          <details><summary>詳しい打撃成績</summary><div className="mlb-stat-scroll" tabIndex={0} role="region" aria-label={`${team.shortName}の打撃詳細`}><StatTable><thead><tr><th>選手</th>{battingDetails.map(c => <th key={c.key}><MetricLabel metric={c.label} /></th>)}</tr></thead><tbody>{batting.map(row => <tr key={`${row.playerId}:${row.teamId}`}><th scope="row">{row.name}</th>{battingDetails.map(c => <td key={c.key}>{value(row[c.key])}</td>)}</tr>)}</tbody></StatTable></div></details>
         </> : <p className="game-detail__note">保存済み打撃成績はありません。</p>}
         <h3>投球</h3>{pitching.length ? <>
-          <div className="mlb-stat-scroll box-primary" tabIndex={0} role="region" aria-label={`${team.shortName}の投球成績。横スクロールできます`}><table><thead><tr><th>選手</th><th><MetricLabel metric="IP" /></th><th>SO</th><th>R</th><th>ER</th></tr></thead><tbody>{pitching.map(row => <tr key={`${row.playerId}:${row.teamId}`}><th scope="row"><a href={`#/NPB/players/${encodeURIComponent(row.playerId)}`}>{row.name}</a><small>{roleName[row.role]}{row.decision && row.decision !== "none" && ` · ${decisionName[row.decision]}`}</small></th><td>{formatOuts(row.outsRecorded)}回</td>{[row.strikeouts,row.runs,row.earnedRuns].map((n,i) => <td key={i}>{value(n)}</td>)}</tr>)}</tbody></table></div>
-          <details><summary>詳しい投球成績</summary><div className="mlb-stat-scroll" tabIndex={0} role="region" aria-label={`${team.shortName}の投球詳細`}><table><thead><tr><th>選手</th>{pitchingDetails.map(c => <th key={c.key}><MetricLabel metric={c.label} /></th>)}</tr></thead><tbody>{pitching.map(row => <tr key={`${row.playerId}:${row.teamId}`}><th scope="row">{row.name}</th>{pitchingDetails.map(c => <td key={c.key}>{value(row[c.key])}</td>)}</tr>)}</tbody></table></div></details>
+          <div className="mlb-stat-scroll box-primary" tabIndex={0} role="region" aria-label={`${team.shortName}の投球成績`}><StatTable><thead><tr><th>選手</th><th><MetricLabel metric="IP" /></th><th>SO</th><th>R</th><th>ER</th></tr></thead><tbody>{pitching.map(row => <tr key={`${row.playerId}:${row.teamId}`}><th scope="row"><a href={`#/NPB/players/${encodeURIComponent(row.playerId)}`}>{row.name}</a><small>{roleName[row.role]}{row.decision && row.decision !== "none" && ` · ${decisionName[row.decision]}`}</small></th><td>{formatOuts(row.outsRecorded)}回</td>{[row.strikeouts,row.runs,row.earnedRuns].map((n,i) => <td key={i}>{value(n)}</td>)}</tr>)}</tbody></StatTable></div>
+          <details><summary>詳しい投球成績</summary><div className="mlb-stat-scroll" tabIndex={0} role="region" aria-label={`${team.shortName}の投球詳細`}><StatTable><thead><tr><th>選手</th>{pitchingDetails.map(c => <th key={c.key}><MetricLabel metric={c.label} /></th>)}</tr></thead><tbody>{pitching.map(row => <tr key={`${row.playerId}:${row.teamId}`}><th scope="row">{row.name}</th>{pitchingDetails.map(c => <td key={c.key}>{value(row[c.key])}</td>)}</tr>)}</tbody></StatTable></div></details>
         </> : <p className="game-detail__note">保存済み投球成績はありません。</p>}
         <p className="game-detail__minor">同じ打順の交代順・救援投手の登板順は表示順から判断できません。</p>
-      </section>;
+      </details>;
     })}
   </div>;
 }

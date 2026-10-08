@@ -18,7 +18,7 @@ export function DiscoveryNavigation({ league }: { league: "NPB" | "MLB" }) {
     const next = new URLSearchParams(params); next.set("kind", item.key);
     if (league === "MLB" && item.key === "series") next.set("competition", "postseason");
     return <Link key={item.key} aria-current={active === item.key ? "page" : undefined} to={`/${league}/search?${next}`}>{item.label}</Link>;
-  })}</nav><ExplorerLinks league={league} scope={`?${params}`} /><Link className="text-link" to={`/${league}/my`}>Favoritesから探す →</Link><LibraryShortcuts league={league} /><Link className="text-link" to={`/${league}/team-compare${params.get("season") ? `?season=${params.get("season")}${params.get("competition") === "postseason" ? "&competition=postseason" : ""}` : ""}`}>球団比較 →</Link></>;
+  })}</nav><details className="discovery-tools"><summary>条件で探す・保存したものから探す</summary><ExplorerLinks league={league} scope={`?${params}`} /><Link className="text-link" to={`/${league}/my`}>Favoritesから探す →</Link><LibraryShortcuts league={league} /><Link className="text-link" to={`/${league}/team-compare${params.get("season") ? `?season=${params.get("season")}${params.get("competition") === "postseason" ? "&competition=postseason" : ""}` : ""}`}>球団比較 →</Link></details></>;
 }
 function DiscoveryList({ league, teams, scope, games, series, message }: { league: "NPB" | "MLB"; teams: { id: string; name: string }[]; scope: string;
   games?: { id: string; home: string; away: string; homeScore: number | null; awayScore: number | null; state: string }[] | undefined; series?: PostseasonHub["series"] | undefined; message?: string }) {

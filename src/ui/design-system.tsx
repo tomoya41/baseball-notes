@@ -44,9 +44,8 @@ export function ScoreboardRow({ to, away, home, awayScore, homeScore, status, da
 }) {
   const known = awayScore !== null && homeScore !== null;
   return <Link className="scoreboard-row" to={to} aria-label={`${date ? `${date}、` : ""}ビジター ${away} ${awayScore ?? "得点未確認"}、ホーム ${home} ${homeScore ?? "得点未確認"}、${status}${gameNumber ? `、第${gameNumber}試合` : ""}${partial ? "、一部データ確認中" : ""}`}>
-    <span className={`scoreboard-club${known && awayScore > homeScore ? " scoreboard-winner" : ""}`}><small>ビジター</small><ClubName name={away} /></span>
-    <span className="scoreboard-center"><span className="scoreboard-result"><strong className={known && awayScore > homeScore ? "scoreboard-winner" : ""}>{awayScore ?? "—"}</strong><span aria-hidden="true">–</span><strong className={known && homeScore > awayScore ? "scoreboard-winner" : ""}>{homeScore ?? "—"}</strong></span><small>{date && `${date} · `}{status}</small>{gameNumber !== undefined && gameNumber > 0 && <small>第{gameNumber}試合</small>}{partial && <small className="scoreboard-partial">一部データ確認中</small>}</span>
-    <span className={`scoreboard-club scoreboard-club--home${known && homeScore > awayScore ? " scoreboard-winner" : ""}`}><small>ホーム</small><ClubName name={home} /></span>
+    <span className="scoreboard-match"><span className={`scoreboard-side${known && awayScore > homeScore ? " scoreboard-winner" : ""}`}><span className="scoreboard-club"><small>ビジター</small><ClubName name={away} /></span><strong>{awayScore ?? "—"}</strong></span><span className={`scoreboard-side${known && homeScore > awayScore ? " scoreboard-winner" : ""}`}><span className="scoreboard-club"><small>ホーム</small><ClubName name={home} /></span><strong>{homeScore ?? "—"}</strong></span></span>
+    <span className="scoreboard-center">{date && <small>{date}</small>}<span>{status}</span>{gameNumber !== undefined && gameNumber > 0 && <small>第{gameNumber}試合</small>}{partial && <small className="scoreboard-partial">一部データ確認中</small>}<ChevronRight size={16} aria-hidden="true" /></span>
   </Link>;
 }
 export function HomeModeNav({ modes, active, onChange }: { modes: readonly { id: string; label: string }[]; active: string; onChange: (id: string) => void }) {

@@ -1,6 +1,5 @@
-import { useId, useRef } from "react";
+import { useId, useState } from "react";
 import type { ReactNode } from "react";
-import { createPortal } from "react-dom";
 import { ChevronRight, Info, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import { metrics } from "../domain/metrics";
@@ -9,6 +8,7 @@ import { metricHelp } from "../presentation/metric-help";
 import type { MetricHelp } from "../presentation/metric-help";
 import { formatMetric, formatPlayerName, formatPositions, formatTeamName } from "../presentation/formatters";
 import { TeamBrand } from "./branding";
+import { PagedDialog } from "./paged-dialog";
 
 export function SectionHeader({ title, action, to }: { title: string; action?: string | undefined; to?: string | undefined }) {
   return <div className="section-header">
@@ -72,9 +72,9 @@ export function FavoriteButton({ active, saving, onClick, label }: {
 }
 
 export function MetricInfo({ definition }: { definition: MetricHelp }) {
-  const dialog = useRef<HTMLDialogElement>(null);
+  const [open, setOpen] = useState(false);
   const titleId = useId();
-  const content = <dialog className="metric-dialog" ref={dialog} aria-labelledby={titleId}>
+  const content = <>
     <p className="eyebrow">指標ガイド</p><h2 id={titleId}>{definition.name} <span>{definition.fullName}</span></h2>
     <p>{definition.description}</p>
     <p>{definition.interpretation}</p>
@@ -83,12 +83,11 @@ export function MetricInfo({ definition }: { definition: MetricHelp }) {
     {definition.data && <p><strong>利用データ</strong> {definition.data}</p>}
     {definition.sample && <p className="muted">{definition.sample}</p>}
     {definition.scope && <p className="muted">{definition.scope}</p>}
-    <form method="dialog"><button className="button">閉じる</button></form>
-  </dialog>;
+  </>;
   return <>
     <button className="metric-info-button" type="button" aria-label={`${definition.name}の説明`} aria-haspopup="dialog"
-      onClick={() => dialog.current?.showModal()}><Info size={17} aria-hidden="true" /></button>
-    {typeof document === "undefined" ? content : createPortal(content, document.body)}
+      onClick={() => setOpen(true)}><Info size={17} aria-hidden="true" /></button>
+    {open && <PagedDialog labelledBy={titleId} onClose={() => setOpen(false)}>{content}</PagedDialog>}
   </>;
 }
 

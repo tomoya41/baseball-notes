@@ -1,3 +1,4 @@
+import { StatTable } from "./stat-table";
 import { historicalPositions, collectedSeasonsLabel } from "../presentation/historical-player";
 import { Search } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -170,32 +171,32 @@ export function MlbHistoricalGame({ manifest, ...actions }: { manifest: Manifest
         (a.appearanceOrder ?? 99) - (b.appearanceOrder ?? 99));
     const pitching = game.pitching.filter(row => row.teamId === teamId)
       .sort((a, b) => (a.appearanceOrder ?? 99) - (b.appearanceOrder ?? 99));
-    return <section className="mlb-box-team" key={teamId} aria-label={`${label} ${teamName(manifest, teamId)}`}>
-      <h2>{label} · {teamName(manifest, teamId)}</h2><h3>打撃</h3>
-      <p className="table-scroll-hint">横にスワイプして成績を見る →</p><div className="mlb-stat-scroll box-primary" tabIndex={0} role="region" aria-label={`${teamName(manifest, teamId)}の打撃成績。横スクロールできます`}><table><thead><tr><th>打順</th><th>選手</th><th><MetricLabel metric="PA" /></th><th><MetricLabel metric="AB" /></th><th>H</th><th>HR</th><th>RBI</th></tr></thead>
+    return <details className="mlb-box-team" key={teamId} aria-label={`${label} ${teamName(manifest, teamId)}`}>
+      <summary>{label} · {teamName(manifest, teamId)}<span>ボックススコア</span></summary><h3>打撃</h3>
+      <div className="mlb-stat-scroll box-primary" tabIndex={0} role="region" aria-label={`${teamName(manifest, teamId)}の打撃成績`}><StatTable><thead><tr><th>打順</th><th>選手</th><th><MetricLabel metric="PA" /></th><th><MetricLabel metric="AB" /></th><th>H</th><th>HR</th><th>RBI</th></tr></thead>
         <tbody>{batting.map(row => <tr key={row.playerId}><td>{format(row.battingOrder)}</td>
           <th scope="row"><Link to={`/MLB/players/${encodeURIComponent(row.playerId)}?season=${game.season}${scopeQuery}`}>{row.name ?? "選手"}</Link>
             {row.starter === false && <small>途中出場</small>}</th>
           <td>{format(row.pa)}</td><td>{format(row.ab)}</td><td>{format(row.hits)}</td>
-          <td>{format(row.homeRuns)}</td><td>{format(row.rbi)}</td></tr>)}</tbody></table></div>
-      <details><summary>打撃の詳細項目</summary><div className="mlb-stat-scroll" tabIndex={0} role="region" aria-label={`${teamName(manifest, teamId)}の打撃詳細`}><table>
+          <td>{format(row.homeRuns)}</td><td>{format(row.rbi)}</td></tr>)}</tbody></StatTable></div>
+      <details><summary>打撃の詳細項目</summary><div className="mlb-stat-scroll" tabIndex={0} role="region" aria-label={`${teamName(manifest, teamId)}の打撃詳細`}><StatTable>
         <thead><tr><th>選手</th><th>R</th><th>2B</th><th>3B</th><th>BB</th><th>HBP</th><th>SH</th><th>SF</th><th>SO</th><th>SB</th><th>CS</th></tr></thead>
         <tbody>{batting.map(row => <tr key={row.playerId}><th scope="row">{row.name}</th>
           {[row.runs, row.doubles, row.triples, row.bb, row.hbp, row.sh, row.sf, row.so, row.sb, row.cs]
-            .map((item, index) => <td key={index}>{format(item)}</td>)}</tr>)}</tbody></table></div></details>
-      <h3>投球</h3><div className="mlb-stat-scroll box-primary" tabIndex={0} role="region" aria-label={`${teamName(manifest, teamId)}の投球成績。横スクロールできます`}><table><thead><tr>
+            .map((item, index) => <td key={index}>{format(item)}</td>)}</tr>)}</tbody></StatTable></div></details>
+      <h3>投球</h3><div className="mlb-stat-scroll box-primary" tabIndex={0} role="region" aria-label={`${teamName(manifest, teamId)}の投球成績`}><StatTable><thead><tr>
         <th>役割</th><th>選手</th><th><MetricLabel metric="IP" /></th><th><MetricLabel metric="BF" /></th><th>H</th><th>HR</th><th>SO</th><th>R</th><th>ER</th></tr></thead>
         <tbody>{pitching.map(row => <tr key={row.playerId}><td>{row.role === "starter" ? "先発" : row.role === "reliever" ? "救援" : "不明"}</td>
           <th scope="row"><Link to={`/MLB/players/${encodeURIComponent(row.playerId)}?season=${game.season}${scopeQuery}`}>{row.name ?? "選手"}</Link></th>
           <td>{row.outsRecorded === null ? "—" : `${Math.floor(row.outsRecorded / 3)}.${row.outsRecorded % 3}`}</td>
-          {[row.bf, row.hits, row.homeRuns, row.so, row.runs, row.er].map((item, index) => <td key={index}>{format(item)}</td>)}</tr>)}</tbody></table></div>
-      <details><summary>投球の詳細項目</summary><div className="mlb-stat-scroll" tabIndex={0} role="region" aria-label={`${teamName(manifest, teamId)}の投球詳細`}><table>
+          {[row.bf, row.hits, row.homeRuns, row.so, row.runs, row.er].map((item, index) => <td key={index}>{format(item)}</td>)}</tr>)}</tbody></StatTable></div>
+      <details><summary>投球の詳細項目</summary><div className="mlb-stat-scroll" tabIndex={0} role="region" aria-label={`${teamName(manifest, teamId)}の投球詳細`}><StatTable>
         <thead><tr><th>選手</th><th>BB</th><th>HBP</th><th>W</th><th>L</th><th>SV</th><th>HLD</th><th>球数</th></tr></thead>
         <tbody>{pitching.map(row => <tr key={row.playerId}><th scope="row">{row.name}</th>
           {[row.bb, row.hbp, row.win === null ? null : Number(row.win), row.loss === null ? null : Number(row.loss),
             row.save === null ? null : Number(row.save), row.hold, row.pitchCount]
-            .map((item, index) => <td key={index}>{format(item)}</td>)}</tr>)}</tbody></table></div></details>
-    </section>;
+            .map((item, index) => <td key={index}>{format(item)}</td>)}</tr>)}</tbody></StatTable></div></details>
+    </details>;
   };
   return <div className="screen"><PageHeading eyebrow={`MLB / ${competition === "postseason" ? "Postseason" : "Regular Season"}`} title={`${game.date} 試合結果`} />
     <ScoreHero away={teamName(manifest,game.awayTeamId)} home={teamName(manifest,game.homeTeamId)} awayScore={game.awayRuns} homeScore={game.homeRuns} status={`終了 · ${game.innings === null ? "回数不明" : `${game.innings}回`}`} />
@@ -281,7 +282,7 @@ export function MlbHistoricalPlayer({ manifest, favorites, toggle, saving }: {
   if (section && !["stats","analysis","game-log","more","trends"].includes(section)) return <Navigate to={`${base}${section === "advanced" ? "/analysis" : ""}?season=${selected}${asOf ? `&asOfDate=${selectedAsOf}` : ""}${scopeQuery}`} replace />;
   return <div className="screen player-screen"><Link className="back-link" to={historicalSearchPath(`?season=${selected}${scopeQuery}`)}>← 選手一覧</Link><header className="profile-header"><Monogram name={player.name} large /><div className="profile-header__body"><p className="eyebrow">MLB{isVerifiedJapanPlayer(player.id) ? " · 日本人選手" : " · 過去記録"}</p><h1>{player.name}</h1><p>{historicalPositions(player.positions)} · {player.seasons[0]}—{player.seasons.at(-1)} 収録</p></div><FavoriteButton active={favorites.some(f => f.league === "MLB" && f.entityId === player.id)} saving={saving} label={player.name} onClick={() => toggle({league:"MLB",kind:"player",entityId:player.id})} /></header>
     <PlayerTabs base={base} section={section} search={`?season=${selected}${asOf ? `&asOfDate=${selectedAsOf}` : ""}${scopeQuery}`} />
-    <nav className="player-tools" aria-label="選手の比較と推移"><CollectionButton league="MLB" playerId={player.id} name={player.name} /><Link to={`/MLB/compare?players=${encodeURIComponent(player.id)}&season=${selected}${scopeQuery}`}>比較に追加</Link><Link to={`/MLB/season-compare?kind=player&entity=${encodeURIComponent(player.id)}${scopeQuery}`}>年度比較・前年差</Link><Link to={`${base}/trends?season=${selected}${scopeQuery}`} aria-current={section === "trends" ? "page" : undefined}>推移・連続記録</Link><Link to={`/MLB/history?player=${encodeURIComponent(player.id)}&season=${selected}${scopeQuery}`}>年度別履歴</Link><Link to={`/MLB/teams?season=${selected}${scopeQuery}`}>球団を見る</Link></nav>
+    <details className="player-tools-disclosure" open={section === "trends"}><summary>比較・推移・保存</summary><nav className="player-tools" aria-label="選手の比較と推移"><CollectionButton league="MLB" playerId={player.id} name={player.name} /><Link to={`/MLB/compare?players=${encodeURIComponent(player.id)}&season=${selected}${scopeQuery}`}>比較に追加</Link><Link to={`/MLB/season-compare?kind=player&entity=${encodeURIComponent(player.id)}${scopeQuery}`}>年度比較・前年差</Link><Link to={`${base}/trends?season=${selected}${scopeQuery}`} aria-current={section === "trends" ? "page" : undefined}>推移・連続記録</Link><Link to={`/MLB/history?player=${encodeURIComponent(player.id)}&season=${selected}${scopeQuery}`}>年度別履歴</Link><Link to={`/MLB/teams?season=${selected}${scopeQuery}`}>球団を見る</Link></nav></details>
     {section !== "more" && <div className="mlb-controls"><label>シーズン<select value={selected} onChange={e => context("season",e.target.value)}>{player.seasons.map(s => <option key={s}>{s}</option>)}</select></label></div>}
     {section === "trends" && <PlayerTrends key={`${player.id}:${selected}:${competition}:${selectedAsOf}`} scope={`${selected}年 · ${competition === "postseason" ? "Postseason" : "公式戦"} · ${selectedAsOf}までの出場記録`} coverageComplete={manifest.seasons.find(s => s.season === selected)?.coverage === "complete"}
       batting={games.filter(r => r.date <= selectedAsOf).map(r => ({ ...r, gameNumber: chronology.value?.games.find(g => g.gameId === r.gameId && g.date === r.date)?.number ?? null, walks: r.bb, sacrificeFlies: r.sf }))}
@@ -394,7 +395,7 @@ export function MlbHistoricalMy({ manifest, favorites, toggle, saving }: {
   const index = useHistoricalDirectory();
   const saved = favorites.filter(item => item.league === "MLB" && item.kind === "player");
   const byId = new Map(index.value?.players.map(player => [player.id, player]) ?? []);
-  return <div className="screen"><PageHeading eyebrow="MLB / My" title="フォローダッシュボード" detail="この端末に保存しています" />
+  return <div className="screen"><PageHeading eyebrow="MLB / My" title="My" detail="この端末に保存しています" />
     <label className="schedule-season">過去シーズン<select value={season} onChange={e => setParams(previous => { const next = new URLSearchParams(previous); next.set("season", e.target.value); return next; })}>{!manifest.seasons.some(s => s.season === season) && <option value={season}>未収録</option>}{manifest.seasons.map(s => <option key={s.season}>{s.season}</option>)}</select></label>
     <MyLibrary league="MLB" /><MlbPersonalDashboard directory={index} manifest={manifest} season={season} favorites={favorites} toggle={toggle} saving={saving} />
     <SectionHeader title="お気に入り選手" />

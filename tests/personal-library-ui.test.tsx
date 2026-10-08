@@ -4,7 +4,8 @@ import { createRoot, type Root } from "react-dom/client";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PersonalLibrary, PERSONAL_LIBRARY_KEY } from "../src/application/personal-library";
-import { CollectionButton, PersonalLibraryProvider, PersonalLibraryScreen, SaveViewButton } from "../src/ui/personal-library";
+import { CollectionButton, PersonalLibraryScreen, SaveViewButton } from "../src/ui/personal-library";
+import { PersonalLibraryProvider } from "../src/ui/library-provider";
 import { services } from "../src/app/services";
 import { leagueSwitchPath } from "../src/domain/cross-league";
 const id = "00000000-0000-4000-8000-000000000001";
@@ -47,9 +48,9 @@ describe("local organization UI", () => {
   it("adds/removes canonical players from Collections without a favorite or individual stat fetch", async () => {
     const c = (await store.createCollection("比較候補")).collections[0]!;
     await mount(<CollectionButton league="NPB" playerId={id} name="選手" />);
-    await click(div.querySelector("button")!); await click(div.querySelector('input[type="checkbox"]')!);
+    await click(div.querySelector("button")!); await click(document.querySelector('dialog input[type="checkbox"]')!);
     expect((await store.read()).collections[0]!.players).toEqual([{ league: "NPB", playerId: id }]);
-    await click(div.querySelector('input[type="checkbox"]')!); expect((await store.read()).collections[0]!.players).toEqual([]);
+    await click(document.querySelector('dialog input[type="checkbox"]')!); expect((await store.read()).collections[0]!.players).toEqual([]);
     expect(reader).not.toHaveBeenCalled(); expect(data.has("baseball:favorites:v1")).toBe(false); expect(c.id).toBe("local-1");
   });
   it("reloads Collections and resolves the current display name from canonical metadata", async () => {
