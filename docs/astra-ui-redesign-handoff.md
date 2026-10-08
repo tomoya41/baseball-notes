@@ -1,5 +1,7 @@
 # Astra UI Redesign Handoff — Data Contract Freeze v1
 
+Latest product/UI boundaries: [Product Completion Batch 7 handoff](astra-product-final-handoff.md). The counts below are Batch G historical evidence, not current coverage.
+
 Batch G, 2026-09-30. **This document hands off data; it does not start the redesign.** Product requirements remain in `SPEC.md`. Rights evidence is in `docs/npb-batch-g-rights.md`. Verification results and measured counts are in `docs/npb-batch-g-report.md`.
 
 ## Design freedom and immutable data boundaries

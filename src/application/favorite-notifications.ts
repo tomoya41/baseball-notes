@@ -19,6 +19,7 @@ export class FavoriteNotifications {
     ]); } finally { if (timer !== undefined) clearTimeout(timer); }
   }
   async enabled() { return await this.store.get("baseball:notifications:enabled") === "true"; }
+  readiness() { return this.native.status(); }
   private async topics(key = "baseball:notifications:topics"): Promise<string[]> {
     try { const value: unknown = JSON.parse(await this.store.get(key) ?? "[]");
       return Array.isArray(value) ? value.filter((t): t is string => typeof t === "string" && /^npb-player-[0-9a-f-]{36}$/.test(t)) : [];

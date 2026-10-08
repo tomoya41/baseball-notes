@@ -1,5 +1,6 @@
 import { canonicalEntityRefSchema, canonicalEntityPath } from "./cross-league";
 import { portableRoute } from "./product-sharing";
+import { z } from "zod";
 export function canonicalDeepLink(input: string): string | null {
   try {
     const uri = new URL(input);
@@ -20,7 +21,7 @@ export function canonicalDeepLink(input: string): string | null {
     const params = new URLSearchParams();
     for (const key of ["season", "date", "asOfDate"]) {
       const value = sourceParams.get(key); if (!value) continue;
-      if (key === "season" ? /^20\d{2}$/.test(value) : /^20\d{2}-\d{2}-\d{2}$/.test(value)) params.set(key, value);
+      if (key === "season" ? /^20\d{2}$/.test(value) : /^20\d{2}-/.test(value) && z.iso.date().safeParse(value).success) params.set(key, value);
     }
     if (league === "MLB" && sourceParams.get("competition") === "postseason") params.set("competition", "postseason");
     return `${canonicalEntityPath(parsed.data)}${child ? `/${child}` : ""}${params.size ? `?${params}` : ""}`;
@@ -31,8 +32,8 @@ export function parentNativeRoute(path: string): string | null {
   const source = new URLSearchParams(path.split("?")[1]), scope = new URLSearchParams();
   if (league === "MLB" && source.get("competition") === "postseason") {
     scope.set("competition", "postseason");
-    if (/^20\d{2}$/.test(source.get("season") ?? "")) scope.set("season", source.get("season")!);
   }
+  if (league === "MLB" && /^20\d{2}$/.test(source.get("season") ?? "")) scope.set("season", source.get("season")!);
   const suffix = scope.size ? `?${scope}` : "";
   if (segments[1] === "watch-center") return `/${league}/my`;
   if (segments[1] === "library" && segments.length > 2) return `/${league}/library`;
@@ -40,7 +41,7 @@ export function parentNativeRoute(path: string): string | null {
   if (segments[1] === "players" && segments.length > 3) return `/${league}/players/${segments[2]}${suffix}`;
   if (segments[1] === "players") return `/${league}/search${suffix}`;
   if (segments[1] === "games") return `/${league}/schedule${suffix}`;
-  if (segments[1] === "teams" && segments.length > 2) return league === "MLB" ? `/MLB/teams${suffix}` : "/NPB/home";
+  if (segments[1] === "teams" && segments.length > 2) return `/${league}/teams${suffix}`;
   if (segments[1] === "postseason" && segments.length > 2) return `/${league}/postseason${source.get("season")?.match(/^20\d{2}$/) ? `?season=${source.get("season")}` : ""}`;
   if (segments[1] !== "home") return `/${league}/home`;
   return null;
