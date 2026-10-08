@@ -32,7 +32,7 @@ export function NotificationSettings({ favorites, ready, visible }: { favorites:
   </section>;
 }
 export function PrivacyScreen() { return <section className="screen"><h1>プライバシー・データ</h1>
-  <h2>端末に保存するデータ</h2><p>お気に入り、通知設定、最近読み込んだ公開成績を端末に保存します。アカウント、クラウド同期、アクセス解析は使用しません。</p>
+  <h2>端末に保存するデータ</h2><p>お気に入り、通知設定、最近読み込んだ公開成績を端末に保存します。Watchは追跡対象のcanonical ID・確認した数値・データの日付・既読状態を端末に保存します。検索語の分析や外部送信は行いません。アカウント、クラウド同期、アクセス解析は使用しません。</p>
   <h2>通信先</h2><p>公開データをGitHub Pagesおよび選手APIから読み込みます。通信先には通常の接続情報が伝わります。</p>
   <h2>Androidの通知</h2><p>通知をONにすると、Firebase Cloud Messagingがインストール識別情報・通知用トークン・お気に入りNPB選手の購読先を扱います。当アプリのDBにトークンは保存しません。通知はいつでもOFFにできます。</p>
   <p>WebとAndroidの保存領域は別です。アプリのデータ消去・アンインストールで保存情報は消えます。</p>

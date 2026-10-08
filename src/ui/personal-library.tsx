@@ -8,6 +8,7 @@ import { PageHeading, LoadingSkeleton } from "./components";
 import { ShareLink } from "./product-sharing";
 
 import { LibraryContext } from "./personal-library-context";
+import { WatchSummary } from "./personal-watch";
 export function PersonalLibraryProvider({ store, children }: { store: PersonalLibrary; children: ReactNode }) {
   const [state, setState] = useState<PersonalState | null>(null), [error, setError] = useState("");
   const location = useLocation();
@@ -33,7 +34,7 @@ export function CollectionButton({ league, playerId, name }: LibraryPlayer & { n
 }
 export function MyLibrary({ league }: { league: League }) {
   const ctx = useContext(LibraryContext);
-  return <section className="my-library"><h2>保存・整理</h2><Link className="text-link" to={`/${league}/team-compare`}>お気に入り球団を比較 →</Link><LibraryShortcuts league={league} /><p className="inline-note">コレクション {ctx?.state?.collections.length ?? 0} · 保存した条件 {ctx?.state?.views.length ?? 0} · 履歴 {ctx?.state?.activity.length ?? 0}</p>{ctx?.error && <p role="alert">{ctx.error}</p>}</section>;
+  return <section className="my-library"><h2>保存・整理</h2><WatchSummary league={league} /><Link className="text-link" to={`/${league}/team-compare`}>お気に入り球団を比較 →</Link><LibraryShortcuts league={league} /><p className="inline-note">コレクション {ctx?.state?.collections.length ?? 0} · 保存した条件 {ctx?.state?.views.length ?? 0} · 履歴 {ctx?.state?.activity.length ?? 0}</p>{ctx?.error && <p role="alert">{ctx.error}</p>}</section>;
 }
 type Name = { name: string; team: string | null; postseasonOnly?: boolean };
 export function PersonalLibraryScreen({ league }: { league: League }) {

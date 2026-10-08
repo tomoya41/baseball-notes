@@ -34,6 +34,7 @@ export function parentNativeRoute(path: string): string | null {
     if (/^20\d{2}$/.test(source.get("season") ?? "")) scope.set("season", source.get("season")!);
   }
   const suffix = scope.size ? `?${scope}` : "";
+  if (segments[1] === "watch-center") return `/${league}/my`;
   if (segments[1] === "library" && segments.length > 2) return `/${league}/library`;
   if (["compare", "team-compare", "season-compare"].includes(segments[1] ?? "")) return `/${league}/search${suffix}`;
   if (segments[1] === "players" && segments.length > 3) return `/${league}/players/${segments[2]}${suffix}`;

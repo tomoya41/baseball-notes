@@ -28,6 +28,7 @@ import { MyLibrary, PersonalLibraryProvider, PersonalLibraryScreen } from "./per
 import { CollectionDashboard } from "./collection-dashboard";
 import { NpbTeamCompare, SeasonCompare } from "./team-season-compare";
 import { ShareLink } from "./product-sharing";
+import { PersonalWatchProvider, WatchCenter, WatchSummary } from "./personal-watch";
 type FavoriteTarget = Pick<Favorite, "kind" | "entityId" | "league">;
 const MlbLeagueView = lazy(() => import("./mlb-foundation").then(module => ({ default: module.MlbLeagueView })));
 function NpbSearchEntry(props: Parameters<typeof NpbRoutes>[0]) {
@@ -74,7 +75,7 @@ export function App({ services }: { services: Services }) {
   useEffect(() => { window.scrollTo(0, 0); }, [location.pathname]);
   const league: League = location.pathname.split("/")[1] === "MLB" ? "MLB" : "NPB";
   const section = location.pathname.split("/")[2] ?? "home";
-  const currentNav = ["games", "schedule", "postseason"].includes(section) ? "schedule" : ["ranking", "milestones"].includes(section) ? "records" : ["players", "teams", "analysis", "compare", "team-compare", "season-compare", "data", "history", "glossary"].includes(section) ? "search" : ["favorites", "library"].includes(section) ? "my" : section;
+  const currentNav = ["games", "schedule", "postseason"].includes(section) ? "schedule" : ["ranking", "milestones"].includes(section) ? "records" : ["players", "teams", "analysis", "compare", "team-compare", "season-compare", "data", "history", "glossary"].includes(section) ? "search" : ["favorites", "library", "watch-center"].includes(section) ? "my" : section;
   const [favorites, setFavorites] = useState<Favorite[]>([]);
   const [favoritesReady, setFavoritesReady] = useState(false);
   const [refreshVersion, setRefreshVersion] = useState(0);
@@ -104,7 +105,7 @@ export function App({ services }: { services: Services }) {
       .finally(() => setSaving(false));
   }, [services]);
   const switchPath = (next: League) => leagueSwitchPath(location.pathname, location.search, next);
-  return <PersonalLibraryProvider store={services.personalLibrary}><div className="app-shell">
+  return <PersonalLibraryProvider store={services.personalLibrary}><PersonalWatchProvider store={services.personalWatch}><div className="app-shell">
     <a className="skip-link" href="#main-content" onClick={(event) => {
       event.preventDefault(); document.getElementById("main-content")?.focus();
     }}>本文へ移動</a>
@@ -117,6 +118,8 @@ export function App({ services }: { services: Services }) {
     <main id="main-content" tabIndex={-1}>
     <ShareLink key={location.pathname + location.search} />
     <Routes key={refreshVersion}>
+      <Route path="/NPB/watch-center" element={<WatchCenter key="NPB" league="NPB" services={services} favorites={favorites} ready={favoritesReady} />} />
+      <Route path="/MLB/watch-center" element={<WatchCenter key="MLB" league="MLB" services={services} favorites={favorites} ready={favoritesReady} />} />
       <Route path="/NPB/library" element={<PersonalLibraryScreen league="NPB" />} />
       <Route path="/MLB/library" element={<PersonalLibraryScreen league="MLB" />} />
       <Route path="/NPB/library/collections/:collectionId" element={<CollectionDashboard league="NPB" services={services} favorites={favorites} />} />
@@ -129,11 +132,12 @@ export function App({ services }: { services: Services }) {
         favorites={favorites} toggle={toggle} saving={saving} /></Suspense>} />
       <Route path="*" element={<Navigate to="/NPB/home" replace />} />
     </Routes>
+    {section === "home" && <WatchSummary league={league} />}
     {section === "my" && <><MySettings /><NotificationSettings favorites={favorites} ready={favoritesReady} visible /></>}
     <footer className="app-footer"><span>BASEBALL NOTES</span><Link to={`/${league}/explore`}>野球をもっと知る ↗</Link></footer></main>
     <nav className="bottom-nav" aria-label="基本ナビゲーション">{navItems.map(({ label, segment, icon: Icon }) =>
       <Link key={segment} to={`/${league}/${segment}`} aria-current={currentNav === segment ? "page" : undefined}>
         <Icon size={21} strokeWidth={1.9} aria-hidden="true" /><span>{label}</span>
       </Link>)}</nav>
-  </div></PersonalLibraryProvider>;
+  </div></PersonalWatchProvider></PersonalLibraryProvider>;
 }

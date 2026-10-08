@@ -429,3 +429,22 @@ label.analysis-condition select { flex:1; min-width:0; max-width:330px; font-siz
 .library-pagination { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 18px 0; }
 .collection-watch-row .list-heading { justify-content: flex-start; }
 .collection-watch-row .list-heading a { overflow-wrap: anywhere; }
+/* Personal Watch is a local feed, separate from the future live WATCH. */
+.watch-summary { margin: 20px 0; padding: 14px 0; border-block: 1px solid var(--color-border); }
+.watch-summary .list-heading, .watch-center > .list-heading { flex-wrap: wrap; gap: 8px; }
+.watch-count { color: var(--color-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.watch-summary-item { display: block; padding-block: 8px; overflow-wrap: anywhere; }
+.watch-summary-item small, .watch-alert > small { display: block; color: var(--color-muted); font-size: 11px; margin-top: 5px; }
+.watch-alert { padding: 18px 0; border-bottom: 1px solid var(--color-border); overflow-wrap: anywhere; }
+.watch-alert h2 { font-size: 17px; margin: 8px 0; }
+.watch-alert.is-read .list-heading { color: var(--color-muted); }
+.watch-values { display: flex; flex-wrap: wrap; gap: 12px 20px; font-variant-numeric: tabular-nums; }
+.watch-values dt { font-size: 11px; color: var(--color-muted); }
+.watch-values dd { margin: 4px 0; font-size: 18px; }
+.watch-values dd small { display: block; font-size: 11px; color: var(--color-muted); }
+.watch-actions { display: flex; gap: 16px; margin-top: 10px; }
+.watch-center button, .watch-center summary { min-height: 44px; }
+.watch-preferences { margin-block: 20px; padding-block: 12px; border-block: 1px solid var(--color-border); }
+.watch-preferences label { display: flex; gap: 10px; align-items: center; min-height: 44px; font-size: 13px; }
+.watch-preferences input { flex-shrink: 0; }
+.watch-diagnostics { margin-top: 24px; font-size: 12px; color: var(--color-muted); overflow-wrap: anywhere; }

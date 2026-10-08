@@ -1,5 +1,6 @@
 import { Favorites } from "../application/favorites";
 import { PersonalLibrary } from "../application/personal-library";
+import { PersonalWatch } from "../application/personal-watch";
 import { PreferenceStore } from "../infrastructure/storage";
 import { StaticStandingsRepository } from "../infrastructure/providers/static-standings-repository";
 import { StaticHotRepository } from "../infrastructure/providers/static-hot-repository";
@@ -22,6 +23,7 @@ const npbDataBaseUrl = import.meta.env.VITE_NPB_DATA_BASE_URL?.trim() ||
 
 export const services = {
   personalLibrary: new PersonalLibrary(new PreferenceStore()),
+  personalWatch: new PersonalWatch(new PreferenceStore()),
   leagueAvailability: new StaticLeagueAvailabilityRepository(publicAssetBase()),
   standings: new StaticStandingsRepository(import.meta.env.BASE_URL, undefined, npbDataBaseUrl),
   hot: new StaticHotRepository(npbDataBaseUrl),

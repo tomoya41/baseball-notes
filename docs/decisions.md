@@ -316,3 +316,7 @@ Use three static NPB Recent projections at the coordinated saved effectiveDate, 
 ## 2026-10-08 — Portable comparisons and bounded licensed display export
 
 Team comparisons use existing coordinated NPB summaries and additive MLB Team Hub windows derived from immutable archived Games. Saved-season deltas require an actual calendar predecessor; missing years never imply Career. Collections reuse bulk Season/Recent data with a bounded 12-player page and one expanded Trends view. Share only canonical routes and whitelisted conditions, never local library IDs. Permit at most 40 displayed MLB aggregate CSV rows with Retrosheet/Chadwick credit; leave NPB CSV disabled under its provisional rights scope. No new acquisition, canonical write, migration or Gate change. See `docs/product-comparison-sharing.md`.
+
+## 2026-10-08 — In-app Watch from bounded local observations
+
+Personal Watch is an independent local observation/alert contract, not the future live WATCH. Compare content only after a successful, fresh, same-scope read; first checks and setting changes are quiet baselines. Home summaries read local state without new network work. Admit each rule by source completeness/sample and preserve Current/Historical, Regular/Postseason and HOT/Ranking Gate boundaries. Use bounded Preferences storage, read/dismiss tombstones and corruption/quota-safe writes; no backend or claimed background Push. Rollback is an app revert with no canonical migration. See `docs/product-personal-watch.md`.
