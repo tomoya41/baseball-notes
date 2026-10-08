@@ -18,7 +18,7 @@ export function MlbSeasonExplorer({ manifest }: { manifest: ExplorerManifest }) 
   const playerId = params.get("player") ?? "", player = directory.value?.players.find(p => p.id === playerId), role = params.get("role") === "pitching" ? "pitching" : "batting";
   const profile = useHistoricalStatic<ExplorerProfile>(player ? `players/${playerId.replaceAll(":", "_")}.json` : null);
   const name = params.get("q") ?? "", yearRaw = params.get("season"), year = yearRaw ? Number(yearRaw) : manifest.seasons.at(-1)!.season;
-  const update = (key: string, value: string) => setParams(previous => { const next = new URLSearchParams(previous); if (value) next.set(key, value); else next.delete(key); return next; });
+  const update = (key: string, value: string) => setParams(previous => { const next = new URLSearchParams(previous); if (value) next.set(key, value); else next.delete(key); return next; }, { replace: key === "q" });
   const candidates = name.trim() ? directory.value?.players.filter(p => matchesMlbPlayerName(p.id, p.name, name)).slice(0, 20) ?? [] : [];
   const keys = role === "batting" ? ["PA", "HR", "AVG", "OPS"] : ["outsRecorded", "SO", "ERA", "K9"];
   const format = (key: string, value: number | null) => value === null ? "—" : key === "outsRecorded" ? `${Math.floor(value / 3)}.${value % 3}` : ["AVG", "OPS"].includes(key) ? value.toFixed(3) : ["ERA", "K9"].includes(key) ? value.toFixed(2) : String(value);

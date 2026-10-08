@@ -86,7 +86,7 @@ export function MetricInfo({ definition }: { definition: MetricHelp }) {
     <form method="dialog"><button className="button">閉じる</button></form>
   </dialog>;
   return <>
-    <button className="metric-info-button" type="button" aria-label={`${definition.name}の説明`}
+    <button className="metric-info-button" type="button" aria-label={`${definition.name}の説明`} aria-haspopup="dialog"
       onClick={() => dialog.current?.showModal()}><Info size={17} aria-hidden="true" /></button>
     {typeof document === "undefined" ? content : createPortal(content, document.body)}
   </>;
@@ -132,6 +132,7 @@ export function DataState({ kind, title, detail, action, to }: {
 
 export function LoadingSkeleton() {
   return <div className="skeleton-page" aria-label="読み込み中" role="status">
+    <span className="sr-only">読み込み中</span>
     <div className="skeleton skeleton--heading" />
     <div className="skeleton skeleton--panel" />
     <div className="skeleton skeleton--row" />

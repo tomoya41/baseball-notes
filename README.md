@@ -12,9 +12,9 @@ nf3更新遅延とGitHub待ち時間があるため実際の終了から60分以
 
 ## 現在できること
 
-React + TypeScript strict + Vite + Capacitor Androidの構成。ホーム / 検索 / 分析 / 記録 / マイの5項目ナビ、NPB・MLB切替、選手・球団検索、選手詳細、端末保存のお気に入り、指標説明、stale表示を実装。Home / Player / 参考ランキングにLight/Dark対応のデザインシステムを適用しています。
+React + TypeScript strict + Vite + Capacitor Androidの構成。ホーム / 試合 / 選手 / 記録 / Myの5項目ナビ、NPB・MLB切替、選手・球団検索、比較、Explorer、指標説明、Light/Dark、保存済みデータ表示を実装しています。
 
-NPBはcanonical Player検索・プロフィール・Recent・Game Log・Game Detail・Player Analysisを保存済み実データへ接続しています。Analysisは共通30日Contextから期間比較、ホーム／ビジター、対戦相手、打順、出場形態を集計します。Playerの2026シーズン成績も既存Aggregatorで算出し、Coverage不足とMetric欠損を区別します。Home HOTはStatic JSONを参照し、Production Gateが閉じている間はランキング準備中です。Career、MATCHUP、WATCH、既存の参考ランキング等にはサンプル／未接続領域が残ります。保存済み成績を公式順位や最終成績と扱わないでください。Retrosheet 2025年の歴史順位も別途生成できます。
+NPBはCurrentの保存済み実データ、MLBは2020〜2025 HistoricalのRegular/Postseasonに接続します。Team Hub、Preview/Recap、Player/Team/年度比較、Trends、Data/Recent/Season Explorerを利用できます。MyはFavorites、Collections、Saved Views、最近見た履歴、Watchを端末保存します。Watchは取得時の確認差分であり、リアルタイム・バックグラウンド配信ではありません。NPB HOT/RankingはCapability Gateに従います。CareerやCurrent MLB、権利未確定のNPB Postseasonを推測補完しません。監査結果は [Product Completion Audit](docs/product-completion-audit.md)、次工程の境界は [Astra Final Handoff](docs/astra-product-final-handoff.md) を参照してください。
 
 - [アーキテクチャ](docs/architecture.md)
 - [データ取得元の調査](docs/data-sources.md)

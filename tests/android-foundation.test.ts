@@ -22,6 +22,12 @@ describe("canonical native navigation", () => {
     expect(canonicalDeepLink(`baseballnotes://MLB/players/${encodeURIComponent(mlb)}/analysis?season=2025&date=2025-09-20&token=bad`))
       .toBe(`/MLB/players/${encodeURIComponent(mlb)}/analysis?season=2025&date=2025-09-20`);
   });
+  it("drops impossible calendar dates while retaining a valid leap day", () => {
+    expect(canonicalDeepLink(`baseballnotes://MLB/players/${encodeURIComponent(mlb)}/analysis?season=2025&date=2025-02-30&asOfDate=2025-99-01`))
+      .toBe(`/MLB/players/${encodeURIComponent(mlb)}/analysis?season=2025`);
+    expect(canonicalDeepLink(`baseballnotes://MLB/players/${encodeURIComponent(mlb)}?date=2024-02-29`))
+      .toBe(`/MLB/players/${encodeURIComponent(mlb)}?date=2024-02-29`);
+  });
   it.each(["https://evil.test/#/NPB/players/123", "javascript:alert(1)", "baseballnotes://NPB/players/123", `baseballnotes://MLB/players/${id}`,
     `https://tomoya41.github.io/other/#/NPB/players/${id}`, `baseballnotes://NPB/players/${id}/admin`])("rejects %s", uri => expect(canonicalDeepLink(uri)).toBeNull());
   it("uses parent screens only when no router history exists", () => {

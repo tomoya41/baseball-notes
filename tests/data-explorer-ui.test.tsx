@@ -104,6 +104,19 @@ describe("compact exploration UI", () => {
     await click([...container.querySelectorAll("button")].find(b => b.textContent === "戻るテスト")!);
     expect(container.querySelector("[data-location]")?.textContent).toBe("?season=2025&metric1=OPS&value1=.9");
   });
+  it("replaces typing edits without losing the previous filter step on Back", async () => {
+    await mount(explorer());
+    await act(async () => { const select = container.querySelector('select') as HTMLSelectElement;
+      select.value = "14"; select.dispatchEvent(new Event("change", { bubbles: true })); });
+    const input = container.querySelector('input[type="search"]') as HTMLInputElement;
+    for (const value of ["選", "選手"]) await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, value);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    expect(container.querySelector("[data-location]")?.textContent).toContain("q=");
+    await click([...container.querySelectorAll("button")].find(b => b.textContent === "戻るテスト")!);
+    expect(container.querySelector("[data-location]")?.textContent).toBe("?season=2025");
+  });
   it.each([7, 14, 30])("reads only explicit selections for %s days", async days => {
     const read = vi.fn(async () => ({ values: [{ ...rows[0]!, coverage: "partial" }], failed: [id2] }));
     await mount(explorer(read), `/MLB/data?season=2025&period=${days}&recentPlayers=${id},${id2}`);

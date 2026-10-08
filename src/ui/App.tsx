@@ -1,4 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from "react";
+import { RouteErrorBoundary, RouteFocus } from "./route-reliability";
 import { House, Search, Trophy, UserRound, CalendarDays } from "lucide-react";
 import { Link, Navigate, Route, Routes, useLocation, useSearchParams } from "react-router-dom";
 import type { Services } from "../app/services";
@@ -72,7 +73,6 @@ const navItems = [
 ] as const;
 export function App({ services }: { services: Services }) {
   const location = useLocation();
-  useEffect(() => { window.scrollTo(0, 0); }, [location.pathname]);
   const league: League = location.pathname.split("/")[1] === "MLB" ? "MLB" : "NPB";
   const section = location.pathname.split("/")[2] ?? "home";
   const currentNav = ["games", "schedule", "postseason"].includes(section) ? "schedule" : ["ranking", "milestones"].includes(section) ? "records" : ["players", "teams", "analysis", "compare", "team-compare", "season-compare", "data", "history", "glossary"].includes(section) ? "search" : ["favorites", "library", "watch-center"].includes(section) ? "my" : section;
@@ -116,7 +116,9 @@ export function App({ services }: { services: Services }) {
       role={favoriteError ? "alert" : "status"}>{favoriteMessage}</p>}
     <RuntimeStatus />
     <main id="main-content" tabIndex={-1}>
+    <RouteFocus />
     <ShareLink key={location.pathname + location.search} />
+    <RouteErrorBoundary key={`screen:${location.pathname}`}>
     <Routes key={refreshVersion}>
       <Route path="/NPB/watch-center" element={<WatchCenter key="NPB" league="NPB" services={services} favorites={favorites} ready={favoritesReady} />} />
       <Route path="/MLB/watch-center" element={<WatchCenter key="MLB" league="MLB" services={services} favorites={favorites} ready={favoritesReady} />} />
@@ -132,6 +134,7 @@ export function App({ services }: { services: Services }) {
         favorites={favorites} toggle={toggle} saving={saving} /></Suspense>} />
       <Route path="*" element={<Navigate to="/NPB/home" replace />} />
     </Routes>
+    </RouteErrorBoundary>
     {section === "home" && <WatchSummary league={league} />}
     {section === "my" && <><MySettings /><NotificationSettings favorites={favorites} ready={favoritesReady} visible /></>}
     <footer className="app-footer"><span>BASEBALL NOTES</span><Link to={`/${league}/explore`}>野球をもっと知る ↗</Link></footer></main>

@@ -137,7 +137,7 @@ describe("scope isolation and capabilities", () => {
     expect(canonicalDeepLink(`baseballnotes://MLB/players/${encodeURIComponent(id)}/analysis?season=2020&competition=postseason`)).toContain("competition=postseason");
     expect(parentNativeRoute(`/MLB/players/${encodeURIComponent(id)}/analysis?season=2020&competition=postseason`)).toContain("competition=postseason&season=2020");
     expect(parentNativeRoute(`/MLB/players/${encodeURIComponent(id)}?season=2025&competition=postseason`)).toBe("/MLB/search?competition=postseason&season=2025");
-    expect(parentNativeRoute(`/MLB/players/${encodeURIComponent(id)}?season=2025`)).toBe("/MLB/search");
+    expect(parentNativeRoute(`/MLB/players/${encodeURIComponent(id)}?season=2025`)).toBe("/MLB/search?season=2025");
     expect(leagueSwitchPath("/MLB/postseason/series/id","?season=2020","NPB")).toBe("/NPB/postseason");
   });
   it("shows released series links and never emits fabricated Current scores", () => {

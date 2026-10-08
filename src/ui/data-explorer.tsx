@@ -59,7 +59,7 @@ export function DataExplorerView({ league, rows, teams, season, years, effective
     if (name === "role") for (const i of [1, 2]) for (const field of ["metric", "op", "value", "sort", "dir"]) next.delete(`${field}${i}`);
     if (!["page", "compare"].includes(name)) next.delete("page");
     return next;
-  });
+  }, { replace: name === "q" || name === "minimum" || /^value[12]$/.test(name) });
   useEffect(() => {
     if (!days || (!allRecent && !idsKey)) return;
     let active = true;

@@ -1,4 +1,5 @@
 import { canonicalEntityRefSchema } from "./cross-league";
+import { z } from "zod";
 import { compareIds } from "./player-compare";
 import { metricNumber, selectedTeams } from "./product-comparison";
 import type { CompareMetrics } from "./player-compare";
@@ -37,7 +38,7 @@ export function portableRoute(path: string, search = ""): string | null {
     if (!kind || !canonicalEntityRefSchema.safeParse({ league, kind, id: decodeSafe(parts[2] ?? "") }).success || parts.length > (kind === "player" ? 4 : 3)) return null;
     if (parts[3] && !["stats", "analysis", "game-log", "trends", "more", "advanced"].includes(parts[3])) return null;
   }
-  for (const k of ["season", "date", "asOfDate"]) { const v = source.get(k); if (v && (k === "season" ? /^20\d{2}$/.test(v) : /^20\d{2}-\d{2}-\d{2}$/.test(v))) clean.set(k, v); }
+  for (const k of ["season", "date", "asOfDate"]) { const v = source.get(k); if (v && (k === "season" ? /^20\d{2}$/.test(v) : /^20\d{2}-/.test(v) && z.iso.date().safeParse(v).success)) clean.set(k, v); }
   if (source.get("competition") === "postseason") clean.set("competition", "postseason");
   return `${path}${clean.size ? `?${clean}` : ""}`;
 }

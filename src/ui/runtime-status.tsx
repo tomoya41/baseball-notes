@@ -13,20 +13,30 @@ export function RuntimeStatus() {
 }
 export function NotificationSettings({ favorites, ready, visible }: { favorites: Favorite[]; ready: boolean; visible: boolean }) {
   const [enabled, setEnabled] = useState(false), [busy, setBusy] = useState(false), [message, setMessage] = useState("");
-  useEffect(() => { if (isAndroid()) void notifications.enabled().then(setEnabled).catch(() => setMessage("通知設定を読み込めません。")); }, []);
+  const [configured, setConfigured] = useState(false), [checked, setChecked] = useState(false);
+  useEffect(() => {
+    if (!isAndroid()) return;
+    let active = true;
+    void Promise.all([notifications.enabled(), notifications.readiness()]).then(([value, status]) => {
+      if (active) { setEnabled(value); setConfigured(status.configured); }
+    }).catch(() => { if (active) setMessage("通知設定を読み込めません。設定は保持しています。"); })
+      .finally(() => { if (active) setChecked(true); });
+    return () => { active = false; };
+  }, []);
   useEffect(() => { const sync = () => { if (isAndroid() && ready) void notifications.sync(favorites).catch(() => setMessage("通信が戻ったら通知設定を再確認してください。")); };
     sync(); window.addEventListener("online", sync); return () => window.removeEventListener("online", sync); }, [favorites, ready]);
   const toggle = async () => { setBusy(true); setMessage("");
     try { await notifications.setEnabled(!enabled, favorites); setEnabled(await notifications.enabled()); }
-    catch (error) { setEnabled(await notifications.enabled()); setMessage(error instanceof Error ? error.message : "通知設定を保存できません。"); }
+    catch (error) { try { setEnabled(await notifications.enabled()); } catch { /* Keep the last known setting if storage is unavailable. */ }
+      setMessage(error instanceof Error ? error.message : "通知設定を保存できません。"); }
     finally { setBusy(false); }
   };
   if (!visible) return null;
   return <section className="notification-settings" aria-labelledby="notifications-title">
     <h2 id="notifications-title">成績更新通知</h2>
-    <p>お気に入りのNPB選手について、全試合終了後に成績の公開が完了したらお知らせします。MLB過去記録は対象外です。</p>
-    {isAndroid() ? <button className="button" type="button" role="switch" aria-checked={enabled} disabled={busy} onClick={() => void toggle()}>
-      {busy ? "設定中…" : enabled ? "通知 ON" : "通知 OFF"}</button> : <p>通知はAndroidアプリで設定できます。</p>}
+    <p>Androidの成績更新通知は外部設定・配信検証が必要です。MLB過去記録は対象外です。アプリ内の確認差分はWatch Centerで確認できます。</p>
+    {isAndroid() ? <><p role="status">{!checked ? "通知設定を確認中…" : configured ? "通知の接続設定あり。配信確認は別途必要です。" : "外部通知は未設定・利用準備中です。"}</p><button className="button" type="button" role="switch" aria-checked={enabled} disabled={busy || !checked || (!configured && !enabled)} onClick={() => void toggle()}>
+      {busy ? "設定中…" : enabled ? "通知 ON" : "通知 OFF"}</button></> : <p>外部通知はAndroid向けの準備機能です。Webからは配信しません。</p>}
     {message && <p role="status">{message}</p>}
     <a href="#/privacy">プライバシー・データについて</a>
   </section>;
