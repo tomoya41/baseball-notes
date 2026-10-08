@@ -274,7 +274,8 @@ describe("coordinated NPB publication", () => {
       run("refresh-npb-profile-projections", input, root);
       expect(await readNpbPublication(root)).toEqual(result);
     } finally { await rm(root, { recursive: true, force: true }); }
-  });
+  // Three real TypeScript CLI processes can exceed the unit-test default on a shared CI runner.
+  }, 15_000);
   it("fails closed before writing when a newly read Directory is ahead of the preserved family", async () => {
     const root = await mkdtemp(join(tmpdir(), "npb-profile-publication-"));
     try {
