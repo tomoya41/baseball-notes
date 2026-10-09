@@ -17,21 +17,21 @@ A baseball scorebook: strong score and numeric hierarchy, compact named rows, ru
 - My: saved players/teams, collections, saved conditions, activity and observed changes. Watch remains in-app data comparison, not Push.
 - The five primary destinations and every existing deep link remain available. Sharing belongs in a secondary action, not a full-width introductory panel.
 
-## Scroll policy (user requirement)
+## Navigation and scroll policy (2026-10-09 correction)
 
-The user clarified that **document-level vertical scrolling is also disallowed**. Screens must fit the viewport and expose remaining content through explicit previous/next pages, tabs and detail destinations. No user-operated scroll panel, carousel or wide table. The viewport presentation layer paginates the existing document flow; it must keep every data item and keyboard target reachable rather than merely clipping overflow. Wrap navigation, disclose details, paginate lists and adapt tables into labelled rows on narrow screens. Validate page counts and focus transitions after asynchronous loads, filter changes, viewport resize and enlarged text.
+The user explicitly chose natural vertical document scrolling after finding viewport pagination confusing. There is one document scroll, no CSS-column pages or artificial page counts. Fixed primary navigation remains reachable. Native modal dialogs temporarily lock the document and have one content scroll plus a persistent close action. No data migration is needed; rollback is an application revert.
 
-## Implementation / verification
+Detail tabs describe the content (概要 / 成績 / 分析 / 試合別 / 選手情報), distribute across their actual item count, and retain published routes. Use 球団ページ and コレクション consistently instead of implementation/product jargon. Historical context remains explicit as 過去シーズン; it is never relabelled today.
 
-Foundation and navigation first, followed by core, analytical and personal surfaces. Keep existing read models and bounded fetching. Split optional route implementations without changing repositories. Verify 360px Light/Dark, tablet and desktop, direct links, keyboard/focus, reduced motion, local persistence, data hashes and Android builds before publishing.
+## Market reference review
 
-## Review safeguards
+Inspected official Apple Sports and FotMob app screenshots, not just marketing text:
 
-- Oversized rows/groups are allowed to fragment into normal document flow when they exceed the available page height; restoring space restores their compact layout. Charts are constrained to page height. This protects short viewports and enlarged text without enabling vertical scrolling.
-- Every remeasurement follows an active keyboard target after asynchronous content moves it to another column. Route changes reset the viewport; query-only edits preserve the existing focus contract.
-- Metric dialogs mount their content and layout observers only while open. Native dialog focus return and Escape handling remain available.
-- The page selector provides direct access in long lists; it is not a local-storage or shared-URL identifier. Filters, selected entities and scope remain in their existing URL contracts.
+- [Apple Sports official screenshots](https://www.apple.com/newsroom/2026/05/apple-sports-expands-to-more-than-90-new-countries-and-regions/): clear date/scope controls, compact score rows and purpose-labelled detail tabs.
+- [FotMob official app preview](https://www.fotmob.com/download): continuous fixture lists grouped by competition, visible match identity before detailed statistics.
 
-## Verification record
+Applied patterns: continuous reading, fixed primary destinations, named sections and progressive disclosure. No third-party visual assets or data were copied; the existing baseball scorebook palette and rights-cleared content remain.
 
-Local visual checks cover 360×800 Light/Dark, 360×640, 768×1024 and 1280×800, plus a stress case at 360×400 with 200% root text sizing (temporary QA CSS removed). Game box scores, metric explanations, player/season/team comparisons and explorer results remain in the document and reachable through page controls. Automated regressions cover page bounds, reflow, oversized groups, keyboard target movement, dialog open/close and table header associations. Real Android device/TalkBack verification remains a manual release check; Android build success alone does not certify that check.
+## Verification boundaries
+
+Check 360px Light/Dark, larger viewports, long profiles, list-to-detail navigation, native dialog Escape/focus return and a single active scroll region. Retain data hashes, bounded readers, local persistence and Android Back contracts. Device TalkBack and real-device operation remain manual release checks.

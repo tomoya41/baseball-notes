@@ -25,8 +25,8 @@ export function Monogram({ name, large = false }: { name: string; large?: boolea
   return <span className={`monogram${large ? " monogram--large" : ""}`} aria-hidden="true">{initials}</span>;
 }
 export function PlayerTabs({ base, section, search = "" }: { base: string; section: string | undefined; search?: string }) {
-  return <nav className="profile-tabs" aria-label="選手ページ">
-    {[{ label: "概要", part: "" }, { label: "成績", part: "stats" }, { label: "分析", part: "analysis" }, { label: "試合別", part: "game-log" }, { label: "プロフィール", part: "more" }].map(tab =>
+  return <nav className="profile-tabs player-section-tabs" aria-label="選手ページ">
+    {[{ label: "概要", part: "" }, { label: "成績", part: "stats" }, { label: "分析", part: "analysis" }, { label: "試合別", part: "game-log" }, { label: "選手情報", part: "more" }].map(tab =>
       <Link key={tab.part} to={`${base}${tab.part ? `/${tab.part}` : ""}${search}`} aria-current={(section ?? "") === tab.part ? "page" : undefined}>{tab.label}</Link>)}
   </nav>;
 }

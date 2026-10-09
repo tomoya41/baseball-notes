@@ -137,7 +137,7 @@ button,a,input,select,summary { touch-action: manipulation; }
 .team-stat-details,.team-roster { border-block:1px solid var(--color-border); margin:16px 0; }
 .team-stat-details > summary,.team-roster > summary { min-height:56px; padding:16px 0; font-size:.875rem; }
 .team-follow-action { display:flex; align-items:center; gap:8px; font-size:.75rem; }
-.profile-tabs { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:0; padding:0; margin:0 0 12px; overflow:visible; background:var(--color-surface); }
+.profile-tabs { display:flex; gap:0; padding:0; margin:0 0 12px; overflow:visible; background:var(--color-surface); }
 .profile-tabs a { white-space:normal; overflow-wrap:anywhere; padding:12px 2px; font-size:.6875rem; text-align:center; min-height:48px; border-bottom-width:2px; }
 .profile-tabs a[aria-current] { color:var(--brand); }
 .player-tools { display:flex; flex-wrap:wrap; gap:0 16px; padding:0; border:0; }
@@ -242,46 +242,20 @@ button,a,input,select,summary { touch-action: manipulation; }
   .data-explorer > .row-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0 28px; }
 }
 
-/* One viewport, explicit pages. There is no user-operated scroll area. */
-html,body,#root { height:100%; overflow:hidden; }
-.app-shell { height:100dvh; min-height:0; display:flex; flex-direction:column; padding-bottom:0; }
-.app-header { flex-shrink:0; margin-bottom:0; }
-.runtime-status { flex-shrink:0; margin:4px 0; padding:6px 10px; }
-.app-shell > main { flex:1; min-height:0; padding-top:12px; }
-.viewport-pages { height:100%; min-height:0; display:grid; grid-template-rows:minmax(0,1fr) 48px; }
-.viewport-pages-window { min-height:0; overflow:hidden; overscroll-behavior:none; }
-.viewport-pages-flow { height:100%; columns:1; column-gap:24px; column-fill:auto; }
-.viewport-pages-flow > * { max-width:100%; }
-.viewport-pages-controls { display:flex; align-items:center; justify-content:space-between; border-top:1px solid var(--color-border); background:var(--color-bg); font-variant-numeric:tabular-nums; }
-.viewport-pages-controls button { display:flex; gap:4px; align-items:center; min-width:80px; min-height:44px; padding:4px 8px; color:var(--color-text); background:transparent; font-size:.75rem; }
-.viewport-pages-controls small { color:var(--color-muted); font-size:.6875rem; }
-.viewport-page-number { position:relative; display:grid; place-items:center; min-width:72px; min-height:44px; }
-.viewport-page-number::after { content:"⌄"; position:absolute; right:4px; color:var(--color-muted); pointer-events:none; }
-.viewport-page-number select { position:absolute; inset:0; opacity:0; width:100%; cursor:pointer; }
-.viewport-page-number:focus-within { outline:2px solid var(--brand); outline-offset:-2px; }
-.bottom-nav { position:static; flex-shrink:0; margin:0 -16px; }
-.viewport-pages-flow :is(h1,h2,h3,summary,.section-header,.list-heading) { break-after:avoid; }
-.viewport-pages-flow :is(.scoreboard-row,.profile-header,.score-hero,.player-row,.mlb-player-row,.surface-favorite,.follow-player,.explorer-result,.metric-tile,.game-log-card,.stat-table tbody tr,.watch-alert,.library-row) { break-inside:avoid; }
-.viewport-pages-flow :is(.segmented,.profile-tabs,.home-mode-nav,.explorer-filter-grid,.mlb-controls,.explorer-links,.metric-grid,.row-list,.follow-board,.scoreboard-list,.profile-content,.postseason-bracket,.comparison-results) { break-inside:auto; }
-.viewport-pages-flow .screen { max-width:100%; }
-.paged-dialog { width:min(460px,calc(100vw - 24px)); height:min(620px,calc(100dvh - 24px)); max-height:none; overflow:hidden; padding:16px; }
-.paged-dialog[open] { display:grid; grid-template-rows:minmax(0,1fr) 48px; gap:8px; }
-.paged-dialog > form { margin:0; }.paged-dialog > form button { margin:0; }
-.library-picker-content > label { display:flex; gap:10px; align-items:center; min-height:48px; break-inside:avoid; }
+/* One document scroll; native dialogs temporarily own scrolling while open. */
+html { scroll-padding-bottom:calc(88px + env(safe-area-inset-bottom)); }
+.app-shell { min-height:100dvh; }
+.app-shell > main { min-width:0; }
+.runtime-status { margin:4px 0 12px; padding:8px 10px; }
+.app-dialog { width:min(460px,calc(100vw - 24px)); max-height:calc(100dvh - 24px); overflow:hidden; padding:16px; }
+.app-dialog[open] { display:flex; flex-direction:column; gap:12px; }
+.app-dialog-content { min-height:0; overflow-y:auto; overscroll-behavior:contain; }
+.app-dialog > form { margin:0; flex-shrink:0; }
+.app-dialog > form button { margin:0; width:100%; min-height:44px; }
+.library-picker-content > label { display:flex; gap:10px; align-items:center; min-height:48px; }
 .library-picker-content > label input { width:20px; height:20px; flex-shrink:0; }
 .library-picker-content strong { display:block; margin-bottom:12px; }
-.viewport-pages-flow :is(a,button,input,select,textarea,label,.row-list > li) { break-inside:avoid; }
 .metric-label { min-height:44px; }
-.stat-table thead { break-inside:avoid; }
-/* A viewport-sized page must never crop an indivisible large row. Decompose
-   oversized flex/grid/table groups into normal fragmentable document flow. */
-.viewport-pages-flow [data-page-split] { display:block !important; break-inside:auto !important; min-height:0 !important; height:auto !important; max-height:none !important; }
-.viewport-pages-flow [data-page-table],.viewport-pages-flow [data-page-table] :is(thead,tbody,tr,th,td) { display:block; break-inside:auto; }
-.viewport-pages-flow [data-page-table] .stat-table-label { display:block; color:var(--color-muted); font-size:.6875rem; }
-.viewport-pages-flow [data-page-split] > :is(th,td) { display:block; margin-bottom:8px; }
-.viewport-pages-flow svg:not(.lucide) { max-height:var(--page-height); }
 #main-content:focus-visible { outline-offset:-1px; outline-width:1px; }
-@media (min-width:720px) {
-  .app-shell { padding-bottom:16px; }
-  .bottom-nav { position:fixed; margin:0; }
-}
+.profile-tabs > a { flex:1 1 0; min-width:0; text-align:center; }
+.player-section-tabs > a { padding-inline:2px; }

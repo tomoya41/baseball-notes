@@ -320,3 +320,7 @@ Team comparisons use existing coordinated NPB summaries and additive MLB Team Hu
 ## 2026-10-08 — In-app Watch from bounded local observations
 
 Personal Watch is an independent local observation/alert contract, not the future live WATCH. Compare content only after a successful, fresh, same-scope read; first checks and setting changes are quiet baselines. Home summaries read local state without new network work. Admit each rule by source completeness/sample and preserve Current/Historical, Regular/Postseason and HOT/Ranking Gate boundaries. Use bounded Preferences storage, read/dismiss tombstones and corruption/quota-safe writes; no backend or claimed background Push. Rollback is an app revert with no canonical migration. See `docs/product-personal-watch.md`.
+
+## 2026-10-09 — Natural document scrolling over generic viewport pagination
+
+The user explicitly restored vertical scrolling to improve comprehension. Remove presentation-level CSS-column pagination and its layout/focus observers; retain continuous lists, named detail tabs and fixed primary navigation. A modal alone owns scrolling while open and locks the background. All existing routes, readers, persistence and data semantics stay unchanged. No migration; rollback is a UI revert. See docs/final-product-design.md.

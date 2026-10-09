@@ -8,7 +8,7 @@ import { metricHelp } from "../presentation/metric-help";
 import type { MetricHelp } from "../presentation/metric-help";
 import { formatMetric, formatPlayerName, formatPositions, formatTeamName } from "../presentation/formatters";
 import { TeamBrand } from "./branding";
-import { PagedDialog } from "./paged-dialog";
+import { AppDialog } from "./app-dialog";
 
 export function SectionHeader({ title, action, to }: { title: string; action?: string | undefined; to?: string | undefined }) {
   return <div className="section-header">
@@ -87,7 +87,7 @@ export function MetricInfo({ definition }: { definition: MetricHelp }) {
   return <>
     <button className="metric-info-button" type="button" aria-label={`${definition.name}の説明`} aria-haspopup="dialog"
       onClick={() => setOpen(true)}><Info size={17} aria-hidden="true" /></button>
-    {open && <PagedDialog labelledBy={titleId} onClose={() => setOpen(false)}>{content}</PagedDialog>}
+    {open && <AppDialog labelledBy={titleId} onClose={() => setOpen(false)}>{content}</AppDialog>}
   </>;
 }
 

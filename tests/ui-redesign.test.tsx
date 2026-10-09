@@ -19,7 +19,7 @@ describe("new navigation and future surfaces", () => {
   it("retains canonical player routes and historical context across the five tabs", () => {
     const html = wrap(<PlayerTabs base={`/MLB/players/${encodeURIComponent(mlb)}`} section="analysis" search="?season=2020" />);
     expect(html).toMatch(/<a[^>]*aria-current="page"[^>]*href="[^"]+\/analysis\?season=2020"/);
-    for (const label of ["概要", "成績", "分析", "試合別", "プロフィール"]) expect(html).toContain(label);
+    for (const label of ["概要", "成績", "分析", "試合別", "選手情報"]) expect(html).toContain(label);
   });
   it.each(Object.keys(futureSections) as (keyof typeof futureSections)[])("%s is explicitly planned, with no fabricated data", feature => {
     const html = wrap(<FutureFeatureScreen feature={feature} league="NPB" />);

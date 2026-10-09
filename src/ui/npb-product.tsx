@@ -44,7 +44,7 @@ export function NpbHome({ services, favorites, toggle, saving }: { services: Ser
     {view === "scores" && <><NpbToday services={services} favorites={favorites} toggle={toggle} saving={saving} onEffectiveDate={setEffectiveDate} /><NpbPersonalDashboard services={services} favorites={favorites} toggle={toggle} saving={saving} compact /></>}
     {view === "standings" && <NpbStandings services={services} onEffectiveDate={setEffectiveDate} />}
     {view === "follow" && <><NpbToday services={services} favorites={favorites} toggle={toggle} saving={saving} personal /><NpbPersonalDashboard services={services} favorites={favorites} toggle={toggle} saving={saving} compact /><section className="home-section"><SectionHeader title="お気に入り選手" action="My" to="/NPB/my" /><NpbSavedPlayers repository={services.directory} favorites={favorites} toggle={toggle} saving={saving} compact /></section></>}
-    <div className="hub-links"><Link to="/NPB/search">選手を探す <span>→</span></Link><Link to="/NPB/teams">球団Hub <span>→</span></Link><Link to="/NPB/compare">選手比較 <span>→</span></Link><Link to="/NPB/records">個人成績 <span>→</span></Link><Link to="/NPB/postseason">Postseason <span>→</span></Link></div>
+    <div className="hub-links"><Link to="/NPB/search">選手を探す <span>→</span></Link><Link to="/NPB/teams">球団ページ <span>→</span></Link><Link to="/NPB/compare">選手比較 <span>→</span></Link><Link to="/NPB/records">個人成績 <span>→</span></Link><Link to="/NPB/postseason">Postseason <span>→</span></Link></div>
     <div className="hub-readiness"><NpbHotSection repository={services.hot} /></div>
     <ExplorerLinks league="NPB" />
   </div>;
