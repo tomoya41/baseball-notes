@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import type { Services } from "../app/services";
 import { ageOnDate, type NpbCatalog } from "../domain/npb-product-contract";
@@ -27,7 +27,8 @@ export function PlayerLifecycle({ player, effectiveDate }: {player:LifecyclePlay
     </ol><LifecycleLinks /><ProfileCredits player={player} />
   </section>;
 }
-type StatsState = {key:string;rows:ExplorerRow[];coverage:string;error:boolean};
+type StatsState = {key:string;rows:ExplorerRow[];coverage:"complete"|"partial"|"unknown"|"unavailable";error:boolean};
+const coverageLabels = {complete:"Coverage確認済み",partial:"Coverage一部未確認",unknown:"Coverage未確認",unavailable:"Coverage利用不可"} as const;
 export function NpbLifecycleExplorer({ services }: {services:Services}) {
   const [catalog,setCatalog]=useState<NpbCatalog|null>(null), [failed,setFailed]=useState(false), [attempt,setAttempt]=useState(0);
   useEffect(()=>{let active=true;void services.product.catalog().then(c=>{if(active){setCatalog(c);setFailed(false);}}).catch(()=>{if(active)setFailed(true);});return()=>{active=false;};},[services,attempt]);
@@ -37,14 +38,26 @@ export function NpbLifecycleExplorer({ services }: {services:Services}) {
 export function LifecycleWorkspace({catalog}:{catalog:NpbCatalog}) {
   const [params,setParams]=useSearchParams(), query=lifecycleQuery(params,catalog), coverage=lifecycleCoverage(catalog);
   const [stats,setStats]=useState<StatsState|null>(null), [retry,setRetry]=useState(0);
+  const successfulStats = useRef<{ catalog: NpbCatalog; retry: number; value: StatsState } | null>(null);
   const key=`${catalog.effectiveDate}:${query.period}`;
   useEffect(()=>{
     if (query.errors.length) return;
+    // Metadata validation must not discard or re-download a successful period.
+    // An explicit retry and a different Catalog/period still initiate a read.
+    const loaded = successfulStats.current;
     let active=true;
+    if (loaded?.catalog === catalog && loaded.retry === retry && loaded.value.key === key) {
+      queueMicrotask(() => { if (active) setStats(loaded.value); });
+      return () => { active = false; };
+    }
     const directory={effectiveDate:catalog.effectiveDate,players:catalog.players.map(p=>({playerId:p.playerId,displayName:p.displayName,teamId:p.membership.teamId}))};
     void (query.period === "season" ? readNpbExplorerSeason(Number(catalog.effectiveDate.slice(0,4))) : readNpbRecentExplorer(Number(query.period) as 7|14|30,directory)).then(p=>{
       validateLifecycleStats(catalog,p);
-      if(active)setStats({key,coverage:p.coverage.status,error:false,rows:p.players.map(r=>({playerId:r.playerId,name:r.displayName,teamId:r.teamId,batting:r.batting?.metrics ?? null,pitching:r.pitching?.metrics ?? null}))});
+      if(active){
+        const value = {key,coverage:p.coverage.status,error:false,rows:p.players.map(r=>({playerId:r.playerId,name:r.displayName,teamId:r.teamId,batting:r.batting?.metrics ?? null,pitching:r.pitching?.metrics ?? null}))};
+        successfulStats.current = {catalog,retry,value};
+        setStats(value);
+      }
     }).catch(()=>{if(active)setStats({key,coverage:"unavailable",rows:[],error:true});});
     return()=>{active=false;};
   },[catalog,key,query.period,query.errors.length,retry]);
@@ -74,7 +87,7 @@ export function LifecycleWorkspace({catalog}:{catalog:NpbCatalog}) {
       {query.mode !== "school" && <label>学校・アマチュア所属名<input type="search" value={query.school} onChange={e=>update("school",e.target.value)} /></label>}
     </div>{query.mode==="draft" && <label><input type="checkbox" checked={query.includeUnknown} onChange={e=>update("unknown",e.target.checked?"1":"")} />Draft年未確認の収録選手も表示</label>}<p className="inline-note">学校名は保存表記を部分一致検索します。同名校の同一性・卒業・在籍期間を認定しません。</p></details>
     <div className="explorer-filter-grid"><label>表示成績<select value={query.period} onChange={e=>update("period",e.target.value)}><option value="season">保存Season</option>{[7,14,30].map(d=><option value={d} key={d}>直近{d}日</option>)}</select></label><label>最低{query.role==="pitching"?"投球アウト数（3＝1回）":"PA"}<input type="number" min="0" disabled={query.role==="all"} value={params.get("minimum")??"0"} onChange={e=>update("minimum",e.target.value)} /></label></div>
-    <p className="inline-note">年齢基準 {query.date} · 成績 {catalog.effectiveDate}までの{query.period==="season"?"保存Season":`直近${query.period}日`} · {ready ? stats.coverage==="complete"?"Coverage確認済み":"Coverage一部未確認":stats?.key === key && stats.error ? "成績未取得" : "成績確認中"}。球団は最新保存所属で、成績には移籍前も含みます。</p>
+    <p className="inline-note">年齢基準 {query.date} · 成績 {catalog.effectiveDate}までの{query.period==="season"?"保存Season":`直近${query.period}日`} · {ready ? coverageLabels[stats.coverage]:stats?.key === key && stats.error ? "成績未取得" : "成績確認中"}。球団は最新保存所属で、成績には移籍前も含みます。</p>
     {query.errors.map(error=><p className="data-notice" role="alert" key={error}>{error}</p>)}
     {!query.errors.length && stats?.key!==key && <LoadingSkeleton />}
     {stats?.key===key && stats.error && <><DataState kind="source-unavailable" title="成績を読み込めません" detail="確認済みプロフィールは維持しています。未取得の成績を0にしません。" /><button className="text-button" onClick={()=>setRetry(n=>n+1)}>成績を再読み込み</button></>}

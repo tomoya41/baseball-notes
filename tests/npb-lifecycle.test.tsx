@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
+import { MemoryRouter, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { buildNpbCatalog } from "../src/application/npb-product-payload";
 import { npbTeams } from "../src/data/npb-nf3";
@@ -78,7 +78,7 @@ describe("verified saved player discovery semantics",()=>{
 });
 
 let element:HTMLDivElement, root:Root;
-function Location(){const v=useLocation();return <output data-testid="url">{v.pathname}{v.search}</output>;}
+function Location(){const v=useLocation(), navigate=useNavigate();return <><output data-testid="url">{v.pathname}{v.search}</output><button onClick={()=>navigate('/NPB/talent?role=batting&ageMin=30&ageMax=20')}>Invalid metadata test</button><button onClick={()=>navigate('/NPB/talent?role=batting&ageMin=20&ageMax=30')}>Correct metadata test</button><button onClick={()=>navigate('/NPB/talent?role=batting&period=7')}>Recent period test</button><button onClick={()=>navigate('/NPB/talent?role=batting')}>Season period test</button></>;}
 beforeEach(()=>{vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);readers.season.mockReset().mockResolvedValue(payload);readers.recent.mockReset().mockResolvedValue(payload);element=document.createElement("div");document.body.append(element);root=createRoot(element);});
 afterEach(async()=>{await act(async()=>{root.unmount();});element.remove();vi.unstubAllGlobals();});
 async function mount(path="/NPB/talent",lifecycle=false){await act(async()=>root.render(<MemoryRouter initialEntries={[path]}>{lifecycle?<PlayerLifecycle player={catalog.players[0]!}/>:<LifecycleWorkspace catalog={catalog}/>}<Location/></MemoryRouter>));}
@@ -103,6 +103,10 @@ describe("Draft discovery integration and recovery",()=>{
     expect(element.textContent).toContain("成績を読み込めません");expect(element.textContent).toContain("選手02");
     expect([...element.querySelectorAll(".explorer-metrics dd")].every(v=>v.textContent==="—")).toBe(true);
   });
+  it.each([['unknown','Coverage未確認'],['unavailable','Coverage利用不可']])("distinguishes %s coverage from partial",async(status,label)=>{
+    readers.season.mockResolvedValue({...payload,coverage:{status}});await mount('/NPB/talent?role=batting');
+    expect(element.textContent).toContain(label);expect(element.textContent).not.toContain('Coverage一部未確認');
+  });
   it("does not report an empty sample search until loading completes",async()=>{
     let resolve!:(value:typeof payload)=>void;readers.season.mockReturnValue(new Promise(done=>resolve=done));
     await mount("/NPB/talent?role=batting&minimum=100");
@@ -121,6 +125,33 @@ describe("Draft discovery integration and recovery",()=>{
   it("invalid direct URLs remain explicit and do not fetch incompatible data",async()=>{
     await mount("/NPB/talent?competition=postseason");
     expect(element.querySelector('[role="alert"]')).not.toBeNull();expect(readers.season).not.toHaveBeenCalled();expect(element.querySelectorAll(".lifecycle-result")).toHaveLength(0);
+  });
+  it("reuses successful statistics after temporarily invalid metadata instead of losing them on a second fetch",async()=>{
+    await mount('/NPB/talent?role=batting');readers.season.mockRejectedValue(Error('would fail'));
+    const button=(text:string)=>[...element.querySelectorAll('button')].find(b=>b.textContent===text)!;
+    await act(async()=>button('Invalid metadata test').click());
+    expect(element.textContent).toContain('条件の下限は上限以下');
+    await act(async()=>button('Correct metadata test').click());
+    expect(readers.season).toHaveBeenCalledTimes(1);
+    expect(element.textContent).not.toContain('成績を読み込めません');
+    expect(element.querySelectorAll('.lifecycle-result')).toHaveLength(30);
+    expect(element.querySelector('.explorer-metrics dd')?.textContent).toBe('50 一部');
+  });
+  it("an explicit retry still reads again and recovers after a statistics failure",async()=>{
+    readers.season.mockRejectedValueOnce(Error('network')).mockResolvedValue(payload);
+    await mount('/NPB/talent?role=batting');
+    await act(async()=>{[...element.querySelectorAll('button')].find(b=>b.textContent==='成績を再読み込み')!.click();});
+    expect(readers.season).toHaveBeenCalledTimes(2);expect(element.textContent).not.toContain('成績を読み込めません');
+    expect(element.querySelectorAll('.lifecycle-result')).toHaveLength(30);
+  });
+  it("restores the last successful period after another period failed, without refetch or perpetual loading",async()=>{
+    await mount('/NPB/talent?role=batting');readers.recent.mockRejectedValue(Error('network'));
+    await act(async()=>{[...element.querySelectorAll('button')].find(b=>b.textContent==='Recent period test')!.click();});
+    expect(element.textContent).toContain('成績を読み込めません');
+    await act(async()=>{[...element.querySelectorAll('button')].find(b=>b.textContent==='Season period test')!.click();});
+    expect(readers.season).toHaveBeenCalledTimes(1);expect(readers.recent).toHaveBeenCalledTimes(1);
+    expect(element.textContent).not.toContain('成績を読み込めません');
+    expect(element.querySelector('.explorer-metrics dd')?.textContent).toBe('50 一部');
   });
   it("Lifecycle omits unsupported joined/NPB debut and keeps school, draft class and saved Season links",async()=>{
     await mount("/NPB/players/example/more",true);
