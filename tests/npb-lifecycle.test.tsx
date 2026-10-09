@@ -1,13 +1,15 @@
 // @vitest-environment jsdom
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { MemoryRouter, useLocation } from "react-router-dom";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { buildNpbCatalog } from "../src/application/npb-product-payload";
 import { npbTeams } from "../src/data/npb-nf3";
 import { lifecycleCoverage, lifecyclePlayers, lifecycleQuery, playerSchools, validateLifecycleStats } from "../src/domain/npb-lifecycle";
 import type { ExplorerRow } from "../src/domain/data-explorer";
 import { LifecycleWorkspace, PlayerLifecycle } from "../src/ui/npb-lifecycle";
+import { NpbRoutes } from "../src/ui/npb-routes";
+import { services } from "../src/app/services";
 
 const readers = vi.hoisted(() => ({ season: vi.fn(), recent: vi.fn() }));
 vi.mock("../src/application/explorer-readers", () => ({ readNpbExplorerSeason: readers.season, readNpbRecentExplorer: readers.recent }));
@@ -126,5 +128,10 @@ describe("Draft discovery integration and recovery",()=>{
     expect(element.textContent).not.toContain("2019");expect(element.textContent).not.toContain("入団年");
     expect(element.querySelector('a[href="/NPB/talent?year=2022"]')).not.toBeNull();
     expect(element.textContent).toContain("完全なCareer");
+  });
+  it("preserves the legacy Prospects tab as unavailable, without fetching a Draft database",async()=>{
+    await act(async()=>root.render(<MemoryRouter initialEntries={["/NPB/talent?tab=1"]}><Routes><Route path="/NPB/*" element={<NpbRoutes services={services} favorites={[]} toggle={()=>{}} saving={false}/>}/></Routes></MemoryRouter>));
+    expect(element.textContent).toContain("COMING SOON");expect(element.querySelector('a[aria-current="page"]')?.textContent).toBe("プロスペクト");
+    expect(readers.season).not.toHaveBeenCalled();expect(readers.recent).not.toHaveBeenCalled();
   });
 });

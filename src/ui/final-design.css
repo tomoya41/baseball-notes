@@ -284,7 +284,8 @@ html { scroll-padding-bottom:calc(88px + env(safe-area-inset-bottom)); }
 .lifecycle-timeline h3 { font-size:.85rem; margin:0 0 8px; }
 .lifecycle-timeline p { font-size:.8rem; }
 .lifecycle-timeline a, .lifecycle-timeline small { display:block; font-size:.75rem; margin:8px 0; }
-.lifecycle-timeline a { padding-block:8px; }
+.lifecycle-timeline a { padding-block:8px; min-height:44px; }
+.lifecycle-explorer .explorer-links a { min-height:44px; }
 .lifecycle-explorer label, .lifecycle-explorer input, .lifecycle-explorer select { min-width:0; max-width:100%; }
 .lifecycle-explorer details > p, .player-lifecycle details p { overflow-wrap:anywhere; }
 @media (min-width:800px) { .lifecycle-explorer .explorer-results { grid-template-columns:1fr 1fr; gap:0 24px; } }

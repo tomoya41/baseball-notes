@@ -9,9 +9,9 @@ import { readNpbExplorerSeason, readNpbRecentExplorer } from "../application/exp
 import { DataState, LoadingSkeleton, MetricLabel, PageHeading } from "./components";
 import { Monogram } from "./design-system";
 
-export function LifecycleLinks({ teamId }: {teamId?:string}) {
+export function LifecycleLinks({ teamId, active }: {teamId?:string;active?:string}) {
   const suffix = teamId ? `&team=${encodeURIComponent(teamId)}` : "";
-  return <nav className="explorer-links" aria-label="選手の歩みを探す"><Link to={`/NPB/talent?view=draft${suffix}`}>Draft履歴</Link><Link to={`/NPB/talent?view=young${suffix}`}>若手探索</Link><Link to={`/NPB/talent?view=school${suffix}`}>学校・球歴</Link></nav>;
+  return <nav className="explorer-links" aria-label="選手の歩みを探す"><Link aria-current={active === "draft" ? "page" : undefined} to={`/NPB/talent?view=draft${suffix}`}>Draft履歴</Link><Link aria-current={active === "young" ? "page" : undefined} to={`/NPB/talent?view=young${suffix}`}>若手探索</Link><Link aria-current={active === "school" ? "page" : undefined} to={`/NPB/talent?view=school${suffix}`}>学校・球歴</Link></nav>;
 }
 export function ProfileCredits({ player }: {player:LifecyclePlayer}) {
   return <details className="advanced-disclosure"><summary>プロフィールの出典・利用条件</summary><p>公開masterに採用済みの情報だけを使用しています。未確認・競合中の候補は補完しません。</p>{player.profile.credits?.map((c,i) => <p key={i}><a href={c.url} target="_blank" rel="noreferrer">{c.name}</a> · <a href={c.licenseUrl} target="_blank" rel="noreferrer">利用条件</a><small> · {c.fields.join(" / ")} · 構造化・加工済み</small></p>)}<Link to="/MLB/sources">Data Sources / Attribution →</Link></details>;
@@ -56,7 +56,7 @@ export function LifecycleWorkspace({catalog}:{catalog:NpbCatalog}) {
   const availableYears=[...new Set(catalog.players.flatMap(p=>p.profile.draftYear === null?[]:[p.profile.draftYear]))].sort((a,b)=>b-a);
   const title=query.mode==="young"?"若手探索":query.mode==="school"?"学校・球歴から探す":query.year!==null?`${query.year} Draft Class`:"Draft履歴";
   const ready=stats?.key===key && !stats.error;
-  return <div className="screen lifecycle-explorer"><PageHeading eyebrow="NPB · SAVED PLAYER DISCOVERY" title={title} /><LifecycleLinks />
+  return <div className="screen lifecycle-explorer"><PageHeading eyebrow="NPB · SAVED PLAYER DISCOVERY" title={title} /><LifecycleLinks active={query.mode} />
     <p className="inline-note">{query.mode === "young" ? "確認済み生年月日から基準日の年齢で探します。" : query.mode === "school" ? "確認済みの学校・アマチュア所属名から探します。" : "確認済みDraft情報を持つ収録選手を探索します。"} 指名全員の収録・新人資格・Prospect評価を表しません。</p>
     <details className="advanced-disclosure"><summary>情報の収録範囲・出典</summary><dl className="lifecycle-coverage">{Object.entries({"Draft年":coverage.draftYear,"指名順位":coverage.draftRound,"Draft区分":coverage.draftType,"指名球団の照合済み情報":coverage.draftTeam,"生年月日":coverage.birthDate,"学校・アマチュア球歴":coverage.school,"所属履歴":coverage.history}).map(([name,n])=><div key={name}><dt>{name}</dt><dd>{n}/{coverage.total}</dd></div>)}</dl><p>Draft年・順位・区分の未確認は「指名なし」を意味しません。指名球団filterは照合済みの一部だけが対象です。所属は最新保存情報で、現在の登録公示ではありません。採用済みCC0/CC BY-SA等の出典は各選手の情報から確認できます。</p><Link to="/MLB/sources">Data Sources / Attribution →</Link></details>
     <div className="explorer-filter-grid">{query.mode === "draft" ? <label>Draft年<select value={params.get("year")??""} onChange={e=>update("year",e.target.value)}><option value="">すべての確認済み年</option>{availableYears.map(y=><option key={y}>{y}</option>)}</select></label> : query.mode === "young" ? <label>年齢上限<input type="number" min="0" max="100" value={params.get("ageMax")??"25"} onChange={e=>update("ageMax",e.target.value)} /></label> : <label>学校・アマチュア所属名<input type="search" value={query.school} onChange={e=>update("school",e.target.value)} /></label>}<label>成績の種類<select value={query.role} onChange={e=>update("role",e.target.value)}><option value="all">全選手</option><option value="batting">打撃データあり</option><option value="pitching">投球データあり</option></select></label></div>
