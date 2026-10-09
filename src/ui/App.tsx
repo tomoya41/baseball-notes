@@ -12,7 +12,6 @@ import { NotificationSettings, PrivacyScreen, RuntimeStatus } from "./runtime-st
 import { PersonalLibraryProvider } from "./library-provider";
 import { ShareLink } from "./product-sharing";
 import { PersonalWatchProvider, WatchSummary } from "./watch-shell";
-import { ViewportPages } from "./viewport-pages";
 type FavoriteTarget = Pick<Favorite, "kind" | "entityId" | "league">;
 const MlbLeagueView = lazy(() => import("./mlb-foundation").then(module => ({ default: module.MlbLeagueView })));
 const NpbRoutes = lazy(() => import("./npb-routes").then(module => ({ default: module.NpbRoutes })));
@@ -70,7 +69,6 @@ export function App({ services }: { services: Services }) {
     <RuntimeStatus />
     <main id="main-content" tabIndex={-1}>
     <RouteFocus />
-    <ViewportPages resetKey={location.pathname}>
     <RouteErrorBoundary key={`screen:${location.pathname}`}>
     <Suspense fallback={<LoadingSkeleton />}><Routes key={refreshVersion}>
       <Route path="/NPB/watch-center" element={<WatchCenter key="NPB" league="NPB" services={services} favorites={favorites} ready={favoritesReady} />} />
@@ -90,7 +88,7 @@ export function App({ services }: { services: Services }) {
     </RouteErrorBoundary>
     {section === "home" && <WatchSummary league={league} />}
     {section === "my" && <><MySettings /><NotificationSettings favorites={favorites} ready={favoritesReady} visible /></>}
-    <footer className="app-footer"><Link to="/MLB/sources">データ提供元</Link><Link to={`/${league}/explore`}>機能一覧 ↗</Link></footer></ViewportPages></main>
+    <footer className="app-footer"><Link to="/MLB/sources">データ提供元</Link><Link to={`/${league}/explore`}>機能一覧 ↗</Link></footer></main>
     <nav className="bottom-nav" aria-label="基本ナビゲーション">{navItems.map(({ label, segment, icon: Icon }) =>
       <Link key={segment} to={`/${league}/${segment}`} aria-current={currentNav === segment ? "page" : undefined}>
         <Icon size={21} strokeWidth={1.9} aria-hidden="true" /><span>{label}</span>

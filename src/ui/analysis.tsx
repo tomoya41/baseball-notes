@@ -1,4 +1,5 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
+import { AppDialog } from "./app-dialog";
 import { ArrowRight, ChevronRight, SlidersHorizontal } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { AnalysisProvider } from "../application/ports";
@@ -147,7 +148,7 @@ function AnalysisFilter({ manifest, subject, period, setPeriod, filters, setFilt
   setFilters: (filters: AnalysisQuery["filters"]) => void; asOfDate: string;
   countMode: CountMode; setCountMode: (mode: CountMode) => void;
 }) {
-  const dialog = useRef<HTMLDialogElement>(null);
+  const [filterOpen, setFilterOpen] = useState(false);
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
   const [dateError, setDateError] = useState("");
@@ -166,10 +167,10 @@ function AnalysisFilter({ manifest, subject, period, setPeriod, filters, setFilt
           : filters.opponent.kind === "handedness" && filters.opponent.hand === hand}
         onClick={() => update({ opponent: hand === "all" ? { kind: "all" } : { kind: "handedness", hand } })}>
         {hand === "all" ? "左右すべて" : subject === "batter" ? `対${hand}投手` : `対${hand}打者`}</button>)}
-    </div><button className="filter-open" type="button" onClick={() => dialog.current?.showModal()}>
+    </div><button className="filter-open" type="button" onClick={() => setFilterOpen(true)}>
       <SlidersHorizontal size={18} />詳細条件</button></div>
     <p className="filter-summary">{formatFilterSummary(period, filters)}</p>
-    <dialog ref={dialog} className="filter-dialog" aria-label="分析の詳細条件">
+    {filterOpen && <AppDialog label="分析の詳細条件" onClose={() => setFilterOpen(false)}>
       <div className="filter-dialog__body"><h2>詳細条件</h2>
         <label>期間<select value={period.kind === "custom" ? "custom" : period.kind === "last-days" ? `last-${period.days}` : period.kind}
           onChange={(event) => {
@@ -189,7 +190,7 @@ function AnalysisFilter({ manifest, subject, period, setPeriod, filters, setFilt
             <input type="date" aria-label="終了日" value={end} max={asOfDate} onChange={(event) => setEnd(event.target.value)} /></div>
           <button className="filter-apply" type="button" onClick={() => {
             if (!start || !end || start > end || end >= asOfDate) { setDateError("前日までの正しい期間を指定してください"); return; }
-            setDateError(""); setPeriod({ kind: "custom", startDate: start, endDate: end }); dialog.current?.close();
+            setDateError(""); setPeriod({ kind: "custom", startDate: start, endDate: end }); setFilterOpen(false);
           }}>期間を適用</button>{dateError && <small className="warning">{dateError}</small>}
         </fieldset>
         <label>カウント<select disabled={!canUse(manifest, "countSplit")} value={filters.count.kind}
@@ -240,8 +241,8 @@ function AnalysisFilter({ manifest, subject, period, setPeriod, filters, setFilt
             update({ velocity: event.target.value === "all" ? null : { unit: "km/h", minInclusive: min, maxExclusive: min === 150 ? 155 : min === 155 ? 160 : null } });
           }}><option value="all">すべて</option><option value="150">150〜155 km/h</option>
           <option value="155">155〜160 km/h</option><option value="160">160 km/h以上</option></select></label>
-      </div><form method="dialog"><button className="button" type="submit">閉じる</button></form>
-    </dialog>
+      </div>
+    </AppDialog>}
   </div>;
 }
 

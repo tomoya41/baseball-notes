@@ -48,7 +48,7 @@ function TeamWorkspace({ league, teams, years, load, competition = "regular", fa
     <div className="explorer-filter-grid"><label>シーズン<select value={year} onChange={e => update("season", e.target.value)}>{years.map(y => <option key={y}>{y}</option>)}</select></label><label>集計条件<select value={view} onChange={e => update("view", e.target.value)}>{choices.map(v => <option key={v} value={v}>{v === "season" ? "Season" : v === "home" ? "Home" : v === "away" ? "Away" : `直近${v}日${league === "NPB" ? "・試合結果" : ""}`}</option>)}</select></label><label>比較グラフ<select value={metric} onChange={e => update("metric", e.target.value)}>{displayKeys.map(k => <option key={k} value={k}>{labels[k] ?? k}</option>)}</select></label></div>
     {league === "MLB" && <p className="inline-note">Recentは選択年度・集計対象の最終保存日が基準です。現在の成績ではありません。</p>}
     {ids.length < 2 && <p className="data-notice">比較する球団を2〜4つ選んでください。</p>}{ids.length > 0 && (state?.key !== key ? <LoadingSkeleton /> : state.error ? <DataState kind="source-unavailable" title="球団比較を読み込めません" /> : <ComparisonResults league={league} rows={rows} keys={displayKeys} metric={metric} scope={`${year} ${competition} Team ${view}`} />)}
-    <Link to={`/${league}/teams${scopeSuffix(year, competition)}`}>球団Hub一覧 →</Link>
+    <Link to={`/${league}/teams${scopeSuffix(year, competition)}`}>球団一覧 →</Link>
   </>}</div>;
 }
 export function NpbTeamCompare({ services, favoriteTeams = [] }: { services: Services; favoriteTeams?: string[] }) {
