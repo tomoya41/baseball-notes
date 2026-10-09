@@ -259,3 +259,32 @@ html { scroll-padding-bottom:calc(88px + env(safe-area-inset-bottom)); }
 #main-content:focus-visible { outline-offset:-1px; outline-width:1px; }
 .profile-tabs > a { flex:1 1 0; min-width:0; text-align:center; }
 .player-section-tabs > a { padding-inline:2px; }
+
+/* Saved player discovery: compact rows, progressive filters, natural page scroll. */
+.lifecycle-explorer .explorer-results { display:grid; grid-template-columns:1fr; }
+.lifecycle-identity { display:flex; align-items:center; gap:12px; min-width:0; }
+.lifecycle-identity > a { min-width:0; flex:1; }
+.lifecycle-identity strong { font-size:.9rem; }
+.lifecycle-identity small { display:block; color:var(--color-muted); margin-top:4px; font-size:.7rem; }
+.lifecycle-result { overflow-wrap:anywhere; padding-block:18px; }
+.lifecycle-draft { margin:10px 0 4px; font-size:.75rem; }
+.lifecycle-result > small { color:var(--color-muted); }
+.lifecycle-result details { margin-top:6px; font-size:.75rem; }
+.lifecycle-result summary, .lifecycle-school { min-height:44px; display:flex; align-items:center; }
+.lifecycle-actions, .lifecycle-compare { display:flex; flex-wrap:wrap; align-items:center; gap:12px; font-size:.75rem; }
+.lifecycle-actions { justify-content:space-between; }
+.lifecycle-actions a, .lifecycle-actions label { min-height:44px; display:flex; align-items:center; gap:8px; }
+.lifecycle-actions input { width:20px; height:20px; }
+.lifecycle-coverage { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.lifecycle-coverage dt { font-size:.7rem; color:var(--color-muted); }
+.lifecycle-coverage dd { margin:4px 0; font-variant-numeric:tabular-nums; }
+.lifecycle-timeline { list-style:none; margin:20px 0; padding:0 0 0 16px; border-left:2px solid var(--color-border); }
+.lifecycle-timeline li { position:relative; padding:0 0 24px 8px; overflow-wrap:anywhere; }
+.lifecycle-timeline li::before { content:""; position:absolute; left:-21px; top:6px; width:8px; height:8px; border-radius:50%; background:var(--color-muted); }
+.lifecycle-timeline h3 { font-size:.85rem; margin:0 0 8px; }
+.lifecycle-timeline p { font-size:.8rem; }
+.lifecycle-timeline a, .lifecycle-timeline small { display:block; font-size:.75rem; margin:8px 0; }
+.lifecycle-timeline a { padding-block:8px; }
+.lifecycle-explorer label, .lifecycle-explorer input, .lifecycle-explorer select { min-width:0; max-width:100%; }
+.lifecycle-explorer details > p, .player-lifecycle details p { overflow-wrap:anywhere; }
+@media (min-width:800px) { .lifecycle-explorer .explorer-results { grid-template-columns:1fr 1fr; gap:0 24px; } }

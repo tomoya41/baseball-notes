@@ -8,6 +8,7 @@ import { DataState, FavoriteButton, LoadingSkeleton, PageHeading } from "./compo
 import { DiscoveryNavigation } from "./discovery";
 import { Monogram } from "./design-system";
 import { CollectionButton } from "./personal-library";
+import { LifecycleLinks } from "./npb-lifecycle";
 
 type SearchState = "loading" | "ready" | "error";
 type Role = "all" | "batter" | "pitcher";
@@ -28,6 +29,7 @@ export function NpbPlayerSearchView({ directory, state, query, onQueryChange, te
   return <div className="screen npb-player-search">
     <PageHeading eyebrow="NPB" title="選手" />
     <DiscoveryNavigation league="NPB" />
+    <LifecycleLinks />
     <Link className="text-link" to="/NPB/compare">選手比較 →</Link>
     {state === "loading" && <LoadingSkeleton />}
     {state === "error" && <DataState kind="source-unavailable" title="選手一覧を取得できませんでした" />}

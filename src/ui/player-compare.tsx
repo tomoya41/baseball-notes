@@ -68,6 +68,7 @@ export function CompareWorkspace({ league, players, teams, seasons, loader, adva
     {condition === "order" && <label>打順<select value={battingOrder} onChange={e => update({ order: e.target.value })}>{Array.from({ length: 9 }, (_, i) => <option key={i} value={i + 1}>{i + 1}番</option>)}</select></label>}
     {condition === "bvp" && <label>共通の対戦相手<select value={advancedOpponent} onChange={e => update({ against: e.target.value })}><option value="">検索して相手を選択</option>{advancedOpponent && <option value={advancedOpponent}>{players.find(p => p.id === advancedOpponent)?.name ?? "選択済みの相手"}</option>}{players.filter(p => p.id !== advancedOpponent && matches(p)).slice(0, 30).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select><input aria-label="対戦相手名を絞り込む" type="search" value={query} onChange={e => setQuery(e.target.value)} /></label>}</div>
     <p className="inline-note">{condition === "season" ? `${season}年シーズン` : paMode ? `${season}年 · ${role === "pitching" ? "対戦打者の打撃成績" : "PA由来の打撃成績"}` : league === "NPB" && !condition.endsWith("d") ? "直近30日・同じ条件" : "同じ期間・条件"}。同じ記録種類で比較します。</p>
+    {league === "NPB" && <Link className="text-link" to={`/NPB/talent?role=${role}`}>Draftの同期・年齢・学校から比較相手を探す →</Link>}
     {ids.length < 2 && <p className="data-notice">2〜4選手を選んで比較できます。</p>}
     {state.key !== key && ids.length > 0 ? <LoadingSkeleton /> : mismatch ? <DataState kind="source-unavailable" title="集計の基準日が揃っていません。更新後に再確認してください" /> : ids.length > 0 && <>
       {dates.size > 0 && <p className="inline-note">{[...dates][0]}まで</p>}
