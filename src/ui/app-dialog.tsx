@@ -8,9 +8,13 @@ export function AppDialog({ children, label, labelledBy, onClose }: {
   const ref = useRef<HTMLDialogElement>(null);
   useLayoutEffect(() => {
     const root = document.documentElement, previous = root.style.overflow;
+    const trigger = document.activeElement;
     root.style.overflow = "hidden";
     ref.current?.showModal();
-    return () => { root.style.overflow = previous; };
+    return () => {
+      root.style.overflow = previous;
+      if (trigger instanceof HTMLElement && trigger.isConnected) trigger.focus({ preventScroll: true });
+    };
   }, []);
   const dialog = <dialog ref={ref} className="metric-dialog app-dialog" aria-label={label} aria-labelledby={labelledBy} onClose={onClose}>
     <div className="app-dialog-content">{children}</div>
