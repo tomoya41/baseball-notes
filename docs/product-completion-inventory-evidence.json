@@ -1,0 +1,278 @@
+{
+  "auditDate": "2026-10-10",
+  "main": "8632e20f47c43523ae12f90769fc2bbd65e4f50c",
+  "publicSnapshotAt": "2026-10-09T21:55:15.467Z",
+  "publicRoot": "https://tomoya41.github.io/baseball-notes/data/",
+  "readOnlyProductionInspection": true,
+  "classification": {
+    "total": 150,
+    "counts": {
+      "A": 42,
+      "B": 45,
+      "C": 12,
+      "D": 15,
+      "E": 29,
+      "F": 7
+    }
+  },
+  "npb": {
+    "effectiveDate": "2026-10-07",
+    "generatedAt": "2026-10-07T23:20:10.052Z",
+    "players": 739,
+    "teams": 12,
+    "profileCounts": {
+      "position": 518,
+      "bats": 667,
+      "throws": 667,
+      "birthDate": 665,
+      "birthPlace": 571,
+      "originPlace": 629,
+      "nationality": 662,
+      "heightCm": 584,
+      "weightKg": 486,
+      "draftYear": 623,
+      "draftRound": 602,
+      "draftTeamId": 33,
+      "joinedYear": 0,
+      "debutYear": 604,
+      "npbDebutYear": 0,
+      "draftType": 601,
+      "knownPositions": 583,
+      "schools": 456,
+      "affiliations": 562,
+      "identityLinked": 667,
+      "teamId": 739,
+      "uniformNumber": 0,
+      "registrationClass": 0,
+      "photo": 0
+    },
+    "coverage": {
+      "status": "partial",
+      "summary": {
+        "dates": 195,
+        "complete": 164,
+        "noGames": 25,
+        "partial": 6,
+        "unknown": 0,
+        "failed": 0
+      }
+    },
+    "reviewQueue": 400,
+    "humanReviewed": 0
+  },
+  "localReleaseDatabaseCounts": {
+    ".data/mlb-historical.sqlite": {
+      "bytes": 913920000,
+      "counts": {
+        "mlb_historical_games": 13046,
+        "mlb_historical_players": 2840,
+        "mlb_historical_mappings": 5680,
+        "mlb_historical_releases": 6,
+        "mlb_historical_identity_release": 1,
+        "mlb_historical_plate_appearances": 979855,
+        "mlb_historical_pa_games": 13046
+      },
+      "readOnly": true,
+      "unchanged": true
+    },
+    ".data/mlb-postseason.sqlite": {
+      "bytes": 19386368,
+      "counts": {
+        "mlb_historical_games": 261,
+        "mlb_historical_players": 994,
+        "mlb_historical_mappings": 1988,
+        "mlb_historical_releases": 6,
+        "mlb_historical_identity_release": 1,
+        "mlb_historical_plate_appearances": 19771,
+        "mlb_historical_pa_games": 261
+      },
+      "readOnly": true,
+      "unchanged": true
+    }
+  },
+  "publicPayloadHashes": {
+    "npb/players/latest.json": {
+      "http": 200,
+      "bytes": 237707,
+      "sha256": "b81973da433874242bf795e31d2e4e2c0072da0b90600a61156cb917fb737f31"
+    },
+    "npb/catalog/latest.json": {
+      "http": 200,
+      "bytes": 1249191,
+      "sha256": "2db44dd869fd92e655ffe7c70f48d575e9da0507534d70a057a7c2dd93101f69"
+    },
+    "npb/capabilities.json": {
+      "http": 200,
+      "bytes": 9846,
+      "sha256": "bfc3e8e8895a2d3fd04a92271109c56cb159fafbbb432ccb18eddfa34f1e3063"
+    },
+    "npb/milestones/2026/latest.json": {
+      "http": 200,
+      "bytes": 466021,
+      "sha256": "7eb5134f64586642f34b97912bd33f8fd8f05c0e3d67bb1ed0ec6698485bcb0f"
+    },
+    "npb/season/2026/latest.json": {
+      "http": 200,
+      "bytes": 1521095,
+      "sha256": "ab10d325de8e20ba0d059e2d5a2b92ceaa1a121bd9f2acaffaa86b45ce142fe0"
+    },
+    "npb/hot/latest.json": {
+      "http": 200,
+      "bytes": 671,
+      "sha256": "b5295d5819bc394ec0cd54e84c3a62f8e68d6a411cd0892b3cad6d791b97d25d"
+    },
+    "npb/teams/season/2026/latest.json": {
+      "http": 200,
+      "bytes": 37729,
+      "sha256": "3583fe26eb15b62029fe9538cf94239b925a5cf3f1237ffdf3c7112da4fa4354"
+    },
+    "npb/records/2026/latest.json": {
+      "http": 200,
+      "bytes": 637,
+      "sha256": "8126e8b70ce2f952c70763e583e6668c6a960731ba8ab524a93633d0d7318c18"
+    },
+    "npb/games/manifest.json": {
+      "http": 200,
+      "bytes": 142,
+      "sha256": "b15b95092cc310be090c983e14695d95af4722326c75aa30c7975178b7aa3b17"
+    },
+    "npb/games/recent.json": {
+      "http": 200,
+      "bytes": 2129,
+      "sha256": "90abd241a39bf016fb3875712232ad60acc1f2fc40cc27dd295af8928f6cc94a"
+    },
+    "standings/npb/latest.json": {
+      "http": 200,
+      "bytes": 5063,
+      "sha256": "80dbd068409a805594a9765df6aee24a5da234eb3e11d3c8887dd18e9442b974"
+    },
+    "mlb/manifest.json": {
+      "http": 200,
+      "bytes": 456,
+      "sha256": "238ee724feb1b028f9f948cb04e15661fb7bf614fa85a034e90005472b273673"
+    },
+    "postseason/capabilities.json": {
+      "http": 200,
+      "bytes": 1383,
+      "sha256": "b0422cf27668c1d7378d63885b5793a9c70b2c04bb0f088c693b77b35ab581ff"
+    },
+    "mlb/historical/manifest.json.gz": {
+      "http": 200,
+      "bytes": 1545,
+      "sha256": "9860e1b161bf1b00a7e26dfa343240af554ad12e2bb35d0b9e00734745ec509d"
+    },
+    "mlb/historical/players/index.json.gz": {
+      "http": 200,
+      "bytes": 113529,
+      "sha256": "34b87391e8dd349d9c613c89f284263b40faa9b65d4e6715f20a5f01d091395e"
+    },
+    "mlb/historical/advanced/capabilities.json.gz": {
+      "http": 200,
+      "bytes": 222,
+      "sha256": "8cc6139a0486a04258eabeadb100ce50b374fa003defbd212d7b404ee758c490"
+    },
+    "mlb/historical/postseason/manifest.json.gz": {
+      "http": 200,
+      "bytes": 1555,
+      "sha256": "7508d200184e4e2f2755a5833d5ad8d855de97e978d0aa6b187cd0e178423661"
+    },
+    "mlb/historical/postseason/players/index.json.gz": {
+      "http": 200,
+      "bytes": 38583,
+      "sha256": "7b8902cd5dcc4dc8a7bba673c47843eec86571321e67bbaa27d37f6db760d7da"
+    },
+    "mlb/historical/postseason/advanced/capabilities.json.gz": {
+      "http": 200,
+      "bytes": 229,
+      "sha256": "201c15e71402a27b0d54cda7c99503a31d75bda86aa6c902afcf9935324ca773"
+    },
+    "npb/explorer/recent/7.json": {
+      "http": 200,
+      "bytes": 573663,
+      "sha256": "dab5a701622b8693ba4dc198fedc09b6e85c8f7e56854225f932438347f7be0c"
+    },
+    "npb/explorer/recent/14.json": {
+      "http": 200,
+      "bytes": 724549,
+      "sha256": "c4c548db280d4be70f0c9d45463b80491ec413ce256fd0e80bd8439604a4f875"
+    },
+    "npb/explorer/recent/30.json": {
+      "http": 200,
+      "bytes": 888763,
+      "sha256": "c05cac960be51896f9a1840d03e95ce3ce0180f526eb2884adee3d0c4d9e0e97"
+    },
+    "mlb/historical/records/2020.json.gz": {
+      "http": 200,
+      "bytes": 11463,
+      "sha256": "da70b8d47e4600382c03faf2823be959f1b645708d4d37b7156eef7fc2b7f258"
+    },
+    "mlb/historical/records/2021.json.gz": {
+      "http": 200,
+      "bytes": 11417,
+      "sha256": "474382a24b929691f662e82959448406049200f3add4d25a24dc741a058e58e3"
+    },
+    "mlb/historical/records/2022.json.gz": {
+      "http": 200,
+      "bytes": 12026,
+      "sha256": "bd61b3e0fddc2a97beaec536fdaff2de92cbec1839fd793b85f1cac5a9178057"
+    },
+    "mlb/historical/records/2023.json.gz": {
+      "http": 200,
+      "bytes": 11908,
+      "sha256": "7852be937676786d409c52ed0bea4f23f2d94f7c41183bfe6f4c3223a99bf666"
+    },
+    "mlb/historical/records/2024.json.gz": {
+      "http": 200,
+      "bytes": 12029,
+      "sha256": "91d9ec483e9e4ca0b1b093003091fea28fb34d3f898bd17ca36553587f37397f"
+    },
+    "mlb/historical/records/2025.json.gz": {
+      "http": 200,
+      "bytes": 12115,
+      "sha256": "3731edc2ebb507d9e3e988682b207fef91364126c41cdf7b72f39250fd5cb03b"
+    },
+    "mlb/historical/postseason/hub/2020.json.gz": {
+      "http": 200,
+      "bytes": 3615,
+      "sha256": "7b41957f94857fd9d27d4e3a618a0f116614e930f423d3e2cb6198e881de7673"
+    },
+    "mlb/historical/postseason/hub/2021.json.gz": {
+      "http": 200,
+      "bytes": 2690,
+      "sha256": "131446e6b6fefdd90facbfc34c0f04880715d4cfaa7d2264711f7ab8568b37fb"
+    },
+    "mlb/historical/postseason/hub/2022.json.gz": {
+      "http": 200,
+      "bytes": 2921,
+      "sha256": "8558234473424ad588c8a3c6273ebcf81b63036a7572468a0b00bb4ecac12d2b"
+    },
+    "mlb/historical/postseason/hub/2023.json.gz": {
+      "http": 200,
+      "bytes": 2958,
+      "sha256": "e8f0213eaaf99928ae6d9b91d072bc7d3509b1e8c09953a8be71ef37233e8b01"
+    },
+    "mlb/historical/postseason/hub/2024.json.gz": {
+      "http": 200,
+      "bytes": 3028,
+      "sha256": "941688c795dc26021b0c28d288411c3474e9e71789db9f490bfcfe39f0027e47"
+    },
+    "mlb/historical/postseason/hub/2025.json.gz": {
+      "http": 200,
+      "bytes": 3162,
+      "sha256": "82aaf1b3b6939d3624b9fc88783a617f02873647a7cb033b6fea456a1a65cd18"
+    }
+  },
+  "validation": {
+    "testFiles": 86,
+    "tests": 980,
+    "lint": "PASS",
+    "typecheck": "PASS",
+    "webBuild": "PASS",
+    "vercelBuild": "PASS",
+    "androidEvidenceRun": "37993266608",
+    "pagesEvidenceRun": "37993282689",
+    "newAndroidBuildExecuted": false,
+    "newDeployExecuted": false,
+    "newCanonicalWrites": 0
+  }
+}

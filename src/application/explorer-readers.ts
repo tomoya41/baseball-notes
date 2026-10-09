@@ -13,7 +13,10 @@ export async function readNpbExplorerSeason(year: number, request: typeof fetch 
   await rememberPublicResponse(response);
   return payload;
 }
-export async function readNpbRecentExplorer(days: 7 | 14 | 30, directory: NpbPlayerDirectory, request: typeof fetch = publicDataFetch) {
+type RecentIdentityDirectory = Pick<NpbPlayerDirectory, "effectiveDate"> & {
+  players: readonly Pick<NpbPlayerDirectory["players"][number], "playerId" | "displayName" | "teamId">[];
+};
+export async function readNpbRecentExplorer(days: 7 | 14 | 30, directory: RecentIdentityDirectory, request: typeof fetch = publicDataFetch) {
   const base = import.meta.env.VITE_NPB_DATA_BASE_URL?.trim() || publicAssetBase();
   const response = await request(`${base.replace(/\/$/, "")}/data/npb/explorer/recent/${days}.json`, { cache: "no-cache" });
   if (!response.ok) throw Error(`Recent projection HTTP ${response.status}`);

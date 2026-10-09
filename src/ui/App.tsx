@@ -27,7 +27,7 @@ export function App({ services }: { services: Services }) {
   const location = useLocation();
   const league: League = location.pathname.split("/")[1] === "MLB" ? "MLB" : "NPB";
   const section = location.pathname.split("/")[2] ?? "home";
-  const currentNav = ["games", "schedule", "postseason"].includes(section) ? "schedule" : ["ranking", "milestones"].includes(section) ? "records" : ["players", "teams", "analysis", "compare", "team-compare", "season-compare", "data", "history", "glossary"].includes(section) ? "search" : ["favorites", "library", "watch-center"].includes(section) ? "my" : section;
+  const currentNav = ["games", "schedule", "postseason"].includes(section) ? "schedule" : ["ranking", "milestones"].includes(section) ? "records" : ["players", "teams", "analysis", "compare", "team-compare", "season-compare", "data", "history", "glossary"].includes(section) || league === "NPB" && section === "talent" ? "search" : ["favorites", "library", "watch-center"].includes(section) ? "my" : section;
   const [favorites, setFavorites] = useState<Favorite[]>([]);
   const [favoritesReady, setFavoritesReady] = useState(false);
   const [refreshVersion, setRefreshVersion] = useState(0);

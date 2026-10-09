@@ -18,6 +18,7 @@ import { NpbDiscovery } from "./discovery";
 import { StatGlossary } from "./stat-glossary";
 import { MyLibrary } from "./personal-library";
 import { NpbTeamCompare, SeasonCompare } from "./team-season-compare";
+import { NpbLifecycleExplorer } from "./npb-lifecycle";
 type FavoriteTarget = Pick<Favorite, "kind" | "entityId" | "league">;
 function NpbSearchEntry(props: Parameters<typeof NpbRoutes>[0]) {
   const [params] = useSearchParams();
@@ -31,7 +32,8 @@ export function NpbRoutes({ services, favorites, toggle, saving }: { services: S
     <Route path="postseason/*" element={<PostseasonUnavailable league="NPB" />} />
     <Route path="explore" element={<ExploreScreen league="NPB" />} />
     <Route path="milestones/*" element={<NpbMilestonesScreen repository={services.product} />} />
-    {(["moves", "talent", "preseason", "matchup", "watch"] as const).map(feature => <Route key={feature} path={`${feature}/*`} element={<FutureFeatureScreen feature={feature} league="NPB" />} />)}
+    <Route path="talent/*" element={new URLSearchParams(location.search).get("tab") === "1" ? <FutureFeatureScreen feature="talent" league="NPB" /> : <NpbLifecycleExplorer services={services} />} />
+    {(["moves", "preseason", "matchup", "watch"] as const).map(feature => <Route key={feature} path={`${feature}/*`} element={<FutureFeatureScreen feature={feature} league="NPB" />} />)}
     {(["career", "advanced"] as const).map(feature => <Route key={feature} path={`players/:playerId/${feature}`} element={<FutureFeatureScreen feature={feature} league="NPB" />} />)}
     <Route path="home" element={<NpbHome services={services} favorites={favorites} toggle={toggle} saving={saving} />} />
     <Route path="schedule" element={<NpbScheduleScreen repository={services.gameSurface} favorites={favorites} toggle={toggle} saving={saving} />} />
