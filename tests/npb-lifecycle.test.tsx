@@ -153,6 +153,19 @@ describe("Draft discovery integration and recovery",()=>{
     expect(element.textContent).not.toContain('成績を読み込めません');
     expect(element.querySelector('.explorer-metrics dd')?.textContent).toBe('50 一部');
   });
+  it("retrying a failed Recent period does not invalidate successful Season statistics",async()=>{
+    await mount('/NPB/talent?role=batting');
+    readers.season.mockRejectedValue(Error('ongoing outage'));
+    readers.recent.mockRejectedValue(Error('network'));
+    const button=(text:string)=>[...element.querySelectorAll('button')].find(b=>b.textContent===text)!;
+    await act(async()=>button('Recent period test').click());
+    await act(async()=>button('成績を再読み込み').click());
+    expect(readers.recent).toHaveBeenCalledTimes(2);
+    await act(async()=>button('Season period test').click());
+    expect(readers.season).toHaveBeenCalledTimes(1);
+    expect(element.textContent).not.toContain('成績を読み込めません');
+    expect(element.querySelector('.explorer-metrics dd')?.textContent).toBe('50 一部');
+  });
   it("Lifecycle omits unsupported joined/NPB debut and keeps school, draft class and saved Season links",async()=>{
     await mount("/NPB/players/example/more",true);
     expect(element.textContent).toContain("2022年 Draft");expect(element.textContent).toContain("2026 保存シーズン");

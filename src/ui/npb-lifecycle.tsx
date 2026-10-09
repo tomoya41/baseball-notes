@@ -37,9 +37,10 @@ export function NpbLifecycleExplorer({ services }: {services:Services}) {
 }
 export function LifecycleWorkspace({catalog}:{catalog:NpbCatalog}) {
   const [params,setParams]=useSearchParams(), query=lifecycleQuery(params,catalog), coverage=lifecycleCoverage(catalog);
-  const [stats,setStats]=useState<StatsState|null>(null), [retry,setRetry]=useState(0);
+  const [stats,setStats]=useState<StatsState|null>(null), [retries,setRetries]=useState<Record<string,number>>({});
   const successfulStats = useRef<{ catalog: NpbCatalog; retry: number; value: StatsState } | null>(null);
   const key=`${catalog.effectiveDate}:${query.period}`;
+  const retry=retries[key] ?? 0;
   useEffect(()=>{
     if (query.errors.length) return;
     // Metadata validation must not discard or re-download a successful period.
@@ -90,7 +91,7 @@ export function LifecycleWorkspace({catalog}:{catalog:NpbCatalog}) {
     <p className="inline-note">年齢基準 {query.date} · 成績 {catalog.effectiveDate}までの{query.period==="season"?"保存Season":`直近${query.period}日`} · {ready ? coverageLabels[stats.coverage]:stats?.key === key && stats.error ? "成績未取得" : "成績確認中"}。球団は最新保存所属で、成績には移籍前も含みます。</p>
     {query.errors.map(error=><p className="data-notice" role="alert" key={error}>{error}</p>)}
     {!query.errors.length && stats?.key!==key && <LoadingSkeleton />}
-    {stats?.key===key && stats.error && <><DataState kind="source-unavailable" title="成績を読み込めません" detail="確認済みプロフィールは維持しています。未取得の成績を0にしません。" /><button className="text-button" onClick={()=>setRetry(n=>n+1)}>成績を再読み込み</button></>}
+    {stats?.key===key && stats.error && <><DataState kind="source-unavailable" title="成績を読み込めません" detail="確認済みプロフィールは維持しています。未取得の成績を0にしません。" /><button className="text-button" onClick={()=>setRetries(previous=>({...previous,[key]:(previous[key] ?? 0)+1}))}>成績を再読み込み</button></>}
     <div className="list-heading"><strong>{players.length}人 · 保存済み選手</strong><span>{page+1}/{pages}</span></div>
     {query.role==="all" ? <p className="inline-note">同期比較には打撃または投球を選び、2〜4人を選択してください。</p> : <div className="lifecycle-compare"><span>比較 {compare.length}/4人</span>{compare.length>=2 && <Link className="button button--secondary" to={`/NPB/compare?players=${compare.map(encodeURIComponent).join("%2C")}&role=${query.role}&condition=${query.period==="season"?"season":`${query.period}d`}`}>同期を比較 →</Link>}{compare.length>0&&<button className="text-button" onClick={()=>update("compare","")}>選択解除</button>}</div>}
     <div className="explorer-results">{players.slice(page*30,(page+1)*30).map(p=>{
