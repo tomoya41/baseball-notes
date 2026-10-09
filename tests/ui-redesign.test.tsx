@@ -109,7 +109,7 @@ describe("compact scoreboards and contextual metric help", () => {
   it.each(["OPS", "OBP", "SLG", "K9", "K/9", "BF", "RISP", "PA", "AB", "IP", "outsRecorded"])("%s has a local accessible explanation", key => {
     const definition = metricHelp(key)!; expect(definition.description).toBeTruthy(); expect(definition.interpretation).toBeTruthy();
     const html = wrap(<MetricLabel metric={key} />);
-    expect(html).toContain(`aria-label="${definition.name}の説明"`); expect(html).toContain("<dialog"); expect(html).toContain('method="dialog"'); expect(html).not.toMatch(/href=|<img/);
+    expect(html).toContain(`aria-label="${definition.name}の説明"`); expect(html).toContain('aria-haspopup="dialog"'); expect(html).not.toContain("<dialog"); expect(html).not.toMatch(/href=|<img/);
   });
   it("explains OBP denominator, SLG meaning and RISP context without evaluative labels", () => {
     expect(metricHelp("OBP")!.description).toContain("打数＋四球＋死球＋犠飛");

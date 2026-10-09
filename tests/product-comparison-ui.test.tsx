@@ -4,7 +4,8 @@ import { createRoot, type Root } from "react-dom/client";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PersonalLibrary, PERSONAL_LIBRARY_KEY } from "../src/application/personal-library";
-import { PersonalLibraryProvider } from "../src/ui/personal-library";
+
+import { PersonalLibraryProvider } from "../src/ui/library-provider";
 import { CollectionDashboard } from "../src/ui/collection-dashboard";
 import { MlbTeamCompare, SeasonCompare } from "../src/ui/team-season-compare";
 import { services } from "../src/app/services";

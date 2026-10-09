@@ -5,8 +5,10 @@ import { MemoryRouter } from "react-router-dom";
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 import { PersonalWatch, PERSONAL_WATCH_KEY } from "../src/application/personal-watch";
 import { PersonalLibrary } from "../src/application/personal-library";
-import { PersonalLibraryProvider } from "../src/ui/personal-library";
-import { PersonalWatchProvider, WatchCenter, WatchSummary } from "../src/ui/personal-watch";
+
+import { PersonalLibraryProvider } from "../src/ui/library-provider";
+import { WatchCenter } from "../src/ui/personal-watch";
+import { PersonalWatchProvider, WatchSummary } from "../src/ui/watch-shell";
 import { services } from "../src/app/services";
 import type { WatchObservation } from "../src/domain/personal-watch";
 const mocks=vi.hoisted(()=>({read:vi.fn(),online:true,revision:0}));

@@ -1,3 +1,4 @@
+import { StatTable } from "./stat-table";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { matchesMlbPlayerName } from "../domain/mlb-japanese-display";
@@ -11,10 +12,10 @@ const labels: Record<string, string> = { "inning:1–3": "1〜3回", "inning:4�
   "score:ahead": "リード", "score:tied": "同点", "score:behind": "ビハインド" };
 export function PaMetricTable({ metrics, pitching = false }: { metrics: PaAnalysisLine; pitching?: boolean }) {
   return <><div className="metric-grid metric-primary-grid">{(["PA","H","HR","AVG","OBP","OPS"] as const).map(key => <div className="metric-tile" key={key}><span className="metric-tile__label"><MetricLabel metric={key} label={key === "AVG" && pitching ? "被打率" : key === "PA" ? "PA" : key} /></span><strong className="metric-tile__value">{metrics[key] === null ? "—" : ["AVG","OBP","OPS"].includes(key) ? metrics[key].toFixed(3) : metrics[key]}</strong></div>)}</div>
-    <details><summary>対戦打撃成績の詳細</summary><div className="mlb-stat-scroll"><table>
+    <details><summary>対戦打撃成績の詳細</summary><div className="mlb-stat-scroll"><StatTable>
       <thead><tr>{Object.keys(metrics).map(key => <th key={key}><MetricLabel metric={key} /></th>)}</tr></thead><tbody><tr>{Object.entries(metrics).map(([key, value]) =>
         <td key={key}>{value === null ? "—" : ["AVG", "OBP", "SLG", "OPS"].includes(key) ? value.toFixed(3) : value}</td>)}</tr></tbody>
-    </table></div>{pitching && <p className="inline-note">対戦打者の打撃成績</p>}</details></>;
+    </StatTable></div>{pitching && <p className="inline-note">対戦打者の打撃成績</p>}</details></>;
 }
 export function HistoricalAdvancedAnalysis({ playerId, season, hasBatting, hasPitching }: {
   playerId: string; season: number; hasBatting: boolean; hasPitching: boolean;

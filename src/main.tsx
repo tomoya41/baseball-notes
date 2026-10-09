@@ -6,6 +6,7 @@ import { services } from "./app/services";
 import { installAndroidBackHandler } from "./app/android-back";
 import { installPlatformRuntime } from "./app/platform";
 import "./ui/styles.css";
+import "./ui/final-design.css";
 import { restoreAppearance } from "./app/appearance";
 
 void installAndroidBackHandler();

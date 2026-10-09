@@ -311,6 +311,8 @@ describe("discovery and glossary", () => {
   it("uses only actual metrics and offers formula and scope beside their names", async () => {
     await mount(<StatGlossary league="MLB" />, "/MLB/glossary?q=OPS");
     expect(container.textContent).toContain("OPS"); expect(container.querySelector("button[aria-label='OPSの説明']")).not.toBeNull();
+    HTMLDialogElement.prototype.showModal = function () { this.setAttribute("open", ""); };
+    await act(async () => container.querySelector<HTMLButtonElement>("button[aria-label='OPSの説明']")!.click());
     const dialogs = [...document.querySelectorAll("dialog")]; expect(dialogs.some(d => d.textContent?.includes("OBP ＋ SLG"))).toBe(true);
     expect(dialogs.some(d => d.textContent?.includes("Regular SeasonとPostseasonは別集計"))).toBe(true);
     expect(container.textContent).not.toContain("WHIP"); expect(container.textContent).not.toContain("xwOBA");
