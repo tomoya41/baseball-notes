@@ -30,6 +30,7 @@ export function MlbSeasonExplorer({ manifest }: { manifest: ExplorerManifest }) 
     <div className="row-list">{candidates.map(p => <button className="player-row" key={p.id} onClick={() => update("player", p.id)} aria-pressed={p.id === playerId}>{p.name} <span>{p.seasons.join(" / ")}</span></button>)}</div>
     {name.trim() && directory.value && !candidates.length && <DataState kind="no-data" title="一致する保存済み選手がありません" />}
     {playerId && directory.value && !player && <DataState kind="no-data" title="この集計対象では選手が未収録です" />}
+    <Link className="text-link" to={`/MLB/milestones?season=${year}${scope}`}>シーズンの節目 →</Link>
     {player && <><h2>{player.name}</h2><Link className="text-link" to={`/MLB/season-compare?kind=player&entity=${encodeURIComponent(player.id)}&role=${role}${scope}`}>年度推移・前年差を比較 →</Link><div className="segmented" role="group" aria-label="履歴の成績">{(["batting", "pitching"] as const).map(r => <button key={r} aria-pressed={role === r} onClick={() => update("role", r)}>{r === "batting" ? "打撃" : "投球"}</button>)}</div>
       {profile.status === "loading" ? <LoadingSkeleton /> : !profile.value || profile.value.player.id !== playerId ? <DataState kind="source-unavailable" title="年度別成績を読み込めません" /> : <div className="row-list">{player.seasons.map(season => {
         const values = profile.value!.seasonTotals[String(season)]?.[role], context = `?season=${season}${scope}`, base = `/MLB/players/${encodeURIComponent(player.id)}`;

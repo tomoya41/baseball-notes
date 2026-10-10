@@ -29,7 +29,7 @@ describe("new navigation and future surfaces", () => {
   it("groups future destinations away from current Home while preserving game and records access", () => {
     const html = wrap(<ExploreScreen league="NPB" />);
     for (const path of ["schedule", "records", "moves", "talent", "preseason", "matchup", "watch", "milestones"]) expect(html).toContain(`/NPB/${path}`);
-    for (const label of ["選手移動・FA・Posting", "Draft履歴・若手探索"]) expect(html).toContain(label);
+    for (const label of ["選手移動・FA・Posting", "ドラフト・若手選手"]) expect(html).toContain(label);
     expect(wrap(<ExploreScreen league="MLB" />)).toContain("ドラフト・プロスペクト");
   });
   it("selects a valid default section when a future-screen link contains an invalid tab", () => {

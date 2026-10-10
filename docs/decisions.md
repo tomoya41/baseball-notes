@@ -324,3 +324,15 @@ Personal Watch is an independent local observation/alert contract, not the futur
 ## 2026-10-09 — Natural document scrolling over generic viewport pagination
 
 The user explicitly restored vertical scrolling to improve comprehension. Remove presentation-level CSS-column pagination and its layout/focus observers; retain continuous lists, named detail tabs and fixed primary navigation. A modal alone owns scrolling while open and locks the background. All existing routes, readers, persistence and data semantics stay unchanged. No migration; rollback is a UI revert. See docs/final-product-design.md.
+
+## 2026-10-10 — MLB Historical all-player Recent without Profile fanout
+
+Add monthly per-day/player/team count projections derived only from preserved
+2020–2025 Game Facts. A dated 7/14/30 query reads one index and at most three shards,
+with source fingerprints and separate Regular/Postseason namespaces. Keep legacy
+selected-player URLs. MATCHUP reuses exact-PA aggregates; Season checkpoints reuse
+Watch; year/team history reuses Profile Facts. Additional MLB rates are UI-derived
+from independent H/BB/PA/BF/outs; no NPB extrapolation or existing payload rewrite.
+No canonical migration/write. Rollback can revert the app while harmless additive
+projections remain; no Source or rights scope is extended. See
+`docs/historical-product-track-2.md`.

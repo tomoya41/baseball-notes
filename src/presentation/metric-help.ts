@@ -9,10 +9,16 @@ const context: Record<string, Pick<MetricHelp, "formula" | "data" | "sample" | "
   OPS: { formula: "OBP ＋ SLG", data: "保存済みの出塁率・長打率", sample: "少数打席では極端な値になります。走塁・守備の評価は含みません。" },
   ERA: { formula: "自責点 × 27 ÷ 記録したアウト数", data: "自責点・投手アウト数。失点とは別です。", sample: "少ない投球回では大きく変動。球場・守備等の影響も受けます。" },
   K9: { formula: "奪三振 × 27 ÷ 記録したアウト数", data: "奪三振・投手アウト数", sample: "短い投球回では変動。失点を抑えたかどうかとは別の観点です。" },
+  WHIP: { formula: "(被安打＋与四球) × 3 ÷ 投球アウト数", data: "MLB Historicalの独立したH・BB・outs。死球は含みません。", sample: "投球回が少ないと変動。0アウトまたは必要項目未提供なら計算しません。" },
+  BB9: { formula: "与四球 × 27 ÷ 投球アウト数", data: "MLB Historicalの与四球（敬遠を含み、死球を除く）", sample: "少ない投球回では変動。低いほど与四球の頻度が低い傾向です。" },
+  "K%": { formula: "三振 ÷ 打席（打者）／対戦打者（投手） × 100", data: "MLB HistoricalのSO・PA/BF。打者と投手で分母が異なります。", sample: "打席・対戦打者が少ないと変動。打者は低いほど、投手は高いほど三振の頻度を表します。" },
+  "BB%": { formula: "四球 ÷ 打席（打者）／対戦打者（投手） × 100", data: "MLB Historicalの独立したBB（敬遠を含む）・PA/BF。死球は分子に含みません。", sample: "打者は高いほど四球を選び、投手は低いほど四球を抑える傾向。小サンプルは慎重に読みます。" },
   IP: { formula: "アウト数 ÷ 3（余りを1/3回単位で表示）", data: "canonicalの投手アウト数", sample: "6.1は6回と1アウト。6.1という小数の投球回ではありません。" },
 };
-export const glossaryKeys = ["G", "GS", "PA", "AB", "H", "2B", "3B", "HR", "R", "RBI", "BB", "HBP", "SH", "SF", "SO", "SB", "CS", "AVG", "OBP", "SLG", "OPS", "IP", "BF", "ER", "ERA", "K9", "W", "L", "SV", "HLD", "RISP"] as const;
+export const glossaryKeys = ["G", "GS", "PA", "AB", "H", "2B", "3B", "HR", "R", "RBI", "BB", "HBP", "SH", "SF", "SO", "SB", "CS", "AVG", "OBP", "SLG", "OPS", "IP", "BF", "ER", "ERA", "K9", "W", "L", "SV", "HLD", "RISP", "WHIP", "BB9", "K%", "BB%"] as const;
 const help: Record<string, MetricHelp> = {
+  BB9: { name: "BB/9", fullName: "9回あたりの与四球", description: "与四球を9回に換算した頻度。死球は含みません。", interpretation: "低いほど四球を与える頻度が低い傾向です。" },
+  "K%": metrics.kPct!, "BB%": metrics.bbPct!,
   G: { name: "G", fullName: "出場・登板数", description: "保存済み成績がある試合数。打者の出場数と投手の登板数は別に集計します。", interpretation: "多さだけで成績の良し悪しは判断しません。" },
   GS: { name: "GS", fullName: "先発登板数", description: "先発と確認できる投手登板の数。", interpretation: "役割が不明な登板を先発と推定しません。" },
   "2B": { name: "2B", fullName: "二塁打", description: "対象範囲の二塁打数。", interpretation: "出場機会と合わせて確認します。" },

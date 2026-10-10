@@ -8,6 +8,9 @@ import { historicalId, historicalTeamId } from "../src/data/mlb-historical";
 import { generateHistoricalTeamHubs } from "../scripts/generate-historical-team-hubs";
 import { readFile } from "node:fs/promises";
 import { gunzipSync } from "node:zlib";
+import { buildMlbRecentMonths, generateMlbRecentExplorer } from "../scripts/generate-mlb-recent-explorer";
+import { verifyMlbRecentExplorer } from "../scripts/verify-mlb-recent-explorer";
+import { createHash } from "node:crypto";
 
 async function fixture(root: string) {
   const id = historicalId("player", "audit"), home = historicalTeamId("ATL"), away = historicalTeamId("HOU"), years = [2020,2021,2022,2023,2024,2025];
@@ -45,6 +48,47 @@ async function fixture(root: string) {
 }
 
 describe("complete advertised Postseason artifact", () => {
+  it("generates and verifies Regular Recent with no optional Postseason tree, but rejects a partial tree", async () => {
+    const root=await mkdtemp(join(tmpdir(),"regular-recent-only-"));
+    try {
+      await fixture(root);
+      const post=join(root,"postseason"),gameId=historicalId("game","2025");
+      for (const path of ["manifest.json","seasons/2025.json",`games/${gameId.replaceAll(":","_")}.json`]) {
+        const v=JSON.parse(gunzipSync(await readFile(join(post,`${path}.gz`))).toString());delete v.competitionType;
+        if(v.game)delete v.game.competitionType;
+        if(path==="manifest.json")v.seasons=v.seasons.filter((s:{season:number})=>s.season===2025);
+        const file=join(root,`${path}.gz`);await mkdir(dirname(file),{recursive:true});await writeFile(file,gzipSync(JSON.stringify(v)));
+      }
+      await rm(post,{recursive:true});
+      expect((await generateMlbRecentExplorer(root)).files).toBe(2);
+      expect((await verifyMlbRecentExplorer(root)).scopes.map(s=>s.competition)).toEqual(["regular"]);
+      await mkdir(post);
+      await expect(generateMlbRecentExplorer(root)).rejects.toThrow();
+      await expect(verifyMlbRecentExplorer(root)).rejects.toThrow();
+    } finally {await rm(root,{recursive:true,force:true});}
+  });
+  it("audits the additive Recent family and rejects altered or partially published shards", async () => {
+    const root = await mkdtemp(join(tmpdir(), "postseason-recent-audit-"));
+    try {
+      await fixture(root);
+      for (const season of [2020,2021,2022,2023,2024,2025]) {
+        const raw=await readFile(join(root,`postseason/games/${historicalId("game",String(season)).replaceAll(":","_")}.json.gz`));
+        const months=buildMlbRecentMonths([{game:JSON.parse(gunzipSync(raw).toString()).game,hash:createHash("sha256").update(raw).digest("hex")}],"postseason",season);
+        const dir=join(root,`postseason/exploration/recent/${season}`);await mkdir(dir,{recursive:true});
+        const descriptors=[];
+        for(const month of months){const bytes=gzipSync(JSON.stringify(month));await writeFile(join(dir,`${month.month}.json.gz`),bytes);descriptors.push({month:month.month,compressedBytes:bytes.length,rows:0});}
+        await writeFile(join(dir,"index.json.gz"),gzipSync(JSON.stringify({schemaVersion:1,league:"MLB",competitionType:"postseason",season,sourceFingerprint:months[0]!.sourceFingerprint,firstDate:`${season}-10-01`,lastDate:`${season}-10-01`,coverage:"complete",gameCount:1,months:descriptors})));
+      }
+      expect((await auditHistoricalPostseason(root, root)).report.result).toBe("PASS");
+      const file = join(root,"postseason/exploration/recent/2025/index.json.gz");
+      const original=await readFile(file),index=JSON.parse(gunzipSync(original).toString()); index.gameCount++;
+      await writeFile(file,gzipSync(JSON.stringify(index)));
+      await expect(auditHistoricalPostseason(root,root)).rejects.toThrow("Recent index/detail mismatch");
+      await writeFile(file,original);
+      await rm(join(root,"postseason/exploration/recent/2025/2025-10.json.gz"));
+      await expect(auditHistoricalPostseason(root,root)).rejects.toThrow("Missing advertised");
+    } finally { await rm(root,{recursive:true,force:true}); }
+  });
   it("requires the whole derived family at final publication while accepting legacy input archives", async () => {
     const root = await mkdtemp(join(tmpdir(), "postseason-product-required-"));
     try {

@@ -6,6 +6,8 @@ import { validStaticPayload } from "../../src/domain/mlb-historical-public";
 import { postseasonHubSchema } from "../../src/domain/competition";
 import { buildHistoricalTeamHub } from "../../src/data/mlb-team-product";
 import type { HistoricalGame } from "../../src/data/mlb-historical";
+import { buildMlbRecentMonths } from "../generate-mlb-recent-explorer";
+import type { RecentIndex, RecentMonth } from "../../src/domain/mlb-recent-explorer";
 
 type Player = { id: string; name: string; seasons: number[] };
 type Game = { id: string; season: number; date: string; homeTeamId: string; awayTeamId: string; homeRuns: number; awayRuns: number; number: number; batting: { playerId: string }[]; pitching: { playerId: string }[] };
@@ -21,6 +23,7 @@ export async function auditHistoricalPostseason(root: string, regular: string, o
   }
   await walk(target);
   const payloads = new Map<string, unknown>();
+  const hashes = new Map<string, string>(), compressedSizes = new Map<string, number>();
   let bytes = 0, largestBytes = 0;
   for (const file of files) {
     if (!file.endsWith(".json.gz")) throw new Error("Unexpected public postseason file");
@@ -29,6 +32,7 @@ export async function auditHistoricalPostseason(root: string, regular: string, o
     const payload: unknown = JSON.parse(gunzipSync(data).toString());
     if (!validStaticPayload(`postseason/${path}`, payload)) throw new Error(`Invalid public contract: ${path}`);
     payloads.set(path, payload);
+    hashes.set(path, createHash("sha256").update(data).digest("hex")); compressedSizes.set(path, data.length);
   }
   const expected = new Set<string>();
   function requirePayload<T>(path: string): T {
@@ -112,6 +116,21 @@ export async function auditHistoricalPostseason(root: string, regular: string, o
         const actual = requirePayload(path);
         const derived = buildHistoricalTeamHub(canonicalGames, names, { teamId: team.id, season: info.season, competitionType: "postseason", coverage: info.coverage, effectiveDate: info.lastDate });
         if (JSON.stringify(actual) !== JSON.stringify(derived)) throw new Error(`Derived Team/detail mismatch: ${path}`);
+      }
+    }
+  }
+  // Legacy archives may omit Recent. Once present, require every season/shard and
+  // reproduce it from preserved canonical Game Facts before advertising availability.
+  if ([...payloads.keys()].some(path => path.startsWith("exploration/"))) {
+    for (const info of manifest.seasons) {
+      const base = `exploration/recent/${info.season}/`;
+      const index = requirePayload<RecentIndex>(`${base}index.json`);
+      const source = [...games.values()].filter(g => g.season === info.season).map(game => ({ game: game as HistoricalGame, hash: hashes.get(`games/${game.id.replaceAll(":", "_")}.json`)! }));
+      const derived = buildMlbRecentMonths(source, "postseason", info.season);
+      if (index.firstDate !== info.firstDate || index.lastDate !== info.lastDate || index.coverage !== info.coverage || index.gameCount !== source.length || index.months.length !== derived.length || index.sourceFingerprint !== derived[0]?.sourceFingerprint) throw Error("Recent index/detail mismatch");
+      for (const month of derived) {
+        const path = `${base}${month.month}.json`, actual = requirePayload<RecentMonth>(path), advertised = index.months.find(m => m.month === month.month);
+        if (!advertised || JSON.stringify(actual) !== JSON.stringify(month) || advertised.compressedBytes !== compressedSizes.get(path) || advertised.rows !== month.batting.length + month.pitching.length) throw Error("Recent shard/detail mismatch");
       }
     }
   }
