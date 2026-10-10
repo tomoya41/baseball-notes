@@ -10,6 +10,7 @@ import { buildBattingTrends, buildPitchingTrends } from "../domain/player-trends
 import type { HistoricalChronology } from "../domain/game-chronology";
 import type { HistoricalTeamHub } from "../domain/team-hub";
 import type { PostseasonHub } from "../domain/competition";
+import { seasonCheckpoints } from "../domain/mlb-product-metrics";
 import { seasonCheckpointSteps } from "../domain/npb-season-milestones";
 
 export function watchTargets(league: League, favorites: readonly Favorite[], library: PersonalState, preferences: WatchPreferences) {
@@ -49,10 +50,7 @@ export async function readWatchObservations(league: League, favorites: readonly 
   };
   const milestones = (b: ReturnType<typeof base>, batting: ExplorerValues | null, pitching: ExplorerValues | null) => {
     if (b.coverage !== "complete") return;
-    for (const [metric, step] of Object.entries(seasonCheckpointSteps)) {
-      const m = (["H", "HR", "RBI", "SB"].includes(metric) ? batting : pitching)?.[metric];
-      if (m?.status === "complete" && m.value !== null) add(b, "milestone", metric, { value: m.value, step });
-    }
+    for (const c of seasonCheckpoints(batting, pitching)) add(b, "milestone", c.metric, { value: c.value, step: c.step });
   };
   if (targets.omitted) notes.push(`上限により${targets.omitted}対象を今回は確認しません。選手12人・球団4・保存条件6まで。`);
   if (targets.unsupportedViews) notes.push(`${targets.unsupportedViews}保存条件はWatch未対応です。NPB 2026の全選手・Recent 7/14/30条件だけ検出します。保存条件から再検索できます。`);

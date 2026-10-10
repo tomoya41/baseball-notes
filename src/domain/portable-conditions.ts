@@ -1,4 +1,4 @@
-const keys = ["season", "competition", "period", "role", "team", "minimum", "sample", "metric1", "op1", "value1", "metric2", "op2", "value2", "sort1", "dir1", "sort2", "dir2", "metrics", "recentPlayers", "recentMode", "player", "date"];
+const keys = ["season", "competition", "period", "role", "team", "minimum", "sample", "metric1", "op1", "value1", "metric2", "op2", "value2", "sort1", "dir1", "sort2", "dir2", "metrics", "recentPlayers", "recentMode", "player", "date", "asOfDate"];
 import { canonicalEntityRefSchema } from "./cross-league";
 import type { League } from "./models";
 export function viewConditions(params: URLSearchParams, includeName = true, league?: League): string {

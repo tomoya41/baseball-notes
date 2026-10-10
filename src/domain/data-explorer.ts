@@ -4,8 +4,8 @@ export type ExplorerMetric = { value: number | null; status?: "complete" | "part
 export type ExplorerValues = Record<string, ExplorerMetric>;
 export type ExplorerRow = { playerId: string; name: string; aliases?: string[]; teamId?: string | null; batting: ExplorerValues | null; pitching: ExplorerValues | null };
 export const explorerMetrics = {
-  batting: ["G", "PA", "AB", "H", "HR", "RBI", "BB", "SO", "SB", "AVG", "OBP", "SLG", "OPS"],
-  pitching: ["G", "GS", "outsRecorded", "BF", "H", "HR", "BB", "SO", "R", "ER", "W", "L", "SV", "HLD", "ERA", "K9"],
+  batting: ["G", "PA", "AB", "H", "HR", "RBI", "BB", "SO", "SB", "AVG", "OBP", "SLG", "OPS", "K%", "BB%"],
+  pitching: ["G", "GS", "outsRecorded", "BF", "H", "HR", "BB", "SO", "R", "ER", "W", "L", "SV", "HLD", "ERA", "K9", "WHIP", "BB9", "K%", "BB%"],
 } as const;
 export type ExplorerRole = keyof typeof explorerMetrics;
 export type ExplorerRule = { metric: string; operator: "gte" | "lte"; value: number };

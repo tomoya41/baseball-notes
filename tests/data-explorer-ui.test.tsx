@@ -52,6 +52,12 @@ function seedNpb() {
   return { season, directory, deps: { ...services, directory: { findLatestNpb: async () => directory } as unknown as typeof services.directory } };
 }
 describe("compact exploration UI", () => {
+  it("clears an old-year Recent as-of date when the Season changes, retaining the window", async () => {
+    await mount(explorer(), "/MLB/data?season=2025&period=14&asOfDate=2025-08-20");
+    await act(async () => { const select = container.querySelector('.explorer-filter-grid select') as HTMLSelectElement;
+      select.value = "2020"; select.dispatchEvent(new Event("change", { bubbles: true })); });
+    expect(container.querySelector("[data-location]")?.textContent).toBe("?season=2020&period=14");
+  });
   it("keeps failed selected Recent reads partial in both the visible notice and CSV", async () => {
     await mount(explorer(async () => ({ values: [{ ...rows[0]!, coverage: "complete" }], failed: [id2], coverage: "complete" })), `/MLB/data?season=2025&period=14&recentPlayers=${id},${id2}`);
     expect(container.textContent).toContain("一部の選択選手を読み込めません");

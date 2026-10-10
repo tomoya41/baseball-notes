@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { StatTable } from "./stat-table";
 import { useCallback, useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
@@ -23,7 +24,7 @@ export type ComparePlayer = { id: string; name: string; batting: boolean; pitchi
 export type HistoricalProductProfile = { player: { id: string; name: string; seasons: number[] }; batting: DatedBatter[]; pitching: DatedPitcher[] };
 export type HistoricalProductManifest = { seasons: { season: number; firstDate: string; lastDate: string; coverage: string }[]; teams: { id: string; name: string }[]; features?: { directBvp?: string; situationalAnalysis?: string } };
 type Loaded = { id: string; metrics: CompareMetrics | null; date: string; notice: string | null; coverage?: string };
-type Controls = { role: "batting" | "pitching"; condition: string; period: string; season: number; opponent: string; advancedOpponent: string; battingOrder: number };
+type Controls = { role: "batting" | "pitching"; condition: string; period: string; season: number; opponent: string; advancedOpponent: string; battingOrder: number; asOfDate: string };
 type Loader = (id: string, controls: Controls) => Promise<Loaded>;
 const conditionLabels: Record<string, string> = { season: "シーズン", total: "期間の成績", home: "ホーム", away: "ビジター", opponent: "対戦球団", order: "打順", starter: "先発出場", substitute: "途中出場", "pitcher-starter": "先発投手", reliever: "救援投手", "bases:empty": "走者なし", "bases:runners": "走者あり", "bases:risp": "得点圏", "outs:0": "0アウト", "outs:1": "1アウト", "outs:2": "2アウト", "inning:1–3": "1〜3回", "inning:4–6": "4〜6回", "inning:7–9": "7〜9回", "inning:extra": "延長", "score:ahead": "リード", "score:tied": "同点", "score:behind": "ビハインド", bvp: "実対戦" };
 function metricValue(key: string, m: CompareMetrics[string] | undefined) {
@@ -45,7 +46,7 @@ export function CompareWorkspace({ league, players, teams, seasons, loader, adva
   const opponent = teams.some(t => t.id === params.get("opponent")) ? params.get("opponent")! : teams[0]?.id ?? "";
   const advancedOpponent = compareIds("MLB", params.get("against")).find(id => players.some(p => p.id === id)) ?? "";
   const battingOrder = /^[1-9]$/.test(params.get("order") ?? "") ? Number(params.get("order")) : 1;
-  const controlsKey = JSON.stringify({ role, condition, period, season, opponent, advancedOpponent, battingOrder });
+  const controlsKey = JSON.stringify({ role, condition, period, season, opponent, advancedOpponent, battingOrder, asOfDate: params.get("asOfDate") ?? "" });
   const key = JSON.stringify([league, competition, idsKey, controlsKey]);
   const [state, setState] = useState<{ key: string; rows: ({ status: "ready"; value: Loaded } | { status: "error"; id: string })[] }>({ key: "", rows: [] });
   useEffect(() => { if (!supportedSeason) return; let active = true; const selected = idsKey ? idsKey.split(",") : []; const controls = JSON.parse(controlsKey) as Controls; void Promise.all(selected.map(id => loader(id, controls).then(value => ({ status: "ready" as const, value })).catch(() => ({ status: "error" as const, id })))).then(rows => { if (active) setState({ key, rows }); }); return () => { active = false; }; }, [loader, controlsKey, key, idsKey, supportedSeason]);
@@ -69,6 +70,7 @@ export function CompareWorkspace({ league, players, teams, seasons, loader, adva
     {condition === "bvp" && <label>共通の対戦相手<select value={advancedOpponent} onChange={e => update({ against: e.target.value })}><option value="">検索して相手を選択</option>{advancedOpponent && <option value={advancedOpponent}>{players.find(p => p.id === advancedOpponent)?.name ?? "選択済みの相手"}</option>}{players.filter(p => p.id !== advancedOpponent && matches(p)).slice(0, 30).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select><input aria-label="対戦相手名を絞り込む" type="search" value={query} onChange={e => setQuery(e.target.value)} /></label>}</div>
     <p className="inline-note">{condition === "season" ? `${season}年シーズン` : paMode ? `${season}年 · ${role === "pitching" ? "対戦打者の打撃成績" : "PA由来の打撃成績"}` : league === "NPB" && !condition.endsWith("d") ? "直近30日・同じ条件" : "同じ期間・条件"}。同じ記録種類で比較します。</p>
     {league === "NPB" && <Link className="text-link" to={`/NPB/talent?role=${role}`}>ドラフトの同期・年齢・学校から比較相手を探す →</Link>}
+    {league === "MLB" && <Link className="text-link" to={`/MLB/matchup?season=${season}${competition === "postseason" ? "&competition=postseason" : ""}${ids[0] ? `&${role === "batting" ? "batter" : "pitcher"}=${encodeURIComponent(ids[0])}` : ""}`}>打者と投手の実対戦を調べる →</Link>}
     {ids.length < 2 && <p className="data-notice">2〜4選手を選んで比較できます。</p>}
     {state.key !== key && ids.length > 0 ? <LoadingSkeleton /> : mismatch ? <DataState kind="source-unavailable" title="集計の基準日が揃っていません。更新後に再確認してください" /> : ids.length > 0 && <>
       {dates.size > 0 && <p className="inline-note">{[...dates][0]}まで</p>}
@@ -113,7 +115,9 @@ export function MlbPlayerCompare({ manifest }: { manifest: HistoricalProductMani
     }
     const profile = payload as HistoricalProductProfile;
     if (profile.player.id !== id) throw Error("Comparison identity mismatch");
-    const { from, to } = c.condition === "season" || c.period === "season" ? { from: season.firstDate, to: season.lastDate } : dateWindow(season.lastDate, Number(c.period.replace("d", "")) as 7 | 14 | 30);
+    const asOf = c.asOfDate || season.lastDate;
+    if (!z.iso.date().safeParse(asOf).success || asOf < season.firstDate || asOf > season.lastDate) throw Error("Comparison as-of outside saved Season");
+    const { from, to } = c.condition === "season" || c.period === "season" ? { from: season.firstDate, to: season.lastDate } : dateWindow(asOf, Number(c.period.replace("d", "")) as 7 | 14 | 30);
     const filter = (r: DatedBatter | DatedPitcher) => r.season === c.season && (c.condition === "season" || c.condition === "total" || c.condition === "home" && r.home || c.condition === "away" && !r.home || c.condition === "opponent" && r.opponentTeamId === c.opponent || c.condition === "order" && "battingOrder" in r && r.battingOrder === c.battingOrder || c.condition === "starter" && "starter" in r && r.starter === true || c.condition === "substitute" && "starter" in r && r.starter === false || c.condition === "pitcher-starter" && "role" in r && r.role === "starter" || c.condition === "reliever" && "role" in r && r.role === "reliever");
     const stats = c.role === "batting" ? battingAggregate(id, profile.batting.filter(filter), from, to) : pitchingAggregate(id, profile.pitching.filter(filter), from, to);
     return { id, date: to, coverage: season.coverage, metrics: stats.factCount ? stats.metrics : null, notice: !stats.factCount ? "この条件の記録なし" : season.coverage !== "complete" ? "一部データ確認中" : null };

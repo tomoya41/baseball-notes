@@ -504,6 +504,12 @@ Pushは外部設定・配信verifiedを別に扱い、in-app Watchのみのv1を
 
 ## 13. 古い文書・証拠との差分と監査の限界
 
+2026-10-10 Product Track 2: T1のDraft/若手探索後、自然な日本語copyへ整理。
+T2のMLB全選手Recent 7/14/30、横断MATCHUP、Season節目、保存済み年度/球団履歴、
+MLB-only WHIP/BB9/K%/BB%を実装。既存Historicalのみで、Source/Gate/Career範囲は
+拡張しない。個別の配信・検証証拠は`docs/historical-product-track-2.md`とDelivery PR。
+以下の当初監査値は監査時点のsnapshotとして保持する。
+
 - `README`/`architecture.md`/`data-architecture.md`/`analysis-capabilities.md`/旧`design-system.md`の初期sample・Phase 0・one-game proof説明は履歴であり、current implementation一覧ではない。現在composition root/routes/published manifestsと最新decisionsを優先する。
 - 過去735人・68未照合・affiliation608等と、現在739人・72未照合・affiliation562を混ぜない。減少の原因をこのread-only auditで勝手にmaster修正しない。field定義・生成条件の差はData Quality follow-upとして保持。
 - Team Favoritesは初期Compare報告に「未追加」とあっても現在実装済み。MLB Rate閉鎖の旧記述は現在records readyで更新されている。初期JSは旧handoffより改善済み。

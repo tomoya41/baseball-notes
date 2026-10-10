@@ -7,6 +7,10 @@ on:
         type: choice
         default: release
         options: [release, postseason, app-only]
+      expand_historical_exploration:
+        description: Generate read-only MLB daily aggregate shards from preserved Historical Facts
+        type: boolean
+        default: false
       refresh_recent_explorer:
         description: Generate only new read-only NPB Recent projections at the preserved publication date
         type: boolean
@@ -115,6 +119,7 @@ jobs:
       - name: Stage compressed Historical payload and preservation archive
         env:
           MLB_PUBLISH_MODE: ${{ inputs.mode }}
+          MLB_EXPAND_EXPLORATION: ${{ inputs.expand_historical_exploration }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           mkdir -p dist/data/mlb
@@ -130,7 +135,11 @@ jobs:
           if [ "$MLB_PUBLISH_MODE" != 'app-only' ]; then
             npx tsx scripts/generate-historical-team-hubs.ts dist/data/mlb/historical
           fi
-          if [ "$MLB_PUBLISH_MODE" = 'app-only' ]; then
+          if [ "$MLB_EXPAND_EXPLORATION" = 'true' ] || [ "$MLB_PUBLISH_MODE" != 'app-only' ]; then
+            npx tsx scripts/generate-mlb-recent-explorer.ts dist/data/mlb/historical
+            npx tsx scripts/verify-mlb-recent-explorer.ts dist/data/mlb/historical
+          fi
+          if [ "$MLB_PUBLISH_MODE" = 'app-only' ] && [ "$MLB_EXPAND_EXPLORATION" != 'true' ]; then
             npx tsx scripts/publish-mlb-public-archive.ts dist/data/mlb
           else
             npx tsx scripts/publish-mlb-public-archive.ts dist/data/mlb --refresh

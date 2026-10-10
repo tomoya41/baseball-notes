@@ -78,7 +78,7 @@ describe("saved-data exploration", () => {
 describe("only existing metrics are explained", () => {
   it("provides accessible definitions for every listed glossary key", () => {
     for (const key of glossaryKeys) expect(metricHelp(key)?.interpretation).toBeTruthy();
-    expect(glossaryKeys).not.toContain("WHIP"); expect(glossaryKeys).not.toContain("xwOBA");
+    expect(glossaryKeys).toContain("WHIP"); expect(glossaryKeys).not.toContain("xwOBA");
   });
   it("explains rate formulas, scope and non-decimal innings", () => {
     expect(metricHelp("OPS")?.formula).toBe("OBP ＋ SLG");

@@ -13,7 +13,14 @@ export function portableRoute(path: string, search = ""): string | null {
   if (league !== "NPB" && league !== "MLB") return null;
   const resource = parts[1], source = new URLSearchParams(search), clean = new URLSearchParams();
   if (parts.length === 2 && ["data", "history"].includes(resource ?? "")) { const conditions = viewConditions(source, true, league); return `/${league}/${resource}${conditions ? `?${conditions}` : ""}`; }
-  if (parts.length === 2 && ["compare", "team-compare", "season-compare"].includes(resource ?? "")) {
+  if (league === "MLB" && parts.length === 2 && ["matchup","milestones"].includes(resource ?? "")) {
+    for (const key of ["batter","pitcher","player"]) {const id=source.get(key);if(id && canonicalEntityRefSchema.safeParse({league,kind:"player",id}).success)clean.set(key,id);}
+    if(["batting","pitching"].includes(source.get("role") ?? ""))clean.set("role",source.get("role")!);
+    if(resource === "milestones") {
+      if(["near","achieved"].includes(source.get("mode") ?? ""))clean.set("mode",source.get("mode")!);
+      if(["H","HR","RBI","SB","SO","W","SV","HLD"].includes(source.get("metric") ?? ""))clean.set("metric",source.get("metric")!);
+    }
+  } else if (parts.length === 2 && ["compare", "team-compare", "season-compare"].includes(resource ?? "")) {
     if (resource === "compare") {
       const ids = compareIds(league, source.get("players")); if (ids.length) clean.set("players", ids.join(","));
       for (const k of ["condition", "period", "role", "order"]) { const v = source.get(k); if (v && v.length < 200) clean.set(k, v); }

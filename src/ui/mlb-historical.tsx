@@ -1,3 +1,6 @@
+import { MlbMatchup, MlbSeasonMilestones, SavedSeasonTimeline, SeasonCheckpointSummary } from "./mlb-historical-expansion";
+import { mlbProductMetrics } from "../domain/mlb-product-metrics";
+import type { ExplorerValues } from "../domain/data-explorer";
 import { StatTable } from "./stat-table";
 import { historicalPositions, collectedSeasonsLabel } from "../presentation/historical-player";
 import { Search } from "lucide-react";
@@ -214,16 +217,17 @@ export function HistoricalMetrics({ metrics, pitching = false }: { metrics: Reco
   const keys = pitching ? ["ERA","K9","outsRecorded","SO","appearances","GS"] : ["OPS","AVG","HR","RBI","PA","H"];
   return <div className="metric-grid metric-primary-grid">{keys.map(key => <div className="metric-tile" key={key}><span className="metric-tile__label"><MetricLabel metric={key} label={({outsRecorded:"IP",appearances:"登板",K9:"K/9",PA:"打席",H:"安打",SO:"奪三振",HR:"HR",RBI:"打点"} as Record<string,string>)[key] ?? key} /></span><strong className="metric-tile__value">{key === "outsRecorded" ? metrics[key]?.value == null ? "—" : `${Math.floor(metrics[key]!.value! / 3)}.${metrics[key]!.value! % 3}` : metric(metrics,key,["OPS","AVG"].includes(key) ? 3 : ["ERA","K9"].includes(key) ? 2 : 0)}</strong></div>)}</div>;
 }
-function MetricDetails({ title, metrics, pitching = false }: {
+function MetricDetails({ title, metrics: inputMetrics, pitching = false }: {
   title: string; metrics: Record<string, { value: number | null }> | null | undefined; pitching?: boolean;
 }) {
+  const metrics = mlbProductMetrics(inputMetrics as ExplorerValues | null, pitching ? "pitching" : "batting");
   if (!metrics) return null;
-  const keys = pitching ? ["appearances", "GS", "outsRecorded", "BF", "H", "HR", "BB", "SO", "R", "ER", "W", "L", "SV", "ERA", "K9"] :
-    ["G", "PA", "AB", "R", "H", "2B", "3B", "HR", "RBI", "BB", "HBP", "SH", "SF", "SO", "SB", "CS", "AVG", "OBP", "SLG", "OPS"];
+  const keys = pitching ? ["appearances", "GS", "outsRecorded", "BF", "H", "HR", "BB", "SO", "R", "ER", "W", "L", "SV", "ERA", "K9", "WHIP", "BB9", "K%", "BB%"] :
+    ["G", "PA", "AB", "R", "H", "2B", "3B", "HR", "RBI", "BB", "HBP", "SH", "SF", "SO", "SB", "CS", "AVG", "OBP", "SLG", "OPS", "K%", "BB%"];
   return <details className="mlb-metric-details"><summary>{title}</summary><dl>{keys.map(key =>
-    <div key={key} style={{ display: "contents" }}><dt><MetricLabel metric={key} label={key === "appearances" ? "登板" : key === "outsRecorded" ? "IP" : key === "K9" ? "K/9" : key} /></dt>
+    <div key={key} style={{ display: "contents" }}><dt><MetricLabel metric={key} label={key === "appearances" ? "登板" : key === "outsRecorded" ? "IP" : key === "K9" ? "K/9" : key === "BB9" ? "BB/9" : key} /></dt>
       <dd>{key === "outsRecorded" ? metrics[key]?.value == null ? "—" : `${Math.floor(metrics[key]!.value! / 3)}.${metrics[key]!.value! % 3}` :
-        metric(metrics, key, ["AVG", "OBP", "SLG", "OPS"].includes(key) ? 3 : ["ERA", "K9"].includes(key) ? 2 : 0)}</dd></div>)}</dl>
+        metric(metrics, key, ["AVG", "OBP", "SLG", "OPS"].includes(key) ? 3 : ["ERA", "K9", "WHIP", "BB9"].includes(key) ? 2 : ["K%","BB%"].includes(key) ? 1 : 0)}</dd></div>)}</dl>
     </details>;
 }
 export function MlbHistoricalPlayer({ manifest, favorites, toggle, saving }: {
@@ -282,7 +286,7 @@ export function MlbHistoricalPlayer({ manifest, favorites, toggle, saving }: {
   if (section && !["stats","analysis","game-log","more","trends"].includes(section)) return <Navigate to={`${base}${section === "advanced" ? "/analysis" : ""}?season=${selected}${asOf ? `&asOfDate=${selectedAsOf}` : ""}${scopeQuery}`} replace />;
   return <div className="screen player-screen"><Link className="back-link" to={historicalSearchPath(`?season=${selected}${scopeQuery}`)}>← 選手一覧</Link><header className="profile-header"><Monogram name={player.name} large /><div className="profile-header__body"><p className="eyebrow">MLB{isVerifiedJapanPlayer(player.id) ? " · 日本人選手" : " · 過去記録"}</p><h1>{player.name}</h1><p>{historicalPositions(player.positions)} · {player.seasons[0]}—{player.seasons.at(-1)} 収録</p></div><FavoriteButton active={favorites.some(f => f.league === "MLB" && f.entityId === player.id)} saving={saving} label={player.name} onClick={() => toggle({league:"MLB",kind:"player",entityId:player.id})} /></header>
     <PlayerTabs base={base} section={section} search={`?season=${selected}${asOf ? `&asOfDate=${selectedAsOf}` : ""}${scopeQuery}`} />
-    <details className="player-tools-disclosure" open={section === "trends"}><summary>比較・推移・保存</summary><nav className="player-tools" aria-label="選手の比較と推移"><CollectionButton league="MLB" playerId={player.id} name={player.name} /><Link to={`/MLB/compare?players=${encodeURIComponent(player.id)}&season=${selected}${scopeQuery}`}>比較に追加</Link><Link to={`/MLB/season-compare?kind=player&entity=${encodeURIComponent(player.id)}${scopeQuery}`}>年度比較・前年差</Link><Link to={`${base}/trends?season=${selected}${scopeQuery}`} aria-current={section === "trends" ? "page" : undefined}>推移・連続記録</Link><Link to={`/MLB/history?player=${encodeURIComponent(player.id)}&season=${selected}${scopeQuery}`}>年度別履歴</Link><Link to={`/MLB/teams?season=${selected}${scopeQuery}`}>球団を見る</Link></nav></details>
+    <details className="player-tools-disclosure" open={section === "trends"}><summary>比較・推移・保存</summary><nav className="player-tools" aria-label="選手の比較と推移"><CollectionButton league="MLB" playerId={player.id} name={player.name} /><Link to={`/MLB/compare?players=${encodeURIComponent(player.id)}&season=${selected}${scopeQuery}`}>比較に追加</Link><Link to={`/MLB/season-compare?kind=player&entity=${encodeURIComponent(player.id)}${scopeQuery}`}>年度比較・前年差</Link><Link to={`${base}/trends?season=${selected}${scopeQuery}`} aria-current={section === "trends" ? "page" : undefined}>推移・連続記録</Link><Link to={`/MLB/matchup?${pitches.length && !games.length ? "pitcher" : "batter"}=${encodeURIComponent(player.id)}&season=${selected}${scopeQuery}`}>MATCHUP</Link><Link to={`/MLB/history?player=${encodeURIComponent(player.id)}&season=${selected}${scopeQuery}`}>年度別履歴</Link><Link to={`/MLB/teams?season=${selected}${scopeQuery}`}>球団を見る</Link></nav></details>
     {section !== "more" && <div className="mlb-controls"><label>シーズン<select value={selected} onChange={e => context("season",e.target.value)}>{player.seasons.map(s => <option key={s}>{s}</option>)}</select></label></div>}
     {section === "trends" && <PlayerTrends key={`${player.id}:${selected}:${competition}:${selectedAsOf}`} scope={`${selected}年 · ${competition === "postseason" ? "Postseason" : "公式戦"} · ${selectedAsOf}までの出場記録`} coverageComplete={manifest.seasons.find(s => s.season === selected)?.coverage === "complete"}
       batting={games.filter(r => r.date <= selectedAsOf).map(r => ({ ...r, gameNumber: chronology.value?.games.find(g => g.gameId === r.gameId && g.date === r.date)?.number ?? null, walks: r.bb, sacrificeFlies: r.sf }))}
@@ -338,6 +342,8 @@ export function MlbHistoricalPlayer({ manifest, favorites, toggle, saving }: {
         {pitches.find(item => item.gameId === row.gameId) && <small>投球: {format(pitches.find(item => item.gameId === row.gameId)?.outsRecorded)}アウト · SO {format(pitches.find(item => item.gameId === row.gameId)?.so)} · ER {format(pitches.find(item => item.gameId === row.gameId)?.er)}</small>}</Link>)}
     </div></section>{!section && <Link className="button button--secondary" to={`${base}/game-log?season=${selected}${scopeQuery}`}>試合別成績をもっと見る</Link>}</>}
     {section === "more" && <section className="surface-card"><h2>プロフィール</h2><dl className="profile-definition"><div><dt>守備位置</dt><dd>{historicalPositions(player.positions) || "未登録"}</dd></div><div><dt>投打</dt><dd>{({R:"右",L:"左",B:"両"} as Record<string,string>)[player.throws ?? ""] ?? player.throws ?? "—"}投 / {({R:"右",L:"左",B:"両"} as Record<string,string>)[player.bats ?? ""] ?? player.bats ?? "—"}打</dd></div><div><dt>収録年</dt><dd>{player.seasons.join(" / ")}</dd></div><div><dt>所属球団</dt><dd>{player.teamIds.map(id => teamName(manifest,id)).join(" / ")}</dd></div></dl><p className="inline-note">所属球団は収録期間中の情報です。現在の所属を示すものではありません。</p></section>}
+    {section === "more" && <SavedSeasonTimeline profile={profile} manifest={manifest} competition={competition} />}
+    {(!section || section === "stats") && manifest.seasons.find(s=>s.season===selected)?.coverage === "complete" && <SeasonCheckpointSummary batting={seasonTotals?.batting as ExplorerValues ?? null} pitching={seasonTotals?.pitching as ExplorerValues ?? null} season={selected} playerId={player.id} competition={competition} />}
     {section === "more" && <PlayerFutureLinks base={base} historical />}
     <p className="source-note inline-note"><Link to="/MLB/sources">データ提供元・クレジット</Link></p></div>;
 
@@ -448,15 +454,17 @@ function MlbHistoricalDataRoutes({ favorites, toggle, saving }: HistoricalRouteP
     <DataState kind="unsupported" title="2026年の試合結果・選手成績は未対応" />
   </div>;
   const manifest = result.value!;
-  const competitionTabs = ["players", "search", "schedule", "records", "teams", "compare", "team-compare", "season-compare", "my", "data", "history"].includes(location.pathname.split("/")[2] ?? "");
+  const competitionTabs = ["players", "search", "schedule", "records", "teams", "compare", "team-compare", "season-compare", "my", "data", "history", "matchup", "milestones"].includes(location.pathname.split("/")[2] ?? "");
   return <>{competitionTabs && <CompetitionTabs />}<Routes>
     <Route path="explore" element={<ExploreScreen league="MLB" />} />
-    {(["milestones", "moves", "talent", "preseason", "watch", "matchup"] as const).map(feature => <Route key={feature} path={`${feature}/*`} element={<FutureFeatureScreen feature={feature} league="MLB" />} />)}
+    {(["moves", "talent", "preseason", "watch"] as const).map(feature => <Route key={feature} path={`${feature}/*`} element={<FutureFeatureScreen feature={feature} league="MLB" />} />)}
     <Route path="home" element={<MlbHistoricalHome manifest={manifest} favorites={favorites} toggle={toggle} saving={saving} />} />
     <Route path="teams" element={<MlbTeams manifest={manifest} />} />
     <Route path="teams/:teamId" element={<MlbTeamHub key={`${location.pathname}:${location.search}`} manifest={manifest} favorites={favorites} toggle={toggle} saving={saving} />} />
     <Route path="compare" element={<MlbPlayerCompare manifest={manifest} />} />
     <Route path="search" element={<MlbSearchEntry manifest={manifest} favorites={favorites} toggle={toggle} saving={saving} />} />
+    <Route path="matchup" element={<MlbMatchup manifest={manifest} />} />
+    <Route path="milestones" element={<MlbSeasonMilestones manifest={manifest} />} />
     <Route path="data" element={<MlbDataExplorer manifest={manifest} />} />
     <Route path="history" element={<MlbSeasonExplorer manifest={manifest} />} />
     <Route path="team-compare" element={<MlbTeamCompare manifest={manifest} favoriteTeams={favorites.filter(f => f.league === "MLB" && f.kind === "team").map(f => f.entityId)} />} />
