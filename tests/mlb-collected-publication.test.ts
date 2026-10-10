@@ -5,6 +5,19 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { gzipSync, gunzipSync } from "node:zlib";
 describe("Collected Records publication scope isolation", () => {
+  it("accepts a legacy Regular-only app archive but requires both complete expansion scopes", () => {
+    const root = mkdtempSync(join(tmpdir(), "mlb-release-years-"));
+    try {
+      const payload = { schemaVersion: 1, league: "MLB", current2026: "unavailable", teams: [{ id: "mlb:team:00000000-0000-5000-8000-000000000002", name: "Fixture" }], seasons: [2020, 2021, 2022, 2023, 2024, 2025].map(season => ({ season, firstDate: `${season}-07-01`, lastDate: `${season}-09-01`, games: 1, playerCount: 1, coverage: "complete" })) };
+      writeFileSync(join(root, "manifest.json.gz"), gzipSync(JSON.stringify(payload)));
+      const run = (mode: string) => execFileSync(process.execPath, ["--import", "tsx", "scripts/verify-mlb-release-manifests.ts", root, mode], { stdio: "pipe" });
+      expect(() => run("app-only")).not.toThrow();
+      expect(() => run("expansion")).toThrow();
+      mkdirSync(join(root, "postseason"));
+      writeFileSync(join(root, "postseason/manifest.json.gz"), gzipSync(JSON.stringify({ ...payload, competitionType: "postseason" })));
+      expect(() => run("app-only")).not.toThrow();
+    } finally { rmSync(root, { recursive: true, force: true }); }
+  }, 20000);
   it.each(["regular", "postseason"])("updates only %s and validates advertised aggregate periods", scope => {
     const root = mkdtempSync(join(tmpdir(), "mlb-collected-fixture-")), base = scope === "regular" ? root : join(root, "postseason");
     const opposite = scope === "regular" ? join(root, "postseason") : root;

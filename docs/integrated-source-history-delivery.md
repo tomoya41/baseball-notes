@@ -38,7 +38,7 @@ Search、Profile、Game Log、Season/Recent Explorer、Compare、収録済みシ
 
 年齢を比較するためのverified birthDateは既存MLB Historical masterにないため、同年齢Season比較を実装しない。2010–2015は今回追加しない。次の年代追加は同じ完全性・容量・運用時間gateを通す。
 
-最終local preservation：25,393 immutable payloadのSHA一致、3,834 Profileの既存identity/Facts/Season totals一致、6 Postseason Hubの意味一致。新規込みpayloadは52,985 files / 228,996,360 compressed bytes、最大269,712 bytes。1,093 tests（92 files）、lint、typecheck、Web/Vercel build PASS。公開CI/HTTPの結果はPR/Run evidenceを参照する。
+最終local preservation：25,393 immutable payloadのSHA一致、3,834 Profileの既存identity/Facts/Season totals一致、6 Postseason Hubの意味一致。新規込みpayloadは52,985 files / 228,996,360 compressed bytes、最大269,712 bytes。1,094 tests（92 files）、lint、typecheck、Web/Vercel build PASS。公開CI/HTTPの結果はPR/Run evidenceを参照する。
 
 公開はSeason/Player/Game/advanced aggregate/Recent月別にpartition。PA raw rows、event dump、Chadwick full dump、SQLite DBはPagesへ出さない。Home追加fetchは0。全年Profileの総当たり取得はしない。
 
