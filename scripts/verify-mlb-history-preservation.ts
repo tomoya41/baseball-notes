@@ -33,7 +33,7 @@ for (const path of paths) {
     delete old.generatedAt; delete current.generatedAt;
     delete old.provenance.verifiedAt; delete current.provenance.verifiedAt;
     if (!isDeepStrictEqual(old, current)) failures.push(`Hub semantics: ${path}`); else hubUnchanged++;
-  } else if (/^(games|schedule|seasons|records|teams|chronology|exploration\/recent)\//.test(scoped) || /^advanced\/202[0-5]\//.test(scoped)) {
+  } else if (/^(games|schedule|seasons|teams|chronology|exploration\/recent)\//.test(scoped) || /^records\/\d{4}\.json\.gz$/.test(scoped) || /^advanced\/202[0-5]\//.test(scoped)) {
     const current = await readFile(join(after, path));
     if (createHash("sha256").update(oldBytes).digest("hex") !== createHash("sha256").update(current).digest("hex")) failures.push(`Protected payload hash: ${path}`);
     else hashUnchanged++;

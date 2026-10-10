@@ -4,7 +4,9 @@ import { gzipSync, gunzipSync } from "node:zlib";
 import { validStaticPayload } from "../src/domain/mlb-historical-public";
 import { collectedCountingRecords, type CollectedSeasonLine } from "../src/domain/mlb-collected-records";
 const root = process.argv[2] ?? "dist/data/mlb/historical";
-for (const scope of ["regular", "postseason"] as const) {
+const requested = process.argv.includes("--competition") ? process.argv[process.argv.indexOf("--competition") + 1] : "both";
+if (!["regular", "postseason", "both"].includes(requested ?? "")) throw Error("Invalid records competition");
+for (const scope of (["regular", "postseason"] as const).filter(scope => requested === "both" || requested === scope)) {
   const base = scope === "regular" ? root : join(root, "postseason"), prefix = scope === "regular" ? "" : "postseason/";
   try { await access(join(base, "manifest.json.gz")); } catch { continue; }
   const read = async <T>(path: string): Promise<T> => {
