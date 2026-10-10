@@ -1,4 +1,4 @@
-import { readFile,readdir,writeFile } from "node:fs/promises";
+import { readFile,readdir,writeFile,stat } from "node:fs/promises";
 import { join } from "node:path";
 import { gunzipSync } from "node:zlib";
 import { battingAggregate,pitchingAggregate,dateWindow,type DatedBatter,type DatedPitcher } from "../src/domain/mlb-historical-aggregate";
@@ -12,6 +12,10 @@ export async function verifyMlbRecentExplorer(root:string) {
   const started=performance.now();let comparisons=0,windows=0,totalGames=0,maxFoldMs=0,maxRows=0;const scopes=[];
   for(const competition of ["regular","postseason"] as const) {
     const base=competition==="regular"?root:join(root,"postseason"),prefix=competition==="regular"?"":"postseason/";
+    if (competition === "postseason") {
+      try { if (!(await stat(base)).isDirectory()) throw Error("Invalid Postseason subtree"); }
+      catch (error) { if ((error as NodeJS.ErrnoException).code === "ENOENT") continue; throw error; }
+    }
     const read=async<T>(path:string):Promise<T>=>{const p:unknown=JSON.parse(gunzipSync(await readFile(join(base,`${path}.gz`))).toString());if(!validStaticPayload(prefix+path,p))throw Error(`Invalid public contract ${path}`);return p as T;};
     const manifest=await read<{seasons:{season:number;firstDate:string;lastDate:string}[]}>("manifest.json"),directory=await read<{players:{id:string;name:string}[]}>("players/index.json");
     const names=new Map(directory.players.map(p=>[p.id,p.name]));
@@ -43,6 +47,9 @@ export async function verifyMlbRecentExplorer(root:string) {
     }
   }
   const report={result:"PASS",scopes,totalGames,windows,metricComparisons:comparisons,mismatches:0,maxFoldMs:Math.round(maxFoldMs),maxWindowPlayers:maxRows,elapsedMs:Math.round(performance.now()-started),canonicalWrites:0,queries:0};
-  await writeFile(".data/track2-recent-verification.json",JSON.stringify(report,null,2));console.log(JSON.stringify(report));return report;
+  return report;
 }
-if(process.argv[1]?.replaceAll("\\","/").endsWith("verify-mlb-recent-explorer.ts"))await verifyMlbRecentExplorer(process.argv[2]??"dist/data/mlb/historical");
+if(process.argv[1]?.replaceAll("\\","/").endsWith("verify-mlb-recent-explorer.ts")) {
+  const report=await verifyMlbRecentExplorer(process.argv[2]??"dist/data/mlb/historical");
+  await writeFile(process.argv[3]??".data/track2-recent-verification.json",JSON.stringify(report,null,2));console.log(JSON.stringify(report));
+}

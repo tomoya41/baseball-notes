@@ -106,7 +106,7 @@ export function DataExplorerView({ league, rows, teams, season, years, effective
       <div className="explorer-result-title"><Link to={`/${league}/players/${encodeURIComponent(row.playerId)}${linkScope}`}><strong>{row.name}</strong></Link>
         <CollectionButton league={league} playerId={row.playerId} name={row.name} /><button aria-label={`${row.name}を比較${compare.includes(row.playerId) ? "から外す" : "に追加"}`} aria-pressed={compare.includes(row.playerId)} disabled={!compare.includes(row.playerId) && compare.length >= 4} onClick={() => toggleId("compare", row.playerId)}>比較</button></div>
       <dl className="explorer-values">{[...new Set([sampleKey, ...displayKeys])].map(k => <div key={k}>
-        <dt><MetricLabel metric={k} label={k === "outsRecorded" ? "IP" : k === "K9" ? "K/9" : k} /></dt>
+        <dt><MetricLabel metric={k} label={k === "outsRecorded" ? "IP" : k === "K9" ? "K/9" : k === "BB9" ? "BB/9" : k} /></dt>
         <dd>{formatValue(k, readableMetric(row[query.role]?.[k]))}{row[query.role]?.[k]?.status === "partial" && <small> 一部</small>}</dd>
       </div>)}</dl>
     </article>)}</div>

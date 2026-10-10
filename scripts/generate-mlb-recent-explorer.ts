@@ -1,4 +1,4 @@
-import { readFile, readdir, mkdir, writeFile } from "node:fs/promises";
+import { readFile, readdir, mkdir, writeFile, stat } from "node:fs/promises";
 import { join } from "node:path";
 import { gzipSync, gunzipSync } from "node:zlib";
 import { createHash } from "node:crypto";
@@ -37,6 +37,10 @@ export async function generateMlbRecentExplorer(root:string) {
   const started=performance.now();let files=0,bytes=0,largest=0,rows=0;
   for (const competitionType of ["regular","postseason"] as const) {
     const base=competitionType==="regular"?root:join(root,"postseason"),prefix=competitionType==="regular"?"":"postseason/";
+    if (competitionType === "postseason") {
+      try { if (!(await stat(base)).isDirectory()) throw Error("Invalid Postseason subtree"); }
+      catch (error) { if ((error as NodeJS.ErrnoException).code === "ENOENT") continue; throw error; }
+    }
     const read=async<T>(path:string):Promise<T>=>{const value:unknown=JSON.parse(gunzipSync(await readFile(join(base,`${path}.gz`))).toString());if(!validStaticPayload(prefix+path,value))throw Error(`Invalid historical source ${prefix+path}`);return value as T;};
     const manifest=await read<{seasons:{season:number;firstDate:string;lastDate:string;games:number;coverage:"complete"|"partial"|"unavailable"}[]}>("manifest.json");
     const byYear=new Map<number,{game:HistoricalGame;hash:string}[]>();

@@ -8,7 +8,8 @@ import { historicalId, historicalTeamId } from "../src/data/mlb-historical";
 import { generateHistoricalTeamHubs } from "../scripts/generate-historical-team-hubs";
 import { readFile } from "node:fs/promises";
 import { gunzipSync } from "node:zlib";
-import { buildMlbRecentMonths } from "../scripts/generate-mlb-recent-explorer";
+import { buildMlbRecentMonths, generateMlbRecentExplorer } from "../scripts/generate-mlb-recent-explorer";
+import { verifyMlbRecentExplorer } from "../scripts/verify-mlb-recent-explorer";
 import { createHash } from "node:crypto";
 
 async function fixture(root: string) {
@@ -47,6 +48,25 @@ async function fixture(root: string) {
 }
 
 describe("complete advertised Postseason artifact", () => {
+  it("generates and verifies Regular Recent with no optional Postseason tree, but rejects a partial tree", async () => {
+    const root=await mkdtemp(join(tmpdir(),"regular-recent-only-"));
+    try {
+      await fixture(root);
+      const post=join(root,"postseason"),gameId=historicalId("game","2025");
+      for (const path of ["manifest.json","seasons/2025.json",`games/${gameId.replaceAll(":","_")}.json`]) {
+        const v=JSON.parse(gunzipSync(await readFile(join(post,`${path}.gz`))).toString());delete v.competitionType;
+        if(v.game)delete v.game.competitionType;
+        if(path==="manifest.json")v.seasons=v.seasons.filter((s:{season:number})=>s.season===2025);
+        const file=join(root,`${path}.gz`);await mkdir(dirname(file),{recursive:true});await writeFile(file,gzipSync(JSON.stringify(v)));
+      }
+      await rm(post,{recursive:true});
+      expect((await generateMlbRecentExplorer(root)).files).toBe(2);
+      expect((await verifyMlbRecentExplorer(root)).scopes.map(s=>s.competition)).toEqual(["regular"]);
+      await mkdir(post);
+      await expect(generateMlbRecentExplorer(root)).rejects.toThrow();
+      await expect(verifyMlbRecentExplorer(root)).rejects.toThrow();
+    } finally {await rm(root,{recursive:true,force:true});}
+  });
   it("audits the additive Recent family and rejects altered or partially published shards", async () => {
     const root = await mkdtemp(join(tmpdir(), "postseason-recent-audit-"));
     try {
