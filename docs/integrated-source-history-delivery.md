@@ -38,7 +38,7 @@ Search、Profile、Game Log、Season/Recent Explorer、Compare、収録済みシ
 
 年齢を比較するためのverified birthDateは既存MLB Historical masterにないため、同年齢Season比較を実装しない。2010–2015は今回追加しない。次の年代追加は同じ完全性・容量・運用時間gateを通す。
 
-最終local preservation：25,393 immutable payloadのSHA一致、3,834 Profileの既存identity/Facts/Season totals一致、6 Postseason Hubの意味一致。新規込みpayloadは52,985 files / 228,996,360 compressed bytes、最大269,712 bytes。1,090 tests（92 files）、lint、typecheck、Web/Vercel build PASS。公開CI/HTTPの結果はPR/Run evidenceを参照する。
+最終local preservation：25,393 immutable payloadのSHA一致、3,834 Profileの既存identity/Facts/Season totals一致、6 Postseason Hubの意味一致。新規込みpayloadは52,985 files / 228,996,360 compressed bytes、最大269,712 bytes。1,093 tests（92 files）、lint、typecheck、Web/Vercel build PASS。公開CI/HTTPの結果はPR/Run evidenceを参照する。
 
 公開はSeason/Player/Game/advanced aggregate/Recent月別にpartition。PA raw rows、event dump、Chadwick full dump、SQLite DBはPagesへ出さない。Home追加fetchは0。全年Profileの総当たり取得はしない。
 
@@ -55,5 +55,7 @@ Regular/Postseason portable backupとscratch restore、代表PAの一致をlocal
 ## Review / Release
 
 PR #19の指摘：scopeをまたぐ未監査Records生成、集計periodのimmutable hash対象誤り、未公開年selector、古い運用文書。scope別生成、両scope再計算検証、Year hash保全と期間aggregate検証の分離、manifest年度selector、README/decision更新で対応する。
+
+再レビューでTeam/chronology生成前の保全順序と年代Recordsリンクの範囲変更も修正した。derived生成 → decoded比較/旧bytes再利用 → Recent生成の順をworkflow testで固定。年代Recordsの選手は同じ年度・competition・role・metricのSeason Compareへ開き、全収録期間合計へ黙って変更しない。
 
 P1/P2、rights不明、データ差分、公開不整合が残ればmerge/publishしない。NPB APIの認証/権利保留は独立したMLB公開を止めない。ReleaseはPR review、Web/Android CI、coordinated expansion publish、HTTP contract/hashと360px Light/Dark smokeの順で行う。

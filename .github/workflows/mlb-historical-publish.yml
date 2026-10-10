@@ -135,13 +135,15 @@ jobs:
             npx tsx scripts/stage-mlb-historical.ts --competition postseason --source .data/postseason-public/data/mlb/historical --target dist/data/mlb/historical
             npx tsx scripts/verify-postseason-preservation.ts after dist/data/mlb/historical
           fi
+          if [ "$MLB_PUBLISH_MODE" != 'app-only' ]; then
+            npx tsx scripts/generate-historical-team-hubs.ts dist/data/mlb/historical
+          fi
           if [ "$MLB_PUBLISH_MODE" = 'expansion' ]; then
             # Compression/library changes and stable-key row order must not rewrite old releases.
             # Every decoded immutable payload must match before its baseline bytes are reused.
             npx tsx scripts/preserve-verified-mlb-baseline.ts --before .data/mlb-baseline/historical --after dist/data/mlb/historical --report .data/mlb-baseline-reuse.json
           fi
           if [ "$MLB_PUBLISH_MODE" != 'app-only' ]; then
-            npx tsx scripts/generate-historical-team-hubs.ts dist/data/mlb/historical
             if [ "$MLB_PUBLISH_MODE" = 'expansion' ]; then
               npx tsx scripts/generate-mlb-collected-records.ts dist/data/mlb/historical --competition both
             elif [ "$MLB_PUBLISH_MODE" = 'release' ]; then

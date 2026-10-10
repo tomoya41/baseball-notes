@@ -1,5 +1,6 @@
 import { MlbMatchup, MlbSeasonMilestones, SavedSeasonTimeline, SeasonCheckpointSummary } from "./mlb-historical-expansion";
 import { mlbProductMetrics } from "../domain/mlb-product-metrics";
+import { mlbRecordPlayerRoute } from "../domain/mlb-record-navigation";
 import type { ExplorerValues } from "../domain/data-explorer";
 import { StatTable } from "./stat-table";
 import { historicalPositions, collectedSeasonsLabel } from "../presentation/historical-player";
@@ -351,7 +352,7 @@ export function MlbHistoricalPlayer({ manifest, favorites, toggle, saving }: {
 }
 
 function MlbHistoricalRecords({ manifest }: { manifest: Manifest }) {
-  const competition = useHistoricalCompetition(), scopeQuery = competition === "postseason" ? "&competition=postseason" : "";
+  const competition = useHistoricalCompetition();
   const [rankingParams, setRankingParams] = useSearchParams();
   const season = Number(rankingParams.get("season") ?? manifest.seasons.at(-1)!.season);
   const selectedPeriod = manifest.collectedRecordPeriods?.find(p => p.id === rankingParams.get("period"));
@@ -391,7 +392,7 @@ function MlbHistoricalRecords({ manifest }: { manifest: Manifest }) {
       {effectiveCategory === "rate" && <details className="qualification-note"><summary>{rankingRole === "batting" ? `規定 ${result.value!.requiredPa ?? "—"} 打席` : `規定 ${result.value!.requiredOuts == null ? "—" : Math.floor(result.value!.requiredOuts / 3)} 回`} · 対象選手について</summary>
         <p>AVG・OBP・SLGには公式の不足PA例外を適用します。OPS・K/9は同じ最低サンプルを使う統計順位です。選手の元の成績は変更しません。</p></details>}
       <ol className="row-list leaderboard">{selected?.rows.map(row => <li key={row.playerId}>
-        <Link to={`/MLB/players/${encodeURIComponent(row.playerId)}${collectedRange ? "/stats" : ""}?${collectedRange ? `competition=${competition}` : `season=${season}${scopeQuery}`}`}><strong className="rank-number">{row.rank}</strong><span className="rank-person"><strong>{row.name}</strong>
+        <Link to={mlbRecordPlayerRoute({ playerId: row.playerId, season, competition, ...(selectedPeriod ? { period: selectedPeriod } : {}), role: selected!.role, metric: selected!.metric })}><strong className="rank-number">{row.rank}</strong><span className="rank-person"><strong>{row.name}</strong>
           {effectiveCategory === "rate" && <small>{selected.role === "batting" ? `${row.sample ?? "—"} 打席` : `${row.sample == null ? "—" : `${Math.floor(row.sample / 3)}.${row.sample % 3}`} 回`}
             {row.qualification === "qualified_by_exception" && " · 規定資格（例外適用）"}</small>}</span><strong className="rank-value">{effectiveCategory === "rate" ? row.value.toFixed(selected.metric === "ERA" || selected.metric === "K9" ? 2 : 3) : row.value}</strong></Link></li>)}</ol>
       </>}
