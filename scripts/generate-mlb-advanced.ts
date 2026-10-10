@@ -11,12 +11,17 @@ const args = process.argv.slice(2), get = (name: string, fallback: string) => ar
 const competition = competitionTypeSchema.parse(get("--competition", "regular"));
 const root = join(get("--output", ".data/mlb-public"), "data/mlb/historical", ...(competition === "postseason" ? ["postseason"] : []));
 const client = openDataClient(`file:${get("--db", ".data/mlb-historical.sqlite")}`);
+// Season-wide grouping must not traverse the opponent lookup indexes and fetch
+// every PA in random index order. Group temporary rows in memory, with a bounded
+// single-season source; individual matchup queries retain their existing indexes.
+await client.execute("PRAGMA temp_store=MEMORY");
 const started = performance.now();
 const validation = JSON.parse(await readFile(get("--validation", ".data/mlb-pa-validation.json"), "utf8"));
 if ((validation.competition ?? "regular") !== competition) throw new Error("Advanced competition validation mismatch");
 const storedScope = await client.execute("SELECT DISTINCT COALESCE(json_extract(payload_json,'$.competitionType'),'regular') AS scope FROM mlb_historical_games");
 if (storedScope.rows.some(row => row.scope !== competition)) throw new Error("Advanced database competition mismatch");
-const gate = historicalAdvancedGate(validation.seasons);
+const expectedSeasons = (await client.execute("SELECT season FROM mlb_historical_releases ORDER BY season")).rows.map(row => Number(row.season));
+const gate = historicalAdvancedGate(validation.seasons, expectedSeasons);
 const playerSeasons = new Map<string, number[]>();
 const players = new Map((await client.execute("SELECT player_id,payload_json FROM mlb_historical_players")).rows.map(row => {
   const player = JSON.parse(String(row.payload_json)); playerSeasons.set(String(row.player_id), player.seasons);
@@ -63,8 +68,8 @@ async function publish(scope: string, pairs: Iterable<{ batterId: string; pitche
   }
   for (const p of output.values()) await json(`advanced/${scope}/${p.playerId.replaceAll(":", "_")}.json`, p);
 }
-for (const season of HISTORICAL_SEASONS) {
-  const pairRows = await client.execute({ sql: `SELECT batterId,pitcherId,${sumColumns} FROM mlb_historical_plate_appearances
+for (const season of HISTORICAL_SEASONS.filter(year => expectedSeasons.includes(year))) {
+  const pairRows = await client.execute({ sql: `SELECT batterId,pitcherId,${sumColumns} FROM mlb_historical_plate_appearances NOT INDEXED
     WHERE season=? GROUP BY batterId,pitcherId`, args: [season] }); selects++;
   const pairs = pairRows.rows.map(row => ({ batterId: String(row.batterId), pitcherId: String(row.pitcherId), counts: counts(row) }));
   for (const pair of pairs) {
@@ -84,7 +89,7 @@ for (const season of HISTORICAL_SEASONS) {
     const specs = [...dimensions, [`'score:'||CASE WHEN ${own}=${other} THEN 'tied' WHEN ${own}>${other} THEN 'ahead' ELSE 'behind' END`, "battingScoreBefore IS NOT NULL AND fieldingScoreBefore IS NOT NULL"]];
     return specs.map(([key, where]) => `SELECT '${role}' AS role,${role === "batting" ? "batterId" : "pitcherId"} AS playerId,${key} AS key,${paCountFields.join(",")} FROM source WHERE ${where}`);
   }).join(" UNION ALL ");
-  const splitRows = await client.execute({ sql: `WITH source AS (SELECT ${columns} FROM mlb_historical_plate_appearances WHERE season=?),
+  const splitRows = await client.execute({ sql: `WITH source AS (SELECT ${columns} FROM mlb_historical_plate_appearances NOT INDEXED WHERE season=?),
     expanded AS (${union}) SELECT playerId,role,key,${sumColumns} FROM expanded GROUP BY playerId,role,key`, args: [season] }); selects++;
   const splits = splitRows.rows.map(row => ({ playerId: String(row.playerId), role: String(row.role) as "batting" | "pitching", key: String(row.key), counts: counts(row) }));
   for (const split of splits) {
@@ -102,7 +107,7 @@ await publish("range", rangePairs.values(), rangeSplits.values());
 const manifestPath = join(root, "manifest.json.gz"), manifest = JSON.parse(gunzipSync(await readFile(manifestPath)).toString("utf8"));
 await json("manifest.json", { ...manifest, features: { ...manifest.features, directBvp: gate.directBvp === "ready" ? "available" : "unavailable",
   situationalAnalysis: gate.situations === "ready" ? "available" : "unavailable", timesThroughOrder: "evaluate", count: "evaluate" } });
-await json("advanced/capabilities.json", { schemaVersion: 1, league: "MLB", ...gate, scope: "2020–2025", rawPaPublic: false,
+await json("advanced/capabilities.json", { schemaVersion: 1, league: "MLB", ...gate, scope: `${expectedSeasons[0]}–${expectedSeasons.at(-1)}`, rawPaPublic: false,
   unknownContexts: validation.seasons.map((s: { season: number; unknownStartContexts: number }) => ({ season: s.season, pa: s.unknownStartContexts })),
   timesThroughOrder: "evaluate", count: "evaluate", statcast: "unavailable" });
 const files = await readdir(join(root, "advanced"));

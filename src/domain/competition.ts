@@ -53,7 +53,7 @@ export const seriesSchema = z.object({
 });
 export type PostseasonSeries = z.infer<typeof seriesSchema>;
 export const postseasonHubSchema = z.object({ schemaVersion: z.literal(1), league: z.literal("MLB"),
-  season: z.number().int().min(2020).max(2025), competitionType: z.literal("postseason"),
+  season: z.number().int().min(2016).max(2025), competitionType: z.literal("postseason"),
   coverage: z.enum(["complete", "partial"]), effectiveDate: z.iso.date(), generatedAt: z.iso.datetime(),
   series: z.array(seriesSchema).min(1), games: count, battingFacts: count, pitchingFacts: count,
   playerStats: capabilitySchema, analysis: capabilitySchema,

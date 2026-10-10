@@ -43,7 +43,7 @@ export function MlbPostseasonScreen() {
   const [params] = useSearchParams(), { seriesId } = useParams(), navigate = useNavigate();
   const availability = usePostseasonAvailability();
   const season = Number(params.get("season") ?? availability.value.leagues.MLB.historicalSeasons.at(-1) ?? "2025");
-  const historical = season >= 2020 && season <= 2025 && Number.isInteger(season);
+  const historical = season >= 2016 && season <= 2025 && Number.isInteger(season);
   const supported = historical && hasHistoricalPostseason(availability, season);
   const state = useHistoricalStatic<PostseasonHub>(supported ? `postseason/hub/${season}.json` : null);
   if (!historical) return <PostseasonUnavailable league="MLB" />;

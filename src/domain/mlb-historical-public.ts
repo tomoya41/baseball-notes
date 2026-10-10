@@ -9,7 +9,7 @@ export const historicalCanonicalPlayerId = z.string().regex(/^mlb:player:[0-9a-f
 const teamId = z.string().regex(/^mlb:team:[0-9a-f-]{36}$/);
 const count = z.number().int().nonnegative();
 const nullable = count.nullable();
-const season = z.number().int().min(2020).max(2025);
+const season = z.number().int().min(2016).max(2025);
 const base = z.object({ schemaVersion: z.literal(1), league: z.literal("MLB") });
 const metric = z.object({ value: z.number().finite().nullable() }).passthrough();
 const metrics = z.record(z.string(), metric).nullable();
@@ -50,14 +50,14 @@ export function validStaticPayload(path: string, value: unknown, expectedScope: 
     if (scopedPath.startsWith("players/") && scopedPath !== "players/index.json" && scopedPath !== `players/${data.player?.id?.replaceAll(":", "_")}.json`) return false;
     if (scopedPath.startsWith("advanced/") && scopedPath !== "advanced/capabilities.json" && scopedPath !== `advanced/${data.scope}/${data.playerId?.replaceAll(":", "_")}.json`) return false;
     if (scopedPath.startsWith("schedule/") && scopedPath !== `schedule/${data.season}/${data.date}.json`) return false;
-    if (scopedPath.startsWith("records/") && scopedPath !== `records/${data.season}.json`) return false;
+    if (scopedPath.startsWith("records/") && !/^records\/(range|decade-2010|decade-2020)\.json$/.test(scopedPath) && scopedPath !== `records/${data.season}.json`) return false;
     if (scopedPath.startsWith("seasons/") && scopedPath !== `seasons/${data.season}.json`) return false;
     return validStaticPayload(scopedPath, value, "postseason");
   }
   if (expectedScope === "regular" && value && typeof value === "object" &&
     ((value as { competitionType?: string }).competitionType === "postseason" || (value as { game?: { competitionType?: string } }).game?.competitionType === "postseason")) return false;
   if (path.startsWith("exploration/recent/")) {
-    const match = /^exploration\/recent\/(202[0-5])\/(index|20\d{2}-\d{2})\.json$/.exec(path);
+    const match = /^exploration\/recent\/(201[6-9]|202[0-5])\/(index|20\d{2}-\d{2})\.json$/.exec(path);
     if (!match) return false;
     const parsed = match[2] === "index" ? recentIndexSchema.safeParse(value) : recentMonthSchema.safeParse(value);
     return parsed.success && parsed.data.season === Number(match[1]) && parsed.data.competitionType === expectedScope && (match[2] === "index" || ("month" in parsed.data && parsed.data.month === match[2]));
@@ -83,11 +83,21 @@ export function validStaticPayload(path: string, value: unknown, expectedScope: 
         context.addIssue({ code: "custom", message: "Situation gate closed" });
     }).safeParse(value).success;
   if (path === "manifest.json") return base.extend({ current2026: z.literal("unavailable"),
+    collectedRecordPeriods: z.array(z.object({ id: z.enum(["range", "decade-2010", "decade-2020"]), label: z.string().min(1), seasons: z.array(season).min(1) })).optional(),
     seasons: z.array(z.object({ season, firstDate: z.iso.date(), lastDate: z.iso.date(), games: count,
       coverage: z.enum(["complete", "partial", "unavailable"]), playerCount: count })).min(1),
     teams: z.array(z.object({ id: teamId, name: z.string().min(1) })).min(1),
     features: z.object({ directBvp: z.enum(["available", "unavailable", "evaluate"]),
-      situationalAnalysis: z.enum(["available", "unavailable", "evaluate"]).optional() }).passthrough().optional() }).safeParse(value).success;
+      situationalAnalysis: z.enum(["available", "unavailable", "evaluate"]).optional(), collectedCountingRecords: z.enum(["available", "unavailable"]).optional() }).passthrough().optional() }).superRefine((data, context) => {
+        const years = data.seasons.map(s => s.season);
+        if (new Set(years).size !== years.length || years.some((year, i) => i > 0 && year <= years[i - 1]!)) context.addIssue({ code: "custom", message: "Invalid manifest seasons" });
+        const periods = data.collectedRecordPeriods;
+        if (data.features?.collectedCountingRecords === "available" && !periods?.length) context.addIssue({ code: "custom", message: "Collected records periods missing" });
+        if (periods && (new Set(periods.map(p => p.id)).size !== periods.length || periods.some(p => new Set(p.seasons).size !== p.seasons.length ||
+          p.seasons.some((year, i) => !years.includes(year) || (i > 0 && year <= p.seasons[i - 1]!) ||
+            (p.id !== "range" && Math.floor(year / 10) * 10 !== Number(p.id.slice(7)))) || (p.id === "range" && p.seasons.join(",") !== years.join(",")))))
+          context.addIssue({ code: "custom", message: "Invalid collected records period" });
+      }).safeParse(value).success;
   if (path === "players/index.json") return base.extend({ players: z.array(player) }).safeParse(value).success;
   if (path.startsWith("players/")) return base.extend({ player: player.extend({ bats: z.string().nullable(), throws: z.string().nullable() }),
     collectedRange: z.string(), collectedRangeTotals: totals, seasonTotals: z.record(z.string(), totals),
@@ -98,6 +108,16 @@ export function validStaticPayload(path: string, value: unknown, expectedScope: 
     status: z.literal("final"), complete: z.boolean() })) }).safeParse(value).success;
   if (path.startsWith("seasons/")) return base.extend({ season, coverage: z.literal("complete"), firstDate: z.iso.date(),
     lastDate: z.iso.date(), gameCount: count, players: z.array(z.object({ playerId: historicalCanonicalPlayerId, batting: metrics, pitching: metrics })) }).safeParse(value).success;
+  if (/^records\/(range|decade-2010|decade-2020)\.json$/.test(path)) return base.extend({ coverage: z.literal("complete"), counting: z.literal("ready"), rate: z.literal("not_ready"),
+    collectedSeasons: z.array(season).min(1), records: z.array(z.object({ metric: z.string(), role: z.enum(["batting", "pitching"]),
+      rows: z.array(z.object({ playerId: historicalCanonicalPlayerId, name: z.string(), value: count, rank: count })) }))
+  }).superRefine((data, context) => {
+    if (new Set(data.collectedSeasons).size !== data.collectedSeasons.length || data.collectedSeasons.some((year, index) => index > 0 && year <= data.collectedSeasons[index - 1]!))
+      context.addIssue({ code: "custom", message: "Invalid collected season range" });
+    const decade = /^records\/decade-(\d{4})\.json$/.exec(path)?.[1];
+    if (decade && data.collectedSeasons.some(year => Math.floor(year / 10) * 10 !== Number(decade)))
+      context.addIssue({ code: "custom", message: "Collected records decade mismatch" });
+  }).safeParse(value).success;
   if (path.startsWith("records/")) return base.extend({ coverage: z.literal("complete"), counting: z.literal("ready"),
     rate: z.enum(["ready", "not_ready"]), records: z.array(z.object({ metric: z.string(), role: z.enum(["batting", "pitching"]),
       classification: z.enum(["rate", "counting"]).optional(), group: z.enum(["AL", "NL"]).optional(),

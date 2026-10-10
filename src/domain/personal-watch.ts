@@ -11,7 +11,7 @@ const rule = z.enum(["result", "next", "recent", "streak", "milestone", "series"
 const values = z.record(z.string().max(40), z.union([z.number().finite(), z.string().max(180), z.null()])).refine(v => Object.keys(v).length <= 20);
 export const watchObservationSchema = z.strictObject({
   key: z.string().min(1).max(280), league: z.enum(["NPB", "MLB"]), kind: z.enum(["player", "team", "view"]), entityId: z.string().min(1).max(160),
-  name: z.string().min(1).max(120), rule, season: z.number().int().min(2020).max(2100), competition: z.enum(["regular", "postseason"]),
+  name: z.string().min(1).max(120), rule, season: z.number().int().min(2016).max(2100), competition: z.enum(["regular", "postseason"]),
   effectiveDate: z.iso.date(), generatedAt: z.iso.datetime().nullable(), eventDate: z.iso.date().nullable(),
   coverage: z.enum(["complete", "partial", "unknown", "unavailable"]),
   path: z.string().max(700), metric: z.string().max(40), values,
@@ -50,7 +50,7 @@ export function watchEnabled(o: WatchObservation, p: WatchPreferences): boolean 
 export function watchFresh(o: WatchObservation, now: number): boolean {
   const today = new Date(now + 9 * 3600_000).toISOString().slice(0, 10);
   if (o.generatedAt && (Date.parse(o.generatedAt) > now + 300_000 || new Date(Date.parse(o.generatedAt)+9*3600_000).toISOString().slice(0,10) < o.effectiveDate)) return false;
-  if (o.league === "MLB") return o.season >= 2020 && o.season <= 2025 && o.effectiveDate.startsWith(String(o.season));
+  if (o.league === "MLB") return o.season >= 2016 && o.season <= 2025 && o.effectiveDate.startsWith(String(o.season));
   return o.effectiveDate <= today && Date.parse(`${today}T00:00:00Z`) - Date.parse(`${o.effectiveDate}T00:00:00Z`) <= 3 * 86400_000;
 }
 function changed(old: WatchObservation, next: WatchObservation): { title: string; priority: WatchAlert["priority"] } | null {

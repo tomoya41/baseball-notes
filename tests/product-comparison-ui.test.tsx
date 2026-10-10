@@ -10,16 +10,17 @@ import { CollectionDashboard } from "../src/ui/collection-dashboard";
 import { MlbTeamCompare, SeasonCompare } from "../src/ui/team-season-compare";
 import { services } from "../src/app/services";
 import { HistoricalCompetitionContext } from "../src/ui/historical-competition-context";
-const mocks = vi.hoisted(() => ({ historical: vi.fn(), season: vi.fn(), recent: vi.fn(), npbTeam: vi.fn(), mlbTeam: vi.fn() }));
+const mocks = vi.hoisted(() => ({ historical: vi.fn(), season: vi.fn(), recent: vi.fn(), npbTeam: vi.fn(), mlbTeam: vi.fn(), staticHistorical: vi.fn() }));
 vi.mock("../src/app/historical-products", () => ({ readHistoricalProduct: mocks.historical }));
 vi.mock("../src/application/explorer-readers", () => ({ readNpbExplorerSeason: mocks.season, readNpbRecentExplorer: mocks.recent }));
 vi.mock("../src/application/product-comparison", async importOriginal => ({ ...await importOriginal<typeof import("../src/application/product-comparison")>(), readNpbTeamComparison: mocks.npbTeam, readMlbTeamComparison: mocks.mlbTeam }));
-vi.mock("../src/ui/use-mlb-historical", () => ({ useHistoricalStatic: () => ({ value: { players: [] }, status: "ready" }) }));
+vi.mock("../src/ui/use-mlb-historical", () => ({ useHistoricalStatic: (path: string | null) => mocks.staticHistorical(path) }));
 let div: HTMLDivElement, root: Root, store: PersonalLibrary, saved: Map<string, string>;
 const uuid = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`, player = `mlb:player:${uuid(1)}`, team = `mlb:team:${uuid(2)}`;
 const manifest = { teams: [{ id: team, name: "球団" }], seasons: [2020, 2021, 2025].map(season => ({ season, firstDate: `${season}-04-01`, lastDate: `${season}-09-28`, coverage: "complete" })) };
 beforeEach(() => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true); Object.values(mocks).forEach(m => m.mockReset());
+  mocks.staticHistorical.mockReturnValue({ value: { ...manifest, players: [] }, status: "ready" });
   saved = new Map(); let n = 0; store = new PersonalLibrary({ get: async k => saved.get(k) ?? null, set: async (k, v) => { saved.set(k, v); } }, () => Date.now(), () => `local-${++n}`);
   div = document.createElement("div"); document.body.append(div); root = createRoot(div);
   vi.spyOn(services.directory, "findLatestNpb").mockResolvedValue({ effectiveDate: "2026-10-03", players: Array.from({ length: 13 }, (_, i) => ({ playerId: uuid(i + 1), displayName: `選手${i}` })) } as never);
@@ -29,6 +30,15 @@ afterEach(async () => { await act(async () => root.unmount()); div.remove(); vi.
 async function mount(child: ReactNode, path: string) { await act(async () => root.render(<MemoryRouter key={path} initialEntries={[path]}><PersonalLibraryProvider store={store}>{child}</PersonalLibraryProvider></MemoryRouter>)); }
 const metric = (v: number) => ({ value: v, status: "complete" });
 describe("comparison and collection scope", () => {
+  it("keeps unpublished older years unavailable using the selected competition manifest", async () => {
+    const c = (await store.createCollection("年度")).collections[0]!; await store.setPlayer(c.id, { league: "MLB", playerId: player }, true);
+    await mount(<Routes><Route path="/MLB/library/collections/:collectionId" element={<CollectionDashboard league="MLB" services={services} favorites={[]} />} /></Routes>, `/MLB/library/collections/${c.id}?season=2016&competition=postseason`);
+    expect(mocks.staticHistorical).toHaveBeenCalledWith("postseason/manifest.json");
+    expect(mocks.historical).not.toHaveBeenCalled();
+    expect(div.textContent).toContain("指定の年度・集計対象は未収録");
+    expect(div.textContent).toContain("2016年（未収録）");
+    expect([...div.querySelectorAll('option')].some(option => option.value === "2017")).toBe(false);
+  });
   it("loads Player seasons once and shows true prior-year delta, missing years stay unavailable", async () => {
     mocks.historical.mockResolvedValue({ player: { id: player }, seasonTotals: { "2020": { batting: { OPS: metric(.8), PA: metric(100) } }, "2021": { batting: { OPS: metric(.9), PA: metric(200) } } } });
     await mount(<SeasonCompare league="MLB" manifest={manifest} />, `/MLB/season-compare?entity=${encodeURIComponent(player)}&years=2020,2021,2025`);

@@ -6,7 +6,7 @@ on:
         description: Import regular or isolated postseason; app-only preserves both releases
         type: choice
         default: release
-        options: [release, postseason, app-only]
+        options: [release, postseason, expansion, app-only]
       expand_historical_exploration:
         description: Generate read-only MLB daily aggregate shards from preserved Historical Facts
         type: boolean
@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    timeout-minutes: 35
+    timeout-minutes: 60
     outputs:
       generated_at: ${{ steps.publication.outputs.generated_at }}
       projection_hashes: ${{ steps.publication.outputs.projection_hashes }}
@@ -40,8 +40,8 @@ jobs:
       - run: npm ci
       - name: Validate app and importer
         run: npm run check
-      - name: Import released 2020–2025 archives
-        if: inputs.mode == 'release'
+      - name: Import released 2016–2025 archives
+        if: inputs.mode == 'release' || inputs.mode == 'expansion'
         run: |
           mkdir -p .data
           npx tsx scripts/import-mlb-historical.ts --download --cache .data --output .data/mlb-public --db .data/mlb-historical.sqlite > .data/mlb-import-report.json
@@ -51,10 +51,10 @@ jobs:
           npx tsx scripts/generate-mlb-advanced.ts --db .data/mlb-historical.sqlite --output .data/mlb-public --validation .data/mlb-pa-validation.json
           npx tsx scripts/verify-mlb-advanced-public.ts --output .data/mlb-public
           npx tsx scripts/verify-mlb-advanced-performance.ts
-          npx tsx scripts/backup-mlb-historical.ts --db .data/mlb-historical.sqlite --output .data/mlb-backup --scratch .data/mlb-restored.sqlite > .data/mlb-backup-report.json
+          npx tsx scripts/backup-mlb-historical.ts --db .data/mlb-historical.sqlite --output .data/mlb-backup/regular --scratch .data/mlb-restored.sqlite > .data/mlb-backup-report.json
           cat .data/mlb-backup-report.json
       - name: Import and validate isolated Historical Postseason
-        if: inputs.mode == 'postseason'
+        if: inputs.mode == 'postseason' || inputs.mode == 'expansion'
         run: |
           mkdir -p .data
           npx tsx scripts/import-mlb-historical.ts --competition postseason --download --cache .data --output .data/postseason-public --db .data/mlb-postseason.sqlite > .data/postseason-import.json
@@ -65,7 +65,7 @@ jobs:
           node --input-type=module -e "import{readFileSync}from'node:fs';const r=JSON.parse(readFileSync('.data/postseason-idempotency.json'));if(r.dbWrites!==0)throw Error('Postseason reimport changed Facts');console.log(JSON.stringify({idempotent:r.dbWrites===0,games:r.games}));"
           npx tsx scripts/import-mlb-plate-appearances.ts --competition postseason --cache .data --db .data/mlb-postseason.sqlite --report .data/postseason-pa-idempotency.json
           node --input-type=module -e "import{readFileSync}from'node:fs';const r=JSON.parse(readFileSync('.data/postseason-pa-idempotency.json'));if(r.dbWrites!==0)throw Error('Postseason PA reimport changed Facts');"
-          npx tsx scripts/backup-mlb-historical.ts --db .data/mlb-postseason.sqlite --output .data/mlb-backup --scratch .data/postseason-restored.sqlite > .data/mlb-backup-report.json
+          npx tsx scripts/backup-mlb-historical.ts --db .data/mlb-postseason.sqlite --output .data/mlb-backup/postseason --scratch .data/postseason-restored.sqlite > .data/mlb-backup-report.json
           cat .data/mlb-backup-report.json
       - uses: actions/upload-artifact@v4
         if: inputs.mode != 'app-only'
@@ -124,9 +124,12 @@ jobs:
         run: |
           mkdir -p dist/data/mlb
           npx tsx scripts/preserve-mlb-historical.ts dist/data/mlb
-          if [ "$MLB_PUBLISH_MODE" = 'release' ]; then
+          mkdir -p .data/mlb-baseline
+          cp -a dist/data/mlb/historical .data/mlb-baseline/historical
+          if [ "$MLB_PUBLISH_MODE" = 'release' ] || [ "$MLB_PUBLISH_MODE" = 'expansion' ]; then
             npx tsx scripts/stage-mlb-historical.ts --competition regular --source .data/mlb-public/data/mlb/historical --target dist/data/mlb/historical
-          elif [ "$MLB_PUBLISH_MODE" = 'postseason' ]; then
+          fi
+          if [ "$MLB_PUBLISH_MODE" = 'postseason' ] || [ "$MLB_PUBLISH_MODE" = 'expansion' ]; then
             npx tsx scripts/verify-mlb-postseason.ts --root .data/postseason-public/data/mlb/historical --regular-root dist/data/mlb/historical
             npx tsx scripts/verify-postseason-preservation.ts before dist/data/mlb/historical
             npx tsx scripts/stage-mlb-historical.ts --competition postseason --source .data/postseason-public/data/mlb/historical --target dist/data/mlb/historical
@@ -135,24 +138,50 @@ jobs:
           if [ "$MLB_PUBLISH_MODE" != 'app-only' ]; then
             npx tsx scripts/generate-historical-team-hubs.ts dist/data/mlb/historical
           fi
+          if [ "$MLB_PUBLISH_MODE" = 'expansion' ]; then
+            # Compression/library changes and stable-key row order must not rewrite old releases.
+            # Every decoded immutable payload must match before its baseline bytes are reused.
+            npx tsx scripts/preserve-verified-mlb-baseline.ts --before .data/mlb-baseline/historical --after dist/data/mlb/historical --report .data/mlb-baseline-reuse.json
+          fi
+          if [ "$MLB_PUBLISH_MODE" != 'app-only' ]; then
+            if [ "$MLB_PUBLISH_MODE" = 'expansion' ]; then
+              npx tsx scripts/generate-mlb-collected-records.ts dist/data/mlb/historical --competition both
+            elif [ "$MLB_PUBLISH_MODE" = 'release' ]; then
+              npx tsx scripts/generate-mlb-collected-records.ts dist/data/mlb/historical --competition regular
+            else
+              npx tsx scripts/generate-mlb-collected-records.ts dist/data/mlb/historical --competition postseason
+            fi
+            npx tsx scripts/verify-mlb-collected-records.ts dist/data/mlb/historical
+          fi
           if [ "$MLB_EXPAND_EXPLORATION" = 'true' ] || [ "$MLB_PUBLISH_MODE" != 'app-only' ]; then
-            npx tsx scripts/generate-mlb-recent-explorer.ts dist/data/mlb/historical
+            if [ "$MLB_PUBLISH_MODE" = 'expansion' ]; then
+              npx tsx scripts/generate-mlb-recent-explorer.ts dist/data/mlb/historical --baseline .data/mlb-baseline/historical
+            else
+              npx tsx scripts/generate-mlb-recent-explorer.ts dist/data/mlb/historical
+            fi
             npx tsx scripts/verify-mlb-recent-explorer.ts dist/data/mlb/historical
+          fi
+          if [ "$MLB_PUBLISH_MODE" = 'expansion' ]; then
+            npx tsx scripts/verify-mlb-history-preservation.ts --before .data/mlb-baseline/historical --after dist/data/mlb/historical
+            npx tsx scripts/verify-mlb-expanded-aggregates.ts --cache .data --root dist/data/mlb/historical
+            npx tsx scripts/verify-mlb-postseason.ts --root dist/data/mlb/historical --regular-root dist/data/mlb/historical
           fi
           if [ "$MLB_PUBLISH_MODE" = 'app-only' ] && [ "$MLB_EXPAND_EXPLORATION" != 'true' ]; then
             npx tsx scripts/publish-mlb-public-archive.ts dist/data/mlb
           else
             npx tsx scripts/publish-mlb-public-archive.ts dist/data/mlb --refresh
           fi
-          node --input-type=module -e "import{readFileSync}from'node:fs';import{gunzipSync}from'node:zlib';const p=JSON.parse(gunzipSync(readFileSync('dist/data/mlb/historical/manifest.json.gz')));if(p.seasons.length!==6||p.current2026!=='unavailable'||p.seasons.some(s=>s.coverage!=='complete'))throw Error('Historical manifest');console.log(JSON.stringify({seasons:p.seasons.length,games:p.seasons.reduce((n,s)=>n+s.games,0)}))"
+          npx tsx scripts/verify-mlb-release-manifests.ts dist/data/mlb/historical "$MLB_PUBLISH_MODE"
       - name: Retain Postseason publication evidence
-        if: inputs.mode == 'postseason'
+        if: inputs.mode == 'postseason' || inputs.mode == 'expansion'
         uses: actions/upload-artifact@v4
         with:
           name: postseason-publication-audit
           path: |
             .data/postseason-public-audit.json
             .data/postseason-regular-preservation.json
+            .data/mlb-history-preservation.json
+            .data/mlb-baseline-reuse.json
           retention-days: 7
       - uses: actions/configure-pages@v5
       - name: Validate preserved NPB projections before artifact upload
@@ -190,9 +219,11 @@ jobs:
           EXPECTED_PROJECTION_HASHES: ${{ needs.stage.outputs.projection_hashes }}
         run: npx tsx scripts/verify-published-npb-player-directory.ts
       - name: Verify public Historical and NPB payloads
+        env:
+          MLB_PUBLISH_MODE: ${{ inputs.mode }}
         run: |
           # Public static contract/readback, no database credentials on deploy.
-          node --input-type=module -e "import{gunzipSync}from'node:zlib';const b='https://tomoya41.github.io/baseball-notes/';const signal=AbortSignal.timeout(60000);const [m,n]=await Promise.all([fetch(b+'data/mlb/historical/manifest.json.gz?v='+Date.now(),{signal}),fetch(b+'data/npb/season/2026/latest.json?v='+Date.now(),{signal})]);if(m.status!==200||n.status!==200)throw Error('public HTTP');const [manifest]=await Promise.all([m.arrayBuffer(),n.arrayBuffer()]);const p=JSON.parse(gunzipSync(Buffer.from(manifest)));if(p.seasons.length!==6||p.current2026!=='unavailable')throw Error('Historical public contract');console.log(JSON.stringify({mlb:m.status,npb:n.status,seasons:p.seasons.length}))"
+          node --input-type=module -e "import{gunzipSync}from'node:zlib';const b='https://tomoya41.github.io/baseball-notes/';const signal=AbortSignal.timeout(60000);const [m,n]=await Promise.all([fetch(b+'data/mlb/historical/manifest.json.gz?v='+Date.now(),{signal}),fetch(b+'data/npb/season/2026/latest.json?v='+Date.now(),{signal})]);if(m.status!==200||n.status!==200)throw Error('public HTTP');const [manifest]=await Promise.all([m.arrayBuffer(),n.arrayBuffer()]);const p=JSON.parse(gunzipSync(Buffer.from(manifest)));const years=JSON.stringify(p.seasons.map(s=>s.season).sort((a,b)=>a-b));const supported=['[2020,2021,2022,2023,2024,2025]','[2016,2017,2018,2019,2020,2021,2022,2023,2024,2025]'];if(!(process.env.MLB_PUBLISH_MODE==='expansion'?years===supported[1]:supported.includes(years))||p.current2026!=='unavailable'||p.seasons.some(s=>s.coverage!=='complete'))throw Error('Historical public contract');console.log(JSON.stringify({mlb:m.status,npb:n.status,seasons:p.seasons.length}))"
       - name: Verify public Postseason contracts
-        if: inputs.mode == 'postseason'
+        if: inputs.mode == 'postseason' || inputs.mode == 'expansion'
         run: npx tsx scripts/verify-published-postseason.ts

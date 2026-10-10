@@ -6,7 +6,7 @@ const count = z.number().int().nonnegative();
 const metrics = z.record(z.string(), z.object({ value: z.number().finite().nullable(), status: z.enum(["complete", "partial", "unavailable"]) }).passthrough());
 const view = z.object({ from: z.iso.date(), to: z.iso.date(), G: count, W: count, L: count, T: count, runsFor: count, runsAgainst: count, batting: metrics, pitching: metrics }).refine(v => v.from <= v.to && v.G === v.W + v.L + v.T, "Invalid team comparison window");
 export const historicalTeamHubSchema = z.object({ schemaVersion: z.literal(1), league: z.literal("MLB"),
-  season: z.number().int().min(2020).max(2025), competitionType: z.enum(["regular", "postseason"]),
+  season: z.number().int().min(2016).max(2025), competitionType: z.enum(["regular", "postseason"]),
   teamId, effectiveDate: z.iso.date(), coverage: z.enum(["complete", "partial", "unavailable"]),
   G: count, W: count, L: count, T: count, runsFor: count, runsAgainst: count,
   batting: metrics, pitching: metrics,

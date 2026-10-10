@@ -2,6 +2,7 @@ import { readFile, readdir, mkdir, writeFile, stat } from "node:fs/promises";
 import { join } from "node:path";
 import { gzipSync, gunzipSync } from "node:zlib";
 import { createHash } from "node:crypto";
+import { isDeepStrictEqual } from "node:util";
 import type { HistoricalGame } from "../src/data/mlb-historical";
 import { validStaticPayload } from "../src/domain/mlb-historical-public";
 import { battingDailyKeys, pitchingDailyKeys, recentIndexSchema, recentMonthSchema, } from "../src/domain/mlb-recent-explorer";
@@ -33,8 +34,18 @@ export function buildMlbRecentMonths(input: {game:HistoricalGame;hash:string}[],
   return [...months].sort(([a],[b])=>a.localeCompare(b)).map(([month,data])=>recentMonthSchema.parse({schemaVersion:1,league:"MLB",competitionType,season,sourceFingerprint,month,players:ids,teams,batting:[...data.batting.values()],pitching:[...data.pitching.values()]}));
 }
 
-export async function generateMlbRecentExplorer(root:string) {
+export async function generateMlbRecentExplorer(root:string, baselineRoot?:string) {
   const started=performance.now();let files=0,bytes=0,largest=0,rows=0;
+  const compress = async (path: string, payload: unknown) => {
+    if (baselineRoot) {
+      try {
+        const previous = await readFile(join(baselineRoot, path));
+        if (!isDeepStrictEqual(JSON.parse(gunzipSync(previous).toString()), payload)) throw Error(`Existing Recent content changed: ${path}`);
+        return previous;
+      } catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; }
+    }
+    return gzipSync(JSON.stringify(payload));
+  };
   for (const competitionType of ["regular","postseason"] as const) {
     const base=competitionType==="regular"?root:join(root,"postseason"),prefix=competitionType==="regular"?"":"postseason/";
     if (competitionType === "postseason") {
@@ -61,14 +72,17 @@ export async function generateMlbRecentExplorer(root:string) {
         const month=payload.month;
         recentMonthSchema.parse(payload);
         if(payload.batting.some(r=>r.length!==3+battingDailyKeys.length)||payload.pitching.some(r=>r.length!==3+pitchingDailyKeys.length))throw Error("Daily columns mismatch");
-        const compressed=gzipSync(JSON.stringify(payload));await writeFile(join(dir,`${month}.json.gz`),compressed);
+        const compressed=await compress(`${prefix}exploration/recent/${descriptor.season}/${month}.json.gz`,payload);await writeFile(join(dir,`${month}.json.gz`),compressed);
         files++;bytes+=compressed.length;largest=Math.max(largest,compressed.length);rows+=payload.batting.length+payload.pitching.length;
         monthDescriptors.push({month,compressedBytes:compressed.length,rows:payload.batting.length+payload.pitching.length});
       }
       const index=recentIndexSchema.parse({schemaVersion:1,league:"MLB",competitionType,season:descriptor.season,sourceFingerprint,firstDate:descriptor.firstDate,lastDate:descriptor.lastDate,coverage:descriptor.coverage,gameCount:games.length,months:monthDescriptors});
-      const compressed=gzipSync(JSON.stringify(index));await writeFile(join(dir,"index.json.gz"),compressed);files++;bytes+=compressed.length;
+      const compressed=await compress(`${prefix}exploration/recent/${descriptor.season}/index.json.gz`,index);await writeFile(join(dir,"index.json.gz"),compressed);files++;bytes+=compressed.length;
     }
   }
   const report={files,compressedBytes:bytes,largestPayload:largest,dailyAggregateRows:rows,generationMs:Math.round(performance.now()-started),canonicalWrites:0,sourceRequests:0};console.log(JSON.stringify(report));return report;
 }
-if(process.argv[1]?.replaceAll("\\","/").endsWith("generate-mlb-recent-explorer.ts"))await generateMlbRecentExplorer(process.argv[2]??"dist/data/mlb/historical");
+if(process.argv[1]?.replaceAll("\\","/").endsWith("generate-mlb-recent-explorer.ts")) {
+  const args=process.argv.slice(2),baseline=args.includes("--baseline")?args[args.indexOf("--baseline")+1]:undefined;
+  await generateMlbRecentExplorer(args[0]??"dist/data/mlb/historical",baseline);
+}

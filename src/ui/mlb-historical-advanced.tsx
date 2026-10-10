@@ -37,7 +37,7 @@ export function HistoricalAdvancedAnalysis({ playerId, season, hasBatting, hasPi
     <button className="text-button" type="button" aria-expanded={open} onClick={() => setOpen(!open)}>{open ? "閉じる" : "対戦・状況別を見る"}</button></header>
     {open && <>
       <div className="mlb-controls"><label>対象期間<select value={scope} onChange={event => setScope(event.target.value as "season" | "range")}>
-        <option value="season">{season}年</option><option value="range">収録期間内 2020〜2025</option></select></label>
+        <option value="season">{season}年</option><option value="range">収録期間内</option></select></label>
         {hasBatting && hasPitching && <label>成績の種類<select value={role} onChange={event => setSelectedRole(event.target.value as "batting" | "pitching")}>
           <option value="batting">打者として</option><option value="pitching">投手として</option></select></label>}</div>
       <div className="chip-list" role="group" aria-label="高度分析の条件">{(["bvp", "inning", "outs", "bases", "score"] as const).map(key =>

@@ -8,8 +8,8 @@ async function read(path: string) {
   const data = Buffer.from(await r.arrayBuffer());
   return JSON.parse(path.endsWith(".gz") ? gunzipSync(data).toString() : data.toString());
 }
-postseasonCapabilitiesSchema.parse(await read("postseason/capabilities.json"));
-for (const season of [2020,2021,2022,2023,2024,2025]) {
+const capabilities = postseasonCapabilitiesSchema.parse(await read("postseason/capabilities.json"));
+for (const season of capabilities.leagues.MLB.historicalSeasons) {
   const path = `postseason/hub/${season}.json`, hub = await read(`mlb/historical/${path}.gz`);
   if (!validStaticPayload(path, hub)) throw new Error("Invalid public Hub");
   const gameId = hub.series[0].games[0].gameId;

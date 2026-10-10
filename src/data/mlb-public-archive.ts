@@ -8,7 +8,7 @@ Contains information from Chadwick Register, available under the ODC Attribution
 Register: https://github.com/chadwickbureau/register
 License: https://opendatacommons.org/licenses/by/1-0/
 
-These are modified, aggregated app read models for the released 2020–2025 historical range, not original source archives or current MLB results.
+These are modified, aggregated app read models for the historical seasons identified in the manifest, not original source archives or current MLB results.
 App and full Data Sources notice: https://tomoya41.github.io/baseball-notes/#/MLB/sources
 `;
 
@@ -16,6 +16,10 @@ export interface HistoricalPublicArchive {
   schemaVersion: 1;
   assetUrl: string;
   sha256: string;
+}
+
+export function hasHistoricalSourceAttribution(text: string | null): boolean {
+  return text !== null && text.includes(RETROSHEET_ATTRIBUTION) && text.includes("Chadwick Register") && text.includes("https://opendatacommons.org/licenses/by/1-0/");
 }
 
 // This is a preservation copy of public aggregates, never a database backup.

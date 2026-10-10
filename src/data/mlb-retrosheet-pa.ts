@@ -1,6 +1,6 @@
 import { Readable } from "node:stream";
 import { parse } from "csv-parse";
-import { extractHistoricalCsv, historicalId, historicalTeamId, POSTSEASON_GAME_TYPES } from "./mlb-historical";
+import { extractHistoricalCsv, historicalId, historicalTeamId, POSTSEASON_GAME_TYPES, isRegularRetrosheetGame } from "./mlb-historical";
 import type { HistoricalGame } from "./mlb-historical";
 import { addPaCounts, emptyPaCounts, type HistoricalPlateAppearance, type PaCounts } from "../domain/mlb-plate-appearance";
 
@@ -22,7 +22,7 @@ export async function* historicalPlays(zip: Uint8Array, season: number, competit
   const stream = Readable.from(chunks(extractHistoricalCsv(zip, season, "plays")))
     .pipe(parse({ columns: true, bom: true, skip_empty_lines: true }));
   for await (const row of stream as AsyncIterable<RetrosheetPlay>) if (competition === "regular"
-    ? row.gametype === "regular" : POSTSEASON_GAME_TYPES.includes(row.gametype ?? "")) yield row;
+    ? isRegularRetrosheetGame(row.gametype) : POSTSEASON_GAME_TYPES.includes(row.gametype ?? "")) yield row;
 }
 /** Keeps runner-only plays inside their PA. Substitution makes start context unknown,
  * rather than assigning the previous batter's/pitcher's situation to a replacement. */

@@ -1,5 +1,7 @@
 # Product Completion Inventory / Remaining Roadmap
 
+Delivery追補：本inventoryは下記基準mainでの監査snapshot。Draft/Young PlayerとHistorical Product Track 2に続く2016〜2019拡張は[Integrated source/history delivery](integrated-source-history-delivery.md)を参照。過去の2020〜2025件数を最新Production件数として読み替えない。
+
 確認日：**2026-10-10 JST**。対象main：`8632e20f47c43523ae12f90769fc2bbd65e4f50c`（local mainとGitHub mainを照合）。公開版：[Baseball Notes](https://tomoya41.github.io/baseball-notes/)。これは現状確定の監査であり、機能実装、canonical DB write、collector実行、公開データ変更、Gate解除、デプロイは行っていない。
 
 ## 1. 判定方法と結論

@@ -23,6 +23,10 @@ const output = value("--output", ".data/mlb-public");
 const competition = competitionTypeSchema.parse(value("--competition", "regular"));
 const database = value("--db", competition === "postseason" ? ".data/mlb-postseason.sqlite" : ".data/mlb-historical.sqlite");
 const download = args.includes("--download");
+const selectedSeasons = value("--seasons", HISTORICAL_SEASONS.join(",")).split(",").map(Number);
+if (!selectedSeasons.length || new Set(selectedSeasons).size !== selectedSeasons.length ||
+  selectedSeasons.some(year => !(HISTORICAL_SEASONS as readonly number[]).includes(year))) throw new Error("Unsupported/duplicate season selection");
+selectedSeasons.sort((a, b) => a - b);
 const sha = (bytes: Uint8Array | string) => createHash("sha256").update(bytes).digest("hex");
 const source = "https://www.retrosheet.org/downloads";
 const root = join(output, "data", "mlb", "historical", ...(competition === "postseason" ? ["postseason"] : []));
@@ -98,7 +102,7 @@ if (String(storedRegister.rows[0]?.archive_sha256 ?? "") !== registerHash) {
 const games: HistoricalGame[] = [];
 const players = new Map<string, HistoricalPlayer>();
 const releases = [];
-for (const season of HISTORICAL_SEASONS) {
+for (const season of selectedSeasons) {
   const bytes = await archive(join(cache, `${season}csvs.zip`), `${source}/${season}/${season}csvs.zip`);
   extractedBytes += Object.values(unzipSync(bytes)).reduce((n, content) => n + content.byteLength, 0);
   const parsedAt = performance.now();
@@ -208,11 +212,13 @@ for (const [dateKey, rows] of byDate) await json(`schedule/${dateKey}.json`, {
     status: "final", complete: game.validationIssues.length === 0, number: game.number })),
 });
 const seasons = [];
-for (const season of HISTORICAL_SEASONS) {
+const seasonRanges = new Map<number, { from: string; to: string }>();
+for (const season of selectedSeasons) {
   const seasonGames = games.filter(game => game.season === season);
   const seasonPlayers = playerRows.filter(player => player.seasons.includes(season));
   const from = seasonGames.reduce((min, game) => game.date < min ? game.date : min, "9999-12-31");
   const to = seasonGames.reduce((max, game) => game.date > max ? game.date : max, "0000-01-01");
+  seasonRanges.set(season, { from, to });
   const aggregates = seasonPlayers.map(player => {
     const batting = batterFacts.get(player.id)?.filter(row => row.season === season) ?? [];
     const pitching = pitcherFacts.get(player.id)?.filter(row => row.season === season) ?? [];
@@ -248,9 +254,7 @@ for (const player of playerRows) {
   const batting = batterFacts.get(player.id) ?? [];
   const pitching = pitcherFacts.get(player.id) ?? [];
   const totals = Object.fromEntries(player.seasons.map(season => {
-    const dates = games.filter(game => game.season === season).map(game => game.date);
-    const from = dates.reduce((min, date) => date < min ? date : min, "9999-12-31");
-    const to = dates.reduce((max, date) => date > max ? date : max, "0000-01-01");
+    const { from, to } = seasonRanges.get(season)!;
     const b = batting.filter(row => row.season === season);
     const p = pitching.filter(row => row.season === season);
     return [season, { batting: b.length ? battingAggregate(player.id, b, from, to).metrics : null,
@@ -264,7 +268,7 @@ for (const player of playerRows) {
     pitching: pitching.length ? pitchingAggregate(player.id, pitching, first, last).metrics : null,
   };
   await json(`players/${player.id.replaceAll(":", "_")}.json`, { schemaVersion: 1, league: "MLB", player,
-    seasonTotals: totals, collectedRangeTotals, batting, pitching, collectedRange: "2020–2025" });
+    seasonTotals: totals, collectedRangeTotals, batting, pitching, collectedRange: `${selectedSeasons[0]}–${selectedSeasons.at(-1)}` });
 }
 await json("players/index.json", { schemaVersion: 1, league: "MLB", players: playerRows.map(player => ({
   id: player.id, name: player.name, positions: player.positions, seasons: player.seasons,

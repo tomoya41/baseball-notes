@@ -336,3 +336,22 @@ from independent H/BB/PA/BF/outs; no NPB extrapolation or existing payload rewri
 No canonical migration/write. Rollback can revert the app while harmless additive
 projections remain; no Source or rights scope is extended. See
 `docs/historical-product-track-2.md`.
+
+## 2026-10-10 — Historical expansion with immutable baseline protection
+
+Extend the reviewed Retrosheet import range to 2016–2025, keeping Regular and
+Postseason in separate release databases and namespaces. Historical Game 163
+tiebreakers count in Regular; the 2016–2019 Wild Card is a single postseason Game.
+Additional years require complete Game/PA/identity validation, independent CSV
+season totals, and a comparison against the previously published yearly Facts
+and aggregates. Imported season history and collected-period/decade counting
+records are not full Career or all-time records. UI year choices follow the
+selected competition's published manifest, including older six-season releases.
+
+The expansion workflow can update both scopes together; single-scope release
+modes must not rewrite the opposite scope's Records. App-only keeps the immutable
+archive when its required credits are present. No remote MLB PA database, NPB
+Source switch, paid infrastructure or existing Production Gate change is involved.
+Reverting app code leaves the attributed Historical archive recoverable.
+Free NPB API probes currently establish no FULL_READY/SCORE_READY Source, so
+preparation remains an isolated evidence contract and fixtures; nf3 is maintained.

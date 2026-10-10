@@ -14,7 +14,7 @@ nf3更新遅延とGitHub待ち時間があるため実際の終了から60分以
 
 React + TypeScript strict + Vite + Capacitor Androidの構成。ホーム / 試合 / 選手 / 記録 / Myの5項目ナビ、NPB・MLB切替、選手・球団検索、比較、Explorer、指標説明、Light/Dark、保存済みデータ表示を実装しています。
 
-NPBはCurrentの保存済み実データ、MLBは2020〜2025 HistoricalのRegular/Postseasonに接続します。Team Hub、Preview/Recap、Player/Team/年度比較、Trends、Data/Recent/Season Explorerを利用できます。MyはFavorites、Collections、Saved Views、最近見た履歴、Watchを端末保存します。Watchは取得時の確認差分であり、リアルタイム・バックグラウンド配信ではありません。NPB HOT/RankingはCapability Gateに従います。CareerやCurrent MLB、権利未確定のNPB Postseasonを推測補完しません。監査結果は [Product Completion Audit](docs/product-completion-audit.md)、次工程の境界は [Astra Final Handoff](docs/astra-product-final-handoff.md) を参照してください。
+NPBはCurrentの保存済み実データ、MLBはHistoricalのRegular/Postseasonに接続します。release importの既定対象は2016〜2025、画面が利用する年度は公開Manifestに従います。Team Hub、Preview/Recap、Player/Team/年度比較、Trends、Data/Recent/Season Explorerを利用できます。MyはFavorites、Collections、Saved Views、最近見た履歴、Watchを端末保存します。Watchは取得時の確認差分であり、リアルタイム・バックグラウンド配信ではありません。NPB HOT/RankingはCapability Gateに従います。CareerやCurrent MLB、権利未確定のNPB Postseasonを推測補完しません。監査結果は [Product Completion Audit](docs/product-completion-audit.md)、次工程の境界は [Astra Final Handoff](docs/astra-product-final-handoff.md) を参照してください。
 
 - [アーキテクチャ](docs/architecture.md)
 - [データ取得元の調査](docs/data-sources.md)
@@ -154,11 +154,11 @@ Favorite v1 already stores league and canonical entity ID; no destructive migrat
 
 ## MLB Historical release import
 
-MLBの公開画面はRetrosheetの2020〜2025年公式戦を対象にします。2026 Currentの試合結果・選手成績は未対応です。権利根拠と指定creditは [Historical source evidence](docs/mlb-historical-source-evidence-2026-09-30.md) を参照してください。Chadwick Registerは選手ID照合だけに使用します。Lahmanは不要です。
+MLB Historical importerの既定対象はRetrosheetの2016〜2025年公式戦です。`--seasons 2016,2017,2018,2019`で検証対象を限定できます。公開画面は実際のManifestに含まれる年度だけを利用します。2026 Currentの試合結果・選手成績は未対応です。権利根拠と指定creditは [Historical source evidence](docs/mlb-historical-source-evidence-2026-09-30.md) を参照してください。Chadwick Registerは選手ID照合だけに使用します。Lahmanは不要です。
 
 `npx tsx scripts/import-mlb-historical.ts --download --cache .data --db .data/mlb-historical.sqlite --output .data/mlb-public` で公式Season ZIPとRegisterを取得し、ローカルSQLiteへcanonical Game/Player/Fact/mappingを保存します。ダウンロード済みarchiveは再利用します。Game・Playerのcontent hashが同じならDBを書きません。`npx tsx scripts/backup-mlb-historical.ts` はschema・JSONL.gz・manifest/hashを出力し、空のScratch SQLiteへ復元して検証します。
 
-手動の `mlb-historical-publish.yml` はrelease import・検証・NPB/MLB両方のBackup/Restore・Pages公開を行います。MLB daily collectionはありません。公開payloadは `/data/mlb/historical/` 下のmanifest、Player別、日付別、Game別、Season別、Records別gzipです。Raw全量やSource IDは公開しません。Playerの合計は「2020〜2025収録期間合計」であり、MLB通算ではありません。Counting recordsと率指標の公開資格は独立しています。
+手動の `mlb-historical-publish.yml` はrelease import・検証・NPB/MLB両方のBackup/Restore・Pages公開を行います。`mode=expansion`で両competitionを同時に生成・検証し、旧公開年度のFacts・集計・identity・payload hashを比較します。`mode=release`はRegular、`mode=postseason`はPostseasonだけを更新します。MLB daily collectionはありません。公開payloadは `/data/mlb/historical/` 下のmanifest、Player別、日付別、Game別、Season別、Records別gzipです。Raw全量やSource IDは公開しません。2016〜2025の合計は「収録期間内合計」であり、MLB通算ではありません。年代別Recordsも収録された年度だけの集計です。Counting recordsと率指標の公開資格は独立しています。
 
 Batch Eの高度分析は以下の順に明示実行します。既存のSeason ZIPを再利用し、新たなGame別HTTPやMLB Current収集は行いません。
 
@@ -176,7 +176,7 @@ PAはローカルrelease SQLiteに保存し、Tursoへ投入しません。Game�
 
 ## Postseason release
 
-Postseasonは独立competitionです。[Source/rights・Contract・Coverage・運用](docs/postseason.md) を参照してください。Retrosheet 2020〜2025は専用SQLiteへimportし、`/data/mlb/historical/postseason/`へ公開します。Hubは`#/MLB/postseason?season=2025`、選手/日程/Recordsは`competition=postseason`で切り替えます。Regular Seasonに数字を混ぜません。NPBとMLB 2026 CurrentはSource rights pendingです。
+Postseasonは独立competitionです。[Source/rights・Contract・Coverage・運用](docs/postseason.md) を参照してください。Retrosheet 2016〜2025は専用SQLiteへimportし、`/data/mlb/historical/postseason/`へ公開します。2016〜2019のWild Cardは単試合、2018のGame 163はRegularです。Hubは`#/MLB/postseason?season=2025`、選手/日程/Recordsは`competition=postseason`で切り替えます。Regular Seasonに数字を混ぜません。NPBとMLB 2026 CurrentはSource rights pendingです。
 
 手動 `mlb-historical-publish.yml mode=postseason` はimport/PBP検証/再import write 0/restoreを行い、公開済みRegular payload全hashを保持してcoordinated publishします。`mode=app-only`は両competitionを保持。Daily MLB収集/Production Pushは追加しません。
 

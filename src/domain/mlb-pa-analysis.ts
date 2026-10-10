@@ -1,5 +1,6 @@
 import { battingAggregate, type DatedBatter } from "./mlb-historical-aggregate";
 import { addPaCounts, emptyPaCounts, type HistoricalPlateAppearance, type PaCounts } from "./mlb-plate-appearance";
+import { MLB_BASELINE_SEASONS, supportedHistoricalSeason } from "./mlb-historical-seasons";
 
 export type PaAnalysisLine = { PA: number; AB: number; H: number; "2B": number; "3B": number; HR: number;
   BB: number; HBP: number; SO: number; SH: number; SF: number;
@@ -32,9 +33,12 @@ export interface AdvancedOpponent { playerId: string; name: string; metrics: PaA
 export interface AdvancedSplit { key: string; metrics: PaAnalysisLine; unknownPa: number }
 
 export function historicalAdvancedGate(reports: readonly { season: number; expectedGames: number; games: number; reconstructedGames: number; skippedGames: number;
-  parserFailures: number; identityUnresolved: number; mismatches: readonly unknown[]; stateIssues: Record<string, number> }[]) {
-  const directBvp = reports.length === 6 && new Set(reports.map(report => report.season)).size === 6 &&
-    reports.every(report => report.season >= 2020 && report.season <= 2025 && report.games > 0 &&
+  parserFailures: number; identityUnresolved: number; mismatches: readonly unknown[]; stateIssues: Record<string, number> }[],
+  expectedSeasons: readonly number[] = MLB_BASELINE_SEASONS) {
+  const directBvp = expectedSeasons.length > 0 && expectedSeasons.every(supportedHistoricalSeason) &&
+    new Set(expectedSeasons).size === expectedSeasons.length && reports.length === expectedSeasons.length &&
+    new Set(reports.map(report => report.season)).size === expectedSeasons.length &&
+    reports.every(report => expectedSeasons.includes(report.season) && report.games > 0 &&
     report.games === report.expectedGames && report.games === report.reconstructedGames &&
     report.skippedGames === 0 && report.parserFailures === 0 && report.identityUnresolved === 0 && report.mismatches.length === 0 &&
     !(report.stateIssues.final_score || report.stateIssues.defensive_outs));

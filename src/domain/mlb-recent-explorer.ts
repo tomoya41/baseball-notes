@@ -6,7 +6,7 @@ import { dateWindow } from "./mlb-historical-aggregate";
 export const battingDailyKeys = ["G", "PA", "AB", "R", "H", "2B", "3B", "HR", "RBI", "BB", "HBP", "SH", "SF", "SO", "SB", "CS"] as const;
 export const pitchingDailyKeys = ["G", "GS", "outsRecorded", "BF", "H", "HR", "BB", "HBP", "SO", "R", "ER", "W", "L", "SV"] as const;
 const count = z.number().int().nonnegative(), nullable = count.nullable();
-const envelope = { schemaVersion: z.literal(1), league: z.literal("MLB"), competitionType: z.enum(["regular", "postseason"]), season: z.number().int().min(2020).max(2025), sourceFingerprint: z.string().regex(/^[a-f0-9]{64}$/) };
+const envelope = { schemaVersion: z.literal(1), league: z.literal("MLB"), competitionType: z.enum(["regular", "postseason"]), season: z.number().int().min(2016).max(2025), sourceFingerprint: z.string().regex(/^[a-f0-9]{64}$/) };
 const canonical = (kind: string) => z.string().regex(new RegExp(`^mlb:${kind}:[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$`));
 const tuple = z.array(nullable);
 export const recentMonthSchema = z.object({ ...envelope, month: z.string().regex(/^20\d{2}-(0[1-9]|1[0-2])$/), players: z.array(canonical("player")).max(2840), teams: z.array(canonical("team")).max(30),
