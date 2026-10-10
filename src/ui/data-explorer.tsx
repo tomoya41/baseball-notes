@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { readMlbAllRecent } from "../application/mlb-recent-explorer";
 import { mlbProductMetrics } from "../domain/mlb-product-metrics";
+import type { RecentIndex } from "../domain/mlb-recent-explorer";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import type { Services } from "../app/services";
@@ -153,6 +154,10 @@ export function MlbDataExplorer({ manifest }: { manifest: ExplorerManifest }) {
   const season = useHistoricalStatic<SeasonProjection>(descriptor && !teamId ? `seasons/${year}.json` : null);
   const teamResult = useHistoricalStatic<HistoricalTeamHub>(descriptor && team ? `teams/${year}/${teamId.replaceAll(":", "_")}.json` : null);
   const directory = useHistoricalStatic<{ players: HistoricalDirectoryPlayer[] }>(descriptor && (!teamId || team) ? "players/index.json" : null);
+  // Old public releases may contain valid selected-player Recent without this
+  // optional aggregate family. Only a missing index permits that fallback;
+  // transport/schema errors must stay explicit rather than mask broken data.
+  const recentIndex = useHistoricalStatic<RecentIndex>(recentMode && validDate ? `exploration/recent/${year}/index.json` : null);
   const source = teamId ? teamResult : season;
   const rows = useMemo<ExplorerRow[]>(() => {
     if (teamId) return teamResult.value?.players.map(p => ({ ...p, teamId, batting: mlbProductMetrics(p.batting,"batting"), pitching: mlbProductMetrics(p.pitching,"pitching") })) ?? [];
@@ -168,9 +173,9 @@ export function MlbDataExplorer({ manifest }: { manifest: ExplorerManifest }) {
   }), [competition, year, descriptor, teamId, asOf]);
   const readRecent = useCallback((ids: string[], days: 7 | 14 | 30) => boundedExplorerRead(ids, id => readOne(id, days)), [readOne]);
   const readAllRecent = useCallback(async (days: 7|14|30) => {
-    if (!descriptor || !directory.value || !validDate) throw Error("Recent context unavailable");
-    return readMlbAllRecent(year,competition,asOf,days,directory.value.players,descriptor,teamId);
-  }, [descriptor, directory.value, validDate, year, competition, asOf, teamId]);
+    if (!descriptor || !directory.value || !validDate || !recentIndex.value) throw Error("Recent context unavailable");
+    return readMlbAllRecent(year,competition,asOf,days,directory.value.players,descriptor,teamId,undefined,recentIndex.value);
+  }, [descriptor, directory.value, validDate, recentIndex.value, year, competition, asOf, teamId]);
   if (!descriptor || (teamId && !team)) return <DataState kind="unsupported" title="指定シーズン・球団は未収録です" />;
   if (!validDate) return <DataState kind="unsupported" title="基準日は選択シーズンの収録期間内で指定してください" action="収録済み期間を見る" to={`/MLB/data?season=${year}${competition === "postseason" ? "&competition=postseason" : ""}`} />;
   if (source.status === "error" || source.status === "missing" || directory.status === "error" || directory.status === "missing") return <DataState kind="source-unavailable" title="指定範囲の成績を取得できません" />;
@@ -178,5 +183,7 @@ export function MlbDataExplorer({ manifest }: { manifest: ExplorerManifest }) {
   if ((teamId ? teamResult.value?.season : season.value?.season) !== year) return <DataState kind="source-unavailable" title="保存済みSeasonが一致しません" />;
   if (teamId && (teamResult.value?.effectiveDate !== descriptor.lastDate || rows.some(row => !directory.value?.players.some(p => p.id === row.playerId && p.seasons.includes(year))))) return <DataState kind="source-unavailable" title="球団Season・選手一覧の整合を確認できません" />;
   if (!teamId && (season.value?.firstDate !== descriptor.firstDate || season.value?.lastDate !== descriptor.lastDate || rows.length !== season.value?.players.length)) return <DataState kind="source-unavailable" title="保存済みSeason・選手一覧の整合を確認できません" />;
-  return <>{recentMode && <label className="screen mlb-asof">基準日<input type="date" min={descriptor.firstDate} max={descriptor.lastDate} value={asOf} onChange={e=>{const next=new URLSearchParams(dateParams);next.set("asOfDate",e.target.value);next.delete("page");setDateParams(next);}} /></label>}<p className="screen inline-note">MLB過去記録。{teamId ? "選択球団での出場分を集計します。" : "選択年の全所属球団合計です。"}現在の成績ではありません。</p><DataExplorerView league="MLB" rows={rows} teams={manifest.teams} season={year} years={manifest.seasons.map(s => s.season)} effectiveDate={asOf} coverage={descriptor.coverage} readRecent={readRecent} readAllRecent={readAllRecent} scope={competition === "postseason" ? "&competition=postseason" : ""} /></>;
+  if (recentMode && recentIndex.status === "loading") return <LoadingSkeleton />;
+  if (recentMode && recentIndex.status === "error") return <><DataState kind="source-unavailable" title="全選手Recentの公開状態を確認できません" /><button onClick={recentIndex.retry}>再読み込み</button></>;
+  return <>{recentMode && <label className="screen mlb-asof">基準日<input type="date" min={descriptor.firstDate} max={descriptor.lastDate} value={asOf} onChange={e=>{const next=new URLSearchParams(dateParams);next.set("asOfDate",e.target.value);next.delete("page");setDateParams(next);}} /></label>}{recentMode && recentIndex.status === "missing" && <p className="screen inline-note">このシーズンの全選手Recentは未公開です。選手を選択して調べられます。</p>}<p className="screen inline-note">MLB過去記録。{teamId ? "選択球団での出場分を集計します。" : "選択年の全所属球団合計です。"}現在の成績ではありません。</p><DataExplorerView league="MLB" rows={rows} teams={manifest.teams} season={year} years={manifest.seasons.map(s => s.season)} effectiveDate={asOf} coverage={descriptor.coverage} readRecent={readRecent} readAllRecent={recentIndex.status === "ready" ? readAllRecent : undefined} scope={competition === "postseason" ? "&competition=postseason" : ""} /></>;
 }

@@ -18,6 +18,8 @@ import type { GameDateIndex } from "../src/domain/npb-game-index";
 const staticValues = vi.hoisted(() => new Map<string, unknown>());
 const reader = vi.hoisted(() => vi.fn());
 const npbReader = vi.hoisted(() => vi.fn());
+const mlbAllReader = vi.hoisted(() => vi.fn());
+vi.mock("../src/application/mlb-recent-explorer",()=>({readMlbAllRecent:mlbAllReader}));
 vi.mock("../src/ui/use-mlb-historical", () => ({ useHistoricalStatic: (path: string | null) => {
   const value = path ? staticValues.get(path) : null;
   return { path, status: value instanceof Error ? "error" : path && staticValues.has(path) ? "ready" : "missing", value: value instanceof Error ? null : value ?? null, retry: vi.fn() };
@@ -34,7 +36,7 @@ const directory = { players: [{ id, name: "選手A", seasons: [2020, 2025], team
 const profile = { player: directory.players[0], seasonTotals: { "2020": { batting: metrics, pitching: null }, "2025": { batting: metrics, pitching: metrics } }, batting: [], pitching: [] };
 let container: HTMLDivElement, root: Root;
 beforeEach(() => {
-  staticValues.clear(); reader.mockReset(); npbReader.mockReset();
+  staticValues.clear(); reader.mockReset(); npbReader.mockReset(); mlbAllReader.mockReset();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   container = document.createElement("div"); document.body.append(container); root = createRoot(container);
 });
@@ -154,6 +156,22 @@ describe("compact exploration UI", () => {
   });
 });
 describe("historical identity and competition scope", () => {
+  it("keeps selected-player Recent usable when an old release has no aggregate index",async()=>{
+    staticValues.set("players/index.json",directory);staticValues.set("seasons/2025.json",{season:2025,firstDate:"2025-03-18",lastDate:"2025-09-28",players:rows});reader.mockResolvedValue(profile);
+    await mount(<MlbDataExplorer manifest={manifest}/>,"/MLB/data?season=2025&period=14&recentMode=all");
+    expect(container.textContent).toContain("全選手Recentは未公開");expect(container.textContent).toContain("直近を調べる選手");expect(reader).not.toHaveBeenCalled();expect(mlbAllReader).not.toHaveBeenCalled();
+    const candidate=container.querySelector<HTMLInputElement>('.explorer-candidates input')!;await click(candidate);
+    expect(reader).toHaveBeenCalledExactlyOnceWith(`players/${id.replaceAll(":","_")}.json`);expect(container.textContent).not.toContain("全選手Recentを読み込めません");
+  });
+  it("enables all-player Recent only with a published index and reuses it without Profile fanout",async()=>{
+    staticValues.set("players/index.json",directory);staticValues.set("seasons/2025.json",{season:2025,firstDate:"2025-03-18",lastDate:"2025-09-28",players:rows});const index={season:2025};staticValues.set("exploration/recent/2025/index.json",index);mlbAllReader.mockResolvedValue({values:rows.map(r=>({...r,coverage:"complete"})),failed:[],coverage:"complete"});
+    await mount(<MlbDataExplorer manifest={manifest}/>,"/MLB/data?season=2025&period=7");
+    expect(mlbAllReader).toHaveBeenCalledExactlyOnceWith(2025,"regular","2025-09-28",7,directory.players,manifest.seasons[1],"",undefined,index);expect(reader).not.toHaveBeenCalled();expect(container.textContent).toContain("検索結果 2人");
+  });
+  it("does not hide a broken aggregate publication as an old-release fallback",async()=>{
+    staticValues.set("players/index.json",directory);staticValues.set("seasons/2025.json",{season:2025,firstDate:"2025-03-18",lastDate:"2025-09-28",players:rows});staticValues.set("exploration/recent/2025/index.json",Error("invalid schema"));
+    await mount(<MlbDataExplorer manifest={manifest}/>,"/MLB/data?season=2025&period=7");expect(container.textContent).toContain("公開状態を確認できません");expect(container.querySelector('.explorer-candidates')).toBeNull();expect(mlbAllReader).not.toHaveBeenCalled();
+  });
   it("shows one-year season totals and refuses a mismatched manifest window", async () => {
     staticValues.set("players/index.json", directory);
     staticValues.set("seasons/2025.json", { season: 2025, firstDate: "2025-03-18", lastDate: "2025-09-28", players: rows });

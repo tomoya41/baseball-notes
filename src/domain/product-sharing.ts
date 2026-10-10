@@ -18,7 +18,7 @@ export function portableRoute(path: string, search = ""): string | null {
     if(["batting","pitching"].includes(source.get("role") ?? ""))clean.set("role",source.get("role")!);
     if(resource === "milestones") {
       if(["near","achieved"].includes(source.get("mode") ?? ""))clean.set("mode",source.get("mode")!);
-      if(["H","HR","RBI","SB","SO","W","SV","HLD"].includes(source.get("metric") ?? ""))clean.set("metric",source.get("metric")!);
+      if(["H","HR","RBI","SB","SO","W","SV"].includes(source.get("metric") ?? ""))clean.set("metric",source.get("metric")!);
     }
   } else if (parts.length === 2 && ["compare", "team-compare", "season-compare"].includes(resource ?? "")) {
     if (resource === "compare") {

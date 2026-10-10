@@ -49,8 +49,16 @@ describe("all-player Historical Recent shards",()=>{
     const result=await readMlbAllRecent(2025,"regular","2025-03-30",14,[{id:player,name:"選手",seasons:[2025],positions:[],teamIds:[team]}],index,"",read as Parameters<typeof readMlbAllRecent>[7]);
     expect(read).toHaveBeenCalledTimes(2);expect(result.values).toHaveLength(1);expect(read.mock.calls.flat().join()).not.toContain("players/");
   });
+  it("reuses an already-probed index and still validates its publication context",async()=>{
+    const read=vi.fn(async()=>month);
+    await readMlbAllRecent(2025,"regular","2025-03-30",14,[{id:player,name:"選手",seasons:[2025],positions:[],teamIds:[team]}],index,"",read as Parameters<typeof readMlbAllRecent>[7],index);
+    expect(read).toHaveBeenCalledExactlyOnceWith("exploration/recent/2025/2025-03.json");
+    await expect(readMlbAllRecent(2025,"postseason","2025-03-30",14,[],index,"",read as Parameters<typeof readMlbAllRecent>[7],index)).rejects.toThrow("publication mismatch");expect(read).toHaveBeenCalledTimes(1);
+  });
   it("includes up to three calendar shards for a 30-day window",()=>{const data={...index,firstDate:"2025-01-31",months:["2025-01","2025-02","2025-03"].map(month=>({month,rows:1,compressedBytes:1}))};expect(recentMonths(data,"2025-03-01",30)).toHaveLength(3);});
   it("shares date/window/scope and only canonical matchup identities",()=>{
+    expect(portableRoute("/MLB/milestones","season=2025&role=pitching&metric=HLD")).not.toContain("metric=");
+    const holds=canonicalDeepLink("baseballnotes://MLB/milestones?season=2025&role=pitching&metric=HLD");expect(holds).not.toContain("HLD");
     expect(portableRoute("/MLB/milestones", "season=2025&mode=achieved&metric=HR")).toContain("mode=achieved&metric=HR");
     const path=portableRoute("/MLB/data",`season=2025&period=14&asOfDate=2025-08-20&competition=postseason`)!;expect(path).toContain("asOfDate=2025-08-20");
     const matchup=portableRoute("/MLB/matchup",`batter=${player}&pitcher=not-canonical&season=2025&competition=postseason`)!;expect(matchup).toContain("batter=");expect(matchup).not.toContain("pitcher");expect(canonicalDeepLink(`https://tomoya41.github.io/baseball-notes/#${matchup}`)).toBe(matchup);
