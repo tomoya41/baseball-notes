@@ -83,6 +83,15 @@ beforeEach(()=>{vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);readers.season.mo
 afterEach(async()=>{await act(async()=>{root.unmount();});element.remove();vi.unstubAllGlobals();});
 async function mount(path="/NPB/talent",lifecycle=false){await act(async()=>root.render(<MemoryRouter initialEntries={[path]}>{lifecycle?<PlayerLifecycle player={catalog.players[0]!}/>:<LifecycleWorkspace catalog={catalog}/>}<Location/></MemoryRouter>));}
 describe("Draft discovery integration and recovery",()=>{
+  it("labels the latest affiliation filter separately from historical affiliations",async()=>{
+    await mount(`/NPB/talent?team=${team}`);
+    const labels=[...element.querySelectorAll('label')];
+    expect(labels.some(l=>l.textContent?.startsWith('所属球団（収録時点）'))).toBe(true);
+    expect(labels.some(l=>l.textContent?.startsWith('所属履歴'))).toBe(false);
+    const historyOnly=structuredClone(catalog);historyOnly.players[2]!.membership.teamId='npb:team:giants';
+    historyOnly.players[2]!.profile.affiliations=[{name:'阪神タイガース',teamId:team,from:null,to:null,uniformNumber:null}];
+    expect(lifecyclePlayers(historyOnly,lifecycleQuery(new URLSearchParams(`team=${team}`),historyOnly),[]).map(p=>p.playerId)).not.toContain(id(2));
+  });
   it("direct loads class filters, bounds rendering to 30 and preserves partial coverage",async()=>{
     await mount("/NPB/talent?year=2022&role=batting");
     expect(element.querySelector("h1")?.textContent).toBe("2022年 ドラフト同期");

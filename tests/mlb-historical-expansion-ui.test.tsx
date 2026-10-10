@@ -6,6 +6,7 @@ import { afterEach,beforeEach,describe,it,expect,vi } from "vitest";
 import { MlbMatchup,MlbSeasonMilestones,SavedSeasonTimeline,SeasonCheckpointSummary } from "../src/ui/mlb-historical-expansion";
 import { HistoricalCompetitionContext } from "../src/ui/historical-competition-context";
 import { StatGlossary } from "../src/ui/stat-glossary";
+import { CompareWorkspace } from "../src/ui/player-compare";
 const payloads=vi.hoisted(()=>new Map<string,unknown>());
 const reads=vi.hoisted(()=>vi.fn());
 vi.mock("../src/ui/use-mlb-historical",()=>({useHistoricalStatic:(path:string|null)=>{if(path)reads(path);return {status:path&&payloads.has(path)?"ready":"missing",value:path?payloads.get(path):null,retry:vi.fn()};}}));
@@ -20,6 +21,26 @@ afterEach(async()=>{await act(async()=>root.unmount());el.remove();vi.unstubAllG
 async function mount(child:ReactNode,path:string,scope:"regular"|"postseason"="regular"){await act(async()=>root.render(<MemoryRouter initialEntries={[path]}><HistoricalCompetitionContext.Provider value={scope}>{child}</HistoricalCompetitionContext.Provider></MemoryRouter>));}
 const path=`advanced/2025/${batter.replaceAll(":","_")}.json`;
 describe("MLB Historical Product Track 2 UI",()=>{
+  it("clears a Recent as-of date on comparison year changes while retaining selected players and period",async()=>{
+    const loader=vi.fn(async(id:string,c:{season:number;asOfDate:string})=>{
+      if(c.asOfDate&& !c.asOfDate.startsWith(String(c.season)))throw Error("wrong year");
+      return {id,metrics:null,date:c.asOfDate||`${c.season}-09-27`,notice:null};
+    });
+    await mount(<CompareWorkspace league="MLB" players={[{id:batter,name:"打者",batting:true,pitching:false,seasons:[2020,2025]}]} teams={[]} seasons={[2020,2025]} loader={loader}/>,`/MLB/compare?season=2025&players=${batter}&condition=total&period=14d&asOfDate=2025-08-20`);
+    expect(el.textContent).toContain("2025-08-20まで");
+    const select=el.querySelector<HTMLSelectElement>('.mlb-controls select')!;
+    await act(async()=>{select.value="2020";select.dispatchEvent(new Event("change",{bubbles:true}));});
+    expect(loader).toHaveBeenLastCalledWith(batter,expect.objectContaining({season:2020,asOfDate:"",condition:"total",period:"14d"}));
+    expect(el.textContent).toContain("2020-09-27まで");expect(el.textContent).not.toContain("読み込みに失敗しました");
+  });
+  it("offers only supported MLB pitcher checkpoint metrics, including after a role switch",async()=>{
+    payloads.set("seasons/2025.json",{season:2025,firstDate:manifest.seasons[1]!.firstDate,lastDate:manifest.seasons[1]!.lastDate,coverage:"complete",players:[]});
+    await mount(<MlbSeasonMilestones manifest={manifest} />,"/MLB/milestones?season=2025&role=batting&metric=HR");
+    const selects=el.querySelectorAll<HTMLSelectElement>('.explorer-filter-grid select');
+    await act(async()=>{selects[1]!.value="pitching";selects[1]!.dispatchEvent(new Event("change",{bubbles:true}));});
+    const metric=el.querySelectorAll<HTMLSelectElement>('.explorer-filter-grid select')[3]!;
+    expect([...metric.options].map(o=>o.value)).toEqual(["","SO","W","SV"]);expect(metric.value).toBe("");expect(el.textContent).not.toContain("ホールド");
+  });
   it.each(["regular","postseason"] as const)("shows only admitted exact BvP with scope and PA for %s",async scope=>{
     payloads.set(path,{playerId:batter,scope:"2025",directBvp:"ready",batting:{opponents:[{playerId:pitcher,name:"投手",metrics}]},pitching:{opponents:[]}});
     await mount(<MlbMatchup manifest={manifest} />,`/MLB/matchup?season=2025&batter=${batter}&pitcher=${pitcher}`,scope);
