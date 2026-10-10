@@ -3,8 +3,8 @@ import { postseasonHubSchema, roundLabels, seriesStanding, type PostseasonHub, t
 
 // Versioned competition rules, not inferred from the number of played Games.
 export function mlbPostseasonBestOf(season: number, round: PostseasonRound): number {
-  if (season < 2020 || season > 2025) throw new Error("Unreviewed postseason format");
-  if (round === "wild_card") return season === 2021 ? 1 : 3;
+  if (!Number.isInteger(season) || season < 2016 || season > 2025) throw new Error("Unreviewed postseason format");
+  if (round === "wild_card") return season <= 2019 || season === 2021 ? 1 : 3;
   if (round === "division_series") return 5;
   if (["alcs", "nlcs", "world_series"].includes(round)) return 7;
   throw new Error("Not an MLB round");
@@ -44,7 +44,7 @@ export function buildPostseasonHub(games: readonly HistoricalGame[], archiveSha2
     s.advancesToSeriesId = next[0]!.id;
   }
   series.sort((a, b) => order(a.round) - order(b.round) || a.id.localeCompare(b.id));
-  const expectedSeries = season === 2020 ? 15 : season === 2021 ? 9 : 11;
+  const expectedSeries = season === 2020 ? 15 : season <= 2021 ? 9 : 11;
   if (series.length !== expectedSeries || series.filter(s => s.round === "world_series").length !== 1) throw new Error("Incomplete postseason bracket");
   return postseasonHubSchema.parse({ schemaVersion: 1, league: "MLB", season, competitionType: "postseason",
     coverage: "complete", effectiveDate: [...games].sort((a, b) => a.date.localeCompare(b.date)).at(-1)!.date, generatedAt,

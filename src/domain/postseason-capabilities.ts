@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { capabilitySchema, postseasonRoundSchema, postseasonHubSchema, type PostseasonHub } from "./competition";
+import { MLB_BASELINE_SEASONS, supportedHistoricalSeason } from "./mlb-historical-seasons";
 
 export const postseasonCapabilitiesSchema = z.object({ schemaVersion: z.literal(1),
   leagues: z.record(z.enum(["NPB", "MLB"]), z.object({
@@ -27,7 +28,8 @@ export function capabilitiesForVerifiedPostseason(hubs: readonly PostseasonHub[]
   if (!hubs.length) return postseasonCapabilities;
   const verified = hubs.map(h => postseasonHubSchema.parse(h));
   const years = verified.map(h => h.season).sort();
-  if (years.join(",") !== "2020,2021,2022,2023,2024,2025" || verified.some(h => h.coverage !== "complete" || h.playerStats.status !== "available"))
+  if (new Set(years).size !== years.length || !MLB_BASELINE_SEASONS.every(y => years.includes(y)) ||
+    years.some(y => !supportedHistoricalSeason(y)) || verified.some(h => h.coverage !== "complete" || h.playerStats.status !== "available"))
     throw new Error("Incomplete staged Postseason release");
   const available = { status: "available" as const, reason: null };
   return postseasonCapabilitiesSchema.parse({ ...postseasonCapabilities, leagues: { ...postseasonCapabilities.leagues,

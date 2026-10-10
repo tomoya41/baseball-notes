@@ -156,7 +156,7 @@ export async function readWatchObservations(league: League, favorites: readonly 
       }
     }
     if (targets.views.length) notes.push("MLB Historicalの保存条件Watchは未対応です。保存条件から再検索できます。");
-    notes.push("MLBは2020–2025 Historical。現在の出来事ではなく、保存データの確認差分です。");
+    notes.push("MLBはHistorical。現在の出来事ではなく、保存データの確認差分です。");
   }
   return { observations, activeEntities, notes: [...new Set(notes)], fetches, targets: targets.players.length+targets.teams.length+targets.views.length, elapsedMs: performance.now()-started };
 }

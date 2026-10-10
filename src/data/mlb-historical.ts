@@ -5,6 +5,8 @@ import { mlb2025Teams } from "./retrosheet";
 import { unzipSync } from "fflate";
 
 export const POSTSEASON_GAME_TYPES = ["wildcard", "divisionseries", "lcs", "worldseries"];
+/** Retrosheet labels historical Game 163 as playoff; MLB counts it in regular-season statistics. */
+export const isRegularRetrosheetGame = (type: string | undefined) => type === "regular" || type === "playoff";
 export function retrosheetRound(type: string, homeTeam: string): PostseasonRound {
   if (type === "wildcard") return "wild_card";
   if (type === "divisionseries") return "division_series";
@@ -14,7 +16,8 @@ export function retrosheetRound(type: string, homeTeam: string): PostseasonRound
   throw new Error("Unknown postseason type/team group");
 }
 
-export const HISTORICAL_SEASONS = [2020, 2021, 2022, 2023, 2024, 2025] as const;
+export { MLB_HISTORICAL_SEASONS as HISTORICAL_SEASONS } from "../domain/mlb-historical-seasons";
+import { MLB_HISTORICAL_SEASONS as HISTORICAL_SEASONS } from "../domain/mlb-historical-seasons";
 export type HistoricalSeason = typeof HISTORICAL_SEASONS[number];
 
 export interface HistoricalPlayer {
@@ -193,7 +196,7 @@ export function validateHistoricalGame(game: HistoricalGame, teams: readonly Csv
 export function importHistoricalSeason(zip: Uint8Array, season: HistoricalSeason,
   bridge: ReadonlyMap<string, string>, competition: CompetitionType = "regular"): HistoricalImport {
   const info = readHistoricalCsv(zip, season, "gameinfo").filter(row => competition === "regular"
-    ? row.gametype === "regular" : POSTSEASON_GAME_TYPES.includes(row.gametype ?? ""));
+    ? isRegularRetrosheetGame(row.gametype) : POSTSEASON_GAME_TYPES.includes(row.gametype ?? ""));
   const sourceGames = new Map<string, HistoricalGame>();
   const sourceGameInfo = new Map<string, CsvRow>();
   for (const row of info) {

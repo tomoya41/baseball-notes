@@ -8,11 +8,11 @@ import { buildHistoricalTeamHub } from "../../src/data/mlb-team-product";
 import type { HistoricalGame } from "../../src/data/mlb-historical";
 import { buildMlbRecentMonths } from "../generate-mlb-recent-explorer";
 import type { RecentIndex, RecentMonth } from "../../src/domain/mlb-recent-explorer";
+import { MLB_BASELINE_SEASONS, supportedHistoricalSeason } from "../../src/domain/mlb-historical-seasons";
 
 type Player = { id: string; name: string; seasons: number[] };
 type Game = { id: string; season: number; date: string; homeTeamId: string; awayTeamId: string; homeRuns: number; awayRuns: number; number: number; batting: { playerId: string }[]; pitching: { playerId: string }[] };
 type DatedFact = { playerId: string; gameId: string; season: number; date: string };
-const seasons = [2020, 2021, 2022, 2023, 2024, 2025];
 
 export async function auditHistoricalPostseason(root: string, regular: string, options: { requireDerivedProducts?: boolean } = {}) {
   const target = join(root, "postseason"), files: string[] = [];
@@ -41,12 +41,25 @@ export async function auditHistoricalPostseason(root: string, regular: string, o
     // The public runtime schema was checked above before any cross-file access.
     return payloads.get(path) as T;
   }
-  const manifest = requirePayload<{ seasons: { season: number; firstDate: string; lastDate: string; games: number; playerCount: number; coverage: "complete" | "partial" | "unavailable" }[]; teams: { id: string }[]; features: { directBvp: string; situationalAnalysis?: string } }>("manifest.json");
+  const manifest = requirePayload<{ seasons: { season: number; firstDate: string; lastDate: string; games: number; playerCount: number; coverage: "complete" | "partial" | "unavailable" }[]; teams: { id: string }[]; features: { directBvp: string; situationalAnalysis?: string; collectedCountingRecords?: string }; collectedRecordPeriods?: { id: string; seasons: number[] }[] }>("manifest.json");
+  const seasons = manifest.seasons.map(row => row.season);
+  if (!MLB_BASELINE_SEASONS.every(y => seasons.includes(y)) || seasons.some(y => !supportedHistoricalSeason(y))) throw new Error("Unreviewed/missing baseline postseason season");
   if (manifest.seasons.length !== seasons.length || seasons.some(year => manifest.seasons.filter(s => s.season === year).length !== 1)) throw new Error("Incomplete/duplicate manifest seasons");
   const postPlayers = requirePayload<{ players: Player[] }>("players/index.json").players;
   const postIds = new Set(postPlayers.map(p => p.id));
   if (postIds.size !== postPlayers.length || postPlayers.some(p => new Set(p.seasons).size !== p.seasons.length)) throw new Error("Duplicate postseason master identity/season");
   const advanced = requirePayload<{ directBvp: string; situations: string }>("advanced/capabilities.json");
+  if (payloads.has("records/range.json")) {
+    const range = requirePayload<{ collectedSeasons: number[] }>("records/range.json");
+    if (range.collectedSeasons.join(",") !== seasons.join(",")) throw new Error("Collected records season mismatch");
+  }
+  if (manifest.features.collectedCountingRecords === "available") {
+    if (!manifest.collectedRecordPeriods?.length || new Set(manifest.collectedRecordPeriods.map(p => p.id)).size !== manifest.collectedRecordPeriods.length) throw new Error("Invalid collected records manifest");
+    for (const period of manifest.collectedRecordPeriods) {
+      const range = requirePayload<{ collectedSeasons: number[] }>(`records/${period.id}.json`);
+      if (range.collectedSeasons.join(",") !== period.seasons.join(",") || period.seasons.some(year => !seasons.includes(year))) throw new Error("Collected period mismatch");
+    }
+  }
   if ((manifest.features.directBvp === "available") !== (advanced.directBvp === "ready") || (manifest.features.situationalAnalysis === "available") !== (advanced.situations === "ready")) throw new Error("Advanced manifest capability mismatch");
   const hubs = seasons.map(year => postseasonHubSchema.parse(requirePayload(`hub/${year}.json`)));
   const games = new Map<string, Game>();

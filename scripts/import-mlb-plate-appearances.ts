@@ -20,7 +20,9 @@ const identities = new Map((await client.execute("SELECT source_id,canonical_id 
   .map(row => [String(row.source_id), String(row.canonical_id)]));
 const seasons = [];
 let dbWrites = 0, dbReads = 1;
-for (const season of HISTORICAL_SEASONS.filter(year => !seasonFilter || year === seasonFilter)) {
+const releasedSeasons = (await client.execute("SELECT season FROM mlb_historical_releases ORDER BY season")).rows.map(row => Number(row.season));
+if (seasonFilter && !releasedSeasons.includes(seasonFilter)) throw new Error("PA season has no validated Game release");
+for (const season of HISTORICAL_SEASONS.filter(year => releasedSeasons.includes(year) && (!seasonFilter || year === seasonFilter))) {
   const gameRows = (await client.execute({ sql: `SELECT game_id,payload_json,r.games AS expected_games
     FROM mlb_historical_games g JOIN mlb_historical_releases r ON g.season=r.season
     WHERE g.season=? AND r.validation_issues=0`, args: [season] })).rows;

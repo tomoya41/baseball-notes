@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { mkdir, mkdtemp, readFile, unlink, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
-import { HISTORICAL_PUBLIC_ARCHIVE_ATTRIBUTION, historicalPublicArchivePointer, parseHistoricalPublicArchive, verifyHistoricalArchive } from "../src/data/mlb-public-archive";
+import { HISTORICAL_PUBLIC_ARCHIVE_ATTRIBUTION, hasHistoricalSourceAttribution, historicalPublicArchivePointer, parseHistoricalPublicArchive, verifyHistoricalArchive } from "../src/data/mlb-public-archive";
 
 const target = resolve(process.argv[2] ?? "dist/data/mlb");
 const pointerPath = join(target, "historical-release.json");
@@ -12,13 +12,16 @@ const attributionPath = join(target, "historical", "ATTRIBUTION.txt");
 let attribution = null;
 try { attribution = await readFile(attributionPath, "utf8"); }
 catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; }
-if (attribution !== HISTORICAL_PUBLIC_ARCHIVE_ATTRIBUTION) {
+// Existing attributed releases are immutable. An app-only deployment must reuse
+// their pointer even when explanatory wording in this script changes.
+const refresh = process.argv.includes("--refresh");
+if ((!existing || refresh || !hasHistoricalSourceAttribution(attribution)) && attribution !== HISTORICAL_PUBLIC_ARCHIVE_ATTRIBUTION) {
   await writeFile(attributionPath, HISTORICAL_PUBLIC_ARCHIVE_ATTRIBUTION);
   // Migrate the legacy public copy into an attributed immutable archive.
   existing = null;
 }
 // Explicit release replacement; app-only preservation must never rebuild the archive.
-if (process.argv.includes("--refresh")) existing = null;
+if (refresh) existing = null;
 if (existing) console.log(JSON.stringify({ reused: true, ...existing }));
 else {
   await mkdir(".data", { recursive: true });
