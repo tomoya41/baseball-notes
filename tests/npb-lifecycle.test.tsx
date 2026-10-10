@@ -85,9 +85,9 @@ async function mount(path="/NPB/talent",lifecycle=false){await act(async()=>root
 describe("Draft discovery integration and recovery",()=>{
   it("direct loads class filters, bounds rendering to 30 and preserves partial coverage",async()=>{
     await mount("/NPB/talent?year=2022&role=batting");
-    expect(element.querySelector("h1")?.textContent).toBe("2022 Draft Class");
+    expect(element.querySelector("h1")?.textContent).toBe("2022年 ドラフト同期");
     expect(element.querySelectorAll(".lifecycle-result")).toHaveLength(30);
-    expect(element.textContent).toContain("Coverage一部未確認");
+    expect(element.textContent).toContain("一部未確認");
     expect(readers.season).toHaveBeenCalledTimes(1);expect(readers.recent).not.toHaveBeenCalled();
     await act(async()=>{[...element.querySelectorAll("button")].find(b=>b.textContent==="次へ")!.click();});
     expect(element.querySelectorAll(".lifecycle-result")).toHaveLength(2);expect(readers.season).toHaveBeenCalledTimes(1);
@@ -103,15 +103,15 @@ describe("Draft discovery integration and recovery",()=>{
     expect(element.textContent).toContain("成績を読み込めません");expect(element.textContent).toContain("選手02");
     expect([...element.querySelectorAll(".explorer-metrics dd")].every(v=>v.textContent==="—")).toBe(true);
   });
-  it.each([['unknown','Coverage未確認'],['unavailable','Coverage利用不可']])("distinguishes %s coverage from partial",async(status,label)=>{
+  it.each([['unknown','収録範囲未確認'],['unavailable','収録範囲を確認できません']])("distinguishes %s coverage from partial",async(status,label)=>{
     readers.season.mockResolvedValue({...payload,coverage:{status}});await mount('/NPB/talent?role=batting');
-    expect(element.textContent).toContain(label);expect(element.textContent).not.toContain('Coverage一部未確認');
+    expect(element.textContent).toContain(label);expect(element.textContent).not.toContain('一部未確認');
   });
   it("does not report an empty sample search until loading completes",async()=>{
     let resolve!:(value:typeof payload)=>void;readers.season.mockReturnValue(new Promise(done=>resolve=done));
     await mount("/NPB/talent?role=batting&minimum=100");
-    expect(element.textContent).not.toContain("条件に合う確認済み選手がいません");
-    await act(async()=>resolve(payload));expect(element.textContent).toContain("条件に合う確認済み選手がいません");
+    expect(element.textContent).not.toContain("条件に合う選手がいません");
+    await act(async()=>resolve(payload));expect(element.textContent).toContain("条件に合う選手がいません");
   });
   it("selects at most four same-role players and hands period and identities to existing Compare",async()=>{
     await mount("/NPB/talent?year=2022&role=batting&period=14");
@@ -168,8 +168,8 @@ describe("Draft discovery integration and recovery",()=>{
   });
   it("Lifecycle omits unsupported joined/NPB debut and keeps school, draft class and saved Season links",async()=>{
     await mount("/NPB/players/example/more",true);
-    expect(element.textContent).toContain("2022年 Draft");expect(element.textContent).toContain("2026 保存シーズン");
-    expect(element.textContent).not.toContain("2019");expect(element.textContent).not.toContain("入団年");
+    expect(element.textContent).toContain("2022年 ドラフト");expect(element.textContent).toContain("2026 シーズン");
+    expect(element.textContent).not.toContain("2019");expect(element.querySelector(".lifecycle-timeline")?.textContent).not.toContain("入団年");expect(element.querySelector("details")?.textContent).toContain("推定しません");
     expect(element.querySelector('a[href="/NPB/talent?year=2022"]')).not.toBeNull();
     expect(element.textContent).toContain("完全なCareer");
   });
