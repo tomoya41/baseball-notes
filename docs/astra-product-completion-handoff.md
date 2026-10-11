@@ -64,7 +64,7 @@ The audit identifies small 10–13px UI text, dense filters, technical wording, 
 
 Reuse validated repository/domain calculations; redesign their rendering rather than building duplicate engines. Shared primitives should cover accessible buttons/links, tabs/chips, stat cells with glossary, data-state panels, sheets/dialog focus, score alignment, trend charts, player/team compact rows, filter summary and responsive paging. Dedicated Game / Player / Team / Home / form compositions may use these primitives without sharing one generic card template.
 
-Repositories and domain files own Fact aggregation, qualifiers, scopes, identities and rights. `src/domain/portable-route.ts` owns portable conditions. Platform services own Android Back, lifecycle and incoming URI translation. Cache fallback must preserve its saved-data indication. The full observation/alert system stays inside the existing application/domain boundary; do not recreate it in a new UI hook.
+Repositories and domain files own Fact aggregation, qualifiers, scopes, identities and rights. `src/domain/portable-conditions.ts` owns portable conditions. Platform services own Android Back, lifecycle and incoming URI translation. Cache fallback must preserve its saved-data indication. The full observation/alert system stays inside the existing application/domain boundary; do not recreate it in a new UI hook.
 
 ## Personal state, rights and performance
 

@@ -70,6 +70,7 @@ jobs:
           npx tsx scripts/verify-mlb-advanced-performance.ts
           npx tsx scripts/backup-mlb-historical.ts --db .data/mlb-historical.sqlite --output .data/mlb-backup/regular --scratch .data/mlb-restored.sqlite > .data/mlb-backup-report.json
           cat .data/mlb-backup-report.json
+          cp .data/mlb-backup-report.json .data/mlb-regular-backup-report.json
       - name: Import and validate isolated Historical Postseason
         if: inputs.mode == 'postseason' || inputs.mode == 'expansion'
         run: |
@@ -94,6 +95,8 @@ jobs:
             .data/mlb-advanced-public-audit.json
             .data/mlb-advanced-performance.json
             .data/mlb-backup-report.json
+            .data/mlb-regular-backup-report.json
+            .data/mlb-import-report.json
             .data/postseason-import.json
             .data/postseason-idempotency.json
             .data/postseason-pa-validation.json
@@ -227,6 +230,7 @@ jobs:
             .data/postseason-regular-preservation.json
             .data/mlb-history-preservation.json
             .data/mlb-baseline-reuse.json
+            .data/mlb-expanded-aggregates.json
           retention-days: 7
       - uses: actions/configure-pages@v5
         if: inputs.verify_only != true
