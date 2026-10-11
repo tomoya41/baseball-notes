@@ -74,6 +74,8 @@ Final device/TalkBack, release signing/App Links and Production Push QA remain m
 
 ## Local validation evidence
 
-1,116 tests / 95 files PASS (15-second per-test timeout used during simultaneous large-file audit; the one original 5-second timeout was an unchanged artifact fixture and its focused rerun also passed). Lint, strict typecheck, Web and Vercel build passed. All 52,986 original public Historical files / 228,996,982 bytes retain exact SHA; canonical writes 0. No new PA/Game Facts, no year expansion, no NPB payload modification. Android/PR/publication evidence is recorded in the delivery Run and PR.
+1,120 tests / 95 files PASS (15-second per-test timeout used during simultaneous large-file audit; the one original 5-second timeout was an unchanged artifact fixture and its focused rerun also passed). Lint, strict typecheck, Web and Vercel build passed. All 52,986 original public Historical files / 228,996,982 bytes retain exact SHA; canonical writes 0. No new PA/Game Facts, no year expansion, no NPB payload modification. Android/PR/publication evidence is recorded in the delivery Run and PR.
+
+Codex Review found a P2 in Cooling ordering: batting OPS declines and pitching ERA increases were listed smallest first. Sorting now reverses the improvement order specifically for Cooling, with independent batter/starter/reliever regression fixtures checking both Rising and Cooling and input-order determinism. Player navigation also preserves the selected 7/14/30-day window between tabs and the Historical HOT return link.
 
 Independent validation: 23,168 Games, 2,184 windows/categories, 8,342,265 metric comparisons, mismatches 0, unknown-role rows 0 across all 20 scopes. Local worst evaluation 385 ms, 20 rendered rows/page, up to 3 monthly fetches, 0 SQL queries. Full audit elapsed 148 seconds. This worst local sample is not an Android device benchmark.

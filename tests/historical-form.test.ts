@@ -83,6 +83,25 @@ describe("Historical form evaluation",()=>{
     for(const g of f.games)if(g.date>="2024-08-25")g.batting=g.batting.filter(p=>p.playerId!==other);
     const absent=buildFormMonths(f.games.map(game=>({game,hash:"a".repeat(64)})),"regular",2024);expect(evaluateHistoricalForm({...index,sourceFingerprint:absent[0]!.sourceFingerprint},absent,f.names,"2024-08-31",7,"change","batting").entries.some(e=>e.playerId===other)).toBe(false);
   });
+  it.each(["batting","starters","relievers"] as const)("orders %s Rising and Cooling by the strongest change first",category=>{
+    const f=fixture(), players=Array.from({length:4},(_,i)=>historicalId("player",`change-${i}`));
+    f.games.forEach(g=>{
+      const current=g.date>="2024-08-25";
+      const hits=current?[3,2,0,1]:[0,1,3,2];
+      const earned=current?[0,1,3,2]:[3,2,0,1];
+      g.batting=players.map((playerId,i)=>batter(playerId,hits[i]!));
+      g.pitching=players.map((playerId,i)=>({...pitcher(category==="relievers"?"reliever":"starter",18,earned[i]!),playerId}));
+    });
+    const months=buildFormMonths(f.games.map(game=>({game,hash:"a".repeat(64)})),"regular",2024);
+    const index={...f.index,sourceFingerprint:months[0]!.sourceFingerprint,roles:players.map(playerId=>({...f.index.roles[0]!,playerId}))};
+    const names=new Map(players.map((playerId,i)=>[playerId,`選手${i}`]));
+    const evaluate=()=>evaluateHistoricalForm(index,months,names,"2024-08-31",7,"change",category).entries;
+    const result=evaluate();
+    expect(result.filter(e=>e.change==="rising").map(e=>e.playerId)).toEqual(players.slice(0,2));
+    expect(result.filter(e=>e.change==="cooling").map(e=>e.playerId)).toEqual(players.slice(2,4));
+    months[0]!.batting.reverse();months[0]!.starters.reverse();months[0]!.relievers.reverse();
+    expect(evaluate()).toEqual(result);
+  });
   it("separates Postseason; calendar MVP is not admitted",()=>{
     const f=fixture(31,"postseason");expect(evaluateHistoricalForm(f.index,f.months,f.names,"2024-08-31",7,"monthly","batting").entries).toEqual([]);
     expect(()=>evaluateHistoricalForm({...f.index,competitionType:"regular"},f.months,f.names,"2024-08-31",7,"hot","batting")).toThrow("scope");

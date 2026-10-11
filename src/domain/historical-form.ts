@@ -94,7 +94,14 @@ export function evaluateHistoricalForm(index:FormIndex, months:readonly FormMont
     return [{playerId:row.playerId,name:row.name,teamIds:teams,metrics,rank:0,previous:before,delta:qualified?delta:null,change:change as FormEntry["change"],reason:category==="batting"?`OPS ${after?.toFixed(3)??"—"} · ${value(metrics,"PA")??"—"}打席 · ${value(metrics,"HR")??"—"}本塁打`:`防御率 ${after?.toFixed(2)??"—"} · ${value(metrics,"G")??"—"}登板 · K/9 ${value(metrics,"K9")?.toFixed(1)??"—"}`}];
   });
   entries.sort((a,b)=>{
-    if(mode==="change"){const order={rising:0,cooling:1,stable:2,insufficient:3};const diff=order[a.change]-order[b.change];if(diff)return diff;if(a.delta!==null&&b.delta!==null&&a.delta!==b.delta)return category==="batting"?b.delta-a.delta:a.delta-b.delta;}
+    if(mode==="change"){
+      const order={rising:0,cooling:1,stable:2,insufficient:3};
+      const diff=order[a.change]-order[b.change];if(diff)return diff;
+      if(a.delta!==null&&b.delta!==null&&a.delta!==b.delta){
+        const improvementOrder=category==="batting"?b.delta-a.delta:a.delta-b.delta;
+        return a.change==="cooling"?-improvementOrder:improvementOrder;
+      }
+    }
     const keys=category==="batting"?["OPS","PA","HR","H"]:["ERA","K9",category==="starters"?"outsRecorded":"G","outsRecorded"];
     for(const k of keys){const av=value(a.metrics,k),bv=value(b.metrics,k);if(av===null&&bv!==null)return 1;if(av!==null&&bv===null)return -1;if(av!==null&&bv!==null&&av!==bv)return k==="ERA"?av-bv:bv-av;}
     return a.playerId.localeCompare(b.playerId);

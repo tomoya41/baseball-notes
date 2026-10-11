@@ -30,3 +30,5 @@ describe("historical player navigation context", () => {
     } finally { await act(async () => root.unmount()); element.remove(); }
   });
 });
+
+it("keeps the HOT window when moving through player tabs",async()=>{vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);const element=document.createElement("div");const root=createRoot(element);try{await act(async()=>root.render(<MemoryRouter initialEntries={[`/MLB/players/${encodeURIComponent(id)}?season=2020&asOfDate=2020-08-01&period=7`]}><Routes><Route path="/MLB/players/:playerId/:section?" element={<MlbHistoricalPlayer manifest={manifest} favorites={[]} saving={false} toggle={()=>{}}/>}/></Routes></MemoryRouter>));const links=Array.from(element.querySelectorAll("nav[aria-label=\"選手ページ\"] a"));expect(links.length).toBeGreaterThan(0);for(const link of links)expect(link.getAttribute("href")).toContain("period=7");expect(Array.from(element.querySelectorAll("a")).find(a=>a.textContent==="HOT・月間候補")?.getAttribute("href")).toContain("period=7");}finally{await act(async()=>root.unmount());}});
