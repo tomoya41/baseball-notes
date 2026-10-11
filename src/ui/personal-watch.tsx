@@ -9,7 +9,7 @@ import { LibraryContext } from "./personal-library-context";
 import { publicFallbackRevision, publicNetworkOnline } from "../app/mobile-services";
 import { LoadingSkeleton, PageHeading, MetricLabel } from "./components";
 
-const labels: [keyof WatchPreferences, string][] = [["players","お気に入り選手の試合記録"],["teams","お気に入り球団の試合記録・保存済み次戦"],["recent","Recentの数値変化"],["streaks","確認できる連続記録"],["milestones","保存済みSeasonの節目"],["postseason","Historical Seriesの保存状態"],["collections","Collections内の選手"],["savedViews","保存した全選手Recent条件への新規一致"]];
+const labels: [keyof WatchPreferences, string][] = [["players","お気に入り選手の試合記録"],["teams","お気に入り球団の試合記録・保存済み次戦"],["recent","Recentの数値変化・Historical HOT／月間候補"],["streaks","確認できる連続記録"],["milestones","保存済みSeasonの節目"],["postseason","Historical Seriesの保存状態"],["collections","Collections内の選手"],["savedViews","保存した全選手Recent条件への新規一致"]];
 export function WatchCenter({ league, services, favorites, ready }: { league: League; services: Services; favorites: Favorite[]; ready: boolean }) {
   const ctx = useContext(PersonalWatchContext), library = useContext(LibraryContext), [busy,setBusy] = useState(false), [check,setCheck] = useState<WatchCheck | null>(null), [message,setMessage] = useState(""), [filter,setFilter] = useState("all"), [reset,setReset] = useState(false);
   const initial = useRef(false), active = useRef(true);

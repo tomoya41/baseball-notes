@@ -45,9 +45,9 @@ export function CoverageNote({ stats, period }: { stats: PeriodStats; period: Re
   </details>;
 }
 
-export function PlayerRecentView({ period, onPeriodChange, payload, state, noFactKnown = false }: {
+export function PlayerRecentView({ period, onPeriodChange, payload, state, noFactKnown = false, pitcherBatting=false }: {
   period: RecentPeriod; onPeriodChange: (period: RecentPeriod) => void;
-  payload: PlayerRecentResponse | null; state: RecentState; noFactKnown?: boolean;
+  payload: PlayerRecentResponse | null; state: RecentState; noFactKnown?: boolean; pitcherBatting?:boolean|undefined;
 }) {
   const stats = [payload?.batting, payload?.pitching].filter((item): item is PeriodStats => item !== null && item !== undefined);
   return <section className="stats-section player-recent" aria-label="最近の成績">
@@ -63,12 +63,12 @@ export function PlayerRecentView({ period, onPeriodChange, payload, state, noFac
       <p className="recent-dates">{formatDate(payload.asOfDate, true)}終了時点{stats[0] && <> · {period === "season" && "シーズン期間 "}
         {formatDate(stats[0].from, true)}〜{formatDate(stats[0].to, true)}</>}</p>
       {stats.length === 0 && <DataState kind="no-data" title={noFactKnown ? "最近の成績データはありません" : "この期間の出場データはありません"} />}
-      {payload.batting && <div className="recent-group"><h3>打撃</h3>
+      {payload.batting && (pitcherBatting?<details className="advanced-disclosure"><summary>投手の打撃成績</summary><StatTiles stats={payload.batting} keys={[...battingPrimary,...battingDetail]} /><CoverageNote stats={payload.batting} period={period} /></details>:<div className="recent-group"><h3>打撃</h3>
         <StatTiles stats={payload.batting} keys={battingPrimary} />
         <CoverageNote stats={payload.batting} period={period} />
         <details className="advanced-disclosure"><summary>詳細成績<ChevronRight size={18} aria-hidden="true" /></summary>
           <StatTiles stats={payload.batting} keys={battingDetail} /></details>
-      </div>}
+      </div>)}
       {payload.pitching && <div className="recent-group"><h3>投球</h3>
         <StatTiles stats={payload.pitching} keys={pitchingPrimary} />
         <CoverageNote stats={payload.pitching} period={period} />

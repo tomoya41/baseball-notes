@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { publicDataFetch } from "../app/mobile-services";
 import { HistoricalProductHttpError, readHistoricalProduct } from "../app/historical-products";
 import { useHistoricalCompetition } from "./historical-competition-context";
@@ -29,6 +29,7 @@ export function useHistoricalDirectory() {
   const availability = usePostseasonAvailability();
   const regular = useHistoricalStatic<{ players: HistoricalDirectoryPlayer[] }>("players/index.json");
   const postseason = useHistoricalStatic<{ players: HistoricalDirectoryPlayer[] }>(competition === "regular" && hasHistoricalPostseason(availability) ? "postseason/players/index.json" : null);
+  const merged = useMemo(() => regular.value ? { players: mergeHistoricalDirectory(regular.value.players, postseason.value?.players ?? []) } : null, [regular.value,postseason.value]);
   if (competition === "postseason") return regular;
-  return { ...regular, value: regular.value ? { players: mergeHistoricalDirectory(regular.value.players, postseason.value?.players ?? []) } : null };
+  return { ...regular, value: merged };
 }

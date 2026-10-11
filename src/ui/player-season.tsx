@@ -3,7 +3,7 @@ import { formatDate } from "../presentation/formatters";
 import { DataState, LoadingSkeleton, SectionHeader } from "./components";
 import { StatTiles, CoverageNote } from "./player-recent";
 
-export function PlayerSeasonView({payload,state}:{payload:PlayerRecentResponse|null;state:"loading"|"ready"|"missing"|"error"}) {
+export function PlayerSeasonView({payload,state,pitcherBatting=false}:{payload:PlayerRecentResponse|null;state:"loading"|"ready"|"missing"|"error";pitcherBatting?:boolean|undefined}) {
   const batting=payload?.batting,pitching=payload?.pitching;
   return <section className="stats-section player-season" aria-label="2026シーズン成績">
     <SectionHeader title="2026シーズン成績" />
@@ -12,12 +12,12 @@ export function PlayerSeasonView({payload,state}:{payload:PlayerRecentResponse|n
     {state==="error" && <DataState kind="source-unavailable" title="シーズン成績を読み込めません" />}
     {(state==="missing" || (state==="ready" && !batting && !pitching)) &&
       <DataState kind="no-data" title="保存済みシーズン成績はありません" />}
-    {state==="ready" && batting && <div className="recent-group"><h3>打撃</h3>
+    {state==="ready" && batting && (pitcherBatting?<details className="advanced-disclosure"><summary>投手の打撃成績</summary><StatTiles stats={batting} keys={["G","PA","AB","R","H","2B","3B","HR","RBI","BB","HBP","SH","SF","SO","SB","CS","AVG","OBP","SLG","OPS"]} /><CoverageNote stats={batting} period="season" /></details>:<div className="recent-group"><h3>打撃</h3>
       <StatTiles stats={batting} keys={["OPS","AVG","HR","RBI","PA"]} />
       <CoverageNote stats={batting} period="season" />
       <details className="advanced-disclosure"><summary>打撃の詳細成績</summary>
         <StatTiles stats={batting} keys={["G","AB","R","H","2B","3B","BB","HBP","SH","SF","SO","SB","CS","OBP","SLG"]} /></details>
-    </div>}
+    </div>)}
     {state==="ready" && pitching && <div className="recent-group"><h3>投球</h3>
       <StatTiles stats={pitching} keys={["ERA","K9","outsRecorded","SO","G","GS"]} labelOverrides={{G:"登板"}} />
       <CoverageNote stats={pitching} period="season" />

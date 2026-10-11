@@ -449,3 +449,8 @@ label.analysis-condition select { flex:1; min-width:0; max-width:330px; font-siz
 .watch-preferences label { display: flex; gap: 10px; align-items: center; min-height: 44px; font-size: 13px; }
 .watch-preferences input { flex-shrink: 0; }
 .watch-diagnostics { margin-top: 24px; font-size: 12px; color: var(--color-muted); overflow-wrap: anywhere; }
+
+/* Historical form: bounded rows, one page scroll, existing theme tokens. */
+.historical-form .mlb-controls{flex-wrap:wrap}.historical-form .mlb-controls>label{min-width:0;flex:1 1 130px}.historical-form input[type=date],.batting-view-control select{max-width:100%;min-width:0}.form-entry{padding:14px 0;border-bottom:1px solid var(--color-border)}.form-entry-title{display:flex;align-items:center;gap:10px}.form-entry-title>a{flex:1;min-width:0}.form-entry-title small{display:block;overflow-wrap:anywhere}.form-method{margin:12px 0}.form-method p{font-size:.8rem;line-height:1.65}.batting-view-control{display:flex;align-items:center;gap:10px;margin:8px 0}.form-entry .hub-links{font-size:.8rem}.historical-form .explorer-values{font-variant-numeric:tabular-nums}.historical-form button:focus-visible,.historical-form a:focus-visible{outline:2px solid var(--brand);outline-offset:3px}
+
+.form-filters{margin:10px 0;border-block:1px solid var(--color-border);padding:10px 0}.form-filters summary{font-size:.8rem;font-weight:650;cursor:pointer}.form-filters[open] summary{margin-bottom:12px}

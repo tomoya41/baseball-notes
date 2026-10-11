@@ -1,8 +1,9 @@
 import { normalizePlayerSearch } from "./npb-player-directory";
+import { battingView, includesBattingRole, type BattingDisplayRole, type BattingView } from "./player-display-role";
 
 export type ExplorerMetric = { value: number | null; status?: "complete" | "partial" | "unavailable" };
 export type ExplorerValues = Record<string, ExplorerMetric>;
-export type ExplorerRow = { playerId: string; name: string; aliases?: string[]; teamId?: string | null; batting: ExplorerValues | null; pitching: ExplorerValues | null };
+export type ExplorerRow = { playerId: string; name: string; aliases?: string[]; teamId?: string | null; battingRole?: BattingDisplayRole | undefined; batting: ExplorerValues | null; pitching: ExplorerValues | null };
 export const explorerMetrics = {
   batting: ["G", "PA", "AB", "H", "HR", "RBI", "BB", "SO", "SB", "AVG", "OBP", "SLG", "OPS", "K%", "BB%"],
   pitching: ["G", "GS", "outsRecorded", "BF", "H", "HR", "BB", "SO", "R", "ER", "W", "L", "SV", "HLD", "ERA", "K9", "WHIP", "BB9", "K%", "BB%"],
@@ -10,7 +11,7 @@ export const explorerMetrics = {
 export type ExplorerRole = keyof typeof explorerMetrics;
 export type ExplorerRule = { metric: string; operator: "gte" | "lte"; value: number };
 export type ExplorerSort = { metric: string; direction: "asc" | "desc" };
-export type ExplorerQuery = { role: ExplorerRole; name: string; teamId: string; minimum: number; sample?: "G" | "PA" | "outsRecorded"; rules: ExplorerRule[]; sorts: ExplorerSort[] };
+export type ExplorerQuery = { role: ExplorerRole; battingView?: BattingView | undefined; name: string; teamId: string; minimum: number; sample?: "G" | "PA" | "outsRecorded"; rules: ExplorerRule[]; sorts: ExplorerSort[] };
 export const MAX_RECENT_PLAYERS = 12;
 export function readableMetric(metric: ExplorerMetric | undefined): number | null {
   return metric?.status === "unavailable" || !Number.isFinite(metric?.value) ? null : metric!.value;
@@ -20,6 +21,7 @@ export function exploreRows(rows: readonly ExplorerRow[], query: ExplorerQuery):
   const sampleKey = query.sample ?? (query.role === "batting" ? "PA" : "outsRecorded");
   return rows.filter(row => {
     const values = row[query.role];
+    if (query.role === "batting" && !includesBattingRole(row.battingRole,query.battingView??"standard")) return false;
     if (!values || (query.teamId && row.teamId !== query.teamId)) return false;
     if (needle && ![row.name, ...(row.aliases ?? [])].some(n => normalizePlayerSearch(n).includes(needle))) return false;
     const sample = readableMetric(values[sampleKey]);
@@ -47,7 +49,7 @@ export function explorerQuery(params: URLSearchParams): ExplorerQuery {
     if (sort && allowed.includes(sort) && !sorts.some(s => s.metric === sort)) sorts.push({ metric: sort, direction: params.get(`dir${index}`) === "asc" ? "asc" : "desc" });
   }
   const rawMinimum = params.get("minimum"), minimum = rawMinimum !== null && rawMinimum.trim() && Number.isFinite(Number(rawMinimum)) && Number(rawMinimum) >= 0 ? Number(rawMinimum) : 0;
-  return { role, name: params.get("q") ?? "", teamId: params.get("team") ?? "", minimum, sample: params.get("sample") === "G" ? "G" : role === "batting" ? "PA" : "outsRecorded", rules, sorts };
+  return { role, battingView: battingView(params), name: params.get("q") ?? "", teamId: params.get("team") ?? "", minimum, sample: params.get("sample") === "G" ? "G" : role === "batting" ? "PA" : "outsRecorded", rules, sorts };
 }
 export function selectedRecentPlayers(params: URLSearchParams, knownIds: ReadonlySet<string>) {
   return [...new Set((params.get("recentPlayers") ?? "").split(",").filter(id => knownIds.has(id)))].slice(0, MAX_RECENT_PLAYERS);

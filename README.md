@@ -195,3 +195,9 @@ Home / MyのWatchから、Favorites・Collections・保存済みRecent条件の�
 [Data Contract Freeze / Astra Handoff](docs/astra-ui-redesign-handoff.md) と [NPB Source・Visual権利監査](docs/npb-batch-g-rights.md) を参照してください。既存Directory v2等は維持し、新規 `/data/npb/catalog/latest.json`・`capabilities.json`・`teams/season/2026/latest.json` はversion 1の追加read modelです。Profile基本情報は共通catalogを1回取得し、画像・背番号・履歴の未知値を推測しません。
 
 手動 `npb-season-publish.yml` は既存のread-only監査・Backup/Restoreと同時に新Contract生成・2回生成のhash一致・Pages HTTP確認を行います。新たなnf3取得やTurso writeはありません。CC0プロフィール補足の変更は `npx tsx scripts/review-npb-measurements.ts` の明示review後に限ります。公開アプリやDaily collectorからWikidataへ追加アクセスしません。
+
+## Historical HOT / Monthly Candidates
+
+MLBの `#/MLB/form?season=2024&asOfDate=2024-08-20&period=7` から、HistoricalのHOT・月間MVP候補（独自評価）・上昇／下降を確認できます。2016〜2025のRegular / Postseasonを分離し、月間候補はRegularのみです。現在の活躍や公式賞ではありません。表示用の野手/DH・投手打撃フィルターはFacts・公式資格・記録順位を変えません。
+
+公開時は `mlb-historical-publish.yml` の `mode=app-only`、`refresh_historical_form=true` を使います。全既存payloadのSHA保全、独立Game Fact集計照合、更新archiveとPagesの同時公開、公開HTTP検証が必要です。NPBのHOT/Ranking Gateは別です。[評価・Source・検証・preflight](docs/integrated-form-discovery.md) を参照してください。

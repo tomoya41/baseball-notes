@@ -7,7 +7,7 @@ export const WATCH_LIMITS = { players: 12, teams: 4, views: 6, observations: 240
 export const watchPreferencesSchema = z.strictObject({ players: z.boolean(), teams: z.boolean(), recent: z.boolean(), streaks: z.boolean(), milestones: z.boolean(), postseason: z.boolean(), collections: z.boolean(), savedViews: z.boolean() });
 export type WatchPreferences = z.infer<typeof watchPreferencesSchema>;
 export const defaultWatchPreferences = (): WatchPreferences => ({ players: true, teams: true, recent: false, streaks: true, milestones: true, postseason: true, collections: false, savedViews: false });
-const rule = z.enum(["result", "next", "recent", "streak", "milestone", "series", "view"]);
+const rule = z.enum(["result", "next", "recent", "streak", "milestone", "series", "view", "form"]);
 const values = z.record(z.string().max(40), z.union([z.number().finite(), z.string().max(180), z.null()])).refine(v => Object.keys(v).length <= 20);
 export const watchObservationSchema = z.strictObject({
   key: z.string().min(1).max(280), league: z.enum(["NPB", "MLB"]), kind: z.enum(["player", "team", "view"]), entityId: z.string().min(1).max(160),
@@ -45,7 +45,7 @@ export function watchFingerprint(value: unknown): string {
 export function watchEnabled(o: WatchObservation, p: WatchPreferences): boolean {
   if (o.kind === "view") return p.savedViews;
   if (o.collectionOnly && !p.collections) return false;
-  return o.rule === "recent" ? p.recent : o.rule === "streak" ? p.streaks : o.rule === "milestone" ? p.milestones : o.rule === "series" ? p.postseason : o.kind === "team" ? p.teams : p.players || ((o.collectionOnly || o.collectionMember === true) && p.collections);
+  return o.rule === "recent" || o.rule === "form" ? p.recent : o.rule === "streak" ? p.streaks : o.rule === "milestone" ? p.milestones : o.rule === "series" ? p.postseason : o.kind === "team" ? p.teams : p.players || ((o.collectionOnly || o.collectionMember === true) && p.collections);
 }
 export function watchFresh(o: WatchObservation, now: number): boolean {
   const today = new Date(now + 9 * 3600_000).toISOString().slice(0, 10);
@@ -55,6 +55,10 @@ export function watchFresh(o: WatchObservation, now: number): boolean {
 }
 function changed(old: WatchObservation, next: WatchObservation): { title: string; priority: WatchAlert["priority"] } | null {
   if (watchFingerprint([old.values, old.members]) === watchFingerprint([next.values, next.members])) return null;
+  if (next.rule === "form") {
+    if (old.coverage !== "complete" || next.coverage !== "complete" || old.values.member !== "false" || next.values.member !== "true") return null;
+    return {title:`Historical ${next.metric}の上位10人に新しく該当`,priority:"normal"};
+  }
   if (next.rule === "recent") {
     const before = old.values.value, after = next.values.value, sample = next.metric === "OPS" ? 20 : 9;
     if (old.coverage !== "complete" || next.coverage !== "complete" || typeof before !== "number" || typeof after !== "number" ||

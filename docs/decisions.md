@@ -355,3 +355,7 @@ Source switch, paid infrastructure or existing Production Gate change is involve
 Reverting app code leaves the attributed Historical archive recoverable.
 Free NPB API probes currently establish no FULL_READY/SCORE_READY Source, so
 preparation remains an isolated evidence contract and fixtures; nf3 is maintained.
+
+## 2026-10-11 — Historical form is a scope-specific, deterministic product
+
+Add period/month aggregates over immutable licensed Game Facts, with dated same-season fielding/DH evidence for display roles. Pitcher-only batting is a secondary view, never a Fact deletion or qualification change. HOT and independent monthly candidates use disclosed sample floors and lexicographic same-category rates, not mixed-unit scores or official awards. Changes compare adjacent equal windows only when both samples/coverage are valid. Unknown roles, missing rates and cached/stale observations suppress evaluation/Watch. NPB existing gates remain independent. Additive projections require complete old-file SHA preservation and a refreshed archive in the same Pages publication. Rollback is an app revert and removal of the additive projection family; no canonical migration. See `docs/integrated-form-discovery.md`.

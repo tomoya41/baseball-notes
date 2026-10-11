@@ -9,7 +9,7 @@ import { compareBattingKeys } from "../src/domain/player-compare";
 vi.mock("../src/ui/product-sharing", () => ({ DisplayExportButton: ({ data }: { data: { coverage: string } }) => <output data-export-coverage>{data.coverage}</output> }));
 const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
 const players = Array.from({ length: 5 }, (_, i) => ({ id: id(i + 1), name: `選手${i + 1}`, batting: true, pitching: true }));
-vi.mock("../src/ui/use-mlb-historical", () => ({ useHistoricalDirectory: () => ({ status: "ready", value: { players: [
+vi.mock("../src/ui/use-mlb-historical", () => ({ useHistoricalStatic: () => ({ status: "missing", value: null, retry: vi.fn() }), useHistoricalDirectory: () => ({ status: "ready", value: { players: [
   { id: "mlb:player:00000000-0000-4000-8000-000000000001", name: "Regular player", positions: ["DH"], seasons: [2025] },
   { id: "mlb:player:00000000-0000-4000-8000-000000000002", name: "Postseason only", positions: ["DH"], seasons: [2025], postseasonOnly: true },
 ] } }) }));

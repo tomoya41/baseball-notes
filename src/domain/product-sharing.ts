@@ -13,7 +13,10 @@ export function portableRoute(path: string, search = ""): string | null {
   if (league !== "NPB" && league !== "MLB") return null;
   const resource = parts[1], source = new URLSearchParams(search), clean = new URLSearchParams();
   if (parts.length === 2 && ["data", "history"].includes(resource ?? "")) { const conditions = viewConditions(source, true, league); return `/${league}/${resource}${conditions ? `?${conditions}` : ""}`; }
-  if (league === "MLB" && parts.length === 2 && ["matchup","milestones"].includes(resource ?? "")) {
+  if (league === "MLB" && parts.length === 2 && resource === "form") {
+    for (const [key,allowed] of [["mode",["hot","monthly","change"]],["category",["batting","starters","relievers"]],["period",["7","14","30"]],["battingView",["standard","pitchers","all"]],["change",["rising","cooling","stable","insufficient","all"]]] as const) if(allowed.some(v=>v===source.get(key)))clean.set(key,source.get(key)!);
+    const team=source.get("team");if(team&&canonicalEntityRefSchema.safeParse({league,kind:"team",id:team}).success)clean.set("team",team);
+  } else if (league === "MLB" && parts.length === 2 && ["matchup","milestones"].includes(resource ?? "")) {
     for (const key of ["batter","pitcher","player"]) {const id=source.get(key);if(id && canonicalEntityRefSchema.safeParse({league,kind:"player",id}).success)clean.set(key,id);}
     if(["batting","pitching"].includes(source.get("role") ?? ""))clean.set("role",source.get("role")!);
     if(resource === "milestones") {
@@ -23,7 +26,7 @@ export function portableRoute(path: string, search = ""): string | null {
   } else if (parts.length === 2 && ["compare", "team-compare", "season-compare"].includes(resource ?? "")) {
     if (resource === "compare") {
       const ids = compareIds(league, source.get("players")); if (ids.length) clean.set("players", ids.join(","));
-      for (const k of ["condition", "period", "role", "order"]) { const v = source.get(k); if (v && v.length < 200) clean.set(k, v); }
+      for (const k of ["condition", "period", "role", "order", "battingView"]) { const v = source.get(k); if (v && v.length < 200) clean.set(k, v); }
       const opponent = source.get("opponent"), against = source.get("against");
       if (opponent && canonicalEntityRefSchema.safeParse({ league, kind: "team", id: opponent }).success) clean.set("opponent", opponent);
       if (league === "MLB" && against && canonicalEntityRefSchema.safeParse({ league, kind: "player", id: against }).success) clean.set("against", against);
@@ -45,6 +48,7 @@ export function portableRoute(path: string, search = ""): string | null {
     if (!kind || !canonicalEntityRefSchema.safeParse({ league, kind, id: decodeSafe(parts[2] ?? "") }).success || parts.length > (kind === "player" ? 4 : 3)) return null;
     if (parts[3] && !["stats", "analysis", "game-log", "trends", "more", "advanced"].includes(parts[3])) return null;
   }
+  if(resource==="players"&&["7","14","30"].includes(source.get("period")??""))clean.set("period",source.get("period")!);
   for (const k of ["season", "date", "asOfDate"]) { const v = source.get(k); if (v && (k === "season" ? /^20\d{2}$/.test(v) : /^20\d{2}-/.test(v) && z.iso.date().safeParse(v).success)) clean.set(k, v); }
   if (source.get("competition") === "postseason") clean.set("competition", "postseason");
   return `${path}${clean.size ? `?${clean}` : ""}`;

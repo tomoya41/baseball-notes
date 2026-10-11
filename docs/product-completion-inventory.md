@@ -520,3 +520,24 @@ MLB-only WHIP/BB9/K%/BB%を実装。既存Historicalのみで、Source/Gate/Care
 - main commitと公開snapshotは確認時点の値。別のscheduled runが後にデータを更新した場合は新しいsnapshotで再評価する。今回のdoc変更をdata correction/publish runと扱わない。
 
 本監査のtracked変更対象はこの文書とその集計・hash evidenceのみ。Facts、canonical ID、Coverage、Production Gate、Capabilitiesの意味、Regular/Postseason、NPB Current/MLB Historical、provenance/export制限、完成UI、Android、local保存契約を変更していない。次Batchを自動実行せず、ここで棚卸しを終える。
+
+## 14. 2026-10-11 Integrated Product Completion追補
+
+§1〜13の数・分類・estimateは当初監査snapshotとして保持する。PR #19時点でMLB Historicalは2016–2025へ拡張済み。この追補は新しいProduct実装のscopeを明示し、似た機能による過大な完成判定を避ける。詳細は [Integrated Form Discovery](integrated-form-discovery.md)。
+
+| 構想 | 最新分類 | 実装／残件 |
+|---|---|---|
+| MLB Historical HOT | COMPLETE（収録済みscope） | 2016–2025、7/14/30、exact as-of、打者/先発/救援、完全なGame Factとsample条件。Current HOTではない |
+| NPB HOT | PARTIAL / Production Gate pending | Coverage、sample、display metadata、scheduled proofを別評価。Gate値不変。7日だけで開くという文言gapは修正 |
+| Monthly MVP Candidates | PARTIAL（全構想） | MLB Historical Regularは実装済み。独自評価・途中月・母数明示。NPB/Current/公式予測は未対応 |
+| Rising / Cooling | PARTIAL（全構想） | MLB Historical同じ長さの前期間とのOPS/ERA変化を実装。今月vs前月、Season基準、tracking変化までは未実装 |
+| Period Rankings | PARTIAL | 上記独自評価とExplorer。公式期間ランキングではない。NPB Counting/Rate公開Gateはclosed |
+| Record Watch / Career milestones | PARTIAL / SOURCE BLOCKED | 保存SeasonのcheckpointとWatchはある。完全Career、公式達成日/歴代到達予測はない |
+| Historical Records | PARTIAL | 2016–2025の単年・収録期間/年代集計。2014–15はpreflightのみ、full Career/all-timeなし |
+| Player Role UX | COMPLETE（表示規則） | 野手・DH、投手、投手打撃、unknownを区別。役割は同年/scope/as-of、全Facts保持。公式登録認定ではない |
+| Draft / Prospect | PARTIAL / RIGHTS BLOCKED | verified Draft・同期・若手・学校・経歴入口はある。正式rookie資格/Prospect順位/Current予想はない |
+| Offseason / Preseason | RIGHTS / SOURCE BLOCKED | transactions、FA、posting、roster、camp/open gamesの新規取得なし |
+| Personalization / Notifications | PARTIAL | ローカルFavorites/Collections/Saved Views/Activity/Watch。Historical候補はユーザー確認時のみ。Production Pushなし |
+| Advanced Analysis | PARTIAL | Exact PA BvP/状況/MLB metricsは利用可。Count/TTO/Statcast/trackingは別readinessで未公開 |
+
+次の順序：Scheduled運用の具体的失敗原因修復と証拠取得（NPB Productとは独立）→2015単年PA/容量/restore確認→rights-clear Source解決。新しい年のpreflightやCurrent Source不足を理由に完成済みProduct公開を止めない。v1 scope freeze後のFinal QAと一度のpolishは維持し、署名実機/TalkBack/Push未検証をCIで代替しない。
