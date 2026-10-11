@@ -35,7 +35,7 @@ try {const latest=await client.execute("SELECT MAX(snapshot_date) AS date FROM s
   });
   const hot=npbHotPayloadSchema.parse(JSON.parse(hotBody));
   if(directory.effectiveDate!==effectiveDate || season.effectiveDate!==effectiveDate || hot.effectiveDate!==effectiveDate)
-    throw Error("Product projections require matching effective dates");
+    throw Error(`Product projections require matching effective dates: ${JSON.stringify({expected:effectiveDate,directory:directory.effectiveDate,season:season.effectiveDate,hot:hot.effectiveDate})}`);
   const enriched=projectNpbFreeProfiles(directory);
   const catalog=enriched.catalog;
   const teamSeason=await readNpbTeamSeason(client,catalog,index.coverage);

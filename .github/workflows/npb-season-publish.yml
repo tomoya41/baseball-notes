@@ -1,6 +1,11 @@
 name: Publish NPB Season aggregates
 on:
   workflow_dispatch:
+    inputs:
+      diagnostic_only:
+        description: Read-only generation and restore checks; no Pages publication or scheduled proof
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -64,15 +69,19 @@ jobs:
           path: .data/batch-b
           retention-days: 7
       - name: Preserve released MLB historical data
+        if: inputs.diagnostic_only != true
         run: npx tsx scripts/preserve-mlb-historical.ts dist/data/mlb
       - uses: actions/configure-pages@v5
+        if: inputs.diagnostic_only != true
       - name: Validate coordinated NPB projections before artifact upload
         id: publication
         run: npx tsx scripts/verify-npb-publication.ts dist
       - uses: actions/upload-pages-artifact@v4
+        if: inputs.diagnostic_only != true
         with:
           path: dist
   deploy:
+    if: inputs.diagnostic_only != true
     needs: stage
     runs-on: ubuntu-latest
     permissions:
