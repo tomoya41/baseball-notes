@@ -15,6 +15,10 @@ on:
         description: Generate only new read-only NPB Recent projections at the preserved publication date
         type: boolean
         default: false
+      refresh_historical_form:
+        description: Add validated role-separated HOT/monthly aggregate projections without rewriting Facts
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -120,6 +124,7 @@ jobs:
         env:
           MLB_PUBLISH_MODE: ${{ inputs.mode }}
           MLB_EXPAND_EXPLORATION: ${{ inputs.expand_historical_exploration }}
+          MLB_REFRESH_FORM: ${{ inputs.refresh_historical_form }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           mkdir -p dist/data/mlb
@@ -166,12 +171,30 @@ jobs:
             npx tsx scripts/verify-mlb-expanded-aggregates.ts --cache .data --root dist/data/mlb/historical
             npx tsx scripts/verify-mlb-postseason.ts --root dist/data/mlb/historical --regular-root dist/data/mlb/historical
           fi
-          if [ "$MLB_PUBLISH_MODE" = 'app-only' ] && [ "$MLB_EXPAND_EXPLORATION" != 'true' ]; then
+          if [ "$MLB_REFRESH_FORM" = 'true' ]; then
+            npx tsx scripts/generate-historical-form.ts dist/data/mlb/historical .data --download > .data/form-generation.json
+            cat .data/form-generation.json
+            npx tsx scripts/verify-historical-form.ts dist/data/mlb/historical
+            if [ "$MLB_PUBLISH_MODE" = 'app-only' ]; then
+              npx tsx scripts/verify-form-preservation.ts .data/mlb-baseline/historical dist/data/mlb/historical
+            fi
+          fi
+          if [ "$MLB_PUBLISH_MODE" = 'app-only' ] && [ "$MLB_EXPAND_EXPLORATION" != 'true' ] && [ "$MLB_REFRESH_FORM" != 'true' ]; then
             npx tsx scripts/publish-mlb-public-archive.ts dist/data/mlb
           else
             npx tsx scripts/publish-mlb-public-archive.ts dist/data/mlb --refresh
           fi
           npx tsx scripts/verify-mlb-release-manifests.ts dist/data/mlb/historical "$MLB_PUBLISH_MODE"
+      - name: Retain Historical form validation and byte-preservation evidence
+        if: inputs.refresh_historical_form == true
+        uses: actions/upload-artifact@v4
+        with:
+          name: historical-form-evidence
+          path: |
+            .data/form-generation.json
+            .data/historical-form-validation.json
+            .data/form-preservation.json
+          retention-days: 7
       - name: Retain Postseason publication evidence
         if: inputs.mode == 'postseason' || inputs.mode == 'expansion'
         uses: actions/upload-artifact@v4
@@ -227,3 +250,6 @@ jobs:
       - name: Verify public Postseason contracts
         if: inputs.mode == 'postseason' || inputs.mode == 'expansion'
         run: npx tsx scripts/verify-published-postseason.ts
+      - name: Verify public Historical form projection family
+        if: inputs.refresh_historical_form == true
+        run: npx tsx scripts/verify-published-historical-form.ts
