@@ -27,7 +27,7 @@ catalog.players.forEach((p,i)=>Object.assign(p.profile,{draftYear:i===1?null:i==
 const rows: ExplorerRow[] = catalog.players.map((p,i)=>({playerId:p.playerId,name:p.displayName,teamId:team,
   batting:i===0?null:{PA:{value:i===1?null:50,status:i===1?"unavailable":"partial"},OPS:{value:.9,status:"partial"},HR:{value:0,status:"partial"}},
   pitching:i===0?{outsRecorded:{value:30,status:"complete"}}:null}));
-const payload = {effectiveDate:date,coverage:{status:"partial"},players:rows.map(r=>({playerId:r.playerId,displayName:r.name,teamId:r.teamId ?? null,
+const payload = {effectiveDate:date,period:{from:"2026-03-27",to:date},coverage:{status:"partial"},players:rows.map(r=>({playerId:r.playerId,displayName:r.name,teamId:r.teamId ?? null,
   batting:r.batting?{metrics:r.batting}:null,pitching:r.pitching?{metrics:r.pitching}:null}))};
 const query = (s="")=>lifecycleQuery(new URLSearchParams(s),catalog);
 const ids = (s="", values:ExplorerRow[]=[])=>lifecyclePlayers(catalog,query(s),values).map(p=>p.playerId);
@@ -83,6 +83,13 @@ beforeEach(()=>{vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);readers.season.mo
 afterEach(async()=>{await act(async()=>{root.unmount();});element.remove();vi.unstubAllGlobals();});
 async function mount(path="/NPB/talent",lifecycle=false){await act(async()=>root.render(<MemoryRouter initialEntries={[path]}>{lifecycle?<PlayerLifecycle player={catalog.players[0]!}/>:<LifecycleWorkspace catalog={catalog}/>}<Location/></MemoryRouter>));}
 describe("Draft discovery integration and recovery",()=>{
+  it("shows the Season Fact cutoff separately from the age reference date",async()=>{
+    readers.season.mockResolvedValue({...payload,period:{from:"2026-03-27",to:"2026-10-04"}});
+    await mount("/NPB/talent?role=batting");
+    expect(element.textContent).toContain(`年齢基準 ${date} · 成績 2026-10-04までのシーズン`);
+    expect(element.textContent).not.toContain(`成績 ${date}までのシーズン`);
+    expect(readers.season).toHaveBeenCalledTimes(1);
+  });
   it("labels the latest affiliation filter separately from historical affiliations",async()=>{
     await mount(`/NPB/talent?team=${team}`);
     const labels=[...element.querySelectorAll('label')];

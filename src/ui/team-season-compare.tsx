@@ -77,7 +77,7 @@ export function SeasonCompare({ league, manifest, services }: { league: League; 
       if (league === "NPB") {
         if (kind === "team") return (await readNpbTeamComparison(services!)).filter(r => r.id === entity).map(r => ({ ...r, id: `${r.id}:${r.season}` }));
         const payload = await readNpbExplorerSeason(2026), player = payload.players.find(p => p.playerId === entity); if (!player) throw Error("Player absent");
-        return [{ id: `${entity}:2026`, name: "2026年", season: 2026, date: payload.effectiveDate, coverage: payload.coverage.status, metrics: player[role]?.metrics ?? null }];
+        return [{ id: `${entity}:2026`, name: "2026年", season: 2026, date: payload.period.to, coverage: payload.coverage.status, metrics: player[role]?.metrics ?? null }];
       }
       if (kind === "team") { const result = await boundedComparisonRead(selected.map(String), y => readMlbTeamComparison(entity, `${y}年`, Number(y), competition)); return result.map((r, i) => r.status === "fulfilled" ? { ...r.value, id: `${entity}:${selected[i]}` } : { id: `${entity}:${selected[i]}`, name: `${selected[i]}年`, season: selected[i]!, date: manifest!.seasons.find(s => s.season === selected[i])!.lastDate, coverage: "unavailable", metrics: null, notice: "この年度を取得できません" }); }
       const profile = await readHistoricalProduct<ExplorerProfile>(`${competition === "postseason" ? "postseason/" : ""}players/${entity.replaceAll(":", "_")}.json`); if (profile.player.id !== entity) throw Error("Player identity mismatch");

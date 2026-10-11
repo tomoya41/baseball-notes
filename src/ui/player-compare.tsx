@@ -95,7 +95,7 @@ export function NpbPlayerCompare({ services }: { services: Services }) {
     const payload = await pending;
     if (!payload) return { id, metrics: null, date: directory!.effectiveDate, notice: "保存済み成績なし" };
     const section = kind === "season" ? (payload as PlayerRecentResponse)[c.role] : npbCompareSection(payload as PlayerAnalysisBundle, c.role, c.condition, c.opponent, c.battingOrder);
-    return { id, metrics: section?.metrics ?? null, date: payload.asOfDate, notice: !section ? "この条件の記録なし" : section.coverage.status !== "complete" ? "一部データ確認中・保存済み記録から集計" : null };
+    return { id, metrics: section?.metrics ?? null, date: section?.to ?? payload.asOfDate, notice: !section ? "この条件の記録なし" : section.coverage.status !== "complete" ? "一部データ確認中・保存済み記録から集計" : null };
   }, [cache, services, directory]);
   if (error) return <DataState kind="source-unavailable" title="比較用の選手一覧を読み込めません" />;
   if (!directory) return <LoadingSkeleton />;

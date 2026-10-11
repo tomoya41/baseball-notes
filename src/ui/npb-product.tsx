@@ -85,7 +85,7 @@ export function NpbTeam({ services, hub = false, favorites = [], toggle, saving 
     <section className="surface-card"><h2>{season ? `${season.season}シーズン` : "シーズン成績"}</h2>
       {seasonState === "loading" ? <LoadingSkeleton /> : seasonState === "error" ?
         <DataState kind="source-unavailable" title="シーズン成績を読み込めません" /> : season && stats ? <>
-        <p className="inline-note">{season.effectiveDate}までの保存済み試合 · {season.coverage.status === "complete" ? "確認済み" : "一部データ確認中"}</p>
+        <p className="inline-note">{season.period.to}までの保存済み試合 · {season.coverage.status === "complete" ? "確認済み" : "一部データ確認中"}</p>
         <div className="metric-grid">{[["試合", stats.G], ["勝", stats.W], ["敗", stats.L], ["引分", stats.T], ["得点", stats.runsFor], ["失点", stats.runsAgainst]].map(([label, value]) => <div className="metric-tile" key={label}><span className="metric-tile__label">{label}</span><strong className="metric-tile__value">{value ?? "—"}</strong></div>)}</div>
       </> : <DataState kind="no-data" title="保存済みのシーズン成績はありません" />}
     </section>

@@ -552,7 +552,7 @@ MLB-only WHIP/BB9/K%/BB%を実装。既存Historicalのみで、Source/Gate/Care
 | HOT / MVP比較理由 | PARTIAL（全構想）: 既存の客観指標・母数に前期間値/母数/差を追加。as-of Season基準との比較は未実装 |
 | Favorite / Watchの変化 | PARTIAL: Rolling/月比較のRisingを明示操作時に確認、baseline/dedupe/stale制御を再利用。Push/background配信なし |
 | Records / Timeline / Compare | 既存の収録期間/年代別集計・保存年履歴・比較を維持。2014–2015は全件検証/old-byte guard/restore/public readback後のみ追加。Career/all-timeではない |
-| NPB運用 | PARTIAL: Season終了後のprojection effectiveDate不一致を再現・修復。read-only診断とrestore PASS。次回の実Scheduled成功証拠は独立して待つ |
+| NPB運用 | PARTIAL: 設定上のRegular終端以降のprojection effectiveDate不一致を再現・修復。read-only診断とrestore PASS。次回の実Scheduled成功証拠は独立して待つ |
 | NPB HOT / Ranking | Production Gate pending: HOT打者母数不足/Scheduled証拠待ち、Ranking 6 partial。formal metadata join改善、Gate緩和なし |
 | Profile期間分析 / 高度分析 | PARTIAL: 既存Recent/Splits/Trends/exact PAは維持。専用の月間Profile/Compare、as-of Season基準、TTO/count readinessは別Product/validation残件 |
 | UI readiness | Handoff準備済み。現Design Systemと機能を維持して、次Astraで専用sports surfacesと分析workspaceを再構成可能。実機/TalkBack/署名Releaseはmanual QA |

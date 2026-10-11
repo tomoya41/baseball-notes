@@ -61,7 +61,7 @@ describe("comparison and collection scope", () => {
   });
   it("uses one NPB bulk projection for a bounded 12-player dashboard and preserves local Favorites", async () => {
     const c = (await store.createCollection("候補")).collections[0]!; for (let n = 1; n <= 13; n++) await store.setPlayer(c.id, { league: "NPB", playerId: uuid(n) }, true);
-    mocks.season.mockResolvedValue({ effectiveDate: "2026-10-03", coverage: { status: "partial" }, players: [{ playerId: uuid(1), batting: { metrics: { PA: metric(100), HR: metric(2), OPS: metric(.8) } } }] });
+    mocks.season.mockResolvedValue({ effectiveDate: "2026-10-03", period:{from:"2026-03-27",to:"2026-10-01"}, coverage: { status: "partial" }, players: [{ playerId: uuid(1), batting: { metrics: { PA: metric(100), HR: metric(2), OPS: metric(.8) } } }] });
     const bytes = saved.get(PERSONAL_LIBRARY_KEY); await mount(<Routes><Route path="/NPB/library/collections/:collectionId" element={<CollectionDashboard league="NPB" services={services} favorites={[{ league: "NPB", kind: "player", entityId: uuid(1) } as never]} />} /></Routes>, `/NPB/library/collections/${c.id}`);
     expect(div.querySelectorAll('.collection-watch-row')).toHaveLength(12); expect(mocks.season).toHaveBeenCalledOnce(); expect(mocks.historical).not.toHaveBeenCalled(); expect(saved.get(PERSONAL_LIBRARY_KEY)).toBe(bytes); expect(div.textContent).toContain("★ 選手0"); expect(div.textContent).toContain("一部未確認");
   });
@@ -72,7 +72,7 @@ describe("comparison and collection scope", () => {
   });
   it("carries the current Recent window into a Collection comparison", async () => {
     const c = (await store.createCollection("14日")).collections[0]!; for (const n of [1, 2]) await store.setPlayer(c.id, { league: "NPB", playerId: uuid(n) }, true);
-    mocks.recent.mockResolvedValue({ effectiveDate: "2026-10-03", coverage: { status: "partial" }, players: [] });
+    mocks.recent.mockResolvedValue({ effectiveDate: "2026-10-03", period:{from:"2026-09-20",to:"2026-10-03"}, coverage: { status: "partial" }, players: [] });
     await mount(<Routes><Route path="/NPB/library/collections/:collectionId" element={<CollectionDashboard league="NPB" services={services} favorites={[]} />} /></Routes>, `/NPB/library/collections/${c.id}?period=14`);
     for (const el of div.querySelectorAll('input[type=checkbox]')) await act(async () => el.dispatchEvent(new MouseEvent("click", { bubbles: true })));
     const link = [...div.querySelectorAll('a')].find(a => a.textContent?.includes("2人を比較"))!; expect(link.getAttribute("href")).toContain("condition=14d"); expect(link.getAttribute("href")).toContain("season=2026");

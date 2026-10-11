@@ -100,6 +100,14 @@ describe("season read model",()=>{
   });
 });
 describe("season UI",()=>{
+  it("labels the actual aggregate cutoff without extending it to the publication observation",async()=>{
+    const result=await batch(),batting={...result.batters[0]!,to:"2026-10-07"};
+    const payload={player:{id:"dual",name:"選手",teamId:"t",teamName:"球団"},asOfDate:"2026-10-10",period:"season" as const,batting,pitching:null};
+    const html=renderToStaticMarkup(<PlayerSeasonView state="ready" payload={payload} />);
+    expect(html).toContain("10月7日終了時点"); expect(html).not.toContain("10月10日終了時点");
+    expect(renderToStaticMarkup(<PlayerSeasonView state="ready" payload={{...payload,batting:null}} />)).not.toContain("終了時点");
+    expect(renderToStaticMarkup(<PlayerSeasonView state="ready" payload={{...payload,pitching:{...result.pitchers[0]!,to:"2026-10-06"}}} />)).toContain("打撃 10月7日 / 投球 10月6日");
+  });
   it("shows both roles with saved-data wording and no final-season claims",async()=>{
     const result=await batch();
     const html=renderToStaticMarkup(<PlayerSeasonView state="ready" payload={{player:{id:"dual",name:"選手",teamId:"t",teamName:"球団"},

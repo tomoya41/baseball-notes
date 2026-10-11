@@ -6,7 +6,7 @@ vi.mock("../src/app/historical-products", () => ({ readHistoricalProduct: reader
 beforeEach(() => reader.mockReset());
 const date = "2026-10-03", generatedAt = `${date}T10:00:00Z`, team = "npb:team:tigers";
 function npb() {
-  return { product: { catalog: vi.fn().mockResolvedValue({ effectiveDate: date, generatedAt, teams: [{ teamId: team, name: "阪神" }] }), teamSeason: vi.fn().mockResolvedValue({ season: 2026, effectiveDate: date, generatedAt, coverage: { status: "partial" }, teams: [{ teamId: team, G: 1, W: 1, L: 0, T: 0, runsFor: 3, runsAgainst: 1, batting: { H: { value: 8, status: "partial" } }, pitching: {} }] }) }, gameSurface: { manifest: vi.fn().mockResolvedValue({ from: "2026-09-20", effectiveDate: date, generatedAt }), date: vi.fn().mockResolvedValue({ games: [], coverage: "no_games", generatedAt }) } };
+  return { product: { catalog: vi.fn().mockResolvedValue({ effectiveDate: date, generatedAt, teams: [{ teamId: team, name: "阪神" }] }), teamSeason: vi.fn().mockResolvedValue({ season: 2026, effectiveDate: date, generatedAt, period:{from:"2026-03-27",to:date}, coverage: { status: "partial" }, teams: [{ teamId: team, G: 1, W: 1, L: 0, T: 0, runsFor: 3, runsAgainst: 1, batting: { H: { value: 8, status: "partial" } }, pitching: {} }] }) }, gameSurface: { manifest: vi.fn().mockResolvedValue({ from: "2026-09-20", effectiveDate: date, generatedAt }), date: vi.fn().mockResolvedValue({ games: [], coverage: "no_games", generatedAt }) } };
 }
 describe("bounded read-only comparison", () => {
   it("limits concurrency to three and keeps settled failures in original order", async () => {
@@ -20,6 +20,12 @@ describe("bounded read-only comparison", () => {
   });
   it("reads NPB one catalog and one coordinated Team Season; preserves gate status", async () => {
     const s = npb(), r = await readNpbTeamComparison(s as unknown as Services); expect(r[0]!.metrics!.H!.value).toBe(8); expect(r[0]!.coverage).toBe("partial"); expect(s.product.teamSeason).toHaveBeenCalledOnce(); expect(s.gameSurface.date).not.toHaveBeenCalled();
+  });
+  it("keeps observation-date admission separate from the aggregate date used by comparisons",async()=>{
+    const s=npb(),through="2026-10-01";
+    s.product.teamSeason.mockResolvedValue({...await s.product.teamSeason(),period:{from:"2026-03-27",to:through}});
+    expect((await readNpbTeamComparison(s as unknown as Services))[0]?.date).toBe(through);
+    expect((await readNpbTeamComparison(s as unknown as Services,"14"))[0]?.date).toBe(date);
   });
   it.each(["effectiveDate", "generatedAt"])("rejects mismatched NPB %s instead of mixing generations", async k => {
     const s = npb(); s.product.catalog.mockResolvedValue({ ...await s.product.catalog(), [k]: "mismatch" }); await expect(readNpbTeamComparison(s as unknown as Services)).rejects.toThrow("generation");
