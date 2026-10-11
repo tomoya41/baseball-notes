@@ -118,7 +118,7 @@ export function NpbPlayer({ services, favorites, toggle, saving }: { services: S
     {section === "trends" && <NpbPlayerTrends services={services} playerId={player.id} />}
     {!section && <div className="profile-content"><PlayerSeasonView payload={season} state={seasonState} pitcherBatting={directoryPlayer?.position==="P"} /><PlayerRecentView period={period} onPeriodChange={next => { if (next === period) return; setRecentState("loading"); setPeriod(next); }} payload={recent} state={recentState} noFactKnown={directoryPlayer?.recentAvailable === false} pitcherBatting={directoryPlayer?.position==="P"} />
       <PlayerGameLogView payload={gameLog ? { ...gameLog, batting: gameLog.batting.slice(0, 3), pitching: gameLog.pitching.slice(0, 3) } : null} state={gameLogState} teams={gameLogTeams} /><Link className="button button--secondary" to={`${base}/game-log`}>すべての試合別成績を見る</Link></div>}
-    {section === "stats" && <PlayerSeasonView payload={season} state={seasonState} />}
+    {section === "stats" && <PlayerSeasonView payload={season} state={seasonState} pitcherBatting={directoryPlayer?.position==="P"} />}
     {section === "game-log" && <PlayerGameLogView payload={gameLog} state={gameLogState} teams={gameLogTeams} />}
     {section === "more" && <>{product ? <><NpbProfileDetails player={product} /><PlayerLifecycle player={product} /></> : directoryPlayer ? <section className="surface-card"><h2>プロフィール</h2><NpbPlayerProfileFacts player={directoryPlayer} /></section> : <DataState kind="no-data" title="プロフィールを確認できません" />}<PlayerFutureLinks base={base} /></>}
     {section === "analysis" && <div className="profile-content profile-content--analysis">{canonical
