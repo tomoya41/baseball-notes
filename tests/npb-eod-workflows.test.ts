@@ -33,3 +33,23 @@ test("Daily safety-net publication regenerates player payloads after verified Fa
   expect(build.indexOf("generate-npb-season.ts")).toBeLessThan(build.indexOf("npm run build"));
   expect(build).toContain("else\n  npx tsx scripts/preserve-published-npb-hot.ts");
 });
+
+test("formal HOT re-evaluation follows completed trusted Scheduled production, never a manual proof", () => {
+  const workflow = parse(readFileSync(".github/workflows/npb-season-publish.yml", "utf8"));
+  expect(workflow.on.workflow_run).toEqual({ workflows: ["Daily NPB collector and Pages delivery"], types: ["completed"] });
+  const guard = workflow.jobs.stage.if;
+  for (const required of ["workflow_run.event == 'schedule'", "workflow_run.conclusion == 'success'",
+    "workflow_run.head_branch == 'main'", "workflow_run.head_repository.id == github.repository_id"])
+    expect(guard).toContain(required);
+  expect(workflow.jobs.deploy.if).toContain("needs.stage.result == 'success'");
+  const runs = workflow.jobs.stage.steps.map((step: { run?: string }) => step.run ?? "").join("\n");
+  expect(runs).toContain("publish-npb-hot.ts --require-remote");
+  expect(runs).not.toContain("collector:npb:day");
+  expect(runs).not.toContain("--trigger=scheduled");
+  // Never check out a workflow_run-controlled ref or execute a PR artifact.
+  expect(JSON.stringify(workflow.jobs.stage.steps)).not.toContain("workflow_run.head_sha");
+  const publisher = readFileSync("scripts/publish-npb-hot.ts", "utf8");
+  expect(publisher).toContain('action?.conclusion === "success"');
+  expect(publisher).toContain("action.inferredTargetDate === asOfDate");
+  expect(publisher).toContain('action.encryptedBackupArtifact === "present"');
+});

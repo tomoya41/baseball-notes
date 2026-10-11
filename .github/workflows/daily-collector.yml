@@ -155,6 +155,8 @@ jobs:
           if [[ "$GITHUB_EVENT_NAME" == "schedule" || "$NPB_MODE" == "ingest" ]]; then
             date_jst="${TARGET_DATE:-$(TZ=Asia/Tokyo date -d yesterday +%F)}"
             npx tsx scripts/generate-npb-season.ts --date="$date_jst" --payload-root=.data/publish
+            # This run is not completed proof. The read-only Season workflow
+            # re-evaluates HOT after this scheduled workflow succeeds.
             npx tsx scripts/publish-npb-hot.ts --require-remote
             npx tsx scripts/generate-npb-player-directory.ts --require-remote --payload-root=.data/publish
           fi
