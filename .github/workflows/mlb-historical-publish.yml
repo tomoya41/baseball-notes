@@ -215,6 +215,7 @@ jobs:
             .data/form-generation.json
             .data/historical-form-validation.json
             .data/form-preservation.json
+            .data/mlb-full-baseline-reuse.json
           retention-days: 7
       - name: Retain Postseason publication evidence
         if: inputs.mode == 'postseason' || inputs.mode == 'expansion'
@@ -238,6 +239,9 @@ jobs:
         with:
           path: dist
           retention-days: 1
+      - name: Validate coordinated artifact in verification-only mode
+        if: inputs.verify_only == true
+        run: npx tsx scripts/verify-npb-publication.ts dist
   deploy:
     if: inputs.verify_only != true
     needs: stage
