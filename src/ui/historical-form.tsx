@@ -1,0 +1,60 @@
+import { useContext, useEffect, useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { z } from "zod";
+import { readHistoricalForm } from "../application/historical-form";
+import { FORM_POLICY, type FormCategory, type FormIndex, type FormMode } from "../domain/historical-form";
+import { battingView } from "../domain/player-display-role";
+import { readableMetric } from "../domain/data-explorer";
+import type { Favorite } from "../domain/models";
+import { useHistoricalCompetition } from "./historical-competition-context";
+import { useHistoricalDirectory, useHistoricalStatic } from "./use-mlb-historical";
+import { DataState, LoadingSkeleton, MetricLabel, PageHeading } from "./components";
+import { BattingViewControl } from "./player-display-role";
+import { FavoriteButton } from "./components";
+import { PersonalWatchContext } from "./personal-watch-context";
+import { formWatchObservations } from "../application/form-watch";
+import { publicFallbackRevision, publicNetworkOnline, hasSavedResponseFallback } from "../app/mobile-services";
+
+type Manifest={seasons:{season:number;firstDate:string;lastDate:string;coverage:string}[];teams:{id:string;name:string}[]};
+type Actions={favorites:Favorite[];toggle:(target:Pick<Favorite,"kind"|"entityId"|"league">)=>void;saving:boolean};
+export function HistoricalFormScreen({manifest,favorites,toggle,saving}: {manifest:Manifest}&Actions) {
+  const [params,setParams]=useSearchParams(),competition=useHistoricalCompetition(),watch=useContext(PersonalWatchContext);
+  const season=Number(params.get("season")??manifest.seasons.at(-1)?.season),descriptor=manifest.seasons.find(s=>s.season===season);
+  const mode:FormMode=params.get("mode")==="monthly"?"monthly":params.get("mode")==="change"?"change":"hot";
+  const category:FormCategory=params.get("category")==="starters"?"starters":params.get("category")==="relievers"?"relievers":"batting";
+  const days:7|14|30=params.get("period")==="14"?14:params.get("period")==="30"?30:7;
+  const asOf=params.get("asOfDate")??descriptor?.lastDate??"",valid=!!descriptor&&z.iso.date().safeParse(asOf).success&&asOf>=descriptor.firstDate&&asOf<=descriptor.lastDate;
+  const index=useHistoricalStatic<FormIndex>(valid?`exploration/form/${season}/index.json`:null),directory=useHistoricalDirectory();
+  const names=useMemo(()=>new Map(directory.value?.players.filter(p=>p.seasons.includes(season)).map(p=>[p.id,p.name])??[]),[directory.value,season]);
+  const view=battingView(params),key=`${competition}:${season}:${asOf}:${days}:${mode}:${category}:${view}`;
+  const [state,setState]=useState<{key:string;result:Awaited<ReturnType<typeof readHistoricalForm>>|null;error:string}>({key:"",result:null,error:""}),[attempt,setAttempt]=useState(0),[watchMessage,setWatchMessage]=useState("");
+  const update=(field:string,value:string)=>{const next=new URLSearchParams(params);next.set(field,value);next.delete("page");if(field==="season"||field==="competition")next.delete("asOfDate");setParams(next);};
+  const inconsistent=!!index.value&&!!descriptor&&(index.value.season!==season||index.value.competitionType!==competition||index.value.firstDate!==descriptor.firstDate||index.value.lastDate!==descriptor.lastDate||index.value.coverage!==descriptor.coverage);
+  useEffect(()=>{if(!valid||inconsistent||!index.value||!directory.value||!descriptor)return;let active=true;const revision=publicFallbackRevision();
+    void readHistoricalForm({index:index.value,names,asOf,days,mode,category,view}).then(result=>{if(active)setState({key,result,error:""});if(active&&publicFallbackRevision()!==revision)setWatchMessage("保存済みデータを表示しています。Watchの差分判定は保留します。");}).catch(()=>{if(active)setState({key,result:null,error:"集計を取得できません。再読み込みしてください。"});});return()=>{active=false;};
+  },[key,attempt,valid,inconsistent,index.value,directory.value,descriptor,names,season,competition,asOf,days,mode,category,view]);
+  const result=state.key===key?state.result:null,team=params.get("team")??"",focus=params.get("focus")==="favorites",change=params.get("change")??"rising";
+  const all=result?.entries??[],entries=all.filter(e=>(!team||e.teamIds.includes(team))&&(!focus||favorites.some(f=>f.league==="MLB"&&f.kind==="player"&&f.entityId===e.playerId))&&(mode!=="change"||change==="all"||e.change===change));
+  const pageRaw=Number(params.get("page")??0),page=Number.isInteger(pageRaw)&&pageRaw>=0?Math.min(pageRaw,Math.max(0,Math.ceil(entries.length/20)-1)):0;
+  const scope=`season=${season}&asOfDate=${asOf}${competition==="postseason"?"&competition=postseason":""}`,metric=category==="batting"?"OPS":"ERA";
+  const checkWatch=async()=>{if(!watch?.state||!result||!index.value||mode==="change"||view!=="standard"||!publicNetworkOnline()||hasSavedResponseFallback()){setWatchMessage("オンラインの標準表示で候補を確認してください。");return;}const observations=formWatchObservations(index.value,asOf,days,mode,category,result.entries,favorites,Date.now());const ok=await watch.run(()=>watch.store.observe(observations));if(ok)setWatchMessage("候補を確認しました。初回は基準値のみ保存します。");};
+  return <div className="screen historical-form"><PageHeading eyebrow="MLB · 過去記録" title={mode==="monthly"?"月間MVP候補":mode==="change"?"成績の変化":"HOT"} />
+    <nav className="segmented" aria-label="好調選手の見方">{([ ["hot","HOT"],["monthly","月間候補"],["change","上昇・下降"] ] as const).map(([id,label])=><button key={id} aria-pressed={mode===id} onClick={()=>update("mode",id)}>{label}</button>)}</nav>
+    <p className="inline-note">{valid?`${season} ${competition==="regular"?"Regular":"Postseason"} · ${asOf}時点`:"対象期間外です"}{result&&` · ${result.from.slice(5)}〜${result.to.slice(5)}`}{mode==="monthly"&&result&&(result.monthlyComplete?" · 月末時点":" · 月途中時点")}<br/><small>独自評価{mode==="monthly"?" · 公式賞ではありません":""}</small></p>
+    {mode!=="monthly"&&<div className="segmented" aria-label="評価期間">{([7,14,30] as const).map(d=><button key={d} aria-pressed={days===d} onClick={()=>update("period",String(d))}>{d}日</button>)}</div>}
+    <nav className="segmented" aria-label="選手カテゴリー">{([["batting","打者"],["starters","先発"],["relievers","救援"]] as const).map(([id,label])=><button key={id} aria-pressed={category===id} onClick={()=>update("category",id)}>{label}</button>)}</nav>
+    <details className="form-filters"><summary>期間・球団・対象を変更</summary>
+    <div className="mlb-controls"><label>シーズン<select value={season} onChange={e=>update("season",e.target.value)}>{!descriptor&&<option value={season}>未収録</option>}{manifest.seasons.map(s=><option key={s.season}>{s.season}</option>)}</select></label><label>対象<select value={competition} onChange={e=>update("competition",e.target.value)}><option value="regular">Regular</option><option value="postseason">Postseason</option></select></label><label>基準日<input type="date" value={asOf} min={descriptor?.firstDate} max={descriptor?.lastDate} onChange={e=>update("asOfDate",e.target.value)} /></label></div>
+    <div className="mlb-controls">{category==="batting"&&<BattingViewControl />}<label>球団<select value={team} onChange={e=>update("team",e.target.value)}><option value="">すべて</option>{manifest.teams.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select></label><label><input type="checkbox" checked={focus} onChange={e=>update("focus",e.target.checked?"favorites":"all")} />お気に入りのみ</label>{mode==="change"&&<label>変化<select value={change} onChange={e=>update("change",e.target.value)}><option value="rising">上昇</option><option value="cooling">下降</option><option value="stable">変化が小さい</option><option value="insufficient">母数不足</option><option value="all">すべて</option></select></label>}</div>
+    </details>
+    <details className="form-method"><summary>評価方法・対象データ ⓘ</summary><p>保存済みHistoricalの試合成績による独自評価です。現在の活躍や公式受賞者を示すものではありません。</p><p>打者はOPS → 打席 → 本塁打 → 安打、投手は防御率 → K/9 → {category==="relievers"?"登板数":"投球アウト数"}の順。同値は選手IDで固定します。異なる単位を合計したスコアは使いません。</p><p>最低母数: {result?.minimum??(mode==="monthly"?FORM_POLICY[category].monthly:FORM_POLICY[category].minimum[days])} {category==="batting"?"PA":"アウト"}。投手は期間に応じた登板数も必要です。先発と救援は各登板の記録を分離。不明な役割・欠損指標は推測しません。野手・DHには役割未確認の選手も残します。</p><p>上昇・下降は前の同じ日数との{metric}差（OPS ±0.100 / 防御率 ±1.00）。両期間が最低母数を満たす場合のみ判定。出場なしを下降とは判定しません。球団は期間内に所属した選手で絞り込み、移籍前後の成績は合算します。絞り込み後も評価順位は全対象での順序です。</p><p>役割は当該年・対象Competitionの基準日までの守備・DH記録に基づきます。二刀流の実績属性は同じ年・Competitionで20回以上の投球と20試合以上の3打席を持つ先発DH記録が揃った場合のみ。公式の登録区分を認定するものではありません。</p><Link to="/MLB/sources">提供元・利用条件</Link></details>
+    {!valid?<DataState kind="unsupported" title="基準日は収録済み期間内で指定してください" />:mode==="monthly"&&competition==="postseason"?<DataState kind="unsupported" title="Postseasonの月間候補は評価対象外です" />:index.status==="missing"?<DataState kind="unsupported" title="このシーズンのHOT評価は未公開です" /> :inconsistent?<DataState kind="source-unavailable" title="シーズンの公開状態が一致しません" />:index.status==="error"||directory.status==="error"||state.key===key&&state.error?<><DataState kind="source-unavailable" title={state.key===key&&state.error?state.error:"データを取得できません"} /><button onClick={()=>{index.retry();directory.retry();setAttempt(n=>n+1);}}>再読み込み</button></>:!result?<LoadingSkeleton />:result.coverage!=="complete"?<DataState kind="small-sample" title="完全性・役割を確認できないため候補を表示しません" />:<>
+      <div className="list-heading"><strong>{entries.length}人</strong><span>{mode==="change"?`${result.previous.from.slice(5)}〜${result.previous.to.slice(5)}との比較`:"独自評価"}</span></div>
+      {!entries.length&&<DataState kind="no-data" title="この条件・母数を満たす選手はいません" detail="期間や基準日を変更してください。" />}
+      <div className="row-list">{entries.slice(page*20,(page+1)*20).map(e=><article className="form-entry" key={e.playerId}><div className="form-entry-title"><span className="rank-number">{mode==="change"?"":e.rank}</span><Link to={`/MLB/players/${encodeURIComponent(e.playerId)}?${scope}&period=${days}`}><strong>{e.name}</strong><small>{e.teamIds.map(id=>manifest.teams.find(t=>t.id===id)?.name??"球団未確認").join(" / ")}</small></Link><FavoriteButton active={favorites.some(f=>f.league==="MLB"&&f.kind==="player"&&f.entityId===e.playerId)} saving={saving} label={e.name} onClick={()=>toggle({league:"MLB",kind:"player",entityId:e.playerId})} /></div><dl className="explorer-values">{[metric,category==="batting"?"PA":"outsRecorded",category==="batting"?"HR":"K9",category==="batting"?"H":"G"].map(k=><div key={k}><dt><MetricLabel metric={k} label={k==="outsRecorded"?"IP":k==="K9"?"K/9":k} /></dt><dd>{readableMetric(e.metrics[k])===null?"—":k==="outsRecorded"?`${Math.floor(e.metrics[k]!.value!/3)}.${e.metrics[k]!.value!%3}`:["OPS","ERA","K9"].includes(k)?e.metrics[k]!.value!.toFixed(k==="OPS"?3:2):e.metrics[k]!.value}</dd></div>)}</dl>{mode==="change"?<p className="inline-note">{({rising:"上昇",cooling:"下降",stable:"変化が小さい",insufficient:"比較母数が不足"})[e.change]} · 前期間 {e.previous?.toFixed(category==="batting"?3:2)??"—"}{e.delta!==null&&` → 差 ${e.delta>=0?"+":""}${e.delta.toFixed(category==="batting"?3:2)}`}</p>:<p className="inline-note">{e.reason}</p>}<div className="hub-links">{mode!=="monthly"&&<Link to={`/MLB/data?${scope}&period=${days}&role=${category==="batting"?"batting":"pitching"}&recentMode=selected&recentPlayers=${encodeURIComponent(e.playerId)}`}>期間成績を掘る →</Link>}<Link to={`/MLB/compare?${scope}&players=${encodeURIComponent(e.playerId)}&role=${category==="batting"?"batting":"pitching"}&condition=${mode==="monthly"?"season":"total"}&period=${days}d`}>{mode==="monthly"?"シーズン比較":"期間比較"}</Link></div></article>)}</div>
+      {entries.length>20&&<nav className="explorer-pagination" aria-label="HOTのページ"><button disabled={page===0} onClick={()=>update("page",String(page-1))}>前へ</button><span>{page+1}/{Math.ceil(entries.length/20)}</span><button disabled={(page+1)*20>=entries.length} onClick={()=>update("page",String(page+1))}>次へ</button></nav>}
+      {watch&&mode!=="change"&&view==="standard"&&<button className="button button--secondary" onClick={()=>void checkWatch()}>お気に入りの候補をWatchで確認</button>}
+      {watchMessage&&<p role="status" className="data-notice">{watchMessage}</p>}{watch?.error&&<p role="alert">{watch.error}</p>}
+    </>}
+  </div>;
+}

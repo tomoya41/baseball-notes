@@ -1,3 +1,5 @@
+import { battingDisplayRole, battingView, includesBattingRole } from "../domain/player-display-role";
+import { BattingViewControl } from "./player-display-role";
 import { useEffect, useMemo, useState } from "react";
 import { ChevronRight, Search } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
@@ -19,8 +21,9 @@ export function NpbPlayerSearchView({ directory, state, query, onQueryChange, te
   favorites?:Favorite[]|undefined;toggle?:((target:Pick<Favorite,"kind"|"entityId"|"league">)=>void)|undefined;saving?:boolean|undefined;
   query: string; onQueryChange: (value: string) => void; teamId: string; onTeamChange: (value: string) => void;
   role: Role; onRoleChange: (value: Role) => void }) {
+  const [displayParams]=useSearchParams();
   const players = useMemo(() => directory ? searchNpbPlayers(directory.players, query,
-    { teamId, role }) : [], [directory, query, teamId, role]);
+    { teamId, role }).filter(p=>role!=="batter"||includesBattingRole(battingDisplayRole(p.position?[p.position]:[]),battingView(displayParams))) : [], [directory, query, teamId, role, displayParams]);
   const teams = useMemo(() => new Map(directory?.teams.map((team) => [team.id, team.shortName]) ?? []), [directory]);
   const [limit, setLimit] = useState(80);
   const filterKey = `${query}:${teamId}:${role}`;
@@ -52,6 +55,7 @@ export function NpbPlayerSearchView({ directory, state, query, onQueryChange, te
           <button key={item.id} type="button" className="filter-chip" aria-pressed={role === item.id}
             onClick={() => onRoleChange(item.id)}>{item.label}</button>)}
       </div>
+      {role==="batter"&&<BattingViewControl />}
       <div className="list-heading"><strong>{query || teamId || role !== "all" ? "検索結果" : "選手一覧"}</strong><span>{players.length}人</span></div>
       {players.length ? <div className="row-list">{players.slice(0, visibleLimit).map((player) =>
         <div className="surface-favorite" key={player.playerId}><Link className="player-row npb-directory-row"

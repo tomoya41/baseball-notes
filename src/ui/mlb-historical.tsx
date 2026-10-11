@@ -1,3 +1,6 @@
+import { BattingViewControl } from "./player-display-role";
+import { useSeasonDisplayRoles } from "./use-player-display-role";
+import { battingView, includesBattingRole } from "../domain/player-display-role";
 import { MlbMatchup, MlbSeasonMilestones, SavedSeasonTimeline, SeasonCheckpointSummary } from "./mlb-historical-expansion";
 import { mlbProductMetrics } from "../domain/mlb-product-metrics";
 import { mlbRecordPlayerRoute } from "../domain/mlb-record-navigation";
@@ -5,7 +8,8 @@ import type { ExplorerValues } from "../domain/data-explorer";
 import { StatTable } from "./stat-table";
 import { historicalPositions, collectedSeasonsLabel } from "../presentation/historical-player";
 import { Search } from "lucide-react";
-import { useMemo, useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
+const HistoricalFormScreen = lazy(() => import("./historical-form").then(m => ({ default: m.HistoricalFormScreen })));
 import { Link, Navigate, Route, Routes, useLocation, useParams, useSearchParams } from "react-router-dom";
 import type { Favorite } from "../domain/models";
 import { isVerifiedJapanPlayer } from "../domain/mlb-japan-cohort";
@@ -111,6 +115,7 @@ export function MlbHistoricalHome({ manifest, favorites, toggle, saving }: { man
     {view !== "league" && <Link className="hub-game-entry" to={`/MLB/schedule?season=${latest.season}&date=${latest.lastDate}`}><span><small>{latest.lastDate.replaceAll("-",".")}</small><strong>試合結果</strong></span><span>{results.value?.games.length ?? "—"}<small>試合 →</small></span></Link>}
     {hasHistoricalPostseason(postseason, latest.season) && <div className="hub-links"><Link to={`/MLB/postseason?season=${latest.season}`}>Postseason <span>→</span></Link></div>}
     <div className="hub-links"><Link to={`/MLB/teams?season=${latest.season}`}>球団ページ <span>→</span></Link><Link to={`/MLB/compare?season=${latest.season}`}>選手比較 <span>→</span></Link></div>
+    <section className="home-section home-section--compact"><SectionHeader title="この年の好調選手" /><div className="hub-links"><Link to={`/MLB/form?season=${latest.season}&asOfDate=${latest.lastDate}`}>HOT <span>→</span></Link><Link to={`/MLB/form?season=${latest.season}&asOfDate=${latest.lastDate}&mode=monthly`}>月間MVP候補 <span>→</span></Link><Link to={`/MLB/form?season=${latest.season}&asOfDate=${latest.lastDate}&mode=change`}>上昇・下降 <span>→</span></Link></div><small className="inline-note">{latest.lastDate}時点 · 過去記録</small></section>
     <ExplorerLinks league="MLB" scope={`?season=${latest.season}`} />
     <p className="inline-note availability-note">過去記録 {manifest.seasons[0]?.season}–{manifest.seasons.at(-1)?.season} · 2026年の試合結果・選手成績は未対応</p></div>;
 }
@@ -121,13 +126,16 @@ export function MlbHistoricalSearch({ manifest, favorites, toggle, saving }: { m
   const query = params.get("q") ?? "", focus = params.get("focus") === "japan";
   const selectedSeason = params.get("season") ?? "all", team = params.get("team") ?? "";
   const update = (key: string,value: string) => { const next = new URLSearchParams(params); if(value) next.set(key,value); else next.delete(key); setParams(next,{replace:true}); };
+  const searchRoles=useSeasonDisplayRoles(manifest.seasons.some(s=>s.season===Number(selectedSeason))?Number(selectedSeason):null);
+  const searchRole=params.get("role")??"all";
   const [limit,setLimit] = useState(80);
-  const rows = useMemo(() => (result.value?.players ?? []).filter(p => (selectedSeason === "all" || p.seasons.includes(Number(selectedSeason))) && (!team || p.teamIds.includes(team)) && (!focus || isVerifiedJapanPlayer(p.id)) && matchesMlbPlayerName(p.id,p.name,query)),[result.value,selectedSeason,team,focus,query]);
+  const rows = useMemo(() => (result.value?.players ?? []).filter(p => (selectedSeason === "all" || p.seasons.includes(Number(selectedSeason))) && (!team || p.teamIds.includes(team)) && (!focus || isVerifiedJapanPlayer(p.id)) && matchesMlbPlayerName(p.id,p.name,query) && (searchRole!=="pitching"||selectedSeason==="all"||!searchRoles.value||searchRoles.roles.get(p.id)==="pitcher"||searchRoles.pitchers.has(p.id)) && (searchRole!=="batting"||includesBattingRole(searchRoles.roles.get(p.id),battingView(params)))),[result.value,selectedSeason,team,focus,query,searchRole,searchRoles.value,searchRoles.roles,searchRoles.pitchers,params]);
   return <div className="screen"><PageHeading eyebrow={`MLB · ${manifest.seasons[0]?.season}–${manifest.seasons.at(-1)?.season}`} title="選手" />
     <DiscoveryNavigation league="MLB" />
     <div className="segmented" role="group" aria-label="選手の絞り込み"><button aria-pressed={!focus} onClick={() => { update("focus","");setLimit(80); }}>すべての選手</button><button aria-pressed={focus} onClick={() => { update("focus","japan");setLimit(80); }}><span className="japan-dot" />日本人選手</button></div>
     <label className="search-field"><Search size={19} aria-hidden="true" /><span className="sr-only">選手名を検索</span><input type="search" placeholder="選手名を入力" value={query} onChange={e => { update("q",e.target.value);setLimit(80); }} /></label>
     <div className="mlb-controls"><label>シーズン<select value={selectedSeason} onChange={e => { update("season",e.target.value);setLimit(80); }}><option value="all">収録期間すべて</option>{manifest.seasons.map(s => <option key={s.season} value={s.season}>{s.season}年</option>)}</select></label><label>所属した球団<select value={team} onChange={e => { update("team",e.target.value);setLimit(80); }}><option value="">すべての球団</option>{manifest.teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</select></label></div>
+    <div className="mlb-controls"><label>記録の種類<select value={searchRole} onChange={e=>update("role",e.target.value)}><option value="all">全選手</option><option value="batting">打撃</option><option value="pitching">投球</option></select></label>{searchRole==="batting"&&<BattingViewControl />}</div>{searchRole!=="all"&&selectedSeason==="all"&&<p className="inline-note">役割による絞り込みはシーズンを選択すると利用できます。</p>}
     <div className="list-heading"><strong>{focus ? "確認済みの日本人選手" : "選手一覧"}</strong><span>{rows.length}人</span></div>
     {result.status !== "ready" ? <Status state={result} /> : !rows.length ? <DataState kind="no-data" title="一致する選手がいません" detail="名前や絞り込み条件を変えてみてください。" /> : <div className="row-list">{rows.slice(0,limit).map(p => <div className="mlb-player-row" key={p.id}><Link to={`/MLB/players/${encodeURIComponent(p.id)}?${selectedSeason === "all" ? "" : `season=${Number(selectedSeason)}`}${competition === "postseason" || p.postseasonOnly ? "&competition=postseason" : ""}`}><Monogram name={p.name} /><span><strong>{p.name}</strong><small>{historicalPositions(p.positions) || "守備位置未登録"} · {collectedSeasonsLabel(p.seasons)}{p.postseasonOnly && " · Postseason"}</small></span></Link><Link className="compare-add" aria-label={`${p.name}を比較に追加`} to={`/MLB/compare?players=${encodeURIComponent(p.id)}${selectedSeason === "all" ? "" : `&season=${selectedSeason}`}${competition === "postseason" || p.postseasonOnly ? "&competition=postseason" : ""}`}>比較</Link><CollectionButton league="MLB" playerId={p.id} name={p.name} /><FavoriteButton active={favorites.some(f => f.league === "MLB" && f.kind === "player" && f.entityId === p.id)} saving={saving} label={p.name} onClick={() => toggle({league:"MLB",kind:"player",entityId:p.id})} /></div>)}</div>}
     {rows.length > limit && <button className="button button--secondary" onClick={() => setLimit(n => n+80)}>さらに80人を表示</button>}
@@ -241,8 +249,10 @@ export function MlbHistoricalPlayer({ manifest, favorites, toggle, saving }: {
   const result = useStatic<Profile>(playerId && canonicalPlayerId.test(playerId) ? `players/${playerId.replaceAll(":", "_")}.json` : null);
   const season = params.has("season") ? Number(params.get("season")) : null;
   const chronologySeason = season ?? result.value?.player.seasons.at(-1);
+  const displayRoles = useSeasonDisplayRoles(chronologySeason??null,params.get("asOfDate")??undefined);
   const chronology = useStatic<HistoricalChronology>(section === "trends" && chronologySeason ? `chronology/${chronologySeason}.json` : null);
-  const [period, setPeriod] = useState<7 | 14 | 30>(30);
+  const period: 7 | 14 | 30 = params.get("period")==="7"?7:params.get("period")==="14"?14:30;
+  const setPeriod = (value: 7 | 14 | 30) => { const next = new URLSearchParams(params);next.set("period",String(value));setParams(next); };
   const [split, setSplit] = useState<"total" | "home" | "away" | "opponent" | "order" | "batter-starter" | "batter-substitute" | "pitcher-starter" | "pitcher-reliever">("total");
   const [opponent, setOpponent] = useState("");
   const [battingOrder, setBattingOrder] = useState(1);
@@ -288,14 +298,14 @@ export function MlbHistoricalPlayer({ manifest, favorites, toggle, saving }: {
   if (section && !["stats","analysis","game-log","more","trends"].includes(section)) return <Navigate to={`${base}${section === "advanced" ? "/analysis" : ""}?season=${selected}${asOf ? `&asOfDate=${selectedAsOf}` : ""}${scopeQuery}`} replace />;
   return <div className="screen player-screen"><Link className="back-link" to={historicalSearchPath(`?season=${selected}${scopeQuery}`)}>← 選手一覧</Link><header className="profile-header"><Monogram name={player.name} large /><div className="profile-header__body"><p className="eyebrow">MLB{isVerifiedJapanPlayer(player.id) ? " · 日本人選手" : " · 過去記録"}</p><h1>{player.name}</h1><p>{historicalPositions(player.positions)} · {player.seasons[0]}—{player.seasons.at(-1)} 収録</p></div><FavoriteButton active={favorites.some(f => f.league === "MLB" && f.entityId === player.id)} saving={saving} label={player.name} onClick={() => toggle({league:"MLB",kind:"player",entityId:player.id})} /></header>
     <PlayerTabs base={base} section={section} search={`?season=${selected}${asOf ? `&asOfDate=${selectedAsOf}` : ""}${scopeQuery}`} />
-    <details className="player-tools-disclosure" open={section === "trends"}><summary>比較・推移・保存</summary><nav className="player-tools" aria-label="選手の比較と推移"><CollectionButton league="MLB" playerId={player.id} name={player.name} /><Link to={`/MLB/compare?players=${encodeURIComponent(player.id)}&season=${selected}${scopeQuery}`}>比較に追加</Link><Link to={`/MLB/season-compare?kind=player&entity=${encodeURIComponent(player.id)}${scopeQuery}`}>年度比較・前年差</Link><Link to={`${base}/trends?season=${selected}${scopeQuery}`} aria-current={section === "trends" ? "page" : undefined}>推移・連続記録</Link><Link to={`/MLB/matchup?${pitches.length && !games.length ? "pitcher" : "batter"}=${encodeURIComponent(player.id)}&season=${selected}${scopeQuery}`}>MATCHUP</Link><Link to={`/MLB/history?player=${encodeURIComponent(player.id)}&season=${selected}${scopeQuery}`}>年度別履歴</Link><Link to={`/MLB/teams?season=${selected}${scopeQuery}`}>球団を見る</Link></nav></details>
+    <details className="player-tools-disclosure" open={section === "trends"}><summary>比較・推移・保存</summary><nav className="player-tools" aria-label="選手の比較と推移"><CollectionButton league="MLB" playerId={player.id} name={player.name} /><Link to={`/MLB/compare?players=${encodeURIComponent(player.id)}&season=${selected}${scopeQuery}`}>比較に追加</Link><Link to={`/MLB/season-compare?kind=player&entity=${encodeURIComponent(player.id)}${scopeQuery}`}>年度比較・前年差</Link><Link to={`${base}/trends?season=${selected}${scopeQuery}`} aria-current={section === "trends" ? "page" : undefined}>推移・連続記録</Link><Link to={`/MLB/matchup?${pitches.length && !games.length ? "pitcher" : "batter"}=${encodeURIComponent(player.id)}&season=${selected}${scopeQuery}`}>MATCHUP</Link><Link to={`/MLB/history?player=${encodeURIComponent(player.id)}&season=${selected}${scopeQuery}`}>年度別履歴</Link><Link to={`/MLB/form?season=${selected}&asOfDate=${selectedAsOf}${scopeQuery}`}>HOT・月間候補</Link><Link to={`/MLB/teams?season=${selected}${scopeQuery}`}>球団を見る</Link></nav></details>
     {section !== "more" && <div className="mlb-controls"><label>シーズン<select value={selected} onChange={e => context("season",e.target.value)}>{player.seasons.map(s => <option key={s}>{s}</option>)}</select></label></div>}
     {section === "trends" && <PlayerTrends key={`${player.id}:${selected}:${competition}:${selectedAsOf}`} scope={`${selected}年 · ${competition === "postseason" ? "Postseason" : "公式戦"} · ${selectedAsOf}までの出場記録`} coverageComplete={manifest.seasons.find(s => s.season === selected)?.coverage === "complete"}
       batting={games.filter(r => r.date <= selectedAsOf).map(r => ({ ...r, gameNumber: chronology.value?.games.find(g => g.gameId === r.gameId && g.date === r.date)?.number ?? null, walks: r.bb, sacrificeFlies: r.sf }))}
       pitching={pitches.filter(r => r.date <= selectedAsOf).map(r => ({ ...r, gameNumber: chronology.value?.games.find(g => g.gameId === r.gameId && g.date === r.date)?.number ?? null, earnedRuns: r.er, strikeouts: r.so }))} />}
     {(!section || section === "stats") && <>
     <section className="surface-card"><h2>{selected} {competition === "postseason" ? "Postseason" : "シーズン成績"}</h2>
-      {seasonTotals?.batting && <><h3 className="stat-role-label">打撃</h3><HistoricalMetrics metrics={seasonTotals.batting} /></>}
+      {seasonTotals?.batting && (displayRoles.roles.get(player.id)==="pitcher"?<details className="advanced-disclosure"><summary>投手の打撃成績</summary><HistoricalMetrics metrics={seasonTotals.batting} /></details>:<><h3 className="stat-role-label">打撃</h3><HistoricalMetrics metrics={seasonTotals.batting} /></>)}
       {seasonTotals?.pitching && <><h3 className="stat-role-label">投球</h3><HistoricalMetrics metrics={seasonTotals.pitching} pitching /></>}
       <MetricDetails title="シーズン打撃成績の詳細" metrics={seasonTotals?.batting} />
       <MetricDetails title="シーズン投球成績の詳細" metrics={seasonTotals?.pitching} pitching />
@@ -324,7 +334,7 @@ export function MlbHistoricalPlayer({ manifest, favorites, toggle, saving }: {
       {effectiveSplit === "order" && <label className="mlb-asof">打順<select value={activeOrder}
         onChange={event => setBattingOrder(Number(event.target.value))}>{orders.map(order =>
           <option key={order} value={order}>{order}番</option>)}</select></label>}
-      {games.length > 0 && <><h3 className="stat-role-label">打撃</h3><HistoricalMetrics metrics={batting.metrics} /></>}
+      {games.length > 0 && (displayRoles.roles.get(player.id)==="pitcher"?<details className="advanced-disclosure"><summary>投手の期間打撃成績</summary><HistoricalMetrics metrics={batting.metrics} /></details>:<><h3 className="stat-role-label">打撃</h3><HistoricalMetrics metrics={batting.metrics} /></>)}
       {pitches.length > 0 && <><h3 className="stat-role-label">投球</h3><HistoricalMetrics metrics={pitching.metrics} pitching /></>}
       <MetricDetails title="期間・条件別の打撃詳細" metrics={batting.metrics} />
       <MetricDetails title="期間・条件別の投球詳細" metrics={pitching.metrics} pitching />
@@ -367,6 +377,7 @@ function MlbHistoricalRecords({ manifest }: { manifest: Manifest }) {
     records: { metric: string; role: string; classification?: string; group?: string;
       rows: { playerId: string; name: string; value: number; rank: number; sample?: number; qualification?: string }[] }[]
   }>(`records/${selectedPeriod?.id ?? season}.json`);
+  const displayRoles = useSeasonDisplayRoles(collectedRange?null:season);
   const effectiveCategory = collectedRange ? "counting" : category;
   const records = result.value?.records.filter(record => effectiveCategory === "counting" ? record.classification !== "rate" : record.classification === "rate" && record.group === group).filter(record => record.role === rankingRole) ?? [];
   const selected = records.find(record => `${record.role}:${record.metric}` === metricId) ?? records[0];
@@ -388,10 +399,11 @@ function MlbHistoricalRecords({ manifest }: { manifest: Manifest }) {
         <button className="filter-chip" type="button" key={`${record.role}:${record.metric}`}
           aria-pressed={selected === record}
           onClick={() => setMetricId(`${record.role}:${record.metric}`)}>{({HR:"本塁打",H:"安打",RBI:"打点",SB:"盗塁",SO:"奪三振",W:"勝利",SV:"セーブ",HLD:"ホールド",AVG:"打率",OBP:"出塁率",SLG:"長打率",ERA:"防御率",K9:"K/9"} as Record<string,string>)[record.metric] ?? record.metric}</button>)}</div>
-      {selected && <div className="ranking-heading"><h2><MetricLabel metric={selected.metric} label={({HR:"本塁打",H:"安打",RBI:"打点",SB:"盗塁",SO:"奪三振",W:"勝利",SV:"セーブ",HLD:"ホールド",AVG:"打率",OBP:"出塁率",SLG:"長打率",ERA:"防御率",K9:"K/9"} as Record<string,string>)[selected.metric] ?? selected.metric} /></h2><span className="inline-note">{scopeLabel}{effectiveCategory === "rate" ? ` · ${group}` : ""}</span></div>}
+      {rankingRole==="batting"&&!collectedRange&&<><BattingViewControl /><p className="inline-note">表示のみ切り替えます。記録の順位・公式規定の対象は変えません。役割未確認の選手は標準表示に残します。</p></>}
+    {selected && <div className="ranking-heading"><h2><MetricLabel metric={selected.metric} label={({HR:"本塁打",H:"安打",RBI:"打点",SB:"盗塁",SO:"奪三振",W:"勝利",SV:"セーブ",HLD:"ホールド",AVG:"打率",OBP:"出塁率",SLG:"長打率",ERA:"防御率",K9:"K/9"} as Record<string,string>)[selected.metric] ?? selected.metric} /></h2><span className="inline-note">{scopeLabel}{effectiveCategory === "rate" ? ` · ${group}` : ""}</span></div>}
       {effectiveCategory === "rate" && <details className="qualification-note"><summary>{rankingRole === "batting" ? `規定 ${result.value!.requiredPa ?? "—"} 打席` : `規定 ${result.value!.requiredOuts == null ? "—" : Math.floor(result.value!.requiredOuts / 3)} 回`} · 対象選手について</summary>
         <p>AVG・OBP・SLGには公式の不足PA例外を適用します。OPS・K/9は同じ最低サンプルを使う統計順位です。選手の元の成績は変更しません。</p></details>}
-      <ol className="row-list leaderboard">{selected?.rows.map(row => <li key={row.playerId}>
+      <ol className="row-list leaderboard">{selected?.rows.filter(row=>rankingRole!=="batting"||collectedRange||includesBattingRole(displayRoles.roles.get(row.playerId),battingView(rankingParams))).map(row => <li key={row.playerId}>
         <Link to={mlbRecordPlayerRoute({ playerId: row.playerId, season, competition, ...(selectedPeriod ? { period: selectedPeriod } : {}), role: selected!.role, metric: selected!.metric })}><strong className="rank-number">{row.rank}</strong><span className="rank-person"><strong>{row.name}</strong>
           {effectiveCategory === "rate" && <small>{selected.role === "batting" ? `${row.sample ?? "—"} 打席` : `${row.sample == null ? "—" : `${Math.floor(row.sample / 3)}.${row.sample % 3}`} 回`}
             {row.qualification === "qualified_by_exception" && " · 規定資格（例外適用）"}</small>}</span><strong className="rank-value">{effectiveCategory === "rate" ? row.value.toFixed(selected.metric === "ERA" || selected.metric === "K9" ? 2 : 3) : row.value}</strong></Link></li>)}</ol>
@@ -484,6 +496,7 @@ function MlbHistoricalDataRoutes({ favorites, toggle, saving }: HistoricalRouteP
     <Route path="my" element={<MlbHistoricalMy manifest={manifest} favorites={favorites} toggle={toggle} saving={saving} />} />
     <Route path="analysis" element={<Navigate to="/MLB/search?focus=japan" replace />} />
     <Route path="records" element={<MlbHistoricalRecords manifest={manifest} />} />
+    <Route path="form" element={<Suspense fallback={<p role="status">読み込み中…</p>}><HistoricalFormScreen manifest={manifest} favorites={favorites} toggle={toggle} saving={saving} /></Suspense>} />
     <Route path="ranking" element={<Navigate to="/MLB/records" replace />} />
     <Route path="sources" element={<MlbDataSources />} />
     <Route path="favorites" element={<Navigate to="/MLB/my" replace />} />

@@ -21,6 +21,9 @@ import { useHistoricalStatic } from "./use-mlb-historical";
 import { CollectionButton, SaveViewButton } from "./personal-library";
 import { useHistoricalCompetition } from "./historical-competition-context";
 import { DisplayExportButton } from "./product-sharing";
+import { battingDisplayRole, battingView } from "../domain/player-display-role";
+import { BattingViewControl } from "./player-display-role";
+import { useSeasonDisplayRoles } from "./use-player-display-role";
 
 export type ExplorerManifest = { seasons: { season: number; firstDate: string; lastDate: string; coverage: string }[]; teams: { id: string; name: string }[] };
 export type ExplorerProfile = { player: { id: string; name: string; seasons: number[] }; seasonTotals: Record<string, { batting: ExplorerValues | null; pitching: ExplorerValues | null }>; batting: DatedBatter[]; pitching: DatedPitcher[] };
@@ -41,13 +44,13 @@ export function ExplorerLinks({ league, scope = "" }: { league: "NPB" | "MLB"; s
   const search = new URLSearchParams(context);
   const glossary = new URLSearchParams(context); glossary.delete("q");
   if (league === "NPB" && context.get("role")) search.set("role", context.get("role") === "pitching" ? "pitcher" : "batter");
-  return <nav className="explorer-links" aria-label="データを探す"><Link to={`/${league}/search?${search}`}>検索</Link><Link to={`/${league}/data?${context}`}>データ探索</Link><Link to={`/${league}/history?${context}`}>シーズン履歴</Link>{league === "NPB" && <Link to="/NPB/talent">ドラフト・若手</Link>}{league === "MLB" && <Link to={`/MLB/matchup?${context}`}>MATCHUP</Link>}<Link to={`/${league}/glossary?${glossary}`}>指標ガイド</Link></nav>;
+  return <nav className="explorer-links" aria-label="データを探す"><Link to={`/${league}/search?${search}`}>検索</Link><Link to={`/${league}/data?${context}`}>データ探索</Link><Link to={`/${league}/history?${context}`}>シーズン履歴</Link>{league === "NPB" && <Link to="/NPB/talent">ドラフト・若手</Link>}{league === "MLB" && <><Link to={`/MLB/form?${context}`}>HOT・月間候補</Link><Link to={`/MLB/matchup?${context}`}>MATCHUP</Link></>}<Link to={`/${league}/glossary?${glossary}`}>指標ガイド</Link></nav>;
 }
 export function DataExplorerView({ league, rows, teams, season, years, effectiveDate, coverage, readRecent, readAllRecent, scope = "" }: {
   league: "NPB" | "MLB"; rows: ExplorerRow[]; teams: { id: string; name: string }[]; season: number; years: number[]; effectiveDate: string; coverage: string;
   readRecent: (ids: string[], days: 7 | 14 | 30) => Promise<RecentResult>; readAllRecent?: ((days: 7 | 14 | 30) => Promise<RecentResult>) | undefined; scope?: string;
 }) {
-  const [params, setParams] = useSearchParams(), query = explorerQuery(params);
+  const [params, setParams] = useSearchParams(), query = {...explorerQuery(params),battingView:battingView(params)};
   const daysRaw = params.get("period"), days = daysRaw === "7" || daysRaw === "14" || daysRaw === "30" ? Number(daysRaw) as 7 | 14 | 30 : null;
   const allRecent = !!readAllRecent && params.get("recentMode") !== "selected" && !params.has("recentPlayers");
   const idsKey = selectedRecentPlayers(params, new Set(rows.map(r => r.playerId))).join(","), ids = idsKey ? idsKey.split(",") : [], key = `${season}:${scope}:${query.teamId}:${effectiveDate}:${days}:${allRecent ? "all" : idsKey}`;
@@ -71,7 +74,7 @@ export function DataExplorerView({ league, rows, teams, season, years, effective
     void (allRecent ? readAllRecent!(days) : readRecent(idsKey.split(","), days)).then(result => { if (active) { setErrorKey(""); setRecent({ key, ...result }); } }).catch(() => { if (active) setErrorKey(key); });
     return () => { active = false; };
   }, [key, idsKey, days, readRecent, readAllRecent, allRecent, attempt]);
-  const source = days ? recent?.key === key ? recent.values : [] : rows;
+  const source = days ? recent?.key === key ? recent.values.map(row=>({...row,battingRole:rows.find(p=>p.playerId===row.playerId)?.battingRole})) : [] : rows;
   const matched = league === "MLB" ? source.filter(r => matchesMlbPlayerName(r.playerId, r.name, query.name)) : source;
   const inputErrors = explorerInputErrors(params);
   const visible = inputErrors.length ? [] : exploreRows(matched, { ...query, name: league === "MLB" ? "" : query.name });
@@ -88,6 +91,7 @@ export function DataExplorerView({ league, rows, teams, season, years, effective
   return <div className="screen data-explorer"><PageHeading eyebrow={`${league} · ${season} · ${scope ? "POSTSEASON" : "REGULAR SEASON"}`} title="データ探索" /><ExplorerLinks league={league} scope={`${linkScope}&role=${query.role}`} />
     <SaveViewButton league={league} params={savedParams} /><p className="inline-note">保存済みデータの条件検索です。公式ランキング・HOTではありません。{effectiveDate}まで · Coverage {periodCoverage === "complete" ? "確認済み" : periodCoverage === "unavailable" ? "確認情報を取得できません" : "一部未確認"}。</p>
     <div className="explorer-filter-grid"><label>シーズン<select value={season} onChange={e => update("season", e.target.value)}>{years.map(year => <option key={year}>{year}</option>)}</select></label><label>成績<select value={query.role} onChange={e => update("role", e.target.value)}><option value="batting">打撃</option><option value="pitching">投球</option></select></label><label>球団<select value={query.teamId} onChange={e => update("team", e.target.value)}><option value="">すべて</option>{teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</select></label><label>期間<select value={days ?? "season"} onChange={e => update("period", e.target.value)}><option value="season">シーズン</option>{[7, 14, 30].map(d => <option key={d} value={d}>直近{d}日{readAllRecent ? "・全選手" : "・選択選手"}</option>)}</select></label></div>
+    {query.role==="batting"&&<><BattingViewControl /><p className="inline-note">役割未確認の選手は標準表示に残しています。投手の打撃記録も表示を切り替えて確認できます。</p></>}
     <label className="search-field"><span className="sr-only">選手名</span><input type="search" value={query.name} placeholder="選手名・既存表記で検索" onChange={e => update("q", e.target.value)} /></label>
     <details className="explorer-filters"><summary>条件・並べ替え</summary><label>サンプルの種類<select value={sampleKey} onChange={e => update("sample", e.target.value)}><option value={query.role === "batting" ? "PA" : "outsRecorded"}>{query.role === "batting" ? "打席数" : "投球アウト数（3アウト＝1回）"}</option><option value="G">{query.role === "batting" ? "出場試合数" : "登板数"}</option></select></label><label>最低サンプル（{sampleKey === "G" ? "試合・登板数" : query.role === "batting" ? "打席" : "アウト数"}）<input type="number" min="0" value={params.get("minimum") ?? "0"} onChange={e => update("minimum", e.target.value)} /></label><p className="inline-note">探索用の任意条件です。公式規定到達の判定ではありません。率はサンプル数と合わせて確認してください。</p>
       {[1, 2].map(i => <div className="explorer-filter-grid" key={i}><label>条件{i}の指標<select value={params.get(`metric${i}`) ?? ""} onChange={e => update(`metric${i}`, e.target.value)}><option value="">指定なし</option>{keys.map(k => <option key={k}>{k}</option>)}</select></label><label>条件{i}の方向<select value={params.get(`op${i}`) ?? "gte"} onChange={e => update(`op${i}`, e.target.value)}><option value="gte">以上</option><option value="lte">以下</option></select></label><label>条件{i}の値<input type="number" min="0" step="any" value={params.get(`value${i}`) ?? ""} onChange={e => update(`value${i}`, e.target.value)} /></label><label>並べ替え{i}<select value={params.get(`sort${i}`) ?? ""} onChange={e => update(`sort${i}`, e.target.value)}><option value="">名前順</option>{keys.map(k => <option key={k}>{k}</option>)}</select></label><label>並べ替え{i}の方向<select value={params.get(`dir${i}`) ?? "desc"} onChange={e => update(`dir${i}`, e.target.value)}><option value="desc">大きい順</option><option value="asc">小さい順</option></select></label></div>)}
@@ -121,7 +125,7 @@ export function NpbDataExplorer({ services }: { services: Services }) {
   const supported = year === 2026 && params.get("competition") !== "postseason";
   const [data, setData] = useState<{ season: NpbSeasonPayload; directory: NpbPlayerDirectory } | null>(null), [failed, setFailed] = useState(false);
   useEffect(() => { if (!supported) return; let active = true; void Promise.all([readNpbExplorerSeason(2026), services.directory.findLatestNpb()]).then(([season, directory]) => { if (season.effectiveDate !== directory.effectiveDate) throw Error("Projection dates differ"); if (active) setData({ season, directory }); }).catch(() => { if (active) setFailed(true); }); return () => { active = false; }; }, [services, supported]);
-  const rows = useMemo<ExplorerRow[]>(() => data?.season.players.map(p => ({ playerId: p.playerId, name: p.displayName, teamId: p.teamId, batting: p.batting?.metrics ?? null, pitching: p.pitching?.metrics ?? null })) ?? [], [data]);
+  const rows = useMemo<ExplorerRow[]>(() => data?.season.players.map(p => ({ playerId: p.playerId, name: p.displayName, teamId: p.teamId, batting: p.batting?.metrics ?? null, pitching: p.pitching?.metrics ?? null, battingRole: battingDisplayRole(data.directory.players.find(d=>d.playerId===p.playerId)?.position ? [data.directory.players.find(d=>d.playerId===p.playerId)!.position!] : []) })) ?? [], [data]);
   const readOne = useMemo(() => cachedExplorerRead(async (id: string, days: 7 | 14 | 30): Promise<RecentRow> => {
     const value = await services.recent.find(id, `${days}d`);
     if (!value || value.player.id !== id || value.asOfDate !== data?.season.effectiveDate || value.period !== `${days}d`) throw Error("Recent scope/date unavailable");
@@ -158,12 +162,14 @@ export function MlbDataExplorer({ manifest }: { manifest: ExplorerManifest }) {
   // optional aggregate family. Only a missing index permits that fallback;
   // transport/schema errors must stay explicit rather than mask broken data.
   const recentIndex = useHistoricalStatic<RecentIndex>(recentMode && validDate ? `exploration/recent/${year}/index.json` : null);
+  const displayRoles = useSeasonDisplayRoles(descriptor?year:null,asOf);
   const source = teamId ? teamResult : season;
   const rows = useMemo<ExplorerRow[]>(() => {
     if (teamId) return teamResult.value?.players.map(p => ({ ...p, teamId, batting: mlbProductMetrics(p.batting,"batting"), pitching: mlbProductMetrics(p.pitching,"pitching") })) ?? [];
     const names = new Map(directory.value?.players.filter(p => p.seasons.includes(year)).map(p => [p.id, p.name]));
     return season.value?.players.flatMap(p => names.has(p.playerId) ? [{ ...p, name: names.get(p.playerId)!, batting: mlbProductMetrics(p.batting,"batting"), pitching: mlbProductMetrics(p.pitching,"pitching") }] : []) ?? [];
   }, [teamId, teamResult.value, directory.value, year, season.value]);
+  const displayedRows=rows.map(row=>({...row,battingRole:displayRoles.roles.get(row.playerId)}));
   const readOne = useMemo(() => cachedExplorerRead(async (id: string, days: 7 | 14 | 30): Promise<RecentRow> => {
     const profile = await readHistoricalProduct<ExplorerProfile>(`${competition === "postseason" ? "postseason/" : ""}players/${id.replaceAll(":", "_")}.json`);
     if (profile.player.id !== id || !profile.player.seasons.includes(year) || !descriptor) throw Error("Historical identity/season mismatch");
@@ -185,5 +191,5 @@ export function MlbDataExplorer({ manifest }: { manifest: ExplorerManifest }) {
   if (!teamId && (season.value?.firstDate !== descriptor.firstDate || season.value?.lastDate !== descriptor.lastDate || rows.length !== season.value?.players.length)) return <DataState kind="source-unavailable" title="保存済みSeason・選手一覧の整合を確認できません" />;
   if (recentMode && recentIndex.status === "loading") return <LoadingSkeleton />;
   if (recentMode && recentIndex.status === "error") return <><DataState kind="source-unavailable" title="全選手Recentの公開状態を確認できません" /><button onClick={recentIndex.retry}>再読み込み</button></>;
-  return <>{recentMode && <label className="screen mlb-asof">基準日<input type="date" min={descriptor.firstDate} max={descriptor.lastDate} value={asOf} onChange={e=>{const next=new URLSearchParams(dateParams);next.set("asOfDate",e.target.value);next.delete("page");setDateParams(next);}} /></label>}{recentMode && recentIndex.status === "missing" && <p className="screen inline-note">このシーズンの全選手Recentは未公開です。選手を選択して調べられます。</p>}<p className="screen inline-note">MLB過去記録。{teamId ? "選択球団での出場分を集計します。" : "選択年の全所属球団合計です。"}現在の成績ではありません。</p><DataExplorerView league="MLB" rows={rows} teams={manifest.teams} season={year} years={manifest.seasons.map(s => s.season)} effectiveDate={asOf} coverage={descriptor.coverage} readRecent={readRecent} readAllRecent={recentIndex.status === "ready" ? readAllRecent : undefined} scope={competition === "postseason" ? "&competition=postseason" : ""} /></>;
+  return <>{recentMode && <label className="screen mlb-asof">基準日<input type="date" min={descriptor.firstDate} max={descriptor.lastDate} value={asOf} onChange={e=>{const next=new URLSearchParams(dateParams);next.set("asOfDate",e.target.value);next.delete("page");setDateParams(next);}} /></label>}{recentMode && recentIndex.status === "missing" && <p className="screen inline-note">このシーズンの全選手Recentは未公開です。選手を選択して調べられます。</p>}<p className="screen inline-note">MLB過去記録。{teamId ? "選択球団での出場分を集計します。" : "選択年の全所属球団合計です。"}現在の成績ではありません。</p><DataExplorerView league="MLB" rows={displayedRows} teams={manifest.teams} season={year} years={manifest.seasons.map(s => s.season)} effectiveDate={asOf} coverage={descriptor.coverage} readRecent={readRecent} readAllRecent={recentIndex.status === "ready" ? readAllRecent : undefined} scope={competition === "postseason" ? "&competition=postseason" : ""} /></>;
 }

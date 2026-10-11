@@ -1,3 +1,6 @@
+import { BattingViewControl } from "./player-display-role";
+import { useSeasonDisplayRoles } from "./use-player-display-role";
+import { battingDisplayRole, battingView, includesBattingRole, type BattingDisplayRole } from "../domain/player-display-role";
 import { z } from "zod";
 import { StatTable } from "./stat-table";
 import { useCallback, useEffect, useState } from "react";
@@ -20,7 +23,7 @@ import { DataState, LoadingSkeleton, MetricLabel, PageHeading } from "./componen
 import { DisplayExportButton } from "./product-sharing";
 import { comparisonDisplayExport } from "../domain/product-sharing";
 
-export type ComparePlayer = { id: string; name: string; batting: boolean; pitching: boolean; seasons?: number[] };
+export type ComparePlayer = { id: string; name: string; batting: boolean; pitching: boolean; seasons?: number[];battingRole?:BattingDisplayRole|undefined };
 export type HistoricalProductProfile = { player: { id: string; name: string; seasons: number[] }; batting: DatedBatter[]; pitching: DatedPitcher[] };
 export type HistoricalProductManifest = { seasons: { season: number; firstDate: string; lastDate: string; coverage: string }[]; teams: { id: string; name: string }[]; features?: { directBvp?: string; situationalAnalysis?: string } };
 type Loaded = { id: string; metrics: CompareMetrics | null; date: string; notice: string | null; coverage?: string };
@@ -52,7 +55,7 @@ export function CompareWorkspace({ league, players, teams, seasons, loader, adva
   useEffect(() => { if (!supportedSeason) return; let active = true; const selected = idsKey ? idsKey.split(",") : []; const controls = JSON.parse(controlsKey) as Controls; void Promise.all(selected.map(id => loader(id, controls).then(value => ({ status: "ready" as const, value })).catch(() => ({ status: "error" as const, id })))).then(rows => { if (active) setState({ key, rows }); }); return () => { active = false; }; }, [loader, controlsKey, key, idsKey, supportedSeason]);
   const update = (values: Record<string, string>) => { const next = new URLSearchParams(params); for (const [k, v] of Object.entries(values)) { if (v) next.set(k, v); else next.delete(k); } setParams(next); };
   const matches = (p: ComparePlayer) => league === "MLB" ? matchesMlbPlayerName(p.id, p.name, query) : normalizePlayerSearch(p.name).includes(normalizePlayerSearch(query));
-  const results = players.filter(p => (role === "batting" ? p.batting : p.pitching) && (!p.seasons || p.seasons.includes(season)) && matches(p) && !ids.includes(p.id)).slice(0, 12);
+  const results = players.filter(p => (role === "batting" ? p.batting && includesBattingRole(p.battingRole,battingView(params)) : p.pitching) && (!p.seasons || p.seasons.includes(season)) && matches(p) && !ids.includes(p.id)).slice(0, 12);
   const loaded = state.key === key ? state.rows : [];
   const dates = new Set(loaded.flatMap(r => r.status === "ready" ? [r.value.date] : []));
   const mismatch = dates.size > 1;
@@ -61,6 +64,7 @@ export function CompareWorkspace({ league, players, teams, seasons, loader, adva
   if (!supportedSeason) return <div className="screen"><PageHeading eyebrow={league} title="選手比較" /><DataState kind="unsupported" title={league === "MLB" && season === 2026 ? "2026年の試合結果・選手成績は未対応" : "指定のシーズンは未収録です"} action="収録済みの比較へ" to={`/${league}/compare`} /></div>;
   return <div className="screen compare-screen"><Link className="back-link" to={`/${league}/search${competition === "postseason" ? `?competition=postseason&season=${season}` : ""}`}>← 選手一覧</Link><PageHeading eyebrow={`${league} · ${competition === "postseason" ? "POSTSEASON" : "REGULAR SEASON"}`} title="選手比較" />
     <div className="segmented" aria-label="比較する成績">{(["batting", "pitching"] as const).map(r => <button key={r} aria-pressed={role === r} onClick={() => update({ role: r, condition: "season", against: "" })}>{r === "batting" ? "打撃" : "投球"}</button>)}</div>
+    {role==="batting"&&<><BattingViewControl /><p className="inline-note">投手の打撃も切り替えて比較できます。選択済み選手の実績は保持します。</p></>}
     <div className="compare-selection">{ids.map(id => <div key={id}><Link to={`/${league}/players/${encodeURIComponent(id)}?season=${season}${competition === "postseason" ? "&competition=postseason" : ""}`}>{players.find(p => p.id === id)?.name ?? "未収録選手"}</Link><button type="button" aria-label={`${players.find(p => p.id === id)?.name ?? "選手"}を比較から削除`} onClick={() => update({ players: ids.filter(p => p !== id).join(",") })}>×</button></div>)}</div>
     {ids.length < 4 && <details className="compare-search" open={ids.length < 2}><summary>選手を追加（{ids.length}/4）</summary><label className="search-field"><span className="sr-only">比較する選手名</span><input type="search" placeholder="選手名で検索" value={query} onChange={e => setQuery(e.target.value)} /></label><div className="row-list">{results.map(p => <button className="player-row" key={p.id} onClick={() => { update({ players: [...ids, p.id].join(",") }); setQuery(""); }}><strong>{p.name}</strong><span>＋</span></button>)}</div>{!results.length && <p className="inline-note">この年度・記録種類の選手は見つかりません。</p>}</details>}
     <div className="mlb-controls">{league === "MLB" && <label>シーズン<select value={season} onChange={e => update({ season: e.target.value, asOfDate: "" })}>{seasons.map(s => <option key={s}>{s}</option>)}</select></label>}<label>条件<select value={condition} onChange={e => update({ condition: e.target.value })}>{choices.map(c => <option key={c} value={c}>{conditionLabels[c] ?? c.replace("d", "日")}</option>)}</select></label>
@@ -95,10 +99,13 @@ export function NpbPlayerCompare({ services }: { services: Services }) {
   }, [cache, services, directory]);
   if (error) return <DataState kind="source-unavailable" title="比較用の選手一覧を読み込めません" />;
   if (!directory) return <LoadingSkeleton />;
-  return <CompareWorkspace league="NPB" players={searchNpbPlayers(directory.players, "", {}).map(p => ({ id: p.playerId, name: p.displayName, batting: p.battingAvailable, pitching: p.pitchingAvailable }))} teams={directory.teams.map(t => ({ id: t.id, name: t.shortName }))} seasons={[Number(directory.effectiveDate.slice(0, 4))]} loader={loader} />;
+  return <CompareWorkspace league="NPB" players={searchNpbPlayers(directory.players, "", {}).map(p => ({ id: p.playerId, name: p.displayName, batting: p.battingAvailable, pitching: p.pitchingAvailable,battingRole:battingDisplayRole(p.position?[p.position]:[]) }))} teams={directory.teams.map(t => ({ id: t.id, name: t.shortName }))} seasons={[Number(directory.effectiveDate.slice(0, 4))]} loader={loader} />;
 }
 export function MlbPlayerCompare({ manifest }: { manifest: HistoricalProductManifest }) {
   const competition = useHistoricalCompetition(), directory = useHistoricalDirectory();
+  const [roleParams]=useSearchParams();
+  const displayYear=Number(roleParams.get("season")??manifest.seasons.at(-1)?.season);
+  const displayRoles=useSeasonDisplayRoles(manifest.seasons.some(s=>s.season===displayYear)?displayYear:null,roleParams.get("asOfDate")??undefined);
   const [cache] = useState(() => new Map<string, Promise<unknown>>());
   const loader = useCallback<Loader>(async (id, c) => {
     const advanced = c.condition.includes(":") || c.condition === "bvp";
@@ -123,5 +130,5 @@ export function MlbPlayerCompare({ manifest }: { manifest: HistoricalProductMani
     return { id, date: to, coverage: season.coverage, metrics: stats.factCount ? stats.metrics : null, notice: !stats.factCount ? "この条件の記録なし" : season.coverage !== "complete" ? "一部データ確認中" : null };
   }, [cache, competition, manifest]);
   if (directory.status !== "ready") return directory.status === "loading" ? <LoadingSkeleton /> : <DataState kind="source-unavailable" title="選手一覧を読み込めません" />;
-  return <CompareWorkspace league="MLB" competition={competition} players={directory.value!.players.filter(p => competition === "postseason" || !p.postseasonOnly).map(p => ({ id: p.id, name: p.name, seasons: p.seasons, ...historicalCompareRoles(p.positions) }))} teams={manifest.teams} seasons={manifest.seasons.map(s => s.season)} loader={loader} advanced={manifest.features?.directBvp === "available" || manifest.features?.situationalAnalysis === "available"} />;
+  return <CompareWorkspace league="MLB" competition={competition} players={directory.value!.players.filter(p => competition === "postseason" || !p.postseasonOnly).map(p => ({ id: p.id, name: p.name, seasons: p.seasons, batting:true,pitching:displayRoles.value?displayRoles.pitchers.has(p.id):historicalCompareRoles(p.positions).pitching,battingRole:displayRoles.roles.get(p.id) }))} teams={manifest.teams} seasons={manifest.seasons.map(s => s.season)} loader={loader} advanced={manifest.features?.directBvp === "available" || manifest.features?.situationalAnalysis === "available"} />;
 }
