@@ -37,6 +37,7 @@ jobs:
     outputs:
       generated_at: ${{ steps.publication.outputs.generated_at }}
       projection_hashes: ${{ steps.publication.outputs.projection_hashes }}
+      mlb_manifest_hashes: ${{ steps.historical_publication.outputs.manifest_hashes }}
     steps:
       - name: Reject form refresh outside immutable app-only publication
         env:
@@ -238,6 +239,12 @@ jobs:
             .data/mlb-baseline-reuse.json
             .data/mlb-expanded-aggregates.json
           retention-days: 7
+      - name: Record admitted Historical manifest hashes
+        if: inputs.verify_only != true
+        id: historical_publication
+        env:
+          MLB_PUBLISH_MODE: ${{ inputs.mode }}
+        run: npx tsx scripts/record-mlb-publication.ts dist/data/mlb/historical
       - uses: actions/configure-pages@v5
         if: inputs.verify_only != true
       - name: Validate preserved NPB projections before artifact upload
@@ -283,9 +290,9 @@ jobs:
       - name: Verify public Historical and NPB payloads
         env:
           MLB_PUBLISH_MODE: ${{ inputs.mode }}
-        run: |
-          # Public static contract/readback, no database credentials on deploy.
-          node --input-type=module -e "import{gunzipSync}from'node:zlib';const b='https://tomoya41.github.io/baseball-notes/';const signal=AbortSignal.timeout(60000);const [m,n]=await Promise.all([fetch(b+'data/mlb/historical/manifest.json.gz?v='+Date.now(),{signal}),fetch(b+'data/npb/season/2026/latest.json?v='+Date.now(),{signal})]);if(m.status!==200||n.status!==200)throw Error('public HTTP');const [manifest]=await Promise.all([m.arrayBuffer(),n.arrayBuffer()]);const p=JSON.parse(gunzipSync(Buffer.from(manifest)));const years=JSON.stringify(p.seasons.map(s=>s.season).sort((a,b)=>a-b));const supported=['[2020,2021,2022,2023,2024,2025]','[2016,2017,2018,2019,2020,2021,2022,2023,2024,2025]','[2014,2015,2016,2017,2018,2019,2020,2021,2022,2023,2024,2025]'];if(!(process.env.MLB_PUBLISH_MODE==='expansion'?years===supported[2]:supported.includes(years))||p.current2026!=='unavailable'||p.seasons.some(s=>s.coverage!=='complete'))throw Error('Historical public contract');console.log(JSON.stringify({mlb:m.status,npb:n.status,seasons:p.seasons.length}))"
+          MLB_MANIFEST_HASHES: ${{ needs.stage.outputs.mlb_manifest_hashes }}
+        # NPB family was verified in the preceding step. Never accept a stale MLB generation.
+        run: npx tsx scripts/verify-published-historical-manifests.ts
       - name: Verify public Postseason contracts
         if: inputs.mode == 'postseason' || inputs.mode == 'expansion'
         run: npx tsx scripts/verify-published-postseason.ts
