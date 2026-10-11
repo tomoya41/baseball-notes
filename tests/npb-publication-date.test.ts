@@ -3,6 +3,10 @@ import { readFileSync } from "node:fs";
 import { npbLatestPublicationDate } from "../scripts/lib/npb-publication-date";
 
 describe("latest-only coordinated NPB publication", () => {
+  it("forwards the Actions token to the formal HOT evidence lookup", () => {
+    const code = readFileSync("scripts/publish-npb-hot.ts", "utf8");
+    expect(code).toContain('inspectLatestScheduledAction("tomoya41/baseball-notes", process.env.GITHUB_TOKEN)');
+  });
   it("uses the stored date, independent of the device date", () => {
     expect(npbLatestPublicationDate("2026-09-30")).toBe("2026-09-30");
     expect(npbLatestPublicationDate("2026-09-30", null)).toBe("2026-09-30");
