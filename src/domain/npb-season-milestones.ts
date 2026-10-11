@@ -23,7 +23,7 @@ export const npbSeasonMilestonesSchema = z.strictObject({ schemaVersion: z.liter
   players: z.array(z.strictObject({ playerId: z.uuid(), displayName: z.string().min(1), teamId: z.string().nullable(), teamName: z.string().nullable(),
     checkpoints: z.array(checkpointSchema).min(1) }))
 }).superRefine((v, ctx) => {
-  if (v.period.to !== v.effectiveDate || v.period.from > v.period.to ||
+  if (v.period.to > v.effectiveDate || v.period.from > v.period.to ||
       Number(v.period.from.slice(0, 4)) !== v.season || Number(v.period.to.slice(0, 4)) !== v.season ||
       new Set(v.players.map(p => p.playerId)).size !== v.players.length)
     ctx.addIssue({ code: "custom", message: "Invalid milestone identity/window" });

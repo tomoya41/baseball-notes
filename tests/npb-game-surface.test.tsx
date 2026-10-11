@@ -20,6 +20,16 @@ const records=(ready=false)=>recordsSchema.parse({schemaVersion:1,league:"NPB",s
   readiness:ready?"ready":"not_ready",coverage:ready?"complete":"partial",qualifierStatus:"verified",reasons:ready?[]:["season_coverage_not_complete"],
   categories:[{role:"batting",metric:"HR",rows:ready?[{playerId:"canonical",displayName:"実選手",rank:1,value:20}]:[]}]});
 describe("canonical dated Game surface",()=>{
+  it("offers a safe observation-day route after the regular-season boundary without widening Season coverage",async()=>{
+    const client=openDataClient("file::memory:");
+    try {await migrateData(client);
+      const index=await readNpbGameIndex(client,"2026-10-10");
+      expect(index.coverage.to).toBe("2026-10-07");
+      expect(index.to).toBe("2026-10-10");
+      expect(index.days.find(d=>d.date==="2026-10-10")).toMatchObject({coverage:"unknown",games:[]});
+      expect(index.recent).toEqual([]);
+    }finally{client.close();}
+  });
   it("lists partial Game headers with safe canonical detail links",()=>{const text=html(<GameDateView payload={date([row()])}/>);
     expect(text).toContain("一部データ確認中");expect(text).toContain("npb%3Agame%3Aone");expect(text).toContain("<small>ホーム</small><span>阪神</span>");expect(text).toContain("<small>ビジター</small><span>DeNA</span>");});
   it("distinguishes confirmed no-games from unavailable schedule",()=>{

@@ -29,7 +29,7 @@ test("Daily safety-net publication regenerates player payloads after verified Fa
   expect(build).toContain('"$GITHUB_EVENT_NAME" == "schedule"');
   expect(build).toContain("generate-npb-season.ts --date=\"$date_jst\"");
   expect(build).toContain("generate-npb-player-directory.ts --require-remote");
-  expect(build).toContain("generate-npb-hot-payload.ts --require-remote");
+  expect(build).toContain("publish-npb-hot.ts --require-remote");
   expect(build.indexOf("generate-npb-season.ts")).toBeLessThan(build.indexOf("npm run build"));
   expect(build).toContain("else\n  npx tsx scripts/preserve-published-npb-hot.ts");
 });

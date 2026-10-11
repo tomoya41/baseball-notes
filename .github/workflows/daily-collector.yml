@@ -58,11 +58,13 @@ jobs:
           TARGET_DATE: ${{ inputs.target_date }}
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
       - name: Verify remote DB connection without writing
         run: npm run verify:npb:remote -- --connection-only
         env:
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
       - name: Source dry run (manual only)
         if: github.event_name == 'workflow_dispatch' && inputs.mode == 'dry-run'
         shell: bash
@@ -80,6 +82,7 @@ jobs:
           TARGET_DATE: ${{ inputs.target_date }}
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
           NPB_NF3_ENABLED: ${{ vars.NPB_NF3_ENABLED }}
         run: |
           args=()
@@ -99,6 +102,7 @@ jobs:
           TARGET_DATE: ${{ inputs.target_date }}
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
           NPB_NF3_ENABLED: ${{ vars.NPB_NF3_ENABLED }}
         run: |
           args=()
@@ -133,6 +137,7 @@ jobs:
           TARGET_DATE: ${{ inputs.target_date }}
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           args=()
           if [[ -n "$TARGET_DATE" ]]; then args+=(--date "$TARGET_DATE"); fi
@@ -145,11 +150,12 @@ jobs:
           NPB_MODE: ${{ inputs.mode }}
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           if [[ "$GITHUB_EVENT_NAME" == "schedule" || "$NPB_MODE" == "ingest" ]]; then
             date_jst="${TARGET_DATE:-$(TZ=Asia/Tokyo date -d yesterday +%F)}"
             npx tsx scripts/generate-npb-season.ts --date="$date_jst" --payload-root=.data/publish
-            npx tsx scripts/generate-npb-hot-payload.ts --require-remote
+            npx tsx scripts/publish-npb-hot.ts --require-remote
             npx tsx scripts/generate-npb-player-directory.ts --require-remote --payload-root=.data/publish
           fi
           npm run build
@@ -158,7 +164,7 @@ jobs:
           if [[ "$GITHUB_EVENT_NAME" == "schedule" || "$NPB_MODE" == "ingest" ]]; then
             cp -R .data/publish/data dist/
             mkdir -p dist/data/npb/hot
-            cp .data/hot-diagnostics/npb-hot-7d.json dist/data/npb/hot/latest.json
+            cp .data/publish/data/npb/hot/latest.json dist/data/npb/hot/latest.json
           else
             npx tsx scripts/preserve-published-npb-hot.ts
             npx tsx scripts/preserve-published-npb-player-directory.ts
@@ -215,6 +221,7 @@ jobs:
           TARGET_DATE: ${{ needs.collect.outputs.date }}
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
       - name: Optional published EOD favorite notifications
         if: vars.NPB_DAY_FACTS_ENABLED == 'true' && (github.event_name == 'schedule' || inputs.mode == 'ingest')
         continue-on-error: true
@@ -226,3 +233,4 @@ jobs:
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}

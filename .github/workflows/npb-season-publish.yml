@@ -8,6 +8,7 @@ on:
         default: false
 permissions:
   contents: read
+  actions: read
 concurrency:
   group: daily-npb-collector-and-pages
   cancel-in-progress: false
@@ -31,10 +32,11 @@ jobs:
         env:
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           mkdir -p .data/batch-b
           npx tsx scripts/generate-npb-season.ts > .data/batch-b/season.json
-          npx tsx scripts/generate-npb-hot-payload.ts --require-remote > .data/batch-b/hot.json
+          npx tsx scripts/publish-npb-hot.ts --require-remote > .data/batch-b/hot.json
           npx tsx scripts/audit-npb-fact-quality.ts > .data/batch-b/audit.json
           npx tsx scripts/validate-npb-season-facts.ts > .data/batch-b/current-validation.json
           npx tsx scripts/audit-npb-eod-coverage.ts > .data/batch-b/eod-coverage.json
@@ -62,7 +64,7 @@ jobs:
           npm run build
           cp -R .data/publish/data dist/
           mkdir -p dist/data/npb/hot
-          cp .data/hot-diagnostics/npb-hot-7d.json dist/data/npb/hot/latest.json
+          cp .data/publish/data/npb/hot/latest.json dist/data/npb/hot/latest.json
       - uses: actions/upload-artifact@v4
         with:
           name: npb-season-verification

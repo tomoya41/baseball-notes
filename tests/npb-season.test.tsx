@@ -24,6 +24,17 @@ async function batch(partial=false){
     .aggregate({asOfDate:date,period:"season"});
 }
 describe("season read model",()=>{
+  it("keeps the final regular-season Fact window separate from later publication observations",async()=>{
+    const result=await batch();
+    result.window.to="2026-10-07";
+    const observed={...directory,effectiveDate:"2026-10-10"};
+    const payload=buildNpbSeasonPayload(result,observed,at);
+    expect(payload.effectiveDate).toBe("2026-10-10");
+    expect(payload.period.to).toBe("2026-10-07");
+    expect(payload.players[0]?.batting?.metrics).toEqual(buildNpbSeasonPayload(result,{...observed,effectiveDate:"2026-10-07"},at).players[0]?.batting?.metrics);
+    expect(()=>buildNpbSeasonPayload(result,{...observed,effectiveDate:"2026-10-06"},at)).toThrow();
+    expect(payload.readiness.status).toBe("not_ready");
+  });
   it("reuses existing rates and preserves both roles, coverage and samples",async()=>{
     const result=await batch(),payload=buildNpbSeasonPayload(result,directory,at);
     const query={playerId:"dual",period:"season" as const,asOfDate:date};

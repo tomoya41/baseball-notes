@@ -27,7 +27,9 @@ export const npbSeasonPayloadSchema=z.strictObject({schemaVersion:z.literal(1),l
     batting:statsSchema(seasonBattingKeys).nullable(),pitching:statsSchema(seasonPitchingKeys).nullable()})),
   rankings:z.strictObject({batting:z.array(z.unknown()).max(0),pitching:z.array(z.unknown()).max(0)}),
 }).superRefine((value,ctx)=>{
-  if(value.period.to!==value.effectiveDate || value.period.from>value.period.to)
+  // effectiveDate is the coordinated observation date; period bounds the Facts.
+  // After the regular-season boundary these dates legitimately differ.
+  if(value.period.to>value.effectiveDate || value.period.from>value.period.to)
     ctx.addIssue({code:"custom",message:"Season period/effective date mismatch"});
   if(new Set(value.players.map(p=>p.playerId)).size!==value.players.length)
     ctx.addIssue({code:"custom",message:"Duplicate canonical Player"});
@@ -99,7 +101,8 @@ export function buildNpbSeasonPayload(batch:PlayerPeriodBatchResult,directory:Np
   });
   const reasons=[...(batch.coverage.status!=="complete"?["season_coverage_not_complete"]:[]),
     ...(batch.coverage.status!=="complete"?["qualifier_computation_requires_complete_coverage"]:[]),"public_ranking_not_enabled"];
-  return npbSeasonPayloadSchema.parse({schemaVersion:1,league:"NPB",season:2026,effectiveDate:batch.window.to,generatedAt,
+  const effectiveDate=directory.effectiveDate ?? batch.window.to;
+  return npbSeasonPayloadSchema.parse({schemaVersion:1,league:"NPB",season:2026,effectiveDate,generatedAt,
     period:{from:batch.window.from,to:batch.window.to},coverage:{status:batch.coverage.status,summary:batch.coverage.summary},
     readiness:{status:"not_ready",reasons,counting:seasonRankingReadModel(batch).readiness.counting,rateQualifier:"verified"},
     players,rankings:{batting:[],pitching:[]}});
