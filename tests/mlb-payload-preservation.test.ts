@@ -5,6 +5,16 @@ import { parse } from "yaml";
 import { mlbRecordPlayerRoute } from "../src/domain/mlb-record-navigation";
 
 describe("Historical immutable payload preservation", () => {
+  it("requires coordinated admission before any data download/import and keeps app-only available", () => {
+    const workflow = parse(readFileSync(".github/workflows/mlb-historical-publish.yml", "utf8"));
+    expect(workflow.on.workflow_dispatch.inputs.mode.options).toEqual(["expansion", "app-only"]);
+    expect(workflow.on.workflow_dispatch.inputs.mode.default).toBe("app-only");
+    const steps = workflow.jobs.stage.steps;
+    expect(steps[0].run).toContain('"$MLB_PUBLISH_MODE" != \'expansion\'');
+    expect(steps[0].run).toContain('"$MLB_PUBLISH_MODE" != \'app-only\'');
+    expect(steps[0].run).toContain("exit 1");
+    expect(steps[0].run).not.toContain("import-mlb-historical.ts");
+  });
   const a = { season: 2020, players: [{ playerId: "a", batting: { H: 12 } }, { playerId: "b", batting: { H: null } }] };
   const b = { season: 2020, players: [...a.players].reverse() };
   it("allows only stable-key Season row reordering", () => {
@@ -19,7 +29,7 @@ describe("Historical immutable payload preservation", () => {
   });
   it("keeps expansion aggregates and mutable profile unions outside immutable bytes", () => {
     for (const path of ["records/range.json.gz", "postseason/records/decade-2020.json.gz", "players/index.json.gz", "players/a.json.gz", "manifest.json.gz"]) expect(protectedHistoricalPath(path)).toBe(false);
-    for (const path of ["games/a.json.gz", "seasons/2020.json.gz", "postseason/records/2020.json.gz", "advanced/2016/a.json.gz"]) expect(protectedHistoricalPath(path)).toBe(true);
+    for (const path of ["games/a.json.gz", "seasons/2020.json.gz", "postseason/records/2020.json.gz", "advanced/2016/a.json.gz", "advanced/2015/a.json.gz", "postseason/exploration/form/2024/index.json.gz", "exploration/recent/2020/index.json.gz"]) expect(protectedHistoricalPath(path)).toBe(true);
   });
   it("generates Team/chronology projections before immutable reuse and Recent fingerprints", () => {
     const workflow = parse(readFileSync(".github/workflows/mlb-historical-publish.yml", "utf8"));

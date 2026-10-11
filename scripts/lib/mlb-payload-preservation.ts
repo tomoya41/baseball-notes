@@ -14,8 +14,8 @@ export function equivalentHistoricalPayload(path: string, baseline: unknown, can
   return before !== null && after !== null && isDeepStrictEqual(before, after);
 }
 
-export function protectedHistoricalPath(path: string): boolean {
+export function protectedHistoricalPath(path: string, includeExploration=true): boolean {
   const scoped = path.replace(/^postseason\//, "");
   // Range/decade Records intentionally expand. Identity/profile union is audited separately.
-  return /^(games|schedule|seasons|teams|chronology)\//.test(scoped) || /^records\/\d{4}\.json\.gz$/.test(scoped) || /^advanced\/(201[6-9]|202[0-5])\//.test(scoped);
+  return /^(games|schedule|seasons|teams|chronology)\//.test(scoped) || /^records\/\d{4}\.json\.gz$/.test(scoped) || /^advanced\/\d{4}\//.test(scoped) || includeExploration&&/^exploration\/(recent|form)\//.test(scoped);
 }

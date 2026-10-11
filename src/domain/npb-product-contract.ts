@@ -75,7 +75,7 @@ export const npbTeamSeasonSchema = z.strictObject({ schemaVersion: z.literal(1),
     gamesWithBattingFacts: z.number().int().nonnegative(), gamesWithPitchingFacts: z.number().int().nonnegative(),
     observedHomeVenues: z.array(z.string()), batting: z.record(z.string(), metricSchema), pitching: z.record(z.string(), metricSchema) })),
 }).superRefine((v, ctx) => {
-  if (v.period.to !== v.effectiveDate || v.period.from > v.period.to || new Set(v.teams.map(t => t.teamId)).size !== v.teams.length)
+  if (v.period.to > v.effectiveDate || v.period.from > v.period.to || new Set(v.teams.map(t => t.teamId)).size !== v.teams.length)
     ctx.addIssue({ code: "custom", message: "Invalid Season identity/window" });
   for (const t of v.teams) if (t.scoreStatus === "complete" && t.G !== t.W + t.L + t.T)
     ctx.addIssue({ code: "custom", message: "Team decisions disagree with Games" });

@@ -8,7 +8,8 @@ import { expect, it } from "vitest";
 
 it.each([
   { mode: "app-only", years: [2020, 2021, 2022, 2023, 2024, 2025], valid: true },
-  { mode: "expansion", years: [2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025], valid: true },
+  { mode: "expansion", years: [2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025], valid: true },
+  { mode: "app-only", years: [2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025], valid: true },
   { mode: "app-only", years: [2020, 2020, 2020, 2020, 2020, 2020], valid: false },
   { mode: "expansion", years: [2020, 2021, 2022, 2023, 2024, 2025], valid: false },
 ])("public readback drains NPB response and validates exact years: $mode $years", async ({ mode, years, valid }) => {

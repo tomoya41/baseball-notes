@@ -70,7 +70,7 @@ try {
   let scheduledProductionEvidence = false;
   if (scheduled.rows.length) {
     try {
-      const action = await inspectLatestScheduledAction("tomoya41/baseball-notes");
+      const action = await inspectLatestScheduledAction("tomoya41/baseball-notes", process.env.GITHUB_TOKEN);
       scheduledProductionEvidence = action?.conclusion === "success" &&
         action.inferredTargetDate === asOfDate && action.encryptedBackupArtifact === "present";
     } catch { /* A failed operational proof closes the HOT gate; it never opens it. */ }

@@ -23,6 +23,23 @@ function fixture(days=31,competition:"regular"|"postseason"="regular") {
   const names=new Map([[id,"選手A"],[other,"選手B"]]);return {games,months,index,names};
 }
 describe("Historical form evaluation",()=>{
+  it("compares full prior months, equivalent mid-month days and leap months without future Facts",()=>{
+    expect(formWindow("2024-08-31",7,"monthly-change").previous).toEqual({from:"2024-07-01",to:"2024-07-31"});
+    expect(formWindow("2024-08-20",7,"monthly-change").previous).toEqual({from:"2024-07-01",to:"2024-07-20"});
+    expect(formWindow("2024-03-30",7,"monthly-change").previous.to).toBe("2024-02-29");
+    expect(formWindow("2024-03-31",7,"monthly-change").previous.to).toBe("2024-02-29");
+    const f=fixture(),old=f.games.map(g=>({...g,id:historicalId("game",`previous-${g.date}`),date:g.date.replace("-08-","-07-"),batting:[batter(id,1)]}));
+    const games=[...old,...f.games],months=buildFormMonths(games.map(game=>({game,hash:"a".repeat(64)})),"regular",2024);
+    const index={...f.index,firstDate:"2024-07-01",sourceFingerprint:months[0]!.sourceFingerprint,months:months.map(m=>({month:m.month,compressedBytes:1,rows:1}))};
+    const result=evaluateHistoricalForm(index,months,f.names,"2024-08-20",7,"monthly-change","batting");
+    const one=result.entries.find(e=>e.playerId===id)!;
+    expect(one.change).toBe("rising");expect(one.metrics.PA!.value).toBe(80);expect(one.previousSample).toBe(80);
+    expect(one.previous).toBe(0.5);expect(one.delta).toBe(0.5);
+    expect(result.entries.find(e=>e.playerId===other)!.change).toBe("insufficient");
+    expect(evaluateHistoricalForm(index,months,f.names,"2024-08-19",7,"monthly-change","batting").entries.every(e=>e.change==="insufficient")).toBe(true);
+    expect(portableRoute("/MLB/form","season=2024&mode=monthly-change&asOfDate=2024-08-20")).toContain("mode=monthly-change");
+    expect(evaluateHistoricalForm({...index,competitionType:"postseason"},months.map(m=>({...m,competitionType:"postseason"})),f.names,"2024-08-20",7,"monthly-change","batting").coverage).toBe("partial");
+  });
   it("uses dated fielding/DH evidence and does not infer two-way status from a cameo",()=>{
     const f=fixture(),retro="proof",uuid="proof-uuid",pid=historicalId("player",`chadwick:${uuid}`);
     const source=(n:number)=>`TST202408${String(n).padStart(2,"0")}0`;
@@ -131,6 +148,18 @@ describe("Historical form evaluation",()=>{
   });
 });
 describe("Season roles and Historical Watch",()=>{
+  it("tracks favorite Rising membership as a separate Historical baseline without push or duplicate alerts",()=>{
+    const f=fixture(),now=Date.parse("2026-10-11T00:00:00Z"),fav=[{league:"MLB",kind:"player",entityId:id}] as Parameters<typeof formWatchObservations>[6];
+    const entry=evaluateHistoricalForm(f.index,f.months,f.names,"2024-08-31",7,"hot","batting").entries[0]!;
+    let state=emptyWatchState();state.preferences.recent=true;
+    const before=formWatchObservations(f.index,"2024-08-30",7,"change","batting",[{...entry,change:"insufficient"}],fav,now);
+    state=evaluateWatch(state,before,now);expect(state.alerts).toEqual([]);
+    const next=formWatchObservations(f.index,"2024-08-31",7,"change","batting",[{...entry,change:"rising"}],fav,now);
+    state=evaluateWatch(state,next,now);expect(state.alerts[0]!.title).toBe("Historicalの期間比較で新しく上昇に該当");
+    expect(evaluateWatch(state,next,now).alerts).toHaveLength(1);
+    expect(formWatchObservations({...f.index,coverage:"partial"},"2024-08-31",7,"change","batting",[entry],fav,now)).toEqual([]);
+    expect(formWatchObservations(f.index,"2024-08-31",7,"monthly-change","batting",[entry],fav,now)[0]!.key).not.toBe(next[0]!.key);
+  });
   it("keeps unknowns, ordinary pitcher batting and DH without pitching, never treats one outing as two-way",()=>{
     expect(battingDisplayRole(["P"])).toBe("pitcher");expect(battingDisplayRole(["P","DH"])).toBe("dh");expect(battingDisplayRole(["RF","P"])).toBe("fielder");expect(battingDisplayRole([])).toBe("unknown");expect(includesBattingRole("unknown","standard")).toBe(true);expect(includesBattingRole("pitcher","standard")).toBe(false);expect(includesBattingRole("pitcher","pitchers")).toBe(true);
     const f=fixture();f.index.roles[0]!.positionDates=[{position:"P",date:"2024-08-02"},{position:"DH",date:"2024-08-25"}];expect(formPlayerRole(f.index,id,"2024-08-20")).toBe("pitcher");expect(formPlayerRole(f.index,id,"2024-08-31")).toBe("dh");expect(formPlayerRole(f.index,id,"2024-08-01")).toBe("unknown");

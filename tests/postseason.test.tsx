@@ -156,7 +156,7 @@ describe("scope isolation and capabilities", () => {
   it("publishes Postseason only through a guarded whole-site release with regular byte preservation", () => {
     const path = new URL("../.github/workflows/mlb-historical-publish.yml",import.meta.url);
     const text = readFileSync(path,"utf8"), workflow = parse(text);
-    expect(workflow.on.workflow_dispatch.inputs.mode.options).toContain("postseason");
+    expect(workflow.on.workflow_dispatch.inputs.mode.options).toContain("expansion");
     expect(workflow.on.schedule).toBeUndefined();
     expect(workflow.concurrency.group).toBe("daily-npb-collector-and-pages");
     expect(text).toContain("verify-postseason-preservation.ts before"); expect(text).toContain("verify-postseason-preservation.ts after");

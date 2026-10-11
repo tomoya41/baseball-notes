@@ -9,6 +9,8 @@ import { periodDates } from "../domain/period-coverage";
 export async function readNpbGameIndex(client:DataClient,effectiveDate:string) {
   const started=performance.now(),season=findNpbRegularSeason(effectiveDate);
   if(!season)throw Error("Season metadata missing");
+  const throughDate=effectiveDate<season.endDate?effectiveDate:season.endDate;
+  const calendarTo=effectiveDate>season.endDate?effectiveDate:season.endDate;
   const [teams,result,coverage]=await Promise.all([
     new NpbRepository(client).findTeams(),
     client.execute({sql:`SELECT g.game_id,g.game_date,g.game_number,g.scheduled_time,g.status,
@@ -17,7 +19,7 @@ export async function readNpbGameIndex(client:DataClient,effectiveDate:string) {
       EXISTS(SELECT 1 FROM player_game_pitching p WHERE p.game_id=g.game_id) AS has_pitching
       FROM npb_games g LEFT JOIN npb_game_completeness c ON c.game_id=g.game_id
       WHERE g.game_date BETWEEN ? AND ? ORDER BY g.game_date,g.game_id`,args:[season.startDate,season.endDate]}),
-    new NpbPeriodCoverageRepository(client).findPeriodCoverage({from:season.startDate,to:effectiveDate,timeZone:"Asia/Tokyo"}),
+    new NpbPeriodCoverageRepository(client).findPeriodCoverage({from:season.startDate,to:throughDate,timeZone:"Asia/Tokyo"}),
   ]);
   const generatedAt=new Date().toISOString();const byDate=new Map<string,GameIndexRow[]>();
   for(const r of result.rows){const side=(id:unknown,score:unknown)=>{
@@ -27,9 +29,9 @@ export async function readNpbGameIndex(client:DataClient,effectiveDate:string) {
       scheduledTime:r.scheduled_time??null,status:r.status,home:side(r.home_team_id,r.home_score),away:side(r.away_team_id,r.away_score),
       completeness:r.game_status??null,battingAvailable:!!r.has_batting,pitchingAvailable:!!r.has_pitching,detailAvailable:true});
     byDate.set(row.date,[...(byDate.get(row.date)??[]),row]);}
-  const days=periodDates({from:season.startDate,to:season.endDate,timeZone:"Asia/Tokyo"}).map(date=>gameDateIndexSchema.parse({schemaVersion:1,league:"NPB",date,
+  const days=periodDates({from:season.startDate,to:calendarTo,timeZone:"Asia/Tokyo"}).map(date=>gameDateIndexSchema.parse({schemaVersion:1,league:"NPB",date,
     generatedAt,coverage:coverage.calendar.find(d=>d.date===date)?.status??"unknown",games:orderGames(byDate.get(date)??[])}));
   const recent=[...byDate.values()].flat().filter(g=>g.status==="final"&&g.date<=effectiveDate)
     .sort((a,b)=>b.date.localeCompare(a.date)||a.gameId.localeCompare(b.gameId)).slice(0,6);
-  return {days,recent,coverage,generatedAt,from:season.startDate,to:season.endDate,rows:result.rows.length,readMs:performance.now()-started};
+  return {days,recent,coverage,generatedAt,from:season.startDate,to:calendarTo,rows:result.rows.length,readMs:performance.now()-started};
 }

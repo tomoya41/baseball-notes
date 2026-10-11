@@ -4,25 +4,25 @@ import { gunzipSync } from "node:zlib";
 import { createHash } from "node:crypto";
 import type { HistoricalGame } from "../src/data/mlb-historical";
 import { battingAggregate, pitchingAggregate, type DatedBatter, type DatedPitcher } from "../src/domain/mlb-historical-aggregate";
-import { evaluateHistoricalForm, formIndexSchema, formMonthSchema, formMonths, FORM_POLICY, type FormCategory, type FormMode } from "../src/domain/historical-form";
+import { evaluateHistoricalForm, formIndexSchema, formMonthSchema, formMonths, FORM_POLICY, isMonthlyForm, isFormComparison, type FormCategory, type FormMode } from "../src/domain/historical-form";
 import { validStaticPayload } from "../src/domain/mlb-historical-public";
 import { mlbProductMetrics } from "../src/domain/mlb-product-metrics";
 import type { ExplorerValues } from "../src/domain/data-explorer";
 
 type GroupedFacts = ReadonlyMap<string,{b:DatedBatter[];p:DatedPitcher[]}>;
 /** Admission is derived from source Game Facts, including players absent from a shard. */
-export function verifyFormPopulation(grouped:GroupedFacts, context:{category:FormCategory;mode:FormMode;days:7|14|30;competition:"regular"|"postseason";coverage:string;from:string;to:string;previousFrom:string}, actual:readonly {playerId:string}[]) {
+export function verifyFormPopulation(grouped:GroupedFacts, context:{category:FormCategory;mode:FormMode;days:7|14|30;competition:"regular"|"postseason";coverage:string;from:string;to:string;previousFrom:string;previousTo?:string}, actual:readonly {playerId:string}[]) {
   const expected=new Map<string,ExplorerValues>();
   const {category,mode,days,from,to}=context,policy=FORM_POLICY[category];
-  const unknown=category!=="batting"&&[...grouped.values()].some(rows=>rows.p.some(p=>p.role==="unknown"&&p.date>=(mode==="change"?context.previousFrom:from)&&p.date<=to));
-  if(context.coverage==="complete"&&!unknown&&!(mode==="monthly"&&context.competition==="postseason"))for(const [id,rows] of grouped){
+  const unknown=category!=="batting"&&[...grouped.values()].some(rows=>rows.p.some(p=>p.role==="unknown"&&(p.date>=from&&p.date<=to||isFormComparison(mode)&&p.date>=context.previousFrom&&p.date<=(context.previousTo??from))));
+  if(context.coverage==="complete"&&!unknown&&!(isMonthlyForm(mode)&&context.competition==="postseason"))for(const [id,rows] of grouped){
     const batting=rows.b.filter(r=>r.date>=from&&r.date<=to),pitching=rows.p.filter(r=>r.date>=from&&r.date<=to&&r.role===(category==="starters"?"starter":"reliever"));
     if((category==="batting"?batting.length:pitching.length)===0)continue;
     const metrics=mlbProductMetrics(category==="batting"?battingAggregate(id,batting,from,to).metrics:pitchingAggregate(id,pitching,from,to).metrics,category==="batting"?"batting":"pitching")!;
     const value=(key:string)=>(metrics as Record<string,{value:number|null}>)[key]?.value??null;
-    const sample=value(policy.sample),rate=value(category==="batting"?"OPS":"ERA"),minimum=mode==="monthly"?policy.monthly:policy.minimum[days];
-    const eligible=sample!==null&&sample>=minimum&&rate!==null&&(category==="batting"?["HR","H"].every(k=>value(k)!==null):value("K9")!==null&&pitching.length>=Math.ceil((mode==="monthly"?28:days)/7)*(category==="relievers"?2:1));
-    if(mode==="change"||eligible)expected.set(id,metrics);
+    const sample=value(policy.sample),rate=value(category==="batting"?"OPS":"ERA"),minimum=isMonthlyForm(mode)?policy.monthly:policy.minimum[days];
+    const eligible=sample!==null&&sample>=minimum&&rate!==null&&(category==="batting"?["HR","H"].every(k=>value(k)!==null):value("K9")!==null&&pitching.length>=Math.ceil((isMonthlyForm(mode)?28:days)/7)*(category==="relievers"?2:1));
+    if(isFormComparison(mode)||eligible)expected.set(id,metrics);
   }
   const actualIds=actual.map(e=>e.playerId);
   if(new Set(actualIds).size!==actualIds.length||actualIds.length!==expected.size||actualIds.some(id=>!expected.has(id)))throw Error(`Form player population mismatch ${context.competition}/${to}/${mode}/${category}`);
@@ -52,12 +52,12 @@ export async function verifyHistoricalForm(root: string) {
       if(index.roles.length!==grouped.size||index.roles.some(role=>!grouped.has(role.playerId)))throw Error("Form source role population mismatch");
       // Every month and all windows at the season midpoint/end, in both independent roles.
       const dates=[...new Set([...months.map(m=>year.filter(g=>g.game.date.startsWith(m.month)).map(g=>g.game.date).sort().at(-1)!),new Date((Date.parse(index.firstDate)+Date.parse(index.lastDate))/2).toISOString().slice(0,10)])];
-      for(const date of dates)for(const mode of ["hot","change","monthly"] as const)for(const days of (mode==="monthly"?[7] as const:[7,14,30] as const))for(const category of ["batting","starters","relievers"] as const){
+      for(const date of dates)for(const mode of ["hot","change","monthly","monthly-change"] as const)for(const days of (isMonthlyForm(mode)?[7] as const:[7,14,30] as const))for(const category of ["batting","starters","relievers"] as const){
         const required=formMonths(index,date,days,mode),t=performance.now(),result=evaluateHistoricalForm(index,months.filter(m=>required.includes(m.month)),names,date,days,mode,category,"all");maxMs=Math.max(maxMs,performance.now()-t);maxEntries=Math.max(maxEntries,result.entries.length);windows++;
-        const population=verifyFormPopulation(grouped,{category,mode,days,competition,coverage:index.coverage,from:result.from,to:result.to,previousFrom:result.previous.from},result.entries);
+        const population=verifyFormPopulation(grouped,{category,mode,days,competition,coverage:index.coverage,from:result.from,to:result.to,previousFrom:result.previous.from,previousTo:result.previous.to},result.entries);
         for(const entry of result.entries){const rows=grouped.get(entry.playerId)!;const expected=population.get(entry.playerId)!;
           for(const [key,actual] of Object.entries(entry.metrics)){const e=(expected as Record<string,{value:number|null}>)[key];if(!e)continue;comparisons++;if(actual.value===null?e.value!==null:e.value===null||Math.abs(actual.value-e.value)>1e-10)throw Error(`Form mismatch ${competition}/${season}/${date}/${category}/${entry.playerId}/${key}`);}
-          if(mode==="change"&&entry.delta!==null){const previous=category==="batting"?battingAggregate(entry.playerId,rows.b,result.previous.from,result.previous.to).metrics.OPS.value:pitchingAggregate(entry.playerId,rows.p.filter(p=>p.role===(category==="starters"?"starter":"reliever")),result.previous.from,result.previous.to).metrics.ERA.value;if(previous!==entry.previous)throw Error("Previous window mismatch");comparisons++;}
+          if(isFormComparison(mode)&&entry.delta!==null){const previous=category==="batting"?battingAggregate(entry.playerId,rows.b,result.previous.from,result.previous.to).metrics.OPS.value:pitchingAggregate(entry.playerId,rows.p.filter(p=>p.role===(category==="starters"?"starter":"reliever")),result.previous.from,result.previous.to).metrics.ERA.value;if(previous!==entry.previous)throw Error("Previous window mismatch");comparisons++;}
         }
       }
       gamesChecked+=year.length;scopes.push({season,competition,games:year.length,unknownRoleRows:months.reduce((n,m)=>n+m.unknown.length,0),twoWayEvidence:index.roles.filter(r=>r.twoWayEvidence).length});

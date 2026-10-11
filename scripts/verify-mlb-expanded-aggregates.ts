@@ -10,7 +10,7 @@ const checks: { season: number; scope: string; playerMetrics: number }[] = [];
 const mapping = new Map([...chadwickBridge(await readFile(join(cache, "chadwick-register.zip")))].map(([retro, uuid]) => [retro, historicalId("player", `chadwick:${uuid}`)]));
 for (const scope of ["regular", "postseason"] as const) {
   const base = scope === "regular" ? root : get("--post-root", join(root, "postseason"));
-  for (const season of [2016, 2017, 2018, 2019]) {
+  for (const season of [2014, 2015, 2016, 2017, 2018, 2019]) {
     const archive = await readFile(join(cache, `${season}csvs.zip`));
     const ids = new Set(readHistoricalCsv(archive, season, "gameinfo").filter(row => scope === "regular" ? isRegularRetrosheetGame(row.gametype ?? "") :
       POSTSEASON_GAME_TYPES.includes(row.gametype ?? "")).map(row => row.gid));

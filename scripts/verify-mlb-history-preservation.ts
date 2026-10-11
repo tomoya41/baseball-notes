@@ -3,6 +3,7 @@ import { join, relative } from "node:path";
 import { createHash } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
 import { gunzipSync } from "node:zlib";
+import { protectedHistoricalPath } from "./lib/mlb-payload-preservation";
 const args = process.argv.slice(2);
 const get = (key: string) => args.includes(key) ? args[args.indexOf(key) + 1] : undefined;
 const before = get("--before"), after = get("--after");
@@ -33,7 +34,7 @@ for (const path of paths) {
     delete old.generatedAt; delete current.generatedAt;
     delete old.provenance.verifiedAt; delete current.provenance.verifiedAt;
     if (!isDeepStrictEqual(old, current)) failures.push(`Hub semantics: ${path}`); else hubUnchanged++;
-  } else if (/^(games|schedule|seasons|teams|chronology|exploration\/recent)\//.test(scoped) || /^records\/\d{4}\.json\.gz$/.test(scoped) || /^advanced\/202[0-5]\//.test(scoped)) {
+  } else if (protectedHistoricalPath(path)) {
     const current = await readFile(join(after, path));
     if (createHash("sha256").update(oldBytes).digest("hex") !== createHash("sha256").update(current).digest("hex")) failures.push(`Protected payload hash: ${path}`);
     else hashUnchanged++;

@@ -105,4 +105,17 @@ describe("NPB daily health",()=>{
     expect(await inspectLatestScheduledAction("owner/repo",undefined,request)).toMatchObject({runId:42,
       inferredTargetDate:"2026-09-25",encryptedBackupArtifact:"present"});
   });
+  it("authenticates both scheduled-run and artifact evidence requests without exposing the token", async () => {
+    const headers: string[] = [];
+    const request = (async (input: RequestInfo | URL, options?: RequestInit) => {
+      headers.push(new Headers(options?.headers).get("Authorization") ?? "");
+      return new Response(JSON.stringify(String(input).includes("/artifacts?") ?
+        { artifacts: [{ name: "npb-facts-encrypted-42", expired: false }] } :
+        { workflow_runs: [{ id: 42, run_started_at: "2026-09-26T00:00:00Z", conclusion: "success", html_url: "https://example.test/42" }] }));
+    }) as typeof fetch;
+    const result = await inspectLatestScheduledAction("owner/repo", "fixture-token", request);
+    expect(headers).toEqual(["Bearer fixture-token", "Bearer fixture-token"]);
+    expect(result).toMatchObject({ runId: 42, encryptedBackupArtifact: "present" });
+    expect(JSON.stringify(result)).not.toContain("fixture-token");
+  });
 });

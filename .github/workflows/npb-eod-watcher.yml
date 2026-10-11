@@ -60,6 +60,7 @@ jobs:
         env:
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
       - name: Lightweight status check and incremental collection
         id: watch
         if: '!inputs.fixture_only'
@@ -69,17 +70,19 @@ jobs:
           NPB_MONITOR_OFFSET_MINUTES: ${{ vars.NPB_MONITOR_OFFSET_MINUTES || '120' }}
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
       - name: Generate only after newly complete Day; gates remain unchanged
         if: steps.watch.outputs.publish == 'true'
         env:
           TARGET_DATE: ${{ steps.watch.outputs.target_date }}
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           mkdir -p .data/eod
           npm run backup:npb:drill -- --require-remote > .data/eod/backup.json
           npx tsx scripts/generate-npb-season.ts --date="$TARGET_DATE" > .data/eod/season.json
-          npx tsx scripts/generate-npb-hot-payload.ts --require-remote > .data/eod/hot.json
+          npx tsx scripts/publish-npb-hot.ts --require-remote > .data/eod/hot.json
           npm run publish:npb:remote -- --date "$TARGET_DATE" --payload-root .data/publish
           npx tsx scripts/generate-npb-player-directory.ts --require-remote --payload-root=.data/publish
           npx tsx scripts/generate-npb-game-surface.ts > .data/eod/game-surface.json
@@ -105,7 +108,7 @@ jobs:
           npm run build
           cp -R .data/publish/data dist/
           mkdir -p dist/data/npb/hot
-          cp .data/hot-diagnostics/npb-hot-7d.json dist/data/npb/hot/latest.json
+          cp .data/publish/data/npb/hot/latest.json dist/data/npb/hot/latest.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -159,6 +162,7 @@ jobs:
           TARGET_DATE: ${{ needs.watch.outputs.date }}
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
       - name: Optional published EOD favorite notifications
         continue-on-error: true
         timeout-minutes: 5
@@ -169,3 +173,4 @@ jobs:
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}

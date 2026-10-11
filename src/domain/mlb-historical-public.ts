@@ -10,7 +10,7 @@ export const historicalCanonicalPlayerId = z.string().regex(/^mlb:player:[0-9a-f
 const teamId = z.string().regex(/^mlb:team:[0-9a-f-]{36}$/);
 const count = z.number().int().nonnegative();
 const nullable = count.nullable();
-const season = z.number().int().min(2016).max(2025);
+const season = z.number().int().min(2014).max(2025);
 const base = z.object({ schemaVersion: z.literal(1), league: z.literal("MLB") });
 const metric = z.object({ value: z.number().finite().nullable() }).passthrough();
 const metrics = z.record(z.string(), metric).nullable();
@@ -58,13 +58,13 @@ export function validStaticPayload(path: string, value: unknown, expectedScope: 
   if (expectedScope === "regular" && value && typeof value === "object" &&
     ((value as { competitionType?: string }).competitionType === "postseason" || (value as { game?: { competitionType?: string } }).game?.competitionType === "postseason")) return false;
   if (path.startsWith("exploration/recent/")) {
-    const match = /^exploration\/recent\/(201[6-9]|202[0-5])\/(index|20\d{2}-\d{2})\.json$/.exec(path);
+    const match = /^exploration\/recent\/(20\d{2})\/(index|20\d{2}-\d{2})\.json$/.exec(path);
     if (!match) return false;
     const parsed = match[2] === "index" ? recentIndexSchema.safeParse(value) : recentMonthSchema.safeParse(value);
     return parsed.success && parsed.data.season === Number(match[1]) && parsed.data.competitionType === expectedScope && (match[2] === "index" || ("month" in parsed.data && parsed.data.month === match[2]));
   }
   if (path.startsWith("exploration/form/")) {
-    const match = /^exploration\/form\/(201[6-9]|202[0-5])\/(index|20\d{2}-\d{2})\.json$/.exec(path);
+    const match = /^exploration\/form\/(20\d{2})\/(index|20\d{2}-\d{2})\.json$/.exec(path);
     if (!match) return false;
     const parsed = match[2] === "index" ? formIndexSchema.safeParse(value) : formMonthSchema.safeParse(value);
     return parsed.success && parsed.data.season === Number(match[1]) && parsed.data.competitionType === expectedScope && (match[2] === "index" || ("month" in parsed.data && parsed.data.month === match[2]));

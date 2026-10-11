@@ -3,7 +3,7 @@ import { postseasonHubSchema, roundLabels, seriesStanding, type PostseasonHub, t
 
 // Versioned competition rules, not inferred from the number of played Games.
 export function mlbPostseasonBestOf(season: number, round: PostseasonRound): number {
-  if (!Number.isInteger(season) || season < 2016 || season > 2025) throw new Error("Unreviewed postseason format");
+  if (!Number.isInteger(season) || season < 2014 || season > 2025) throw new Error("Unreviewed postseason format");
   if (round === "wild_card") return season <= 2019 || season === 2021 ? 1 : 3;
   if (round === "division_series") return 5;
   if (["alcs", "nlcs", "world_series"].includes(round)) return 7;

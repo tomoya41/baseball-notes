@@ -17,6 +17,13 @@ beforeEach(()=>{vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);fixtures.status="
 afterEach(async()=>{await act(async()=>root.unmount());container.remove();vi.unstubAllGlobals();});
 async function render(query="mode=hot&period=7&asOfDate=2024-08-20",scope:"regular"|"postseason"="regular"){await act(async()=>root.render(<MemoryRouter key={query+scope} initialEntries={[`/MLB/form?season=2024&${query}`]}><HistoricalCompetitionContext.Provider value={scope}><HistoricalFormScreen manifest={manifest} favorites={[]} toggle={()=>undefined} saving={false} /></HistoricalCompetitionContext.Provider></MemoryRouter>));}
 describe("Historical HOT/MVP UI",()=>{
+  it("restores monthly comparison URLs with samples and keeps calendar aggregates out of Recent links",async()=>{
+    await render("mode=monthly-change&asOfDate=2024-08-20");
+    expect(fixtures.reader).toHaveBeenLastCalledWith(expect.objectContaining({mode:"monthly-change"}));
+    expect(container.textContent).toContain("前月と比較");expect(container.textContent).toContain("月途中時点");
+    expect(container.textContent).not.toContain("期間成績を掘る");
+    expect(container.querySelector('nav[aria-label="好調選手の見方"] button[aria-pressed="true"]')?.textContent).toBe("上昇・下降");
+  });
   it("discloses historical scope, samples and independent evaluation; retains period Compare URL",async()=>{await render();expect(container.textContent).toContain("2024 Regular · 2024-08-20時点");expect(container.textContent).toContain("公式");expect(container.textContent).toContain("28");const compare=Array.from(container.querySelectorAll("a")).find(a=>a.textContent==="期間比較")!;expect(compare.getAttribute("href")).toContain("condition=total");expect(compare.getAttribute("href")).toContain("period=7d");expect(container.querySelector("details.form-method")?.textContent).toContain("最低母数");});
   it("labels an incomplete calendar month and does not pass it to a 7-day aggregate",async()=>{await render("mode=monthly&asOfDate=2024-08-20");expect(container.textContent).toContain("月途中時点");expect(container.textContent).not.toContain("期間成績を掘る");expect(container.textContent).toContain("シーズン比較");});
   it("keeps partial and missing releases unavailable instead of rendering a leaderboard",async()=>{fixtures.result={...(fixtures.result as object),coverage:"partial"};await render();expect(container.querySelectorAll(".form-entry")).toHaveLength(0);expect(container.textContent).toContain("候補を表示しません");fixtures.status="missing";fixtures.index=null;await render();expect(container.textContent).toContain("未公開");});

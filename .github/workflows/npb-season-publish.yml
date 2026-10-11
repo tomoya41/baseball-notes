@@ -1,13 +1,25 @@
 name: Publish NPB Season aggregates
 on:
+  # A running Daily workflow cannot prove its own successful completion.
+  # Re-evaluate the unchanged HOT gate only after a trusted scheduled run ends.
+  workflow_run:
+    workflows: [Daily NPB collector and Pages delivery]
+    types: [completed]
   workflow_dispatch:
+    inputs:
+      diagnostic_only:
+        description: Read-only generation and restore checks; no Pages publication or scheduled proof
+        type: boolean
+        default: false
 permissions:
   contents: read
+  actions: read
 concurrency:
   group: daily-npb-collector-and-pages
   cancel-in-progress: false
 jobs:
   stage:
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.event == 'schedule' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.head_repository.id == github.repository_id)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     outputs:
@@ -26,10 +38,11 @@ jobs:
         env:
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           mkdir -p .data/batch-b
           npx tsx scripts/generate-npb-season.ts > .data/batch-b/season.json
-          npx tsx scripts/generate-npb-hot-payload.ts --require-remote > .data/batch-b/hot.json
+          npx tsx scripts/publish-npb-hot.ts --require-remote > .data/batch-b/hot.json
           npx tsx scripts/audit-npb-fact-quality.ts > .data/batch-b/audit.json
           npx tsx scripts/validate-npb-season-facts.ts > .data/batch-b/current-validation.json
           npx tsx scripts/audit-npb-eod-coverage.ts > .data/batch-b/eod-coverage.json
@@ -57,22 +70,27 @@ jobs:
           npm run build
           cp -R .data/publish/data dist/
           mkdir -p dist/data/npb/hot
-          cp .data/hot-diagnostics/npb-hot-7d.json dist/data/npb/hot/latest.json
+          cp .data/publish/data/npb/hot/latest.json dist/data/npb/hot/latest.json
       - uses: actions/upload-artifact@v4
         with:
           name: npb-season-verification
           path: .data/batch-b
           retention-days: 7
       - name: Preserve released MLB historical data
+        if: inputs.diagnostic_only != true
         run: npx tsx scripts/preserve-mlb-historical.ts dist/data/mlb
       - uses: actions/configure-pages@v5
+        if: inputs.diagnostic_only != true
       - name: Validate coordinated NPB projections before artifact upload
+        if: inputs.diagnostic_only != true
         id: publication
         run: npx tsx scripts/verify-npb-publication.ts dist
       - uses: actions/upload-pages-artifact@v4
+        if: inputs.diagnostic_only != true
         with:
           path: dist
   deploy:
+    if: needs.stage.result == 'success' && inputs.diagnostic_only != true
     needs: stage
     runs-on: ubuntu-latest
     permissions:

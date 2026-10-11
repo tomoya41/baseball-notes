@@ -29,13 +29,13 @@ try {const latest=await client.execute("SELECT MAX(snapshot_date) AS date FROM s
   const records=buildNpbRecords(season);
   const recordPath=`${root}/data/npb/records/2026`;await mkdir(recordPath,{recursive:true});const recordJson=JSON.stringify(records);await writeFile(`${recordPath}/latest.json`,recordJson);
   const directory=npbPlayerDirectorySchema.parse(JSON.parse(await readFile(`${root}/data/npb/players/latest.json`,"utf8")));
-  const hotBody=await readFile(".data/hot-diagnostics/npb-hot-7d.json","utf8").catch((error:NodeJS.ErrnoException)=>{
+  const hotBody=await readFile(`${root}/data/npb/hot/latest.json`,"utf8").catch((error:NodeJS.ErrnoException)=>{
     if(error.code!=="ENOENT")throw error;
-    return readFile(`${root}/data/npb/hot/latest.json`,"utf8");
+    return readFile(".data/hot-diagnostics/npb-hot-7d.json","utf8");
   });
   const hot=npbHotPayloadSchema.parse(JSON.parse(hotBody));
   if(directory.effectiveDate!==effectiveDate || season.effectiveDate!==effectiveDate || hot.effectiveDate!==effectiveDate)
-    throw Error("Product projections require matching effective dates");
+    throw Error(`Product projections require matching effective dates: ${JSON.stringify({expected:effectiveDate,directory:directory.effectiveDate,season:season.effectiveDate,hot:hot.effectiveDate})}`);
   const enriched=projectNpbFreeProfiles(directory);
   const catalog=enriched.catalog;
   const teamSeason=await readNpbTeamSeason(client,catalog,index.coverage);
