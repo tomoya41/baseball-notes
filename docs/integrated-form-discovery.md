@@ -81,4 +81,3 @@ Codex Review found a P2 in Cooling ordering: batting OPS declines and pitching E
 Independent validation: 23,168 Games, 2,184 windows/categories, 8,342,265 metric comparisons, mismatches 0, unknown-role rows 0 across all 20 scopes. Local worst evaluation 385 ms, 20 rendered rows/page, up to 3 monthly fetches, 0 SQL queries. Full audit elapsed 148 seconds. This worst local sample is not an Android device benchmark.
 
 A second Codex P2 found that the NPB Stats tab omitted the overview's pitcher-batting display flag. Both tabs now use the same verified position, with route-level regression cases for pitcher, fielder and unknown position. All Facts remain accessible.
-
