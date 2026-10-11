@@ -5,6 +5,16 @@ import { parse } from "yaml";
 import { mlbRecordPlayerRoute } from "../src/domain/mlb-record-navigation";
 
 describe("Historical immutable payload preservation", () => {
+  it("requires coordinated admission before any data download/import and keeps app-only available", () => {
+    const workflow = parse(readFileSync(".github/workflows/mlb-historical-publish.yml", "utf8"));
+    expect(workflow.on.workflow_dispatch.inputs.mode.options).toEqual(["expansion", "app-only"]);
+    expect(workflow.on.workflow_dispatch.inputs.mode.default).toBe("app-only");
+    const steps = workflow.jobs.stage.steps;
+    expect(steps[0].run).toContain('"$MLB_PUBLISH_MODE" != \'expansion\'');
+    expect(steps[0].run).toContain('"$MLB_PUBLISH_MODE" != \'app-only\'');
+    expect(steps[0].run).toContain("exit 1");
+    expect(steps[0].run).not.toContain("import-mlb-historical.ts");
+  });
   const a = { season: 2020, players: [{ playerId: "a", batting: { H: 12 } }, { playerId: "b", batting: { H: null } }] };
   const b = { season: 2020, players: [...a.players].reverse() };
   it("allows only stable-key Season row reordering", () => {

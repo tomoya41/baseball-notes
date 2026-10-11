@@ -3,10 +3,10 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: Import regular or isolated postseason; app-only preserves both releases
+        description: Coordinated validated expansion, or app-only preservation of both releases
         type: choice
-        default: release
-        options: [release, postseason, expansion, app-only]
+        default: app-only
+        options: [expansion, app-only]
       expand_historical_exploration:
         description: Generate read-only MLB daily aggregate shards from preserved Historical Facts
         type: boolean
@@ -43,6 +43,12 @@ jobs:
           MLB_PUBLISH_MODE: ${{ inputs.mode }}
           MLB_REFRESH_FORM: ${{ inputs.refresh_historical_form }}
         run: |
+          # Legacy single-scope imports use the candidate defaults and lack the
+          # complete old-release admission guards. Fail before download/import.
+          if [ "$MLB_PUBLISH_MODE" != 'expansion' ] && [ "$MLB_PUBLISH_MODE" != 'app-only' ]; then
+            echo 'Data release requires mode=expansion with coordinated admission and preservation guards. Legacy release/postseason modes are disabled.'
+            exit 1
+          fi
           if [ "$MLB_REFRESH_FORM" = 'true' ] && [ "$MLB_PUBLISH_MODE" != 'app-only' ]; then
             echo 'Historical form refresh requires mode=app-only and the complete old-file preservation gate.'
             exit 1

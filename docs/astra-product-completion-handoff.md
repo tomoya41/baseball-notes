@@ -53,7 +53,7 @@ The audit identifies small 10–13px UI text, dense filters, technical wording, 
 
 ## League, time and role semantics
 
-- NPB: Current **saved** Regular Season. Projection `effectiveDate` is observation/publication date; Fact `period.to` ends at the verified Regular Season cutoff. A later observation date does not extend Coverage or create games. Current roster/number is not proved by latest saved affiliation.
+- NPB: Current **saved** Regular Season. Projection `effectiveDate` is observation/publication date; Fact `period.to` retains the configured Regular Season aggregate boundary. The 10/07 end date is scheduled metadata, not final competition-end evidence. A later observation date does not extend Coverage or create games. Current roster/number is not proved by latest saved affiliation.
 - NPB HOT requires coverage, eligible samples, identity/display metadata, actual Scheduled production/backup and publication evidence. Ranking has an independent completeness/qualification gate. Six partial dates remain a blocker; never publish by hiding them.
 - MLB: admitted Historical seasons only. The 2014–2015 addition is published only after the same PA, identity, scope, independent aggregate and immutable-old-release checks as 2016–2025. No MLB Current, Career or all-time claim.
 - Regular and Postseason have separate payload trees, queries and aggregates. Calendar-month candidates/comparison are Regular-only. Postseason HOT remains subject to its own complete coverage and sample limits.

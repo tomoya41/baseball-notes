@@ -12,7 +12,7 @@ Daily, EOD and read-only Season publishing use the existing formal HOT publisher
 
 Read-only [38133591557](https://github.com/tomoya41/baseball-notes/actions/runs/38133591557) passed. Observation 10/10, Regular period through 10/07: 739 Season participants; Directory/Catalog 740 canonical players; 164 complete, 25 no-game, **6 partial** dates. Recent7 complete, Recent14/30 partial. HOT has 206 complete players, 249 candidates; eligible batting **0**, starters **12**, relievers **8**. Formal output remains empty/not-ready, with `category_not_ready` and `scheduled_production_evidence_pending`. Metadata is now resolved through the formal join, without filling unknown identity or source conflict by guesswork. Ranking remains closed due to partial Season Coverage. Production idempotency report: **canonicalWrites 0**. Portable export / scratch restore passed separately.
 
-The correction has passed reproduced diagnostics; the next real Scheduled success is still required to establish operational evidence. No gate is relaxed. Latest saved profile conflicts and unresolved identity remain the separate Data Quality track.
+The correction has passed reproduced diagnostics; the next real Scheduled success is still required to establish operational evidence. No gate is relaxed. The configured 10/07 end date has `endDateStatus: scheduled`, not final: this correction preserves the existing aggregate boundary and does not establish that the actual competition ended then. Any verified rescheduled Regular Game after it requires separate metadata/period review; neither that Game nor a future Postseason is inferred here. Latest saved profile conflicts and unresolved identity remain the separate Data Quality track.
 
 ## Existing-data Product completion
 
@@ -40,6 +40,8 @@ Local reconstruction for every listed Game: missing PBP / skipped games / parser
 ## Review, performance and handoff
 
 Recheck PR #20's final population, Cooling ordering, role filters and app-only form-refresh guard, and PR #21's final closed-world Postseason publication guard. New expansion generates/revalidates all form shards and byte-preserves every old shard; it does not use the app-only refresh flag to bypass an immutable release check. Verification-only mode produces evidence/backup artifacts but creates no public release and deploys no Pages.
+
+External PR #22 review found two P1 publication issues: old 2016–2025 exploration path regexes despite widened payload schemas, and legacy single-scope release modes admitting candidate years without expansion-only guards. Fixes route path years through the validated schemas (with wrong-year/month/scope regressions) and limit data publication to coordinated `expansion`. Legacy `release` / `postseason` input is rejected before checkout/download/import; the workflow default is `app-only`. Direct isolated CLI imports remain available, but public admission always verifies both competitions and the full old-release family. This is a deliberate safety restriction, not a relaxed gate or a change to Regular/Postseason calculations.
 
 Initial JS: **481.95KB / 149.22KB gzip**, compared with 481.86KB / 149.18KB previously; the form route is 13.72KB / 5.67KB gzip. New month comparison reuses existing month shards (maximum two) and adds no payload family. Rolling mode loads at most three month shards. Render limit 20; Watch at most 12 followed players; Home additional form fetch **0**. Year expansion stays partitioned/lazy, never bundles the canonical DB or raw PA into the app.
 
