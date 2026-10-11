@@ -76,6 +76,7 @@ jobs:
       - uses: actions/configure-pages@v5
         if: inputs.diagnostic_only != true
       - name: Validate coordinated NPB projections before artifact upload
+        if: inputs.diagnostic_only != true
         id: publication
         run: npx tsx scripts/verify-npb-publication.ts dist
       - uses: actions/upload-pages-artifact@v4
