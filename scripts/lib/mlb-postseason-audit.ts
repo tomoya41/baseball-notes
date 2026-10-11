@@ -9,6 +9,8 @@ import type { HistoricalGame } from "../../src/data/mlb-historical";
 import { buildMlbRecentMonths } from "../generate-mlb-recent-explorer";
 import type { RecentIndex, RecentMonth } from "../../src/domain/mlb-recent-explorer";
 import { MLB_BASELINE_SEASONS, supportedHistoricalSeason } from "../../src/domain/mlb-historical-seasons";
+import { buildFormMonths } from "../generate-historical-form";
+import type { FormIndex, FormMonth } from "../../src/domain/historical-form";
 
 type Player = { id: string; name: string; seasons: number[] };
 type Game = { id: string; season: number; date: string; homeTeamId: string; awayTeamId: string; homeRuns: number; awayRuns: number; number: number; batting: { playerId: string }[]; pitching: { playerId: string }[] };
@@ -134,7 +136,7 @@ export async function auditHistoricalPostseason(root: string, regular: string, o
   }
   // Legacy archives may omit Recent. Once present, require every season/shard and
   // reproduce it from preserved canonical Game Facts before advertising availability.
-  if ([...payloads.keys()].some(path => path.startsWith("exploration/"))) {
+  if ([...payloads.keys()].some(path => path.startsWith("exploration/recent/"))) {
     for (const info of manifest.seasons) {
       const base = `exploration/recent/${info.season}/`;
       const index = requirePayload<RecentIndex>(`${base}index.json`);
@@ -144,6 +146,22 @@ export async function auditHistoricalPostseason(root: string, regular: string, o
       for (const month of derived) {
         const path = `${base}${month.month}.json`, actual = requirePayload<RecentMonth>(path), advertised = index.months.find(m => m.month === month.month);
         if (!advertised || JSON.stringify(actual) !== JSON.stringify(month) || advertised.compressedBytes !== compressedSizes.get(path) || advertised.rows !== month.batting.length + month.pitching.length) throw Error("Recent shard/detail mismatch");
+      }
+    }
+  }
+  // Optional additive HOT products must be complete and derived from this exact
+  // canonical Game generation. Do not exempt an arbitrary exploration subtree.
+  if ([...payloads.keys()].some(path => path.startsWith("exploration/form/"))) {
+    for (const info of manifest.seasons) {
+      const base = `exploration/form/${info.season}/`;
+      const index = requirePayload<FormIndex>(`${base}index.json`);
+      const source = [...games.values()].filter(g => g.season === info.season).map(game => ({ game: game as HistoricalGame, hash: hashes.get(`games/${game.id.replaceAll(":", "_")}.json`)! }));
+      const derived = buildFormMonths(source, "postseason", info.season);
+      const identities = new Set(source.flatMap(({game}) => [...game.batting, ...game.pitching].map(p => p.playerId)));
+      if (index.firstDate !== info.firstDate || index.lastDate !== info.lastDate || index.coverage !== info.coverage || index.gameCount !== source.length || index.months.length !== derived.length || index.sourceFingerprint !== derived[0]?.sourceFingerprint || index.roles.length !== identities.size || index.roles.some(p => !identities.has(p.playerId))) throw Error("Form index/detail mismatch");
+      for (const month of derived) {
+        const path = `${base}${month.month}.json`, actual = requirePayload<FormMonth>(path), advertised = index.months.find(m => m.month === month.month);
+        if (!advertised || JSON.stringify(actual) !== JSON.stringify(month) || advertised.compressedBytes !== compressedSizes.get(path) || advertised.rows !== month.batting.length + month.starters.length + month.relievers.length + month.unknown.length) throw Error("Form shard/detail mismatch");
       }
     }
   }

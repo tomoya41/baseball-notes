@@ -11,6 +11,7 @@ import { gunzipSync } from "node:zlib";
 import { buildMlbRecentMonths, generateMlbRecentExplorer } from "../scripts/generate-mlb-recent-explorer";
 import { verifyMlbRecentExplorer } from "../scripts/verify-mlb-recent-explorer";
 import { createHash } from "node:crypto";
+import { buildFormMonths } from "../scripts/generate-historical-form";
 
 async function fixture(root: string) {
   const id = historicalId("player", "audit"), home = historicalTeamId("ATL"), away = historicalTeamId("HOU"), years = [2020,2021,2022,2023,2024,2025];
@@ -48,6 +49,42 @@ async function fixture(root: string) {
 }
 
 describe("complete advertised Postseason artifact", () => {
+  it.each(["complete", "coverage", "fingerprint", "missing-month", "missing-year", "altered-month", "identity"])("audits the optional form family: %s", async scenario => {
+    const root = await mkdtemp(join(tmpdir(), "postseason-form-audit-"));
+    try {
+      await fixture(root);
+      for (const season of [2020,2021,2022,2023,2024,2025]) {
+        const raw = await readFile(join(root, `postseason/games/${historicalId("game", String(season)).replaceAll(":", "_")}.json.gz`));
+        const months = buildFormMonths([{game:JSON.parse(gunzipSync(raw).toString()).game,hash:createHash("sha256").update(raw).digest("hex")}], "postseason", season);
+        const dir = join(root, `postseason/exploration/form/${season}`); await mkdir(dir,{recursive:true});
+        const descriptors = [];
+        for (const month of months) {
+          const bytes = gzipSync(JSON.stringify(month)); await writeFile(join(dir, `${month.month}.json.gz`), bytes);
+          descriptors.push({month:month.month,compressedBytes:bytes.length,rows:0});
+        }
+        await writeFile(join(dir,"index.json.gz"),gzipSync(JSON.stringify({schemaVersion:1,league:"MLB",competitionType:"postseason",season,sourceFingerprint:months[0]!.sourceFingerprint,roleSourceHash:"a".repeat(64),firstDate:`${season}-10-01`,lastDate:`${season}-10-01`,coverage:"complete",gameCount:1,roles:[],months:descriptors})));
+      }
+      if (scenario === "complete") {
+        // Form does not implicitly require the independently optional Recent family.
+        expect((await auditHistoricalPostseason(root, root)).report.result).toBe("PASS");
+        return;
+      }
+      const dir = join(root,"postseason/exploration/form/2025"), indexPath=join(dir,"index.json.gz");
+      if (scenario === "missing-month") await rm(join(dir,"2025-10.json.gz"));
+      else if (scenario === "missing-year") await rm(dir,{recursive:true});
+      else if (scenario === "altered-month") {
+        const monthPath=join(dir,"2025-10.json.gz"),month=JSON.parse(gunzipSync(await readFile(monthPath)).toString());
+        month.sourceFingerprint="b".repeat(64); await writeFile(monthPath,gzipSync(JSON.stringify(month)));
+      } else {
+        const index=JSON.parse(gunzipSync(await readFile(indexPath)).toString());
+        if (scenario === "coverage") index.coverage="partial";
+        else if (scenario === "fingerprint") index.sourceFingerprint="b".repeat(64);
+        else index.roles=[{playerId:historicalId("player","audit"),positions:[],positionDates:[],battingRole:"unknown",twoWayEvidence:false,twoWayEvidenceDate:null}];
+        await writeFile(indexPath,gzipSync(JSON.stringify(index)));
+      }
+      await expect(auditHistoricalPostseason(root,root)).rejects.toThrow(scenario.startsWith("missing")?"Missing advertised":scenario==="altered-month"?"Form shard/detail mismatch":"Form index/detail mismatch");
+    } finally { await rm(root,{recursive:true,force:true}); }
+  });
   it("generates and verifies Regular Recent with no optional Postseason tree, but rejects a partial tree", async () => {
     const root=await mkdtemp(join(tmpdir(),"regular-recent-only-"));
     try {
