@@ -60,7 +60,7 @@ export function PlayerRecentView({ period, onPeriodChange, payload, state, noFac
     {state === "error" && <DataState kind="source-unavailable" title="最近の成績を読み込めません" />}
     {state === "missing" && <DataState kind="no-data" title={noFactKnown ? "最近の成績データはありません" : "この期間の出場データはありません"} />}
     {state === "ready" && payload && <>
-      <p className="recent-dates">{formatDate(payload.asOfDate, true)}終了時点{stats[0] && <> · {period === "season" && "シーズン期間 "}
+      <p className="recent-dates">{period === "season" ? "保存済みシーズン成績" : `${formatDate(payload.asOfDate, true)}終了時点`}{stats[0] && <> · {period === "season" && "シーズン期間 "}
         {formatDate(stats[0].from, true)}〜{formatDate(stats[0].to, true)}</>}</p>
       {stats.length === 0 && <DataState kind="no-data" title={noFactKnown ? "最近の成績データはありません" : "この期間の出場データはありません"} />}
       {payload.batting && (pitcherBatting?<details className="advanced-disclosure"><summary>投手の打撃成績</summary><StatTiles stats={payload.batting} keys={[...battingPrimary,...battingDetail]} /><CoverageNote stats={payload.batting} period={period} /></details>:<div className="recent-group"><h3>打撃</h3>

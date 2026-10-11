@@ -5,9 +5,10 @@ import { StatTiles, CoverageNote } from "./player-recent";
 
 export function PlayerSeasonView({payload,state,pitcherBatting=false}:{payload:PlayerRecentResponse|null;state:"loading"|"ready"|"missing"|"error";pitcherBatting?:boolean|undefined}) {
   const batting=payload?.batting,pitching=payload?.pitching;
+  const dates = [...new Set([batting?.to, pitching?.to].filter((date): date is string => !!date))];
   return <section className="stats-section player-season" aria-label="2026シーズン成績">
     <SectionHeader title="2026シーズン成績" />
-    <p className="recent-dates">保存済み成績{payload && ` · ${formatDate(payload.asOfDate,true)}終了時点`}</p>
+    <p className="recent-dates">保存済み成績{dates.length === 1 && ` · ${formatDate(dates[0]!,true)}終了時点`}{dates.length > 1 && ` · 打撃 ${formatDate(batting!.to,true)} / 投球 ${formatDate(pitching!.to,true)}`}</p>
     {state==="loading" && <div aria-live="polite"><LoadingSkeleton /></div>}
     {state==="error" && <DataState kind="source-unavailable" title="シーズン成績を読み込めません" />}
     {(state==="missing" || (state==="ready" && !batting && !pitching)) &&

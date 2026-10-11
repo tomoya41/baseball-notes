@@ -136,6 +136,13 @@ describe("NPB Team independent Season loading", () => {
     expect([...container.querySelectorAll(".metric-tile__value")].map(e => e.textContent)).toEqual(["1", "0", "1", "0", "0", "1"]);
     expect(container.querySelector('[role="alert"]')).toBeNull();
   });
+  it("retains the publication generation but labels the earlier team aggregate cutoff", async () => {
+    const observed="2026-10-10";
+    await mountTeam(async url => Response.json(String(url).includes("catalog/") ? {...catalog,effectiveDate:observed} : {...season,effectiveDate:observed}));
+    expect(container.textContent).toContain(`${date}までの保存済み試合`);
+    expect(container.textContent).not.toContain(`${observed}までの保存済み試合`);
+    expect(container.textContent).toContain("保存済み選手"); expect(container.textContent).toContain("一部データ確認中");
+  });
   it("explicitly shows unavailable Season stats when a valid payload has no matching team", async () => {
     await mountTeam(async url => Response.json(String(url).includes("catalog/") ? catalog : { ...season, teams: [] }));
     expect(container.textContent).toContain("保存済みのシーズン成績はありません");

@@ -38,7 +38,7 @@ export function CollectionDashboard({ league, services, favorites }: { league: L
         const directory = await services.directory.findLatestNpb();
         const p = period === "season" ? await readNpbExplorerSeason(season) : await readNpbRecentExplorer(Number(period) as 7 | 14 | 30, directory);
         if (p.effectiveDate !== directory.effectiveDate) throw Error("Collection generation mismatch");
-        return ids.map(id => { const r = p.players.find(p => p.playerId === id); return { id, name: directory.players.find(p => p.playerId === id)?.displayName ?? id, season, date: p.effectiveDate, coverage: p.coverage.status, metrics: r?.[role]?.metrics ?? null }; });
+        return ids.map(id => { const r = p.players.find(p => p.playerId === id); return { id, name: directory.players.find(p => p.playerId === id)?.displayName ?? id, season, date: p.period.to, coverage: p.coverage.status, metrics: r?.[role]?.metrics ?? null }; });
       }
       const prefix = competition === "postseason" ? "postseason/" : "";
       const [manifest, directory] = await Promise.all([readHistoricalProduct<ExplorerManifest>(`${prefix}manifest.json`), readHistoricalProduct<{ players: { id: string; name: string }[] }>(`${prefix}players/index.json`)]);

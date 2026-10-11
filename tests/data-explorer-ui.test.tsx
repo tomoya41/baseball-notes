@@ -26,7 +26,7 @@ vi.mock("../src/ui/use-mlb-historical", () => ({ useHistoricalStatic: (path: str
 } }));
 vi.mock("../src/app/historical-products", () => ({ readHistoricalProduct: reader }));
 vi.mock("../src/application/explorer-readers", () => ({ readNpbExplorerSeason: npbReader }));
-vi.mock("../src/ui/product-sharing", () => ({ DisplayExportButton: ({ data }: { data: { coverage: string } }) => <output data-export-coverage>{data.coverage}</output> }));
+vi.mock("../src/ui/product-sharing", () => ({ DisplayExportButton: ({ data }: { data: { coverage: string; date: string } }) => <output data-export-coverage data-export-date={data.date}>{data.coverage}</output> }));
 const id = "mlb:player:00000000-0000-4000-8000-000000000001", id2 = "mlb:player:00000000-0000-4000-8000-000000000002", npbId = id.split("player:")[1]!;
 const team = "mlb:team:00000000-0000-4000-8000-000000000010";
 const metrics = { PA: { value: 100 }, OPS: { value: .950 }, HR: { value: 20 }, outsRecorded: { value: 19 }, ERA: { value: 2 }, K9: { value: 9 } };
@@ -48,12 +48,22 @@ async function mount(child: ReactNode, path = "/MLB/data?season=2025", competiti
 const click = async (button: Element) => act(async () => button.dispatchEvent(new MouseEvent("click", { bubbles: true })));
 const explorer = (readRecent: Parameters<typeof DataExplorerView>[0]["readRecent"] = vi.fn(async () => ({ values: [], failed: [] }))) => <DataExplorerView league="MLB" rows={rows} teams={manifest.teams} season={2025} years={[2020, 2025]} effectiveDate="2025-09-28" coverage="complete" readRecent={readRecent} />;
 function seedNpb() {
-  const season = { season: 2026, effectiveDate: "2026-10-03", players: [{ playerId: npbId, displayName: "保存選手", teamId: "npb:team:tigers", batting: { metrics }, pitching: null }], coverage: { status: "partial" } } as unknown as NpbSeasonPayload;
+  const season = { season: 2026, effectiveDate: "2026-10-03", period: {from:"2026-03-27",to:"2026-10-03"}, players: [{ playerId: npbId, displayName: "保存選手", teamId: "npb:team:tigers", batting: { metrics }, pitching: null }], coverage: { status: "partial" } } as unknown as NpbSeasonPayload;
   const directory = { effectiveDate: season.effectiveDate, teams: [{ id: "npb:team:tigers", name: "阪神", shortName: "阪神" }], players: [{ playerId: npbId, displayName: "保存選手", teamId: "npb:team:tigers" }] } as NpbPlayerDirectory;
   npbReader.mockResolvedValue(season);
   return { season, directory, deps: { ...services, directory: { findLatestNpb: async () => directory } as unknown as typeof services.directory } };
 }
 describe("compact exploration UI", () => {
+  it("uses the aggregate cutoff for Season display/export while retaining the Recent observation date",async()=>{
+    const props={league:"NPB" as const,rows,teams:[],season:2026,years:[2026],effectiveDate:"2026-10-10",seasonThroughDate:"2026-10-07",coverage:"partial",readRecent:async()=>({values:[],failed:[]})};
+    await mount(<DataExplorerView {...props} />,"/NPB/data");
+    expect(container.textContent).toContain("2026-10-07まで");
+    expect(container.querySelector("[data-export-date]")?.getAttribute("data-export-date")).toBe("2026-10-07");
+    await mount(<DataExplorerView {...props} readAllRecent={async()=>({values:rows.map(r=>({...r,coverage:"partial"})),failed:[],coverage:"partial"})} />);
+    await act(async()=>{const period=container.querySelectorAll('.explorer-filter-grid select')[3] as HTMLSelectElement;period.value="7";period.dispatchEvent(new Event("change",{bubbles:true}));});
+    expect(container.textContent).toContain("2026-10-10まで");
+    expect(container.querySelector("[data-export-date]")?.getAttribute("data-export-date")).toBe("2026-10-10");
+  });
   it("clears an old-year Recent as-of date when the Season changes, retaining the window", async () => {
     await mount(explorer(), "/MLB/data?season=2025&period=14&asOfDate=2025-08-20");
     await act(async () => { const select = container.querySelector('.explorer-filter-grid select') as HTMLSelectElement;

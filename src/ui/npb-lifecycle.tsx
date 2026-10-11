@@ -23,11 +23,11 @@ export function PlayerLifecycle({ player, effectiveDate }: {player:LifecyclePlay
       {!!schools.length && <li><h3>学校・アマチュア球歴</h3>{schools.map(name => <Link key={name} to={`/NPB/talent?view=school&school=${encodeURIComponent(name)}`}>{name}</Link>)}</li>}
       {f.draftYear !== null && <li><h3>{f.draftYear}年 ドラフト</h3><p>{f.draftRound ?? "順位不明"} · {f.draftType === "regular" ? "通常指名" : f.draftType === "developmental" ? "育成指名" : "区分不明"} · {f.draftTeamName ?? "指名球団不明"}</p><Link to={`/NPB/talent?year=${f.draftYear}`}>{f.draftYear}年 ドラフト同期 →</Link></li>}
       {!!f.affiliations?.length && <li><h3>所属履歴</h3>{f.affiliations.map((a,i) => <p key={i}>{a.name}{a.from || a.to ? ` · ${a.from ?? "開始未確認"}〜${a.to ?? "終了未確認"}` : " · 期間未確認"}</p>)}</li>}
-      <li><h3>{date.slice(0,4)} シーズン</h3><p>{date}時点</p><Link to={`/NPB/players/${player.playerId}/stats`}>シーズン成績 →</Link></li>
+      <li><h3>{date.slice(0,4)} シーズン</h3><p>情報基準日 {date}</p><Link to={`/NPB/players/${player.playerId}/stats`}>シーズン成績 →</Link></li>
     </ol><LifecycleLinks /><ProfileCredits player={player} />
   </section>;
 }
-type StatsState = {key:string;rows:ExplorerRow[];coverage:"complete"|"partial"|"unknown"|"unavailable";error:boolean};
+type StatsState = {key:string;throughDate?:string;rows:ExplorerRow[];coverage:"complete"|"partial"|"unknown"|"unavailable";error:boolean};
 const coverageLabels = {complete:"全試合確認済み",partial:"一部未確認",unknown:"収録範囲未確認",unavailable:"収録範囲を確認できません"} as const;
 export function NpbLifecycleExplorer({ services }: {services:Services}) {
   const [catalog,setCatalog]=useState<NpbCatalog|null>(null), [failed,setFailed]=useState(false), [attempt,setAttempt]=useState(0);
@@ -55,7 +55,7 @@ export function LifecycleWorkspace({catalog}:{catalog:NpbCatalog}) {
     void (query.period === "season" ? readNpbExplorerSeason(Number(catalog.effectiveDate.slice(0,4))) : readNpbRecentExplorer(Number(query.period) as 7|14|30,directory)).then(p=>{
       validateLifecycleStats(catalog,p);
       if(active){
-        const value = {key,coverage:p.coverage.status,error:false,rows:p.players.map(r=>({playerId:r.playerId,name:r.displayName,teamId:r.teamId,batting:r.batting?.metrics ?? null,pitching:r.pitching?.metrics ?? null}))};
+        const value = {key,throughDate:p.period.to,coverage:p.coverage.status,error:false,rows:p.players.map(r=>({playerId:r.playerId,name:r.displayName,teamId:r.teamId,batting:r.batting?.metrics ?? null,pitching:r.pitching?.metrics ?? null}))};
         successfulStats.current = {catalog,retry,value};
         setStats(value);
       }
@@ -87,7 +87,7 @@ export function LifecycleWorkspace({catalog}:{catalog:NpbCatalog}) {
       {query.mode !== "school" && <label>学校・アマチュア所属名<input type="search" value={query.school} onChange={e=>update("school",e.target.value)} /></label>}
     </div>{query.mode==="draft" && <label><input type="checkbox" checked={query.includeUnknown} onChange={e=>update("unknown",e.target.checked?"1":"")} />指名年未確認の収録選手も表示</label>}<p className="inline-note">学校名は保存表記を部分一致検索します。同名校の同一性・卒業・在籍期間を認定しません。</p></details>
     <div className="explorer-filter-grid"><label>表示成績<select value={query.period} onChange={e=>update("period",e.target.value)}><option value="season">シーズン</option>{[7,14,30].map(d=><option value={d} key={d}>直近{d}日</option>)}</select></label><label>最低{query.role==="pitching"?"投球アウト数（3＝1回）":"PA"}<input type="number" min="0" disabled={query.role==="all"} value={params.get("minimum")??"0"} onChange={e=>update("minimum",e.target.value)} /></label></div>
-    <p className="inline-note">年齢基準 {query.date} · 成績 {catalog.effectiveDate}までの{query.period==="season"?"シーズン":`直近${query.period}日`} · {ready ? coverageLabels[stats.coverage]:stats?.key === key && stats.error ? "成績未取得" : "成績確認中"}。</p>
+    <p className="inline-note">年齢基準 {query.date} · 成績 {ready ? stats.throughDate : "期間確認中"}{ready && "までの"}{query.period==="season"?"シーズン":`直近${query.period}日`} · {ready ? coverageLabels[stats.coverage]:stats?.key === key && stats.error ? "成績未取得" : "成績確認中"}。</p>
     {query.errors.map(error=><p className="data-notice" role="alert" key={error}>{error}</p>)}
     {!query.errors.length && stats?.key!==key && <LoadingSkeleton />}
     {stats?.key===key && stats.error && <><DataState kind="source-unavailable" title="成績を読み込めません" detail="選手情報は表示できます。成績は未取得です。" /><button className="text-button" onClick={()=>setRetries(previous=>({...previous,[key]:(previous[key] ?? 0)+1}))}>成績を再読み込み</button></>}

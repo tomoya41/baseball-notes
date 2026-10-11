@@ -34,7 +34,7 @@ export function NpbScheduleScreen({repository,favorites=[],toggle,saving=false}:
     {state==="ready"&&payload&&payload.date===date&&toggle&&<details><summary>この日の球団をフォロー</summary><div className="row-list">{[...new Map(payload.games.flatMap(g=>[g.away,g.home]).map(t=>[t.id,t])).values()].map(t=><div className="surface-favorite" key={t.id}><Link className="player-row" to={`/NPB/teams/${encodeURIComponent(t.id)}`}>{t.name}</Link><TeamFavorite league="NPB" teamId={t.id} name={t.name} favorites={favorites} toggle={toggle} saving={saving}/></div>)}</div></details>}
   </div>;
 }
-export function RecordsView({payload}:{payload:NpbRecords}){return <><p>2026シーズン · {payload.effectiveDate}までの保存済み成績</p>
+export function RecordsView({payload}:{payload:NpbRecords}){return <><p>2026シーズン · 保存済み成績 · データ基準日 {payload.effectiveDate}</p>
   {payload.readiness!=="ready"?<><DataState kind="unsupported" title="2026年シーズン集計を確認中" detail="確認が完了したカテゴリから表示します。"/>
     <details className="advanced-disclosure"><summary>集計状態の詳細</summary><p>Coverage: {payload.coverage} · 規定ルール: {payload.qualifierStatus}</p>
       <ul>{payload.reasons.map(r=><li key={r}>{r}</li>)}</ul></details></>:
