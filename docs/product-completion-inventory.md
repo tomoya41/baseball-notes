@@ -541,3 +541,20 @@ MLB-only WHIP/BB9/K%/BB%を実装。既存Historicalのみで、Source/Gate/Care
 | Advanced Analysis | PARTIAL | Exact PA BvP/状況/MLB metricsは利用可。Count/TTO/Statcast/trackingは別readinessで未公開 |
 
 次の順序：Scheduled運用の具体的失敗原因修復と証拠取得（NPB Productとは独立）→2015単年PA/容量/restore確認→rights-clear Source解決。新しい年のpreflightやCurrent Source不足を理由に完成済みProduct公開を止めない。v1 scope freeze後のFinal QAと一度のpolishは維持し、署名実機/TalkBack/Push未検証をCIで代替しない。
+
+## 15. Product Completion & NPB Operations追補（2026-10-11）
+
+最新の実装・運用証拠は [Batch report](product-completion-npb-operations.md)、次回UI再設計の境界は [Astra handoff](astra-product-completion-handoff.md) を参照。旧snapshotの件数・完成率は書き換えない。
+
+| 項目 | 分類 / 今回の変化 |
+|---|---|
+| 月間成績の前月比較 | COMPLETE（MLB Historical Regular収録範囲）: 月末は暦月全体、月途中は同日数基準、OPS/ERAと両期間の母数。Postseason月間は対象外 |
+| HOT / MVP比較理由 | PARTIAL（全構想）: 既存の客観指標・母数に前期間値/母数/差を追加。as-of Season基準との比較は未実装 |
+| Favorite / Watchの変化 | PARTIAL: Rolling/月比較のRisingを明示操作時に確認、baseline/dedupe/stale制御を再利用。Push/background配信なし |
+| Records / Timeline / Compare | 既存の収録期間/年代別集計・保存年履歴・比較を維持。2014–2015は全件検証/old-byte guard/restore/public readback後のみ追加。Career/all-timeではない |
+| NPB運用 | PARTIAL: Season終了後のprojection effectiveDate不一致を再現・修復。read-only診断とrestore PASS。次回の実Scheduled成功証拠は独立して待つ |
+| NPB HOT / Ranking | Production Gate pending: HOT打者母数不足/Scheduled証拠待ち、Ranking 6 partial。formal metadata join改善、Gate緩和なし |
+| Profile期間分析 / 高度分析 | PARTIAL: 既存Recent/Splits/Trends/exact PAは維持。専用の月間Profile/Compare、as-of Season基準、TTO/count readinessは別Product/validation残件 |
+| UI readiness | Handoff準備済み。現Design Systemと機能を維持して、次Astraで専用sports surfacesと分析workspaceを再構成可能。実機/TalkBack/署名Releaseはmanual QA |
+
+推奨順序: 今回のadmissionと公開後QA → Astra UI仕上げ → 明示したv1 scope freeze/Final QA。NPB Scheduled運用・Source/Data Qualityは並行し、未達GateをUIで隠さない。Source待ちはCurrent NPB Postseason、NPB Historical/Career/roster/FA/Transactions/Preseason、MLB Current、rights未確定assets/export。今回Source rightsを拡張しない。

@@ -28,3 +28,9 @@ Counting rankings remain independent. Exception qualification is metric-specific
 The existing remote `plate_appearances` reservation lacks the required release validation fields. Historical PA uses separate local-release SQLite tables and two matchup indexes. NPB schema/Facts are unaffected. The release command is explicit, never daily. Rollback removes the advanced publish step and UI capability while leaving the Core database/payload compatible; no destructive NPB migration is involved.
 
 Pilot estimate: approximately 982,000 PA based on 2025's 182,926 PA and the actual six-season Game count. Initial 315 MB row estimate excluded full index cost. The measured pilot adds 137 MB for one full season, giving approximately 735 MB additional SQLite including indexes for all seasons. Turso storage/write delta is zero. The importer reports actual size and runtime before enabling any public capability; raw PA rows are never copied into Pages.
+
+## 2014–2015 qualification provenance（2026-10-11）
+
+- 2014: MLB公式 [2014 schedule release](https://www.mlb.com/news/colorado-rockies-2014-schedule-released/c-60136492)。Section: 2014 championship schedule。162予定試合のSeason-specific denominatorとして使用。Accessed 2026-10-11。
+- 2015: MLB公式 [final-day scenarios](https://www.mlb.com/news/scenarios-for-final-day-of-2015-season/c-153136576)。Section: scheduled end / postseason seeding。162予定試合のSeason-specific denominatorとして使用。Accessed 2026-10-11。
+- 既存Rule 9.22の502 PA / 486 outsと例外判定を再利用し、実際の未消化試合数で分母を引き下げない。OPS/K9 sample policyと公式AVG/OBP/SLG/ERAタイトル条件を混同しない。
