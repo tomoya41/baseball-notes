@@ -14,7 +14,7 @@ async function walk(root: string) {
     if (entry.isDirectory()) await walk(join(root, entry.name));
     else {
       const path = relative(before!, join(root, entry.name)).replaceAll("\\", "/");
-      if (entry.name.endsWith(".json.gz") && protectedHistoricalPath(path)) paths.push(path);
+      if (entry.name.endsWith(".json.gz") && protectedHistoricalPath(path, !args.includes("--facts-only"))) paths.push(path);
     }
   }
 }

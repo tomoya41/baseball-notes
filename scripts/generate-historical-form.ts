@@ -81,7 +81,7 @@ export async function generateHistoricalForm(root:string,cache:string,download=f
       const games=all.get(descriptor.season)??[];
       if(games.length!==descriptor.games||new Set(games.map(g=>g.game.id)).size!==games.length)throw Error("Form coverage mismatch");
       const zip=await archive(`${descriptor.season}csvs.zip`,`https://www.retrosheet.org/downloads/${descriptor.season}/${descriptor.season}csvs.zip`);
-      if (!Number.isInteger(descriptor.season) || descriptor.season < 2016 || descriptor.season > 2025) throw Error("Unsupported form season");
+      if (!Number.isInteger(descriptor.season) || descriptor.season < 2014 || descriptor.season > 2025) throw Error("Unsupported form season");
       const parsed=importHistoricalSeason(zip,descriptor.season as HistoricalSeason,bridge,competition),byId=new Map(parsed.games.map(g=>[g.id,g]));
       if(parsed.validationIssueCount||parsed.unresolvedRetrosheetIds.length||parsed.games.length!==games.length)throw Error("Role source failed existing import validation");
       for(const {game} of games) {

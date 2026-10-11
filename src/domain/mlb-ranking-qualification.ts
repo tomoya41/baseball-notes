@@ -5,6 +5,8 @@ import type { AggregateMetric } from "./player-period";
 // Verified scheduled-league denominators, not observed completed Game counts.
 // Provenance and the revised 2020 schedule are in docs/mlb-ranking-rule-2026-09-30.md.
 export const historicalQualificationSeasons: Readonly<Record<number, { scheduledGames: number; source: string }>> = {
+  2014: { scheduledGames: 162, source: "https://www.mlb.com/news/colorado-rockies-2014-schedule-released/c-60136492" },
+  2015: { scheduledGames: 162, source: "https://www.mlb.com/news/scenarios-for-final-day-of-2015-season/c-153136576" },
   2016: { scheduledGames: 162, source: "https://www.mlb.com/rockies/news/colorado-rockies-2016-schedule-announced/c-148078084" },
   2017: { scheduledGames: 162, source: "https://www.mlb.com/news/mlb-releases-2017-sf-giants-schedule-c201353174" },
   2018: { scheduledGames: 162, source: "https://www.mlb.com/press-release/game-times-announced-for-tigers-2018-schedule-264536196" },

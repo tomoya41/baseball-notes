@@ -19,7 +19,7 @@ describe("Historical immutable payload preservation", () => {
   });
   it("keeps expansion aggregates and mutable profile unions outside immutable bytes", () => {
     for (const path of ["records/range.json.gz", "postseason/records/decade-2020.json.gz", "players/index.json.gz", "players/a.json.gz", "manifest.json.gz"]) expect(protectedHistoricalPath(path)).toBe(false);
-    for (const path of ["games/a.json.gz", "seasons/2020.json.gz", "postseason/records/2020.json.gz", "advanced/2016/a.json.gz"]) expect(protectedHistoricalPath(path)).toBe(true);
+    for (const path of ["games/a.json.gz", "seasons/2020.json.gz", "postseason/records/2020.json.gz", "advanced/2016/a.json.gz", "advanced/2015/a.json.gz", "postseason/exploration/form/2024/index.json.gz", "exploration/recent/2020/index.json.gz"]) expect(protectedHistoricalPath(path)).toBe(true);
   });
   it("generates Team/chronology projections before immutable reuse and Recent fingerprints", () => {
     const workflow = parse(readFileSync(".github/workflows/mlb-historical-publish.yml", "utf8"));
