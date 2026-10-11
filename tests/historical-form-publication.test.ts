@@ -14,5 +14,8 @@ test("form publication validates additions and preserves all old bytes before re
   expect(preservation).toBeGreaterThan(validation); expect(refresh).toBeGreaterThan(preservation);
   expect(script).toContain('[ "$MLB_REFRESH_FORM" != \'true\' ]');
   expect(stage.env.TURSO_DATABASE_URL).toBeUndefined();
+  const guard=workflow.jobs.stage.steps[0];
+  expect(guard.run).toContain('[ "$MLB_REFRESH_FORM" = \'true\' ] && [ "$MLB_PUBLISH_MODE" != \'app-only\' ]');
+  expect(guard.run).toContain('exit 1');
   expect(workflow.jobs.deploy.steps.some((s: { run?: string }) => s.run === "npx tsx scripts/verify-published-historical-form.ts")).toBe(true);
 });

@@ -11,6 +11,7 @@ import { emptyWatchState,evaluateWatch } from "../src/domain/personal-watch";
 import { canonicalDeepLink } from "../src/domain/native-navigation";
 import { portableRoute } from "../src/domain/product-sharing";
 import { validStaticPayload } from "../src/domain/mlb-historical-public";
+import { verifyFormPopulation } from "../scripts/verify-historical-form";
 
 const id=historicalId("player","one"),other=historicalId("player","two"),team=historicalId("team","one"),away=historicalId("team","two");
 const batter=(playerId=id, hits=2,pa=4):HistoricalBatter=>({playerId,teamId:team,battingOrder:1,appearanceOrder:1,starter:true,pa,ab:pa,runs:1,hits,doubles:0,triples:0,homeRuns:0,rbi:1,bb:0,hbp:0,sh:0,sf:0,so:1,sb:0,cs:0});
@@ -105,6 +106,17 @@ describe("Historical form evaluation",()=>{
   it("separates Postseason; calendar MVP is not admitted",()=>{
     const f=fixture(31,"postseason");expect(evaluateHistoricalForm(f.index,f.months,f.names,"2024-08-31",7,"monthly","batting").entries).toEqual([]);
     expect(()=>evaluateHistoricalForm({...f.index,competitionType:"regular"},f.months,f.names,"2024-08-31",7,"hot","batting")).toThrow("scope");
+  });
+  it.each(["batting","starters","relievers"] as const)("independent %s verification rejects omitted players and empty categories",category=>{
+    const f=fixture();if(category==="relievers")f.games.forEach(g=>g.pitching[0]!.role="reliever");
+    const months=buildFormMonths(f.games.map(game=>({game,hash:"a".repeat(64)})),"regular",2024);
+    const index={...f.index,sourceFingerprint:months[0]!.sourceFingerprint};
+    const grouped=new Map([id,other].map(playerId=>[playerId,{b:f.games.flatMap(g=>g.batting.filter(r=>r.playerId===playerId).map(r=>({...r,date:g.date,season:g.season,gameId:g.id,home:true,opponentTeamId:away}))),p:f.games.flatMap(g=>g.pitching.filter(r=>r.playerId===playerId).map(r=>({...r,date:g.date,season:g.season,gameId:g.id,home:true,opponentTeamId:away})))}]));
+    const result=evaluateHistoricalForm(index,months,f.names,"2024-08-31",7,"hot",category,"all");
+    const context={category,mode:"hot" as const,days:7 as const,competition:"regular" as const,coverage:"complete",from:result.from,to:result.to,previousFrom:result.previous.from};
+    expect(verifyFormPopulation(grouped,context,result.entries).size).toBe(result.entries.length);
+    expect(()=>verifyFormPopulation(grouped,context,result.entries.slice(1))).toThrow("population mismatch");
+    expect(()=>verifyFormPopulation(grouped,context,[])).toThrow("population mismatch");
   });
   it("rejects malformed, duplicate, stale-generation or missing shards and unknown identity",()=>{
     const f=fixture();expect(formMonthSchema.safeParse({...f.months[0],batting:[...f.months[0]!.batting,f.months[0]!.batting[0]]}).success).toBe(false);
