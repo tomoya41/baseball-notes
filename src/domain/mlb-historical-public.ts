@@ -1,4 +1,5 @@
 import { recentIndexSchema, recentMonthSchema } from "./mlb-recent-explorer";
+import { formIndexSchema, formMonthSchema } from "./historical-form";
 import { z } from "zod";
 import { postseasonHubSchema } from "./competition";
 import { historicalTeamHubSchema } from "./team-hub";
@@ -60,6 +61,12 @@ export function validStaticPayload(path: string, value: unknown, expectedScope: 
     const match = /^exploration\/recent\/(201[6-9]|202[0-5])\/(index|20\d{2}-\d{2})\.json$/.exec(path);
     if (!match) return false;
     const parsed = match[2] === "index" ? recentIndexSchema.safeParse(value) : recentMonthSchema.safeParse(value);
+    return parsed.success && parsed.data.season === Number(match[1]) && parsed.data.competitionType === expectedScope && (match[2] === "index" || ("month" in parsed.data && parsed.data.month === match[2]));
+  }
+  if (path.startsWith("exploration/form/")) {
+    const match = /^exploration\/form\/(201[6-9]|202[0-5])\/(index|20\d{2}-\d{2})\.json$/.exec(path);
+    if (!match) return false;
+    const parsed = match[2] === "index" ? formIndexSchema.safeParse(value) : formMonthSchema.safeParse(value);
     return parsed.success && parsed.data.season === Number(match[1]) && parsed.data.competitionType === expectedScope && (match[2] === "index" || ("month" in parsed.data && parsed.data.month === match[2]));
   }
   if (path.startsWith("teams/")) {

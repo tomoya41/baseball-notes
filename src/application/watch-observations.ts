@@ -1,3 +1,4 @@
+import { battingDisplayRole } from "../domain/player-display-role";
 import type { Services } from "../app/services";
 import type { Favorite, League } from "../domain/models";
 import type { PersonalState } from "./personal-library";
@@ -109,7 +110,7 @@ export async function readWatchObservations(league: League, favorites: readonly 
       if (v.kind !== "data" || params.get("recentMode") === "selected" || params.has("recentPlayers") || params.get("competition") === "postseason" || (params.has("season") && Number(params.get("season")) !== season) || !p || p.coverage.status !== "complete" || explorerInputErrors(params).length) { notes.push(`「${v.name}」は全選手・完全なNPB Recent条件のみ検出できます。`); continue; }
       const query = explorerQuery(params), required = [...query.rules.map(r => r.metric), ...(query.minimum > 0 ? [query.sample!] : [])];
       if (p.players.some(row => required.some(key => row[query.role]?.metrics[key]?.status !== "complete" && row[query.role]))) { notes.push(`「${v.name}」は条件指標に未確認値があるため判定しません。`); continue; }
-      const matching = exploreRows(p.players.map(row => ({ playerId: row.playerId, name: row.displayName, teamId: row.teamId, batting: row.batting?.metrics ?? null, pitching: row.pitching?.metrics ?? null })), query).map(r => r.playerId).sort();
+      const matching = exploreRows(p.players.map(row => ({ playerId: row.playerId, name: row.displayName, teamId: row.teamId, battingRole: battingDisplayRole(directory.players.find(player=>player.playerId===row.playerId)?.position?[directory.players.find(player=>player.playerId===row.playerId)!.position!]:[]), batting: row.batting?.metrics ?? null, pitching: row.pitching?.metrics ?? null })), query).map(r => r.playerId).sort();
       if (matching.length > 100) { notes.push(`「${v.name}」の一致が100人を超えるため、条件を絞ってください。`); continue; }
       observations.push({ key: `NPB:view:${v.id}:${watchFingerprint(v.conditions)}`, league, kind: "view", entityId: v.id, name: v.name, rule: "view", season, competition: "regular", effectiveDate: p.effectiveDate, generatedAt: p.generatedAt, eventDate: null, coverage: "complete", path: "/NPB/library?tab=views", metric: "matches", values: { count: matching.length }, members: matching, collectionOnly: false, observedAt: now });
     }
