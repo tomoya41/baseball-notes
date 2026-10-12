@@ -213,7 +213,7 @@ describe("historical identity and competition scope", () => {
   it("shows collected seasons, null role and year-specific links without a Career label", async () => {
     staticValues.set("players/index.json", directory); staticValues.set(`players/${id.replaceAll(":", "_")}.json`, profile);
     await mount(<MlbSeasonExplorer manifest={manifest} />, `/MLB/history?player=${id}&role=pitching&competition=postseason`, "postseason");
-    expect(container.textContent).toContain("保存済みシーズン履歴"); expect(container.textContent).toContain("この出場形態の記録はありません");
+    expect(container.querySelector("h1")?.textContent).toBe("シーズン履歴"); expect(container.textContent).toContain("収録年の実データ"); expect(container.textContent).toContain("この出場形態の記録はありません");
     expect([...container.querySelectorAll("a")].map(a => a.getAttribute("href"))).toContain(`/MLB/players/${encodeURIComponent(id)}/stats?season=2020&competition=postseason`);
     expect([...container.querySelectorAll("a")].map(a => a.getAttribute("href"))).toContain(`/MLB/compare?players=${encodeURIComponent(id)}&season=2025&role=pitching&competition=postseason`);
     expect(container.querySelector(".explorer-values dd")?.textContent).toBe("6.1");
