@@ -1,0 +1,1469 @@
+/* Existing feature layout contracts, retained without shared design overrides. */
+
+.screen {
+  min-width: 0;
+}
+
+.shortcut-grid {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 0;
+  margin: 16px 0 28px;
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.shortcut {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 14px 8px;
+  background: transparent;
+}
+
+.shortcut strong {
+  display: block;
+  font-size: .84rem;
+}
+
+.shortcut small {
+  display: block;
+  color: var(--color-muted);
+  font-size: .8125rem;
+  margin-top: 4px;
+}
+
+.shortcut svg {
+  color: var(--brand);
+}
+
+.data-state__title {
+  font-size: .95rem;
+}
+
+.coming-soon {
+  padding: 38px 24px;
+  border: 1px dashed var(--color-border);
+  border-radius: 22px;
+  background: var(--color-surface);
+}
+
+.coming-soon p {
+  font-size: .83rem;
+  color: var(--color-muted);
+  max-width: 580px;
+}
+
+.coming-label {
+  display: inline-block;
+  color: var(--brand);
+  font-size: .8125rem;
+  letter-spacing: .16em;
+  font-weight: 850;
+  margin-bottom: 18px;
+}
+
+.coming-soon h2 {
+  font-size: 1.45rem;
+}
+
+.soon-badge {
+  color: var(--color-muted);
+  font-size: .8125rem;
+  padding: 3px 6px;
+  border: 1px solid var(--color-border);
+  border-radius: 5px;
+  white-space: nowrap;
+}
+
+.icon-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.icon-heading svg {
+  color: var(--brand);
+}
+
+.explore-list > a {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--color-border);
+  min-height: 70px;
+}
+
+.explore-list > a:last-child {
+  border-bottom: none;
+}
+
+.explore-list > a > span:first-child {
+  flex: 1;
+}
+
+.explore-list strong {
+  display: block;
+  font-size: .85rem;
+}
+
+.explore-list small {
+  display: block;
+  color: var(--color-muted);
+  font-size: .8125rem;
+  margin-top: 3px;
+}
+
+.future-player-tools {
+  padding: 0 18px;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  margin: 18px 0;
+}
+
+.future-player-tools > summary {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.game-log-card__details dl {
+  display: grid;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  gap: 10px;
+  font-size: .8125rem;
+}
+
+.game-log-card__details dd {
+  margin: 0;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+
+.game-log-card__details dt {
+  color: var(--color-muted);
+}
+
+.npb-directory-filter {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-size: .8125rem;
+  margin: 14px 0;
+}
+
+.npb-directory-filter select {
+  flex: 1;
+}
+
+.row-chevron {
+  color: var(--color-muted);
+}
+
+.mlb-player-row > a {
+  display: flex;
+  flex: 1;
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+}
+
+.metric-primary-grid {
+  margin: 14px 0;
+}
+
+.recent-coverage p {
+  font-size: .8125rem;
+}
+
+.surface-date-nav, .mlb-date-nav {
+  display: flex;
+  align-items: end;
+  gap: 10px;
+  margin: 16px 0 24px;
+}
+
+.surface-date-nav label {
+  flex: 1;
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  font-size: .8125rem;
+  color: var(--color-muted);
+}
+
+.surface-date-nav button, .mlb-date-nav button {
+  min-height: 46px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  font-size: .8125rem;
+}
+
+.mlb-date-nav {
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mlb-date-nav strong {
+  font-size: .9rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.standings-section {
+  padding: 0;
+}
+
+.standings-table tr:first-child td:first-child {
+  color: var(--brand);
+}
+
+.mlb-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.mlb-controls label {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  flex: 1;
+  font-size: .8125rem;
+  color: var(--color-muted);
+}
+
+.mlb-asof {
+  display: grid;
+  gap: 6px;
+  font-size: .8125rem;
+  color: var(--color-muted);
+  margin: 12px 0;
+}
+
+.mlb-controls input, .mlb-controls select {
+  width: 100%;
+}
+
+.mlb-box-team h2 {
+  font-size: 1rem;
+}
+
+.mlb-box-team h3 {
+  margin-top: 20px;
+  font-size: .83rem;
+}
+
+.mlb-stat-scroll thead {
+  font-size: .8125rem;
+  color: var(--color-muted);
+  background: var(--color-bg);
+}
+
+.mlb-stat-scroll td:nth-child(2), .mlb-stat-scroll th:nth-child(2) {
+  text-align: left;
+}
+
+.mlb-stat-scroll th[scope="row"] {
+  text-align: left;
+}
+
+.box-primary table {
+  min-width: 400px;
+}
+
+.box-primary th, .box-primary td {
+  padding-left: 7px;
+  padding-right: 7px;
+}
+
+.box-primary th[scope="row"] {
+  width: 112px;
+  max-width: 112px;
+  white-space: normal;
+}
+
+.mlb-stat-scroll tbody th[scope="row"] {
+  position: sticky;
+  left: 0;
+  background: var(--color-surface);
+}
+
+.table-scroll-hint {
+  color: var(--color-muted);
+  font-size: .8125rem;
+  margin: 0 0 10px;
+}
+
+.mlb-metric-details dl {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  font-size: .84rem;
+}
+
+.mlb-metric-details dt {
+  color: var(--color-muted);
+}
+
+.mlb-metric-details dd {
+  margin: 0;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+
+.ranking-entry {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 62px;
+  padding: 16px;
+  text-align: left;
+  background: transparent;
+  font-size: .85rem;
+}
+
+.ranking-entry small {
+  width: 100%;
+  color: var(--color-muted);
+  font-size: .8125rem;
+}
+
+.ranking-entry[aria-pressed="true"] {
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+
+.analysis-screen > .page-heading {
+  padding: 0;
+}
+
+.analysis-period-metric {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.analysis-period-metric--primary {
+  border-bottom-color: var(--brand);
+}
+
+.analysis-period-metric > strong {
+  font-size: .8125rem;
+  color: var(--brand);
+}
+
+.analysis-period-metric__values {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.analysis-period-metric__values > div {
+  display: grid;
+}
+
+.analysis-period-metric__values span {
+  color: var(--color-muted);
+  font-size: .8125rem;
+}
+
+.analysis-period-metric__values strong {
+  font-size: 1.1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.analysis-period-sample-heading {
+  margin-top: 24px;
+  font-size: .8125rem;
+}
+
+.analysis-period-sample {
+  padding: 13px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.analysis-period-sample__heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: .8125rem;
+}
+
+.analysis-period-sample__heading small {
+  font-size: .8125rem;
+  color: var(--color-muted);
+}
+
+.analysis-period-sample__values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px 14px;
+  margin: 7px 0;
+  font-size: .8125rem;
+}
+
+.analysis-period-coverage {
+  color: var(--color-muted);
+  font-size: .8125rem;
+}
+
+.analysis-condition {
+  padding: 0;
+  border-top: 1px solid var(--color-border);
+  margin-bottom: 12px;
+}
+
+.analysis-condition > summary {
+  font-size: .86rem;
+  min-height: 58px;
+}
+
+.analysis-condition .section-header h2 {
+  font-size: .88rem;
+}
+
+.analysis-conditions > h2 {
+  margin: 24px 0 16px;
+}
+
+.analysis-split-grid {
+  display: grid;
+  gap: 12px;
+  margin: 14px 0;
+}
+
+.analysis-split-card {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.analysis-split-primary, .analysis-split-sample {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.analysis-split-primary > div {
+  display: grid;
+}
+
+.analysis-split-primary strong {
+  font-size: 1.4rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.analysis-split-primary span {
+  font-size: .8125rem;
+  color: var(--color-muted);
+}
+
+.analysis-split-sample {
+  margin-top: 12px;
+  font-size: .8125rem;
+}
+
+.analysis-split-details {
+  font-size: .8125rem;
+}
+
+.analysis-opponent-select {
+  display: grid;
+  gap: 8px;
+  font-size: .8125rem;
+  margin-bottom: 18px;
+}
+
+.analysis-opponent-table__row[aria-pressed="true"] {
+  color: var(--brand);
+}
+
+.game-log-group {
+  margin-top: 22px;
+}
+
+.game-log-list {
+  display: grid;
+  gap: 12px;
+}
+
+.game-log-card {
+  border-bottom: 1px solid var(--color-border);
+  padding: 15px 0;
+}
+
+.game-log-card__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: start;
+}
+
+.game-log-card__header strong {
+  font-size: .8125rem;
+}
+
+.game-log-card__header small {
+  display: block;
+  color: var(--color-muted);
+  font-size: .8125rem;
+  margin-top: 3px;
+}
+
+.game-log-card__result {
+  font-size: .84rem;
+  white-space: nowrap;
+  font-weight: 750;
+}
+
+.game-log-card__meta {
+  font-size: .8125rem;
+  color: var(--color-muted);
+  margin: 8px 0;
+}
+
+.game-log-card__metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 15px;
+  font-size: .8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.game-log-card__summary {
+  font-size: .84rem;
+}
+
+.game-log-card__details {
+  margin-top: 10px;
+  border-top: 1px solid var(--color-border);
+  font-size: .8125rem;
+}
+
+.game-detail__totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: .8125rem;
+  margin: 12px 0;
+}
+
+.game-detail__minor {
+  color: var(--color-muted);
+  font-size: .8125rem;
+}
+
+.npb-hot-group {
+  margin: 18px 0;
+}
+
+.npb-hot-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.npb-hot-card__body {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  font-size: .84rem;
+}
+
+.npb-hot-card__body small, .npb-hot-card__body > span {
+  color: var(--color-muted);
+  font-size: .8125rem;
+}
+
+.npb-hot-card__metric {
+  font-size: 1.3rem;
+  font-weight: 750;
+}
+
+.npb-hot-card__rank {
+  color: var(--brand);
+}
+
+@media (max-width: 420px) {
+  .analysis-period-metric__values strong {
+    font-size: 1.32rem;
+  }
+  .shortcut {
+    padding: 16px 12px;
+    gap: 5px;
+  }
+  .shortcut small {
+    font-size: .8125rem;
+  }
+  .standings-section {
+    padding: 0;
+  }
+  .mlb-controls {
+    gap: 8px;
+  }
+}
+
+@media (min-width: 720px) {
+  .recent-periods {
+    max-width: 560px;
+  }
+  .analysis-split-grid {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+  }
+}
+
+.records-heading h1 {
+  font-size: 1.65rem;
+}
+
+.availability-note {
+  border-top: 1px solid var(--color-border);
+  padding-top: 16px;
+}
+
+.analysis-period-sample__values > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.analysis-split-details dl > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.analysis-split-details dd {
+  font-variant-numeric: tabular-nums;
+}
+
+.analysis-split-primary .metric-label {
+  font-size: .8125rem;
+}
+
+.hub-game-entry > span {
+  display: grid;
+  gap: 2px;
+}
+
+.hub-readiness {
+  margin-top: 16px;
+}
+
+.hub-readiness .data-state {
+  border: 0;
+  padding: 12px 0;
+  background: transparent;
+}
+
+.hub-readiness .data-state strong {
+  font-size: .8125rem;
+  color: var(--color-muted);
+}
+
+.hub-readiness .data-state p {
+  font-size: .8125rem;
+}
+
+.date-ribbon-heading strong {
+  font-size: .8125rem;
+}
+
+.schedule-season {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--color-muted);
+  font-size: .8125rem;
+}
+
+.schedule-season label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.schedule-season select {
+  font-size: .8125rem;
+  border: 0;
+}
+
+.player-screen .mlb-controls {
+  margin: 0;
+}
+
+.mlb-controls {
+  margin: 12px 0;
+  gap: 8px;
+}
+
+.mlb-controls select, .mlb-controls input {
+  font-size: .8125rem;
+}
+
+.game-log-list {
+  gap: 0;
+}
+
+.game-log-card {
+  padding: 12px 0;
+}
+
+.game-log-card__metrics {
+  font-size: .8125rem;
+}
+
+.availability-note {
+  font-size: .8125rem;
+}
+
+@media (min-width:720px) {
+  .home-hub {
+    max-width: 780px;
+  }
+}
+
+.period-control {
+  max-width: 330px;
+  margin: 12px 0;
+}
+
+label.analysis-condition {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 12px 0;
+  font-size: .8125rem;
+  color: var(--color-muted);
+}
+
+label.analysis-condition select {
+  flex: 1;
+  min-width: 0;
+  max-width: 330px;
+  font-size: .8125rem;
+}
+
+.advanced-workspace > .section-header {
+  margin-bottom: 8px;
+}
+
+.advanced-workspace .text-button {
+  font-size: .8125rem;
+}
+
+.matchup-opponents .ranking-entry {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+}
+
+.matchup-opponents .ranking-entry > span:first-child {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.matchup-opponents .ranking-entry > span:last-child {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.matchup-opponents strong {
+  font-size: 1rem;
+}
+
+.matchup-opponents small {
+  font-size: .8125rem;
+  color: var(--color-muted);
+}
+
+.matchup-opponents .ranking-entry[aria-pressed=true] {
+  background: var(--brand-soft);
+  color: var(--brand);
+  border-left: 3px solid var(--brand);
+}
+
+.player-screen > .mlb-controls {
+  justify-content: flex-end;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.player-screen > .mlb-controls label {
+  flex: none;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+
+.player-screen > .mlb-controls select {
+  width: 100px;
+  min-height: 44px;
+}
+
+.competition-tabs {
+  margin: 0 0 12px;
+  padding: 0;
+}
+
+.series-score span {
+  overflow-wrap: anywhere;
+}
+
+.postseason-screen .schedule-season {
+  margin-bottom: 20px;
+}
+
+.player-tools a[aria-current=page] {
+  color: var(--color-text);
+  text-decoration: underline;
+  text-underline-offset: 6px;
+}
+
+.compare-search {
+  border-block: 1px solid var(--color-border);
+  padding: 8px 0;
+  margin: 8px 0 16px;
+}
+
+.compare-search summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  font-size: .8125rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.compare-search .player-row {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text);
+  text-align: left;
+  justify-content: space-between;
+}
+
+.compare-table th:not(:first-child) {
+  min-width: 100px;
+  max-width: 150px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.compare-table th:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--color-surface);
+}
+
+.compare-table td {
+  font-variant-numeric: tabular-nums;
+  font-size: .9375rem;
+}
+
+.compare-table td small {
+  display: block;
+  font-size: .8125rem;
+}
+
+.trend-chart {
+  margin: 20px 0;
+}
+
+.trend-chart svg {
+  width: 100%;
+  max-height: 200px;
+  display: block;
+}
+
+.trend-chart figcaption {
+  font-size: .8125rem;
+  font-weight: 650;
+}
+
+.trend-line {
+  stroke: var(--brand);
+  stroke-width: 2;
+}
+
+.trend-dot {
+  fill: var(--brand);
+}
+
+.trend-axis {
+  stroke: var(--color-border);
+}
+
+.trend-range {
+  display: flex;
+  justify-content: space-between;
+  font-size: .8125rem;
+  color: var(--color-muted);
+}
+
+.player-trends .metric-tile > span, .player-trends .metric-tile > small {
+  font-size: .8125rem;
+  color: var(--color-muted);
+}
+
+.team-standing {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.team-standing > strong {
+  font-size: 2rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.team-standing small {
+  font-size: .8125rem;
+}
+
+.team-standing > span {
+  font-size: .8125rem;
+  color: var(--color-muted);
+}
+
+.team-favorites-filter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  font-size: .8125rem;
+}
+
+.team-favorites-filter input {
+  width: 20px;
+  height: 20px;
+}
+
+.today-board h3, .game-preview h3, .game-recap h3 {
+  font-size: .8125rem;
+  margin: 18px 0 8px;
+}
+
+.daily-player, .daily-team {
+  border-bottom: 1px solid var(--color-border);
+  padding: 8px 0 12px;
+  min-width: 0;
+}
+
+.daily-player .player-row, .daily-team .player-row {
+  justify-content: space-between;
+}
+
+.daily-numbers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  font-size: .8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.daily-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 18px;
+}
+
+.daily-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: .8125rem;
+  font-weight: 650;
+}
+
+.daily-team-actions summary, .game-recap summary, .daily-player summary {
+  min-height: 44px;
+  align-content: center;
+  font-size: .8125rem;
+  cursor: pointer;
+}
+
+.daily-player details p, .game-recap details p {
+  font-size: .8125rem;
+  color: var(--color-muted);
+  line-height: 1.7;
+}
+
+.daily-recap-row {
+  min-height: 58px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 0;
+}
+
+.daily-recap-row strong {
+  font-size: .875rem;
+  overflow-wrap: anywhere;
+}
+
+.daily-recap-row > span {
+  font-size: .8125rem;
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.daily-metric-help {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: .8125rem;
+}
+
+.preview-team-grid {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+  gap: 16px;
+  padding: 12px 0;
+  border-block: 1px solid var(--color-border);
+}
+
+.preview-team-grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.preview-team-grid strong {
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.preview-team-grid a, .preview-team-grid span {
+  font-size: .8125rem;
+  overflow-wrap: anywhere;
+}
+
+.preview-team-grid small {
+  font-size: .8125rem;
+  color: var(--color-muted);
+}
+
+.explorer-filters > label input {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  font-size: .8125rem;
+}
+
+.explorer-filters summary {
+  min-height: 44px;
+  align-content: center;
+  cursor: pointer;
+  font-size: .8125rem;
+  font-weight: 650;
+}
+
+.explorer-candidates {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 4px 10px;
+}
+
+.explorer-candidates label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  font-size: .8125rem;
+  overflow-wrap: anywhere;
+}
+
+.explorer-candidates input {
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.my-library h2 {
+  margin: 0;
+  font-size: .95rem;
+}
+
+.library-save {
+  margin: 8px 0;
+}
+
+.library-save form, .library-create {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: end;
+}
+
+.library-save label, .library-create label {
+  flex: 1;
+  min-width: 160px;
+}
+
+.personal-library input:not([type=checkbox]), .library-save input, .library-picker input:not([type=checkbox]) {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-radius: 6px;
+}
+
+.personal-library button, .library-save button, .collection-control button {
+  min-height: 44px;
+  padding: 6px 10px;
+}
+
+.library-row > a, .library-row > span {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.library-row small {
+  display: block;
+  color: var(--color-muted);
+  margin-top: 4px;
+}
+
+.library-row button {
+  flex-shrink: 0;
+}
+
+.library-row button, .library-collection .list-heading button, .library-reset button {
+  background: transparent;
+  color: var(--color-muted);
+  border-radius: 6px;
+}
+
+.library-create button, .library-save form button, .library-picker form button {
+  background: var(--brand-soft);
+  color: var(--brand);
+  border-radius: 6px;
+}
+
+.library-save [role=status] {
+  font-size: .8125rem;
+  color: var(--color-muted);
+}
+
+.library-collection {
+  margin-top: 24px;
+}
+
+.library-collection .list-heading {
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.library-collection h2 {
+  flex: 1;
+  min-width: 120px;
+  overflow-wrap: anywhere;
+  font-size: 1rem;
+}
+
+.compare-pick {
+  display: grid;
+  place-items: center;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.library-reset {
+  margin-block: 32px 16px;
+  border-top: 1px solid var(--color-border);
+  padding-top: 12px;
+}
+
+.library-reset summary {
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.collection-control {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.library-picker {
+  width: min(380px, calc(100vw - 32px));
+  max-height: 75dvh;
+  overflow-y: auto;
+  padding: 16px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  box-shadow: 0 12px 32px #0003;
+}
+
+.library-picker label {
+  display: block;
+  overflow-wrap: anywhere;
+  padding-block: 6px;
+}
+
+.library-picker strong {
+  overflow-wrap: anywhere;
+}
+
+.library-picker input[type=checkbox] {
+  margin-right: 8px;
+}
+
+.library-picker form {
+  margin-block: 10px;
+}
+
+.explorer-filters fieldset {
+  margin-top: 12px;
+  border: 0;
+  padding: 0;
+}
+
+.explorer-filters .chip-list label {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.comparison-bars figcaption {
+  margin-bottom: 14px;
+  font-weight: 700;
+}
+
+.comparison-bar strong {
+  overflow-wrap: anywhere;
+}
+
+.collection-watch-row {
+  padding: 18px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.comparison-summary h2 {
+  font-size: 17px;
+  overflow-wrap: anywhere;
+}
+
+.comparison-years {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 18px 0;
+}
+
+.comparison-years label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+}
+
+.share-link, .display-export {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.share-link label {
+  width: 100%;
+}
+
+.share-link textarea {
+  width: 100%;
+  min-height: 90px;
+  overflow-wrap: anywhere;
+}
+
+.share-link button, .display-export button, .collection-watch-row button, .library-pagination button {
+  min-height: 44px;
+}
+
+.library-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0;
+}
+
+.collection-watch-row .list-heading {
+  justify-content: flex-start;
+}
+
+.collection-watch-row .list-heading a {
+  overflow-wrap: anywhere;
+}
+
+.watch-center > .list-heading {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.watch-values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+.watch-values dd {
+  margin: 4px 0;
+  font-size: 18px;
+}
+
+.watch-center button, .watch-center summary {
+  min-height: 44px;
+}
+
+.historical-form .mlb-controls {
+  flex-wrap: wrap;
+}
+
+.historical-form .mlb-controls>label {
+  min-width: 0;
+  flex: 1 1 130px;
+}
+
+.historical-form input[type=date], .batting-view-control select {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.batting-view-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0;
+}
+
+.historical-form .explorer-values {
+  font-variant-numeric: tabular-nums;
+}
+
+.historical-form button:focus-visible, .historical-form a:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 3px;
+}
+
+.home-hub {
+  max-width: none;
+}
+
+.match-team-links .player-row span {
+  color: var(--color-muted);
+}
+
+.match-team-links .surface-favorite > a:first-child {
+  flex: 1;
+}
+
+.team-stat-details > summary, .team-roster > summary {
+  min-height: 56px;
+  padding: 16px 0;
+  font-size: .875rem;
+}
+
+.player-tools-disclosure > summary {
+  font-size: .8125rem;
+  padding: 10px 0;
+}
+
+.comparison-summary h2 {
+  font-size: 1rem;
+}
+
+.discovery-tools {
+  margin: 0 0 8px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.watch-center > .list-heading button {
+  padding: 8px;
+  font-size: .8125rem;
+}
+
+.mlb-stat-scroll tbody th[scope=row], .compare-table th:first-child {
+  position: static;
+  background: transparent;
+}
+
+.compare-table th:not(:first-child) {
+  min-width: 0;
+}
+
+@media (min-width:1080px) {
+  .profile-content {
+    display: grid;
+    grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+    gap: 0 28px;
+    align-items: start;
+  }
+  .profile-content > .stats-section {
+    grid-column: 1/-1;
+  }
+}
+
+.library-picker-content > label input {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.player-section-tabs > a {
+  padding-inline: 2px;
+}
+
+.lifecycle-result > small {
+  color: var(--color-muted);
+}
+
+.lifecycle-result details {
+  margin-top: 6px;
+  font-size: .8125rem;
+}
+
+.lifecycle-actions input {
+  width: 20px;
+  height: 20px;
+}
+
+.lifecycle-timeline p {
+  font-size: .8125rem;
+}
+
+.lifecycle-explorer .explorer-links a {
+  min-height: 44px;
+}
+
+.lifecycle-explorer details > p, .player-lifecycle details p {
+  overflow-wrap: anywhere;
+}

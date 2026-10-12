@@ -5,9 +5,8 @@ import { Link, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import type { Services } from "../app/services";
 import type { Favorite, League } from "../domain/models";
 import { favoriteMatches, leagueSwitchPath } from "../domain/cross-league";
-import { BaseballIcon } from "./baseball-icons";
 import { LoadingSkeleton } from "./components";
-import { MySettings } from "./design-system";
+import { MySettings, ThemeControl } from "./design-system";
 import { NotificationSettings, PrivacyScreen, RuntimeStatus } from "./runtime-status";
 import { PersonalLibraryProvider } from "./library-provider";
 import { ShareLink } from "./product-sharing";
@@ -62,8 +61,8 @@ export function App({ services }: { services: Services }) {
       event.preventDefault(); document.getElementById("main-content")?.focus();
     }}>本文へ移動</a>
     <header className="app-header"><Link className="brand" to={`/${league}/home`} aria-label="Baseball Notes ホーム">
-      <span className="brand-mark"><BaseballIcon /></span><span><strong>BASEBALL</strong><small>NOTES</small></span>
-    </Link><div className="app-header-actions"><nav className="league-switch" aria-label="リーグ切替">{(["NPB", "MLB"] as const).map(item => <Link key={item} to={switchPath(item)} aria-current={league === item ? "true" : undefined}>{item}</Link>)}</nav><ShareLink compact key={location.pathname + location.search} /></div></header>
+      <span><strong>BASEBALL</strong><small>NOTES</small></span>
+    </Link><div className="app-header-actions"><nav className="league-switch" aria-label="リーグ切替">{(["NPB", "MLB"] as const).map(item => <Link key={item} to={switchPath(item)} aria-current={league === item ? "true" : undefined}>{item}</Link>)}</nav><ThemeControl /><ShareLink compact key={location.pathname + location.search} /></div></header>
     {favoriteMessage && <p className={`toast${favoriteError ? " toast--error" : ""}`}
       role={favoriteError ? "alert" : "status"}>{favoriteMessage}</p>}
     <RuntimeStatus />
@@ -87,7 +86,7 @@ export function App({ services }: { services: Services }) {
     </Routes></Suspense>
     </RouteErrorBoundary>
     {section === "home" && <WatchSummary league={league} />}
-    {section === "my" && <><MySettings /><NotificationSettings favorites={favorites} ready={favoritesReady} visible /></>}
+    {section === "my" && <details className="my-settings-disclosure"><summary>表示・通知・アプリについて</summary><MySettings /><NotificationSettings favorites={favorites} ready={favoritesReady} visible /></details>}
     <footer className="app-footer"><Link to="/MLB/sources">データ提供元</Link><Link to={`/${league}/explore`}>機能一覧 ↗</Link></footer></main>
     <nav className="bottom-nav" aria-label="基本ナビゲーション">{navItems.map(({ label, segment, icon: Icon }) =>
       <Link key={segment} to={`/${league}/${segment}`} aria-current={currentNav === segment ? "page" : undefined}>
