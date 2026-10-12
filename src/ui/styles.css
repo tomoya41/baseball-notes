@@ -295,10 +295,10 @@ details[open]>summary {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  min-height: calc(70px + env(safe-area-inset-top));
+  min-height: calc(64px + env(safe-area-inset-top));
   padding-top: env(safe-area-inset-top);
   border-bottom: 1px solid var(--color-border);
-  margin-bottom: 22px;
+  margin-bottom: 12px;
 }
 
 .brand {
@@ -793,7 +793,7 @@ details[open]>summary {
   place-items: center;
   padding: 10px 2px;
   text-align: center;
-  font-size: .8125rem;
+  font-size: .875rem;
   font-weight: 650;
   color: var(--color-muted);
   border-bottom: 3px solid transparent;
@@ -813,25 +813,6 @@ details[open]>summary {
   font-size: .8125rem;
   color: var(--color-muted);
   margin-bottom: 8px;
-}
-
-.player-tools {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 16px;
-}
-
-.player-tools a {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  font-size: .875rem;
-  color: var(--brand);
-}
-
-.player-tools-disclosure {
-  border-bottom: 1px solid var(--color-border);
-  margin-bottom: 16px;
 }
 
 .profile-definition {

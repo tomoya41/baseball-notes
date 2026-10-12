@@ -39,6 +39,8 @@ Use only the existing visual availability/usage contracts. No new player photo, 
 
 Five primary destinations: **ホーム / 試合 / 選手 / 記録 / My**. Existing HashRouter paths, public deep links, validated queries and native Back translation retain their meaning. One natural document scroll is used. Native dialogs temporarily lock the document and retain a visible close action.
 
+The PR #26 refinement uses a single Player context row above identity: year, competition, compact Back and a labelled action dialog. HOT keeps visible mode tabs and a category/window summary, with secondary criteria inside an expandable row. Game separates opposed team labels from its full-width numeric score row. Nested dialogs share a document scroll lock so a route exit cannot leave scrolling disabled. See [visual-refinement.md](visual-refinement.md) for same-condition captures and measured hierarchy changes.
+
 - Shared controls/statuses: `components.tsx`, `design-system.tsx`, `app-dialog.tsx`.
 - Signature identity/headline/record/discovery: `signature.tsx`.
 - Comparison chart: `comparison-bars.tsx`, using existing comparison formatters and unavailable/partial semantics.

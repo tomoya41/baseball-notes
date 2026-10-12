@@ -17,6 +17,21 @@ beforeEach(()=>{vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);fixtures.status="
 afterEach(async()=>{await act(async()=>root.unmount());container.remove();vi.unstubAllGlobals();});
 async function render(query="mode=hot&period=7&asOfDate=2024-08-20",scope:"regular"|"postseason"="regular"){await act(async()=>root.render(<MemoryRouter key={query+scope} initialEntries={[`/MLB/form?season=2024&${query}`]}><HistoricalCompetitionContext.Provider value={scope}><HistoricalFormScreen manifest={manifest} favorites={[]} toggle={()=>undefined} saving={false} /></HistoricalCompetitionContext.Provider></MemoryRouter>));}
 describe("Historical HOT/MVP UI",()=>{
+  it("shows the selected category/window while disclosing secondary controls before unchanged results",async()=>{
+    await render("mode=hot&period=14&category=starters&asOfDate=2024-08-20");
+    const filters=container.querySelector<HTMLDetailsElement>("details.form-filters")!;
+    expect(filters.open).toBe(false);expect(filters.querySelector("summary")?.textContent).toContain("先発 · 直近14日");
+    expect(container.querySelectorAll(".historical-form>.segmented")).toHaveLength(0);
+    expect(filters.querySelectorAll('[aria-label="評価期間"] button')).toHaveLength(3);
+    expect(fixtures.reader).toHaveBeenLastCalledWith(expect.objectContaining({days:14,category:"starters",asOf:"2024-08-20"}));
+    expect(container.querySelector(".form-entry")?.textContent).toContain("28打席");
+  });
+  it("keeps active team/favorites/role constraints visible with the filter panel closed",async()=>{
+    await render(`mode=hot&team=${encodeURIComponent(tid)}&focus=favorites&battingView=pitchers&asOfDate=2024-08-20`);
+    expect(container.querySelector(".form-active-conditions")?.textContent).toBe("球団名 · お気に入り · 投手の打撃");
+    expect(container.querySelector(".form-filters")?.hasAttribute("open")).toBe(false);
+    expect(fixtures.reader).toHaveBeenLastCalledWith(expect.objectContaining({view:"pitchers"}));
+  });
   it("restores monthly comparison URLs with samples and keeps calendar aggregates out of Recent links",async()=>{
     await render("mode=monthly-change&asOfDate=2024-08-20");
     expect(fixtures.reader).toHaveBeenLastCalledWith(expect.objectContaining({mode:"monthly-change"}));

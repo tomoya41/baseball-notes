@@ -92,10 +92,10 @@ describe("compact scoreboards and contextual metric help", () => {
     expect(html).toContain('class="club-context">ヒューストン');
     expect(html).toContain('<span>アストロズ</span>');
   });
-  it("keeps the central game hero's zero and unavailable scores distinct", () => {
+  it("keeps opposed team scores' real zero and unavailable value distinct", () => {
     const html = wrap(<ScoreHero home="阪神" away="DeNA" homeScore={0} awayScore={null} status="中断" />);
     expect(html).toContain('role="group"'); expect(html).toContain("得点未確認");
-    expect(html).toContain("—<i"); expect(html).toContain("</i>0"); expect(html).toContain("中断");
+    expect(html).toContain("<span>—</span>"); expect(html).toContain("<span>0</span>"); expect(html).toContain("中断");
     expect(html).not.toContain("試合終了");
   });
   it("bounds the quick calendar to the imported season, across month boundaries", () => {

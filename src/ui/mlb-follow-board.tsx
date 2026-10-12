@@ -32,7 +32,7 @@ export function MlbFollowPlayer({ player, season, favorites, toggle, saving, fea
     </Link>
     <FavoriteButton active={favorites.some(f => f.league === "MLB" && f.entityId === player.id)} saving={saving}
       label={player.name} onClick={() => toggle({ league: "MLB", kind: "player", entityId: player.id })} />
-    <div className="follow-player-stats">{profile.status === "ready" ? <>
+    <div className={`follow-player-stats${hasBatting && totals?.pitching ? " follow-player-stats--dual" : ""}`}>{profile.status === "ready" ? <>
       {hasBatting && totals?.batting && <FollowStatLine values={totals.batting} pitching={false} />}
       {totals?.pitching && <FollowStatLine values={totals.pitching} pitching />}
       {!hasBatting && !totals?.pitching && <small>{season}年の成績は未収録</small>}
