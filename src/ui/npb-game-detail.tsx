@@ -6,6 +6,7 @@ import type { NpbGameDetail } from "../domain/npb-game-detail";
 import { formatDate } from "../presentation/formatters";
 import { DataState, LoadingSkeleton, MetricLabel } from "./components";
 import { ScoreHero } from "./design-system";
+import { GameHeading } from "./signature";
 import type { Services } from "../app/services";
 import { GameRecap, GameTeamLinks, NpbGamePreview } from "./game-story";
 import type { FavoriteActions } from "./team-favorite";
@@ -35,13 +36,11 @@ export function NpbGameDetailView({ payload, state, services, actions }: { paylo
     <DataState kind="source-unavailable" title="試合データを取得できませんでした" /></div>;
   const hasBox = payload.status === "final";
   return <div className="screen game-detail">
-    <a className="back-link" href={`#/NPB/schedule?date=${payload.date}`}>日程・結果に戻る</a>
-    <header className="game-detail__header"><p>NPB / 試合詳細</p><h1>{formatDate(payload.date, true)}の試合</h1>
-      <p>{statusName[payload.status]}{payload.gameNumber > 1 ? ` · 第${payload.gameNumber}試合` : ""}</p></header>
+    <GameHeading title={`${formatDate(payload.date, true)}の試合`} date={payload.date} context={`NPB · 公式戦${payload.gameNumber > 1 ? ` · 第${payload.gameNumber}試合` : ""}`} backTo={`/NPB/schedule?date=${payload.date}`} />
     <ScoreHero away={payload.away.shortName} home={payload.home.shortName} awayScore={payload.away.score} homeScore={payload.home.score} status={statusName[payload.status]} />
-    {actions && <GameTeamLinks league="NPB" teams={[payload.away, payload.home]} {...actions} />}
     {payload.status === "scheduled" && services && <NpbGamePreview game={payload} services={services} favorites={actions?.favorites ?? []} />}
     {hasBox && <GameRecap league="NPB" complete={payload.completeness === "complete"} favorites={actions?.favorites ?? []} batting={[...payload.batting.away, ...payload.batting.home]} pitching={[...payload.pitching.away, ...payload.pitching.home].map(p => ({ ...p, outs: p.outsRecorded, so: p.strikeouts }))} />}
+    {actions && <details className="game-team-disclosure"><summary>球団情報・フォロー</summary><GameTeamLinks league="NPB" teams={[payload.away, payload.home]} {...actions} /></details>}
     {payload.status !== "final" && <p className="game-detail__note">{statusName[payload.status]}のため、試合別成績はありません。</p>}
     {hasBox && payload.completeness !== "complete" && <p className="game-detail__note" role="status">
       {payload.completeness === "partial" || payload.completeness === "failed" ?
