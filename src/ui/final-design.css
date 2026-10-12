@@ -2014,9 +2014,15 @@
   }
   .form-entry--lead {
     grid-column: 1/-1;
+    display: grid;
+    grid-template-columns: minmax(0,1fr) minmax(0,1.2fr);
+    gap: 8px 32px;
+    align-items: start;
   }
   .form-entry--lead .explorer-values {
-    max-width: 640px;
+    grid-column: 2;
+    grid-row: 1 / span 3;
+    margin-top: 0;
   }
   .postseason-bracket {
     grid-template-columns: repeat(3,minmax(0,1fr));
