@@ -1,8 +1,40 @@
 /* Screen compositions. Shared controls and tokens live only in styles.css. */
-.team-record { display:flex; gap:32px; margin:18px 0 24px; }
-.team-record dt { font-size:.875rem; color:var(--color-muted); }
-.team-record dd { margin:4px 0; font-size:2.75rem; line-height:1.1; font-weight:800; letter-spacing:-.04em; }
-.team-record > div:first-child dd { color:var(--brand); }
+.team-record {
+  display: flex;
+  gap: 32px;
+  margin: 18px 0 24px;
+}
+.team-record dt {
+  font-size: .875rem;
+  color: var(--color-muted);
+}
+.team-record dd {
+  margin: 4px 0;
+  font-size: 2.75rem;
+  line-height: 1.1;
+  font-weight: 800;
+  letter-spacing: -.04em;
+}
+.team-record > div:first-child dd {
+  color: var(--brand);
+}
+
+.explorer-toolbar {
+  display: grid;
+  grid-template-columns: 1fr 1.35fr;
+  gap: 12px;
+  margin: 10px 0;
+  align-items: start;
+}
+.explorer-toolbar summary {
+  font-size: .8125rem;
+}
+.explorer-toolbar details[open] {
+  grid-column: 1 / -1;
+}
+.explorer-filters .screen {
+  margin: 12px 0;
+}
 .team-secondary-stats { grid-template-columns:repeat(3,minmax(0,1fr)); }
 .recap-player-line { display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%; }
 .recap-player-line b { color:var(--brand); font-size:1.125rem; white-space:nowrap; }
