@@ -23,11 +23,12 @@ export function MlbMatchup({manifest}:{manifest:ExplorerManifest}) {
   const advanced=useHistoricalStatic<AdvancedPlayerPayload>(batter?`advanced/${season}/${batter.id.replaceAll(":","_")}.json`:null);
   const update=(key:string,value:string)=>setParams(old=>{const next=new URLSearchParams(old);if(value)next.set(key,value);else next.delete(key);return next;});
   const data=advanced.value,valid=data?.playerId===batter?.id&&data?.scope===String(season),opponent=valid&&data?.directBvp==="ready"?data.batting.opponents.find(p=>p.playerId===pitcher?.id):undefined;
-  return <div className="screen"><PageHeading eyebrow={`MLB · ${season} · ${competition==="postseason"?"POSTSEASON":"REGULAR"}`} title="MATCHUP" /><ExplorerLinks league="MLB" scope={`?season=${season}${scope}`} />
+  return <div className="screen matchup-screen"><PageHeading eyebrow={`MLB · ${season} · ${competition==="postseason"?"POSTSEASON":"REGULAR"}`} title="MATCHUP" /><ExplorerLinks league="MLB" scope={`?season=${season}${scope}`} />
     <label className="competition-season">シーズン<select value={season} onChange={e=>update("season",e.target.value)}>{!descriptor&&<option value={season}>未収録</option>}{manifest.seasons.map(s=><option key={s.season}>{s.season}</option>)}</select></label>
     {!descriptor?<DataState kind="unsupported" title="指定シーズンは未収録です" />:directory.status==="loading"?<LoadingSkeleton />:!directory.value?<><DataState kind="source-unavailable" title="選手一覧を読み込めません" /><button onClick={directory.retry}>再読み込み</button></>:<>
       <p className="inline-note">{descriptor.lastDate}までの過去記録。実際の打席で対戦した結果を表示します。</p>
-      <div className="matchup-selectors">{(["batter","pitcher"] as const).map(kind=>{
+      {batter && pitcher && <div className="matchup-duel" aria-label="選択した直接対戦"><Link to={`/MLB/players/${encodeURIComponent(batter.id)}?season=${season}${scope}`}><small>打者</small><strong>{batter.name}</strong></Link><span aria-hidden="true">VS</span><Link to={`/MLB/players/${encodeURIComponent(pitcher.id)}?season=${season}${scope}`}><small>投手</small><strong>{pitcher.name}</strong></Link></div>}
+      <details className="matchup-selection" open={!batter || !pitcher}><summary>対戦選手を選ぶ・変更する</summary><div className="matchup-selectors">{(["batter","pitcher"] as const).map(kind=>{
         const selected=kind==="batter"?batter:pitcher,label=kind==="batter"?"打者":"投手",q=queries[kind];
         const candidates=q.trim()?players.filter(p=>matchesMlbPlayerName(p.id,p.name,q)).slice(0,20):[];
         return <section key={kind}><h2>{label}</h2>{selected&&<div className="compare-selection"><Link to={`/MLB/players/${encodeURIComponent(selected.id)}?season=${season}${scope}`}>{selected.name}</Link><button aria-label={`${label}の選択を解除`} onClick={()=>update(kind,"")}>×</button></div>}
@@ -36,7 +37,7 @@ export function MlbMatchup({manifest}:{manifest:ExplorerManifest}) {
           <div className="row-list">{candidates.map(p=><button className="player-row" key={p.id} onClick={()=>{update(kind,p.id);setQueries({...queries,[kind]:""});}}>{p.name}</button>)}</div>{q.trim()&&!candidates.length&&<p>該当選手がいません。</p>}
           {kind==="pitcher"&&!q.trim()&&valid&&data?.directBvp==="ready"&&!selected&&<details><summary>この打者の対戦投手から選ぶ</summary><div className="row-list">{data.batting.opponents.slice(0,20).map(p=><button className="player-row" key={p.playerId} onClick={()=>update("pitcher",p.playerId)}>{p.name}<span>{p.metrics.PA} PA</span></button>)}</div><small>20人まで表示。ほかの相手は名前で検索できます。</small></details>}
         </section>;
-      })}</div>
+      })}</div></details>
       {batter&&pitcher&&<button className="text-button" onClick={()=>setParams(old=>{const next=new URLSearchParams(old);next.set("batter",pitcher.id);next.set("pitcher",batter.id);return next;})}>打者・投手を入れ替える</button>}
       {batter&&advanced.status==="loading"&&<LoadingSkeleton />}
       {batter&&["missing","error"].includes(advanced.status)&&<><DataState kind="source-unavailable" title="対戦データを取得できません" /><button onClick={advanced.retry}>再読み込み</button></>}

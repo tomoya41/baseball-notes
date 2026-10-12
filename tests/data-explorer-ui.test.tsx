@@ -46,6 +46,7 @@ async function mount(child: ReactNode, path = "/MLB/data?season=2025", competiti
   await act(async () => root.render(<MemoryRouter initialEntries={[path]}><HistoricalCompetitionContext.Provider value={competition}>{child}<Probe /></HistoricalCompetitionContext.Provider></MemoryRouter>));
 }
 const click = async (button: Element) => act(async () => button.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+const selectNamed = (name: string) => [...container.querySelectorAll<HTMLLabelElement>("label")].find(label => label.textContent?.startsWith(name) && label.querySelector("select"))!.querySelector<HTMLSelectElement>("select")!;
 const explorer = (readRecent: Parameters<typeof DataExplorerView>[0]["readRecent"] = vi.fn(async () => ({ values: [], failed: [] }))) => <DataExplorerView league="MLB" rows={rows} teams={manifest.teams} season={2025} years={[2020, 2025]} effectiveDate="2025-09-28" coverage="complete" readRecent={readRecent} />;
 function seedNpb() {
   const season = { season: 2026, effectiveDate: "2026-10-03", period: {from:"2026-03-27",to:"2026-10-03"}, players: [{ playerId: npbId, displayName: "保存選手", teamId: "npb:team:tigers", batting: { metrics }, pitching: null }], coverage: { status: "partial" } } as unknown as NpbSeasonPayload;
@@ -60,20 +61,20 @@ describe("compact exploration UI", () => {
     expect(container.textContent).toContain("2026-10-07まで");
     expect(container.querySelector("[data-export-date]")?.getAttribute("data-export-date")).toBe("2026-10-07");
     await mount(<DataExplorerView {...props} readAllRecent={async()=>({values:rows.map(r=>({...r,coverage:"partial"})),failed:[],coverage:"partial"})} />);
-    await act(async()=>{const period=container.querySelectorAll('.explorer-filter-grid select')[3] as HTMLSelectElement;period.value="7";period.dispatchEvent(new Event("change",{bubbles:true}));});
+    await act(async()=>{const period=selectNamed("期間");period.value="7";period.dispatchEvent(new Event("change",{bubbles:true}));});
     expect(container.textContent).toContain("2026-10-10まで");
     expect(container.querySelector("[data-export-date]")?.getAttribute("data-export-date")).toBe("2026-10-10");
   });
   it("clears an old-year Recent as-of date when the Season changes, retaining the window", async () => {
     await mount(explorer(), "/MLB/data?season=2025&period=14&asOfDate=2025-08-20");
-    await act(async () => { const select = container.querySelector('.explorer-filter-grid select') as HTMLSelectElement;
+    await act(async () => { const select = selectNamed("シーズン");
       select.value = "2020"; select.dispatchEvent(new Event("change", { bubbles: true })); });
     expect(container.querySelector("[data-location]")?.textContent).toBe("?season=2020&period=14");
   });
   it("keeps failed selected Recent reads partial in both the visible notice and CSV", async () => {
     await mount(explorer(async () => ({ values: [{ ...rows[0]!, coverage: "complete" }], failed: [id2], coverage: "complete" })), `/MLB/data?season=2025&period=14&recentPlayers=${id},${id2}`);
     expect(container.textContent).toContain("一部の選択選手を読み込めません");
-    expect(container.textContent).toContain("Coverage 一部未確認");
+    expect(container.textContent).toContain("収録状態 一部未確認");
     expect(container.querySelector("[data-export-coverage]")?.textContent).toBe("partial");
   });
   it("distinguishes unavailable Coverage evidence from partial Coverage", async () => {
@@ -84,7 +85,7 @@ describe("compact exploration UI", () => {
     const all = vi.fn(async () => ({ values: [], failed: [] })), read = vi.fn(async () => ({ values: [], failed: [] }));
     await mount(<DataExplorerView league="NPB" rows={rows} teams={manifest.teams} season={2026} years={[2026]} effectiveDate="2026-10-03" coverage="partial" readRecent={read} readAllRecent={all} />, `/NPB/data?period=14&recentPlayers=${id}`);
     if (action === "deselect") await click(container.querySelector(".explorer-candidates input")!);
-    else { const selects = container.querySelectorAll(".explorer-filter-grid select"); await act(async () => { const input = selects[action === "team" ? 2 : 1] as HTMLSelectElement; input.value = action === "team" ? team : "pitching"; input.dispatchEvent(new Event("change", { bubbles: true })); }); }
+    else { await act(async () => { const input = selectNamed(action === "team" ? "球団" : "成績"); input.value = action === "team" ? team : "pitching"; input.dispatchEvent(new Event("change", { bubbles: true })); }); }
     expect(all).not.toHaveBeenCalled(); expect(container.querySelector("[data-location]")?.textContent).toContain("recentMode=selected");
     expect(container.textContent).toContain("直近を調べる選手を選択してください");
   });
@@ -100,7 +101,7 @@ describe("compact exploration UI", () => {
   it("does not substitute Season values if all-player Recent fetch fails", async () => {
     const all = vi.fn(async () => { throw Error("network"); }), read = vi.fn(async () => ({ values: [], failed: [] }));
     await mount(<DataExplorerView league="NPB" rows={rows} teams={manifest.teams} season={2026} years={[2026]} effectiveDate="2026-10-03" coverage="complete" readRecent={read} readAllRecent={all} />, "/NPB/data?period=7");
-    expect(container.textContent).toContain("全選手Recentを読み込めません"); expect(container.querySelectorAll(".explorer-result")).toHaveLength(0); expect(read).not.toHaveBeenCalled();
+    expect(container.textContent).toContain("全選手の直近成績を読み込めません"); expect(container.querySelectorAll(".explorer-result")).toHaveLength(0); expect(read).not.toHaveBeenCalled();
   });
   it("does not perform individual reads in Season mode and shows missing as a dash", async () => {
     const read = vi.fn(async () => ({ values: [], failed: [] })); await mount(explorer(read));
@@ -124,7 +125,7 @@ describe("compact exploration UI", () => {
   });
   it("replaces typing edits without losing the previous filter step on Back", async () => {
     await mount(explorer());
-    await act(async () => { const select = container.querySelector('select') as HTMLSelectElement;
+    await act(async () => { const select = selectNamed("期間");
       select.value = "14"; select.dispatchEvent(new Event("change", { bubbles: true })); });
     const input = container.querySelector('input[type="search"]') as HTMLInputElement;
     for (const value of ["選", "選手"]) await act(async () => {
@@ -309,8 +310,8 @@ describe("discovery and glossary", () => {
   });
   it("provides four search destinations, favorites and scope-correct series links", async () => {
     await mount(<DiscoveryNavigation league="MLB" />, "/MLB/search?season=2020&q=保存");
-    const link = [...container.querySelectorAll("a")].find(a => a.textContent === "Series")!;
-    expect(link.href).toContain("season=2020"); expect(link.href).toContain("competition=postseason"); expect(container.textContent).toContain("Favoritesから探す");
+    const link = [...container.querySelectorAll("a")].find(a => a.textContent === "シリーズ")!;
+    expect(link.href).toContain("season=2020"); expect(link.href).toContain("competition=postseason"); expect(container.textContent).toContain("お気に入りから探す");
   });
   it("distinguishes no-games from unknown dates and retains partial-game links", async () => {
     const { deps } = seedNpb();
