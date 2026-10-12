@@ -259,13 +259,17 @@ export function MlbHistoricalPlayer({ manifest, favorites, toggle, saving }: {
   const [battingOrder, setBattingOrder] = useState(1);
   const asOf = params.get("asOfDate") ?? params.get("date");
   const context = (key: string, value: string) => { const next = new URLSearchParams(params); next.set(key,value); if(key === "season") { next.delete("date");next.delete("asOfDate"); } setParams(next); };
-  if (!playerId || !canonicalPlayerId.test(playerId)) return <div className="screen"><PageHeading eyebrow="MLB / 過去記録" title="選手" />
+  // Scope can lack this player's profile. Keep recovery controls independent
+  // of profile readiness instead of stranding the user in the missing scope.
+  const fallbackYear = season ?? manifest.seasons.at(-1)?.season;
+  const fallbackContext = fallbackYear === undefined ? null : <PlayerContextBar backTo={historicalSearchPath(`?season=${fallbackYear}${scopeQuery}`)}><label><span className="sr-only">シーズン</span><select value={fallbackYear} onChange={e => context("season",e.target.value)}>{!manifest.seasons.some(s=>s.season===fallbackYear) && <option value={fallbackYear}>{fallbackYear}年 · 未収録</option>}{manifest.seasons.map(s=><option key={s.season} value={s.season}>{s.season}年</option>)}</select></label><CompetitionSelect season={fallbackYear} /></PlayerContextBar>;
+  if (!playerId || !canonicalPlayerId.test(playerId)) return <div className="screen">{fallbackContext}<PageHeading eyebrow="MLB / 過去記録" title="選手" />
     <DataState kind="no-data" title="選手が見つかりません" /></div>;
-  if (result.status !== "ready") return <div className="screen"><PageHeading eyebrow="MLB / 過去記録" title="選手" />
+  if (result.status !== "ready") return <div className="screen">{fallbackContext}<PageHeading eyebrow="MLB / 過去記録" title="選手" />
     <Status state={result} missing="選手が見つかりません" /></div>;
   const profile = result.value!;
   const player = profile.player;
-  if (season !== null && !player.seasons.includes(season)) return <div className="screen"><PageHeading eyebrow="MLB · HISTORICAL" title={player.name} /><DataState kind="unsupported" title={season === 2026 ? "2026年の試合結果・選手成績は未対応" : "この選手の指定シーズンは未収録です"} action="収録済みの成績を見る" to={`/MLB/players/${encodeURIComponent(player.id)}`} /></div>;
+  if (season !== null && !player.seasons.includes(season)) return <div className="screen">{fallbackContext}<PageHeading eyebrow="MLB · HISTORICAL" title={player.name} /><DataState kind="unsupported" title={season === 2026 ? "2026年の試合結果・選手成績は未対応" : "この選手の指定シーズンは未収録です"} action="収録済みの成績を見る" to={`/MLB/players/${encodeURIComponent(player.id)}`} /></div>;
   const selected = season ?? player.seasons.at(-1)!;
   const games = profile.batting.filter(row => row.season === selected);
   const pitches = profile.pitching.filter(row => row.season === selected);

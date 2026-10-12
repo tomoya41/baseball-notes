@@ -4,13 +4,13 @@ import { Link } from "react-router-dom";
 import { MetricLabel } from "./components";
 import { AppDialog } from "./app-dialog";
 
-export function PlayerContextBar({ backTo, children, tools }: { backTo: string; children: ReactNode; tools: ReactNode }) {
+export function PlayerContextBar({ backTo, children, tools }: { backTo: string; children: ReactNode; tools?: ReactNode }) {
   const [open, setOpen] = useState(false);
   return <div className="player-context-bar">
     <Link className="icon-button" to={backTo} aria-label="選手一覧に戻る"><ChevronLeft size={20} aria-hidden="true" /></Link>
     <div className="player-context-controls">{children}</div>
-    <button className="icon-button" aria-label="選手の操作" aria-haspopup="dialog" onClick={() => setOpen(true)}><MoreHorizontal size={20} aria-hidden="true" /></button>
-    {open && <AppDialog label="比較・推移・保存" onClose={() => setOpen(false)}><h2>比較・推移・保存</h2><nav className="player-action-menu" aria-label="選手の比較と推移" onClick={e => { if (e.target instanceof Element && e.target.closest("a")) setOpen(false); }}>{tools}</nav></AppDialog>}
+    {tools && <button className="icon-button" aria-label="選手の操作" aria-haspopup="dialog" onClick={() => setOpen(true)}><MoreHorizontal size={20} aria-hidden="true" /></button>}
+    {open && tools && <AppDialog label="比較・推移・保存" onClose={() => setOpen(false)}><h2>比較・推移・保存</h2><nav className="player-action-menu" aria-label="選手の比較と推移" onClick={e => { if (e.target instanceof Element && e.target.closest("a")) setOpen(false); }}>{tools}</nav></AppDialog>}
   </div>;
 }
 

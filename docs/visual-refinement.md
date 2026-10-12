@@ -85,7 +85,7 @@ Physical Android, TalkBack, actual disconnected cold start, hardware scroll perf
 - NPB Current remains saved/partial where applicable, HOT and Ranking Gates closed. MLB remains Historical **2014–2025**, Regular and Postseason separated. Player headline is full selected-Season totals; its Recent section alone uses the selected as-of date. An as-of label must not imply that full-season totals were truncated.
 - Before-publication read-only HTTP validation: **45 requests PASS**, including seven protected NPB payload hashes, two old MLB hashes, twelve-year Regular/Postseason manifests and canonical count/identity checks. Full app-only staged-data preservation and after-publication HTTP results belong to the final delivery evidence.
 
-Full regression checkpoint: **102 files / 1,178 tests**, lint, strict typecheck, Web and Vercel build PASS. Android CI must build debug APK and unsigned release AAB from the exact final head before merge. Build success is not device QA.
+Initial refinement checkpoint: **102 files / 1,178 tests**, lint, strict typecheck, Web and Vercel build PASS. Codex Review found one P2: a scope with no corresponding Player profile hid the scope control as well. Recovery controls now remain in missing/loading/error and unrecorded-season states, without fictitious Player actions. Four additional tests cover both scope directions and error/loading recovery. The final **1,182-test** full run and exact-head Android build are recorded in the PR delivery evidence. Build success is not device QA.
 
 ## Remaining
 

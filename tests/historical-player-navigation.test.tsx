@@ -9,16 +9,19 @@ import { PostseasonAvailabilityContext } from "../src/ui/postseason-availability
 import { postseasonCapabilities } from "../src/domain/postseason-capabilities";
 
 const id = "mlb:player:e70b8d12-aa41-50c0-9c1b-d468d451355f";
-vi.mock("../src/ui/use-mlb-historical", () => ({
-  useHistoricalStatic: () => ({ status: "ready", retry: () => {}, value: {
+const absent = vi.hoisted(()=>({scope:"" as string,status:"missing" as "missing"|"loading"|"error"}));
+vi.mock("../src/ui/use-mlb-historical", async () => {
+  const {useHistoricalCompetition}=await import("../src/ui/historical-competition-context");
+  return {
+  useHistoricalStatic: () => { const scope=useHistoricalCompetition();return absent.scope===scope ? {status:absent.status,retry:()=>{},value:null} : ({ status: "ready", retry: () => {}, value: {
     player: { id: "mlb:player:e70b8d12-aa41-50c0-9c1b-d468d451355f", name: "大谷翔平", seasons: [2020, 2025], positions: [], teamIds: [], bats: null, throws: null },
     batting: [], pitching: [], seasonTotals: {}, collectedRange: "2020–2025", collectedRangeTotals: { batting: null, pitching: null },
-  } }),
-}));
+  } });},
+};});
 const manifest = { schemaVersion: 1 as const, league: "MLB" as const, current2026: "unavailable" as const, teams: [],
   seasons: [2020, 2025].map(season => ({ season, firstDate: `${season}-07-01`, lastDate: `${season}-10-01`, games: 0, coverage: "complete" as const, playerCount: 1 })) };
 function Location() { const location = useLocation(); return <output>{location.pathname}{location.search}</output>; }
-beforeEach(() => { vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true); HTMLDialogElement.prototype.showModal = function () { this.setAttribute("open",""); }; });
+beforeEach(() => { absent.scope="";absent.status="missing";vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true); HTMLDialogElement.prototype.showModal = function () { this.setAttribute("open",""); }; });
 afterEach(() => { vi.unstubAllGlobals(); });
 describe("historical player navigation context", () => {
   it.each(["advanced", "obsolete"])("keeps the selected year and as-of date through %s fallback", async section => {
@@ -79,4 +82,27 @@ it("pins the displayed default year when changing competition from a URL without
     expect(element.querySelector("output")?.textContent).toContain("/stats?season=2025&competition=postseason");
     expect(element.querySelector(".player-identity")?.textContent).toContain("2025 MLB · ポストシーズン");
   } finally { await act(async()=>root.unmount());element.remove(); }
+});
+
+it.each(["regular","postseason"] as const)("recovers from a player profile absent in %s without browser Back",async missingScope=>{
+  absent.scope=missingScope;
+  const initialScope=missingScope==="regular"?"postseason":"regular";
+  const element=document.createElement("div"),root=createRoot(element);document.body.append(element);
+  try { await act(async()=>root.render(<MemoryRouter initialEntries={[`/MLB/players/${encodeURIComponent(id)}/analysis?season=2020${initialScope==="postseason"?"&competition=postseason":""}`]}><Location/><Routes><Route path="/MLB/players/:playerId/:section?" element={<ScopedPlayer/>}/></Routes></MemoryRouter>));
+    await act(async()=>{const scope=element.querySelector<HTMLSelectElement>('select[aria-label="集計対象"]')!;scope.value=missingScope;scope.dispatchEvent(new Event("change",{bubbles:true}));});
+    expect(element.textContent).toContain("選手が見つかりません");expect(element.querySelector('button[aria-label="選手の操作"]')).toBeNull();
+    const scope=element.querySelector<HTMLSelectElement>('select[aria-label="集計対象"]')!;
+    expect(scope.value).toBe(missingScope);expect(element.querySelector<HTMLSelectElement>('.player-context-controls select')?.value).toBe("2020");
+    await act(async()=>{scope.value=initialScope;scope.dispatchEvent(new Event("change",{bubbles:true}));});
+    expect(element.querySelector("output")?.textContent).toContain("/analysis?season=2020");expect(element.querySelector(".player-identity")?.textContent).toContain("大谷翔平");expect(element.textContent).not.toContain("選手が見つかりません");
+  } finally {await act(async()=>root.unmount());element.remove();}
+});
+it.each(["error","loading"] as const)("retains scope recovery during profile %s",async status=>{
+  absent.scope="postseason";absent.status=status;
+  const element=document.createElement("div"),root=createRoot(element);document.body.append(element);
+  try {await act(async()=>root.render(<MemoryRouter initialEntries={[`/MLB/players/${encodeURIComponent(id)}/stats?season=2020&competition=postseason`]}><Location/><Routes><Route path="/MLB/players/:playerId/:section?" element={<ScopedPlayer/>}/></Routes></MemoryRouter>));
+    const scope=element.querySelector<HTMLSelectElement>('select[aria-label="集計対象"]')!;expect(scope.value).toBe("postseason");
+    await act(async()=>{scope.value="regular";scope.dispatchEvent(new Event("change",{bubbles:true}));});
+    expect(element.querySelector("output")?.textContent).toBe(`/MLB/players/${encodeURIComponent(id)}/stats?season=2020`);expect(element.querySelector(".player-identity")?.textContent).toContain("大谷翔平");
+  } finally {await act(async()=>root.unmount());element.remove();}
 });
