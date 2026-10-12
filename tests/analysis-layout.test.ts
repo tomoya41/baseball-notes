@@ -9,7 +9,7 @@ it("keeps NPB condition disclosures stacked while MLB's condition selector stays
   `;
   const style = document.createElement("style");
   try {
-    style.textContent = readFileSync("src/ui/styles.css", "utf8");
+    style.textContent = readFileSync("src/ui/styles.css", "utf8") + readFileSync("src/ui/feature-layouts.css", "utf8") + readFileSync("src/ui/final-design.css", "utf8");
     document.head.append(style);
     expect(window.getComputedStyle(document.querySelector("details")!).display).toBe("block");
     expect(window.getComputedStyle(document.querySelector("label")!).display).toBe("flex");

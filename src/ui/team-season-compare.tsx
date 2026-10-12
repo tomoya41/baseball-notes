@@ -15,15 +15,10 @@ import { useHistoricalStatic } from "./use-mlb-historical";
 import { matchesMlbPlayerName } from "../domain/mlb-japanese-display";
 import { readNpbExplorerSeason } from "../application/explorer-readers";
 
+import { ComparisonBars } from "./comparison-bars";
+
 const labels: Record<string, string> = { G: "試合", W: "勝", L: "敗", T: "分", runsFor: "得点", runsAgainst: "失点", runDifference: "得失点差", outsRecorded: "IP", K9: "K/9" };
 const scopeSuffix = (season: number, scope: string) => `?season=${season}${scope === "postseason" ? "&competition=postseason" : ""}`;
-function ComparisonBars({ rows, metric }: { rows: ComparisonRow[]; metric: string }) {
-  const max = Math.max(1, ...rows.map(r => Math.abs(metricNumber(r.metrics, metric) ?? 0)));
-  return <figure className="comparison-bars"><figcaption><MetricLabel metric={metric} label={labels[metric] ?? metric} /></figcaption>{rows.map(r => {
-    const n = metricNumber(r.metrics, metric);
-    return <div className="comparison-bar" key={r.id}><strong>{r.name}</strong><div className="comparison-bar__track">{n !== null && <span className={n < 0 ? "negative" : ""} style={{ width: `${Math.abs(n) / max * 100}%` }} />}</div><span>{comparisonValue(metric, n)}{r.metrics?.[metric]?.status === "partial" && " *"}</span></div>;
-  })}<small>保存済み集計の比較。順位や優劣の判定ではありません。</small></figure>;
-}
 function ComparisonResults({ league, rows, keys, metric, scope, yearMode = false }: { league: League; rows: ComparisonRow[]; keys: string[]; metric: string; scope: string; yearMode?: boolean }) {
   const dates = new Set(rows.map(r => r.date));
   if (!yearMode && dates.size > 1) return <DataState kind="source-unavailable" title="比較の基準日が一致しません" />;
@@ -45,7 +40,7 @@ function TeamWorkspace({ league, teams, years, load, competition = "regular", fa
   return <div className="screen"><PageHeading eyebrow={`${league} · ${competition === "postseason" ? "POSTSEASON" : "REGULAR SEASON"}`} title="球団比較" /><p className="inline-note">2〜4球団の保存済み成績を比較。公式順位ではありません。</p>{!supported || !known ? <DataState kind="unsupported" title="指定の年度・条件・球団は未対応です" /> : <>
     <div className="compare-selection">{ids.map(id => <div key={id}><Link to={`/${league}/teams/${encodeURIComponent(id)}${scopeSuffix(year, competition)}`}>{teams.find(t => t.id === id)!.name}</Link><button aria-label={`${teams.find(t => t.id === id)!.name}を球団比較から外す`} onClick={() => update("teams", ids.filter(t => t !== id).join(","))}>×</button></div>)}</div>
     {ids.length < 4 && <details open={ids.length < 2}><summary>球団を追加（{ids.length}/4）</summary><label className="search-field"><span className="sr-only">比較する球団</span><input type="search" placeholder="球団名で検索" value={query} onChange={e => setQuery(e.target.value)} /></label><div className="row-list">{candidates.map(t => <button className="player-row" key={t.id} onClick={() => { update("teams", [...ids, t.id].join(",")); setQuery(""); }}>{favorites.includes(t.id) && "★ "}{t.name} ＋</button>)}</div></details>}
-    <div className="explorer-filter-grid"><label>シーズン<select value={year} onChange={e => update("season", e.target.value)}>{years.map(y => <option key={y}>{y}</option>)}</select></label><label>集計条件<select value={view} onChange={e => update("view", e.target.value)}>{choices.map(v => <option key={v} value={v}>{v === "season" ? "Season" : v === "home" ? "Home" : v === "away" ? "Away" : `直近${v}日${league === "NPB" ? "・試合結果" : ""}`}</option>)}</select></label><label>比較グラフ<select value={metric} onChange={e => update("metric", e.target.value)}>{displayKeys.map(k => <option key={k} value={k}>{labels[k] ?? k}</option>)}</select></label></div>
+    <details open={ids.length < 2}><summary>期間・指標を変更 · {year}年</summary><div className="explorer-filter-grid"><label>シーズン<select value={year} onChange={e => update("season", e.target.value)}>{years.map(y => <option key={y}>{y}</option>)}</select></label><label>集計条件<select value={view} onChange={e => update("view", e.target.value)}>{choices.map(v => <option key={v} value={v}>{v === "season" ? "シーズン" : v === "home" ? "ホーム" : v === "away" ? "アウェー" : `直近${v}日${league === "NPB" ? "・試合結果" : ""}`}</option>)}</select></label><label>比較グラフ<select value={metric} onChange={e => update("metric", e.target.value)}>{displayKeys.map(k => <option key={k} value={k}>{labels[k] ?? k}</option>)}</select></label></div></details>
     {league === "MLB" && <p className="inline-note">Recentは選択年度・集計対象の最終保存日が基準です。現在の成績ではありません。</p>}
     {ids.length < 2 && <p className="data-notice">比較する球団を2〜4つ選んでください。</p>}{ids.length > 0 && (state?.key !== key ? <LoadingSkeleton /> : state.error ? <DataState kind="source-unavailable" title="球団比較を読み込めません" /> : <ComparisonResults league={league} rows={rows} keys={displayKeys} metric={metric} scope={`${year} ${competition} Team ${view}`} />)}
     <Link to={`/${league}/teams${scopeSuffix(year, competition)}`}>球団一覧 →</Link>
@@ -93,3 +88,6 @@ export function SeasonCompare({ league, manifest, services }: { league: League; 
     {years.length < 2 && <p className="data-notice">現在のNPBは2026年のみ収録。年度差は未対応です。</p>}{unsupported ? <DataState kind="unsupported" title="指定年度・集計対象は未収録です" /> : entity && !valid ? <DataState kind="unsupported" title="canonical IDが一致しません" /> : valid && (errorKey === key ? <DataState kind="source-unavailable" title="シーズン比較を取得できません" /> : state?.key !== key ? <LoadingSkeleton /> : <><h2>{name}</h2><ComparisonResults league={league} rows={state.rows} keys={[...new Set([kind === "team" ? "G" : role === "batting" ? "PA" : "outsRecorded", metric, kind === "team" ? "runDifference" : role === "batting" ? "HR" : "SO"])]} metric={metric} scope={`${competition} 保存済み年度 ${selected.join("/")}`} yearMode /><div className="row-list">{selected.map(y => <Link key={y} className="player-row" to={`/${league}/${kind === "team" ? "teams" : "players"}/${encodeURIComponent(entity)}${kind === "player" ? "/stats" : ""}${scopeSuffix(y, competition)}`}>{y}年の保存済み成績 →</Link>)}</div></>)}
   </div>;
 }
+
+
+

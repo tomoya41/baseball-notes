@@ -81,7 +81,7 @@ describe("daily product surfaces", () => {
     expect(container.textContent).not.toContain("シーズン成績は未収録");
     expect(container.textContent).toContain("1勝 / 1試合");
   });
-  it.each([["loading", "この試合終了時のSeries"], ["error", "Series情報を読み込めません"], ["missing", "この年のSeries情報は未収録"]])("shows explicit %s Series state", async (status, text) => {
+  it.each([["loading", "この試合終了時のシリーズ"], ["error", "Series情報を読み込めません"], ["missing", "この年のSeries情報は未収録"]])("shows explicit %s Series state", async (status, text) => {
     staticValues.set("status:postseason/hub/2025.json", status);
     await render(<PostseasonGameContext season={2025} gameId="one" names={id => id} />);
     expect(container.textContent).toContain(text);

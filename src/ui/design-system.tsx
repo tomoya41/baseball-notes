@@ -1,24 +1,36 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { ArrowUpRight, ChevronLeft, ChevronRight, Moon, Sun, Monitor } from "lucide-react";
 import { Link } from "react-router-dom";
-import { readAppearance, setAppearance } from "../app/appearance";
+import { parseTheme, setAppearance } from "../app/appearance";
 import type { ThemePreference } from "../app/appearance";
+import { AppDialog } from "./app-dialog";
 const themes = [{ id: "system", label: "端末に合わせる", icon: Monitor }, { id: "light", label: "ライト", icon: Sun }, { id: "dark", label: "ダーク", icon: Moon }] as const;
 export function ThemeSettings() {
-  const [theme, setTheme] = useState<ThemePreference>("system");
+  // mount() restores this before rendering; the applied theme also remains
+  // authoritative when persistence fails and only the current session changes.
+  const [theme, setTheme] = useState<ThemePreference>(() => parseTheme(typeof document === "undefined" ? null : document.documentElement.dataset.theme ?? null));
   const [message, setMessage] = useState("");
-  useEffect(() => { let active = true; void readAppearance().then(value => {
-    if (active) setTheme(value);
-  }).catch(() => {}); return () => { active = false; }; }, []);
+  const version = useRef(0);
+  useEffect(() => {
+    const sync = () => { version.current++; setTheme(parseTheme(document.documentElement.dataset.theme ?? null)); setMessage(""); };
+    window.addEventListener("baseball:appearance-changed", sync);
+    return () => window.removeEventListener("baseball:appearance-changed", sync);
+  }, []);
   const change = async (value: ThemePreference) => {
-    setTheme(value);
-    try { await setAppearance(value); setMessage(""); }
-    catch { setMessage("この表示設定は今回の起動中だけ適用します。"); }
+    const saved = setAppearance(value);
+    window.dispatchEvent(new Event("baseball:appearance-changed"));
+    const request = version.current;
+    try { await saved; if (request === version.current) setMessage(""); }
+    catch { if (request === version.current) setMessage("この表示設定は今回の起動中だけ適用します。"); }
   };
   return <section className="settings-panel"><h2>表示モード</h2><div className="segmented" role="group" aria-label="表示モード">
     {themes.map(({ id, label, icon: Icon }) => <button key={id} aria-pressed={theme === id} onClick={() => void change(id)}><Icon size={17} aria-hidden="true" />{label}</button>)}
   </div>{message && <p role="status" className="inline-note">{message}</p>}</section>;
+}
+export function ThemeControl() {
+  const [open, setOpen] = useState(false);
+  return <><button className="icon-button" aria-label="表示モードを変更" aria-haspopup="dialog" onClick={() => setOpen(true)}><Sun size={20} aria-hidden="true" /></button>{open && <AppDialog label="表示モード" onClose={() => setOpen(false)}><ThemeSettings /></AppDialog>}</>;
 }
 export function Monogram({ name, large = false }: { name: string; large?: boolean }) {
   const initials = name.includes(" ") ? name.split(" ").filter(Boolean).slice(0, 2).map(part => part[0]).join("") : name.slice(0, 2);
@@ -44,7 +56,7 @@ export function ScoreboardRow({ to, away, home, awayScore, homeScore, status, da
 }) {
   const known = awayScore !== null && homeScore !== null;
   return <Link className="scoreboard-row" to={to} aria-label={`${date ? `${date}、` : ""}ビジター ${away} ${awayScore ?? "得点未確認"}、ホーム ${home} ${homeScore ?? "得点未確認"}、${status}${gameNumber ? `、第${gameNumber}試合` : ""}${partial ? "、一部データ確認中" : ""}`}>
-    <span className="scoreboard-match"><span className={`scoreboard-side${known && awayScore > homeScore ? " scoreboard-winner" : ""}`}><span className="scoreboard-club"><small>ビジター</small><ClubName name={away} /></span><strong>{awayScore ?? "—"}</strong></span><span className={`scoreboard-side${known && homeScore > awayScore ? " scoreboard-winner" : ""}`}><span className="scoreboard-club"><small>ホーム</small><ClubName name={home} /></span><strong>{homeScore ?? "—"}</strong></span></span>
+    <span className="scoreboard-match"><span className={`scoreboard-side${known && awayScore > homeScore ? " scoreboard-winner" : ""}`}><span className="scoreboard-marker" aria-hidden="true">A</span><span className="scoreboard-club"><small>ビジター</small><ClubName name={away} /></span><strong>{awayScore ?? "—"}</strong></span><span className={`scoreboard-side${known && homeScore > awayScore ? " scoreboard-winner" : ""}`}><span className="scoreboard-marker" aria-hidden="true">H</span><span className="scoreboard-club"><small>ホーム</small><ClubName name={home} /></span><strong>{homeScore ?? "—"}</strong></span></span>
     <span className="scoreboard-center">{date && <small>{date}</small>}<span>{status}</span>{gameNumber !== undefined && gameNumber > 0 && <small>第{gameNumber}試合</small>}{partial && <small className="scoreboard-partial">一部データ確認中</small>}<ChevronRight size={16} aria-hidden="true" /></span>
   </Link>;
 }

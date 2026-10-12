@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import type { Favorite } from "../domain/models";
 import type { HistoricalPlayer } from "../data/mlb-historical";
-import { historicalPositions } from "../presentation/historical-player";
 import { FavoriteButton, MetricLabel } from "./components";
 import { Monogram } from "./design-system";
 import { useHistoricalStatic } from "./use-mlb-historical";
@@ -17,19 +16,19 @@ function FollowStatLine({ values, pitching }: { values: Values; pitching: boolea
   </div>;
 }
 
-export function MlbFollowPlayer({ player, season, favorites, toggle, saving }: {
+export function MlbFollowPlayer({ player, season, favorites, toggle, saving, featured = false }: {
   player: Pick<HistoricalPlayer,"id"|"name"|"positions"|"seasons"> & { postseasonOnly?: boolean }; season: number; favorites: Favorite[];
-  toggle: (target: Pick<Favorite,"league"|"kind"|"entityId">) => void; saving: boolean;
+  toggle: (target: Pick<Favorite,"league"|"kind"|"entityId">) => void; saving: boolean; featured?: boolean;
 }) {
   // A maximum of four existing profile payloads, never the multi-megabyte all-player Season payload.
   const profile = useHistoricalStatic<{ seasonTotals: Record<string,{batting:Values|null;pitching:Values|null}> }>(`${player.postseasonOnly ? "postseason/" : ""}players/${player.id.replaceAll(":","_")}.json`);
   const totals = profile.value?.seasonTotals[String(season)];
   const hasBatting = totals?.batting != null && totals.batting.PA?.value !== 0;
   const year = player.seasons.includes(season) ? season : player.seasons.at(-1)!;
-  return <article className="follow-player">
+  return <article className={`follow-player${featured ? " follow-player--featured" : ""}`}>
     <Link className="follow-player-identity" to={`/MLB/players/${encodeURIComponent(player.id)}?season=${year}${player.postseasonOnly ? "&competition=postseason" : ""}`}>
       <Monogram name={player.name} />
-      <span><strong>{player.name}</strong><small>{historicalPositions(player.positions).split("・").slice(0, 2).join("・")}{player.postseasonOnly && " · Postseason"}</small></span>
+      <span><strong>{player.name}</strong><small>{season}年{totals ? ` · ${[hasBatting && "打撃", totals.pitching && "投球"].filter(Boolean).join("・") || "成績未収録"}` : "の記録"}{player.postseasonOnly && " · Postseason"}</small></span>
     </Link>
     <FavoriteButton active={favorites.some(f => f.league === "MLB" && f.entityId === player.id)} saving={saving}
       label={player.name} onClick={() => toggle({ league: "MLB", kind: "player", entityId: player.id })} />
