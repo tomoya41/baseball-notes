@@ -427,7 +427,7 @@ export function MlbHistoricalMy({ manifest, favorites, toggle, saving }: {
   const byId = new Map(index.value?.players.map(player => [player.id, player]) ?? []);
   return <div className="screen"><PageHeading eyebrow="MLB / My" title="My" detail="この端末に保存しています" />
     <label className="schedule-season">過去シーズン<select value={season} onChange={e => setParams(previous => { const next = new URLSearchParams(previous); next.set("season", e.target.value); return next; })}>{!manifest.seasons.some(s => s.season === season) && <option value={season}>未収録</option>}{manifest.seasons.map(s => <option key={s.season}>{s.season}</option>)}</select></label>
-    <MlbPersonalDashboard directory={index} manifest={manifest} season={season} favorites={favorites} toggle={toggle} saving={saving} />
+    {favorites.some(f => f.league === "MLB") ? <>    <MlbPersonalDashboard directory={index} manifest={manifest} season={season} favorites={favorites} toggle={toggle} saving={saving} />
     <SectionHeader title="お気に入り選手" />
     <Link className="button" to="/NPB/my">NPBのお気に入りへ</Link>
     {index.status === "loading" ? <LoadingSkeleton /> : !saved.length ?
@@ -438,7 +438,7 @@ export function MlbHistoricalMy({ manifest, favorites, toggle, saving }: {
           <span>選手情報を確認できません</span>}
         <FavoriteButton active saving={saving} label={byId.get(item.entityId)?.name ?? "登録済み選手"}
           onClick={() => toggle(item)} />
-      </div>)}</div>}<MyLibrary league="MLB" /></div>;
+      </div>)}</div>}</> : <section className="my-start"><p>選手・球団をフォローすると、ここで過去シーズンの成績を追えます。</p><div className="hub-links"><Link to={`/MLB/search?season=${season}${competition === "postseason" ? "&competition=postseason" : ""}`}>選手を探す →</Link><Link to={`/MLB/teams?season=${season}${competition === "postseason" ? "&competition=postseason" : ""}`}>球団を探す →</Link></div></section>}<MyLibrary league="MLB" /></div>;
 }
 
 type HistoricalRouteProps = {

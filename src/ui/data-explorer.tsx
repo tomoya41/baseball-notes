@@ -75,7 +75,8 @@ export function DataExplorerView({ league, rows, teams, season, years, effective
     void (allRecent ? readAllRecent!(days) : readRecent(idsKey.split(","), days)).then(result => { if (active) { setErrorKey(""); setRecent({ key, ...result }); } }).catch(() => { if (active) setErrorKey(key); });
     return () => { active = false; };
   }, [key, idsKey, days, readRecent, readAllRecent, allRecent, attempt]);
-  const source = days ? recent?.key === key ? recent.values.map(row=>({...row,battingRole:rows.find(p=>p.playerId===row.playerId)?.battingRole})) : [] : rows;
+  const rolesById = useMemo(() => { const index = new Map<string, ExplorerRow["battingRole"]>(); for (const row of rows) if (!index.has(row.playerId)) index.set(row.playerId, row.battingRole); return index; }, [rows]);
+  const source = days ? recent?.key === key ? recent.values.map(row=>({...row,battingRole:rolesById.get(row.playerId)})) : [] : rows;
   const matched = league === "MLB" ? source.filter(r => matchesMlbPlayerName(r.playerId, r.name, query.name)) : source;
   const inputErrors = explorerInputErrors(params);
   const visible = inputErrors.length ? [] : exploreRows(matched, { ...query, name: league === "MLB" ? "" : query.name });

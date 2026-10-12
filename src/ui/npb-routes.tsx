@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes, useLocation, useSearchParams } from "react-router-dom";
+import { Link, Navigate, Route, Routes, useLocation, useSearchParams } from "react-router-dom";
 import type { Services } from "../app/services";
 import type { Favorite } from "../domain/models";
 import { NpbHome, NpbTeam } from "./npb-product";
@@ -50,7 +50,7 @@ export function NpbRoutes({ services, favorites, toggle, saving }: { services: S
     <Route path="compare" element={<NpbPlayerCompare services={services} />} />
     <Route path="records" element={<NpbRecordsScreen repository={services.gameSurface} />} />
     <Route path="ranking" element={<Navigate to="/NPB/records" replace />} />
-    <Route path="my" element={<div className="screen"><header><p className="eyebrow">NPB / My</p><h1>My</h1></header><NpbPersonalDashboard services={services} favorites={favorites} toggle={toggle} saving={saving} /><NpbSavedPlayers heading={false} repository={services.directory} favorites={favorites} toggle={toggle} saving={saving} /><MyLibrary league="NPB" /></div>} />
+    <Route path="my" element={<div className="screen"><header><p className="eyebrow">NPB / My</p><h1>My</h1></header>{favorites.some(f => f.league === "NPB") ? <><NpbPersonalDashboard services={services} favorites={favorites} toggle={toggle} saving={saving} /><NpbSavedPlayers heading={false} repository={services.directory} favorites={favorites} toggle={toggle} saving={saving} /></> : <section className="my-start"><p>選手・球団をフォローすると、ここで成績や変化を追えます。</p><div className="hub-links"><Link to="/NPB/search">選手を探す →</Link><Link to="/NPB/teams">球団を探す →</Link></div></section>}<MyLibrary league="NPB" /></div>} />
     <Route path="favorites" element={<Navigate to="/NPB/my" replace />} />
     <Route path="players" element={<Navigate to="/NPB/search" replace />} />
     <Route path="*" element={<Navigate to="/NPB/home" replace />} />
