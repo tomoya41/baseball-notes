@@ -133,7 +133,8 @@ describe("NPB Team independent Season loading", () => {
   it("preserves the normal saved Season metrics, zero values and partial Coverage notice", async () => {
     await mountTeam(async url => Response.json(String(url).includes("catalog/") ? catalog : season));
     expect(container.textContent).toContain("2026シーズン"); expect(container.textContent).toContain("一部データ確認中");
-    expect([...container.querySelectorAll(".metric-tile__value")].map(e => e.textContent)).toEqual(["1", "0", "1", "0", "0", "1"]);
+    expect([...container.querySelectorAll(".team-record dd")].map(e => e.textContent)).toEqual(["0", "1", "0"]);
+    expect([...container.querySelectorAll(".metric-tile__value")].map(e => e.textContent)).toEqual(["1", "0", "1"]);
     expect(container.querySelector('[role="alert"]')).toBeNull();
   });
   it("retains the publication generation but labels the earlier team aggregate cutoff", async () => {

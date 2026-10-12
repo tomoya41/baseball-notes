@@ -15,6 +15,7 @@ import { NpbToday, NpbPersonalDashboard } from "./daily-dashboard";
 import { TeamFavorite } from "./team-favorite";
 import { ExplorerLinks } from "./data-explorer";
 import { LifecycleLinks } from "./npb-lifecycle";
+import { HomeDiscover, TeamRecord } from "./signature";
 
 type Target = Pick<Favorite, "kind" | "entityId" | "league">;
 export function NpbStandings({ services, onEffectiveDate }: { services: Services; onEffectiveDate?: (date: string) => void }) {
@@ -42,12 +43,12 @@ export function NpbHome({ services, favorites, toggle, saving }: { services: Ser
   };
   return <div className="screen home-screen home-hub"><CompetitionHeader league="NPB" context={effectiveDate ? `${effectiveDate.slice(0, 4)}年 · 公式戦` : "公式戦"} />
     <HomeModeNav active={view} onChange={changeView} modes={[{id:"scores",label:"スコア"},{id:"standings",label:"順位表"},{id:"follow",label:"フォロー"}]} />
-    {view === "scores" && <><NpbToday services={services} favorites={favorites} toggle={toggle} saving={saving} onEffectiveDate={setEffectiveDate} /><NpbPersonalDashboard services={services} favorites={favorites} toggle={toggle} saving={saving} compact /></>}
+    {view === "scores" && <div className="home-main"><NpbToday services={services} favorites={favorites} toggle={toggle} saving={saving} onEffectiveDate={setEffectiveDate} /><div className="home-follow"><NpbPersonalDashboard services={services} favorites={favorites} toggle={toggle} saving={saving} compact /></div></div>}
     {view === "standings" && <NpbStandings services={services} onEffectiveDate={setEffectiveDate} />}
     {view === "follow" && <><NpbToday services={services} favorites={favorites} toggle={toggle} saving={saving} personal /><NpbPersonalDashboard services={services} favorites={favorites} toggle={toggle} saving={saving} compact /><section className="home-section"><SectionHeader title="お気に入り選手" action="My" to="/NPB/my" /><NpbSavedPlayers repository={services.directory} favorites={favorites} toggle={toggle} saving={saving} compact /></section></>}
-    <div className="hub-links"><Link to="/NPB/search">選手を探す <span>→</span></Link><Link to="/NPB/teams">球団ページ <span>→</span></Link><Link to="/NPB/compare">選手比較 <span>→</span></Link><Link to="/NPB/records">個人成績 <span>→</span></Link><Link to="/NPB/postseason">Postseason <span>→</span></Link></div>
-    <div className="hub-readiness"><NpbHotSection repository={services.hot} /></div>
-    <ExplorerLinks league="NPB" />
+    <HomeDiscover league="NPB" />
+    <details className="home-availability"><summary>HOT · 公開状況を確認</summary><NpbHotSection repository={services.hot} /></details>
+    <details className="home-tools"><summary>記録・ポストシーズン・その他の機能</summary><div className="hub-links"><Link to="/NPB/records">個人成績 →</Link><Link to="/NPB/postseason">ポストシーズン →</Link></div><ExplorerLinks league="NPB" /></details>
   </div>;
 }
 export function NpbProfileDetails({ player }: { player: NpbCatalog["players"][number] }) {
@@ -86,7 +87,7 @@ export function NpbTeam({ services, hub = false, favorites = [], toggle, saving 
       {seasonState === "loading" ? <LoadingSkeleton /> : seasonState === "error" ?
         <DataState kind="source-unavailable" title="シーズン成績を読み込めません" /> : season && stats ? <>
         <p className="inline-note">{season.period.to}までの保存済み試合 · {season.coverage.status === "complete" ? "確認済み" : "一部データ確認中"}</p>
-        <div className="metric-grid">{[["試合", stats.G], ["勝", stats.W], ["敗", stats.L], ["引分", stats.T], ["得点", stats.runsFor], ["失点", stats.runsAgainst]].map(([label, value]) => <div className="metric-tile" key={label}><span className="metric-tile__label">{label}</span><strong className="metric-tile__value">{value ?? "—"}</strong></div>)}</div>
+        <TeamRecord wins={stats.W} losses={stats.L} ties={stats.T} /><div className="metric-grid team-secondary-stats">{[["試合", stats.G], ["得点", stats.runsFor], ["失点", stats.runsAgainst]].map(([label, value]) => <div className="metric-tile" key={label}><span className="metric-tile__label">{label}</span><strong className="metric-tile__value">{value ?? "—"}</strong></div>)}</div>
       </> : <DataState kind="no-data" title="保存済みのシーズン成績はありません" />}
     </section>
     {hub && <>{stats && <details className="team-stat-details"><summary>チーム打撃・投球成績</summary><TeamMetrics batting={stats.batting} pitching={stats.pitching} /></details>}<NpbTeamActivity key={team.teamId} services={services} teamId={team.teamId} /><div className="hub-links"><Link to="/NPB/compare">選手比較 →</Link><Link to="/NPB/my">お気に入り →</Link></div></>}
