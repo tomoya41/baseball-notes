@@ -51,6 +51,11 @@ public class ReleaseQualityTest {
         InstrumentationRegistry.getInstrumentation().waitForIdleSync();
         Thread.sleep(400);
     }
+    private String preference(String key) throws Exception {
+        js("delete document.documentElement.dataset.qaPreference;Capacitor.Plugins.Preferences.get({key:'" + key + "'}).then(v=>document.documentElement.dataset.qaPreference=v.value || 'null')");
+        waitCondition("Native preference loaded", "document.documentElement.dataset.qaPreference!==undefined");
+        return js("document.documentElement.dataset.qaPreference");
+    }
     private void setTheme(String theme, String label) throws Exception {
         js("location.hash='#/MLB/my'");
         waitCondition("Appearance controls", "location.hash==='#/MLB/my' && !!document.querySelector('[aria-label=\"表示モード\"] button')");
@@ -145,6 +150,31 @@ public class ReleaseQualityTest {
         assertEquals("true", js("!!document.querySelector('button[aria-label=\"大谷翔平をお気に入りに追加\"]')"));
         js("document.querySelector('button[aria-label=\"大谷翔平をお気に入りに追加\"]').click()");
         waitCondition("Favorite saved", "!!document.querySelector('button[aria-label=\"大谷翔平をお気に入りから削除\"]')");
+        // Exercise actual React controls and the Native Preferences adapter, not an injected library fixture.
+        js("document.querySelector('button[aria-label=\"選手の操作\"]').click()");
+        waitCondition("Player collection action", "!!document.querySelector('button[aria-label=\"大谷翔平をコレクションに整理\"]')");
+        js("document.querySelector('button[aria-label=\"大谷翔平をコレクションに整理\"]').click()");
+        waitCondition("Collection picker", "!!document.querySelector('dialog[aria-label=\"大谷翔平のコレクション\"] input[maxlength=\"60\"]')");
+        js("(()=>{const e=document.querySelector('dialog[aria-label=\"大谷翔平のコレクション\"] input[maxlength=\"60\"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(e,'端末QA');e.dispatchEvent(new Event('input',{bubbles:true}));})()");
+        waitPaint();
+        js("document.querySelector('dialog[aria-label=\"大谷翔平のコレクション\"] .library-picker-content form').requestSubmit()");
+        waitCondition("Created Collection label", "Array.from(document.querySelectorAll('dialog label')).some(e=>e.textContent==='端末QA')");
+        js("Array.from(document.querySelectorAll('dialog label')).find(e=>e.textContent==='端末QA').querySelector('input').click()");
+        waitCondition("Collection membership saved in UI", "Array.from(document.querySelectorAll('dialog label')).find(e=>e.textContent==='端末QA')?.querySelector('input').checked");
+        assertTrue("Collection persists canonical ID", preference("baseball:personal-library:v1").contains("e70b8d12-aa41-50c0-9c1b-d468d451355f"));
+        scenario.onActivity(activity -> activity.getOnBackPressedDispatcher().onBackPressed());
+        waitCondition("Back closes top picker only", "document.querySelectorAll('dialog[open]').length===1 && !!document.querySelector('button[aria-label=\"大谷翔平をコレクションに整理\"]')");
+        assertEquals("Picker focus returns to its trigger", "true", js("document.activeElement?.getAttribute('aria-label')==='大谷翔平をコレクションに整理'"));
+        scenario.onActivity(activity -> activity.getOnBackPressedDispatcher().onBackPressed());
+        waitCondition("Back closes parent actions", "!document.querySelector('dialog[open]') && location.hash.includes('e70b8d12')");
+        js("location.hash='#/MLB/watch-center'"); waitText("フォローの変化");
+        waitCondition("Watch observation finished", "Array.from(document.querySelectorAll('button')).some(b=>b.textContent==='データを確認' && !b.disabled)");
+        js("document.querySelector('.watch-preferences').open=true");
+        js("Array.from(document.querySelectorAll('.watch-preferences label')).find(e=>e.textContent==='確認できる連続記録').querySelector('input').click()");
+        waitCondition("Watch rule off", "!Array.from(document.querySelectorAll('.watch-preferences label')).find(e=>e.textContent==='確認できる連続記録')?.querySelector('input').checked");
+        String savedWatch = preference("baseball:personal-watch:v1");
+        assertFalse("Watch preference written through native adapter", new org.json.JSONObject(savedWatch).getJSONObject("preferences").getBoolean("streaks"));
+        screenshot("watch-rules-360");
         js("location.hash='#/MLB/players/mlb%3Aplayer%3Ae70b8d12-aa41-50c0-9c1b-d468d451355f/analysis'");
         System.out.println("PERF analysis_ms=" + waitText("高度分析"));
         js("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='対戦・状況別を見る').click()");
@@ -170,6 +200,15 @@ public class ReleaseQualityTest {
         System.out.println("PERF offline_player_ms=" + offline);
         assertEquals("true", js("!!document.querySelector('button[aria-label=\"大谷翔平をお気に入りから削除\"]')"));
         assertEquals("true", js("document.documentElement.scrollWidth <= window.innerWidth"));
+        js("location.hash='#/MLB/library?tab=collections'"); waitText("端末QA"); waitText("大谷翔平");
+        assertEquals("true", js("document.documentElement.scrollWidth <= window.innerWidth"));
+        screenshot("collections-offline-restart");
+        String beforeOfflineWatch = preference("baseball:personal-watch:v1");
+        js("location.hash='#/MLB/watch-center'"); waitText("オフラインです。");
+        js("document.querySelector('.watch-preferences').open=true");
+        assertEquals("Watch rule survives Activity restart", "false", js("Array.from(document.querySelectorAll('.watch-preferences label')).find(e=>e.textContent==='確認できる連続記録')?.querySelector('input').checked"));
+        assertEquals("Offline Watch does not advance baselines, alerts or read state", beforeOfflineWatch, preference("baseball:personal-watch:v1"));
+        screenshot("watch-offline-restart");
         shell("svc wifi enable"); shell("svc data enable");
         js("location.hash='#/MLB/my'"); waitText("大谷翔平");
     }
