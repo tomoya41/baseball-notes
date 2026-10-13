@@ -31,7 +31,12 @@ export async function inspectNpbCalendar(client: DataClient, date: string) {
     SUM(CASE WHEN g.game_date=? THEN 1 ELSE 0 END) AS target_games,
     SUM(CASE WHEN g.game_date<=? AND (g.status NOT IN ('final','postponed','canceled') OR
       (g.status='final' AND (COALESCE(c.game_status,'unknown')!='complete' OR
-        COALESCE(c.batting_status,'unknown')!='complete' OR COALESCE(c.pitching_status,'unknown')!='complete'))) THEN 1 ELSE 0 END) AS pending_games
+        COALESCE(c.batting_status,'unknown')!='complete' OR COALESCE(c.pitching_status,'unknown')!='complete' OR
+        c.expected_batters<18 OR c.expected_pitchers<2 OR
+        c.expected_batters!=c.collected_batters OR c.mapped_batters!=c.collected_batters OR
+        c.expected_pitchers!=c.collected_pitchers OR c.mapped_pitchers!=c.collected_pitchers OR
+        c.collected_batters!=(SELECT COUNT(*) FROM player_game_batting b WHERE b.game_id=g.game_id) OR
+        c.collected_pitchers!=(SELECT COUNT(*) FROM player_game_pitching p WHERE p.game_id=g.game_id)))) THEN 1 ELSE 0 END) AS pending_games
     FROM npb_games g LEFT JOIN npb_game_completeness c ON c.game_id=g.game_id WHERE g.season=?`,
     args: [date, date, Number(date.slice(0, 4))] });
   const row = result.rows[0];
