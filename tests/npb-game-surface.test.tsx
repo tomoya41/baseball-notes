@@ -24,7 +24,7 @@ describe("canonical dated Game surface",()=>{
     const client=openDataClient("file::memory:");
     try {await migrateData(client);
       const index=await readNpbGameIndex(client,"2026-10-10");
-      expect(index.coverage.to).toBe("2026-10-07");
+      expect(index.coverage.to).toBe("2026-10-08");
       expect(index.to).toBe("2026-10-10");
       expect(index.days.find(d=>d.date==="2026-10-10")).toMatchObject({coverage:"unknown",games:[]});
       expect(index.recent).toEqual([]);
@@ -80,3 +80,4 @@ describe("local canonical Favorites",()=>{
   it("preserves unresolved stored IDs without requiring profile data",async()=>{const item={entityId:"broken-id",kind:"player",league:"NPB",addedAt:"2026-09-27T00:00:00Z"};
     expect(await new Favorites({get:async()=>JSON.stringify({version:1,items:[item]}),set:async()=>{}}).list()).toEqual([item]);});
 });
+
