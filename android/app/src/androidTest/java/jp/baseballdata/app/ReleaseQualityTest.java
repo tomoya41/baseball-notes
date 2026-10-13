@@ -163,7 +163,7 @@ public class ReleaseQualityTest {
         waitCondition("Collection membership saved in UI", "Array.from(document.querySelectorAll('dialog label')).find(e=>e.textContent==='端末QA')?.querySelector('input').checked");
         assertTrue("Collection persists canonical ID", preference("baseball:personal-library:v1").contains("e70b8d12-aa41-50c0-9c1b-d468d451355f"));
         scenario.onActivity(activity -> activity.getOnBackPressedDispatcher().onBackPressed());
-        waitCondition("Back closes top picker only", "document.querySelectorAll('dialog[open]').length===1 && !!document.querySelector('button[aria-label=\"大谷翔平をコレクションに整理\"]')");
+        waitCondition("Back closes top picker only and restores focus after unmount", "document.querySelectorAll('dialog').length===1 && document.querySelectorAll('dialog[open]').length===1 && document.activeElement?.getAttribute('aria-label')==='大谷翔平をコレクションに整理'");
         assertEquals("Picker focus returns to its trigger", "true", js("document.activeElement?.getAttribute('aria-label')==='大谷翔平をコレクションに整理'"));
         scenario.onActivity(activity -> activity.getOnBackPressedDispatcher().onBackPressed());
         waitCondition("Back closes parent actions", "!document.querySelector('dialog[open]') && location.hash.includes('e70b8d12')");

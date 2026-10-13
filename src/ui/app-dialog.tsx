@@ -23,7 +23,12 @@ export function AppDialog({ children, label, labelledBy, onClose }: {
       if (trigger instanceof HTMLElement && trigger.isConnected) trigger.focus({ preventScroll: true });
     };
   }, []);
-  const dialog = <dialog ref={ref} className="metric-dialog app-dialog" aria-label={label} aria-labelledby={labelledBy} onClose={onClose}>
+  // React portal events follow the component tree: a nested picker's close must
+  // not also invoke the containing action sheet's close handler.
+  const dialog = <dialog ref={ref} className="metric-dialog app-dialog" aria-label={label} aria-labelledby={labelledBy} onClose={event => {
+    event.stopPropagation();
+    if (event.target === event.currentTarget) onClose();
+  }}>
     <div className="app-dialog-content">{children}</div>
     <form method="dialog"><button className="button">閉じる</button></form>
   </dialog>;

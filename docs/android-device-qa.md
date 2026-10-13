@@ -32,4 +32,6 @@ Mark **PASS / FAIL / NOT RUN** for every row, with screenshot and reproduction U
 
 Repository instrumentation exercises actual canonical MLB Player/Game, native Back, nested picker focus return, Light/Dark, 150% font, portrait/landscape recreation, favorite persistence, Collection membership via real UI, Watch rule persistence and byte-identical offline Watch state. Shell smoke covers offline first launch, connection recovery and force-stopped cached Player restart. Web tests cover deep-link query validation, persistence migration/corruption/quota/dedup/stale/partial rules. OS gesture recognition, real TalkBack, physical networking/OEM lifecycle and production signing/domain verification remain manual.
 
+The added emulator test exposed an actual nested-dialog bug, also reproduced with Escape on the published browser: React close propagation dismissed both the collection picker and its parent actions sheet. `AppDialog` now isolates its close event. Regression uses a real parent close-state handler rather than the previous no-op test handler, and native QA waits for picker unmount and trigger focus before proceeding. No visual redesign or persistence contract change.
+
 Signed builds, signing-key ownership and Play steps are in [Play preparation](play-release-readiness.md). No release key was generated or modified.

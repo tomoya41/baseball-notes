@@ -20,8 +20,9 @@ afterEach(async () => {
   vi.unstubAllGlobals();
 });
 function Nested({ startOpen=false }: {startOpen?:boolean}) {
-  const [child,setChild]=useState(startOpen);
-  return <AppDialog label="選手の操作" onClose={()=>{}}><button onClick={()=>setChild(true)}>整理</button>{child&&<AppDialog label="コレクション" onClose={()=>setChild(false)}>選手一覧</AppDialog>}</AppDialog>;
+  const [child,setChild]=useState(startOpen),[parent,setParent]=useState(true);
+  if(!parent)return <p>親も閉じました</p>;
+  return <AppDialog label="選手の操作" onClose={()=>setParent(false)}><button onClick={()=>setChild(true)}>整理</button>{child&&<AppDialog label="コレクション" onClose={()=>setChild(false)}>選手一覧</AppDialog>}</AppDialog>;
 }
 it("restores the original page scroll when navigation unmounts nested dialogs together",async()=>{
   await act(async()=>root.render(<Nested startOpen/>));expect(document.querySelectorAll("dialog[open]")).toHaveLength(2);expect(document.documentElement.style.overflow).toBe("hidden");
