@@ -30,14 +30,14 @@ export async function auditNpbIntegrity(client: DataClient, window: PeriodWindow
     (SELECT COUNT(*) FROM player_game_batting b WHERE b.game_id=g.game_id) AS saved_batting,
     (SELECT COUNT(*) FROM player_game_pitching p WHERE p.game_id=g.game_id) AS saved_pitching
     FROM npb_games g LEFT JOIN npb_game_completeness c ON c.game_id=g.game_id
-    WHERE g.season=? AND g.game_date>? ORDER BY g.game_date,g.game_id`, args: [season, window.to] });
+    WHERE g.season=? AND g.game_date>=? ORDER BY g.game_date,g.game_id`, args: [season, window.to] });
   const parse = (value: unknown) => value == null ? null : JSON.parse(String(value)) as unknown;
   return { season, window, asOfDate, pendingGames: pending.rows.map(({ checks_json, issues_json, shortened_evidence, ...r }) =>
     ({ ...r, checks: parse(checks_json), issues: parse(issues_json), shortenedEvidence: parse(shortened_evidence) })),
   boundaryGames: boundary.rows, coverage, partialDays: coverage.calendar.filter(d => d.status !== "complete" && d.status !== "no_games")
     .map(d => ({ ...d, latestRun: days.rows.find(r => r.target_date === d.date) ?? null,
       stages: stages.rows.filter(r => r.target_date === d.date) })),
-  boundaryDays: days.rows.filter(r => String(r.target_date) > window.to) };
+  boundaryDays: days.rows.filter(r => String(r.target_date) >= window.to) };
 }
 
 export async function hashNpbIntegrity(client: DataClient) {

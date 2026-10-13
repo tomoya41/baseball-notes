@@ -23,7 +23,7 @@ test("read-only audit retains null scores, missing proof, pending boundary Games
     expect(result.pendingGames.map(r => r.game_id)).toEqual(["not-started", "missing-proof", "makeup"]);
     expect(result.pendingGames[0]?.home_score).toBeNull();
     expect(result.pendingGames[1]?.checks).toBeNull();
-    expect(result.boundaryGames.map(r => r.game_id)).toEqual(["makeup", "future"]);
+    expect(result.boundaryGames.map(r => r.game_id)).toEqual(["missing-proof", "makeup", "future"]);
     expect(result.partialDays).toMatchObject([{ date: "2026-10-06", status: "unknown", latestRun: null },
       { date: "2026-10-07", status: "partial", latestRun: { error_summary: "missing proof" } }]);
     expect(result.coverage.summary).toMatchObject({ complete: 0, partial: 1, unknown: 1 });

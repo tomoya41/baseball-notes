@@ -14,16 +14,20 @@ test("unknown year requires reviewed metadata, not an automatic successful skip"
   expect(() => planNpbCalendar("daily", "2027-10-13")).toThrow("metadata unavailable");
 });
 test.each(["daily", "weekly", "monthly", "season"] as const)("outside reviewed calendar %s is a skip, not no-game or season completion", mode => {
-  expect(planNpbCalendar(mode, "2026-10-13")).toEqual({ skip: true, reason: "outside_reviewed_regular_calendar", date: "2026-10-13", reviewedFrom: "2026-03-27", reviewedTo: "2026-10-07", endDateStatus: "scheduled" });
-  expect(() => planNpbCalendar(mode, "2026-10-08", 1)).toThrow("Saved fixture outside reviewed calendar");
+  expect(planNpbCalendar(mode, "2026-10-13")).toEqual({ skip: true, reason: "outside_reviewed_regular_calendar", date: "2026-10-13", reviewedFrom: "2026-03-27", reviewedTo: "2026-10-08", endDateStatus: "scheduled" });
+  expect(() => planNpbCalendar(mode, "2026-10-09", 1)).toThrow("Saved fixture outside reviewed calendar");
 });
 test("preseason windows intersecting the calendar are clamped; wholly outside windows skip", () => {
   expect(planNpbCalendar("daily", "2026-03-26").skip).toBe(true);
   expect(planNpbCalendar("weekly", "2026-03-20")).toEqual({ skip: false, range: { from: "2026-03-27", to: "2026-04-02" } });
-  expect(planNpbCalendar("monthly", "2026-09-27")).toEqual({ skip: false, range: { from: "2026-09-27", to: "2026-10-07" } });
+  expect(planNpbCalendar("monthly", "2026-09-27")).toEqual({ skip: false, range: { from: "2026-09-27", to: "2026-10-08" } });
 });
 test("an empty in-calendar day is not a skip or completeness proof", () => {
   expect(planNpbCalendar("daily", "2026-10-07", 0)).toEqual({ skip: false, range: { from: "2026-10-07", to: "2026-10-07" } });
+});
+test("verified October 8 regular fixture is admitted, October 10 postseason stays outside", () => {
+  expect(planNpbCalendar("daily", "2026-10-08", 1)).toEqual({ skip: false, range: { from: "2026-10-08", to: "2026-10-08" } });
+  expect(planNpbCalendar("daily", "2026-10-10")).toMatchObject({ skip: true, endDateStatus: "scheduled" });
 });
 test("new/restored schema can bootstrap an admitted sync; outside preflight never migrates", async () => {
   const client = openDataClient("file::memory:");
@@ -37,15 +41,15 @@ test("new/restored schema can bootstrap an admitted sync; outside preflight neve
     expect((await planNpbScheduleSync(client, "daily", "2026-10-13")).skip).toBe(true);
     expect((await client.execute("SELECT name FROM sqlite_master WHERE type='table'")).rows).toEqual(tables);
     // A known makeup fixture remains an explicit exception even if outside the calendar.
-    await client.execute(`INSERT INTO npb_games VALUES ('fixture',2026,'2026-10-08','home','away',1,NULL,NULL,'scheduled',NULL,NULL,'nf3','fixture','https://nf3.sakura.ne.jp/','2026-10-01','hash')`);
-    await expect(planNpbScheduleSync(client, "daily", "2026-10-08")).rejects.toThrow("Saved fixture outside reviewed calendar");
+    await client.execute(`INSERT INTO npb_games VALUES ('fixture',2026,'2026-10-09','home','away',1,NULL,NULL,'scheduled',NULL,NULL,'nf3','fixture','https://nf3.sakura.ne.jp/','2026-10-01','hash')`);
+    await expect(planNpbScheduleSync(client, "daily", "2026-10-09")).rejects.toThrow("Saved fixture outside reviewed calendar");
     expect((await client.execute("SELECT COUNT(*) AS n FROM npb_games")).rows[0]?.n).toBe(1);
   } finally { client.close(); }
 });
 test("read-only lifecycle monitoring preserves known makeup dates and pending coverage", async () => {
-  const execute = vi.fn(async () => ({ rows: [{ latest_game_date: "2026-10-08", target_games: 0, pending_games: 6 }] }));
+  const execute = vi.fn(async () => ({ rows: [{ latest_game_date: "2026-10-09", target_games: 0, pending_games: 6 }] }));
   const result = await inspectNpbCalendar({ execute } as unknown as DataClient, "2026-10-13");
-  expect(result).toMatchObject({ latestSavedGameDate: "2026-10-08", pendingSavedGames: 6, seasonEndConfirmed: false, metadataReviewRequired: true });
+  expect(result).toMatchObject({ latestSavedGameDate: "2026-10-09", pendingSavedGames: 6, seasonEndConfirmed: false, metadataReviewRequired: true });
   expect(result.calendar.skip).toBe(true);
   expect(execute).toHaveBeenCalledTimes(1);
   expect(execute.mock.calls[0]?.length).toBe(1);
@@ -69,3 +73,4 @@ test("the protected callback uses the triggering Run and the exact actual Day Fa
   expect(callback.jobs.admission.if).toContain("github.event.workflow_run.head_repository.id == github.repository_id");
   expect(callback.jobs.admission.steps.at(-1).env.NPB_TRIGGER_RUN_ID).toBe("${{ github.event.workflow_run.id }}");
 });
+
