@@ -24,13 +24,17 @@ All nine have saved final scores. None is an actually ongoing Game. All nine hav
 | 06-20 | `b2f541664347c98a1f62` | Yakult–Hiroshima | 6–8 | partial / 30,7 | Same check failure; final score alone insufficient. |
 | 09-09 | `51c3f0f8dba6a7bb710e` | Lotte–Rakuten | 10–4 | partial / 23,9 | Same check failure, no saved exception evidence. |
 | 09-09 | `645ed547effceffc5ca9` | DeNA–Yakult | 9–2 | partial / 24,5 | Same check failure, no saved exception evidence. |
-| 09-28 | `5956839637147e5631b2` | Seibu–Rakuten | 2–4 | no completeness row | Score-only save. Existing provider dry-run cannot find Sep28 pitching-usage date. |
-| 09-28 | `7978b5cc540f0334e2d7` | DeNA–Hiroshima | 3–4 | no completeness row | Independently same missing source date, no participant proof. |
-| 09-28 | `fd5f433285c5557b67a6` | Lotte–Nippon-Ham | 3–8 | no completeness row | Independently same missing source date, no participant proof. |
+| 09-28 | `5956839637147e5631b2` | Seibu–Rakuten | 2–4 | no completeness row | Score-only save. Daily rolling path fails; year-wide scratch validation succeeds with 18 batters / 12 pitchers. |
+| 09-28 | `7978b5cc540f0334e2d7` | DeNA–Hiroshima | 3–4 | no completeness row | Year-wide scratch validation succeeds independently: 34 batters / 9 pitchers. No canonical proof stored by dry-run. |
+| 09-28 | `fd5f433285c5557b67a6` | Lotte–Nippon-Ham | 3–8 | no completeness row | Year-wide scratch validation succeeds independently: 28 batters / 9 pitchers. No canonical proof stored by dry-run. |
 
 Source record for each is retained in the audit, with `source_url`, `collected_at`, Game content hash, stored counts, checks/issues and completion evidence. No majority merge, fabricated PA, default zero, fixture re-dating or exception-list relaxation.
 
 September 28 read-only dry-run [38398896806](https://github.com/tomoya41/baseball-notes/actions/runs/38398896806): **9 requests / 9 pages / 0 retries**, all three `nf3 pitch usage date missing: 2026-09-28`, no stored/new Facts or mappings. Workflow failure is this deliberate validation rejection, not a newly broken production Scheduled Run. The one-off preview input was removed after diagnosis; existing collector remains available for a formally justified future replay. Raw responses were not uploaded or published.
+
+This is the **daily rolling two-week discovery path** (`pc_all_data_last2w_pn.htm`), not proof the provider lacks every historical path. Existing year-wide discovery was then exercised with `npb-historical-backfill.yml`, explicit September 28 only, **mode=dry-run**, [38403472647](https://github.com/tomoya41/baseball-notes/actions/runs/38403472647). All three Games validated complete, 80 batting / 30 pitching candidate rows, zero mapping additions/conflicts, **302 requests / 302 pages / 0 retries / 30 cache hits / 16,153,912 response bytes / 306.97 s**. The one traced write affected scratch metadata only. Remote protected counts stayed **899 / 23,468 / 7,112 / 1,662 mappings / 855 completeness / 261 Days**, PA unknown=0. “storedBatters/storedPitchers” in the nested dry-run result are simulated validation counts, not persisted canonical Facts. This is a feasible restoration route, not Source blocked.
+
+No `ingest` run was performed in this diagnostic delivery. Actual restoration additionally requires real write/readback/replay and portable backup evidence; dry-run cannot upgrade the existing September 28 Day. The next narrow data-repair unit can use the existing explicit-date backfill path, preserving known Game values and existing Facts, then regenerate the complete projection family. It must remain `trigger=repair`, never scheduled proof. No source permission was expanded.
 
 ## Six partial dates
 
@@ -77,7 +81,7 @@ HOT stays **not_ready**: latest published batting eligible=0, starter=5, relief=
 ## Delivery / next action
 
 1. Independently verified calendar correction + coordinated read-only regeneration; preserve canonical DB and all MLB release files.
-2. Resolve six final-inning/out-count Source proofs individually and recover September 28 missing source data only if legitimately available. Then use existing validation/replay/backup path; never force completeness.
+2. September 28 year-wide restoration is technically validated: perform its controlled existing backfill/write/readback/backup path as a separate data-repair unit. Six earlier final-inning/out-count proofs remain independently unresolved; never force completeness.
 3. Obtain actual successful scheduled complete Fact collection + encrypted backup proof; outside-season skips cannot supply it. Keep freshness monitoring honest during offseason.
 4. Android checks and Play readiness: [physical QA](android-device-qa.md), [store preparation](play-release-readiness.md). Physical device/TalkBack/signing/Play remain separate owner gates.
 
