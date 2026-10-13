@@ -18,7 +18,8 @@ export async function auditNpbIntegrity(client: DataClient, window: PeriodWindow
     FROM npb_games g LEFT JOIN npb_game_completeness c ON c.game_id=g.game_id
     WHERE g.season=? AND g.game_date<=? AND
     (g.status NOT IN ('final','postponed','canceled') OR
-     (g.status='final' AND COALESCE(c.game_status,'unknown')!='complete'))
+     (g.status='final' AND (COALESCE(c.game_status,'unknown')!='complete' OR
+       COALESCE(c.batting_status,'unknown')!='complete' OR COALESCE(c.pitching_status,'unknown')!='complete')))
     ORDER BY g.game_date,g.game_id`, args: [season, asOfDate] });
   const coverage = await new NpbPeriodCoverageRepository(client).findPeriodCoverage(window);
   const days = await client.execute({ sql: `SELECT * FROM (SELECT *,ROW_NUMBER() OVER

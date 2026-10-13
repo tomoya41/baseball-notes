@@ -1,6 +1,7 @@
 import { expect, test, vi } from "vitest";
 import { openDataClient, migrateData } from "../src/data/database";
 import { auditNpbIntegrity, hashNpbIntegrity } from "../src/data/npb-integrity-audit";
+import { inspectNpbCalendar } from "../src/data/npb-season-lifecycle";
 
 test("read-only audit retains null scores, missing proof, pending boundary Games and partial Day causes", async () => {
   const client = openDataClient("file::memory:");
@@ -14,20 +15,24 @@ test("read-only audit retains null scores, missing proof, pending boundary Games
     await insert("not-started", "2026-10-06", "scheduled", null);
     await insert("postponed", "2026-10-06", "postponed", null);
     await insert("future", "2026-10-14", "scheduled", null);
+    await insert("inconsistent-proof", "2026-10-07", "final", 1);
+    await client.execute(`INSERT INTO npb_game_completeness VALUES ('inconsistent-proof','partial','complete','complete',
+      18,18,18,2,2,2,'{}','[]','nf3','2026-10-08')`);
     await client.execute(`INSERT INTO npb_ingestion_stages VALUES ('2026-10-07','games','complete',1,'2026-10-08',NULL)`);
     await client.execute(`INSERT INTO npb_day_runs VALUES ('run','2026-10-07','manual','2026-10-08','2026-10-08',
       'partial','completed_with_warning',1,1,0,1,0,0,0,0,1,0,'not_exported','missing proof')`);
     const before = await hashNpbIntegrity(client);
     const execute = vi.spyOn(client, "execute");
     const result = await auditNpbIntegrity(client, { from: "2026-10-06", to: "2026-10-07", timeZone: "Asia/Tokyo" }, "2026-10-13");
-    expect(result.pendingGames.map(r => r.game_id)).toEqual(["not-started", "missing-proof", "makeup"]);
+    expect(result.pendingGames.map(r => r.game_id)).toEqual(["not-started", "inconsistent-proof", "missing-proof", "makeup"]);
     expect(result.pendingGames[0]?.home_score).toBeNull();
-    expect(result.pendingGames[1]?.checks).toBeNull();
-    expect(result.boundaryGames.map(r => r.game_id)).toEqual(["missing-proof", "makeup", "future"]);
+    expect(result.pendingGames[2]?.checks).toBeNull();
+    expect(result.boundaryGames.map(r => r.game_id)).toEqual(["inconsistent-proof", "missing-proof", "makeup", "future"]);
     expect(result.partialDays).toMatchObject([{ date: "2026-10-06", status: "unknown", latestRun: null },
       { date: "2026-10-07", status: "partial", latestRun: { error_summary: "missing proof" } }]);
     expect(result.coverage.summary).toMatchObject({ complete: 0, partial: 1, unknown: 1 });
     for (const [statement] of execute.mock.calls) expect(typeof statement === "string" ? statement : (statement as { sql: string }).sql).toMatch(/^SELECT /);
+    expect((await inspectNpbCalendar(client, "2026-10-13")).pendingSavedGames).toBe(4);
     expect(await hashNpbIntegrity(client)).toEqual(before);
   } finally { client.close(); }
 });

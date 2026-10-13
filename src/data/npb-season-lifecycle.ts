@@ -30,7 +30,8 @@ export async function inspectNpbCalendar(client: DataClient, date: string) {
   const result = await client.execute({ sql: `SELECT MAX(g.game_date) AS latest_game_date,
     SUM(CASE WHEN g.game_date=? THEN 1 ELSE 0 END) AS target_games,
     SUM(CASE WHEN g.game_date<=? AND (g.status NOT IN ('final','postponed','canceled') OR
-      (g.status='final' AND COALESCE(c.game_status,'unknown')!='complete')) THEN 1 ELSE 0 END) AS pending_games
+      (g.status='final' AND (COALESCE(c.game_status,'unknown')!='complete' OR
+        COALESCE(c.batting_status,'unknown')!='complete' OR COALESCE(c.pitching_status,'unknown')!='complete'))) THEN 1 ELSE 0 END) AS pending_games
     FROM npb_games g LEFT JOIN npb_game_completeness c ON c.game_id=g.game_id WHERE g.season=?`,
     args: [date, date, Number(date.slice(0, 4))] });
   const row = result.rows[0];

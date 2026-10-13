@@ -51,6 +51,8 @@ Period before correction: **195 dates / 164 complete / 25 no_games / 6 partial**
 
 The old `audit-npb-eod-coverage.ts` INNER JOIN omitted Games without completeness rows, hiding all three September 28 Games. It now uses the shared **LEFT JOIN** diagnostic and includes missing-proof Games, nullable values, latest Day/stages and boundary Games. Seven bounded SELECT queries, no per-Player requests.
 
+Codex Review P2 also identified inconsistent evidence rows: overall Game complete with batting/pitching partial, failed or null. Both this audit and the lifecycle monitor now require **all three statuses complete** before excluding a final Game from pending counts. A real SQLite fixture verifies this case, missing-proof Games, postponed/future exclusions and unchanged hashes. Coverage evidence itself is not modified.
+
 `npb-freshness.yml` manual `integrity_audit=true` runs `audit-npb-data-integrity.ts`; scheduled behavior is unchanged. The audit does no migration, ingestion, repair or publication. Hashes/counts of eight canonical/evidence/master tables before and after prove stable observation; a concurrent change fails the invariant check rather than asserting no change.
 
 Initial [read-only audit 38398222784](https://github.com/tomoya41/baseball-notes/actions/runs/38398222784): 7.33 s, 0 writes, 0 Source requests. Protected counts: **899 Games / 23,468 batting / 7,112 pitching / 855 completeness / 261 Day runs / 260 stages / 23 permanent events / 755 master-history rows**. Raw rows are hashed only; artifact contains bounded Game metadata and summaries, not a raw provider dump.
