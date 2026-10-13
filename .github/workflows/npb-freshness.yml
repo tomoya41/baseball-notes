@@ -8,10 +8,6 @@ on:
         description: Read-only saved Game/Day integrity audit (no source acquisition or repairs)
         type: boolean
         default: false
-      pending_preview:
-        description: Dry-run existing nf3 proof for September 28 only (no DB writes, no publication)
-        type: boolean
-        default: false
 permissions:
   contents: read
   actions: read
@@ -58,19 +54,4 @@ jobs:
         with:
           name: npb-integrity-read-only
           path: .data/integrity-release/npb-integrity.json
-          retention-days: 7
-      - name: Preview September 28 missing Game Facts without canonical writes
-        if: always() && github.event_name == 'workflow_dispatch' && inputs.pending_preview
-        run: |
-          mkdir -p .data/integrity-release
-          npx tsx scripts/collect-npb-day.ts --date=2026-09-28 --dry-run --require-remote --trigger=repair > .data/integrity-release/pending-preview.json
-        env:
-          NPB_NF3_ENABLED: ${{ vars.NPB_NF3_ENABLED }}
-          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
-          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
-      - uses: actions/upload-artifact@v4
-        if: always() && github.event_name == 'workflow_dispatch' && inputs.pending_preview
-        with:
-          name: npb-pending-preview
-          path: .data/integrity-release/pending-preview.json
           retention-days: 7

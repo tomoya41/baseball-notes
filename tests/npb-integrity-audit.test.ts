@@ -27,7 +27,7 @@ test("read-only audit retains null scores, missing proof, pending boundary Games
     expect(result.partialDays).toMatchObject([{ date: "2026-10-06", status: "unknown", latestRun: null },
       { date: "2026-10-07", status: "partial", latestRun: { error_summary: "missing proof" } }]);
     expect(result.coverage.summary).toMatchObject({ complete: 0, partial: 1, unknown: 1 });
-    for (const [statement] of execute.mock.calls) expect(typeof statement === "string" ? statement : statement.sql).toMatch(/^SELECT /);
+    for (const [statement] of execute.mock.calls) expect(typeof statement === "string" ? statement : (statement as { sql: string }).sql).toMatch(/^SELECT /);
     expect(await hashNpbIntegrity(client)).toEqual(before);
   } finally { client.close(); }
 });
