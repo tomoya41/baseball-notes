@@ -55,6 +55,8 @@ Codex Review P2 also identified inconsistent evidence rows: overall Game complet
 
 A second P2 found a hard-coded October 7 horizon in backfill inventory. Remaining calendar-date counts now use the reviewed metadata, with endpoint/after-end/invalid-date/unknown-season regression checks. This changes diagnostics only, not collection authorization or completeness.
 
+Further review corrected the active Season/Player Period guides and resilient handling of malformed saved JSON. Corrupt pending-row checks/issues/shortened evidence are retained in the DB and identified by field/reason/hash in the report; arbitrary corrupt raw text is not exposed. The CLI emits the usable report before failing for manual review. A fixture covers all three corrupt fields and verifies no mutation. This is not a normalization or repair of malformed evidence.
+
 `npb-freshness.yml` manual `integrity_audit=true` runs `audit-npb-data-integrity.ts`; scheduled behavior is unchanged. The audit does no migration, ingestion, repair or publication. Hashes/counts of eight canonical/evidence/master tables before and after prove stable observation; a concurrent change fails the invariant check rather than asserting no change.
 
 Initial [read-only audit 38398222784](https://github.com/tomoya41/baseball-notes/actions/runs/38398222784): 7.33 s, 0 writes, 0 Source requests. Protected counts: **899 Games / 23,468 batting / 7,112 pitching / 855 completeness / 261 Day runs / 260 stages / 23 permanent events / 755 master-history rows**. Raw rows are hashed only; artifact contains bounded Game metadata and summaries, not a raw provider dump.

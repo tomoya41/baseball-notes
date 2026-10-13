@@ -17,7 +17,9 @@ test("read-only audit retains null scores, missing proof, pending boundary Games
     await insert("future", "2026-10-14", "scheduled", null);
     await insert("inconsistent-proof", "2026-10-07", "final", 1);
     await client.execute(`INSERT INTO npb_game_completeness VALUES ('inconsistent-proof','partial','complete','complete',
-      18,18,18,2,2,2,'{}','[]','nf3','2026-10-08')`);
+      18,18,18,2,2,2,'broken','[','nf3','2026-10-08')`);
+    await client.execute(`INSERT INTO permanent_events VALUES ('npb:shortened-final:inconsistent-proof','shortened-final',
+      '2026-10-07','inconsistent-proof','{broken','nf3','inconsistent-proof','2026-10-08')`);
     await client.execute(`INSERT INTO npb_ingestion_stages VALUES ('2026-10-07','games','complete',1,'2026-10-08',NULL)`);
     await client.execute(`INSERT INTO npb_day_runs VALUES ('run','2026-10-07','manual','2026-10-08','2026-10-08',
       'partial','completed_with_warning',1,1,0,1,0,0,0,0,1,0,'not_exported','missing proof')`);
@@ -27,6 +29,8 @@ test("read-only audit retains null scores, missing proof, pending boundary Games
     expect(result.pendingGames.map(r => r.game_id)).toEqual(["not-started", "inconsistent-proof", "missing-proof", "makeup"]);
     expect(result.pendingGames[0]?.home_score).toBeNull();
     expect(result.pendingGames[2]?.checks).toBeNull();
+    expect(result.pendingGames[1]).toMatchObject({ checks:null,issues:null,shortenedEvidence:null,
+      evidenceErrors:[{field:"checks_json",reason:"invalid_json"},{field:"issues_json",reason:"invalid_json"},{field:"shortened_evidence",reason:"invalid_json"}] });
     expect(result.boundaryGames.map(r => r.game_id)).toEqual(["inconsistent-proof", "missing-proof", "makeup", "future"]);
     expect(result.partialDays).toMatchObject([{ date: "2026-10-06", status: "unknown", latestRun: null },
       { date: "2026-10-07", status: "partial", latestRun: { error_summary: "missing proof" } }]);

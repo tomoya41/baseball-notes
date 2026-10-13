@@ -32,12 +32,22 @@ export async function auditNpbIntegrity(client: DataClient, window: PeriodWindow
     (SELECT COUNT(*) FROM player_game_pitching p WHERE p.game_id=g.game_id) AS saved_pitching
     FROM npb_games g LEFT JOIN npb_game_completeness c ON c.game_id=g.game_id
     WHERE g.season=? AND g.game_date>=? ORDER BY g.game_date,g.game_id`, args: [season, window.to] });
-  const parse = (value: unknown) => value == null ? null : JSON.parse(String(value)) as unknown;
   return { season, window, asOfDate, pendingGames: pending.rows.map(row => {
     const r: Record<string, unknown> = Object.fromEntries(Object.entries(row));
-    const checks = parse(r.checks_json), issues = parse(r.issues_json), shortenedEvidence = parse(r.shortened_evidence);
+    const evidenceErrors: { field: string; reason: string; sha256: string }[] = [];
+    const parse = (value: unknown, field: string): unknown => {
+      if (value == null) return null;
+      try { return JSON.parse(String(value)) as unknown; }
+      catch {
+        // Preserve the database value, but never expose arbitrary corrupted raw text.
+        evidenceErrors.push({ field, reason: "invalid_json", sha256: createHash("sha256").update(String(value)).digest("hex") });
+        return null;
+      }
+    };
+    const checks = parse(r.checks_json, "checks_json"), issues = parse(r.issues_json, "issues_json"),
+      shortenedEvidence = parse(r.shortened_evidence, "shortened_evidence");
     delete r.checks_json; delete r.issues_json; delete r.shortened_evidence;
-    return { ...r, checks, issues, shortenedEvidence } as Record<string, unknown>;
+    return { ...r, checks, issues, shortenedEvidence, evidenceErrors } as Record<string, unknown> & { evidenceErrors: typeof evidenceErrors };
   }),
   boundaryGames: boundary.rows, coverage, partialDays: coverage.calendar.filter(d => d.status !== "complete" && d.status !== "no_games")
     .map(d => ({ ...d, latestRun: days.rows.find(r => r.target_date === d.date) ?? null,

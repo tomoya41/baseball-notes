@@ -14,4 +14,5 @@ try {
       "Independent explicit final status, final inning/end outs, score and complete participants"})),
     partialDays:report.partialDays,boundaryGames:report.boundaryGames,databaseWrites:0,sourceRequests:0,
     elapsedMs:performance.now()-started}));
+  if(report.pendingGames.some(r=>r.evidenceErrors.length)) throw Error("Malformed evidence requires review; report preserved");
 } finally {client.close();}
