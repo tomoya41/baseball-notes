@@ -38,9 +38,18 @@ test("read-only audit retains null scores, missing proof, pending boundary Games
     expect(result.boundaryGames.map(r => r.game_id)).toEqual(["inconsistent-proof", "missing-proof", "missing-stored-facts", "makeup", "future"]);
     expect(result.partialDays).toMatchObject([{ date: "2026-10-06", status: "unknown", latestRun: null },
       { date: "2026-10-07", status: "partial", latestRun: { error_summary: "missing proof" } }]);
-    expect(result.coverage.summary).toMatchObject({ complete: 0, partial: 1, unknown: 1 });
+    expect(result.coverage?.summary).toMatchObject({ complete: 0, partial: 1, unknown: 1 });
     for (const [statement] of execute.mock.calls) expect(typeof statement === "string" ? statement : (statement as { sql: string }).sql).toMatch(/^SELECT /);
     expect((await inspectNpbCalendar(client, "2026-10-13")).pendingSavedGames).toBe(5);
+    const midSeason=await auditNpbIntegrity(client,{from:"2026-10-06",to:"2026-10-08",timeZone:"Asia/Tokyo"},"2026-10-07");
+    expect(midSeason.coverage?.to).toBe("2026-10-07");
+    expect(midSeason.partialDays.map(d=>d.date)).toEqual(["2026-10-06","2026-10-07"]);
+    expect(midSeason.pendingGames.some(r=>r.game_id==="makeup")).toBe(false);
+    expect(midSeason.boundaryGames.some(r=>r.game_id==="makeup")).toBe(true);
+    const beforeSeason=await auditNpbIntegrity(client,{from:"2026-10-06",to:"2026-10-08",timeZone:"Asia/Tokyo"},"2026-10-05");
+    expect(beforeSeason.coverage).toBeNull();
+    expect(beforeSeason.partialDays).toEqual([]);
+    expect(beforeSeason.coverageEvaluation).toBe("before_reviewed_calendar");
     expect(await hashNpbIntegrity(client)).toEqual(before);
   } finally { client.close(); }
 });

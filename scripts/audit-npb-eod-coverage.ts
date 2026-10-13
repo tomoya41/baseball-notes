@@ -9,7 +9,7 @@ try {
   const report=await auditNpbIntegrity(client,{from:season.startDate,to:season.endDate,timeZone:"Asia/Tokyo"},
     new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Tokyo"}).format(new Date()));
   // LEFT JOIN keeps Games without completeness rows visible. Null is never zero.
-  console.log(JSON.stringify({queryCount:7,rows:report.pendingGames.map(r=>({...r,
+  console.log(JSON.stringify({queryCount:report.coverage ? 7 : 4,rows:report.pendingGames.map(r=>({...r,
     requiredEvidence:r.game_status===null?"Complete validated participants and Game/Day proof required":
       "Independent explicit final status, final inning/end outs, score and complete participants"})),
     partialDays:report.partialDays,boundaryGames:report.boundaryGames,evidenceFindings:report.evidenceFindings,databaseWrites:0,sourceRequests:0,

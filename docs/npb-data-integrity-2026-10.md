@@ -63,6 +63,8 @@ Further review corrected the active Season/Player Period guides and resilient ha
 
 The audit also scans nominally complete past Games before exclusion, compares actual stored Facts against expected/collected/mapped counts, and validates JSON **shapes** with the existing completeness/shortened-final schemas. Invalid metadata, failed complete-proof checks or wrong Game binding remain explicit findings and fail diagnostics after report emission. Lifecycle pending counts include Fact-count drift. These read-only checks do not change public Coverage or Gate rules.
 
+Coverage evaluation stops at the earlier of audit as-of date and reviewed endpoint. Future fixtures remain separate boundary diagnostics and are never counted as missing days. Before the reviewed calendar, coverage is explicitly not evaluated (`null / before_reviewed_calendar`), not an invented complete/no-game observation.
+
 `npb-freshness.yml` manual `integrity_audit=true` runs `audit-npb-data-integrity.ts`; scheduled behavior is unchanged. The audit does no migration, ingestion, repair or publication. Hashes/counts of eight canonical/evidence/master tables before and after prove stable observation; a concurrent change fails the invariant check rather than asserting no change.
 
 Initial [read-only audit 38398222784](https://github.com/tomoya41/baseball-notes/actions/runs/38398222784): 7.33 s, 0 writes, 0 Source requests. Protected counts: **899 Games / 23,468 batting / 7,112 pitching / 855 completeness / 261 Day runs / 260 stages / 23 permanent events / 755 master-history rows**. Raw rows are hashed only; artifact contains bounded Game metadata and summaries, not a raw provider dump.

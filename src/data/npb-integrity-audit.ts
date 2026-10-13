@@ -21,7 +21,10 @@ export async function auditNpbIntegrity(client: DataClient, window: PeriodWindow
     FROM npb_games g LEFT JOIN npb_game_completeness c ON c.game_id=g.game_id
     WHERE g.season=? AND g.game_date<=?
     ORDER BY g.game_date,g.game_id`, args: [season, asOfDate] });
-  const coverage = await new NpbPeriodCoverageRepository(client).findPeriodCoverage(window);
+  // Reviewed calendar and evaluated past coverage are different windows. Future
+  // fixtures stay in boundary diagnostics, never in missing-day findings.
+  const coverageWindow = { ...window, to: asOfDate < window.to ? asOfDate : window.to };
+  const coverage = asOfDate < window.from ? null : await new NpbPeriodCoverageRepository(client).findPeriodCoverage(coverageWindow);
   const days = await client.execute({ sql: `SELECT * FROM (SELECT *,ROW_NUMBER() OVER
     (PARTITION BY target_date ORDER BY started_at DESC,run_id DESC) AS ordinal FROM npb_day_runs
     WHERE target_date BETWEEN ? AND ?) WHERE ordinal=1 ORDER BY target_date`, args: [window.from, asOfDate] });
@@ -75,7 +78,8 @@ export async function auditNpbIntegrity(client: DataClient, window: PeriodWindow
   });
   return { season, window, asOfDate, checkedGames: audited.length, pendingGames: audited.filter(r => r.pending),
   evidenceFindings: audited.filter(r => r.evidenceErrors.length || r.integrityErrors.length),
-  boundaryGames: boundary.rows, coverage, partialDays: coverage.calendar.filter(d => d.status !== "complete" && d.status !== "no_games")
+  boundaryGames: boundary.rows, coverage, coverageEvaluation: coverage ? "evaluated" : "before_reviewed_calendar",
+  partialDays: (coverage?.calendar ?? []).filter(d => d.status !== "complete" && d.status !== "no_games")
     .map(d => ({ ...d, latestRun: days.rows.find(r => r.target_date === d.date) ?? null,
       stages: stages.rows.filter(r => r.target_date === d.date) })),
   boundaryDays: days.rows.filter(r => String(r.target_date) >= window.to) };
