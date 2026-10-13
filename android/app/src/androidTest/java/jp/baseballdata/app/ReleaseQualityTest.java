@@ -87,7 +87,7 @@ public class ReleaseQualityTest {
         try (FileOutputStream file = new FileOutputStream(new File(dir, name + ".png"))) { assertTrue(image.compress(Bitmap.CompressFormat.PNG, 100, file)); }
         finally { image.recycle(); }
     }
-    @After public void close() throws Exception { shell("svc wifi enable"); shell("svc data enable"); if (scenario != null) scenario.close(); }
+    @After public void close() throws Exception { shell("settings put system font_scale 1.0"); shell("wm size 360x800"); shell("svc wifi enable"); shell("svc data enable"); if (scenario != null) scenario.close(); }
     @Test public void shellDeepLinksBackAndHistorical() throws Exception {
         long start = System.currentTimeMillis(); scenario = ActivityScenario.launch(MainActivity.class);
         waitText("BASEBALL"); System.out.println("PERF shell_ms=" + (System.currentTimeMillis()-start));
@@ -100,7 +100,7 @@ public class ReleaseQualityTest {
         scenario.onActivity(activity -> activity.getOnBackPressedDispatcher().onBackPressed());
         Thread.sleep(300); assertEquals("false", js("document.getElementById('qatest').open"));
         scenario.onActivity(activity -> activity.getOnBackPressedDispatcher().onBackPressed());
-        waitText("最近の試合");
+        waitCondition("Back returned Home", "location.hash.includes('/NPB/home') && !!document.querySelector('main')");
         assertTrue("Back returns to the league Home", js("location.hash").contains("/NPB/home"));
         shell("svc wifi disable"); shell("svc data disable");
         js("location.hash='#/MLB/sources'"); waitText("Retrosheet"); waitText("Chadwick");
@@ -126,13 +126,25 @@ public class ReleaseQualityTest {
             InstrumentationRegistry.getInstrumentation().getTargetContext(), MainActivity.class);
         scenario.close(); scenario = ActivityScenario.launch(intent);
         long playerStart = System.currentTimeMillis();
-        waitCondition("Loaded Ohtani profile", "location.hash.includes('e70b8d12') && document.querySelector('.profile-header h1')?.textContent==='大谷翔平' && document.querySelector('.metric-primary-grid')?.textContent.includes('1.014') && !document.querySelector('.skeleton-page')");
+        waitCondition("Loaded Ohtani profile", "location.hash.includes('e70b8d12') && document.querySelector('.player-identity h1')?.textContent==='大谷翔平' && document.querySelector('.headline-stats')?.textContent.includes('1.014') && !document.querySelector('.skeleton-page')");
         System.out.println("PERF historical_player_ms=" + (System.currentTimeMillis()-playerStart));
         screenshot("mlb-player-360");
+        js("document.querySelector('button[aria-label=\"選手の操作\"]').click()");
+        waitCondition("Player actions dialog", "!!document.querySelector('dialog[open]')");
+        scenario.onActivity(activity -> activity.getOnBackPressedDispatcher().onBackPressed());
+        waitCondition("Back closes actions without leaving Player", "!document.querySelector('dialog[open]') && location.hash.includes('e70b8d12')");
+        shell("settings put system font_scale 1.5"); scenario.recreate(); waitText("大谷翔平"); waitViewport(360);
+        assertEquals("Large system font has no horizontal overflow", "true", js("document.documentElement.scrollWidth <= window.innerWidth"));
+        assertEquals("Expanded headline numbers remain one readable line", "true", js("Array.from(document.querySelectorAll('.headline-stats dd')).length>0 && Array.from(document.querySelectorAll('.headline-stats dd')).every(e=>{const r=document.createRange();r.selectNodeContents(e);return r.getClientRects().length===1;})"));
+        screenshot("mlb-player-font-150");
+        shell("wm size 800x360"); scenario.recreate(); waitText("大谷翔平"); waitViewport(800);
+        assertEquals("Landscape has no horizontal overflow", "true", js("document.documentElement.scrollWidth <= window.innerWidth"));
+        screenshot("mlb-player-landscape");
+        shell("settings put system font_scale 1.0"); shell("wm size 360x800"); scenario.recreate(); waitText("大谷翔平"); waitViewport(360);
         assertTrue(js("location.hash").contains("e70b8d12"));
         assertEquals("true", js("!!document.querySelector('button[aria-label=\"大谷翔平をお気に入りに追加\"]')"));
         js("document.querySelector('button[aria-label=\"大谷翔平をお気に入りに追加\"]').click()");
-        waitText("お気に入りを保存しました");
+        waitCondition("Favorite saved", "!!document.querySelector('button[aria-label=\"大谷翔平をお気に入りから削除\"]')");
         js("location.hash='#/MLB/players/mlb%3Aplayer%3Ae70b8d12-aa41-50c0-9c1b-d468d451355f/analysis'");
         System.out.println("PERF analysis_ms=" + waitText("高度分析"));
         js("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='対戦・状況別を見る').click()");

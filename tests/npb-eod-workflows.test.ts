@@ -37,7 +37,7 @@ test("Daily safety-net publication regenerates player payloads after verified Fa
 test("formal HOT re-evaluation follows completed trusted Scheduled production, never a manual proof", () => {
   const workflow = parse(readFileSync(".github/workflows/npb-season-publish.yml", "utf8"));
   expect(workflow.on.workflow_run).toEqual({ workflows: ["Daily NPB collector and Pages delivery"], types: ["completed"] });
-  const guard = workflow.jobs.stage.if;
+  const guard = workflow.jobs.admission.if;
   for (const required of ["workflow_run.event == 'schedule'", "workflow_run.conclusion == 'success'",
     "workflow_run.head_branch == 'main'", "workflow_run.head_repository.id == github.repository_id"])
     expect(guard).toContain(required);

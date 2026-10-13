@@ -7,6 +7,7 @@ import { scheduleObservation } from "../src/application/npb-schedule-observabili
 import { npbLatestStandingsSchema } from "../src/domain/standings";
 import { NpbRepository } from "../src/data/npb-repository";
 import { currentGameComplete } from "../src/data/npb-eod";
+import { planNpbCalendar, planNpbScheduleSync, type ScheduleMode } from "../src/data/npb-season-lifecycle";
 
 const option=(key:string)=>process.argv.find(a=>a.startsWith(`${key}=`))?.slice(key.length+1);
 const action=option("--action")??"watch",date=option("--date")??jstToday();
@@ -60,15 +61,26 @@ try {
     let skip=Boolean(published);
     for(const game of games)if(!["final","postponed","canceled"].includes(game.status)||
       (game.status==="final"&&!await currentGameComplete(repo,game)))skip=false;
-    result={skip,date};
+    const calendar=planNpbCalendar("daily",date,skip?0:games.length);
+    skip ||= calendar.skip;
+    result={skip,date,calendar};
     if(process.env.GITHUB_OUTPUT)await writeFile(process.env.GITHUB_OUTPUT,`skip=${skip}\ntarget_date=${date}\n`,{flag:"a"});
   } else if(action==="sync") {
     const mode=option("--range")??"daily";
     if(!["season","monthly","weekly","daily"].includes(mode))throw Error("Invalid range mode");
-    await migrateData(client);
-    result=await syncNpbSchedule(client,request,scheduleRange(mode as "season"|"monthly"|"weekly"|"daily",date));
+    // Read existing fixtures before accepting a skip; never turn a makeup Game into no-game.
+    const calendar=await planNpbScheduleSync(client,mode as ScheduleMode,date);
+    if(calendar.skip)result=calendar;
+    else {
+      const range=scheduleRange(mode as ScheduleMode,date);
+      await migrateData(client);
+      result=await syncNpbSchedule(client,request,range);
+    }
   } else if(action==="watch") {
-    result=await runEodWatcher(client,request,date,new Date(),Number(process.env.NPB_MONITOR_OFFSET_MINUTES??120),
+    if(date>jstToday())throw Error("Invalid EOD date");
+    const games=await new NpbRepository(client).findGamesByDate(date);
+    const calendar=planNpbCalendar("daily",date,games.length);
+    result=calendar.skip?{...calendar,publishRequired:false}:await runEodWatcher(client,request,date,new Date(),Number(process.env.NPB_MONITOR_OFFSET_MINUTES??120),
       process.env.GITHUB_EVENT_NAME==="schedule"?"scheduled":"manual");
     const report=result as {publishRequired:boolean};
     if(report.publishRequired) {

@@ -25,6 +25,21 @@ const render = async (child: ReactNode, initialEntries = ["/"]) => { await act(a
 function LocationProbe() { return <output data-testid="location">{useLocation().search}</output>; }
 const actions = { favorites: [], toggle: vi.fn(), saving: false };
 describe("daily product surfaces", () => {
+  it("attaches metric help to real recap values without nesting buttons in player links", async () => {
+    HTMLDialogElement.prototype.showModal = function () { this.setAttribute("open", ""); };
+    await render(<GameRecap league="MLB" batting={[{ playerId: "mlb:player:one", name: "選手", teamId: "mlb:team:one", hits: 2, homeRuns: 1, pa: 4, rbi: 2 }]} pitching={[{ playerId: "mlb:player:two", name: "投手", teamId: "mlb:team:one", outs: 18, runs: 0, so: 8 }]} complete />);
+    expect(container.querySelector(".daily-metric-help")).toBeNull();
+    expect(container.querySelector("a button")).toBeNull();
+    for (const metric of ["PA", "RBI", "IP"]) {
+      const trigger = container.querySelector<HTMLButtonElement>(`button[aria-label="${metric}の説明"]`)!;
+      expect(trigger.closest(".recap-metric-line")).not.toBeNull();
+      trigger.focus();
+      await act(async () => trigger.click());
+      expect(document.querySelector("dialog[open]")?.textContent).toContain("指標ガイド");
+      await act(async () => document.querySelector("dialog")!.dispatchEvent(new Event("close", { bubbles: true })));
+      expect(document.activeElement).toBe(trigger);
+    }
+  });
   it("uses only the actual pre-game aggregate window even when the publication observation is later",async()=>{
     const through="2026-10-01";
     const summary={season:2026,effectiveDate:"2026-10-10",period:{from:"2026-03-27",to:through},coverage:{status:"partial"},teams:[{teamId:home.id,W:1,L:2,T:0,runsFor:3,runsAgainst:4}]};
@@ -112,7 +127,7 @@ describe("daily product surfaces", () => {
     expect(container.textContent).not.toContain("今日は試合なし");
   });
   it("sends canonical team keys and retains accessible add/remove labels", async () => { await render(<GameTeamLinks league="NPB" teams={[home, away]} {...actions} />); const button = container.querySelector<HTMLButtonElement>(`[aria-label="阪神をお気に入りに追加"]`)!; await act(async () => button.click()); expect(actions.toggle).toHaveBeenCalledWith({ league: "NPB", kind: "team", entityId: home.id }); expect(container.querySelector(`a[href='/NPB/teams/${encodeURIComponent(home.id)}']`)).not.toBeNull(); });
-  it("includes a favorite with zero PA without inventing missing stats", async () => { const id = "00000000-0000-4000-8000-000000000001"; await render(<GameRecap league="NPB" batting={[{ playerId: id, name: "途中出場", teamId: home.id, pa: 0, hits: null, homeRuns: 0, rbi: null }]} pitching={[]} complete={false} favorites={[{ league: "NPB", kind: "player", entityId: id, addedAt: "2026-10-03T00:00:00Z" }]} />); expect(container.textContent).toContain("PA 0 · 安打 — · 本塁打 0 · 打点 —"); expect(container.textContent).toContain("一部データ確認中"); expect(container.querySelector("details")?.textContent).toContain("選出の根拠"); });
+  it("includes a favorite with zero PA without inventing missing stats", async () => { const id = "00000000-0000-4000-8000-000000000001"; await render(<GameRecap league="NPB" batting={[{ playerId: id, name: "途中出場", teamId: home.id, pa: 0, hits: null, homeRuns: 0, rbi: null }]} pitching={[]} complete={false} favorites={[{ league: "NPB", kind: "player", entityId: id, addedAt: "2026-10-03T00:00:00Z" }]} />); expect([...container.querySelectorAll(".recap-metric-line > span")].map(e => e.textContent)).toEqual(["PA 0", "安打 —", "本塁打 0", "打点 —"]); expect(container.textContent).toContain("一部データ確認中"); expect(container.querySelector("details")?.textContent).toContain("選出の根拠"); });
   it("keeps historical recap navigation in the selected competition", async () => { await render(<GameRecap league="MLB" batting={[{ playerId: "mlb:player:one", name: "選手", teamId: "mlb:team:one", hits: 2, homeRuns: 1, pa: 4, rbi: 2 }]} pitching={[]} complete scope="?season=2025&competition=postseason" />); expect(container.querySelector(".daily-recap-row")?.getAttribute("href")).toBe("/MLB/players/mlb%3Aplayer%3Aone?season=2025&competition=postseason"); });
   it("does not expose Recap for scheduled games", async () => { await render(<NpbGameDetailView payload={game} state="ready" />); expect(container.textContent).not.toContain("この試合の主な数字"); expect(container.textContent).toContain("開始前"); });
   it("does not fabricate prior-season summaries using data after the game", async () => { const date = vi.fn(async (d: string): Promise<GameDateIndex> => ({ schemaVersion: 1, league: "NPB", date: d, generatedAt: manifest.generatedAt, coverage: "complete", games: d === row.date ? [row] : [] })); await render(<NpbGamePreview game={game} favorites={[]} services={{ ...services, product: { ...services.product, teamSeason: async () => ({ effectiveDate: "2026-10-04", period: {from:"2026-03-27",to:"2026-10-04"} }) as Awaited<ReturnType<typeof services.product.teamSeason>> } as unknown as typeof services.product, gameSurface: { ...services.gameSurface, manifest: async () => manifest, date } as unknown as typeof services.gameSurface }} />); expect(container.textContent).toContain("試合前時点のシーズン成績は未収録"); expect(container.textContent).toContain("1勝 / 1試合"); expect(date.mock.calls.every(([d]) => d < game.date)).toBe(true); expect(container.textContent).not.toContain("予告先発投手:"); });
