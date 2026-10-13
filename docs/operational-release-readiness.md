@@ -38,6 +38,7 @@ Public snapshot: effectiveDate **2026-10-12**, master generatedAt **2026-10-13T0
 - Player year and Regular/Postseason stay above identity and headlines. The previously icon-only action now visibly says **操作**. Compare, trends, history, collections remain in the same accessible sheet. URL/selected year/scope are unchanged.
 - Game Recap removes the unrelated PA/IP/RBI help strip. Help is attached to each actual reported figure. Player links and help buttons are siblings, never nested interactive elements. Null, zero, highlights, sample, selection rules and competition links retain their meaning.
 - No HOT filter redesign or new decoration. Existing PR #27 results-first filters, mobile tabs, long names and charts are checked rather than changed without cause.
+- Native 150% font screenshots exposed decimal values wrapping midway despite a passing horizontal-overflow check. Headline metric blocks now wrap as complete blocks, while numbers stay on one line; instrumentation additionally verifies single-line numeric text rectangles.
 - Before/after images are local ignored evidence under `.data/operational-readiness/`; release evidence can be attached to the PR. Native screenshots are captured by the existing emulator job. No photos/logos or new visual dependency.
 
 ## Android readiness boundaries
@@ -64,6 +65,8 @@ Full tests include calendar boundaries, impossible dates, missing year, known ou
 The app-only Pages path preserves both published NPB and the complete released MLB **2014–2025** archive. No collector import, historical expansion, raw redistribution or canonical write is performed by app publication. Hash/Contract checks compare against the actual predeploy HTTP baseline, independently from unrelated legitimate daily updates.
 
 Final build, review, emulator, merge, Pages and HTTP results are recorded in the PR delivery comment; operational dispatches above remain explicitly manual. New scheduled post-merge runs must establish their own evidence. Do not promote this delivery to HOT/Ranking production readiness.
+
+Initial emulator [38367260282](https://github.com/tomoya41/baseball-notes/actions/runs/38367260282) passed two broad instrumentation tests and real network-off/cold/warm shell checks. Screenshots, then inspected separately, identified the numeric wrapping issue above; this Run is **not** the final visual acceptance evidence for that fix. Remote final calendar preflight [38369323170](https://github.com/tomoya41/baseball-notes/actions/runs/38369323170) confirmed HTTP 0 / SELECT 2 / DB writes 0 with schema-safe preflight. Manual is never Scheduled proof.
 
 Next priority: review existing official calendar metadata against the saved October 8 fixture and audit the nine pending saved Games; validate the next real Scheduled skip/callback. Independently perform the physical Android release checklist. Source-blocked Current MLB, NPB Postseason, Career, roster/uniform information remain separate tracks.
 

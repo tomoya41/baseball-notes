@@ -135,6 +135,7 @@ public class ReleaseQualityTest {
         waitCondition("Back closes actions without leaving Player", "!document.querySelector('dialog[open]') && location.hash.includes('e70b8d12')");
         shell("settings put system font_scale 1.5"); scenario.recreate(); waitText("大谷翔平"); waitViewport(360);
         assertEquals("Large system font has no horizontal overflow", "true", js("document.documentElement.scrollWidth <= window.innerWidth"));
+        assertEquals("Expanded headline numbers remain one readable line", "true", js("Array.from(document.querySelectorAll('.headline-stats dd')).length>0 && Array.from(document.querySelectorAll('.headline-stats dd')).every(e=>{const r=document.createRange();r.selectNodeContents(e);return r.getClientRects().length===1;})"));
         screenshot("mlb-player-font-150");
         shell("wm size 800x360"); scenario.recreate(); waitText("大谷翔平"); waitViewport(800);
         assertEquals("Landscape has no horizontal overflow", "true", js("document.documentElement.scrollWidth <= window.innerWidth"));

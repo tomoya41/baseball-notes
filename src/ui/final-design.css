@@ -544,14 +544,15 @@
 }
 
 .headline-stats dl {
-  display: grid;
-  grid-template-columns: repeat(3,minmax(0,1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin: 8px 0 0;
 }
 
 .headline-stats dl>div {
-  min-width: 0;
+  flex: 1 1 80px;
+  min-width: max-content;
 }
 
 .headline-stats dt {
@@ -565,7 +566,7 @@
   font-weight: 800;
   letter-spacing: -.035em;
   margin: 0;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
 }
 
 .headline-stats dl>div:first-child dd {
