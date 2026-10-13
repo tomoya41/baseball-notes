@@ -14,5 +14,5 @@ try {
   console.log(JSON.stringify({ observedAt: new Date().toISOString(), metadata: season, ...report,
     before, after, unchanged, databaseWrites: 0, sourceRequests: 0, elapsedMs: performance.now() - start }, null, 2));
   if (!unchanged) throw Error("Database changed during audit; obtain a stable observation before reporting invariants");
-  if (report.evidenceFindings.length) throw Error("Corrupt saved evidence requires review; diagnostic report preserved");
+  if (report.inputErrors.length || report.evidenceFindings.length) throw Error("Corrupt or unavailable saved evidence requires review; diagnostic report preserved");
 } finally { client.close(); }

@@ -2,6 +2,8 @@ import { expect, test, vi } from "vitest";
 import { openDataClient, migrateData } from "../src/data/database";
 import { auditNpbIntegrity, hashNpbIntegrity } from "../src/data/npb-integrity-audit";
 import { inspectNpbCalendar } from "../src/data/npb-season-lifecycle";
+import { NpbRepository } from "../src/data/npb-repository";
+import { validateNpbGameFacts } from "../src/data/npb-game-collector";
 
 test("read-only audit retains null scores, missing proof, pending boundary Games and partial Day causes", async () => {
   const client = openDataClient("file::memory:");
@@ -69,4 +71,40 @@ test("valid JSON with invalid evidence shapes is reported, not accepted as proof
       {field:"checks_json",reason:"invalid_shape"},{field:"issues_json",reason:"invalid_shape"},
       {field:"shortened_evidence",reason:"invalid_shape"}]);
   } finally { client.close(); }
+});
+
+test.each(["missing_team_checks","null_pa","shortened_outs_mismatch"])("revalidates actual complete Facts: %s",async mode=>{
+  const client=openDataClient("file::memory:");
+  try {
+    await migrateData(client);
+    await client.execute(`INSERT INTO npb_games VALUES ('actual',2026,'2026-10-07','home','away',1,NULL,NULL,'final',1,0,
+      'nf3','actual','https://nf3.sakura.ne.jp/','2026-10-08T00:00:00Z','hash')`);
+    for(const team of ["home","away"])for(let n=0;n<9;n++)await client.execute({sql:`INSERT INTO player_game_batting
+      (game_id,player_id,team_id,opponent_team_id,batting_order,pa,ab,hits,doubles,triples,home_runs,rbi,walks,strikeouts,hbp,sb,cs,
+       source_key,source_record_id,collected_at,runs,starter,source_url,sacrifice_hits,sacrifice_flies)
+       VALUES ('actual',?,?,?, ?,3,3,?,0,0,0,?,0,1,0,0,0,'nf3',?,'2026-10-08T00:00:00Z',?,1,'https://nf3.sakura.ne.jp/',0,0)`,
+      args:[`${team}-${n}`,team,team==="home"?"away":"home",n+1,Number(team==="home"&&n<3),Number(team==="home"&&n===0),`${team}-${n}`,Number(team==="home"&&n===0)]});
+    for(const team of ["home","away"])await client.execute({sql:`INSERT INTO player_game_pitching
+      (fact_id,game_id,player_id,team_id,opponent_team_id,role,appearance_order,ip_outs,batters_faced,hits,home_runs,walks,
+       strikeouts,runs,earned_runs,pitches,catcher_id,source_key,source_record_id,collected_at,starter,decision,source_url,hit_batters,walks_and_hit_batters)
+       VALUES (?,'actual',?,?,?,'starter',1,?,27,?,0,0,9,?,?,90,NULL,'nf3',?,'2026-10-08T00:00:00Z',1,?,'https://nf3.sakura.ne.jp/',0,0)`,
+      args:[team,`${team}-pitcher`,team,team==="home"?"away":"home",team==="home"?27:24,team==="home"?0:3,
+        Number(team==="away"),Number(team==="away"),team,team==="home"?"win":"loss"]});
+    const repo=new NpbRepository(client),game=(await repo.findGamesByDate("2026-10-07"))[0]!;
+    const proof=validateNpbGameFacts(game,18,await repo.findBattingByGame("actual"),2,await repo.findPitchingByGame("actual"),18,2);
+    expect(proof.gameStatus).toBe("complete");await repo.saveGameCompleteness(proof);
+    const window={from:"2026-10-07",to:"2026-10-08",timeZone:"Asia/Tokyo" as const};
+    expect((await auditNpbIntegrity(client,window,"2026-10-13")).evidenceFindings).toEqual([]);
+    if(mode==="missing_team_checks")await client.execute({sql:"UPDATE npb_game_completeness SET checks_json=?",args:[JSON.stringify(
+      Object.fromEntries(Object.entries(proof.checks).filter(([k])=>!k.includes(":"))))]});
+    if(mode==="null_pa")await client.execute("UPDATE player_game_batting SET pa=NULL WHERE player_id='home-0'");
+    if(mode==="shortened_outs_mismatch")await client.execute({sql:`INSERT INTO permanent_events VALUES
+      ('npb:shortened-final:actual','shortened-final','2026-10-07','actual',?,'nf3','actual','2026-10-08T00:00:00Z')`,args:[JSON.stringify({
+        gameId:"actual",provider:"nf3",observedStatus:"officially_shortened_final",observedFinalInning:5,homeTeamId:"home",awayTeamId:"away",
+        homeScore:1,awayScore:0,homePitchingOuts:15,awayPitchingOuts:12,sourceUrl:"https://nf3.sakura.ne.jp/",verifiedAt:"2026-10-08T00:00:00Z"})]});
+    const before=await hashNpbIntegrity(client),report=await auditNpbIntegrity(client,window,"2026-10-13");
+    expect(report.pendingGames).toHaveLength(1);
+    expect(report.evidenceFindings[0]?.integrityErrors.join(" ")).toContain(mode==="missing_team_checks"?"missing_required_checks":mode==="null_pa"?"plateAppearancesKnown":"pitchingOuts");
+    expect(await hashNpbIntegrity(client)).toEqual(before);
+  } finally {client.close();}
 });

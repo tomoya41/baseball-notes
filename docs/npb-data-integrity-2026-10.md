@@ -53,7 +53,7 @@ Period before correction: **195 dates / 164 complete / 25 no_games / 6 partial**
 
 ## Fixed diagnostic defect and reproducibility
 
-The old `audit-npb-eod-coverage.ts` INNER JOIN omitted Games without completeness rows, hiding all three September 28 Games. It now uses the shared **LEFT JOIN** diagnostic and includes missing-proof Games, nullable values, latest Day/stages and boundary Games. Seven bounded SELECT queries, no per-Player requests.
+The old `audit-npb-eod-coverage.ts` INNER JOIN omitted Games without completeness rows, hiding all three September 28 Games. It now uses the shared **LEFT JOIN** diagnostic and includes missing-proof Games, nullable values, latest Day/stages and boundary Games. Nine bounded SELECT queries (including two batched Fact reads), no per-Player requests.
 
 Codex Review P2 also identified inconsistent evidence rows: overall Game complete with batting/pitching partial, failed or null. Both this audit and the lifecycle monitor now require **all three statuses complete** before excluding a final Game from pending counts. A real SQLite fixture verifies this case, missing-proof Games, postponed/future exclusions and unchanged hashes. Coverage evidence itself is not modified.
 
@@ -61,7 +61,7 @@ A second P2 found a hard-coded October 7 horizon in backfill inventory. Remainin
 
 Further review corrected the active Season/Player Period guides and resilient handling of malformed saved JSON. Corrupt pending-row checks/issues/shortened evidence are retained in the DB and identified by field/reason/hash in the report; arbitrary corrupt raw text is not exposed. The CLI emits the usable report before failing for manual review. A fixture covers all three corrupt fields and verifies no mutation. This is not a normalization or repair of malformed evidence.
 
-The audit also scans nominally complete past Games before exclusion, compares actual stored Facts against expected/collected/mapped counts, and validates JSON **shapes** with the existing completeness/shortened-final schemas. Invalid metadata, failed complete-proof checks or wrong Game binding remain explicit findings and fail diagnostics after report emission. Lifecycle pending counts include Fact-count drift. These read-only checks do not change public Coverage or Gate rules.
+The audit also scans nominally complete past Games before exclusion, compares actual stored Facts against expected/collected/mapped counts, and validates JSON **shapes** with the existing completeness/shortened-final schemas. Invalid metadata, failed complete-proof checks or wrong Game binding remain explicit findings and fail diagnostics after report emission. Nominally complete Games are rechecked with the existing authoritative Game validator against stored batting/pitching Facts, including PA, per-team checks and shortened-final outs. Lifecycle pending counts include Fact-count drift. These read-only checks do not change public Coverage or Gate rules.
 
 Coverage evaluation stops at the earlier of audit as-of date and reviewed endpoint. Future fixtures remain separate boundary diagnostics and are never counted as missing days. Before the reviewed calendar, coverage is explicitly not evaluated (`null / before_reviewed_calendar`), not an invented complete/no-game observation.
 

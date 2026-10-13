@@ -54,4 +54,6 @@ jobs:
         with:
           name: npb-integrity-read-only
           path: .data/integrity-release/npb-integrity.json
+          include-hidden-files: true
+          if-no-files-found: error
           retention-days: 7
