@@ -7,6 +7,7 @@ import { checkPublishedNpbFreshness, diagnoseNpbIngestion, evaluateNpbDailyHealt
   expectedNpbEffectiveDate, freshnessDeadlinePassed, inspectLatestScheduledAction,
   type DayRunHealth, type IngestionHealth, type PublishedFreshness } from "../src/data/npb-freshness";
 import type { NpbLatestStandings } from "../src/domain/standings";
+import { canRetainNpbSnapshot, planNpbCalendar, type inspectNpbCalendar } from "../src/data/npb-season-lifecycle";
 
 const fixture=readFileSync(fileURLToPath(new URL("./fixtures/nf3/standings.html",import.meta.url)),"utf8");
 const now=new Date("2026-09-26T03:17:00Z"); // 12:17 JST
@@ -37,6 +38,38 @@ function fresh():PublishedFreshness {
     checkedAtUtc:now.toISOString(),checkedAtJst:"2026-09-26 12:17:00",deadlineHourJst:12,
     deadlinePassed:true,httpStatus:200,error:null};
 }
+
+describe("outside-calendar operational retention (not Current freshness or Gate proof)", () => {
+  const f: PublishedFreshness = { ...fresh(), status: "stale", expectedEffectiveDate: "2026-10-13", publishedEffectiveDate: "2026-10-12" };
+  const run = day({ targetDate: "2026-10-12", dayStatus: "no_games", finalGames: 0, completeGames: 0, backupStatus: "pending" });
+  const i: IngestionHealth = { ...ingestion(run), targetDayRun: null, latestSuccessfulTargetDate: "2026-10-12", latestStandingsDate: "2026-10-12" };
+  const action = { runId: 1, startedAt: at, conclusion: "success", url: "https://example.test/run", inferredTargetDate: "2026-10-13", encryptedBackupArtifact: "missing" as const };
+  const lifecycle: Awaited<ReturnType<typeof inspectNpbCalendar>> = { calendar: planNpbCalendar("daily", "2026-10-13"), latestSavedGameDate: "2026-10-08", targetGames: 0, pendingSavedGames: 9, seasonEndConfirmed: false, metadataReviewRequired: true };
+  it("recognizes an independently saved snapshot without changing stale, pending coverage or health", () => {
+    expect(canRetainNpbSnapshot(f, i, action, lifecycle)).toBe(true);
+    expect(evaluateNpbDailyHealth(f, i, action).health).toBe("unhealthy");
+    expect(f.status).toBe("stale"); expect(lifecycle.pendingSavedGames).toBe(9);
+  });
+  it.each(["fresh", "future_date", "unreachable", "invalid_payload"] as const)("never waives %s checks", status => {
+    expect(canRetainNpbSnapshot({ ...f, status }, i, action, lifecycle)).toBe(false);
+  });
+  it("refuses missing DB/HTTP evidence, publication mismatch, newer fixtures and incomplete latest Day", () => {
+    expect(canRetainNpbSnapshot(f, null, action, lifecycle)).toBe(false);
+    expect(canRetainNpbSnapshot(f, i, null, lifecycle)).toBe(false);
+    expect(canRetainNpbSnapshot(f, i, action, null)).toBe(false);
+    expect(canRetainNpbSnapshot({ ...f, publishedEffectiveDate: "2026-10-11" }, i, action, lifecycle)).toBe(false);
+    expect(canRetainNpbSnapshot(f, i, action, { ...lifecycle, targetGames: 1 })).toBe(false);
+    expect(canRetainNpbSnapshot(f, i, action, { ...lifecycle, latestSavedGameDate: "2026-10-14" })).toBe(false);
+    expect(canRetainNpbSnapshot(f, { ...i, latestDayRun: { ...run, dayStatus: "partial", partialGames: 1 } }, action, lifecycle)).toBe(false);
+    expect(canRetainNpbSnapshot(f, { ...i, latestDayRun: { ...run, targetDate: "2026-10-13", operationalStatus: "failed" } }, action, lifecycle)).toBe(false);
+  });
+  it("does not waive collection/backup/delivery failures or change in-season checks", () => {
+    expect(canRetainNpbSnapshot(f, i, { ...action, conclusion: "failure" }, lifecycle)).toBe(false);
+    expect(canRetainNpbSnapshot(f, i, { ...action, inferredTargetDate: "2026-10-12" }, lifecycle)).toBe(false);
+    expect(canRetainNpbSnapshot(f, { ...i, latestDayRun: day({ targetDate: "2026-10-12", backupStatus: "failed" }) }, action, lifecycle)).toBe(false);
+    expect(canRetainNpbSnapshot(f, i, action, { ...lifecycle, calendar: planNpbCalendar("daily", "2026-10-07") })).toBe(false);
+  });
+});
 
 describe("NPB published freshness",()=>{
   it("uses JST across the UTC boundary and accepts delayed execution",()=>{

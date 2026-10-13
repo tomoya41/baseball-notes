@@ -68,7 +68,7 @@ Android StudioでSDKを設定し、端末またはエミュレーターを選択
 
 JDKの場所を `JAVA_HOME` に、SDKの場所をAndroid Studioまたは `android/local.properties` に設定します。マシン固有のパスや署名鍵はGitへ追加しません。
 
-**この作業環境ではJava/Android SDKを確認できず、APKビルド・実機動作は未検証です。** Web build、Androidプロジェクト生成、`cap sync android`まで確認しました。Windowsの日本語/OneDrive配下でAndroid Gradleがpath errorを出す場合は、ASCIIの短いパス（例：`C:\dev\baseball-data-app`）へcloneして再試行してください。チェックを無効化して回避しません。
+**APK / unsigned AABは既存の無料Actionsでビルド検証します。ビルド成功と実機動作確認は別です。** エミュレーターは `android-beta.yml` の手動実行で検証し、実機・TalkBack・署名・App Links・Play公開は [公開準備監査](docs/operational-release-readiness.md) の残件として管理します。Windowsの日本語/OneDrive配下でAndroid Gradleがpath errorを出す場合は、ASCIIの短いパス（例：`C:\dev\baseball-data-app`）へcloneして再試行してください。チェックを無効化して回避しません。
 
 ## データ・保存
 

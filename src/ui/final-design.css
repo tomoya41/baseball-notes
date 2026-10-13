@@ -419,6 +419,7 @@
 
 .player-context-bar>.player-action-trigger {
   flex-basis: 64px;
+  flex-direction: row;
   gap: 3px;
   font-size: .8125rem;
 }

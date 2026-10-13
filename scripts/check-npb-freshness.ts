@@ -1,7 +1,7 @@
 import { openDataClient } from "../src/data/database";
 import { checkPublishedNpbFreshness, diagnoseNpbIngestion, evaluateNpbDailyHealth,
   inspectLatestScheduledAction } from "../src/data/npb-freshness";
-import { inspectNpbCalendar } from "../src/data/npb-season-lifecycle";
+import { inspectNpbCalendar, canRetainNpbSnapshot } from "../src/data/npb-season-lifecycle";
 
 const publishedUrl=process.env.NPB_FRESHNESS_PAYLOAD_URL ??
   "https://tomoya41.github.io/baseball-notes/data/standings/npb/latest.json";
@@ -28,8 +28,10 @@ try {
     process.env.GITHUB_TOKEN);
 } catch(error) { scheduledActionError=String(error); }
 const summary=evaluateNpbDailyHealth(freshness,ingestion,scheduledAction);
+const retainedSnapshot=canRetainNpbSnapshot(freshness,ingestion,scheduledAction,lifecycle);
 process.stdout.write(`${JSON.stringify({...summary,scheduledActionError,lifecycle,lifecycleError,
+  operationMode:retainedSnapshot ? "retained_saved_snapshot" : "daily_freshness_required",
   lifecycleNote:lifecycle?.calendar.skip ? "Outside reviewed acquisition calendar; saved snapshot retained. Not no-game, confirmed season end, fresh Current data or Scheduled proof. Existing partial coverage and health failures remain visible." : null},null,2)}\n`);
-if(process.argv.includes("--require-healthy") && (scheduledActionError ||
+if(process.argv.includes("--require-healthy") && (scheduledActionError || lifecycleError || (!retainedSnapshot && (
   (freshness.status!=="fresh" && (freshness.deadlinePassed || freshness.status!=="stale")) ||
-  (freshness.status==="fresh" && summary.health!=="healthy"))) process.exitCode=1;
+  (freshness.status==="fresh" && summary.health!=="healthy"))))) process.exitCode=1;

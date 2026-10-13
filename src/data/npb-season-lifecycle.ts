@@ -1,6 +1,7 @@
 import { addDays } from "./npb-collector";
 import { findNpbRegularSeason } from "./npb-season-metadata";
 import type { DataClient } from "./database";
+import type { PublishedFreshness, IngestionHealth, ScheduledActionHealth } from "./npb-freshness";
 
 export type ScheduleMode = "season" | "monthly" | "weekly" | "daily";
 // The reviewed calendar is an acquisition boundary, not proof that a season ended.
@@ -39,4 +40,20 @@ export async function inspectNpbCalendar(client: DataClient, date: string) {
     // No declaration of completion: scheduled metadata can exclude makeup games.
     seasonEndConfirmed: false as const,
     metadataReviewRequired: calendar.skip && latestSavedGameDate !== null && latestSavedGameDate > calendar.reviewedTo };
+}
+
+// Operational retention is distinct from Current freshness and complete season coverage.
+// Compare against the independently saved DB snapshot, not the public payload's own date.
+export function canRetainNpbSnapshot(freshness: PublishedFreshness, ingestion: IngestionHealth | null,
+  action: ScheduledActionHealth | null, lifecycle: Awaited<ReturnType<typeof inspectNpbCalendar>> | null): boolean {
+  if (!lifecycle?.calendar.skip || lifecycle.targetGames !== 0 || !ingestion || !action ||
+      freshness.status !== "stale") return false;
+  const saved = ingestion.latestStandingsDate, day = ingestion.latestDayRun;
+  if (!saved || saved < lifecycle.calendar.reviewedTo || saved > freshness.expectedEffectiveDate ||
+      saved !== freshness.publishedEffectiveDate || ingestion.latestSuccessfulTargetDate !== saved ||
+      !lifecycle.latestSavedGameDate || lifecycle.latestSavedGameDate > saved ||
+      !day || day.targetDate !== saved || day.operationalStatus !== "succeeded" ||
+      !["complete", "no_games"].includes(day.dayStatus) || day.partialGames !== 0 || day.failedGames !== 0 ||
+      day.completeGames !== day.finalGames || (day.finalGames > 0 && day.backupStatus !== "exported")) return false;
+  return action.inferredTargetDate === freshness.expectedEffectiveDate && action.conclusion === "success";
 }
