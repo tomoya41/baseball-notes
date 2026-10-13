@@ -1001,8 +1001,12 @@ label.analysis-condition select {
   line-height: 1.7;
 }
 
+.daily-recap-item {
+  padding-bottom: 10px;
+}
+
 .daily-recap-row {
-  min-height: 58px;
+  min-height: 44px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -1021,11 +1025,13 @@ label.analysis-condition select {
   font-variant-numeric: tabular-nums;
 }
 
-.daily-metric-help {
+.recap-metric-line {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 4px 12px;
   font-size: .8125rem;
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .preview-team-grid {

@@ -417,6 +417,12 @@
   flex: 0 0 44px;
 }
 
+.player-context-bar>.player-action-trigger {
+  flex-basis: 64px;
+  gap: 3px;
+  font-size: .8125rem;
+}
+
 .player-context-controls {
   display: flex;
   flex: 1;

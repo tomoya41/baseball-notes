@@ -9,7 +9,7 @@ export function PlayerContextBar({ backTo, children, tools }: { backTo: string; 
   return <div className="player-context-bar">
     <Link className="icon-button" to={backTo} aria-label="選手一覧に戻る"><ChevronLeft size={20} aria-hidden="true" /></Link>
     <div className="player-context-controls">{children}</div>
-    {tools && <button className="icon-button" aria-label="選手の操作" aria-haspopup="dialog" onClick={() => setOpen(true)}><MoreHorizontal size={20} aria-hidden="true" /></button>}
+    {tools && <button className="icon-button player-action-trigger" aria-label="選手の操作" aria-haspopup="dialog" onClick={() => setOpen(true)}><span>操作</span><MoreHorizontal size={16} aria-hidden="true" /></button>}
     {open && tools && <AppDialog label="比較・推移・保存" onClose={() => setOpen(false)}><h2>比較・推移・保存</h2><nav className="player-action-menu" aria-label="選手の比較と推移" onClick={e => { if (e.target instanceof Element && e.target.closest("a")) setOpen(false); }}>{tools}</nav></AppDialog>}
   </div>;
 }
