@@ -153,7 +153,7 @@ public class ReleaseQualityTest {
         // Exercise actual React controls and the Native Preferences adapter, not an injected library fixture.
         js("document.querySelector('button[aria-label=\"選手の操作\"]').click()");
         waitCondition("Player collection action", "!!document.querySelector('button[aria-label=\"大谷翔平をコレクションに整理\"]')");
-        js("document.querySelector('button[aria-label=\"大谷翔平をコレクションに整理\"]').click()");
+        js("(()=>{const b=document.querySelector('button[aria-label=\"大谷翔平をコレクションに整理\"]');b.focus();b.click();})()");
         waitCondition("Collection picker", "!!document.querySelector('dialog[aria-label=\"大谷翔平のコレクション\"] input[maxlength=\"60\"]')");
         js("(()=>{const e=document.querySelector('dialog[aria-label=\"大谷翔平のコレクション\"] input[maxlength=\"60\"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(e,'端末QA');e.dispatchEvent(new Event('input',{bubbles:true}));})()");
         waitPaint();

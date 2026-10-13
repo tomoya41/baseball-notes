@@ -198,4 +198,3 @@ test("exhausted final collection budget does not repeat Player detail or publish
   expect(await watchNpbEod(p,now("16:17"))).toMatchObject({newFinalGames:0,fullCollectionGames:0,deferredFinalGames:1,publishRequired:false});
   expect(p.collect).not.toHaveBeenCalled();expect(p.finalize).not.toHaveBeenCalled();
 });
-

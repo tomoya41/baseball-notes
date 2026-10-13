@@ -80,4 +80,3 @@ describe("local canonical Favorites",()=>{
   it("preserves unresolved stored IDs without requiring profile data",async()=>{const item={entityId:"broken-id",kind:"player",league:"NPB",addedAt:"2026-09-27T00:00:00Z"};
     expect(await new Favorites({get:async()=>JSON.stringify({version:1,items:[item]}),set:async()=>{}}).list()).toEqual([item]);});
 });
-

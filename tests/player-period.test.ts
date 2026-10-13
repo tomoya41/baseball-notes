@@ -408,4 +408,3 @@ describe("NPB SQL fact reader integration", () => {
     expect(Number((await db.execute("SELECT COUNT(*) AS n FROM npb_day_runs")).rows[0]?.n)).toBe(before);
   });
 });
-

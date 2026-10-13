@@ -73,4 +73,3 @@ test("the protected callback uses the triggering Run and the exact actual Day Fa
   expect(callback.jobs.admission.if).toContain("github.event.workflow_run.head_repository.id == github.repository_id");
   expect(callback.jobs.admission.steps.at(-1).env.NPB_TRIGGER_RUN_ID).toBe("${{ github.event.workflow_run.id }}");
 });
-
