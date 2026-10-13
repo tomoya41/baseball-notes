@@ -42,6 +42,17 @@ export async function inspectNpbCalendar(client: DataClient, date: string) {
     metadataReviewRequired: calendar.skip && latestSavedGameDate !== null && latestSavedGameDate > calendar.reviewedTo };
 }
 
+export async function planNpbScheduleSync(client: DataClient, mode: ScheduleMode, date: string) {
+  const calendar = planNpbCalendar(mode, date);
+  // An admitted new/restored database must be migrated by the caller before any
+  // repository access. Outside dates only inspect an existing table, without writes.
+  if (!calendar.skip) return calendar;
+  const table = await client.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='npb_games'");
+  if (!table.rows.length) return calendar;
+  const games = await client.execute({ sql: "SELECT COUNT(*) AS count FROM npb_games WHERE game_date=?", args: [date] });
+  return planNpbCalendar(mode, date, Number(games.rows[0]?.count ?? 0));
+}
+
 // Operational retention is distinct from Current freshness and complete season coverage.
 // Compare against the independently saved DB snapshot, not the public payload's own date.
 export function canRetainNpbSnapshot(freshness: PublishedFreshness, ingestion: IngestionHealth | null,

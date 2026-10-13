@@ -203,3 +203,10 @@ export function evaluateNpbDailyHealth(freshness: PublishedFreshness, ingestion:
     (freshness.deadlinePassed ? "unhealthy" : "warning") : warnings.length ? "warning" : "healthy";
   return {freshness,ingestion,scheduledAction,health,likelyFault,warnings};
 }
+
+// SPEC §42: retained snapshots provide context, never a stale-health exemption.
+export function failsRequiredNpbHealth(summary: NpbDailyHealth, diagnosticError = false): boolean {
+  const { freshness } = summary;
+  return diagnosticError || (freshness.status !== "fresh" && (freshness.deadlinePassed || freshness.status !== "stale")) ||
+    (freshness.status === "fresh" && summary.health !== "healthy");
+}

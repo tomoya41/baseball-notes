@@ -7,7 +7,7 @@ import { scheduleObservation } from "../src/application/npb-schedule-observabili
 import { npbLatestStandingsSchema } from "../src/domain/standings";
 import { NpbRepository } from "../src/data/npb-repository";
 import { currentGameComplete } from "../src/data/npb-eod";
-import { planNpbCalendar, type ScheduleMode } from "../src/data/npb-season-lifecycle";
+import { planNpbCalendar, planNpbScheduleSync, type ScheduleMode } from "../src/data/npb-season-lifecycle";
 
 const option=(key:string)=>process.argv.find(a=>a.startsWith(`${key}=`))?.slice(key.length+1);
 const action=option("--action")??"watch",date=option("--date")??jstToday();
@@ -69,8 +69,7 @@ try {
     const mode=option("--range")??"daily";
     if(!["season","monthly","weekly","daily"].includes(mode))throw Error("Invalid range mode");
     // Read existing fixtures before accepting a skip; never turn a makeup Game into no-game.
-    const games=await new NpbRepository(client).findGamesByDate(date);
-    const calendar=planNpbCalendar(mode as ScheduleMode,date,games.length);
+    const calendar=await planNpbScheduleSync(client,mode as ScheduleMode,date);
     if(calendar.skip)result=calendar;
     else {
       const range=scheduleRange(mode as ScheduleMode,date);
@@ -78,6 +77,7 @@ try {
       result=await syncNpbSchedule(client,request,range);
     }
   } else if(action==="watch") {
+    if(date>jstToday())throw Error("Invalid EOD date");
     const games=await new NpbRepository(client).findGamesByDate(date);
     const calendar=planNpbCalendar("daily",date,games.length);
     result=calendar.skip?{...calendar,publishRequired:false}:await runEodWatcher(client,request,date,new Date(),Number(process.env.NPB_MONITOR_OFFSET_MINUTES??120),

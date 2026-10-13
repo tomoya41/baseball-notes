@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { migrateData, openDataClient, type DataClient } from "../src/data/database";
 import { parseNf3Standings } from "../src/data/npb-nf3";
 import { checkPublishedNpbFreshness, diagnoseNpbIngestion, evaluateNpbDailyHealth,
-  expectedNpbEffectiveDate, freshnessDeadlinePassed, inspectLatestScheduledAction,
+  expectedNpbEffectiveDate, freshnessDeadlinePassed, inspectLatestScheduledAction, failsRequiredNpbHealth,
   type DayRunHealth, type IngestionHealth, type PublishedFreshness } from "../src/data/npb-freshness";
 import type { NpbLatestStandings } from "../src/domain/standings";
 import { canRetainNpbSnapshot, planNpbCalendar, type inspectNpbCalendar } from "../src/data/npb-season-lifecycle";
@@ -48,6 +48,7 @@ describe("outside-calendar operational retention (not Current freshness or Gate 
   it("recognizes an independently saved snapshot without changing stale, pending coverage or health", () => {
     expect(canRetainNpbSnapshot(f, i, action, lifecycle)).toBe(true);
     expect(evaluateNpbDailyHealth(f, i, action).health).toBe("unhealthy");
+    expect(failsRequiredNpbHealth(evaluateNpbDailyHealth(f, i, action))).toBe(true);
     expect(f.status).toBe("stale"); expect(lifecycle.pendingSavedGames).toBe(9);
   });
   it.each(["fresh", "future_date", "unreachable", "invalid_payload"] as const)("never waives %s checks", status => {

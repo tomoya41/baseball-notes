@@ -1,7 +1,9 @@
 import { expect, test, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { parse } from "yaml";
-import { planNpbCalendar, inspectNpbCalendar } from "../src/data/npb-season-lifecycle";
+import { planNpbCalendar, inspectNpbCalendar, planNpbScheduleSync } from "../src/data/npb-season-lifecycle";
+import { openDataClient, migrateData } from "../src/data/database";
+import { NpbRepository } from "../src/data/npb-repository";
 import type { DataClient } from "../src/data/database";
 import { dayFactsStepName, hasCompletedDayFacts } from "../src/data/npb-publication-admission";
 
@@ -22,6 +24,23 @@ test("preseason windows intersecting the calendar are clamped; wholly outside wi
 });
 test("an empty in-calendar day is not a skip or completeness proof", () => {
   expect(planNpbCalendar("daily", "2026-10-07", 0)).toEqual({ skip: false, range: { from: "2026-10-07", to: "2026-10-07" } });
+});
+test("new/restored schema can bootstrap an admitted sync; outside preflight never migrates", async () => {
+  const client = openDataClient("file::memory:");
+  try {
+    expect((await planNpbScheduleSync(client, "daily", "2026-10-13")).skip).toBe(true);
+    expect((await client.execute("SELECT name FROM sqlite_master WHERE type='table'")).rows).toHaveLength(0);
+    expect((await planNpbScheduleSync(client, "daily", "2026-10-07")).skip).toBe(false);
+    await migrateData(client);
+    expect(await new NpbRepository(client).findGamesByDate("2026-10-07")).toEqual([]);
+    const tables = (await client.execute("SELECT name FROM sqlite_master WHERE type='table'")).rows;
+    expect((await planNpbScheduleSync(client, "daily", "2026-10-13")).skip).toBe(true);
+    expect((await client.execute("SELECT name FROM sqlite_master WHERE type='table'")).rows).toEqual(tables);
+    // A known makeup fixture remains an explicit exception even if outside the calendar.
+    await client.execute(`INSERT INTO npb_games VALUES ('fixture',2026,'2026-10-08','home','away',1,NULL,NULL,'scheduled',NULL,NULL,'nf3','fixture','https://nf3.sakura.ne.jp/','2026-10-01','hash')`);
+    await expect(planNpbScheduleSync(client, "daily", "2026-10-08")).rejects.toThrow("Saved fixture outside reviewed calendar");
+    expect((await client.execute("SELECT COUNT(*) AS n FROM npb_games")).rows[0]?.n).toBe(1);
+  } finally { client.close(); }
 });
 test("read-only lifecycle monitoring preserves known makeup dates and pending coverage", async () => {
   const execute = vi.fn(async () => ({ rows: [{ latest_game_date: "2026-10-08", target_games: 0, pending_games: 6 }] }));
