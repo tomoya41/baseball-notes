@@ -3,6 +3,11 @@ on:
   schedule:
     - cron: "17 3 * * *" # 12:17 JST; the deadline is independently configurable
   workflow_dispatch:
+    inputs:
+      integrity_audit:
+        description: Read-only saved Game/Day integrity audit (no source acquisition or repairs)
+        type: boolean
+        default: false
 permissions:
   contents: read
   actions: read
@@ -36,3 +41,17 @@ jobs:
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}
+      - name: Audit saved NPB integrity
+        if: always() && github.event_name == 'workflow_dispatch' && inputs.integrity_audit
+        run: |
+          mkdir -p .data/integrity-release
+          npx tsx scripts/audit-npb-data-integrity.ts > .data/integrity-release/npb-integrity.json
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+      - uses: actions/upload-artifact@v4
+        if: always() && github.event_name == 'workflow_dispatch' && inputs.integrity_audit
+        with:
+          name: npb-integrity-read-only
+          path: .data/integrity-release/npb-integrity.json
+          retention-days: 7
