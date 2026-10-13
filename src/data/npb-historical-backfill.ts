@@ -20,6 +20,14 @@ export function backfillDates(from: string, to: string, now = new Date()): strin
   return dates;
 }
 
+// Calendar inventory only, not unplayed Games or season-completion evidence.
+export function remainingReviewedDates(to: string): number {
+  const season = findNpbRegularSeason(to);
+  if (!season || !/^\d{4}-\d{2}-\d{2}$/.test(to) || !Number.isFinite(Date.parse(to)) ||
+      new Date(to).toISOString().slice(0, 10) !== to) throw Error("Invalid reviewed calendar date");
+  return Math.max(0, Math.round((Date.parse(season.endDate) - Date.parse(to)) / 86400000));
+}
+
 // Two independent team schedules must agree. Absence is evidence only after all 12 pages parse.
 export function reconcileHistoricalSchedules(pages: readonly NpbGame[][]): NpbGame[] {
   if (pages.length !== npbTeams.length) throw new Error("All twelve validated schedules required");

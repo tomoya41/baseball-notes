@@ -226,7 +226,7 @@ describe("shared calendar period resolver and aggregation", () => {
     expect(findNpbRegularSeason("2026-09-24")).toEqual(boundary);
     expect(boundary.endDateStatus).toBe("scheduled");
     expect(resolvePlayerPeriod({ ...query, asOfDate: "2026-11-01", period: "season" }, boundary))
-      .toMatchObject({ from: "2026-03-27", to: "2026-10-07" });
+      .toMatchObject({ from: "2026-03-27", to: "2026-10-08" });
     expect(resolvePlayerPeriod({ ...query, asOfDate: "2026-03-26", period: "season" }, boundary).beforeSeason).toBe(true);
     expect(() => npbSeasonMetadataSchema.parse({ ...boundary, endDate: "2026-03-26" })).toThrow();
     const reader = { findBattingByPlayer: vi.fn(async () => [batting("g1")]),
@@ -374,7 +374,7 @@ describe("NPB SQL fact reader integration", () => {
     expect((await service.pitching(query)).metrics.outsRecorded.value).toBe(3);
     expect((await service.batting(query)).games).toBe(3);
     expect(await new NpbRepository(db).findSeasonBoundary("2026-09-24")).toMatchObject({
-      season: 2026, startDate: "2026-03-27", endDate: "2026-10-07" });
+      season: 2026, startDate: "2026-03-27", endDate: "2026-10-08" });
     expect(await new NpbRepository(db).findPlayerFactAvailability("p", 2026)).toEqual({
       firstFactDate: "2026-09-17", lastFactDate: "2026-09-25" });
     expect((await service.batting({ ...query, period: "season" })).games).toBe(4);

@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { createHash } from "node:crypto";
 import { openDataClient, type DataClient } from "../src/data/database";
 import { exportNpbBackup, restoreNpbBackup, verifyRestoredNpbRepository } from "../src/data/npb-backup";
-import { backfillDates, runHistoricalBackfill } from "../src/data/npb-historical-backfill";
+import { backfillDates, remainingReviewedDates, runHistoricalBackfill } from "../src/data/npb-historical-backfill";
 import { NpbPeriodCoverageRepository } from "../src/data/npb-period-coverage-repository";
 import { resolvePlayerPeriod } from "../src/domain/player-period";
 import { findNpbRegularSeason } from "../src/data/npb-season-metadata";
@@ -95,7 +95,7 @@ try {
   const after=(await remote.execute(countsSql)).rows[0];
   if(mode!=="ingest" && JSON.stringify(before)!==JSON.stringify(after)) throw new Error("Read-only counts changed");
   const coverage=await new NpbPeriodCoverageRepository(remote).findPeriodCoverage(window);
-  const report={mode,from,to,targetDates:dates.length,futureDates:Math.max(0, Math.round((Date.parse("2026-10-07")-Date.parse(to))/86400000)),
+  const report={mode,from,to,targetDates:dates.length,futureDates:remainingReviewedDates(to),
     before,after,beforeCoverage:beforeCoverage.summary,coverage,result,replay,backup,db};
   await writeFile(".data/batch-b/report.json",JSON.stringify(report,null,2));
   console.log(JSON.stringify(report));

@@ -118,8 +118,8 @@ test("independent shortened-final evidence verifies exact ending, teams and scor
   expect(shortenedFinalEvidenceSchema.safeParse({...e,observedFinalInning:null}).success).toBe(false);
 });
 test("season/month/week/day sync share metadata range and clamp future end",()=>{
-  expect(scheduleRange("season","2026-09-27")).toEqual({from:"2026-03-27",to:"2026-10-07"});
-  expect(scheduleRange("monthly","2026-09-27").to).toBe("2026-10-07");
+  expect(scheduleRange("season","2026-09-27")).toEqual({from:"2026-03-27",to:"2026-10-08"});
+  expect(scheduleRange("monthly","2026-09-27").to).toBe("2026-10-08");
   expect(scheduleRange("weekly","2026-04-01").to).toBe("2026-04-14");
   expect(scheduleRange("daily","2026-09-27").to).toBe("2026-09-27");
   expect(()=>scheduleRange("daily","2026-11-01")).toThrow();

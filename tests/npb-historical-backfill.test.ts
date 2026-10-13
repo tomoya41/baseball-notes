@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { backfillDates, reconcileHistoricalSchedules, runHistoricalBackfill } from "../src/data/npb-historical-backfill";
+import { backfillDates, remainingReviewedDates, reconcileHistoricalSchedules, runHistoricalBackfill } from "../src/data/npb-historical-backfill";
 import type { NpbGame } from "../src/data/npb-nf3";
 import { openDataClient, migrateData, type DataClient } from "../src/data/database";
 import { npbTeams } from "../src/data/npb-nf3";
@@ -115,4 +115,12 @@ describe("dual-source schedule reconciliation",()=>{
     expect(reconcileHistoricalSchedules([[second,game],[game,second],...Array.from({length:10},()=>[])])
       .map(g=>g.id)).toEqual(["game","second"]);
   });
+});
+it("remaining calendar inventory follows reviewed end, never a hard-coded October 7", () => {
+  expect(remainingReviewedDates("2026-10-07")).toBe(1);
+  expect(remainingReviewedDates("2026-10-08")).toBe(0);
+  expect(remainingReviewedDates("2026-10-13")).toBe(0);
+  expect(remainingReviewedDates("2026-09-26")).toBe(12);
+  expect(() => remainingReviewedDates("2026-02-31")).toThrow();
+  expect(() => remainingReviewedDates("2027-10-07")).toThrow();
 });

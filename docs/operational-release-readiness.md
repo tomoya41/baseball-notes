@@ -1,5 +1,7 @@
 # Operational Stability / Release Readiness — 2026-10-13
 
+This document records **PR #28's initial October 13 observations**. The former October 7 boundary/October 8 review question below is superseded by the [October 13 integrity audit](npb-data-integrity-2026-10.md): reviewed range now ends October 8, still provisional, with nine pending Games and six partial dates. Physical-device and Play preparation are updated in [device QA](android-device-qa.md) and [Play readiness](play-release-readiness.md).
+
 Base: PR #27 / `ec8ca1c`. This delivery changes operational admission, Android QA and two focused interactions. No new source, recurring cost, signing key, Play delivery, statistical calculation, canonical identity, Fact, Coverage or Production Gate is introduced or changed.
 
 ## NPB lifecycle and monitoring

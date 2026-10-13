@@ -24,7 +24,7 @@ describe("canonical dated Game surface",()=>{
     const client=openDataClient("file::memory:");
     try {await migrateData(client);
       const index=await readNpbGameIndex(client,"2026-10-10");
-      expect(index.coverage.to).toBe("2026-10-07");
+      expect(index.coverage.to).toBe("2026-10-08");
       expect(index.to).toBe("2026-10-10");
       expect(index.days.find(d=>d.date==="2026-10-10")).toMatchObject({coverage:"unknown",games:[]});
       expect(index.recent).toEqual([]);
