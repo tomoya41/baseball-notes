@@ -28,7 +28,9 @@ const completeRepairDay=(r:Record<string,unknown>)=>r.target_date===recoveryDate
   r.scheduled_games===3&&r.final_games===3&&r.complete_games===3&&r.partial_games===0&&r.failed_games===0&&r.batter_rows===80&&r.pitcher_rows===30&&r.mapping_created===0;
 export async function recoveryBackupRun(client:DataClient,runId?:string):Promise<string> {
   const result=await client.execute(runId?{sql:"SELECT * FROM npb_day_runs WHERE run_id=? AND target_date=?",args:[runId,recoveryDate]}:
-    {sql:"SELECT * FROM npb_day_runs WHERE target_date=? ORDER BY started_at DESC,run_id DESC LIMIT 1",args:[recoveryDate]});
+    {sql:`SELECT * FROM npb_day_runs WHERE target_date=? AND trigger_kind='repair' AND day_status='complete'
+      AND scheduled_games=3 AND final_games=3 AND complete_games=3 AND partial_games=0 AND failed_games=0
+      AND batter_rows=80 AND pitcher_rows=30 AND mapping_created=0 ORDER BY started_at DESC,run_id DESC LIMIT 1`,args:[recoveryDate]});
   const row=result.rows[0] as unknown as Record<string,unknown>|undefined;
   if(!row||!completeRepairDay(row))throw Error("Only the validated complete target repair Day may acknowledge backup");
   return String(row.run_id);

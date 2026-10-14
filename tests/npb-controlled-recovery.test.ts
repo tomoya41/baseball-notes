@@ -1,7 +1,7 @@
 import { expect,test } from "vitest";
 import { readFileSync } from "node:fs";
 import { parse } from "yaml";
-import { assertRecoveryRange,assertRecoveryDiff,recoveryGames,recoverySnapshot,recoveryReadback } from "../src/data/npb-controlled-recovery";
+import { assertRecoveryRange,assertRecoveryDiff,recoveryGames,recoverySnapshot,recoveryReadback,recoveryBackupRun } from "../src/data/npb-controlled-recovery";
 import { protectedTables } from "../src/data/npb-backup";
 import { migrateData,openDataClient } from "../src/data/database";
 import { runHistoricalBackfill } from "../src/data/npb-historical-backfill";
@@ -42,6 +42,17 @@ test("verified retry may acknowledge only backup_status on its complete repair D
   expect(()=>assertRecoveryDiff(before,after,"prior-repair")).not.toThrow();
   expect(()=>assertRecoveryDiff(before,after)).toThrow("changed/deleted");
   after.npb_day_runs[0]!.trigger_kind="scheduled";expect(()=>assertRecoveryDiff(before,after,"prior-repair")).toThrow();
+});
+test("backup retry selects latest valid complete repair, not a newer manual/failed Day",async()=>{
+  const db=openDataClient("file::memory:");try{
+    await migrateData(db);
+    for(const [id,trigger,status,time]of [["complete-repair","repair","complete","01"],["new-manual","manual","complete","02"],["new-failed","repair","failed","03"]])
+      await db.execute({sql:`INSERT INTO npb_day_runs VALUES (?,'2026-09-28',?,?,?,?,'succeeded',3,3,3,0,0,80,30,0,0,0,'pending',NULL)`,
+        args:[id!,trigger!,`2026-10-14T00:00:${time}Z`,`2026-10-14T00:00:${time}Z`,status!]});
+    expect(await recoveryBackupRun(db)).toBe("complete-repair");
+    await expect(recoveryBackupRun(db,"new-manual")).rejects.toThrow();
+    await expect(recoveryBackupRun(db,"new-failed")).rejects.toThrow();
+  }finally{db.close();}
 });
 test("rolled-back proof without Facts admits a fresh retry but is never accepted as complete readback",async()=>{
   const db=openDataClient("file::memory:");try{
