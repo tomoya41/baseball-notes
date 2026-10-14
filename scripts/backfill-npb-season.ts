@@ -99,9 +99,9 @@ try {
     }
     let target=remote;
     if(mode==="dry-run") {
-      await exportNpbBackup(remote,join(root,"baseline"),"turso-remote");
+      await exportNpbBackup(remote,join(root,"dry-baseline"),"turso-remote");
       target=openDataClient(`file:${join(root,"scratch.db")}`);
-      await restoreNpbBackup(target,join(root,"baseline"));
+      await restoreNpbBackup(target,join(root,"dry-baseline"));
     }
     try {
       let pass=1;
