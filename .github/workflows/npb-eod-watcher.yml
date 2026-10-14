@@ -95,7 +95,9 @@ jobs:
           [[ ${#exports[@]} == 1 && -d "${exports[0]}" ]]
           tar -C "$(dirname "${exports[0]}")" -czf .data/eod-backup.tar.gz export
           npx tsx scripts/crypt-npb-backup.ts encrypt .data/eod-backup.tar.gz .data/eod-backup.tar.gz.enc
-          rm .data/eod-backup.tar.gz
+          npx tsx scripts/crypt-npb-backup.ts decrypt .data/eod-backup.tar.gz.enc .data/eod-backup.verified.tar.gz
+          cmp .data/eod-backup.tar.gz .data/eod-backup.verified.tar.gz
+          rm .data/eod-backup.tar.gz .data/eod-backup.verified.tar.gz
       - uses: actions/upload-artifact@v4
         if: steps.watch.outputs.publish == 'true' || (inputs.fixture_only && inputs.verify_backup)
         with:

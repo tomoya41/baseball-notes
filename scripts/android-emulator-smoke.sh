@@ -25,8 +25,10 @@ network_online() {
   adb shell svc data enable
   for attempt in $(seq 1 15); do
     adb shell dumpsys connectivity > .data/android-emulator/online-connectivity.txt
-    if grep -Eq 'Active default network: [0-9]+' .data/android-emulator/online-connectivity.txt &&
-       awk '/Current Networks:/{p=1;next}/Network Requests:/{p=0}p' .data/android-emulator/online-connectivity.txt | grep -q VALIDATED; then return 0; fi
+    # Read the entire dump: grep -q could SIGPIPE awk under pipefail on long
+    # two-transport dumps. Verify the active default agent, not a secondary
+    # validated network or a listener merely requesting VALIDATED.
+    if awk -f scripts/android-default-network-validated.awk .data/android-emulator/online-connectivity.txt; then return 0; fi
     sleep 2
   done
   echo 'Emulator network is not validated; online QA not established' >&2

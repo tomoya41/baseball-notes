@@ -69,14 +69,18 @@ export function hasPlausibleFinalOuts(game: NpbGame, homeOuts: number | null, aw
     const parsed=shortenedFinalEvidenceSchema.safeParse(game.completionEvidence);
     if(!parsed.success)return false;
     const e=parsed.data;
+    const prior=(e.observedFinalInning-1)*3;
+    const endingShape=e.endingHalf!==undefined&&e.endingOuts!==undefined?
+      homeOuts===prior+(e.endingHalf==="top"?e.endingOuts:3)&&awayOuts===prior+(e.endingHalf==="bottom"?e.endingOuts:0):
+      ((homeOuts===e.observedFinalInning*3&&awayOuts!==null&&awayOuts>=prior&&awayOuts<=homeOuts)||
+       (homeOuts!==null&&homeOuts>prior&&homeOuts<e.observedFinalInning*3&&awayOuts===prior));
     return game.status==="final"&&e.gameId===game.id&&e.homeTeamId===game.homeTeamId&&e.awayTeamId===game.awayTeamId&&
       e.homeScore===game.homeScore&&e.awayScore===game.awayScore&&homeOuts===e.homePitchingOuts&&awayOuts===e.awayPitchingOuts&&
-      homeOuts>0&&awayOuts>0&&
+      homeOuts!==null&&awayOuts!==null&&homeOuts>=15&&awayOuts>0&&
       // Top half: visiting defenders have completed only prior innings.
       // Bottom half: home defenders have completed this top half; the visiting
       // outs can include zero, one, two or three outs in the bottom half.
-      ((homeOuts===e.observedFinalInning*3&&awayOuts>=(e.observedFinalInning-1)*3&&awayOuts<=homeOuts)||
-       (homeOuts>(e.observedFinalInning-1)*3&&homeOuts<e.observedFinalInning*3&&awayOuts===(e.observedFinalInning-1)*3));
+      endingShape;
   }
   if (game.status !== "final" || game.homeScore === null || game.awayScore === null ||
     homeOuts === null || awayOuts === null || homeOuts < 27 || homeOuts % 3 !== 0) return false;

@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { expect,test,vi } from "vitest";
 import { openDataClient,migrateData } from "../src/data/database";
-import { selectOnlyClient,shortenedTargets } from "../src/data/npb-shortened-readiness";
+import { auditShortenedCandidates,selectOnlyClient,shortenedTargets } from "../src/data/npb-shortened-readiness";
 import { hasPlausibleFinalOuts,validateNpbGameFacts } from "../src/data/npb-game-collector";
 import { parseInningsOuts,type NpbGame } from "../src/data/npb-nf3";
 import { shortenedFinalEvidenceSchema } from "../src/domain/npb-game-completion";
@@ -29,6 +29,24 @@ test("a later interruption inning is not the last counted inning",()=>{
  expect(hasPlausibleFinalOuts({...g,completionEvidence:evidence(6,15,15)},15,15)).toBe(false);
  // No automatic reversion or decrement from the stopped inning.
  expect(hasPlausibleFinalOuts(g,15,15)).toBe(false);
+});
+test("zero-out next half needs explicitly paired source evidence, never a guessed inning",()=>{
+ for(const [i,h,a]of [[6,15,15],[7,18,18],[7,21,18]]){
+  const e={...evidence(i!,h!,a!),endingHalf:(h===a?"top":"bottom") as "top"|"bottom",endingOuts:0};
+  expect(hasPlausibleFinalOuts({...g,completionEvidence:e},h!,a!)).toBe(true);
+  expect(hasPlausibleFinalOuts({...g,completionEvidence:{...e,endingOuts:1}},h!,a!)).toBe(false);
+  expect(shortenedFinalEvidenceSchema.safeParse({...e,endingOuts:undefined}).success).toBe(false);
+  expect(shortenedFinalEvidenceSchema.safeParse({...e,endingHalf:undefined}).success).toBe(false);
+ }
+ expect(hasPlausibleFinalOuts({...g,completionEvidence:{...evidence(5,12,12),endingHalf:"top",endingOuts:0}},12,12)).toBe(false);
+});
+test("legacy and explicit zero-out evidence survive unchanged scratch repository readback",async()=>{
+ const db=openDataClient("file::memory:");try{
+  await migrateData(db);const {NpbRepository}=await import("../src/data/npb-repository"),repo=new NpbRepository(db);
+  await repo.saveGames([g],g.date,false,true);
+  const e={...evidence(6,15,15),endingHalf:"top" as const,endingOuts:0};
+  await repo.saveShortenedFinalEvidence(e);expect((await repo.findGamesByDate(g.date))[0]?.completionEvidence).toEqual(e);
+ }finally{db.close();}
 });
 test("normal finals and baseball fractions remain unchanged",()=>{
  expect(hasPlausibleFinalOuts(g,27,24)).toBe(true);expect(hasPlausibleFinalOuts(g,30,29)).toBe(true);
@@ -72,4 +90,23 @@ test("six reviewed identities only, workflow publishes diagnostic not raw export
  expect(yaml).toContain(".data/shortened-readiness/report.json");expect(yaml).not.toContain(".data/shortened-readiness/**");
  expect(script).toContain("selectOnlyClient(openDataClient");expect(script).toContain("httpRequests>=499&&!capturedUrls.has(u)");
  expect(script).toContain('exportNpbBackup(remote,join(privateRoot,"export"),"canonical-read-only")');
+ expect(yaml).toContain("NPB_NF3_ENABLED: ${{ vars.NPB_NF3_ENABLED }}");
+});
+test("disabled nf3 stops before database reads or Source requests",async()=>{
+ const db=openDataClient("file::memory:"),request=vi.fn(),read=vi.spyOn(db,"execute");
+ try{vi.stubEnv("NPB_NF3_ENABLED","false");await expect(auditShortenedCandidates(db,request)).rejects.toThrow("provider disabled");
+ expect(request).not.toHaveBeenCalled();expect(read).not.toHaveBeenCalled();
+ }finally{vi.unstubAllEnvs();db.close();}
+});
+test("EOD backup verifies decrypt equality before uploading ciphertext only",()=>{
+ const yaml=readFileSync(".github/workflows/npb-eod-watcher.yml","utf8");
+ expect(yaml.indexOf("crypt-npb-backup.ts decrypt")).toBeGreaterThan(yaml.indexOf("crypt-npb-backup.ts encrypt"));
+ expect(yaml.indexOf("cmp .data/eod-backup.tar.gz")).toBeLessThan(yaml.indexOf("name: npb-eod-encrypted-backup"));
+ expect(yaml).toContain("path: .data/eod-backup.tar.gz.enc");
+});
+test("emulator reconnect validates default capability without early-exit pipeline",()=>{
+ const smoke=readFileSync("scripts/android-emulator-smoke.sh","utf8"),workflow=readFileSync(".github/workflows/android-beta.yml","utf8");
+ expect(smoke).toContain("awk -f scripts/android-default-network-validated.awk");
+ expect(smoke).not.toContain("| grep -q VALIDATED");
+ expect(workflow).toContain("bash scripts/test-android-connectivity-parser.sh");
 });

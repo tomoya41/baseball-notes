@@ -6,6 +6,7 @@ import { reconcileHistoricalSchedules, recoveryGameFields } from "./npb-historic
 import { NpbRepository } from "./npb-repository";
 import { runNpbGameProof } from "./npb-game-collector";
 import { jstToday } from "./npb-collector";
+import { sourceRegistry } from "./source-registry";
 
 // Reviewed identity/scope only. No ending, outs or official-site values admitted.
 export const shortenedTargets = [
@@ -32,6 +33,8 @@ export function selectOnlyClient(client:DataClient):DataClient {
 }
 
 export async function auditShortenedCandidates(scratch:DataClient,request:(url:string)=>Promise<string>) {
+  if(process.env.NPB_NF3_ENABLED==="false"||sourceRegistry.find(s=>s.key==="nf3")?.status!=="enabled-limited-public")
+    throw Error("nf3 provider disabled; no readiness acquisition permitted");
   if(!jstToday().startsWith("2026-"))throw Error("nf3 y=0 cannot verify 2026 after the source year changes");
   const repo=new NpbRepository(scratch),saved=[];
   for(const t of shortenedTargets){
