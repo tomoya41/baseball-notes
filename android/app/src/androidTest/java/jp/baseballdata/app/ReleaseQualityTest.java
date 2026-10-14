@@ -92,7 +92,7 @@ public class ReleaseQualityTest {
         try (FileOutputStream file = new FileOutputStream(new File(dir, name + ".png"))) { assertTrue(image.compress(Bitmap.CompressFormat.PNG, 100, file)); }
         finally { image.recycle(); }
     }
-    @After public void close() throws Exception { shell("settings put system font_scale 1.0"); shell("wm size 360x800"); shell("svc wifi enable"); shell("svc data enable"); if (scenario != null) scenario.close(); }
+    @After public void close() throws Exception { shell("settings put system font_scale 1.0"); shell("wm size 360x800"); shell("cmd connectivity airplane-mode disable"); shell("svc wifi enable"); shell("svc data enable"); if (scenario != null) scenario.close(); }
     @Test public void shellDeepLinksBackAndHistorical() throws Exception {
         long start = System.currentTimeMillis(); scenario = ActivityScenario.launch(MainActivity.class);
         waitText("BASEBALL"); System.out.println("PERF shell_ms=" + (System.currentTimeMillis()-start));
