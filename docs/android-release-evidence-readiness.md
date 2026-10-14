@@ -1,6 +1,6 @@
 # Android Release Quality / NPB Evidence Resolution
 
-2026-10-14、開始時のmain `705bef1`（PR #31）を確認。未マージPRなし。今回の範囲はAndroid検証の拡充、実機QA準備、NPB証拠の問い合わせ準備。**Production app / Source / canonical / payload / Gate / persistence contractの変更はない**。追加月額費用¥0。
+2026-10-14、開始時のmain `705bef1`（PR #31）を確認。未マージPRなし。今回の範囲はAndroid検証の拡充、実画面で見つかった文字拡大不具合の修正、実機QA準備、NPB証拠の問い合わせ準備。**Source / canonical / payload / Gate / persistence contractの変更はない**。追加月額費用¥0。
 
 ## Android：実施・未実施の境界
 
@@ -14,7 +14,13 @@
 - 360px / OS文字倍率200%のPlayerをスクリーンショットで確認。OEMの最大倍率を網羅したと主張しない。
 - Androidの実touchで検索入力へフォーカスし、WindowInsetsのIME表示を確認。OS BackでIMEだけを閉じてSearchが維持されることを検証。DOMフォーカスだけで「キーボード検証済み」としない。
 
-これはinstrumentationの拡充であり、既存ランタイムUI・CSS・native adapterの修正ではない。明確な操作不具合が再現した場合のみ修正する。release key、署名設定、App Links・assetlinks、Console、支払い・ストア公開は変更しない。
+初回[Android36 Run 38579825176](https://github.com/tomoya41/baseball-notes/actions/runs/38579825176)はAPK /unsigned AAB、既存検証と追加の3 instrumentation tests、実IME /BackまでPASS。ただし取得した200%文字のスクリーンショットで、年度とCompetitionが切れ、OPSとHRのglyphが隣のセルへ出ることを発見。ページのscrollWidthだけではこの問題を検出できなかった。
+
+`MainActivity`の既存Capacitor WebViewListenerからOS fontScaleをCSSのlayout用変数・large-font属性に反映する。ユーザーの文字倍率やWebView textZoomは縮小・無効化しない。1.5倍以上ではヘッダーとPlayer年度・Competition操作を折り返し、headlineのセル幅と基本ナビの高さ・下部余白に必要な幅を確保する。通常文字倍率のデザインは維持する。Cold load、Activity recreation、configuration changeへ適用し、DBやネットワークを追加しない。
+
+追加のnative回帰は文字glyphのRangeがセル内に収まること、ヘッダー操作の表示範囲、WebView textZoomが保たれることも確認する。対象はCSSとnative presentationだけで、大規模再設計・評価値変更・Source変更はない。release key、署名設定、App Links・assetlinks、Console、支払い・ストア公開は変更しない。
+
+Codex Reviewの初回P2（テストのIME APIがAndroid30以上専用）は既存AndroidX `ViewCompat /WindowInsetsCompat`へ修正。Android24〜29やOEM実機での実行はまだNOT RUN。
 
 ## NPB：現状と運用証拠
 
@@ -47,11 +53,11 @@ freshness診断は期間外収集、10/12 snapshotのstale、`retentionVerified=
 
 ## 回帰と公開方針
 
-ローカルfull tests **106 files /1,252 tests PASS**、lint /typecheck /Web /Vercel build PASS。JS `index-CBLvDdCB.js` 482.57KB（gzip149.25KB）、CSS `index-Boa71_gd.css` 65.51KB（gzip11.96KB）でPR #31から不変。ランタイムコードの追加がないためHome追加fetch0、payload・評価ロジック変更0。
+最初のローカルfull tests **106 files /1,252 tests PASS**、lint /typecheck /Web /Vercel build PASS。変更前JS `index-CBLvDdCB.js` 482.57KB（gzip149.25KB）、CSS `index-Boa71_gd.css` 65.51KB（gzip11.96KB）。文字拡大修正後のbuild /emulator /性能は最終実行で再確認する。Home追加fetch0、payload・評価ロジック変更0。
 
 公開HTTPはNPB core7 payloadのhash不変、6 pending GameのID/date/teams/score/partialと保存B/P0を検証。MLB Regular /Postseasonの38 HTTP契約検証は2014〜2025の12年、27,623 /472 Games、既存canonical ID継続、2既存payload hash不変を確認。これは全63,167ファイルをHTTP取得したという主張ではない。
 
-Android build /emulator /Reviewの最終結果は実行後に記録する。今回の変更はdocsとtest APKのinstrumentationのみで、本番アプリに配信すべき変更がない。不要なPages /Vercel再deployは行わず、既存main `705bef1`のPages [38549476125](https://github.com/tomoya41/baseball-notes/actions/runs/38549476125)を維持し、merge後にHTTP smokeを再確認する。
+Android build /emulator /Reviewの最終結果は実行後に記録する。初めはdocsとtestのみで再deploy不要だったが、実画面で発見した文字拡大不具合の修正が入ったため、最終検証・review後にmain merge、正式なread-only publishによるPages公開とHTTP smokeを実施する。NPB7 core payloadとMLB releaseを維持し、manual publishをScheduled Fact証拠に流用しない。
 
 ## 次の判断
 
