@@ -30,9 +30,12 @@ export function assertRecoveryDiff(before:Snapshot,after:Snapshot) {
   return protectedTables.map(table=>{
     const old=new Set(before[table].map(r=>JSON.stringify(r))),next=new Set(after[table].map(r=>JSON.stringify(r)));
     const removed=before[table].filter(r=>!next.has(JSON.stringify(r))),added=after[table].filter(r=>!old.has(JSON.stringify(r)));
-    if(removed.some(r=>table!=="npb_ingestion_stages"||!stage(r))) throw Error(`Recovery changed/deleted protected ${table}`);
+    if(removed.some(r=> !(table==="npb_ingestion_stages"&&stage(r)) &&
+      !(table==="npb_game_completeness"&&target(r)&&["partial","failed"].includes(String(r.game_status)))))
+      throw Error(`Recovery changed/deleted protected ${table}`);
     if(added.some(r=> {
-      if(["player_game_batting","player_game_pitching","npb_game_completeness"].includes(table))return !target(r);
+      if(["player_game_batting","player_game_pitching"].includes(table))return !target(r);
+      if(table==="npb_game_completeness")return !target(r)||r.game_status!=="complete"||r.batting_status!=="complete"||r.pitching_status!=="complete";
       if(table==="npb_ingestion_stages")return !stage(r)||r.status!=="complete"||r.record_count!==3;
       if(table==="ingestion_runs")return r.target_date!==recoveryDate||r.source_key!=="nf3"||r.status!=="succeeded";
       if(table==="npb_day_runs")return r.target_date!==recoveryDate||r.trigger_kind!=="repair"||r.day_status!=="complete"||r.final_games!==3||r.complete_games!==3||r.partial_games!==0||r.failed_games!==0;
@@ -47,7 +50,12 @@ export async function recoveryReadback(client:DataClient, requireComplete:boolea
     const game=(await repo.findGamesByDate(recoveryDate)).find(r=>r.id===g.id);
     if(!game)throw Error("Recovery Game missing");
     const [b,p,e]=await Promise.all([repo.findBattingByGame(g.id),repo.findPitchingByGame(g.id),repo.findGameCompleteness(g.id)]);
-    if(b.length||p.length||e||requireComplete){
+    // A rolled-back Game transaction may leave a failed/partial proof but no
+    // Facts. Preserve that pre-write evidence in the encrypted baseline, then
+    // allow the established writer to replace it only after fresh validation.
+    // Existing partial Facts or a broken claimed-complete proof remain blocked.
+    const emptyRetry=!requireComplete&&!b.length&&!p.length&&e&&["partial","failed"].includes(e.gameStatus);
+    if(!emptyRetry && (b.length||p.length||e||requireComplete)){
       const proof=validateNpbGameFacts(game,g.batters,b,g.pitchers,p,b.length,p.length);
       if(proof.gameStatus!=="complete"||e?.gameStatus!=="complete"||e.battingStatus!=="complete"||e.pitchingStatus!=="complete"||b.length!==g.batters||p.length!==g.pitchers||
         e.expectedBatters!==b.length||e.collectedBatters!==b.length||e.mappedBatters!==b.length||
