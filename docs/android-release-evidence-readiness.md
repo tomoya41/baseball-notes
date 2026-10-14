@@ -53,11 +53,19 @@ freshness診断は期間外収集、10/12 snapshotのstale、`retentionVerified=
 
 ## 回帰と公開方針
 
-最初のローカルfull tests **106 files /1,252 tests PASS**、lint /typecheck /Web /Vercel build PASS。変更前JS `index-CBLvDdCB.js` 482.57KB（gzip149.25KB）、CSS `index-Boa71_gd.css` 65.51KB（gzip11.96KB）。文字拡大修正後のbuild /emulator /性能は最終実行で再確認する。Home追加fetch0、payload・評価ロジック変更0。
+文字拡大修正後もローカルfull tests **106 files /1,252 tests PASS**、lint /typecheck /Web /Vercel build PASS。変更前JS 482.57KB（gzip149.25KB）、CSS 65.51KB（gzip11.96KB）。修正後JS `index-DJ8oTFZq.js` 482.57KB（gzip149.25KB）、CSS `index-FKPUx5pM.css` 66.59KB（gzip12.17KB）。CSS +1.08KB、JS容量不変。Home追加fetch0、payload・評価ロジック変更0。
 
 公開HTTPはNPB core7 payloadのhash不変、6 pending GameのID/date/teams/score/partialと保存B/P0を検証。MLB Regular /Postseasonの38 HTTP契約検証は2014〜2025の12年、27,623 /472 Games、既存canonical ID継続、2既存payload hash不変を確認。これは全63,167ファイルをHTTP取得したという主張ではない。
 
-Android build /emulator /Reviewの最終結果は実行後に記録する。初めはdocsとtestのみで再deploy不要だったが、実画面で発見した文字拡大不具合の修正が入ったため、最終検証・review後にmain merge、正式なread-only publishによるPages公開とHTTP smokeを実施する。NPB7 core payloadとMLB releaseを維持し、manual publishをScheduled Fact証拠に流用しない。
+最終[Android36 Run 38582519304](https://github.com/tomoya41/baseball-notes/actions/runs/38582519304)、runtime/test commit `88da9a4`：**SUCCESS、OK (3 tests)**。実IME /system Back、200% glyph containment /textZoom保持 /header bounds、既存の150% /縦横 /Light・Dark /Back /deep link /Favorites・Collections・Watch /オフラインcold start・process restart /通信復帰がPASS。取得した200%・150%の実スクリーンショットを確認した。大きい文字では縦に情報が増え、自然なページscrollを使用する。全OEM・TalkBack・最大倍率を保証する結果ではない。
+
+debug APK **6,078,924B**、unsigned AAB **4,495,272B**。APK SHA256 `3fc935e113aafa419a03efc084c9df36c0b0657b2a6b31378d0f15f35672ac09`。Runの `android-beta-unsigned`から取得できる。ローカルのignoredコピーは `.data/android-readiness/android-final/apk/debug/app-debug.apk`。APKはWeb source/dataを再収集せず、既存public readerを使う。Source・署名key・通知設定の変更はない。
+
+最終Runの測定：shell4,669ms、MLB Home1,692ms、Player1,564ms、Analysis370ms、BvP384ms、Game348ms、Search725ms、cached offline Player865ms。最大cached response1,249,897Bで前回と同じ。CI端末／ネットワークの測定であり、物理端末の性能保証や厳密な速度差の因果評価ではない。
+
+Before /After証拠は初回／最終Runの `android-emulator-evidence/ui-redesign/player-font-200.png`、150%は `mlb-player-font-150.png`。実IMEは `search-actual-keyboard.png`と`search-keyboard-back.png`。Artifacts7日保持、ignoredローカル `.data/android-readiness/emulator-first`と`emulator-final`に保存。正常fontのWeb360px Light/Dark、入れ子dialogをEscapeで子だけ閉じる／focus return、Regular/Postseason切替、Back /Reloadの2024年保持もChromeで確認。これをAndroid実機やTalkBackのPASSへ流用しない。
+
+Codex Review：初回IME P2を修正、`036cc65`とruntimeを含む`a3d9c0c`の再レビューは重大指摘なし。最終docs追記後のPR結果・merge・公開証拠は[PR #32](https://github.com/tomoya41/baseball-notes/pull/32)のdeliveryコメントへ記録する。初めはdocsとtestのみで再deploy不要だったが、実画面で発見した文字拡大不具合の修正が入ったため、正式なread-only publishでPagesへ公開する。NPB7 core payloadとMLB releaseを維持し、manual publishをScheduled Fact証拠に流用しない。
 
 ## 次の判断
 

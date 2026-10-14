@@ -15,6 +15,8 @@ Open the successful Run linked in the delivery PR → Artifacts → `android-bet
 3. 署名不一致が出たら停止する。保存データを消して更新を強行しない。普段使いのFavorites等はWeb・CIから同期されない。
 4. 以下のセッション欄を埋め、10〜15分のチェックを始める。失敗があれば先へ進む前に再現手順を記録する。TalkBackや通信の物理検証には追加時間を確保する。
 
+このバッチで文字拡大修正まで検証したAPK：[Run 38582519304](https://github.com/tomoya41/baseball-notes/actions/runs/38582519304)、APK commit `88da9a4`、SHA256 `3fc935e113aafa419a03efc084c9df36c0b0657b2a6b31378d0f15f35672ac09`。後続docsのみのcommitとは区別して記録する。エミュレーターは3テストPASSだが、この票の実機結果はすべてNOT RUN。
+
 Session record: APK Run/commit __; model __; Android __; WebView __; navigation buttons/gestures __; Light/Dark/System __; font scale __; date __. Use **PASS /FAIL /NOT RUN** and exact route/steps for every check.
 
 ## 項目ごとの記録（コピーして使用）
