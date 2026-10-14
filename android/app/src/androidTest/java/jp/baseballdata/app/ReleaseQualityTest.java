@@ -194,7 +194,7 @@ public class ReleaseQualityTest {
         js("location.hash='#/MLB/search'"); System.out.println("PERF search_ms=" + waitText("選手一覧"));
         assertEquals("Search input is available", "true", js("!!document.querySelector('main input[type=search]')"));
         // Real last-validated Player/manifest cache must survive a process/activity restart.
-        shell("svc wifi disable"); shell("svc data disable"); Thread.sleep(1500);
+        shell("cmd connectivity airplane-mode enable"); shell("svc wifi disable"); shell("svc data disable"); Thread.sleep(1500);
         scenario.close(); scenario = ActivityScenario.launch(intent);
         long offline = waitText("大谷翔平"); waitText("保存済みデータ");
         System.out.println("PERF offline_player_ms=" + offline);
@@ -209,7 +209,7 @@ public class ReleaseQualityTest {
         assertEquals("Watch rule survives Activity restart", "false", js("Array.from(document.querySelectorAll('.watch-preferences label')).find(e=>e.textContent==='確認できる連続記録')?.querySelector('input').checked"));
         assertEquals("Offline Watch does not advance baselines, alerts or read state", beforeOfflineWatch, preference("baseball:personal-watch:v1"));
         screenshot("watch-offline-restart");
-        shell("svc wifi enable"); shell("svc data enable");
+        shell("cmd connectivity airplane-mode disable"); shell("svc wifi enable"); shell("svc data enable");
         js("location.hash='#/MLB/my'"); waitText("大谷翔平");
     }
     @Test public void nativePreferencesSurviveRestartAndFirebaseDisabled() throws Exception {
