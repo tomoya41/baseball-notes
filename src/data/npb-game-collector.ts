@@ -42,7 +42,11 @@ export interface NpbGameProofResult {
   insertedBatting: number;
   insertedPitching: number;
   wouldCreateMappings: { sourceId: string; name: string; teamId: string; sourceUrl: string }[];
-  observed: { sacrificeFlies: number; fractionalTwoOutPitchers: number };
+  observed: { sacrificeFlies: number; fractionalTwoOutPitchers: number;
+    // Candidate Fact sums are diagnostic only, never independent ending evidence.
+    ending?: { homeCandidateOuts: number | null; awayCandidateOuts: number | null;
+      independentEvidencePresent: boolean; acceptedEnding: boolean };
+    participantIds?: { batting: string[]; pitching: string[] } };
   nonBattingSubstitutes: { sourceId: string; name: string }[];
 }
 
@@ -65,10 +69,18 @@ export function hasPlausibleFinalOuts(game: NpbGame, homeOuts: number | null, aw
     const parsed=shortenedFinalEvidenceSchema.safeParse(game.completionEvidence);
     if(!parsed.success)return false;
     const e=parsed.data;
+    const prior=(e.observedFinalInning-1)*3;
+    const endingShape=e.endingHalf!==undefined&&e.endingOuts!==undefined?
+      homeOuts===prior+(e.endingHalf==="top"?e.endingOuts:3)&&awayOuts===prior+(e.endingHalf==="bottom"?e.endingOuts:0):
+      ((homeOuts===e.observedFinalInning*3&&awayOuts!==null&&awayOuts>=prior&&awayOuts<=homeOuts)||
+       (homeOuts!==null&&homeOuts>prior&&homeOuts<e.observedFinalInning*3&&awayOuts===prior));
     return game.status==="final"&&e.gameId===game.id&&e.homeTeamId===game.homeTeamId&&e.awayTeamId===game.awayTeamId&&
       e.homeScore===game.homeScore&&e.awayScore===game.awayScore&&homeOuts===e.homePitchingOuts&&awayOuts===e.awayPitchingOuts&&
-      homeOuts>0&&awayOuts>0&&Math.max(homeOuts,awayOuts)<=e.observedFinalInning*3&&
-      Math.max(homeOuts,awayOuts)>(e.observedFinalInning-1)*3;
+      homeOuts!==null&&awayOuts!==null&&homeOuts>=15&&awayOuts>0&&
+      // Top half: visiting defenders have completed only prior innings.
+      // Bottom half: home defenders have completed this top half; the visiting
+      // outs can include zero, one, two or three outs in the bottom half.
+      endingShape;
   }
   if (game.status !== "final" || game.homeScore === null || game.awayScore === null ||
     homeOuts === null || awayOuts === null || homeOuts < 27 || homeOuts % 3 !== 0) return false;
@@ -288,7 +300,12 @@ export async function runNpbGameProof(client: DataClient, options: NpbGameProofO
     pitching.map((row) => row.fact),mappedBatters,mappedPitchers,issues);
   const observed = { sacrificeFlies: batting.reduce((sum,row) => sum + (row.fact.sacrificeFlies ?? 0),0),
     fractionalTwoOutPitchers: pitching.filter((row) => row.fact.inningsPitchedOuts !== null &&
-      row.fact.inningsPitchedOuts % 3 === 2).length };
+      row.fact.inningsPitchedOuts % 3 === 2).length,
+    ending: { homeCandidateOuts: total(pitching.filter(r=>r.fact.teamId===game.homeTeamId).map(r=>r.fact.inningsPitchedOuts)),
+      awayCandidateOuts: total(pitching.filter(r=>r.fact.teamId===game.awayTeamId).map(r=>r.fact.inningsPitchedOuts)),
+      independentEvidencePresent: !!game.completionEvidence,
+      acceptedEnding: !!report.checks[`pitchingOuts:${game.homeTeamId}`] && !!report.checks[`pitchingOuts:${game.awayTeamId}`] },
+    participantIds: { batting: batting.map(r=>r.fact.playerId), pitching: pitching.map(r=>r.fact.playerId) } };
   if (dryRun || report.gameStatus !== "complete") {
     if (!dryRun) {
       const previous = await repository.findGameCompleteness(game.id);
