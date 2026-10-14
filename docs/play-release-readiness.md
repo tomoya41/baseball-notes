@@ -1,4 +1,4 @@
-# Google Play release preparation — checked 2026-10-13
+# Google Play release preparation — checked 2026-10-14
 
 This is preparation, not a Play release. No account registration, fee payment, signature/key change, production Firebase or Play upload was performed. Monthly operating cost remains **¥0**; potential store registration cost is separate.
 
@@ -46,6 +46,8 @@ Require `tomoya41.github.io: verified`; manual forced association is not verific
 [Google developer account registration](https://support.google.com/googleplay/android-developer/answer/6112435) currently costs **US$25 once**, and requires account/identity verification; this has **not** been paid or initiated. Currency conversion/taxes/card fees are not estimated as a guaranteed yen amount. This is not a monthly service fee.
 
 For personal accounts created after November 13, 2023, [current production-access testing](https://support.google.com/googleplay/android-developer/answer/14151465) requires at least **12 opted-in closed testers continuously for 14 days**, followed by production-access application; eligibility is not automatic. Account type/date and physical-device verification are owner-specific. Do not claim this project has completed them.
+
+The registration fee and 12-testers/14-days rules were rechecked against those official pages on October 14; no registration/payment or Console access occurred. [Per-device result form](android-physical-qa-results.md) records the exact APK commit, device, reproduction and screenshot for each physical check. Engineering build/emulator evidence, actual physical QA and Play owner gates remain separate. The current release has no functioning Browser/Native Push and makes no background-delivery promise.
 
 ## Suggested listing copy (draft, owner approval needed)
 

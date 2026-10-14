@@ -328,6 +328,19 @@ details[open]>summary {
   gap: 2px;
 }
 
+/* Android's large system font needs room for painted text, not smaller text. */
+:root[data-large-font] .app-header,:root[data-large-font] .app-header-actions {
+  flex-wrap: wrap;
+}
+
+:root[data-large-font] .app-header-actions {
+  margin-left: auto;
+}
+
+:root[data-large-font] .league-switch a {
+  min-width: calc(42px * var(--android-font-scale,1));
+}
+
 .league-switch {
   display: flex;
   align-items: center;
@@ -414,6 +427,14 @@ details[open]>summary {
 .bottom-nav a[aria-current] {
   color: var(--brand);
   background: var(--brand-soft);
+}
+
+:root[data-large-font] .bottom-nav a {
+  min-height: calc(28px + 26px * var(--android-font-scale,1));
+}
+
+:root[data-large-font] .app-shell {
+  padding-bottom: calc(70px + 28px * var(--android-font-scale,1) + env(safe-area-inset-bottom));
 }
 
 .page-heading {

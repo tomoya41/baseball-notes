@@ -8,6 +8,9 @@ import android.net.Uri;
 import android.net.ConnectivityManager;
 import android.net.NetworkCapabilities;
 import android.graphics.Bitmap;
+import android.view.MotionEvent;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import java.io.File;
 import java.io.FileOutputStream;
 import org.junit.*;
@@ -109,6 +112,40 @@ public class ReleaseQualityTest {
         assertNotNull("Native screenshot", image);
         try (FileOutputStream file = new FileOutputStream(new File(dir, name + ".png"))) { assertTrue(image.compress(Bitmap.CompressFormat.PNG, 100, file)); }
         finally { image.recycle(); }
+    }
+    private void waitIme(boolean visible) throws Exception {
+        AtomicReference<Boolean> actual = new AtomicReference<>(false);
+        long start = System.currentTimeMillis();
+        while (System.currentTimeMillis() - start < 15000) {
+            scenario.onActivity(activity -> {
+                WindowInsetsCompat insets = ViewCompat.getRootWindowInsets(activity.getWindow().getDecorView());
+                actual.set(insets != null && insets.isVisible(WindowInsetsCompat.Type.ime()));
+            });
+            if (actual.get() == visible) return;
+            Thread.sleep(100);
+        }
+        fail("Actual soft keyboard visibility should be " + visible);
+    }
+    private void tapSearchInput() throws Exception {
+        // Send a real Android touch, rather than claiming a DOM focus opens the IME.
+        js("document.querySelector('main input[type=search]').scrollIntoView({block:'center'})");
+        waitPaint();
+        org.json.JSONArray point = new org.json.JSONArray(js("(()=>{const r=document.querySelector('main input[type=search]').getBoundingClientRect();return [r.x+r.width/2,r.y+r.height/2,innerWidth]})()"));
+        AtomicReference<float[]> screen = new AtomicReference<>();
+        scenario.onActivity(activity -> {
+            android.webkit.WebView web = activity.getBridge().getWebView();
+            int[] location = new int[2]; web.getLocationOnScreen(location);
+            float scale = web.getWidth() / (float) point.optDouble(2);
+            screen.set(new float[]{location[0] + (float) point.optDouble(0)*scale, location[1] + (float) point.optDouble(1)*scale});
+        });
+        long now = android.os.SystemClock.uptimeMillis();
+        MotionEvent down = MotionEvent.obtain(now, now, MotionEvent.ACTION_DOWN, screen.get()[0], screen.get()[1], 0);
+        MotionEvent up = MotionEvent.obtain(now, now+60, MotionEvent.ACTION_UP, screen.get()[0], screen.get()[1], 0);
+        try {
+            InstrumentationRegistry.getInstrumentation().sendPointerSync(down);
+            InstrumentationRegistry.getInstrumentation().sendPointerSync(up);
+        } finally { down.recycle(); up.recycle(); }
+        waitIme(true);
     }
     @After public void close() throws Exception { shell("settings put system font_scale 1.0"); shell("wm size 360x800"); shell("cmd connectivity airplane-mode disable"); shell("svc wifi enable"); shell("svc data enable"); if (scenario != null) scenario.close(); }
     @Test public void shellDeepLinksBackAndHistorical() throws Exception {
@@ -229,6 +266,47 @@ public class ReleaseQualityTest {
         screenshot("watch-offline-restart");
         setNetwork(true);
         js("location.hash='#/MLB/my'"); waitText("大谷翔平");
+    }
+    @Test public void publicRoutesLargeFontAndActualKeyboardBack() throws Exception {
+        scenario = ActivityScenario.launch(MainActivity.class); waitText("BASEBALL");
+        setNetwork(true);
+        js("location.hash='#/MLB/form?season=2024&asOfDate=2024-08-20&period=7'");
+        waitCondition("Historical HOT actual results", "document.querySelectorAll('.form-entry').length>0 && !document.querySelector('.skeleton-page')");
+        assertTrue("HOT keeps exact Historical date", js("document.body.innerText").contains("2024-08-20"));
+        assertEquals("Bounded HOT rendering", "true", js("document.querySelectorAll('.form-entry').length<=20"));
+        screenshot("hot-actual-360");
+        js("location.hash='#/MLB/records?season=2024'");
+        waitCondition("Historical Records data", "location.hash.includes('/MLB/records') && document.querySelectorAll('main a[href*=\"/players/\"]').length>0 && !document.querySelector('.skeleton-page')");
+        screenshot("records-actual-360");
+        js("location.hash='#/MLB/compare?season=2024'"); waitText("比較する選手名");
+        // Real UI selection, using existing verified names, does not merge identities.
+        for (String name : new String[]{"大谷翔平", "鈴木誠也"}) {
+            waitCondition("Compare search input", "!!document.querySelector('main input[type=search]')");
+            js("(()=>{const e=document.querySelector('main input[type=search]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(e,'"+name+"');e.dispatchEvent(new Event('input',{bubbles:true}));})()");
+            waitCondition("Exact verified compare result", "Array.from(document.querySelectorAll('.compare-search button.player-row strong')).some(e=>e.textContent==='"+name+"')");
+            js("Array.from(document.querySelectorAll('.compare-search button.player-row')).find(e=>e.querySelector('strong')?.textContent==='"+name+"').click()");
+            waitCondition("Compare player selected", "document.querySelector('.compare-selection')?.textContent.includes('"+name+"')");
+        }
+        waitCondition("Two real comparison columns", "document.querySelector('.compare-table tbody tr td') && document.querySelector('.compare-table tbody tr').querySelectorAll('td').length===2 && !document.querySelector('.skeleton-page')");
+        assertEquals("Comparison is not all unavailable", "true", js("Array.from(document.querySelectorAll('.compare-table td')).some(e=>e.textContent.trim()!=='—')"));
+        screenshot("compare-actual-360");
+        shell("settings put system font_scale 2.0"); scenario.recreate(); waitText("BASEBALL"); waitViewport(360);
+        js("location.hash='#/MLB/players/mlb%3Aplayer%3Ae70b8d12-aa41-50c0-9c1b-d468d451355f?season=2024'");
+        waitCondition("200% font Player metrics", "document.querySelector('.headline-stats')?.textContent.includes('1.036')");
+        assertEquals("200% system font page has no horizontal overflow", "true", js("document.documentElement.scrollWidth<=innerWidth"));
+        scenario.onActivity(activity -> assertTrue("Do not disable OS large text", activity.getBridge().getWebView().getSettings().getTextZoom() >= 180));
+        waitCondition("Large metric glyphs fit their cells without overlap", "Array.from(document.querySelectorAll('.headline-stats dd')).every(e=>{const r=document.createRange();r.selectNodeContents(e);const text=r.getBoundingClientRect(),cell=e.parentElement.getBoundingClientRect();return text.left>=cell.left-1&&text.right<=cell.right+1;})");
+        assertEquals("Header actions stay inside the viewport", "true", js("Array.from(document.querySelectorAll('.app-header a,.app-header button')).every(e=>{const r=e.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth;})"));
+        screenshot("player-font-200");
+        shell("settings put system font_scale 1.0"); scenario.recreate(); waitText("BASEBALL"); waitViewport(360);
+        js("location.hash='#/MLB/search?season=2024'");
+        waitCondition("Actual Player Search", "location.hash.includes('/MLB/search') && !!document.querySelector('main input[type=search]') && !document.querySelector('.skeleton-page')");
+        tapSearchInput();
+        screenshot("search-actual-keyboard");
+        assertEquals("Keyboard focus is on search", "true", js("document.activeElement===document.querySelector('main input[type=search]')"));
+        shell("input keyevent KEYCODE_BACK"); waitIme(false);
+        assertTrue("First system Back dismisses IME without leaving Search", js("location.hash").contains("/MLB/search"));
+        screenshot("search-keyboard-back");
     }
     @Test public void nativePreferencesSurviveRestartAndFirebaseDisabled() throws Exception {
         String fixture = "{\"items\":[{\"league\":\"NPB\",\"kind\":\"player\",\"entityId\":\"canonical-player\"}]}";
