@@ -5,6 +5,8 @@ import androidx.test.core.app.ActivityScenario;
 import androidx.test.platform.app.InstrumentationRegistry;
 import android.content.Intent;
 import android.net.Uri;
+import android.net.ConnectivityManager;
+import android.net.NetworkCapabilities;
 import android.graphics.Bitmap;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -36,6 +38,22 @@ public class ReleaseQualityTest {
             byte[] buffer = new byte[1024];
             while (output.read(buffer) != -1) { /* Shell output is not test data. */ }
         }
+    }
+    private void setNetwork(boolean online) throws Exception {
+        shell("cmd connectivity airplane-mode " + (online ? "disable" : "enable"));
+        shell("svc wifi " + (online ? "enable" : "disable"));
+        shell("svc data " + (online ? "enable" : "disable"));
+        ConnectivityManager manager = InstrumentationRegistry.getInstrumentation().getTargetContext().getSystemService(ConnectivityManager.class);
+        long start=System.currentTimeMillis();
+        while(System.currentTimeMillis()-start<30000) {
+            android.net.Network active=manager.getActiveNetwork();
+            NetworkCapabilities capabilities=active==null?null:manager.getNetworkCapabilities(active);
+            if(online ? capabilities!=null && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) : active==null) {
+                Thread.sleep(500); return;
+            }
+            Thread.sleep(250);
+        }
+        fail("Actual emulator transport did not become " + (online?"validated online":"offline"));
     }
     private void waitCondition(String label, String expression) throws Exception {
         long start = System.currentTimeMillis();
@@ -92,7 +110,7 @@ public class ReleaseQualityTest {
         try (FileOutputStream file = new FileOutputStream(new File(dir, name + ".png"))) { assertTrue(image.compress(Bitmap.CompressFormat.PNG, 100, file)); }
         finally { image.recycle(); }
     }
-    @After public void close() throws Exception { shell("settings put system font_scale 1.0"); shell("wm size 360x800"); shell("svc wifi enable"); shell("svc data enable"); if (scenario != null) scenario.close(); }
+    @After public void close() throws Exception { shell("settings put system font_scale 1.0"); shell("wm size 360x800"); shell("cmd connectivity airplane-mode disable"); shell("svc wifi enable"); shell("svc data enable"); if (scenario != null) scenario.close(); }
     @Test public void shellDeepLinksBackAndHistorical() throws Exception {
         long start = System.currentTimeMillis(); scenario = ActivityScenario.launch(MainActivity.class);
         waitText("BASEBALL"); System.out.println("PERF shell_ms=" + (System.currentTimeMillis()-start));
@@ -107,9 +125,9 @@ public class ReleaseQualityTest {
         scenario.onActivity(activity -> activity.getOnBackPressedDispatcher().onBackPressed());
         waitCondition("Back returned Home", "location.hash.includes('/NPB/home') && !!document.querySelector('main')");
         assertTrue("Back returns to the league Home", js("location.hash").contains("/NPB/home"));
-        shell("svc wifi disable"); shell("svc data disable");
+        setNetwork(false);
         js("location.hash='#/MLB/sources'"); waitText("Retrosheet"); waitText("Chadwick");
-        shell("svc wifi enable"); shell("svc data enable");
+        setNetwork(true);
         long homeStart = System.currentTimeMillis(); js("location.hash='#/MLB/home'");
         waitText("日本人選手");
         waitHomeStatistics();
@@ -194,7 +212,7 @@ public class ReleaseQualityTest {
         js("location.hash='#/MLB/search'"); System.out.println("PERF search_ms=" + waitText("選手一覧"));
         assertEquals("Search input is available", "true", js("!!document.querySelector('main input[type=search]')"));
         // Real last-validated Player/manifest cache must survive a process/activity restart.
-        shell("svc wifi disable"); shell("svc data disable"); Thread.sleep(1500);
+        setNetwork(false);
         scenario.close(); scenario = ActivityScenario.launch(intent);
         long offline = waitText("大谷翔平"); waitText("保存済みデータ");
         System.out.println("PERF offline_player_ms=" + offline);
@@ -209,7 +227,7 @@ public class ReleaseQualityTest {
         assertEquals("Watch rule survives Activity restart", "false", js("Array.from(document.querySelectorAll('.watch-preferences label')).find(e=>e.textContent==='確認できる連続記録')?.querySelector('input').checked"));
         assertEquals("Offline Watch does not advance baselines, alerts or read state", beforeOfflineWatch, preference("baseball:personal-watch:v1"));
         screenshot("watch-offline-restart");
-        shell("svc wifi enable"); shell("svc data enable");
+        setNetwork(true);
         js("location.hash='#/MLB/my'"); waitText("大谷翔平");
     }
     @Test public void nativePreferencesSurviveRestartAndFirebaseDisabled() throws Exception {

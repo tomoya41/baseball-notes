@@ -5,6 +5,33 @@ mkdir -p .data/android-emulator
 record_app_pid() {
   adb shell pidof com.tomoya41.baseballnotes | tr -d '\r' >> .data/android-emulator/app-pids.txt || true
 }
+network_offline() {
+  # svc toggles alone can race the freshly booted emulator's cellular setup.
+  # Establish and record a real disconnected transport before asserting UI.
+  adb shell cmd connectivity airplane-mode enable
+  adb shell svc wifi disable
+  adb shell svc data disable
+  for attempt in $(seq 1 15); do
+    adb shell dumpsys connectivity > .data/android-emulator/offline-connectivity.txt
+    if grep -q 'Active default network: none' .data/android-emulator/offline-connectivity.txt; then return 0; fi
+    sleep 2
+  done
+  echo 'Emulator still has a default network; offline QA not established' >&2
+  return 1
+}
+network_online() {
+  adb shell cmd connectivity airplane-mode disable
+  adb shell svc wifi enable
+  adb shell svc data enable
+  for attempt in $(seq 1 15); do
+    adb shell dumpsys connectivity > .data/android-emulator/online-connectivity.txt
+    if grep -Eq 'Active default network: [0-9]+' .data/android-emulator/online-connectivity.txt &&
+       awk '/Current Networks:/{p=1;next}/Network Requests:/{p=0}p' .data/android-emulator/online-connectivity.txt | grep -q VALIDATED; then return 0; fi
+    sleep 2
+  done
+  echo 'Emulator network is not validated; online QA not established' >&2
+  return 1
+}
 wait_screen() {
   local expected="$1" target="$2"
   for attempt in $(seq 1 15); do
@@ -24,14 +51,12 @@ adb install artifacts/apk/androidTest/debug/app-debug-androidTest.apk
 adb shell wm size 360x800
 adb shell wm density 160
 # Fresh install has no data cache: the bundled shell still starts offline.
-adb shell svc wifi disable
-adb shell svc data disable
+network_offline
 adb shell am start -W -n com.tomoya41.baseballnotes/jp.baseballdata.app.MainActivity > .data/android-emulator/cold-launch.txt
 record_app_pid
 wait_screen 'オフライン' .data/android-emulator/offline-first-launch.xml
 adb exec-out screencap -p > .data/android-emulator/offline-first-launch.png
-adb shell svc wifi enable
-adb shell svc data enable
+network_online
 adb shell input keyevent KEYCODE_HOME
 adb shell am start -W -n com.tomoya41.baseballnotes/jp.baseballdata.app.MainActivity > .data/android-emulator/warm-launch.txt
 record_app_pid
@@ -47,8 +72,7 @@ adb logcat -d -s Capacitor:V Capacitor/Console:V > .data/android-emulator/bridge
 adb exec-out screencap -p > .data/android-emulator/instrumentation-screen.png
 grep -q 'OK (' .data/android-emulator/instrumentation.txt
 adb pull /sdcard/Android/data/com.tomoya41.baseballnotes/files/ui-redesign .data/android-emulator/ui-redesign
-adb shell svc wifi disable
-adb shell svc data disable
+network_offline
 adb shell am force-stop com.tomoya41.baseballnotes
 adb shell am start -W -a android.intent.action.VIEW -d 'baseballnotes://MLB/players/mlb%3Aplayer%3Ae70b8d12-aa41-50c0-9c1b-d468d451355f' com.tomoya41.baseballnotes > .data/android-emulator/deep-link.txt
 record_app_pid
@@ -56,8 +80,7 @@ wait_screen '大谷翔平' .data/android-emulator/offline-process-restart.xml
 grep -q '保存済みデータ' .data/android-emulator/offline-process-restart.xml
 adb exec-out screencap -p > .data/android-emulator/offline-process-restart.png
 adb shell dumpsys meminfo com.tomoya41.baseballnotes > .data/android-emulator/memory.txt
-adb shell svc wifi enable
-adb shell svc data enable
+network_online
 wait_screen '大谷翔平' .data/android-emulator/online-restored.xml
 adb shell run-as com.tomoya41.baseballnotes du -k . > .data/android-emulator/storage.txt
 adb exec-out screencap -p > .data/android-emulator/android-360.png

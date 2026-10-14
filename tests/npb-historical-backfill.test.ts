@@ -115,6 +115,12 @@ describe("dual-source schedule reconciliation",()=>{
     expect(reconcileHistoricalSchedules([[second,game],[game,second],...Array.from({length:10},()=>[])])
       .map(g=>g.id)).toEqual(["game","second"]);
   });
+  it("controlled scope rejects the second copy's venue/time even when the first copy matches",()=>{
+    const reviewed={...game,venue:"球場",scheduledTime:"18:00"};
+    expect(()=>reconcileHistoricalSchedules(pages(reviewed,{...reviewed,venue:"別球場"}),[reviewed])).toThrow("Both recovery");
+    expect(()=>reconcileHistoricalSchedules(pages(reviewed,{...reviewed,scheduledTime:"19:00"}),[reviewed])).toThrow("Both recovery");
+    expect(reconcileHistoricalSchedules(pages(reviewed,reviewed),[reviewed])).toHaveLength(1);
+  });
 });
 it("remaining calendar inventory follows reviewed end, never a hard-coded October 7", () => {
   expect(remainingReviewedDates("2026-10-07")).toBe(1);

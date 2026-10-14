@@ -9,6 +9,9 @@ import { NpbRepository } from "./npb-repository";
 import { findNpbRegularSeason } from "./npb-season-metadata";
 import { sourceRegistry } from "./source-registry";
 
+export const recoveryGameFields=["id","season","date","homeTeamId","awayTeamId","gameNumber","venue","scheduledTime","status","homeScore","awayScore","sourceRecordId"] as const;
+export type ExpectedHistoricalGame=Pick<NpbGame,typeof recoveryGameFields[number]>;
+
 export function backfillDates(from: string, to: string, now = new Date()): string[] {
   const season = findNpbRegularSeason(to);
   if (!season || !/^2026-\d{2}-\d{2}$/.test(from) || !/^2026-\d{2}-\d{2}$/.test(to) ||
@@ -29,12 +32,17 @@ export function remainingReviewedDates(to: string): number {
 }
 
 // Two independent team schedules must agree. Absence is evidence only after all 12 pages parse.
-export function reconcileHistoricalSchedules(pages: readonly NpbGame[][]): NpbGame[] {
+export function reconcileHistoricalSchedules(pages: readonly NpbGame[][], expected: readonly ExpectedHistoricalGame[] = []): NpbGame[] {
   if (pages.length !== npbTeams.length) throw new Error("All twelve validated schedules required");
   const byId = new Map<string,NpbGame[]>();
   for (const page of pages) {
     if (new Set(page.map(g=>g.id)).size !== page.length) throw new Error("Duplicate game within schedule");
     for (const game of page) byId.set(game.id,[...(byId.get(game.id) ?? []),game]);
+  }
+  for(const game of expected) {
+    const copies=byId.get(game.id)??[];
+    if(copies.length!==2||copies.some(copy=>recoveryGameFields.some(k=>copy[k]!==game[k])))
+      throw Error(`Both recovery schedule copies must match reviewed metadata: ${game.id}`);
   }
   return [...byId.values()].map(rows=>{
     const first=rows[0]!;
@@ -48,6 +56,7 @@ export function reconcileHistoricalSchedules(pages: readonly NpbGame[][]): NpbGa
 export async function runHistoricalBackfill(client: DataClient, options: {
   from: string; to: string; dryRun?: boolean; scratch?: boolean; request?: (url:string)=>Promise<string>;
   progress?: (result: unknown)=>Promise<void>; now?: Date;
+  expectedGames?: readonly ExpectedHistoricalGame[];
 }) {
   const dates=backfillDates(options.from,options.to,options.now);
   if (options.dryRun && !options.scratch) throw new Error("Dry-run requires a caller-owned scratch database");
@@ -78,10 +87,16 @@ export async function runHistoricalBackfill(client: DataClient, options: {
           pages.push(parseNf3TeamGames(html,team.code,2026,url,new Date().toISOString()));
           timings.scheduleParsingMs+=performance.now()-parseStart;
         }
-        schedules=reconcileHistoricalSchedules(pages);
+        schedules=reconcileHistoricalSchedules(pages,options.expectedGames);
         } catch(error) { scheduleFailure=String(error); throw error; }
       }
       const games=schedules!.filter(g=>g.date===date);
+      if (options.expectedGames) {
+        const expected = options.expectedGames.filter(g=>g.date===date);
+        const prior = await repository.findGamesByDate(date);
+        for (const rows of [games,prior]) if(rows.length!==expected.length || rows.some(g=>!expected.some(e=>recoveryGameFields.every(k=>e[k]===g[k]))))
+          throw Error("Controlled recovery Game identity/metadata differs from approved scope");
+      }
       // Future/postponed rows are not final Facts; a completed-day scheduled row remains unresolved.
       if(games.some(g=>g.status==="scheduled" || g.status==="unknown" || g.status==="suspended"))
         throw new Error("Unresolved non-final schedule row on completed date");
