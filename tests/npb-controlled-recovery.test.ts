@@ -17,7 +17,7 @@ test("controlled recovery refuses every range except the approved single date",(
 test("scope diff allows only target inserts and games-stage correction, never identities or old Day rewrite",()=>{
   const before=empty(),after=empty();
   before.npb_day_runs=[{run_id:"legacy",target_date:"2026-09-28",day_status:"partial"}];
-  after.npb_day_runs=[...before.npb_day_runs,{run_id:"repair",target_date:"2026-09-28",trigger_kind:"repair",day_status:"complete",final_games:3,complete_games:3,partial_games:0,failed_games:0}];
+  after.npb_day_runs=[...before.npb_day_runs,{run_id:"repair",target_date:"2026-09-28",trigger_kind:"repair",day_status:"complete",scheduled_games:3,final_games:3,complete_games:3,partial_games:0,failed_games:0,batter_rows:80,pitcher_rows:30,mapping_created:0}];
   after.player_game_batting=[{game_id:recoveryGames[0].id}];
   expect(assertRecoveryDiff(before,after).find(r=>r.table==="player_game_batting")?.added).toBe(1);
   after.player_game_pitching=[{game_id:"outside"}];expect(()=>assertRecoveryDiff(before,after)).toThrow("out-of-scope");
@@ -34,6 +34,14 @@ test("a retry may replace only a target failed/partial proof; complete proof and
   before.npb_game_completeness=[];after.npb_game_completeness=[];
   before.player_game_batting=[{game_id:recoveryGames[0].id,hits:1}];after.player_game_batting=[{game_id:recoveryGames[0].id,hits:2}];
   expect(()=>assertRecoveryDiff(before,after)).toThrow("changed/deleted");
+});
+test("verified retry may acknowledge only backup_status on its complete repair Day, never scheduled/history fields",()=>{
+  const before=empty(),after=empty();const day={run_id:"prior-repair",target_date:"2026-09-28",trigger_kind:"repair",day_status:"complete",
+    scheduled_games:3,final_games:3,complete_games:3,partial_games:0,failed_games:0,batter_rows:80,pitcher_rows:30,mapping_created:0,backup_status:"pending"};
+  before.npb_day_runs=[day];after.npb_day_runs=[{...day,backup_status:"exported"}];
+  expect(()=>assertRecoveryDiff(before,after,"prior-repair")).not.toThrow();
+  expect(()=>assertRecoveryDiff(before,after)).toThrow("changed/deleted");
+  after.npb_day_runs[0]!.trigger_kind="scheduled";expect(()=>assertRecoveryDiff(before,after,"prior-repair")).toThrow();
 });
 test("rolled-back proof without Facts admits a fresh retry but is never accepted as complete readback",async()=>{
   const db=openDataClient("file::memory:");try{

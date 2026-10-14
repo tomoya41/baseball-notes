@@ -24,13 +24,24 @@ export async function recoverySnapshot(client:DataClient) {
 }
 type Snapshot=Awaited<ReturnType<typeof recoverySnapshot>>;
 const hash=(rows:readonly Record<string,unknown>[])=>createHash("sha256").update(JSON.stringify(rows)).digest("hex");
-export function assertRecoveryDiff(before:Snapshot,after:Snapshot) {
+const completeRepairDay=(r:Record<string,unknown>)=>r.target_date===recoveryDate&&r.trigger_kind==="repair"&&r.day_status==="complete"&&
+  r.scheduled_games===3&&r.final_games===3&&r.complete_games===3&&r.partial_games===0&&r.failed_games===0&&r.batter_rows===80&&r.pitcher_rows===30&&r.mapping_created===0;
+export async function recoveryBackupRun(client:DataClient,runId?:string):Promise<string> {
+  const result=await client.execute(runId?{sql:"SELECT * FROM npb_day_runs WHERE run_id=? AND target_date=?",args:[runId,recoveryDate]}:
+    {sql:"SELECT * FROM npb_day_runs WHERE target_date=? ORDER BY started_at DESC,run_id DESC LIMIT 1",args:[recoveryDate]});
+  const row=result.rows[0] as unknown as Record<string,unknown>|undefined;
+  if(!row||!completeRepairDay(row))throw Error("Only the validated complete target repair Day may acknowledge backup");
+  return String(row.run_id);
+}
+export function assertRecoveryDiff(before:Snapshot,after:Snapshot,acknowledgedRunId?:string) {
   const target=(r:Record<string,unknown>)=>recoveryGames.some(g=>g.id===r.game_id);
   const stage=(r:Record<string,unknown>)=>r.target_date===recoveryDate&&r.stage==="games";
   return protectedTables.map(table=>{
     const old=new Set(before[table].map(r=>JSON.stringify(r))),next=new Set(after[table].map(r=>JSON.stringify(r)));
     const removed=before[table].filter(r=>!next.has(JSON.stringify(r))),added=after[table].filter(r=>!old.has(JSON.stringify(r)));
-    if(removed.some(r=> !(table==="npb_ingestion_stages"&&stage(r)) &&
+    const backupAck=(r:Record<string,unknown>)=>table==="npb_day_runs"&&r.run_id===acknowledgedRunId&&completeRepairDay(r)&&
+      ["pending","failed"].includes(String(r.backup_status))&&after[table].some(n=>JSON.stringify(n)===JSON.stringify({...r,backup_status:"exported"}));
+    if(removed.some(r=> !(table==="npb_ingestion_stages"&&stage(r)) && !backupAck(r)&&
       !(table==="npb_game_completeness"&&target(r)&&["partial","failed"].includes(String(r.game_status)))))
       throw Error(`Recovery changed/deleted protected ${table}`);
     if(added.some(r=> {
@@ -38,7 +49,7 @@ export function assertRecoveryDiff(before:Snapshot,after:Snapshot) {
       if(table==="npb_game_completeness")return !target(r)||r.game_status!=="complete"||r.batting_status!=="complete"||r.pitching_status!=="complete";
       if(table==="npb_ingestion_stages")return !stage(r)||r.status!=="complete"||r.record_count!==3;
       if(table==="ingestion_runs")return r.target_date!==recoveryDate||r.source_key!=="nf3"||r.status!=="succeeded";
-      if(table==="npb_day_runs")return r.target_date!==recoveryDate||r.trigger_kind!=="repair"||r.day_status!=="complete"||r.final_games!==3||r.complete_games!==3||r.partial_games!==0||r.failed_games!==0;
+      if(table==="npb_day_runs")return !completeRepairDay(r);
       return true;
     }))throw Error(`Recovery added out-of-scope ${table}`);
     return {table,beforeCount:before[table].length,afterCount:after[table].length,beforeHash:hash(before[table]),afterHash:hash(after[table]),added:added.length,removed:removed.length};

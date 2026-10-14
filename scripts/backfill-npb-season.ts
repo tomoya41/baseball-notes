@@ -9,7 +9,7 @@ import { resolvePlayerPeriod } from "../src/domain/player-period";
 import { findNpbRegularSeason } from "../src/data/npb-season-metadata";
 import { createNf3DryRunSession } from "../src/data/npb-day-dry-run";
 import { recordDayBackup } from "../src/data/npb-day-collector";
-import { assertRecoveryRange, assertRecoveryDiff, expectedRecoveryGames, recoveryReadback, recoverySnapshot } from "../src/data/npb-controlled-recovery";
+import { assertRecoveryRange, assertRecoveryDiff, expectedRecoveryGames, recoveryReadback, recoverySnapshot, recoveryBackupRun } from "../src/data/npb-controlled-recovery";
 import type { BackupManifest } from "../src/data/npb-backup";
 
 const arg = (name:string) => process.argv.find(a=>a.startsWith(`--${name}=`))?.slice(name.length+3);
@@ -145,7 +145,9 @@ try {
             const restored=await recoveryReadback(scratch,true);
             if(JSON.stringify(restored)!==JSON.stringify(candidate))throw Error("Restored values differ from validated candidates");
             const repaired=result.reports[0]?.result as {runId?:string}|undefined;
-            if(repaired?.runId)await recordDayBackup(remote,repaired.runId,true);
+            const acknowledgedRunId=await recoveryBackupRun(remote,repaired?.runId);
+            if(protectedBefore!.npb_day_runs.find(r=>r.run_id===acknowledgedRunId)?.backup_status!=="exported")
+              await recordDayBackup(trace(remote),acknowledgedRunId,true);
             // Include the recorded repair-backup status in the final retained export.
             const finalDir=join(root,"final-export");
             await exportNpbBackup(remote,finalDir,"turso-remote");
@@ -154,7 +156,7 @@ try {
               if(JSON.stringify(await recoveryReadback(finalScratch,true))!==JSON.stringify(candidate))throw Error("Final backup readback mismatch");
             }finally{finalScratch.close();}
             backup={directory:finalDir,schemaVersion:manifest.schemaVersion,countsMatch,readback};
-            recovery={...recovery,restored,finalDiff:assertRecoveryDiff(protectedBefore!,await recoverySnapshot(remote))};
+            recovery={...recovery,restored,acknowledgedRunId,finalDiff:assertRecoveryDiff(protectedBefore!,await recoverySnapshot(remote),acknowledgedRunId)};
           }
         } finally {scratch.close();}
       }
