@@ -15,6 +15,10 @@ on:
         options: [inventory, dry-run, ingest]
         default: inventory
         required: true
+      controlled_sep28:
+        description: Enforce the reviewed September 28 three-Game scope and pre-write encrypted backup
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -33,6 +37,41 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      - name: Admit exact controlled range
+        if: inputs.controlled_sep28
+        env:
+          FROM: ${{ inputs.from }}
+          TO: ${{ inputs.to }}
+          MODE: ${{ inputs.mode }}
+        run: |
+          [[ "$FROM" == '2026-09-28' && "$TO" == '2026-09-28' ]]
+          [[ "$MODE" == 'dry-run' || "$MODE" == 'ingest' ]]
+      - name: Pre-write portable backup and independent scratch restore
+        if: inputs.controlled_sep28 && inputs.mode == 'ingest'
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          NPB_BACKUP_ENCRYPTION_KEY: ${{ secrets.NPB_BACKUP_ENCRYPTION_KEY }}
+        run: |
+          mkdir -p .data/batch-b
+          npm run -s backup:npb:drill -- --require-remote > .data/batch-b/pre-backup.json
+          node --input-type=module -e "import{readFileSync,appendFileSync}from'node:fs';const r=JSON.parse(readFileSync('.data/batch-b/pre-backup.json'));if(r.result!=='PASS')throw Error('Pre-write restore failed');appendFileSync(process.env.GITHUB_ENV,'NPB_RECOVERY_BASELINE_DIR='+r.directory+'/export\n');"
+          exports=(.data/backup-drill-*/export)
+          [[ ${#exports[@]} == 1 && -d "${exports[0]}" ]]
+          tar -C "$(dirname "${exports[0]}")" -czf .data/batch-b/pre-backup.tar.gz export
+          npx tsx scripts/crypt-npb-backup.ts encrypt .data/batch-b/pre-backup.tar.gz .data/batch-b/pre-backup.tar.gz.enc
+          npx tsx scripts/crypt-npb-backup.ts decrypt .data/batch-b/pre-backup.tar.gz.enc .data/batch-b/pre-backup-decrypted.tar.gz
+          cmp .data/batch-b/pre-backup.tar.gz .data/batch-b/pre-backup-decrypted.tar.gz
+          rm .data/batch-b/pre-backup.tar.gz .data/batch-b/pre-backup-decrypted.tar.gz
+      - name: Retain encrypted recovery baseline before permitting writes
+        if: inputs.controlled_sep28 && inputs.mode == 'ingest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: npb-recovery-baseline-encrypted-${{ github.run_id }}
+          path: .data/batch-b/pre-backup.tar.gz.enc
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
       - name: Explicit historical range; never a scheduled production proof
         env:
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
@@ -41,7 +80,35 @@ jobs:
           FROM: ${{ inputs.from }}
           TO: ${{ inputs.to }}
           MODE: ${{ inputs.mode }}
-        run: npx tsx scripts/backfill-npb-season.ts --from="$FROM" --to="$TO" --mode="$MODE"
+          CONTROLLED: ${{ inputs.controlled_sep28 }}
+        run: |
+          args=()
+          if [[ "$CONTROLLED" == 'true' ]]; then args+=(--controlled-sep28); fi
+          npx tsx scripts/backfill-npb-season.ts --from="$FROM" --to="$TO" --mode="$MODE" "${args[@]}"
+      - name: Encrypt restored recovery backup
+        if: inputs.controlled_sep28 && inputs.mode == 'ingest'
+        env:
+          NPB_BACKUP_ENCRYPTION_KEY: ${{ secrets.NPB_BACKUP_ENCRYPTION_KEY }}
+        run: |
+          node --input-type=module -e "import{readFileSync,appendFileSync}from'node:fs';const r=JSON.parse(readFileSync('.data/batch-b/report.json'));if(!r.backup?.countsMatch||!r.replay?.valuesUnchanged||!r.recovery?.restored)throw Error('Recovery verification incomplete');appendFileSync(process.env.GITHUB_ENV,'RECOVERY_EXPORT='+r.backup.directory+'\n');"
+      - name: Retain verified encrypted post-recovery backup
+        if: inputs.controlled_sep28 && inputs.mode == 'ingest'
+        env:
+          NPB_BACKUP_ENCRYPTION_KEY: ${{ secrets.NPB_BACKUP_ENCRYPTION_KEY }}
+        run: |
+          tar -C "$RECOVERY_EXPORT" -czf .data/batch-b/post-backup.tar.gz .
+          npx tsx scripts/crypt-npb-backup.ts encrypt .data/batch-b/post-backup.tar.gz .data/batch-b/post-backup.tar.gz.enc
+          npx tsx scripts/crypt-npb-backup.ts decrypt .data/batch-b/post-backup.tar.gz.enc .data/batch-b/post-backup-decrypted.tar.gz
+          cmp .data/batch-b/post-backup.tar.gz .data/batch-b/post-backup-decrypted.tar.gz
+          rm .data/batch-b/post-backup.tar.gz .data/batch-b/post-backup-decrypted.tar.gz
+      - uses: actions/upload-artifact@v4
+        if: inputs.controlled_sep28 && inputs.mode == 'ingest'
+        with:
+          name: npb-recovery-completed-encrypted-${{ github.run_id }}
+          path: .data/batch-b/post-backup.tar.gz.enc
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -50,4 +117,8 @@ jobs:
             .data/batch-b/report.json
             .data/batch-b/checkpoint.json
             .data/batch-b/progress.jsonl
+            .data/batch-b/pre-backup.json
+            .data/batch-b/preflight.json
+          include-hidden-files: true
+          if-no-files-found: error
           retention-days: 7
