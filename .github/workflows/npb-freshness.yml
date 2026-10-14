@@ -8,6 +8,10 @@ on:
         description: Read-only saved Game/Day integrity audit (no source acquisition or repairs)
         type: boolean
         default: false
+      shortened_readiness:
+        description: Explicit bounded nf3 dry-run of the six shortened Games on a private restored scratch DB (no canonical writes)
+        type: boolean
+        default: false
 permissions:
   contents: read
   actions: read
@@ -15,7 +19,10 @@ jobs:
   check:
     if: github.event.repository.private == false
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: ${{ inputs.shortened_readiness && 20 || 5 }}
+    concurrency:
+      group: ${{ inputs.shortened_readiness && 'daily-npb-collector-and-pages' || format('npb-freshness-{0}', github.run_id) }}
+      cancel-in-progress: false
     steps:
       - name: Capture runner start
         run: echo "NPB_RUNNER_STARTED_AT=$(date -u +%FT%TZ)" >> "$GITHUB_ENV"
@@ -54,6 +61,20 @@ jobs:
         with:
           name: npb-integrity-read-only
           path: .data/integrity-release/npb-integrity.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
+      - name: Read-only shortened readiness on independently restored private scratch DB
+        if: always() && github.event_name == 'workflow_dispatch' && inputs.shortened_readiness
+        run: npx tsx scripts/audit-npb-shortened-readiness.ts
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+      - uses: actions/upload-artifact@v4
+        if: always() && github.event_name == 'workflow_dispatch' && inputs.shortened_readiness
+        with:
+          name: npb-shortened-readiness-diagnostic
+          path: .data/shortened-readiness/report.json
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 7
