@@ -23,6 +23,14 @@ network_online() {
   adb shell cmd connectivity airplane-mode disable
   adb shell svc wifi enable
   adb shell svc data enable
+  for attempt in $(seq 1 15); do
+    adb shell dumpsys connectivity > .data/android-emulator/online-connectivity.txt
+    if grep -Eq 'Active default network: [0-9]+' .data/android-emulator/online-connectivity.txt &&
+       awk '/Current Networks:/{p=1;next}/Network Requests:/{p=0}p' .data/android-emulator/online-connectivity.txt | grep -q VALIDATED; then return 0; fi
+    sleep 2
+  done
+  echo 'Emulator network is not validated; online QA not established' >&2
+  return 1
 }
 wait_screen() {
   local expected="$1" target="$2"
