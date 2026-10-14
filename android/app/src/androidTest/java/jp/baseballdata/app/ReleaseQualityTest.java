@@ -9,7 +9,8 @@ import android.net.ConnectivityManager;
 import android.net.NetworkCapabilities;
 import android.graphics.Bitmap;
 import android.view.MotionEvent;
-import android.view.WindowInsets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import java.io.File;
 import java.io.FileOutputStream;
 import org.junit.*;
@@ -117,8 +118,8 @@ public class ReleaseQualityTest {
         long start = System.currentTimeMillis();
         while (System.currentTimeMillis() - start < 15000) {
             scenario.onActivity(activity -> {
-                WindowInsets insets = activity.getWindow().getDecorView().getRootWindowInsets();
-                actual.set(insets != null && insets.isVisible(WindowInsets.Type.ime()));
+                WindowInsetsCompat insets = ViewCompat.getRootWindowInsets(activity.getWindow().getDecorView());
+                actual.set(insets != null && insets.isVisible(WindowInsetsCompat.Type.ime()));
             });
             if (actual.get() == visible) return;
             Thread.sleep(100);

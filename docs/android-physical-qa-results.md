@@ -34,18 +34,18 @@ Expected / Observed：
 Screenshot：未取得 / 所有者が保管したファイル名
 ```
 
-## Short session (about 10–15 minutes, longer if any failure)
+## 最短チェック（10〜15分、失敗があれば追加時間を確保）
 
-| Order | Actual operation | PASS condition | Physical result |
+| 順番 | 操作 | PASS条件 | 実機結果 |
 |---|---|---|---|
-| 1 | Online first launch → NPB Home, September9 Game, September28 restored Game → MLB 2024 Player | No crash; September9 remains incomplete, September28 stats visible; Historical/year explicit; NPB HOT/Ranking unavailable | NOT RUN |
-| 2 | Player → 操作 → 整理; Back/edge gesture twice; open invalid/custom deep link using the full-checklist examples | Child closes before parent; focus returns; correct year/ID or safe fallback; no duplicate Activity | NOT RUN |
-| 3 | Favorite one Player and Team; create `実機QA` Collection, add Player; save Explorer condition; change one Watch rule | Canonical objects/condition/rule readable and usable; no notification permission or fake realtime claim | NOT RUN |
-| 4 | Force-stop/relaunch; background/resume; rotate with a dialog/filter open | Saved state survives, correct URL/year/scope; no stuck overlay or lost actions | NOT RUN |
-| 5 | Load Player/Game online; turn off both Wi-Fi/mobile data, force-stop/relaunch; open an uncached target | Cached response labeled offline/saved; uncached target has error/Retry; Watch does not advance baseline offline | NOT RUN |
-| 6 | Restore network → Retry → Watch check | Real data returns; same projection does not create duplicate alerts; rules/read state persist | NOT RUN |
-| 7 | Light/Dark/System; OS font150% then max; portrait/landscape Player/Game/My/HOT | Scores/names/decimals/actions readable and tappable; no page-wide horizontal overflow | NOT RUN |
-| 8 | TalkBack → primary navigation, selected season, metric explanation, dialog close, Watch rule | Meaningful labels/values, logical order, modal confines focus and returns it; no unlabeled button/trap | NOT RUN |
+| 1 | オンライン初回起動 → NPBホーム、9/9の試合、9/28の復元済み試合 → MLB2024選手 | クラッシュなし。9/9は一部未収録、9/28は成績あり。MLBは過去年度、NPB HOT/Rankingは未公開と分かる | NOT RUN |
+| 2 | 選手 → 操作 → 整理 → Back／端からの戻るジェスチャーを2回。全チェックリストのdeep link例も開く | 子画面、親画面の順で閉じ、フォーカスが戻る。正しいID／年度、無効URLは安全な案内。Activity重複なし | NOT RUN |
+| 3 | 選手と球団をお気に入りへ追加。`実機QA`コレクションを作成して選手を追加。探索条件を保存。フォローのルールを1つ変更 | 対象・保存条件・ルールを開ける。Push許可を強制せず、リアルタイム通知に見えない | NOT RUN |
+| 4 | OS設定から強制停止 → 再起動。ホームへ戻して再開。ダイアログ／フィルターを開いて回転 | 保存内容・URL・年度・公式戦／Postseasonを維持。残った暗い背景や操作不能なし | NOT RUN |
+| 5 | 選手／試合をオンラインで開く → Wi-Fiとモバイル通信を両方OFF → 強制停止・再起動。未キャッシュの対象も開く | キャッシュはオフライン／保存済み表示、未取得は再試行案内。オフラインでWatch基準値を進めない | NOT RUN |
+| 6 | 通信ON → 再読み込み → フォローの変化を確認 | 実データが戻る。同じデータで重複通知を作らず、ルール・既読状態を維持 | NOT RUN |
+| 7 | ライト／ダーク／端末設定。OS文字150%と最大。縦横の選手／試合／My／HOT | 名前・スコア・小数・操作が読みやすくタップ可能。ページ全体の横はみ出しなし | NOT RUN |
+| 8 | TalkBackをON → 基本ナビ、年度、指標説明、ダイアログを閉じる、フォローのルール | 名前・選択状態・値を読み上げ、順序が自然。ダイアログ内にフォーカスを保ち、閉じると戻る。無名ボタン／閉じられない画面なし | NOT RUN |
 
 Use [full checklist](android-device-qa.md) for offline first-install (separate disposable install), corrupted/quota/reset isolation, lifecycle and all release cases. Do not alter daily-use saved data for destructive tests. If a row fails, record observed vs expected behavior, device/font/theme/navigation, URL/year/scope, online/offline, APK Run/commit and a screenshot without personal information. This is enough for a reproducible fix; do not guess PASS.
 
