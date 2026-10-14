@@ -458,6 +458,34 @@
   font-weight: 650;
 }
 
+:root[data-large-font] .player-context-bar {
+  display: grid;
+  grid-template-columns: 44px minmax(0,1fr);
+}
+
+:root[data-large-font] .player-context-controls {
+  grid-column: 1/-1;
+  grid-row: 2;
+  flex-wrap: wrap;
+}
+
+:root[data-large-font] .player-context-controls label {
+  flex: 1 1 calc(112px * var(--android-font-scale,1));
+}
+
+:root[data-large-font] .player-context-controls label:first-child:not(:only-child) {
+  flex: 1 1 calc(86px * var(--android-font-scale,1));
+}
+
+:root[data-large-font] .player-context-bar>.player-action-trigger {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+  width: auto;
+  padding: 8px 12px;
+  white-space: nowrap;
+}
+
 .player-action-menu {
   display: grid;
   margin: 12px 0;
@@ -551,7 +579,7 @@
 }
 
 .headline-stats dl>div {
-  flex: 1 1 80px;
+  flex: 1 1 calc(80px * var(--android-font-scale,1));
   min-width: max-content;
 }
 

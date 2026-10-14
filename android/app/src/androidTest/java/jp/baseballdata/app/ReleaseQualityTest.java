@@ -294,6 +294,9 @@ public class ReleaseQualityTest {
         js("location.hash='#/MLB/players/mlb%3Aplayer%3Ae70b8d12-aa41-50c0-9c1b-d468d451355f?season=2024'");
         waitCondition("200% font Player metrics", "document.querySelector('.headline-stats')?.textContent.includes('1.036')");
         assertEquals("200% system font page has no horizontal overflow", "true", js("document.documentElement.scrollWidth<=innerWidth"));
+        scenario.onActivity(activity -> assertTrue("Do not disable OS large text", activity.getBridge().getWebView().getSettings().getTextZoom() >= 180));
+        waitCondition("Large metric glyphs fit their cells without overlap", "Array.from(document.querySelectorAll('.headline-stats dd')).every(e=>{const r=document.createRange();r.selectNodeContents(e);const text=r.getBoundingClientRect(),cell=e.parentElement.getBoundingClientRect();return text.left>=cell.left-1&&text.right<=cell.right+1;})");
+        assertEquals("Header actions stay inside the viewport", "true", js("Array.from(document.querySelectorAll('.app-header a,.app-header button')).every(e=>{const r=e.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth;})"));
         screenshot("player-font-200");
         shell("settings put system font_scale 1.0"); scenario.recreate(); waitText("BASEBALL"); waitViewport(360);
         js("location.hash='#/MLB/search?season=2024'");
