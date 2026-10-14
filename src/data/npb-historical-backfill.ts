@@ -32,12 +32,17 @@ export function remainingReviewedDates(to: string): number {
 }
 
 // Two independent team schedules must agree. Absence is evidence only after all 12 pages parse.
-export function reconcileHistoricalSchedules(pages: readonly NpbGame[][]): NpbGame[] {
+export function reconcileHistoricalSchedules(pages: readonly NpbGame[][], expected: readonly ExpectedHistoricalGame[] = []): NpbGame[] {
   if (pages.length !== npbTeams.length) throw new Error("All twelve validated schedules required");
   const byId = new Map<string,NpbGame[]>();
   for (const page of pages) {
     if (new Set(page.map(g=>g.id)).size !== page.length) throw new Error("Duplicate game within schedule");
     for (const game of page) byId.set(game.id,[...(byId.get(game.id) ?? []),game]);
+  }
+  for(const game of expected) {
+    const copies=byId.get(game.id)??[];
+    if(copies.length!==2||copies.some(copy=>recoveryGameFields.some(k=>copy[k]!==game[k])))
+      throw Error(`Both recovery schedule copies must match reviewed metadata: ${game.id}`);
   }
   return [...byId.values()].map(rows=>{
     const first=rows[0]!;
@@ -82,7 +87,7 @@ export async function runHistoricalBackfill(client: DataClient, options: {
           pages.push(parseNf3TeamGames(html,team.code,2026,url,new Date().toISOString()));
           timings.scheduleParsingMs+=performance.now()-parseStart;
         }
-        schedules=reconcileHistoricalSchedules(pages);
+        schedules=reconcileHistoricalSchedules(pages,options.expectedGames);
         } catch(error) { scheduleFailure=String(error); throw error; }
       }
       const games=schedules!.filter(g=>g.date===date);
