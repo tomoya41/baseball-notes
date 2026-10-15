@@ -3,6 +3,7 @@ import { readWatchObservations, watchTargets, type watchSources } from "../src/a
 import { defaultWatchPreferences, evaluateWatch, emptyWatchState, watchObservationSchema } from "../src/domain/personal-watch";
 import type { PersonalState } from "../src/application/personal-library";
 import type { Favorite } from "../src/domain/models";
+import registry from "../src/data/npb-historical-only-identities.json";
 const id="00000000-0000-4000-8000-000000000001", game="npb:game:01234567890123456789", date="2026-10-07", gen="2026-10-07T22:00:00Z", now=Date.parse("2026-10-08T01:00:00Z");
 const library=():PersonalState=>({version:1,views:[],collections:[],activity:[]});
 const favorite=(entityId=id,kind:Favorite["kind"]="player",league:Favorite["league"]="NPB"):Favorite=>({league,kind,entityId,addedAt:gen});
@@ -17,6 +18,12 @@ function setup(){
   return{sources,mocks,directory,recent,row};
 }
 describe("bounded Watch data acquisition",()=>{
+  it("never turns historical-only Favorites or Collection members into Current observation targets",async()=>{
+    const {sources,mocks}=setup(),l=library(),ob=registry.players[0]!.playerId;
+    l.collections=[{id:"old",name:"過去",updatedAt:now,players:[{league:"NPB",playerId:ob}]}];
+    const r=await readWatchObservations("NPB",[favorite(ob)],l,{...defaultWatchPreferences(),collections:true},sources,now);
+    expect(r.targets).toBe(0);expect(r.fetches).toBe(0);expect(mocks.directory).not.toHaveBeenCalled();expect(r.observations).toEqual([]);
+  });
   it("preserves overlapping Favorite/Collection record tracking without changing Favorite thresholds",async()=>{const {sources,mocks}=setup(),l=library();l.collections=[{id:"watchlist",name:"追跡",updatedAt:now,players:[{league:"NPB",playerId:id}]}];const p={...defaultWatchPreferences(),players:false,collections:true,recent:false,milestones:false};const r=await readWatchObservations("NPB",[favorite()],l,p,sources,now);expect(mocks.log).toHaveBeenCalledWith(id,10,0);const o=r.observations.find(o=>o.rule==="result")!;expect(o).toMatchObject({collectionOnly:false,collectionMember:true});const s={...emptyWatchState(),preferences:p};const b=evaluateWatch(s,[o],now);expect(evaluateWatch(b,[{...o,values:{...o.values,H:3}}],now).alerts).toHaveLength(1);});
   it("acquires Recent independently of player records and avoids disabled record reads",async()=>{const {sources,mocks}=setup();const p={...defaultWatchPreferences(),players:false,recent:true,milestones:false,streaks:false};const r=await readWatchObservations("NPB",[favorite()],library(),p,sources,now);expect(r.targets).toBe(1);expect(mocks.log).not.toHaveBeenCalled();expect(r.observations.map(o=>o.rule)).toEqual(["recent"]);});
   it("filters unsupported saved conditions before applying the six-view budget",async()=>{const {sources,mocks}=setup(),l=library();l.views=[...Array.from({length:6},(_,n)=>({id:`history-${n}`,name:"履歴",league:"NPB" as const,kind:"history" as const,conditions:"season=2026",savedAt:now+n})),{id:"valid",name:"有効",league:"NPB",kind:"data",conditions:"period=7&season=2026",savedAt:now-1},{id:"old",name:"旧年",league:"NPB",kind:"data",conditions:"period=14&season=2025",savedAt:now}];const p={...defaultWatchPreferences(),savedViews:true};expect(watchTargets("NPB",[],l,p).views.map(v=>v.id)).toEqual(["valid"]);const r=await readWatchObservations("NPB",[],l,p,sources,now);expect(mocks.recent).toHaveBeenCalledTimes(1);expect(mocks.recent.mock.calls[0]?.[0]).toBe(7);expect(r.observations[0]?.entityId).toBe("valid");});

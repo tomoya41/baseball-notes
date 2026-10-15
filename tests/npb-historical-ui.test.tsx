@@ -15,6 +15,21 @@ beforeEach(()=>{vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);vi.mocked(readNpb
 afterEach(()=>{vi.unstubAllGlobals();vi.clearAllMocks();});
 async function mount(search:string){const div=document.createElement("div");document.body.append(div);const root=createRoot(div);await act(async()=>{root.render(<MemoryRouter initialEntries={[`/NPB/history${search}`]}><Location/><NpbHistoricalHistory current={<p>2026 Current</p>}/></MemoryRouter>);});return{div,close:async()=>{await act(async()=>root.unmount());div.remove();}};}
 describe("NPB Historical integrated UI",()=>{
+  it("finds a retired player's admitted years from the index without fetching every season",async()=>{
+    vi.mocked(readNpbHistoricalManifest).mockResolvedValue({...manifest,seasons:[...manifest.seasons,{...manifest.seasons[0]!,season:2015}],players:[{...manifest.players[0]!,identityScope:"historical_only",seasons:[2015]}]});
+    vi.mocked(readNpbHistoricalSeason).mockResolvedValue({...dataset,players:[],rows:[]});
+    const {div,close}=await mount("?season=2025&q=架空");try{
+      expect(div.textContent).toContain("別の年度に収録されている選手");expect(div.querySelector('a[href*="season=2015"]')).not.toBeNull();expect(readNpbHistoricalSeason).toHaveBeenCalledTimes(1);
+    }finally{await close();}
+  });
+  it("keeps a historical-only profile in History and preserves its per-revision attribution",async()=>{
+    vi.mocked(readNpbHistoricalManifest).mockResolvedValue({...manifest,players:[{...manifest.players[0]!,identityScope:"historical_only"}]});
+    vi.mocked(readNpbHistoricalSeason).mockResolvedValue({...dataset,players:[{...dataset.players[0]!,identityScope:"historical_only",sourceObservedAt:"2026-10-02T00:00:00Z"}]});
+    const {div,close}=await mount(`?season=2025&player=${id}`);try{
+      expect(div.querySelector('a[href*="/NPB/players/"]')).toBeNull();expect(div.textContent).toContain("現在の登録や所属を示しません");
+      expect(div.querySelector('a[href*="oldid=123"]')).not.toBeNull();expect(div.textContent).toContain("原本取得 2026-10-02");
+    }finally{await close();}
+  });
   it("anchors default comparison years to the opened historical season rather than the latest years",async()=>{
     const years=[2015,2016,2017,2023,2024,2025];
     vi.mocked(readNpbHistoricalManifest).mockResolvedValue({...manifest,seasons:years.map(season=>({...manifest.seasons[0]!,season})),players:[{...manifest.players[0]!,seasons:years}]});

@@ -39,7 +39,7 @@ export function NpbRoutes({ services, favorites, toggle, saving }: { services: S
     <Route path="schedule" element={<NpbScheduleScreen repository={services.gameSurface} favorites={favorites} toggle={toggle} saving={saving} />} />
     <Route path="search" element={<NpbSearchEntry services={services} favorites={favorites} toggle={toggle} saving={saving} />} />
     <Route path="data" element={<NpbDataExplorer services={services} />} />
-    <Route path="history" element={<NpbSeasonExplorer />} />
+    <Route path="history" element={<NpbSeasonExplorer favorites={favorites} toggle={toggle} saving={saving} />} />
     <Route path="team-compare" element={<NpbTeamCompare services={services} favoriteTeams={favorites.filter(f => f.league === "NPB" && f.kind === "team").map(f => f.entityId)} />} />
     <Route path="season-compare" element={<SeasonCompare league="NPB" services={services} />} />
     <Route path="glossary" element={<StatGlossary league="NPB" />} />
