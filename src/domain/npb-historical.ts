@@ -64,7 +64,7 @@ export function historicalRates(role: "batting" | "pitching", m: Record<string, 
     const n = numerator.reduce((sum, k) => sum + m[k]!, 0), d = denominator.reduce((sum,k) => sum + m[k]!,0);
     return d > 0 ? factor * n / d : null;
   };
-  if (role === "pitching") return { ERA: divide(["ER"], ["outsRecorded"], 27), WHIP: divide(["H", "BB"], ["outsRecorded"], 3) };
+  if (role === "pitching") return { ERA: divide(["ER"], ["outsRecorded"], 27), WHIP: divide(["H", "BB"], ["outsRecorded"], 3), WPCT: divide(["W"], ["W", "L"]) };
   const AVG = divide(["H"], ["AB"]), OBP = divide(["H", "BB", "HBP"], ["AB", "BB", "HBP", "SF"]), SLG = divide(["TB"], ["AB"]);
   return { AVG, OBP, SLG, OPS: OBP === null || SLG === null ? null : OBP + SLG };
 }

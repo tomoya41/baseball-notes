@@ -33,6 +33,12 @@ describe("NPB historical aggregate source adapter",()=>{
     const r=parseWikipediaHistorical(page(table(`|{{By2|2025}}\n|楽天\n|${line}`,"pitching")),bridge,[2025]);expect(r.rows[0]?.metrics.outsRecorded).toBe(20);expect(r.rows[0]?.metrics.BB).toBe(1);expect(r.rows[0]?.metrics.HBP).toBe(2);
   });
   it.each([["0.0",0],["0.1",1],["7.2",23],["150.1",451],["--",null]])("converts IP %s safely",(input,expected)=>expect(inningsToOuts(String(input))).toBe(expected));
+  it("normalizes the source .000 placeholder without decisions to unavailable",()=>{
+    const m:Record<string,number|null>={...pitching,W:0,L:0,WPCT:0};
+    const line=historicalPitchingKeys.map(k=>k==="outsRecorded"?"6.2":m[k]??"--").join("||");
+    const result=parseWikipediaHistorical(page(table(`|{{by2|2025}}\n|楽天\n|${line}`,"pitching")),bridge,[2025]);
+    expect(result.rows).toHaveLength(1);expect(result.rows[0]?.metrics.WPCT).toBeNull();expect(result.rows[0]?.metrics.SO).toBe(7);
+  });
   it.each(["6.3","1.7","NaN","1/3","-1.0"])("rejects unsupported innings %s",input=>expect(()=>inningsToOuts(input)).toThrow());
 });
 describe("historical data boundaries",()=>{
@@ -56,8 +62,19 @@ describe("historical data boundaries",()=>{
     expect(()=>sumHistoricalRows([row,{...row,playerId:"another"}])).toThrow();
   });
   it("keeps zero-outs and zero-denominator rates unavailable",()=>{
-    expect(historicalRates("pitching",{ER:0,H:0,BB:0,outsRecorded:0})).toEqual({ERA:null,WHIP:null});
+    expect(historicalRates("pitching",{ER:0,H:0,BB:0,outsRecorded:0})).toEqual({ERA:null,WHIP:null,WPCT:null});
     expect(historicalRates("batting",{H:0,AB:0,BB:0,HBP:0,SF:0,TB:0})).toEqual({AVG:null,OBP:null,SLG:null,OPS:null});
+  });
+  it("validates and recomputes pitching win percentage from decisions, never averages rates",()=>{
+    const r={...row,role:"pitching" as const,metrics:{...pitching,W:2,L:1,WPCT:2/3}};
+    expect(npbHistoricalRowSchema.safeParse(r).success).toBe(true);
+    expect(npbHistoricalRowSchema.safeParse({...r,metrics:{...r.metrics,WPCT:.9}}).success).toBe(false);
+    const total=sumHistoricalRows([r,{...r,season:2024,metrics:{...r.metrics,W:1,L:3,WPCT:.25}}]);
+    expect(total.metrics.WPCT).toBeCloseTo(3/7);
+    for(const [W,L] of [[0,0],[null,1],[1,null]]) {
+      expect(historicalRates("pitching",{W:W!,L:L!}).WPCT).toBeNull();
+      expect(npbHistoricalRowSchema.safeParse({...r,metrics:{...r.metrics,W,L,WPCT:.5}}).success).toBe(false);
+    }
   });
   it("retains historical history selection without authorizing NPB current rankings",()=>{
     expect(portableRoute("/NPB/history",`season=2025&player=${playerId}&role=pitching&recentPlayers=${playerId}`)).toContain("season=2025");

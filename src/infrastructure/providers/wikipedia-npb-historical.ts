@@ -72,6 +72,8 @@ export function parseWikipediaHistorical(raw: unknown, bridge: HistoricalBridge,
         if (!team) throw Error("Unknown/non-NPB team; no latest-affiliation fallback");
         if (grid.length !== keys.length + 2) throw Error(`Unexpected column count ${grid.length}`);
         const metrics = Object.fromEntries(keys.map((key,i)=>[key, key === "outsRecorded" ? inningsToOuts(plain(grid[i+2]!)) : numeric(grid[i+2]!) ]));
+        // Some source tables print .000 without any decisions. That is unavailable, not a 0% win rate.
+        if (role === "pitching" && metrics.W === 0 && metrics.L === 0 && metrics.WPCT === 0) metrics.WPCT = null;
         rows.push(npbHistoricalRowSchema.parse({ playerId:bridge.playerId,season:Number(year),teamId:`npb:team:${team}`,role,metrics }));
       } catch (e) {
         // Invalid spanning rows can affect subsequent club/year positions. Stop this table, never guess.

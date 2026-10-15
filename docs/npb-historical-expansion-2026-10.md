@@ -98,7 +98,7 @@ source tableが算術整合することは公式記録全量との独立照合�
 
 scratch SQLiteはメモリ内の専用aggregate table。2回insert→全行readbackを比較して重複なし。canonicalへの接続/認証/writeは不要。今回本番DBへのbackup/restoreや新規migrationは実施しない。
 
-実測：変換319ms、正規化JSON 785,125 bytes、公開release gzip 144,138 bytes、SHA256 `03a51fb6c39c31dedcf72e2e2d013f61bf637b96f9c3924e41dc8b392a3c5047`。配信用は11年+manifestの12 JSON、合計1,296,458 bytes、最大206,726 bytes。Gitにはdata本体/生成物を追加せず、pin metadata・コード・検証・docsのみ。GitHub releaseに許された数値集計を置く。raw記事/画像/Chadwick full dumpなし。
+実測：変換321ms、正規化JSON 785,197 bytes、公開release gzip 144,215 bytes、SHA256 `c6b62a1e450dfe951ffdb17829e779623bcc57d0f340ac715a1764fa88dcd766`。配信用は11年+manifestの12 JSON、合計1,297,040 bytes、最大206,783 bytes。Gitにはdata本体/生成物を追加せず、pin metadata・コード・検証・docsのみ。GitHub releaseに許された数値集計を置く。raw記事/画像/Chadwick full dumpなし。
 
 ## 6. Product / delivery boundary
 
@@ -128,10 +128,12 @@ Rollbackは今回のapp/build変更をrevertし、独立`data/npb/historical` fa
 
 最終のtests/build/実画面/PR/公開結果はdelivery追補へ記録する。設計資料を実施済みQAの代替にしない。
 
-公開前自己監査: 投手表の無四球欄は `noWalkGames`（無四球試合）と明記し、quality start等と混同しない。先行prereleaseの曖昧なkeyをv2で訂正し、旧assetは上書きしない。採用pinは `npb-history-wikipedia-20261015-v2`。既存Facts・数値・件数には変更なし。
+公開前自己監査: 投手表の無四球欄は `noWalkGames`（無四球試合）と明記し、quality start等と混同しない。先行prereleaseの曖昧なkeyをv2で訂正し、旧assetは上書きしない。採用pinは `npb-history-wikipedia-20261015-v3`。既存Facts・数値・件数には変更なし。
 
 ### Review修正
 
 PR #33のCodex ReviewでP1（比較カードが検索/年度/pageの外にある場合に個別著者・revision creditが欠落）が指摘された。選手比較と年度比較/合計に、それぞれ独立した出典欄を追加。検索で全カードが消えるケース、選択選手が当該年度にいないケースを回帰テストで固定。出典修正前の状態でPagesへ公開していない。
 
 新しいAndroid instrumentation項目はHistorical deep link、partial文言、年度合計、出典link、150%/200%の実OS fontScaleと横overflowを検証する。公開後にemulatorで実行するまでPASSとは扱わない。今回のAPKを接続Pixelへ再インストールした/物理端末で新Historicalを確認したとは報告しない。
+
+再レビューP2（投手合計の勝率欠落）を修正。勝率は勝数÷（勝数+敗数）を再計算し、入力比率も検証する。0勝0敗で元表が.000とする7行は、勝率のみnullへ正規化する（他の成績・行・identityは維持）。missingまたはゼロ分母・不整合比率・合算比率をテストで固定。v3を新規固定し、公開前v1/v2 assetは上書きせずsuperseded表記とする。新規Source取得/DB writeはない。

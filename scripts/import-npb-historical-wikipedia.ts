@@ -23,7 +23,7 @@ for (const link of archive.titles) {
   } catch(e) { issues.push({playerId:link.playerId,title:link.title,reason:(e as Error).message}); }
 }
 const dataset = npbHistoricalDatasetSchema.parse({schemaVersion:1,league:"NPB",temporalScope:"historical",competition:"regular",granularity:"season_aggregate",license:"CC-BY-SA-4.0",observedAt:archive.observedAt,inputSha256,
-  transformation:"NPB season tables only; exact existing Wikidata/NPB canonical bridges; normalized counts and baseball innings; unsupported rows quarantined; no article career totals, prose, media, Game Facts or current metadata",coverage:"partial",players,rows});
+  transformation:"NPB season tables only; exact existing Wikidata/NPB canonical bridges; normalized counts and baseball innings; zero-decision .000 WPCT normalized to unavailable; unsupported rows quarantined; no article career totals, prose, media, Game Facts or current metadata",coverage:"partial",players,rows});
 await mkdir(output,{recursive:true});
 // A fresh in-memory scratch DB with readback and idempotent replay, not the production DB.
 const db = new DatabaseSync(":memory:");
