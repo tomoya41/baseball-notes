@@ -336,9 +336,15 @@ describe("all Pages publication entry points", () => {
     for (const script of ["import-npb-player-master-v2.ts", "generate-npb-player-directory.ts", "publish:npb:remote"]) {
       expect(steps.find(s => s.run?.includes(script))?.if).toContain("inputs.profile_projection_only != true");
     }
-    expect(steps.find(s => s.run?.includes("stage-npb-profile-only-directory.ts"))?.if).toBe("inputs.profile_projection_only == true");
+    expect(steps.find(s => s.run?.includes("stage-npb-profile-only-directory.ts"))?.if).toBe("inputs.profile_projection_only == true || inputs.preserve_published_only == true");
     expect(steps.some(s => s.run?.includes("refresh-npb-profile-projections.ts"))).toBe(true);
     expect(steps.some(s => s.run?.includes("verify-npb-publication.ts"))).toBe(true);
+  });
+  it("Historical-only delivery cannot access canonical DB or refresh the current generation",()=>{
+    const steps=workflow("npb-player-directory-publish").jobs.stage!.steps;
+    for(const script of ["import-npb-player-master-v2.ts","generate-npb-player-directory.ts","publish:npb:remote"]) expect(steps.find(s=>s.run?.includes(script))?.if).toContain("inputs.preserve_published_only != true");
+    expect(steps.find(s=>s.run?.includes("stage-npb-profile-only-directory.ts"))?.run).toContain("--preserve-only");
+    expect(steps.find(s=>s.run?.includes("refresh-npb-profile-projections.ts"))?.run).toContain('if [ "$PRESERVE_ONLY" != \'true\' ]');
   });
   it("MLB-only publication preserves the public NPB standings before its dependent family", () => {
     const run = workflow("mlb-historical-publish").jobs.stage!.steps.map(s => s.run ?? "").join("\n");

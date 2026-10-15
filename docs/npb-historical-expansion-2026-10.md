@@ -104,7 +104,7 @@ scratch SQLiteはメモリ内の専用aggregate table。2回insert→全行readb
 
 `/NPB/history?season=2025`から年度・投打・球団・名前、30選手/page、2–4人の収録分比較。同一canonical選手は最大4年度の推移と選択範囲合計。Playerの操作メニュー、既存Search/Data Explorerのhistory導線から接続。Profileへの戻り先は明示的に2026年と表示し、過去数値をCurrentタブへ誤って渡さない。
 
-初回はmanifest+選択年の2 payload、比較時は最大4年度（選択済み年は再利用）。全profile/PA fetchなし。Home追加fetch0、初期JSへ成績datasetをbundleしない。既存Public Response Cacheへschema/identity/hash検証後だけcommit。Web/Androidで同じreaderを使い、Android shellへHistorical DBをbundleしない。
+初回はmanifest+選択年の2 payload、比較時は追加で最大4年度（選択中の年度は再利用、異なる4年を選んだ最悪時はmanifest込み6取得）。全profile/PA fetchなし。Home追加fetch0、初期JSへ成績datasetをbundleしない。既存Public Response Cacheへschema/identity/hash検証後だけcommit。Web/Androidで同じreaderを使い、Android shellへHistorical DBをbundleしない。
 
 `npm run build`はpin済み小型releaseをSHA検証し、年別公開JSONを生成する。checksum付きローカルcacheを再利用でき、ビルド時にWikipediaへアクセスしない。どの既存Pages workflowからbuildしても新しいHistoricalが消えない。
 
