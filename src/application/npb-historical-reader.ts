@@ -1,6 +1,7 @@
 import { npbHistoricalDatasetSchema, npbHistoricalManifestSchema, type NpbHistoricalManifest } from "../domain/npb-historical";
 import { publicAssetBase } from "../app/platform";
 import { publicDataFetch, rememberPublicResponse } from "../infrastructure/public-response-cache";
+import release from "../data/npb-historical-release.json";
 
 const tasks = new Map<string,Promise<unknown>>();
 async function read(path:string, parse:(value:unknown)=>unknown, request:typeof fetch, expectedHash?:string) {
@@ -15,7 +16,9 @@ async function read(path:string, parse:(value:unknown)=>unknown, request:typeof 
   const value=parse(JSON.parse(text));await rememberPublicResponse(response);return value;
 }
 export async function readNpbHistoricalManifest(request:typeof fetch=publicDataFetch) {
-  return npbHistoricalManifestSchema.parse(await read("manifest.json",v=>npbHistoricalManifestSchema.parse(v),request));
+  return npbHistoricalManifestSchema.parse(await read("manifest.json",v=>{
+    const m=npbHistoricalManifestSchema.parse(v);if(m.inputSha256!==release.inputSha256)throw Error("Unadmitted Historical release");return m;
+  },request));
 }
 export async function readNpbHistoricalSeason(season:number,manifest:NpbHistoricalManifest,request:typeof fetch=publicDataFetch) {
   const entry=manifest.seasons.find(s=>s.season===season);if(!entry) throw Error("NPB season is not admitted");

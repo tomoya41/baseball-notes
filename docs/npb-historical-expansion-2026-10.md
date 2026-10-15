@@ -98,7 +98,7 @@ source tableが算術整合することは公式記録全量との独立照合�
 
 scratch SQLiteはメモリ内の専用aggregate table。2回insert→全行readbackを比較して重複なし。canonicalへの接続/認証/writeは不要。今回本番DBへのbackup/restoreや新規migrationは実施しない。
 
-実測：変換319ms、正規化JSON 778,735 bytes、公開release gzip 143,974 bytes、SHA256 `4728c4eea11a0ed522a6d0117fd588b4b29baa4e6f9a8216981dc3b0dce68f74`。配信用は11年+manifestの12 JSON、合計1,290,068 bytes、最大205,655 bytes。Gitにはdata本体/生成物を追加せず、pin metadata・コード・検証・docsのみ。GitHub releaseに許された数値集計を置く。raw記事/画像/Chadwick full dumpなし。
+実測：変換319ms、正規化JSON 785,125 bytes、公開release gzip 144,138 bytes、SHA256 `03a51fb6c39c31dedcf72e2e2d013f61bf637b96f9c3924e41dc8b392a3c5047`。配信用は11年+manifestの12 JSON、合計1,296,458 bytes、最大206,726 bytes。Gitにはdata本体/生成物を追加せず、pin metadata・コード・検証・docsのみ。GitHub releaseに許された数値集計を置く。raw記事/画像/Chadwick full dumpなし。
 
 ## 6. Product / delivery boundary
 
@@ -127,3 +127,5 @@ Rollbackは今回のapp/build変更をrevertし、独立`data/npb/historical` fa
 次はquarantineの表形式を個別に確かめ、既存記事から同一基準で追加できる行を増やす。その後OB identity橋を独立証拠付きで追加する。未採用datasetのlicenseを流用した全量import、2026 Gate解除、公式Career/歴代ランキング化は行わない。
 
 最終のtests/build/実画面/PR/公開結果はdelivery追補へ記録する。設計資料を実施済みQAの代替にしない。
+
+公開前自己監査: 投手表の無四球欄は `noWalkGames`（無四球試合）と明記し、quality start等と混同しない。先行prereleaseの曖昧なkeyをv2で訂正し、旧assetは上書きしない。採用pinは `npb-history-wikipedia-20261015-v2`。既存Facts・数値・件数には変更なし。

@@ -1,14 +1,14 @@
 import { z } from "zod";
 
 export const historicalBattingKeys = ["G", "PA", "AB", "R", "H", "2B", "3B", "HR", "TB", "RBI", "SB", "CS", "SH", "SF", "BB", "IBB", "HBP", "SO", "GDP", "AVG", "OBP", "SLG", "OPS"] as const;
-export const historicalPitchingKeys = ["G", "GS", "CG", "SHO", "QO", "W", "L", "SV", "HLD", "WPCT", "BF", "outsRecorded", "H", "HR", "BB", "IBB", "HBP", "SO", "WP", "BK", "R", "ER", "ERA", "WHIP"] as const;
+export const historicalPitchingKeys = ["G", "GS", "CG", "SHO", "noWalkGames", "W", "L", "SV", "HLD", "WPCT", "BF", "outsRecorded", "H", "HR", "BB", "IBB", "HBP", "SO", "WP", "BK", "R", "ER", "ERA", "WHIP"] as const;
 const count = z.number().int().nonnegative().nullable();
 const rate = z.number().finite().nonnegative().nullable();
 const stats = (keys: readonly string[], rates: string[]) => z.strictObject(Object.fromEntries(keys.map(k => [k, rates.includes(k) ? rate : count])));
 export const historicalBattingSchema = stats(historicalBattingKeys, ["AVG", "OBP", "SLG", "OPS"]);
 export const historicalPitchingSchema = stats(historicalPitchingKeys, ["WPCT", "ERA", "WHIP"]);
 export const npbHistoricalRowSchema = z.strictObject({
-  playerId: z.uuid(), season: z.number().int().min(1936).max(2025), teamId: z.string().regex(/^npb:team:[a-z]+$/),
+  playerId: z.uuid(), season: z.number().int().min(1936).max(2025), teamId: z.enum(["npb:team:giants","npb:team:tigers","npb:team:dragons","npb:team:carp","npb:team:swallows","npb:team:baystars","npb:team:hawks","npb:team:fighters","npb:team:lions","npb:team:marines","npb:team:eagles","npb:team:buffaloes"]),
   role: z.enum(["batting", "pitching"]), metrics: z.record(z.string(), rate),
 }).superRefine((row, ctx) => {
   const result = (row.role === "batting" ? historicalBattingSchema : historicalPitchingSchema).safeParse(row.metrics);
@@ -20,7 +20,7 @@ export const npbHistoricalRowSchema = z.strictObject({
     if (m.H != null && m["2B"] != null && m["3B"] != null && m.HR != null && (m["2B"] + m["3B"] + m.HR > m.H || (m.TB != null && m.TB !== m.H + m["2B"] + 2 * m["3B"] + 3 * m.HR))) ctx.addIssue({ code: "custom", message: "Invalid total bases" });
     const parts = ["AB", "BB", "HBP", "SH", "SF"].map(k => m[k]);
     if (m.PA != null && parts.every(v => v != null) && parts.reduce<number>((s,v) => s + v!, 0) > m.PA) ctx.addIssue({ code: "custom", message: "PA components exceed PA" });
-  } else if (exceeds("ER", "R") || exceeds("GS", "G") || exceeds("IBB", "BB")) ctx.addIssue({ code: "custom", message: "Invalid pitching counts" });
+  } else if (exceeds("ER", "R") || exceeds("GS", "G") || exceeds("IBB", "BB") || exceeds("noWalkGames", "CG") || exceeds("SHO", "CG")) ctx.addIssue({ code: "custom", message: "Invalid pitching counts" });
   for (const [key, actual] of Object.entries(historicalRates(row.role, m))) {
     if (m[key] != null && actual !== null && Math.abs(m[key]! - actual) > (["ERA", "WHIP"].includes(key) ? 0.011 : 0.0016)) ctx.addIssue({ code: "custom", message: `Rate discrepancy: ${key}` });
     if (m[key] != null && actual === null) ctx.addIssue({ code: "custom", message: `Rate without denominator: ${key}` });
@@ -37,6 +37,7 @@ export const npbHistoricalDatasetSchema = z.strictObject({
 }).superRefine((value, ctx) => {
   const ids = new Set(value.players.map(p => p.playerId)), external = new Set(value.players.map(p => p.npbId));
   if (ids.size !== value.players.length || external.size !== value.players.length) ctx.addIssue({ code: "custom", message: "Ambiguous historical identity" });
+  if(value.players.some(p=>p.revisionAt>value.observedAt)) ctx.addIssue({code:"custom",message:"Source revision postdates acquisition"});
   const keys = new Set<string>();
   for (const row of value.rows) {
     const key = `${row.playerId}:${row.season}:${row.teamId}:${row.role}`;

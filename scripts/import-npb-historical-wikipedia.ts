@@ -4,7 +4,7 @@ import { gzipSync } from "node:zlib";
 import { DatabaseSync } from "node:sqlite";
 import { resolve, join } from "node:path";
 import { parseWikipediaHistorical } from "../src/infrastructure/providers/wikipedia-npb-historical";
-import { npbHistoricalDatasetSchema } from "../src/domain/npb-historical";
+import { npbHistoricalDatasetSchema, npbHistoricalRowSchema } from "../src/domain/npb-historical";
 import bridges from "../src/data/npb-free-profile-identities.json";
 import { z } from "zod";
 
@@ -32,7 +32,7 @@ const insert = db.prepare("INSERT INTO npb_historical_aggregates VALUES(?,?,'reg
 for(let replay=0;replay<2;replay++) for(const row of dataset.rows) insert.run(row.playerId,row.season,row.role,row.teamId,JSON.stringify(row.metrics));
 const readback = db.prepare("SELECT player_id,season,role,team_id,metrics FROM npb_historical_aggregates ORDER BY player_id,season,role,team_id").all();
 const canonical = (data:typeof dataset.rows) => data.map(r=>JSON.stringify([r.playerId,r.season,r.role,r.teamId,r.metrics])).sort();
-if(JSON.stringify(canonical(readback.map(r=>({playerId:String(r.player_id),season:Number(r.season),role:r.role as "batting"|"pitching",teamId:String(r.team_id),metrics:JSON.parse(String(r.metrics))}))))!==JSON.stringify(canonical(dataset.rows))) throw Error("Scratch replay/readback mismatch");
+if(JSON.stringify(canonical(readback.map(r=>npbHistoricalRowSchema.parse({playerId:String(r.player_id),season:Number(r.season),role:r.role,teamId:String(r.team_id),metrics:JSON.parse(String(r.metrics))}))))!==JSON.stringify(canonical(dataset.rows))) throw Error("Scratch replay/readback mismatch");
 db.close();
 const json=JSON.stringify(dataset), compressed=gzipSync(json,{level:9}), outputPath=join(output,"npb-historical-wikipedia.json.gz");
 await writeFile(outputPath,compressed);

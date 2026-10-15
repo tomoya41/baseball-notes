@@ -5,7 +5,7 @@ import { portableRoute } from "../src/domain/product-sharing";
 const playerId="00000000-0000-4000-8000-000000000001", bridge={playerId,wikidataId:"Q123",npbId:"12345"};
 const metrics={G:10,PA:43,AB:40,R:2,H:10,"2B":2,"3B":0,HR:2,TB:18,RBI:3,SB:0,CS:0,SH:0,SF:1,BB:2,IBB:1,HBP:0,SO:10,GDP:1,AVG:0.25,OBP:12/43,SLG:.45,OPS:12/43+.45};
 const pitching=Object.fromEntries(historicalPitchingKeys.map(k=>[k,null]));Object.assign(pitching,{G:2,GS:1,outsRecorded:20,H:5,BB:1,IBB:0,HBP:2,SO:7,R:2,ER:1,ERA:1.35,WHIP:.9});
-const row={playerId,season:2025,teamId:"npb:team:tigers",role:"batting" as const,metrics};
+const row={playerId,season:2025,teamId:"npb:team:tigers" as const,role:"batting" as const,metrics};
 const page=(content:string)=>({title:"架空テスト選手",pageprops:{wikibase_item:"Q123"},revisions:[{revid:123,timestamp:"2026-01-01T00:00:00Z",slots:{main:{content}}}]});
 const table=(body:string,role="batting",league="日本野球機構")=>`=== 年度別${role==="batting"?"打撃":"投手"}成績 ===\n{| {{${role==="batting"?"年度別打撃成績":"投手成績"}|リーグ=${league}}}\n|-\n${body}\n|}`;
 const counts=(m:Record<string,number|null>,keys:readonly string[])=>keys.map(k=>m[k]??"--").join("||");
@@ -50,7 +50,7 @@ describe("historical data boundaries",()=>{
     for(const change of [{coverage:"complete"},{competition:"postseason"},{rows:[row,row]},{players:[]}])expect(npbHistoricalDatasetSchema.safeParse({...d,...change}).success).toBe(false);
   });
   it("sums selected seasons and club stints without averaging rates or hiding unknowns",()=>{
-    const rs=[row,{...row,season:2023,teamId:"npb:team:hawks",metrics:{...metrics,H:0,TB:0,"2B":0,HR:0,AVG:0,SLG:0,OBP:2/43,OPS:2/43}}];
+    const rs=[row,{...row,season:2023,teamId:"npb:team:hawks" as const,metrics:{...metrics,H:0,TB:0,"2B":0,HR:0,AVG:0,SLG:0,OBP:2/43,OPS:2/43}}];
     const total=sumHistoricalRows(rs);expect(total.seasons).toEqual([2023,2025]);expect(total.metrics.H).toBe(10);expect(total.metrics.AVG).toBe(.125);expect(total.metrics.OPS).toBeCloseTo(14/86+18/80);
     expect(sumHistoricalRows([row,{...row,season:2024,metrics:{...metrics,BB:null}}]).metrics.OBP).toBeNull();
     expect(()=>sumHistoricalRows([row,{...row,playerId:"another"}])).toThrow();
