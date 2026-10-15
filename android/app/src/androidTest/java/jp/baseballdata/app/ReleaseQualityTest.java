@@ -317,12 +317,20 @@ public class ReleaseQualityTest {
         assertTrue("Historical scope remains partial", js("document.body.innerText").contains("全選手の成績・ランキングではありません"));
         assertEquals("Canonical player preserved by native deep link", "true", js("location.hash.includes('a1ca7cac-f9be-4993-a78c-bcd1e1ae3399') && location.hash.includes('season=2025')"));
         waitCondition("Comparison attribution", "!!document.querySelector('[aria-label=\"年度比較・合計データの出典\"] a[href*=\"oldid=\"]')");
+        String historicalHash=js("location.hash");
         for (String scale : new String[]{"1.5", "2.0"}) {
             shell("settings put system font_scale " + scale); scenario.recreate();
             waitText("2023 / 2024 / 2025年の収録行合計"); waitViewport(360);
             waitCondition("OS font scale reaches Historical view", "Number(getComputedStyle(document.documentElement).getPropertyValue('--android-font-scale')) >= " + scale);
             assertEquals("Historical view has no horizontal overflow at " + scale, "true", js("document.documentElement.scrollWidth <= window.innerWidth"));
-            screenshot("npb-history-font-" + scale.replace(".", ""));
+            assertEquals("All five large-text navigation labels fit on one line", "true", js("Array.from(document.querySelectorAll('.bottom-nav a')).length===5 && Array.from(document.querySelectorAll('.bottom-nav a')).every(a=>{const s=a.querySelector('span'),r=document.createRange();r.selectNodeContents(s);const t=r.getBoundingClientRect(),b=a.getBoundingClientRect();return r.getClientRects().length===1 && t.left>=b.left-1 && t.right<=b.right+1 && t.top>=b.top-1 && t.bottom<=b.bottom+1 && b.bottom<=innerHeight;})"));
+            screenshot("npb-history-font-" + scale.replace(".", "") + "-light");
+            setTheme("dark", "ダーク"); js("location.hash='" + historicalHash + "'");
+            waitText("2023 / 2024 / 2025年の収録行合計"); waitViewport(360);
+            assertEquals("Dark large-text navigation is fully visible", "true", js("Array.from(document.querySelectorAll('.bottom-nav a')).every(a=>{const r=document.createRange();r.selectNodeContents(a.querySelector('span'));const t=r.getBoundingClientRect(),b=a.getBoundingClientRect();return r.getClientRects().length===1 && t.left>=b.left-1 && t.right<=b.right+1 && t.bottom<=b.bottom+1;})"));
+            screenshot("npb-history-font-" + scale.replace(".", "") + "-dark");
+            setTheme("light", "ライト"); js("location.hash='" + historicalHash + "'");
+            waitText("2023 / 2024 / 2025年の収録行合計");
         }
         shell("settings put system font_scale 1.0"); scenario.recreate(); waitText("0.924");
         screenshot("npb-history-360");

@@ -205,3 +205,7 @@ MLBの `#/MLB/form?season=2024&asOfDate=2024-08-20&period=7` から、Historical
 ## Product Completion / NPB Operations handoff
 
 [今回の運用・品質報告](docs/product-completion-npb-operations.md)と[次回Astra UI再設計資料](docs/astra-product-completion-handoff.md)を参照。Historicalの前月比較は `#/MLB/form?season=2024&mode=monthly-change&asOfDate=2024-08-20`。月途中は前月の同じ日付まで、月末は暦月全体の率と母数を比較します。Watch確認は明示操作時のみで、初回はbaselineです。NPBの観測日と設定されたRegular Fact期間を分け、HOT/Rankingの既存GateとScheduled証拠要件を維持します。
+
+## NPB Historical Phase 2
+
+2015〜2025年の一部選手を593人・3,072球団別年度行へ拡張。21人のHistorical-only選手も検索・年度比較・お気に入りで確認できます。全年度partial、全Career/公式ランキングではありません。出典・再処理手順・旧版互換性・運用上の制約は [Phase 2](docs/npb-historical-phase2.md) を参照してください。
