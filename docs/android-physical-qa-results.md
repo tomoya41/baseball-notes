@@ -56,3 +56,9 @@ Use [full checklist](android-device-qa.md) for offline first-install (separate d
 ## Owner release gates — all still pending
 
 Release signing and custody; verified host App Links/`assetlinks.json`; final Privacy/Data safety review; Play account/listing/testers/production submission. No keys, account fees, payments, association file or store release were created by this QA batch. [Play preparation](play-release-readiness.md) keeps these separate from engineering build/emulator readiness.
+
+## 2026-10-16 Phase 2補足
+
+最新版のHistorical-only OB検索・年度推移・Favorite再開を実機でも確認する。例: NPB → 選手 → 過去の選手・OB → 阿部慎之助を検索 → 別年度候補 → 年度比較 → ★ → My → 過去年度へ戻る。PASSは正しい収録年度・出典が表示され、2026 Currentプロフィールへ誘導されないこと。200%文字拡大時は「ホーム/試合/選手/記録/My」の全ラベルが意味を保ち、切断・重なりなく操作できること。OS倍率を下げてPASSにしない。
+
+今回の物理Pixel接続は検出されず、新APKでの操作とTalkBackはNOT RUN。前回のPixel初回起動成功と今回の検証を混同しない。新しいEmulator証拠はPhase 2 deliveryへ記録する。

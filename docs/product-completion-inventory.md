@@ -562,3 +562,9 @@ MLB-only WHIP/BB9/K%/BB%を実装。既存Historicalのみで、Source/Gate/Care
 ## 2026-10-15 — NPB Historical partial admission
 
 [Source audit and admission](npb-historical-expansion-2026-10.md): 2015–2025のWikipedia年度表から444 canonical選手・2,060球団別年度行を別contractで部分収録。NPB Historicalは「全く未導入」からPARTIALへ更新する。年度/投打/球団/選手検索、2–4人比較、最大4年度比較と選択範囲合計を提供する。2023–25もleague全集ではない。OB横断、Game/Recent、球団全体成績、公式資格/歴代ranking、Full Careerは未完成。2026のHOT/Ranking・pending/partial/Freshnessは別であり、今回開放しない。旧inventoryの個別Source/年代件数は当時のsnapshotを残す。
+
+## 2026-10-16 — NPB Historical Phase 2
+
+[Phase 2](npb-historical-phase2.md)で593選手・3,072球団別年度行（打撃1,673/投球1,399）へ拡張。旧2,060行は数値変更・削除0。既存記事から894行、独立Identity照合したHistorical-only21選手から118行を追加した。全年度partial。History内で同年最大4人、最大4年度、選択収録行合計、別年度OB検索、Favorites/MyのHistorical導線を提供する。
+
+NPB Historicalは引き続きPARTIAL。全OB、全年度、Game/Recent、球団全体年度成績、規定資格/公式ranking、Full Careerは未完成。Historical-only IDsを2026 Current一覧やCurrent Watchへ混入させない。Turso最新SQL readはBLOCKED、2026 Gates/freshness条件は変えない。次は残る曖昧形式・算術不一致の独立検証と、実機Pixel/TalkBack QAを進める。
