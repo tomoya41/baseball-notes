@@ -1,0 +1,441 @@
+{
+  "schemaVersion": 1,
+  "namespace": "baseball-notes:npb-historical-only:v1",
+  "players": [
+    {
+      "playerId": "74500a70-9974-8f24-8c47-2409e44e7ed2",
+      "wikidataId": "Q487880",
+      "npbId": "51153884",
+      "scope": "historical_only",
+      "article": "井口資仁",
+      "pageId": 141295,
+      "revision": 111364440,
+      "wikidataRevision": 2545115718,
+      "birthDate": "1974-12-04",
+      "observedAt": "2026-10-15T21:44:38.975Z",
+      "wikidataObservedAt": "2026-10-15T21:45:32.613Z"
+    },
+    {
+      "playerId": "22b8ac49-0134-8e03-bfcd-abcf1047beb2",
+      "wikidataId": "Q847729",
+      "npbId": "01005113",
+      "scope": "historical_only",
+      "article": "中島宏之",
+      "pageId": 161175,
+      "revision": 111026767,
+      "wikidataRevision": 2550439336,
+      "birthDate": "1982-07-31",
+      "observedAt": "2026-10-15T21:44:38.975Z",
+      "wikidataObservedAt": "2026-10-15T21:45:32.613Z"
+    },
+    {
+      "playerId": "f0d0b925-490f-8e42-897b-8a51460441e4",
+      "wikidataId": "Q845633",
+      "npbId": "81485117",
+      "scope": "historical_only",
+      "article": "村田修一",
+      "pageId": 171150,
+      "revision": 111292239,
+      "wikidataRevision": 2541494292,
+      "birthDate": "1980-12-28",
+      "observedAt": "2026-10-15T21:44:38.975Z",
+      "wikidataObservedAt": "2026-10-15T21:45:32.613Z"
+    },
+    {
+      "playerId": "212e987d-c760-8fa6-8868-22372f3c2e44",
+      "wikidataId": "Q847901",
+      "npbId": "21325113",
+      "scope": "historical_only",
+      "article": "内川聖一",
+      "pageId": 184273,
+      "revision": 111388561,
+      "wikidataRevision": 2535861575,
+      "birthDate": "1982-08-04",
+      "observedAt": "2026-10-15T21:44:38.975Z",
+      "wikidataObservedAt": "2026-10-15T21:45:32.613Z"
+    },
+    {
+      "playerId": "ca151324-77aa-8b71-8b7f-377fb265e834",
+      "wikidataId": "Q5359915",
+      "npbId": "51655112",
+      "scope": "historical_only",
+      "article": "松田宣浩",
+      "pageId": 398358,
+      "revision": 110678905,
+      "wikidataRevision": 2541972956,
+      "birthDate": "1983-05-17",
+      "observedAt": "2026-10-15T21:44:38.975Z",
+      "wikidataObservedAt": "2026-10-15T21:45:32.613Z"
+    },
+    {
+      "playerId": "ba6efb66-6c3a-8e0a-86f7-5b3a3c9b3e1b",
+      "wikidataId": "Q865632",
+      "npbId": "21925117",
+      "scope": "historical_only",
+      "article": "坂口智隆",
+      "pageId": 408476,
+      "revision": 111345792,
+      "wikidataRevision": 2516208058,
+      "birthDate": "1984-07-07",
+      "observedAt": "2026-10-15T21:44:38.975Z",
+      "wikidataObservedAt": "2026-10-15T21:45:32.613Z"
+    },
+    {
+      "playerId": "1d83ce10-133b-8948-8ac7-f3b8acfd2e77",
+      "wikidataId": "Q3616107",
+      "npbId": "91195119",
+      "scope": "historical_only",
+      "article": "糸井嘉男",
+      "pageId": 508742,
+      "revision": 111150126,
+      "wikidataRevision": 2532043405,
+      "birthDate": "1981-07-31",
+      "observedAt": "2026-10-15T21:44:38.975Z",
+      "wikidataObservedAt": "2026-10-15T21:45:32.613Z"
+    },
+    {
+      "playerId": "09c4eb52-caff-8a5e-b851-e37a39181466",
+      "wikidataId": "Q8062224",
+      "npbId": "21425114",
+      "scope": "historical_only",
+      "article": "長谷川勇也",
+      "pageId": 804650,
+      "revision": 111247580,
+      "wikidataRevision": 2240870033,
+      "birthDate": "1984-12-22",
+      "observedAt": "2026-10-15T21:44:38.975Z",
+      "wikidataObservedAt": "2026-10-15T21:45:32.613Z"
+    },
+    {
+      "playerId": "5eb2f4a3-dc1c-8f13-abe5-5483ef5766bd",
+      "wikidataId": "Q486224",
+      "npbId": "21923889",
+      "scope": "historical_only",
+      "article": "福浦和也",
+      "pageId": 915512,
+      "revision": 111234407,
+      "wikidataRevision": 2518092571,
+      "birthDate": "1975-12-14",
+      "observedAt": "2026-10-15T21:44:38.975Z",
+      "wikidataObservedAt": "2026-10-15T21:45:32.613Z"
+    },
+    {
+      "playerId": "fb3a9ff1-af67-8891-b5a3-b6f4a0403f30",
+      "wikidataId": "Q845316",
+      "npbId": "21125113",
+      "scope": "historical_only",
+      "article": "阿部慎之助",
+      "pageId": 1162572,
+      "revision": 111272912,
+      "wikidataRevision": 2545892004,
+      "birthDate": "1979-03-20",
+      "observedAt": "2026-10-15T21:44:38.975Z",
+      "wikidataObservedAt": "2026-10-15T21:45:32.613Z"
+    },
+    {
+      "playerId": "09b6db74-96ee-8c29-bcda-662d026bb179",
+      "wikidataId": "Q6142589",
+      "npbId": "21925119",
+      "scope": "historical_only",
+      "article": "鳥谷敬",
+      "pageId": 1182101,
+      "revision": 111253067,
+      "wikidataRevision": 2526699768,
+      "birthDate": "1981-06-26",
+      "observedAt": "2026-10-15T21:44:38.975Z",
+      "wikidataObservedAt": "2026-10-15T21:45:32.613Z"
+    },
+    {
+      "playerId": "35407143-9379-8b60-a130-25b77a4b4220",
+      "wikidataId": "Q1329341",
+      "npbId": "61963888",
+      "scope": "historical_only",
+      "article": "福留孝介",
+      "pageId": 1274275,
+      "revision": 110953114,
+      "wikidataRevision": 2541472997,
+      "birthDate": "1977-04-26",
+      "observedAt": "2026-10-15T21:44:38.975Z",
+      "wikidataObservedAt": "2026-10-15T21:45:32.613Z"
+    },
+    {
+      "playerId": "eec4646d-6bd1-8a58-b635-a840bf01a9e1",
+      "wikidataId": "Q1044930",
+      "npbId": "91193886",
+      "scope": "historical_only",
+      "article": "五十嵐亮太",
+      "pageId": 46024,
+      "revision": 111152676,
+      "wikidataRevision": 2541494600,
+      "birthDate": "1979-05-28",
+      "observedAt": "2026-10-15T21:44:41.839Z",
+      "wikidataObservedAt": "2026-10-15T21:45:32.613Z"
+    },
+    {
+      "playerId": "d4556408-e909-8f00-bd92-895fcbf9d855",
+      "wikidataId": "Q907774",
+      "npbId": "71073888",
+      "scope": "historical_only",
+      "article": "藤川球児",
+      "pageId": 134734,
+      "revision": 111396474,
+      "wikidataRevision": 2530890864,
+      "birthDate": "1980-07-21",
+      "observedAt": "2026-10-15T21:44:41.839Z",
+      "wikidataObservedAt": "2026-10-15T21:45:32.613Z"
+    },
+    {
+      "playerId": "8f1fb4be-b7f0-8ef0-899b-6bc66200fde4",
+      "wikidataId": "Q843300",
+      "npbId": "01103888",
+      "scope": "historical_only",
+      "article": "新井貴浩",
+      "pageId": 173688,
+      "revision": 111323262,
+      "wikidataRevision": 2555732731,
+      "birthDate": "1977-01-30",
+      "observedAt": "2026-10-15T21:44:41.839Z",
+      "wikidataObservedAt": "2026-10-15T21:45:32.613Z"
+    },
+    {
+      "playerId": "36e2e655-7365-871c-8e93-1dff7ae38ab0",
+      "wikidataId": "Q845246",
+      "npbId": "81185119",
+      "scope": "historical_only",
+      "article": "内海哲也",
+      "pageId": 182974,
+      "revision": 111292978,
+      "wikidataRevision": 2541479830,
+      "birthDate": "1982-04-29",
+      "observedAt": "2026-10-15T21:44:41.839Z",
+      "wikidataObservedAt": "2026-10-15T21:45:32.613Z"
+    },
+    {
+      "playerId": "e8a10dbe-dc98-89dc-a418-70bb9a3d1405",
+      "wikidataId": "Q626568",
+      "npbId": "61065110",
+      "scope": "historical_only",
+      "article": "能見篤史",
+      "pageId": 269942,
+      "revision": 111397104,
+      "wikidataRevision": 2554327073,
+      "birthDate": "1979-05-28",
+      "observedAt": "2026-10-15T21:44:41.839Z",
+      "wikidataObservedAt": "2026-10-15T21:45:32.613Z"
+    },
+    {
+      "playerId": "080cba59-a2c0-8f0b-b740-e91888ca8b5a",
+      "wikidataId": "Q324038",
+      "npbId": "31935115",
+      "scope": "historical_only",
+      "article": "杉内俊哉",
+      "pageId": 435008,
+      "revision": 109296035,
+      "wikidataRevision": 2535149490,
+      "birthDate": "1980-10-30",
+      "observedAt": "2026-10-15T21:44:41.839Z",
+      "wikidataObservedAt": "2026-10-15T21:45:32.613Z"
+    },
+    {
+      "playerId": "9b39a9de-0778-823c-836c-69da4f03c1b5",
+      "wikidataId": "Q26121",
+      "npbId": "31233888",
+      "scope": "historical_only",
+      "article": "松坂大輔",
+      "pageId": 808865,
+      "revision": 111380143,
+      "wikidataRevision": 2529344244,
+      "birthDate": "1980-09-13",
+      "observedAt": "2026-10-15T21:44:41.839Z",
+      "wikidataObservedAt": "2026-10-15T21:45:32.613Z"
+    },
+    {
+      "playerId": "6dc8c4f3-146a-83cd-8716-f5301947d94b",
+      "wikidataId": "Q1194501",
+      "npbId": "11313888",
+      "scope": "historical_only",
+      "article": "上原浩治",
+      "pageId": 1162551,
+      "revision": 111279437,
+      "wikidataRevision": 2529308436,
+      "birthDate": "1975-04-03",
+      "observedAt": "2026-10-15T21:44:41.839Z",
+      "wikidataObservedAt": "2026-10-15T21:45:32.613Z"
+    },
+    {
+      "playerId": "f08e35d5-7abc-83fb-adef-38f695de0964",
+      "wikidataId": "Q903565",
+      "npbId": "91995118",
+      "scope": "historical_only",
+      "article": "攝津正",
+      "pageId": 1600224,
+      "revision": 110949278,
+      "wikidataRevision": 2541480118,
+      "birthDate": "1982-06-01",
+      "observedAt": "2026-10-15T21:44:41.839Z",
+      "wikidataObservedAt": "2026-10-15T21:45:32.613Z"
+    }
+  ],
+  "seasons": {
+    "74500a70-9974-8f24-8c47-2409e44e7ed2": [
+      2015,
+      2016,
+      2017
+    ],
+    "22b8ac49-0134-8e03-bfcd-abcf1047beb2": [
+      2015,
+      2016,
+      2017,
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "f0d0b925-490f-8e42-897b-8a51460441e4": [
+      2015,
+      2016,
+      2017
+    ],
+    "212e987d-c760-8fa6-8868-22372f3c2e44": [
+      2015,
+      2016,
+      2017,
+      2018,
+      2019,
+      2021,
+      2022
+    ],
+    "ca151324-77aa-8b71-8b7f-377fb265e834": [
+      2015,
+      2016,
+      2017,
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023
+    ],
+    "ba6efb66-6c3a-8e0a-86f7-5b3a3c9b3e1b": [
+      2015,
+      2016,
+      2017,
+      2018,
+      2019,
+      2020,
+      2021,
+      2022
+    ],
+    "1d83ce10-133b-8948-8ac7-f3b8acfd2e77": [
+      2015,
+      2016,
+      2017,
+      2018,
+      2019,
+      2020,
+      2021,
+      2022
+    ],
+    "09c4eb52-caff-8a5e-b851-e37a39181466": [
+      2015,
+      2016,
+      2017,
+      2018,
+      2019,
+      2020,
+      2021
+    ],
+    "5eb2f4a3-dc1c-8f13-abe5-5483ef5766bd": [
+      2015,
+      2016,
+      2017,
+      2018,
+      2019
+    ],
+    "fb3a9ff1-af67-8891-b5a3-b6f4a0403f30": [
+      2015,
+      2016,
+      2017,
+      2018,
+      2019
+    ],
+    "09b6db74-96ee-8c29-bcda-662d026bb179": [
+      2015,
+      2016,
+      2017,
+      2018,
+      2019,
+      2020,
+      2021
+    ],
+    "35407143-9379-8b60-a130-25b77a4b4220": [
+      2015,
+      2016,
+      2017,
+      2018,
+      2019,
+      2020,
+      2021,
+      2022
+    ],
+    "eec4646d-6bd1-8a58-b635-a840bf01a9e1": [
+      2015,
+      2016,
+      2017,
+      2018,
+      2019,
+      2020
+    ],
+    "d4556408-e909-8f00-bd92-895fcbf9d855": [
+      2016,
+      2017,
+      2018,
+      2019,
+      2020
+    ],
+    "8f1fb4be-b7f0-8ef0-899b-6bc66200fde4": [
+      2015,
+      2016,
+      2017,
+      2018
+    ],
+    "36e2e655-7365-871c-8e93-1dff7ae38ab0": [
+      2015,
+      2017,
+      2018,
+      2020,
+      2021,
+      2022
+    ],
+    "e8a10dbe-dc98-89dc-a418-70bb9a3d1405": [
+      2015,
+      2017,
+      2018,
+      2019,
+      2020,
+      2021,
+      2022
+    ],
+    "080cba59-a2c0-8f0b-b740-e91888ca8b5a": [
+      2015
+    ],
+    "9b39a9de-0778-823c-836c-69da4f03c1b5": [
+      2016,
+      2018,
+      2019,
+      2021
+    ],
+    "6dc8c4f3-146a-83cd-8716-f5301947d94b": [
+      2018
+    ],
+    "f08e35d5-7abc-83fb-adef-38f695de0964": [
+      2015,
+      2016,
+      2017,
+      2018
+    ]
+  }
+}

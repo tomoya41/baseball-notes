@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { parseWikipediaHistorical, inningsToOuts } from "../src/infrastructure/providers/wikipedia-npb-historical";
 import { historicalBattingKeys, historicalPitchingKeys, historicalRates, npbHistoricalDatasetSchema, npbHistoricalRowSchema, sumHistoricalRows } from "../src/domain/npb-historical";
 import { portableRoute } from "../src/domain/product-sharing";
+import archivedFormats from "./fixtures/npb-historical/wikipedia-formats.json";
 const playerId="00000000-0000-4000-8000-000000000001", bridge={playerId,wikidataId:"Q123",npbId:"12345"};
 const metrics={G:10,PA:43,AB:40,R:2,H:10,"2B":2,"3B":0,HR:2,TB:18,RBI:3,SB:0,CS:0,SH:0,SF:1,BB:2,IBB:1,HBP:0,SO:10,GDP:1,AVG:0.25,OBP:12/43,SLG:.45,OPS:12/43+.45};
 const pitching=Object.fromEntries(historicalPitchingKeys.map(k=>[k,null]));Object.assign(pitching,{G:2,GS:1,outsRecorded:20,H:5,BB:1,IBB:0,HBP:2,SO:7,R:2,ER:1,ERA:1.35,WHIP:.9});
@@ -10,6 +11,32 @@ const page=(content:string)=>({title:"架空テスト選手",pageprops:{wikibase
 const table=(body:string,role="batting",league="日本野球機構")=>`=== 年度別${role==="batting"?"打撃":"投手"}成績 ===\n{| {{${role==="batting"?"年度別打撃成績":"投手成績"}|リーグ=${league}}}\n|-\n${body}\n|}`;
 const counts=(m:Record<string,number|null>,keys:readonly string[])=>keys.map(k=>m[k]??"--").join("||");
 describe("NPB historical aggregate source adapter",()=>{
+  it("recovers archived missing-value/colored cells and comments without editing statistics",()=>{
+    const result=(name:string)=>{const f=archivedFormats.find(f=>f.page.title===name)!;return parseWikipediaHistorical(f.page,f.bridge,Array.from({length:11},(_,i)=>2015+i));};
+    expect(result("佐藤輝明").rows.find(r=>r.season===2025)?.metrics.HR).toBe(40);
+    expect(result("大山悠輔").rows).toHaveLength(9);
+    expect(result("陽柏翔").rows).toHaveLength(1);
+    const traded=result("伊藤光");
+    expect(traded.rows.filter(r=>r.season===2018).map(r=>r.teamId)).toEqual(["npb:team:buffaloes","npb:team:baystars"]);
+    expect(traded.rows.some(r=>r.season===2024&&r.teamId==="npb:team:baystars")).toBe(true);
+    expect(traded.rows.some(r=>r.season===2025)).toBe(false); // .000 AVG with zero AB stays rejected.
+    const pitcher=result("戸郷翔征");
+    expect(pitcher.issues.some(i=>i.reason.includes("WHIP"))).toBe(true);
+    expect(pitcher.rows.some(r=>r.season===2019)).toBe(false);
+    expect(pitcher.rows.some(r=>r.season===2024)).toBe(true); // Independent later rows survive a numeric error.
+  });
+  it("accepts only explicit, fixed numeric decorations and preserves unknown versus zero",()=>{
+    const m={...metrics,G:1000,IBB:null,SB:0};
+    const line=counts(m,historicalBattingKeys).replace("1000||","{{Color|red|'''1,000'''}}||").replace("||--||","||{{Nowrap|----}}||");
+    const r=parseWikipediaHistorical(page(table(`|2025\n|阪神\n|${line}`,"batting","日本プロ野球")),bridge,[2025]);
+    expect(r.rows[0]?.metrics).toMatchObject({G:1000,IBB:null,SB:0});
+    const malformed=counts(metrics,historicalBattingKeys).replace("10||43","1|0||43");
+    expect(parseWikipediaHistorical(page(table(`|2025\n|阪神\n|${malformed}`)),bridge,[2025]).rows).toEqual([]);
+  });
+  it("stops on ambiguous spans rather than guessing subsequent column positions",()=>{
+    const r=parseWikipediaHistorical(page(table(`|2024\n|colspan=2|阪神\n|${counts(metrics,historicalBattingKeys)}\n|-\n|2025\n|阪神\n|${counts(metrics,historicalBattingKeys)}`)),bridge,[2024,2025]);
+    expect(r.rows).toEqual([]);expect(r.issues[0]?.reason).toContain("colspan");
+  });
   it("parses exact NPB yearly columns, excluding article career and international scopes",()=>{
     const source=table(`|{{by2|2025}}\n|[[阪神タイガース|阪神]]\n|${counts(metrics,historicalBattingKeys)}\n|-\n!colspan=2|通算\n|${counts(metrics,historicalBattingKeys)}`);
     const result=parseWikipediaHistorical(page(source),bridge,[2025]);expect(result.rows).toEqual([row]);expect(result.issues).toEqual([]);

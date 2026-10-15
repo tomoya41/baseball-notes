@@ -28,7 +28,8 @@ export const npbHistoricalRowSchema = z.strictObject({
 });
 export type NpbHistoricalRow = z.infer<typeof npbHistoricalRowSchema>;
 const player = z.strictObject({ playerId: z.uuid(), name: z.string().min(1), wikidataId: z.string().regex(/^Q\d+$/), npbId: z.string().regex(/^\d+$/),
-  article: z.string().min(1), revision: z.number().int().positive(), revisionAt: z.iso.datetime(), contentSha256: z.string().regex(/^[a-f0-9]{64}$/) });
+  article: z.string().min(1), revision: z.number().int().positive(), revisionAt: z.iso.datetime(), contentSha256: z.string().regex(/^[a-f0-9]{64}$/),
+  identityScope: z.literal("historical_only").optional(), sourceObservedAt: z.iso.datetime().optional() });
 export const npbHistoricalDatasetSchema = z.strictObject({
   schemaVersion: z.literal(1), league: z.literal("NPB"), temporalScope: z.literal("historical"), competition: z.literal("regular"),
   granularity: z.literal("season_aggregate"), license: z.literal("CC-BY-SA-4.0"), observedAt: z.iso.datetime(),
@@ -37,7 +38,7 @@ export const npbHistoricalDatasetSchema = z.strictObject({
 }).superRefine((value, ctx) => {
   const ids = new Set(value.players.map(p => p.playerId)), external = new Set(value.players.map(p => p.npbId));
   if (ids.size !== value.players.length || external.size !== value.players.length) ctx.addIssue({ code: "custom", message: "Ambiguous historical identity" });
-  if(value.players.some(p=>p.revisionAt>value.observedAt)) ctx.addIssue({code:"custom",message:"Source revision postdates acquisition"});
+  if(value.players.some(p=>p.revisionAt>(p.sourceObservedAt??value.observedAt)||(p.sourceObservedAt??value.observedAt)>value.observedAt)) ctx.addIssue({code:"custom",message:"Source revision postdates acquisition"});
   const keys = new Set<string>();
   for (const row of value.rows) {
     const key = `${row.playerId}:${row.season}:${row.teamId}:${row.role}`;
@@ -49,8 +50,8 @@ export type NpbHistoricalDataset = z.infer<typeof npbHistoricalDatasetSchema>;
 export const npbHistoricalManifestSchema = z.strictObject({
   schemaVersion:z.literal(1), league:z.literal("NPB"), competition:z.literal("regular"), temporalScope:z.literal("historical"),
   coverage:z.literal("partial"), license:z.literal("CC-BY-SA-4.0"), inputSha256:z.string().regex(/^[a-f0-9]{64}$/), observedAt:z.iso.datetime(),
-  seasons:z.array(z.strictObject({season:z.number().int().min(1936).max(2025),rows:z.number().int().positive(),players:z.number().int().positive(),sha256:z.string().regex(/^[a-f0-9]{64}$/),bytes:z.number().int().positive().max(300000)})).max(100),
-  players:z.array(z.strictObject({playerId:z.uuid(),name:z.string().min(1),seasons:z.array(z.number().int().min(1936).max(2025)).min(1).max(100)})).max(10000),
+  seasons:z.array(z.strictObject({season:z.number().int().min(1936).max(2025),rows:z.number().int().positive(),players:z.number().int().positive(),sha256:z.string().regex(/^[a-f0-9]{64}$/),bytes:z.number().int().positive().max(500000)})).max(100),
+  players:z.array(z.strictObject({playerId:z.uuid(),name:z.string().min(1),identityScope:z.literal("historical_only").optional(),seasons:z.array(z.number().int().min(1936).max(2025)).min(1).max(100)})).max(10000),
 }).superRefine((m,c)=>{
   const seasons=new Set(m.seasons.map(s=>s.season));
   if(seasons.size!==m.seasons.length || new Set(m.players.map(p=>p.playerId)).size!==m.players.length || m.players.some(p=>p.seasons.some(y=>!seasons.has(y)))) c.addIssue({code:"custom",message:"Invalid historical index"});
