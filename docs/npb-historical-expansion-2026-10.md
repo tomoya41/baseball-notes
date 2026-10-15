@@ -129,3 +129,9 @@ Rollbackは今回のapp/build変更をrevertし、独立`data/npb/historical` fa
 最終のtests/build/実画面/PR/公開結果はdelivery追補へ記録する。設計資料を実施済みQAの代替にしない。
 
 公開前自己監査: 投手表の無四球欄は `noWalkGames`（無四球試合）と明記し、quality start等と混同しない。先行prereleaseの曖昧なkeyをv2で訂正し、旧assetは上書きしない。採用pinは `npb-history-wikipedia-20261015-v2`。既存Facts・数値・件数には変更なし。
+
+### Review修正
+
+PR #33のCodex ReviewでP1（比較カードが検索/年度/pageの外にある場合に個別著者・revision creditが欠落）が指摘された。選手比較と年度比較/合計に、それぞれ独立した出典欄を追加。検索で全カードが消えるケース、選択選手が当該年度にいないケースを回帰テストで固定。出典修正前の状態でPagesへ公開していない。
+
+新しいAndroid instrumentation項目はHistorical deep link、partial文言、年度合計、出典link、150%/200%の実OS fontScaleと横overflowを検証する。公開後にemulatorで実行するまでPASSとは扱わない。今回のAPKを接続Pixelへ再インストールした/物理端末で新Historicalを確認したとは報告しない。

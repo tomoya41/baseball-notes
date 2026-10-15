@@ -308,6 +308,25 @@ public class ReleaseQualityTest {
         assertTrue("First system Back dismisses IME without leaving Search", js("location.hash").contains("/MLB/search"));
         screenshot("search-keyboard-back");
     }
+    @Test public void npbHistoricalYearsAndLargeFont() throws Exception {
+        Intent link = new Intent(Intent.ACTION_VIEW, Uri.parse("baseballnotes://NPB/history?season=2025&player=a1ca7cac-f9be-4993-a78c-bcd1e1ae3399&years=2023,2024,2025&q=%E4%BD%90%E8%97%A4%E8%BC%9D%E6%98%8E"));
+        link.setClassName("com.tomoya41.baseballnotes", "jp.baseballdata.app.MainActivity");
+        scenario = ActivityScenario.launch(link);
+        waitText("2023 / 2024 / 2025年の収録行合計");
+        waitText("0.924");
+        assertTrue("Historical scope remains partial", js("document.body.innerText").contains("全選手の成績・ランキングではありません"));
+        assertEquals("Canonical player preserved by native deep link", "true", js("location.hash.includes('a1ca7cac-f9be-4993-a78c-bcd1e1ae3399') && location.hash.includes('season=2025')"));
+        waitCondition("Comparison attribution", "!!document.querySelector('[aria-label=\"年度比較・合計データの出典\"] a[href*=\"oldid=\"]')");
+        for (String scale : new String[]{"1.5", "2.0"}) {
+            shell("settings put system font_scale " + scale); scenario.recreate();
+            waitText("2023 / 2024 / 2025年の収録行合計"); waitViewport(360);
+            waitCondition("OS font scale reaches Historical view", "Number(getComputedStyle(document.documentElement).getPropertyValue('--android-font-scale')) >= " + scale);
+            assertEquals("Historical view has no horizontal overflow at " + scale, "true", js("document.documentElement.scrollWidth <= window.innerWidth"));
+            screenshot("npb-history-font-" + scale.replace(".", ""));
+        }
+        shell("settings put system font_scale 1.0"); scenario.recreate(); waitText("0.924");
+        screenshot("npb-history-360");
+    }
     @Test public void nativePreferencesSurviveRestartAndFirebaseDisabled() throws Exception {
         String fixture = "{\"items\":[{\"league\":\"NPB\",\"kind\":\"player\",\"entityId\":\"canonical-player\"}]}";
         assertTrue(EodMessagingService.isFavoritePlayer(fixture, "canonical-player"));

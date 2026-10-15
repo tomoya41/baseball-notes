@@ -28,5 +28,15 @@ describe("NPB Historical integrated UI",()=>{
     expect(div.textContent).toContain("収録済み年度の比較");expect(div.textContent).toContain("2025年の収録行合計");expect(div.querySelector('input[type="checkbox"]:checked')).not.toBeNull();expect(localStorage.getItem("qa-preserved")).toBe("sentinel");
   }finally{await close();localStorage.removeItem("qa-preserved");}});
   it("does not use another player's data for an invalid canonical ID",async()=>{const {div,close}=await mount("?season=2025&player=unknown");try{expect(div.textContent).toContain("指定した選手の過去年度成績は未収録");expect(div.textContent).not.toContain("収録済み年度の比較");}finally{await close();}});
+  it("credits selected-player comparisons even when the query hides every result card",async()=>{const {div,close}=await mount(`?season=2025&q=unmatched&recentPlayers=${id}`);try{
+    expect(div.querySelectorAll("article")).toHaveLength(0);expect(div.querySelector('[aria-label="選手比較データの出典"] a[href*="oldid=123"]')).not.toBeNull();
+  }finally{await close();}});
+  it("credits every revision represented by another-year comparison without a visible current-year player card",async()=>{
+    vi.mocked(readNpbHistoricalManifest).mockResolvedValue({...manifest,seasons:[...manifest.seasons,{...manifest.seasons[0]!,season:2024}],players:[{...manifest.players[0]!,seasons:[2024,2025]}]});
+    vi.mocked(readNpbHistoricalSeason).mockImplementation(async year=>year===2025?{...dataset,players:[],rows:[]}:{...dataset,players:[{...dataset.players[0]!,revision:456}],rows:[{...dataset.rows[0]!,season:2024}]});
+    const {div,close}=await mount(`?season=2025&player=${id}&years=2024`);try{
+      expect(div.querySelectorAll("article")).toHaveLength(0);expect(div.textContent).toContain("2024年の収録行合計");expect(div.querySelector('[aria-label="年度比較・合計データの出典"] a[href*="oldid=456"]')).not.toBeNull();
+    }finally{await close();}
+  });
   it("distinguishes a network failure from an empty historical season",async()=>{vi.mocked(readNpbHistoricalSeason).mockRejectedValue(new Error("offline"));const {div,close}=await mount("?season=2025");try{expect(div.textContent).toContain("年度別成績を取得できません");expect(div.textContent).not.toContain("条件に一致する収録データがありません");}finally{await close();}});
 });
