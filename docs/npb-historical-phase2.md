@@ -93,3 +93,7 @@ Full tests / lint / typecheck / build / vercel-build、Android APK/unsigned AAB�
 物理PixelはADB一覧に存在せず、新APK更新/実操作/TalkBackはNOT RUN。署名・Play/App LinksのOwner Gateはそのまま。実機操作票は `android-device-qa.md` / `android-physical-qa-results.md` を継続利用する。
 
 次段階は残る73件のうち、独立した列定義が確認できる形式だけを小単位で回収する。さらに古い年度、全Career/球団年度成績/完全ランキングは今回の完了範囲外。
+
+### Codex Review対応
+
+P2: 新SHA familyだけの検証では、旧APKが使うroot 12 URLの欠落/変更を見逃すとの指摘。公開前のv3全12ファイルから固定したbytes/SHAをlegacy release pinに追加し、local/public verifierの両方で全件照合する。missing/altered/一部欠落を拒否する回帰テストを追加し、`npm run build`の必須工程へ接続した。手元の一度きりのhash照合だけでPASSにしない。
