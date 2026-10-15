@@ -13,5 +13,5 @@ const standings = await preserveNpbPublicStandings(root);
 if (standings.effectiveDate !== directory.effectiveDate) throw Error("Profile-only publication requires coherent saved generation");
 const file = join(root, "data/npb/players/latest.json");
 await mkdir(join(root, "data/npb/players"), { recursive: true });
-await writeFile(file, JSON.stringify({ ...directory, generatedAt: new Date().toISOString() }));
+await writeFile(file, JSON.stringify(process.argv.includes("--preserve-only") ? directory : { ...directory, generatedAt: new Date().toISOString() }));
 console.log(JSON.stringify({ effectiveDate: directory.effectiveDate, players: directory.players.length, canonicalWrites: 0, queries: 0 }));

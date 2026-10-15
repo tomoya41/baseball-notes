@@ -1,3 +1,4 @@
+import { NpbHistoricalHistory } from "./npb-historical";
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { readNpbExplorerSeason } from "../application/explorer-readers";
@@ -39,11 +40,12 @@ export function MlbSeasonExplorer({ manifest }: { manifest: ExplorerManifest }) 
       })}</div>}</>}
   </div>;
 }
-export function NpbSeasonExplorer() {
+export function NpbSeasonExplorer() { return <NpbHistoricalHistory current={<CurrentNpbSeasonExplorer />} />; }
+function CurrentNpbSeasonExplorer() {
   const [data, setData] = useState<NpbSeasonPayload | null>(null), [failed, setFailed] = useState(false), [params, setParams] = useSearchParams();
   const supported = params.get("competition") !== "postseason" && (!params.has("season") || params.get("season") === "2026");
   useEffect(() => { if (!supported) return; let active = true; void readNpbExplorerSeason(2026).then(value => { if (active) setData(value); }).catch(() => { if (active) setFailed(true); }); return () => { active = false; }; }, [supported]);
   const query = params.get("q") ?? "";
   if (!supported) return <DataState kind="unsupported" title="指定したNPBシーズンは未収録です" />;
-  return <div className="screen"><PageHeading eyebrow="NPB" title="シーズン履歴" /><SaveViewButton league="NPB" kind="history" params={new URLSearchParams(`season=2026&${params}`)} /><details className="explorer-tools"><summary>ほかの探し方</summary><ExplorerLinks league="NPB" /></details><p className="inline-note">現在は2026年の公式戦のみ収録。Career・過去年度の成績ではありません。</p>{failed ? <DataState kind="source-unavailable" title="保存済みシーズンを取得できません" /> : !data ? <LoadingSkeleton /> : <><h2>{data.season}年 · {data.period.to}まで</h2><p>収録状態 {data.coverage.status === "complete" ? "確認済み" : "一部未確認"}</p><div className="hub-links"><Link to="/NPB/data?season=2026">年度の成績を探索 →</Link><Link to="/NPB/teams">球団別Season →</Link><Link to="/NPB/schedule">日程・Game →</Link></div><label className="search-field"><span className="sr-only">履歴を調べる選手</span><input type="search" value={query} placeholder="選手名を入力" onChange={e => setParams(previous => { const next = new URLSearchParams(previous); next.set("q", e.target.value); return next; })} /></label>{query.trim() && <div className="row-list">{data.players.filter(p => normalizePlayerSearch(p.displayName).includes(normalizePlayerSearch(query))).slice(0, 20).map(p => <Link className="player-row" key={p.playerId} to={`/NPB/players/${encodeURIComponent(p.playerId)}/stats`}>{p.displayName} · 2026 Season →</Link>)}</div>}</>}</div>;
+  return <div><SaveViewButton league="NPB" kind="history" params={new URLSearchParams(`season=2026&${params}`)} /><details className="explorer-tools"><summary>ほかの探し方</summary><ExplorerLinks league="NPB" /></details><p className="inline-note">この画面は保存済み2026年公式戦です。過去年度の成績は上の年度選択から確認できます。</p>{failed ? <DataState kind="source-unavailable" title="保存済みシーズンを取得できません" /> : !data ? <LoadingSkeleton /> : <><h2>{data.season}年 · {data.period.to}まで</h2><p>収録状態 {data.coverage.status === "complete" ? "確認済み" : "一部未確認"}</p><div className="hub-links"><Link to="/NPB/data?season=2026">年度の成績を探索 →</Link><Link to="/NPB/teams">球団別Season →</Link><Link to="/NPB/schedule">日程・Game →</Link></div><label className="search-field"><span className="sr-only">履歴を調べる選手</span><input type="search" value={query} placeholder="選手名を入力" onChange={e => setParams(previous => { const next = new URLSearchParams(previous); next.set("q", e.target.value); return next; })} /></label>{query.trim() && <div className="row-list">{data.players.filter(p => normalizePlayerSearch(p.displayName).includes(normalizePlayerSearch(query))).slice(0, 20).map(p => <Link className="player-row" key={p.playerId} to={`/NPB/players/${encodeURIComponent(p.playerId)}/stats`}>{p.displayName} · 2026 Season →</Link>)}</div>}</>}</div>;
 }

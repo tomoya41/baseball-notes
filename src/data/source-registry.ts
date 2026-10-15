@@ -17,6 +17,13 @@ export interface DataSource {
 
 export const sourceRegistry: readonly DataSource[] = [
   {
+    key: "wikipedia-npb-historical", displayName: "Wikipedia NPB年度別成績（部分収録）", league: "NPB",
+    baseUrl: "https://ja.wikipedia.org/", type: "licensed-download", priority: 30,
+    status: "enabled-historical", categories: ["historical-season-aggregate"], updateCadence: "pinned reviewed archive; no scheduled acquisition",
+    termsUrl: "https://foundation.wikimedia.org/wiki/Policy:Terms_of_Use#7._Licensing_of_Content", checkedOn: "2026-10-15",
+    notes: "CC BY-SA 4.0 article season tables, revision/author links, transformations and share-alike retained. Existing exact canonical bridges only; partial selected-player coverage, no Game Facts, official ranking, full Career or Current metadata. No rights implied for linked NPB/SPAIA/nf3 sources or media.",
+  },
+  {
     key: "retrosheet-csv", displayName: "Retrosheet Daily Logs", league: "MLB",
     baseUrl: "https://www.retrosheet.org/downloads/", type: "licensed-download",
     priority: 10,

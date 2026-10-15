@@ -89,6 +89,7 @@ export function MlbDataSources() {
     <section className="surface-card"><h2>選手名・プロフィール</h2>
       <p>日本語表示名と、一部のNPBプロフィールに<a href="https://www.wikidata.org/">Wikidata</a>の構造化データ（<a href="https://www.wikidata.org/wiki/Wikidata:Licensing">CC0</a>）を利用しています。確認済みの選手IDに紐づく項目だけを表示します。NPBの選手ID照合と一部の生年月日には、上記Chadwick Registerも利用しています。</p>
       <p>一部のNPBプロフィールはWikipediaの項目を抽出・整形しています。該当する項目は<a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>で再利用できます。各プロフィールに元の記事・版と執筆者へのクレジットを記載しています。写真や記事本文は使用していません。</p>
+      <p>NPBの過去年度は、WikipediaのNPB一軍年度表から抽出・正規化した一部選手の成績です。<Link to="/NPB/history?season=2025">シーズン履歴</Link>に収録年度・元記事の版・執筆者・<a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>を表示しています。全選手の成績、公式通算、試合別Factsやランキングではありません。</p>
       <p>日本人選手は漢字、その他の選手は確認できるカタカナ表記を表示します。表記未確認の選手は原名を表示します。</p>
       <p>日本人選手の絞り込みは、国籍情報とRetrosheet・Chadwickの選手IDを照合し、確認できた選手だけを対象にしています。</p>
     </section></div>;

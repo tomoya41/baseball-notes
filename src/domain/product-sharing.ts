@@ -12,7 +12,14 @@ export function portableRoute(path: string, search = ""): string | null {
   const parts = path.split("/").filter(Boolean), league = parts[0];
   if (league !== "NPB" && league !== "MLB") return null;
   const resource = parts[1], source = new URLSearchParams(search), clean = new URLSearchParams();
-  if (parts.length === 2 && ["data", "history"].includes(resource ?? "")) { const conditions = viewConditions(source, true, league); return `/${league}/${resource}${conditions ? `?${conditions}` : ""}`; }
+  if (parts.length === 2 && ["data", "history"].includes(resource ?? "")) {
+    const conditions = new URLSearchParams(viewConditions(source, true, league));
+    if(league==="NPB"&&resource==="history") {
+      if(source.has("years")&&/^(?:20\d{2}(?:,20\d{2}){0,3})?$/.test(source.get("years")!))conditions.set("years",source.get("years")!);
+      if(/^\d{1,3}$/.test(source.get("page")??""))conditions.set("page",source.get("page")!);
+    }
+    return `/${league}/${resource}${conditions.size ? `?${conditions}` : ""}`;
+  }
   if (league === "MLB" && parts.length === 2 && resource === "form") {
     for (const [key,allowed] of [["mode",["hot","monthly","change","monthly-change"]],["category",["batting","starters","relievers"]],["period",["7","14","30"]],["battingView",["standard","pitchers","all"]],["change",["rising","cooling","stable","insufficient","all"]]] as const) if(allowed.some(v=>v===source.get(key)))clean.set(key,source.get(key)!);
     const team=source.get("team");if(team&&canonicalEntityRefSchema.safeParse({league,kind:"team",id:team}).success)clean.set("team",team);
