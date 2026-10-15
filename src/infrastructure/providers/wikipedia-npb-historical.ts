@@ -4,7 +4,7 @@ import { historicalBattingKeys, historicalPitchingKeys, historicalRates, npbHist
 
 const teams: Record<string, string> = { "巨人": "giants", "阪神": "tigers", "中日": "dragons", "広島": "carp", "ヤクルト": "swallows", "DeNA": "baystars", "ソフトバンク": "hawks", "日本ハム": "fighters", "西武": "lions", "ロッテ": "marines", "楽天": "eagles", "オリックス": "buffaloes" };
 const pageSchema = z.object({ title: z.string(), pageprops: z.object({ wikibase_item: z.string() }), revisions: z.array(z.object({ revid: z.number().int().positive(), timestamp: z.iso.datetime(), slots: z.object({ main: z.object({ content: z.string() }) }) })).length(1) });
-export type HistoricalBridge = { playerId: string; wikidataId: string; npbId: string; identityScope?: "historical_only"; sourceObservedAt?: string };
+export type HistoricalBridge = { playerId: string; wikidataId: string; npbId: string; identityScope?: "historical_only" | undefined; sourceObservedAt?: string | undefined };
 const plain = (text: string) => text.replace(/'''?/g, "").replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_,title: string,label?:string) => label ?? title).trim();
 // A deliberately small wikitext reader. Unsupported templates, spans and non-NPB tables are quarantined.
 function splitCells(text: string) {
