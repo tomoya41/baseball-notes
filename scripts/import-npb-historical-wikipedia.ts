@@ -1,0 +1,41 @@
+import { readFile, writeFile, mkdir } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { gzipSync } from "node:zlib";
+import { DatabaseSync } from "node:sqlite";
+import { resolve, join } from "node:path";
+import { parseWikipediaHistorical } from "../src/infrastructure/providers/wikipedia-npb-historical";
+import { npbHistoricalDatasetSchema } from "../src/domain/npb-historical";
+import bridges from "../src/data/npb-free-profile-identities.json";
+import { z } from "zod";
+
+// Offline-only replay of documented MediaWiki API archives. No collector, remote DB or identity mutation.
+const [input, output] = process.argv.slice(2);
+if (!input || !output || !resolve(output).startsWith(`${resolve(".data")}/`.replaceAll("/", process.platform === "win32" ? "\\" : "/"))) throw Error("Usage: import-npb-historical-wikipedia.ts archive.json .data/output-directory");
+const started = performance.now(), bytes = await readFile(input), inputSha256 = createHash("sha256").update(bytes).digest("hex");
+const archive = z.object({ observedAt:z.iso.datetime(), pages:z.record(z.string(),z.unknown()),titles:z.array(z.object({ playerId:z.uuid(),npbId:z.string(),wikidataId:z.string(),title:z.string() })) }).parse(JSON.parse(bytes.toString("utf8")));
+const years = Array.from({length:11},(_,i)=>2015+i), players=[], rows=[], issues=[];
+for (const link of archive.titles) {
+  if (!bridges.some(b=>b.playerId===link.playerId && b.npbId===link.npbId && b.wikidataId===link.wikidataId)) throw Error("Unverified cross-season canonical bridge");
+  try {
+    const parsed = parseWikipediaHistorical(archive.pages[link.title],link,years);
+    if (parsed.rows.length) { players.push(parsed.player); rows.push(...parsed.rows); }
+    issues.push(...parsed.issues.map(issue=>({playerId:link.playerId,title:link.title,...issue})));
+  } catch(e) { issues.push({playerId:link.playerId,title:link.title,reason:(e as Error).message}); }
+}
+const dataset = npbHistoricalDatasetSchema.parse({schemaVersion:1,league:"NPB",temporalScope:"historical",competition:"regular",granularity:"season_aggregate",license:"CC-BY-SA-4.0",observedAt:archive.observedAt,inputSha256,
+  transformation:"NPB season tables only; exact existing Wikidata/NPB canonical bridges; normalized counts and baseball innings; unsupported rows quarantined; no article career totals, prose, media, Game Facts or current metadata",coverage:"partial",players,rows});
+await mkdir(output,{recursive:true});
+// A fresh in-memory scratch DB with readback and idempotent replay, not the production DB.
+const db = new DatabaseSync(":memory:");
+db.exec("CREATE TABLE npb_historical_aggregates(player_id TEXT NOT NULL, season INTEGER NOT NULL, competition TEXT NOT NULL CHECK(competition='regular'), role TEXT NOT NULL, team_id TEXT NOT NULL, metrics TEXT NOT NULL, PRIMARY KEY(player_id,season,competition,role,team_id))");
+const insert = db.prepare("INSERT INTO npb_historical_aggregates VALUES(?,?,'regular',?,?,?) ON CONFLICT DO NOTHING");
+for(let replay=0;replay<2;replay++) for(const row of dataset.rows) insert.run(row.playerId,row.season,row.role,row.teamId,JSON.stringify(row.metrics));
+const readback = db.prepare("SELECT player_id,season,role,team_id,metrics FROM npb_historical_aggregates ORDER BY player_id,season,role,team_id").all();
+const canonical = (data:typeof dataset.rows) => data.map(r=>JSON.stringify([r.playerId,r.season,r.role,r.teamId,r.metrics])).sort();
+if(JSON.stringify(canonical(readback.map(r=>({playerId:String(r.player_id),season:Number(r.season),role:r.role as "batting"|"pitching",teamId:String(r.team_id),metrics:JSON.parse(String(r.metrics))}))))!==JSON.stringify(canonical(dataset.rows))) throw Error("Scratch replay/readback mismatch");
+db.close();
+const json=JSON.stringify(dataset), compressed=gzipSync(json,{level:9}), outputPath=join(output,"npb-historical-wikipedia.json.gz");
+await writeFile(outputPath,compressed);
+await writeFile(join(output,"quarantine.json"),JSON.stringify(issues,null,2));
+const report={inputSha256,archiveObservedAt:dataset.observedAt,players:players.length,rows:rows.length,seasons:years.map(season=>({season,batting:rows.filter(r=>r.season===season&&r.role==="batting").length,pitching:rows.filter(r=>r.season===season&&r.role==="pitching").length})),issues:issues.length,bytes:Buffer.byteLength(json),gzipBytes:compressed.length,sha256:createHash("sha256").update(compressed).digest("hex"),scratchReadback:true,idempotentReplay:true,canonicalWrites:0,sourceRequests:0,durationMs:Math.round(performance.now()-started)};
+await writeFile(join(output,"report.json"),JSON.stringify(report,null,2));console.log(JSON.stringify(report));

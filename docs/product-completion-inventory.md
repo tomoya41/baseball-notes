@@ -558,3 +558,7 @@ MLB-only WHIP/BB9/K%/BB%を実装。既存Historicalのみで、Source/Gate/Care
 | UI readiness | Handoff準備済み。現Design Systemと機能を維持して、次Astraで専用sports surfacesと分析workspaceを再構成可能。実機/TalkBack/署名Releaseはmanual QA |
 
 推奨順序: 今回のadmissionと公開後QA → Astra UI仕上げ → 明示したv1 scope freeze/Final QA。NPB Scheduled運用・Source/Data Qualityは並行し、未達GateをUIで隠さない。Source待ちはCurrent NPB Postseason、NPB Historical/Career/roster/FA/Transactions/Preseason、MLB Current、rights未確定assets/export。今回Source rightsを拡張しない。
+
+## 2026-10-15 — NPB Historical partial admission
+
+[Source audit and admission](npb-historical-expansion-2026-10.md): 2015–2025のWikipedia年度表から444 canonical選手・2,060球団別年度行を別contractで部分収録。NPB Historicalは「全く未導入」からPARTIALへ更新する。年度/投打/球団/選手検索、2–4人比較、最大4年度比較と選択範囲合計を提供する。2023–25もleague全集ではない。OB横断、Game/Recent、球団全体成績、公式資格/歴代ranking、Full Careerは未完成。2026のHOT/Ranking・pending/partial/Freshnessは別であり、今回開放しない。旧inventoryの個別Source/年代件数は当時のsnapshotを残す。

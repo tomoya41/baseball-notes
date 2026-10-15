@@ -112,3 +112,7 @@ nf3更新時刻の保証や公式API SLAはない。CollectorはJST前日を対�
 ## 実Providerを採用する前の確認
 
 対象league/year/metricのレスポンス例、欠測定義、機械取得と保存・集計・再配布の許諾、認証/無料quota、更新周期、CORS/Android通信、ID対応を揃える。利用条件が未確定のProviderはコード上でも無効にし、「無料で取れた」だけで既定Providerにしない。
+
+## NPB Historical partial season aggregates — 2026-10-15
+
+[NPB Historical audit](npb-historical-expansion-2026-10.md) adds a separate CC BY-SA 4.0 Wikipedia season-table scope, with pinned article/revision/author credit, normalized aggregate values and partial coverage. This does not enlarge the rights of nf3, NPB official, SPAIA, dataFreak or GitHub mirrors. No article prose/media/raw event dump, Current fact change, career-total claim or ranking permission is introduced. Existing profile-only extraction contracts remain unchanged; the new adapter and data family are separate.
