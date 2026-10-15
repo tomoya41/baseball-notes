@@ -48,15 +48,19 @@ function HistoricalSeason({manifest,season,role,params,update,retry}:{manifest:N
     {failed?<><DataState kind="source-unavailable" title="年度別成績を取得できません" /><button onClick={retry}>再試行</button></>:!data?<LoadingSkeleton />:<>
       {comparisonRows.length>0&&<section><h2>選んだ選手の収録分を比較</h2><label>指標<select value={metric} onChange={e=>update("sort1",e.target.value)}>{keys.map(k=><option key={k}>{k}</option>)}</select></label><ComparisonBars rows={comparisonRows} metric={metric} /><p className="inline-note">{season}年・{team?teamName(team):"収録球団"}の範囲。公式資格や優劣の判定ではありません。</p><aside aria-label="選手比較データの出典">{comparisonRows.map(r=><p key={r.id}><Credits data={data} playerId={r.id} /></p>)}</aside></section>}
       {playerId&&!player&&<DataState kind="no-data" title="指定した選手の過去年度成績は未収録です" />}
-      {player&&<PlayerHistory manifest={manifest} playerId={player.playerId} role={role} current={data} />}
+      {player&&<PlayerHistory manifest={manifest} playerId={player.playerId} role={role} current={data} activeSeason={season} />}
       <h2>{candidates.length}選手 · {safePage}/{pages}ページ</h2>{!visible.length&&<DataState kind="no-data" title="条件に一致する収録データがありません" />}
       <div className="row-list">{visible.map(p=>{const records=rows.filter(r=>r.playerId===p.playerId);return <article className="explorer-result" key={p.playerId}><h3><button className="text-link" onClick={()=>update("player",p.playerId)}>{p.name}</button></h3>{records.map(r=><div key={r.teamId}><p>{season}年 · {teamName(r.teamId)}</p><Numbers rows={[r]} role={role} /></div>)}<div className="explorer-links"><label><input type="checkbox" checked={ids.includes(p.playerId)} disabled={!ids.includes(p.playerId)&&ids.length>=4} onChange={()=>update("recentPlayers",ids.includes(p.playerId)?ids.filter(id=>id!==p.playerId).join(","):[...ids,p.playerId].join(","))} /> 比較（最大4人）</label><Link to={`/NPB/players/${p.playerId}`}>2026年の選手ページ →</Link><button className="text-link" onClick={()=>update("player",p.playerId)}>年度推移・収録年合計</button></div><Credits data={data} playerId={p.playerId} /></article>;})}</div>
       <nav className="hub-links" aria-label="過去年度の結果ページ"><button disabled={safePage<=1} onClick={()=>update("page",String(safePage-1))}>前へ</button><button disabled={safePage>=pages} onClick={()=>update("page",String(safePage+1))}>次へ</button></nav>
     </>}</>;
 }
-function PlayerHistory({manifest,playerId,role,current}:{manifest:NpbHistoricalManifest;playerId:string;role:"batting"|"pitching";current:NpbHistoricalDataset}) {
+function PlayerHistory({manifest,playerId,role,current,activeSeason}:{manifest:NpbHistoricalManifest;playerId:string;role:"batting"|"pitching";current:NpbHistoricalDataset;activeSeason:number}) {
   const [params,setParams]=useSearchParams(),player=manifest.players.find(p=>p.playerId===playerId)!;
-  const raw=params.get("years"),years=useMemo(()=>raw===null?player.seasons.slice(-3):[...new Set(raw.split(",").filter(y=>/^\d{4}$/.test(y)).map(Number).filter(y=>player.seasons.includes(y)))].slice(0,4),[raw,player]);
+  const raw=params.get("years"),years=useMemo(()=>{
+    if(raw!==null) return [...new Set(raw.split(",").filter(y=>/^\d{4}$/.test(y)).map(Number).filter(y=>player.seasons.includes(y)))].slice(0,4);
+    const start=Math.max(0,player.seasons.filter(y=>y<=activeSeason).length-3);
+    return player.seasons.slice(start,start+3);
+  },[raw,player,activeSeason]);
   const key=`${playerId}:${years.join(",")}:${manifest.inputSha256}`;
   const [result,setResult]=useState<{key:string;data:NpbHistoricalDataset[];error:boolean}|null>(null);
   useEffect(()=>{let active=true;void Promise.all(years.map(y=>current.rows.some(r=>r.season===y)?Promise.resolve(current):readNpbHistoricalSeason(y,manifest))).then(data=>{if(active)setResult({key,data,error:false});}).catch(()=>{if(active)setResult({key,data:[],error:true});});return()=>{active=false;};},[key,current,manifest,years]);

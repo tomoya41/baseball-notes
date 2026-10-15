@@ -15,6 +15,16 @@ beforeEach(()=>{vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);vi.mocked(readNpb
 afterEach(()=>{vi.unstubAllGlobals();vi.clearAllMocks();});
 async function mount(search:string){const div=document.createElement("div");document.body.append(div);const root=createRoot(div);await act(async()=>{root.render(<MemoryRouter initialEntries={[`/NPB/history${search}`]}><Location/><NpbHistoricalHistory current={<p>2026 Current</p>}/></MemoryRouter>);});return{div,close:async()=>{await act(async()=>root.unmount());div.remove();}};}
 describe("NPB Historical integrated UI",()=>{
+  it("anchors default comparison years to the opened historical season rather than the latest years",async()=>{
+    const years=[2015,2016,2017,2023,2024,2025];
+    vi.mocked(readNpbHistoricalManifest).mockResolvedValue({...manifest,seasons:years.map(season=>({...manifest.seasons[0]!,season})),players:[{...manifest.players[0]!,seasons:years}]});
+    vi.mocked(readNpbHistoricalSeason).mockImplementation(async season=>({...dataset,rows:[{...dataset.rows[0]!,season}]}));
+    const {div,close}=await mount(`?season=2015&player=${id}`);try{
+      expect(div.textContent).toContain("2015 / 2016 / 2017年の収録行合計");
+      const selected=Array.from(div.querySelectorAll('fieldset input:checked')).map(n=>n.parentElement?.textContent?.trim());
+      expect(selected).toEqual(["2015","2016","2017"]);
+    }finally{await close();}
+  });
   it("refreshes the manifest as well as annual data after a publication-generation failure",async()=>{
     const corrected={...manifest,seasons:[{...manifest.seasons[0]!,sha256:"c".repeat(64)}]};
     vi.mocked(readNpbHistoricalManifest).mockResolvedValueOnce(manifest).mockResolvedValueOnce(corrected);
