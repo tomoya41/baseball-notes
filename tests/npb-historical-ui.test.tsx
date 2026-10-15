@@ -15,6 +15,19 @@ beforeEach(()=>{vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);vi.mocked(readNpb
 afterEach(()=>{vi.unstubAllGlobals();vi.clearAllMocks();});
 async function mount(search:string){const div=document.createElement("div");document.body.append(div);const root=createRoot(div);await act(async()=>{root.render(<MemoryRouter initialEntries={[`/NPB/history${search}`]}><Location/><NpbHistoricalHistory current={<p>2026 Current</p>}/></MemoryRouter>);});return{div,close:async()=>{await act(async()=>root.unmount());div.remove();}};}
 describe("NPB Historical integrated UI",()=>{
+  it("refreshes the manifest as well as annual data after a publication-generation failure",async()=>{
+    const corrected={...manifest,seasons:[{...manifest.seasons[0]!,sha256:"c".repeat(64)}]};
+    vi.mocked(readNpbHistoricalManifest).mockResolvedValueOnce(manifest).mockResolvedValueOnce(corrected);
+    vi.mocked(readNpbHistoricalSeason).mockRejectedValueOnce(new Error("hash mismatch")).mockResolvedValueOnce(dataset);
+    const {div,close}=await mount("?season=2025");try{
+      expect(div.textContent).toContain("年度別成績を取得できません");
+      await act(async()=>{Array.from(div.querySelectorAll("button")).find(b=>b.textContent==="再試行")!.click();});
+      expect(readNpbHistoricalManifest).toHaveBeenCalledTimes(2);
+      expect(readNpbHistoricalSeason).toHaveBeenCalledTimes(2);
+      expect(vi.mocked(readNpbHistoricalSeason).mock.calls.at(-1)?.[1]).toEqual(corrected);
+      expect(div.textContent).toContain("架空の長い選手名");expect(div.textContent).not.toContain("年度別成績を取得できません");
+    }finally{await close();}
+  });
   it("shows the admitted year and partial coverage; unknown metrics are not zero",async()=>{const {div,close}=await mount("?season=2025");try{
     expect(div.textContent).toContain("全選手の成績・ランキングではありません");expect(div.textContent).toContain("架空の長い選手名");expect(div.querySelector("dd")?.textContent).toBe("—");expect(div.querySelector('a[href*="oldid=123"]')).not.toBeNull();expect(div.querySelector('a[href*="/players/"]')?.textContent).toContain("2026年");
   }finally{await close();}});

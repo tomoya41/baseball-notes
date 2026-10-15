@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it, vi } from "vitest";
 import { readNpbHistoricalManifest, readNpbHistoricalSeason } from "../src/application/npb-historical-reader";
+import { publicDataFetch } from "../src/infrastructure/public-response-cache";
 import { historicalBattingKeys, npbHistoricalManifestSchema } from "../src/domain/npb-historical";
 const remember=vi.hoisted(()=>vi.fn());
 vi.mock("../src/infrastructure/public-response-cache",()=>({publicDataFetch:vi.fn(),rememberPublicResponse:remember}));
@@ -9,6 +10,23 @@ const dataset={schemaVersion:1,league:"NPB",temporalScope:"historical",competiti
 const body=JSON.stringify(dataset);
 function index(text=body){return npbHistoricalManifestSchema.parse({schemaVersion:1,league:"NPB",competition:"regular",temporalScope:"historical",coverage:"partial",license:"CC-BY-SA-4.0",inputSha256:dataset.inputSha256,observedAt:dataset.observedAt,seasons:[{season:2025,rows:1,players:1,bytes:Buffer.byteLength(text),sha256:createHash("sha256").update(text).digest("hex")}],players:[{playerId:id,name:"テスト",seasons:[2025]}]});}
 describe("NPB Historical bounded validated reader",()=>{
+  it("separates overlapping corrected annual reads even when their source archive is unchanged",async()=>{
+    const corrected=JSON.stringify({...dataset,transformation:"Corrected normalized data"});
+    let resolveOld!:(r:Response)=>void,resolveNew!:(r:Response)=>void;
+    vi.mocked(publicDataFetch).mockReset().mockImplementationOnce(()=>new Promise(resolve=>{resolveOld=resolve;})).mockImplementationOnce(()=>new Promise(resolve=>{resolveNew=resolve;}));
+    const old=readNpbHistoricalSeason(2025,index()),current=readNpbHistoricalSeason(2025,index(corrected));
+    expect(publicDataFetch).toHaveBeenCalledTimes(2);
+    resolveNew(new Response(corrected));resolveOld(new Response(body));
+    expect((await current).transformation).toBe("Corrected normalized data");expect((await old).transformation).toBe(dataset.transformation);
+  });
+  it("revalidates each caller's generation metadata even when the annual hash is shared",async()=>{
+    let resolve!:(r:Response)=>void;
+    vi.mocked(publicDataFetch).mockReset().mockImplementationOnce(()=>new Promise(done=>{resolve=done;}));
+    const first=readNpbHistoricalSeason(2025,index());
+    const other=readNpbHistoricalSeason(2025,{...index(),observedAt:"2026-10-03T00:00:00Z"});
+    const rejection=expect(other).rejects.toThrow(/generation/);
+    resolve(new Response(body));await first;await rejection;expect(publicDataFetch).toHaveBeenCalledTimes(1);
+  });
   it("reads one annual payload and commits only verified content for offline reuse",async()=>{
     remember.mockClear();const request=vi.fn<typeof fetch>().mockResolvedValue(new Response(body));
     expect((await readNpbHistoricalSeason(2025,index(),request)).rows).toHaveLength(1);expect(request).toHaveBeenCalledTimes(1);expect(remember).toHaveBeenCalledTimes(1);

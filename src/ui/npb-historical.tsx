@@ -21,20 +21,21 @@ export function NpbHistoricalHistory({current}:{current:React.ReactNode}) {
   const [params,setParams]=useSearchParams(),[manifest,setManifest]=useState<NpbHistoricalManifest|null>(null),[failed,setFailed]=useState(false),[attempt,setAttempt]=useState(0);
   const season=params.get("season")??"2026",role=params.get("role")==="pitching"?"pitching":"batting";
   useEffect(()=>{let active=true;void readNpbHistoricalManifest().then(m=>{if(active){setManifest(m);setFailed(false);}}).catch(()=>{if(active)setFailed(true);});return()=>{active=false;};},[attempt]);
+  const retry=()=>{setManifest(null);setFailed(false);setAttempt(a=>a+1);};
   const update=(key:string,value:string)=>setParams(previous=>{const p=new URLSearchParams(previous);if(value)p.set(key,value);else p.delete(key);return p;},{replace:key==="q"});
   const supported=season==="2026"||!!manifest?.seasons.some(s=>String(s.season)===season);
   return <div className="screen"><PageHeading eyebrow="NPB · 公式戦" title="シーズン履歴" />
     <label className="competition-season">年度<select aria-label="NPB履歴の年度" value={season} onChange={e=>update("season",e.target.value)}><option value="2026">2026年 · 保存済みの今季</option>{manifest?.seasons.slice().reverse().map(y=><option key={y.season} value={y.season}>{y.season}年 · 過去の成績（一部）</option>)}{!supported&&<option value={season}>未収録の年度</option>}</select></label>
-    {params.get("competition")==="postseason"?<DataState kind="unsupported" title="NPBの過去のポストシーズンは未収録です" />:season==="2026"?current:failed?<><DataState kind="source-unavailable" title="過去年度の一覧を取得できません" /><button onClick={()=>setAttempt(a=>a+1)}>再試行</button></>:!manifest?<LoadingSkeleton />:!supported?<DataState kind="unsupported" title="指定した年度は未収録です" />:<HistoricalSeason key={`${season}:${attempt}`} manifest={manifest} season={Number(season)} role={role} params={params} update={update} />}
-    {failed&&season==="2026"&&<p className="inline-note">過去年度の一覧を取得できません。<button onClick={()=>setAttempt(a=>a+1)}>再試行</button></p>}
+    {params.get("competition")==="postseason"?<DataState kind="unsupported" title="NPBの過去のポストシーズンは未収録です" />:season==="2026"?current:failed?<><DataState kind="source-unavailable" title="過去年度の一覧を取得できません" /><button onClick={retry}>再試行</button></>:!manifest?<LoadingSkeleton />:!supported?<DataState kind="unsupported" title="指定した年度は未収録です" />:<HistoricalSeason key={`${season}:${attempt}`} manifest={manifest} season={Number(season)} role={role} params={params} update={update} retry={retry} />}
+    {failed&&season==="2026"&&<p className="inline-note">過去年度の一覧を取得できません。<button onClick={retry}>再試行</button></p>}
   </div>;
 }
-function HistoricalSeason({manifest,season,role,params,update}:{manifest:NpbHistoricalManifest;season:number;role:"batting"|"pitching";params:URLSearchParams;update:(key:string,value:string)=>void}) {
-  const [data,setData]=useState<NpbHistoricalDataset|null>(null),[failed,setFailed]=useState(false),[attempt,setAttempt]=useState(0);
+function HistoricalSeason({manifest,season,role,params,update,retry}:{manifest:NpbHistoricalManifest;season:number;role:"batting"|"pitching";params:URLSearchParams;update:(key:string,value:string)=>void;retry:()=>void}) {
+  const [data,setData]=useState<NpbHistoricalDataset|null>(null),[failed,setFailed]=useState(false);
   const query=params.get("q")??"",team=params.get("team")??"",page=/^\d{1,3}$/.test(params.get("page")??"")?Math.max(1,Math.min(100,Number(params.get("page")))):1;
   const playerId=params.get("player")??"",player=manifest.players.find(p=>p.playerId===playerId);
   const ids=[...new Set((params.get("recentPlayers")??"").split(",").filter(id=>manifest.players.some(p=>p.playerId===id)))].slice(0,4);
-  useEffect(()=>{let active=true;void readNpbHistoricalSeason(season,manifest).then(d=>{if(active){setData(d);setFailed(false);}}).catch(()=>{if(active)setFailed(true);});return()=>{active=false;};},[season,manifest,attempt]);
+  useEffect(()=>{let active=true;void readNpbHistoricalSeason(season,manifest).then(d=>{if(active){setData(d);setFailed(false);}}).catch(()=>{if(active)setFailed(true);});return()=>{active=false;};},[season,manifest]);
   const rows=data?.rows.filter(r=>r.role===role&&(!team||r.teamId===team))??[];
   const candidates=data?.players.filter(p=>rows.some(r=>r.playerId===p.playerId)&&(!query||normalizePlayerSearch(p.name).includes(normalizePlayerSearch(query))))??[];
   const pages=Math.max(1,Math.ceil(candidates.length/30)),safePage=Math.min(page,pages),visible=candidates.slice((safePage-1)*30,safePage*30);
@@ -44,7 +45,7 @@ function HistoricalSeason({manifest,season,role,params,update}:{manifest:NpbHist
   return <><p className="data-notice">{season}年の一部選手の球団別年度成績です。全選手の成績・ランキングではありません。</p>
     <details className="explorer-tools"><summary>収録範囲・出典について</summary><p>Wikipediaの年度表を既存の選手IDで照合し、数値と単位を検証しています。情報がない年度・選手を出場なしとは判定しません。試合別成績・Recent・規定資格は未収録です。全キャリア通算ではありません。</p><p>原本の取得日：{manifest.observedAt.slice(0,10)}。2026年のFacts・Coverage・HOT／ランキングの公開条件とは独立しています。</p><a href="https://creativecommons.org/licenses/by-sa/4.0/">抽出・正規化したデータはCC BY-SA 4.0</a></details>
     <div className="explorer-filter-grid"><label>成績<select value={role} onChange={e=>update("role",e.target.value)}><option value="batting">打撃（投手打撃を含む）</option><option value="pitching">投球</option></select></label><label>その年度の球団<select value={team} onChange={e=>{update("team",e.target.value);}}><option value="">すべて</option>{Object.entries(teams).map(([id,name])=><option key={id} value={`npb:team:${id}`}>{name}</option>)}</select></label><label>選手名<input type="search" value={query} onChange={e=>update("q",e.target.value)} /></label></div>
-    {failed?<><DataState kind="source-unavailable" title="年度別成績を取得できません" /><button onClick={()=>setAttempt(a=>a+1)}>再試行</button></>:!data?<LoadingSkeleton />:<>
+    {failed?<><DataState kind="source-unavailable" title="年度別成績を取得できません" /><button onClick={retry}>再試行</button></>:!data?<LoadingSkeleton />:<>
       {comparisonRows.length>0&&<section><h2>選んだ選手の収録分を比較</h2><label>指標<select value={metric} onChange={e=>update("sort1",e.target.value)}>{keys.map(k=><option key={k}>{k}</option>)}</select></label><ComparisonBars rows={comparisonRows} metric={metric} /><p className="inline-note">{season}年・{team?teamName(team):"収録球団"}の範囲。公式資格や優劣の判定ではありません。</p><aside aria-label="選手比較データの出典">{comparisonRows.map(r=><p key={r.id}><Credits data={data} playerId={r.id} /></p>)}</aside></section>}
       {playerId&&!player&&<DataState kind="no-data" title="指定した選手の過去年度成績は未収録です" />}
       {player&&<PlayerHistory manifest={manifest} playerId={player.playerId} role={role} current={data} />}

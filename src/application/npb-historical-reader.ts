@@ -22,14 +22,15 @@ export async function readNpbHistoricalManifest(request:typeof fetch=publicDataF
 }
 export async function readNpbHistoricalSeason(season:number,manifest:NpbHistoricalManifest,request:typeof fetch=publicDataFetch) {
   const entry=manifest.seasons.find(s=>s.season===season);if(!entry) throw Error("NPB season is not admitted");
-  const load=async()=>read(`${season}.json`,v=>{
+  const validate=(v:unknown)=>{
     const d=npbHistoricalDatasetSchema.parse(v);
     if(d.inputSha256!==manifest.inputSha256||d.observedAt!==manifest.observedAt||d.rows.some(r=>r.season!==season)||d.rows.length!==entry.rows||d.players.length!==entry.players||d.players.some(p=>!manifest.players.some(m=>m.playerId===p.playerId&&m.seasons.includes(season)))) throw Error("Historical generation or season mismatch");
     return d;
-  },request,entry.sha256);
+  };
+  const load=async()=>read(`${season}.json`,validate,request,entry.sha256);
   // Only concurrent default reads share work. Never retain corrections or failures indefinitely.
   if(request!==publicDataFetch) return npbHistoricalDatasetSchema.parse(await load());
-  const key=`${manifest.inputSha256}:${season}`;let task=tasks.get(key);
+  const key=`${manifest.inputSha256}:${season}:${entry.sha256}`;let task=tasks.get(key);
   if(!task){task=load().finally(()=>tasks.delete(key));tasks.set(key,task);}
-  return npbHistoricalDatasetSchema.parse(await task);
+  return validate(await task);
 }
