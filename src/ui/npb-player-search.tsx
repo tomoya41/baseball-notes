@@ -33,6 +33,7 @@ export function NpbPlayerSearchView({ directory, state, query, onQueryChange, te
     <PageHeading eyebrow="NPB" title="選手" />
     <DiscoveryNavigation league="NPB" />
     <LifecycleLinks />
+    <Link className="text-link" to={`/NPB/history?season=2025&q=${encodeURIComponent(query)}`}>過去の選手・OBを探す →</Link>
     <Link className="text-link" to="/NPB/compare">選手比較 →</Link>
     {state === "loading" && <LoadingSkeleton />}
     {state === "error" && <DataState kind="source-unavailable" title="選手一覧を取得できませんでした" />}

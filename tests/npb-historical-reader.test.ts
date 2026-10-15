@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { readNpbHistoricalManifest, readNpbHistoricalSeason } from "../src/application/npb-historical-reader";
 import { publicDataFetch } from "../src/infrastructure/public-response-cache";
 import { historicalBattingKeys, npbHistoricalManifestSchema } from "../src/domain/npb-historical";
+import release from "../src/data/npb-historical-release.json";
 const remember=vi.hoisted(()=>vi.fn());
 vi.mock("../src/infrastructure/public-response-cache",()=>({publicDataFetch:vi.fn(),rememberPublicResponse:remember}));
 const id="00000000-0000-4000-8000-000000000001";
@@ -30,6 +31,7 @@ describe("NPB Historical bounded validated reader",()=>{
   it("reads one annual payload and commits only verified content for offline reuse",async()=>{
     remember.mockClear();const request=vi.fn<typeof fetch>().mockResolvedValue(new Response(body));
     expect((await readNpbHistoricalSeason(2025,index(),request)).rows).toHaveLength(1);expect(request).toHaveBeenCalledTimes(1);expect(remember).toHaveBeenCalledTimes(1);
+    expect(String(request.mock.calls[0]?.[0])).toContain(`/historical/${release.sha256}/2025.json`);
   });
   it("rejects a changed payload before committing a saved response",async()=>{
     remember.mockClear();const request=vi.fn<typeof fetch>().mockResolvedValue(new Response(body.replace('"name":"テスト"','"name":"changed"')));
@@ -46,6 +48,6 @@ describe("NPB Historical bounded validated reader",()=>{
   });
   it("validates manifest shape and refuses oversized payloads",async()=>{
     await expect(readNpbHistoricalManifest(vi.fn<typeof fetch>().mockResolvedValue(new Response('{}')))).rejects.toThrow();
-    await expect(readNpbHistoricalSeason(2025,index(),vi.fn<typeof fetch>().mockResolvedValue(new Response(' '.repeat(300001))))).rejects.toThrow(/bound/);
+    await expect(readNpbHistoricalSeason(2025,index(),vi.fn<typeof fetch>().mockResolvedValue(new Response(' '.repeat(500001))))).rejects.toThrow(/bound/);
   });
 });

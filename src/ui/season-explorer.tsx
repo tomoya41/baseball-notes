@@ -1,3 +1,4 @@
+import type { FavoriteActions } from "./team-favorite";
 import { NpbHistoricalHistory } from "./npb-historical";
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
@@ -40,7 +41,7 @@ export function MlbSeasonExplorer({ manifest }: { manifest: ExplorerManifest }) 
       })}</div>}</>}
   </div>;
 }
-export function NpbSeasonExplorer() { return <NpbHistoricalHistory current={<CurrentNpbSeasonExplorer />} />; }
+export function NpbSeasonExplorer(props:Partial<FavoriteActions>) { return <NpbHistoricalHistory current={<CurrentNpbSeasonExplorer />} {...props} />; }
 function CurrentNpbSeasonExplorer() {
   const [data, setData] = useState<NpbSeasonPayload | null>(null), [failed, setFailed] = useState(false), [params, setParams] = useSearchParams();
   const supported = params.get("competition") !== "postseason" && (!params.has("season") || params.get("season") === "2026");

@@ -1,0 +1,55 @@
+{
+  "assetUrl": "https://github.com/tomoya41/baseball-notes/releases/download/npb-history-wikipedia-20261015-v3/npb-historical-wikipedia.json.gz",
+  "sha256": "c6b62a1e450dfe951ffdb17829e779623bcc57d0f340ac715a1764fa88dcd766",
+  "inputSha256": "0c0a312ecc4d65c582a0e203df316f590209d31849184a53b4f75bfe75c976f7",
+  "files": {
+    "manifest.json": {
+      "bytes": 50247,
+      "sha256": "f4c7224092416b0c6cfc0c178944f7e7db4a507b6d44397a19a0e938f095ca2d"
+    },
+    "2015.json": {
+      "bytes": 38772,
+      "sha256": "ffbfaccf9c66efac7e6ad419a7fa3e2480003c5982c0561ca2674bbef4bbbbd3"
+    },
+    "2016.json": {
+      "bytes": 46559,
+      "sha256": "549660ef0c92f30b9c1a511c7632023d5e7e8af31d445c98993dcf371a541114"
+    },
+    "2017.json": {
+      "bytes": 64050,
+      "sha256": "90bf64a3685a6abc33977fffe88a09d4c79045592f2bbe400e3f4e959ce23652"
+    },
+    "2018.json": {
+      "bytes": 76195,
+      "sha256": "c6a8a2d2e4bee40b2b9efafc6bab54b21dceb09ebbe9249e21c03222052dde81"
+    },
+    "2019.json": {
+      "bytes": 91815,
+      "sha256": "a6281bdb309cc6ed5cbbe0946ebd2d8f6d68c290d69adf0986b76b616febf337"
+    },
+    "2020.json": {
+      "bytes": 107771,
+      "sha256": "e749e5cc9d599c092152565298d790f3ec2d9db2a2be54e90c23effc11166a2c"
+    },
+    "2021.json": {
+      "bytes": 123514,
+      "sha256": "3034adb7f9b83332638415ab85e582209a79add54f6a106d40bfd5d82bc69404"
+    },
+    "2022.json": {
+      "bytes": 150917,
+      "sha256": "50353c23272a8ef97e0c75ce3c2aee1f58f8576a9c2db2240dd32b3fd1e0917d"
+    },
+    "2023.json": {
+      "bytes": 160545,
+      "sha256": "0ac902c9ffb1340339b4f598605dcf6fee5764d1b89de5e7a8c601c48219c43c"
+    },
+    "2024.json": {
+      "bytes": 179872,
+      "sha256": "cb0b599aae53974332cc921a6480d2bb23404fa9a3673171492ffee5f91a110c"
+    },
+    "2025.json": {
+      "bytes": 206783,
+      "sha256": "980adea2f35738839dd4a4227554a9f0d5a764f7bfb4afd579e28dd9fb5cd338"
+    }
+  }
+}

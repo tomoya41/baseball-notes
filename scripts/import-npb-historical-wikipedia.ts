@@ -5,25 +5,26 @@ import { DatabaseSync } from "node:sqlite";
 import { resolve, join } from "node:path";
 import { parseWikipediaHistorical } from "../src/infrastructure/providers/wikipedia-npb-historical";
 import { npbHistoricalDatasetSchema, npbHistoricalRowSchema } from "../src/domain/npb-historical";
-import bridges from "../src/data/npb-free-profile-identities.json";
+import { assertHistoricalBridge } from "../src/infrastructure/providers/npb-historical-admission";
 import { z } from "zod";
 
 // Offline-only replay of documented MediaWiki API archives. No collector, remote DB or identity mutation.
 const [input, output] = process.argv.slice(2);
 if (!input || !output || !resolve(output).startsWith(`${resolve(".data")}/`.replaceAll("/", process.platform === "win32" ? "\\" : "/"))) throw Error("Usage: import-npb-historical-wikipedia.ts archive.json .data/output-directory");
 const started = performance.now(), bytes = await readFile(input), inputSha256 = createHash("sha256").update(bytes).digest("hex");
-const archive = z.object({ observedAt:z.iso.datetime(), pages:z.record(z.string(),z.unknown()),titles:z.array(z.object({ playerId:z.uuid(),npbId:z.string(),wikidataId:z.string(),title:z.string() })) }).parse(JSON.parse(bytes.toString("utf8")));
+const archive = z.object({ observedAt:z.iso.datetime(), pages:z.record(z.string(),z.unknown()),titles:z.array(z.object({ playerId:z.uuid(),npbId:z.string(),wikidataId:z.string(),title:z.string(),identityScope:z.literal("historical_only").optional(),sourceObservedAt:z.iso.datetime().optional() })) }).parse(JSON.parse(bytes.toString("utf8")));
 const years = Array.from({length:11},(_,i)=>2015+i), players=[], rows=[], issues=[];
 for (const link of archive.titles) {
-  if (!bridges.some(b=>b.playerId===link.playerId && b.npbId===link.npbId && b.wikidataId===link.wikidataId)) throw Error("Unverified cross-season canonical bridge");
+  assertHistoricalBridge(link);
   try {
     const parsed = parseWikipediaHistorical(archive.pages[link.title],link,years);
+    assertHistoricalBridge(link,parsed.player);
     if (parsed.rows.length) { players.push(parsed.player); rows.push(...parsed.rows); }
     issues.push(...parsed.issues.map(issue=>({playerId:link.playerId,title:link.title,...issue})));
   } catch(e) { issues.push({playerId:link.playerId,title:link.title,reason:(e as Error).message}); }
 }
 const dataset = npbHistoricalDatasetSchema.parse({schemaVersion:1,league:"NPB",temporalScope:"historical",competition:"regular",granularity:"season_aggregate",license:"CC-BY-SA-4.0",observedAt:archive.observedAt,inputSha256,
-  transformation:"NPB season tables only; exact existing Wikidata/NPB canonical bridges; normalized counts and baseball innings; zero-decision .000 WPCT normalized to unavailable; unsupported rows quarantined; no article career totals, prose, media, Game Facts or current metadata",coverage:"partial",players,rows});
+  transformation:"NPB season tables only; exact existing bridges or separately verified historical-only NPB-ID/QID/article/DOB identities; normalized counts and baseball innings; zero-decision .000 WPCT unavailable; ambiguous rows quarantined; no article career totals, prose, media, Game Facts or current metadata",coverage:"partial",players,rows});
 await mkdir(output,{recursive:true});
 // A fresh in-memory scratch DB with readback and idempotent replay, not the production DB.
 const db = new DatabaseSync(":memory:");

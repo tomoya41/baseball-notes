@@ -13,12 +13,13 @@ import type { HistoricalTeamHub } from "../domain/team-hub";
 import type { PostseasonHub } from "../domain/competition";
 import { seasonCheckpoints } from "../domain/mlb-product-metrics";
 import { seasonCheckpointSteps } from "../domain/npb-season-milestones";
+import { isHistoricalOnlyPlayer } from "../data/npb-historical-identity-index";
 
 export function watchTargets(league: League, favorites: readonly Favorite[], library: PersonalState, preferences: WatchPreferences) {
   const favoritePlayers = [...new Set(favorites.filter(f => f.league === league && f.kind === "player").map(f => f.entityId))];
   const collected = preferences.collections ? library.collections.flatMap(c => c.players.filter(p => p.league === league).map(p => p.playerId)) : [];
   const playerRules = preferences.players || preferences.recent || preferences.milestones || (league === "MLB" && preferences.streaks);
-  const all = [...new Set([...(playerRules ? favoritePlayers : []), ...collected])];
+  const all = [...new Set([...(playerRules ? favoritePlayers : []), ...collected])].filter(id=>league!=="NPB"||!isHistoricalOnlyPlayer(id));
   const players = all.slice(0, WATCH_LIMITS.players).map(id => ({ id, collectionOnly: !favoritePlayers.includes(id), collectionMember: collected.includes(id) }));
   const allTeams = preferences.teams || (league === "MLB" && preferences.postseason) ? [...new Set(favorites.filter(f => f.league === league && f.kind === "team").map(f => f.entityId))] : [];
   const saved = preferences.savedViews ? library.views.filter(v => v.league === league) : [];

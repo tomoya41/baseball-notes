@@ -141,3 +141,7 @@ PR #33のCodex ReviewでP1（比較カードが検索/年度/pageの外にある
 再レビューで見つかった公開切替時の競合を修正。年度取得失敗時の再試行はmanifestも再取得し、古いmanifestによる再試行ループを防ぐ。同時取得の共有keyには年度payload hashを含め、共有完了後も各呼出元のgenerated metadata/count/indexを再検証する。同じraw archiveから正規化releaseだけ訂正した場合の並行取得と、異なるmanifest metadataの拒否、UI再試行を回帰テストに追加。
 
 2026-10-16 再レビューP2: 古い年度から比較を開いた場合の初期3年を、選択中年度を含む近隣年度に修正。明示したyears queryは維持。2015から開いた場合に2023–25へ飛ばない回帰テストを追加。
+
+### Phase 2更新先
+
+この文書はPR #33 / v3時点の記録です。最新件数、Historical-only Identity、v3 URL保護、次の残件は [Phase 2](npb-historical-phase2.md) を参照。Phase 2以降は旧v3ファイルを次のartifactから外すrollbackは行わず、互換性のため保持します。

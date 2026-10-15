@@ -5,9 +5,9 @@ import release from "../data/npb-historical-release.json";
 
 const tasks = new Map<string,Promise<unknown>>();
 async function read(path:string, parse:(value:unknown)=>unknown, request:typeof fetch, expectedHash?:string) {
-  const response=await request(`${publicAssetBase()}data/npb/historical/${path}`);
+  const response=await request(`${publicAssetBase()}data/npb/historical/${release.sha256}/${path}`);
   if(!response.ok) throw Error(`NPB Historical HTTP ${response.status}`);
-  const text=await response.text(); if(new TextEncoder().encode(text).length>300000) throw Error("Historical payload exceeds bound");
+  const text=await response.text(); if(new TextEncoder().encode(text).length>500000) throw Error("Historical payload exceeds bound");
   if(expectedHash) {
     const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(text));
     const actual=[...new Uint8Array(digest)].map(n=>n.toString(16).padStart(2,"0")).join("");
@@ -24,7 +24,7 @@ export async function readNpbHistoricalSeason(season:number,manifest:NpbHistoric
   const entry=manifest.seasons.find(s=>s.season===season);if(!entry) throw Error("NPB season is not admitted");
   const validate=(v:unknown)=>{
     const d=npbHistoricalDatasetSchema.parse(v);
-    if(d.inputSha256!==manifest.inputSha256||d.observedAt!==manifest.observedAt||d.rows.some(r=>r.season!==season)||d.rows.length!==entry.rows||d.players.length!==entry.players||d.players.some(p=>!manifest.players.some(m=>m.playerId===p.playerId&&m.seasons.includes(season)))) throw Error("Historical generation or season mismatch");
+    if(d.inputSha256!==manifest.inputSha256||d.observedAt!==manifest.observedAt||d.rows.some(r=>r.season!==season)||d.rows.length!==entry.rows||d.players.length!==entry.players||d.players.some(p=>!manifest.players.some(m=>m.playerId===p.playerId&&m.identityScope===p.identityScope&&m.seasons.includes(season)))) throw Error("Historical generation or season mismatch");
     return d;
   };
   const load=async()=>read(`${season}.json`,validate,request,entry.sha256);

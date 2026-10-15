@@ -437,6 +437,17 @@ details[open]>summary {
   padding-bottom: calc(70px + 28px * var(--android-font-scale,1) + env(safe-area-inset-bottom));
 }
 
+@media (max-width:767px) {
+  /* WebView text zoom needs space for the three-character Home label at 200%.
+     Preserve the OS text size; allocate width instead of clipping or shrinking text. */
+  :root[data-large-font] .bottom-nav {
+    grid-template-columns: minmax(0,1.5fr) repeat(4,minmax(0,1fr));
+  }
+  :root[data-large-font] .bottom-nav span {
+    white-space: nowrap;
+  }
+}
+
 .page-heading {
   padding: 4px 0 20px;
 }
