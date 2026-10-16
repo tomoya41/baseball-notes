@@ -85,6 +85,8 @@ Read-only integrity [38959550926](https://github.com/tomoya41/baseball-notes/act
 
 Portable backup/independent scratch restore [38959630755](https://github.com/tomoya41/baseball-notes/actions/runs/38959630755) passed: schema 4, 17 tables, compressed export 1,649,165 B and repository readback. This manual transient restore drill is **not** newly retained encrypted Production backup or scheduled-collection evidence. Freshness remains stale, health warning outside the reviewed calendar, HOT/Ranking closed. No shortened-game refetch/repair or scheduled proof manufactured. Published-response fallback remains useful for future API outages.
 
+Read-only period/HOT diagnostic [38959857662](https://github.com/tomoya41/baseball-notes/actions/runs/38959857662) passed at saved as-of 2026-10-12: 7d coverage complete, 142 candidates, eligible batting **0**, starters 5, relievers 3; readiness `not_ready` with `category_not_ready` and `scheduled_production_evidence_pending`. All three public entry arrays remain empty. Protected Game/Fact/mapping counts unchanged. Complete seven-day coverage is insufficient to open HOT; whole-Regular coverage remains partial and cannot open Ranking. This manual diagnostic is not scheduled proof.
+
 | User task | Result / next safe step |
 | --- | --- |
 | 1 Turso | SQL/API read recovery observed; read-only integrity/restore revalidated; root cause unknown, scheduled skip is not Fact collection |
@@ -109,3 +111,5 @@ Recommended next development: recover supported full article links in the 66 CS 
 ## Delivery verification
 
 Local post-review full tests: 124 files / 1,404 tests PASS. Lint, typecheck and Web/Vercel build PASS. Review P2 (historical-manifest failure blocking independent 2026 Current/CS views) fixed with two failure-isolation tests; skipped innings cannot become implicit zero and X is accepted only in the final home half. Replaying the CS archive after these checks preserved its admitted hash. Initial JS 490,890 B versus previous public 483,943 B (about +7 KB); CSS remains 66,769 B. Post-review CI/Android/public evidence is appended after actual runs; no emulator result is a physical-device PASS.
+
+Codex external re-review completed at code commit `8a76061390e61e20465d4cc0f75155a404fd7968` with no new findings; the original P2 thread was fixed, explained and resolved. Subsequent edits are operational-evidence documentation only. Responsive browser inspection covered CS filters/player stages, saved Regular comparison and four-year progression at 360/390 Light/Dark and 768/1280 Light, with no document overflow. URL year/stage/role/metric transitions, reload, search empty state and keyboard metric-help focus were exercised. Screenshots are retained locally under `.data/npb-completion-next/screenshots/`; generated evidence is not committed as source code.
