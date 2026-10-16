@@ -22,6 +22,9 @@ export function portableRoute(path: string, search = ""): string | null {
   }
   if (league === "NPB" && resource === "players" && parts.length === 4 && parts[3] === "seasons") {
     if(!canonicalEntityRefSchema.safeParse({league,kind:"player",id:decodeSafe(parts[2]!)}).success)return null;
+    if(source.has("season")&&!/^20\d{2}$/.test(source.get("season")!))return null;
+    if(source.has("role")&&!["batting","pitching"].includes(source.get("role")!))return null;
+    if(source.has("years")&&!/^(?:20\d{2}(?:,20\d{2}){0,3})?$/.test(source.get("years")!))return null;
     const competition=source.get("competition")??"regular",stage=source.get("stage");
     if(!["regular","preseason","postseason"].includes(competition)||
       (competition==="postseason"?!["npb_cs_first","npb_cs_final","japan_series"].includes(stage??""):stage!==null))return null;

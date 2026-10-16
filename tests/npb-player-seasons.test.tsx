@@ -26,6 +26,8 @@ describe("NPB player year/competition entry",()=>{
     expect(canonicalDeepLink(`baseballnotes://NPB/players/${id}/seasons?${query}`)).toBe(route);
     expect(canonicalDeepLink(`https://tomoya41.github.io/baseball-notes/#${path}?${query}`)).toBe(route);
     expect(portableRoute(path,"competition=postseason&stage=world_series")).toBeNull();
+    expect(canonicalDeepLink(`baseballnotes://NPB/players/${id}/seasons?season=bad`)).toBeNull();
+    expect(portableRoute(path,"role=unknown")).toBeNull();
     expect(portableRoute(path.replace("NPB","MLB"),query)).toBeNull();
     expect(parentNativeRoute(path+"?season=2025")).toContain("/NPB/history?player="+id+"&season=2025");
   });
