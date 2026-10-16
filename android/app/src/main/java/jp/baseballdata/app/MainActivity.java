@@ -8,6 +8,7 @@ import android.view.Window;
 import android.content.res.Configuration;
 import android.webkit.WebView;
 import android.content.Intent;
+import android.net.Uri;
 
 public class MainActivity extends BridgeActivity {
     private static final String WEB_STATE = "baseball.webState";
@@ -34,6 +35,10 @@ public class MainActivity extends BridgeActivity {
     @Override public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         if (getBridge() != null) {
+            String url = getBridge().getWebView().getUrl();
+            String route = url == null ? null : Uri.parse(url).getFragment();
+            // A pre-router loading page must not consume a pending cold link.
+            if (route == null || !(route.startsWith("/NPB/") || route.startsWith("/MLB/"))) return;
             Bundle webState = new Bundle();
             if (getBridge().getWebView().saveState(webState) != null) outState.putBundle(WEB_STATE, webState);
         }

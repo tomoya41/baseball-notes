@@ -10,6 +10,8 @@ Capacitor's BridgeActivity restores plugin calls, but does not save the WebView 
 
 Font-scale changes retain Android's normal Activity recreation behavior; the manifest and user text scaling are unchanged. The instrumentation additionally asserts the exact selected CS-player hash survives recreation.
 
+A pre-router loading page is not saved as a resumed route: until an NPB/MLB hash exists, the original cold-launch Intent remains authoritative.
+
 Affected areas: Android Activity and native instrumentation only. Web presentation, data/provenance, Gates, canonical DB, persisted Favorites/Collections/Watch and signing remain unchanged. Rollback is a revert of this native-only commit; no migration or data deletion. No new service, permissions, dependency or monthly cost.
 
 Actual rerun results will be recorded in the delivery PR. Physical Pixel is disconnected and TalkBack remains NOT RUN. An emulator rerun does not establish physical-device quality.
