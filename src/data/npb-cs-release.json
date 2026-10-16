@@ -1,12 +1,12 @@
 {
-  "assetUrl": "https://github.com/tomoya41/baseball-notes/releases/download/npb-cs-wikipedia-20261016-v1/npb-cs-wikipedia.json.gz",
-  "sha256": "2f66f68780e7c7605ad45a55f455535532f8a4011ccab18e60859821fab1e836",
-  "bodySha256": "be7bc59301fa222850bd7301a4f62857064ccda3ffdece09192c1a221e92df71",
+  "assetUrl": "https://github.com/tomoya41/baseball-notes/releases/download/npb-cs-wikipedia-20261017-v2/npb-cs-wikipedia.json.gz",
+  "sha256": "3bfaf6d22d2093a452e93a542ba3b416e9740b86b429792acb93d08fd824455a",
+  "bodySha256": "b5add5d74403a4ba791bd277f51ae3b4950a5445e0fb12b666cfc698deef0cdd",
   "inputSha256": "362a4c88222069bd046d5782ecada65c0adffd86849b0b4be7306d40a656d573",
-  "bytes": 111154,
+  "bytes": 112056,
   "games": 8,
-  "players": 125,
-  "rows": 125,
+  "players": 126,
+  "rows": 126,
   "scopes": {
     "42bf18e7-4db9-42fc-987d-48b3a2a950b1": [
       "npb_cs_first"
@@ -207,6 +207,9 @@
       "npb_cs_final"
     ],
     "4f984dde-e742-41aa-99ce-2b4c747afca8": [
+      "npb_cs_final"
+    ],
+    "6bf4b271-e16c-43f9-9142-8c7ca7de9887": [
       "npb_cs_final"
     ],
     "0946a52f-8f86-4556-b75b-2a68bf7a9725": [

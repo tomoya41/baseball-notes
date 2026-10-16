@@ -65,8 +65,14 @@ export function parseWikipediaCs(raw: unknown, observedAt: string, identities: r
         const batting = normalized === "!打順!!守備!!選手!!打数!!安打!!本塁打!!打点!!得点!!三振!!四死球!!犠打!!盗塁";
         const pitching = normalized.endsWith("選手!!投球回!!投球数!!打者!!被安打!!被本塁打!!奪三振!!与四死球!!失点!!自責点");
         if (!team || ![home, away].includes(team) || (!batting && !pitching)) { issues.push({ date, reason: "unsupported_box_header" }); continue; }
-        for (const line of lines.filter(l => /^\|(?![-}])/.test(l))) {
-          const cells = split(line.slice(1), "||"); if (cells.length !== (batting ? 12 : 11)) { issues.push({ date, reason: "unsupported_box_columns" }); continue; }
+        // MediaWiki permits one logical row to put every cell on its own line.
+        // Respect explicit row separators; never treat an incomplete row as another player's cells.
+        for (const logicalRow of table[0].split(/\r?\n\|-[^\r\n]*(?:\r?\n|$)/)) {
+          const rowLines = logicalRow.split(/\r?\n/);
+          if (rowLines.some(l => l.startsWith("!"))) continue;
+          const cells = rowLines.filter(l => /^\|(?![-}])/.test(l)).flatMap(l => split(l.slice(1), "||"));
+          if (!cells.length) continue;
+          if (cells.length !== (batting ? 12 : 11)) { issues.push({ date, reason: "unsupported_box_columns" }); continue; }
           const article = /^\[\[([^\]|]+)(?:\|[^\]]+)?\]\]$/.exec(cells[batting ? 2 : 1]!.trim())?.[1];
           const playerId = article ? byArticle.get(article) : null;
           if (!article || !playerId) { issues.push({ date, reason: "unverified_article_identity", ...(article ? { article } : {}) }); continue; }
