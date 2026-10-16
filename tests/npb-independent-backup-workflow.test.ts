@@ -7,9 +7,9 @@ import { parse } from "yaml";
 import { expect, it } from "vitest";
 
 const workflow = parse(await readFile(".github/workflows/npb-backup-drill.yml", "utf8"));
-it("fails the drill when the backup command fails even if tee successfully writes its report", async () => {
+it.skipIf(process.platform === "win32")("on the Linux runner, fails the drill when export fails even if tee writes its report", async () => {
   const step = workflow.jobs.drill.steps.find((s: { name?: string }) => s.name?.startsWith("Export Turso"));
-  const interpreter = process.platform === "win32" ? "C:/Program Files/Git/bin/bash.exe" : "/bin/bash";
+  const interpreter = "/bin/bash";
   if (!existsSync(interpreter)) throw Error("Bash is required for the backup failure regression");
   const dir = await mkdtemp(join(tmpdir(), "npb-independent-pipe-"));
   // No database/npm/network call: the fake command models an actual blocked SQL export.
