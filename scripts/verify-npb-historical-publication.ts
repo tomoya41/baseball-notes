@@ -9,6 +9,7 @@ import retainedReleases from "../src/data/npb-historical-retained-releases.json"
 import competitionPin from "../src/data/npb-postseason-release.json";
 import { npbPostseasonAggregateDatasetSchema } from "../src/domain/npb-competition";
 import csPin from "../src/data/npb-cs-release.json";
+import retainedCs from "../src/data/npb-cs-retained-releases.json";
 import { npbCsDatasetSchema } from "../src/domain/npb-cs-observations";
 import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
@@ -52,10 +53,11 @@ const competition=npbPostseasonAggregateDatasetSchema.parse(JSON.parse(competiti
 if(competition.inputSha256!==competitionPin.inputSha256||competition.rows.length!==competitionPin.rows)throw Error("Competition generation mismatch");
 for(const p of competition.players)assertHistoricalBridge(p,p);
 const csBytes=await load(`../competitions/${csPin.sha256}/cs-2026.json`);
+const retainedCsFiles=await verifyRetainedFiles(load,Object.fromEntries(retainedCs.map(p=>[`../competitions/${p.sha256}/cs-2026.json`,{bytes:p.bytes,sha256:p.bodySha256}])));
 if(csBytes.length!==csPin.bytes||createHash("sha256").update(csBytes).digest("hex")!==csPin.bodySha256)throw Error("CS publication mismatch");
 const cs=npbCsDatasetSchema.parse(JSON.parse(csBytes.toString()));
 if(cs.inputSha256!==csPin.inputSha256||cs.games.length!==csPin.games||cs.rows.length!==csPin.rows||cs.players.length!==csPin.players)throw Error("CS publication generation mismatch");
 for(const p of cs.players)assertHistoricalBridge(p,p);
-console.log(JSON.stringify({status:"PASS",retainedFiles,seasons:manifest.seasons.map(s=>s.season),players:players.size,rows,competitionRows:competition.rows.length,csGames:cs.games.length,csRows:cs.rows.length,coverage:manifest.coverage,canonicalWrites:0,httpFetches:fetches}));
+console.log(JSON.stringify({status:"PASS",retainedFiles,retainedCsFiles,seasons:manifest.seasons.map(s=>s.season),players:players.size,rows,competitionRows:competition.rows.length,csGames:cs.games.length,csRows:cs.rows.length,coverage:manifest.coverage,canonicalWrites:0,httpFetches:fetches}));
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url))await main();

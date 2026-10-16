@@ -48,3 +48,14 @@ it("requires exact article identity and does not accept duplicated source fields
   expect(() => parseWikipediaCs({ ...page(), title: "wrong" }, "2026-10-16T00:00:00Z", [])).toThrow("Unreviewed");
   expect(() => parse(template.replace("|RR=1", "|RR=1|RR=2"))).toThrow("Duplicate");
 });
+it("reads an explicitly separated multiline pitching row without borrowing from a following row", () => {
+  const oneLine = "|勝||[[架空投手]]||9||110||28||0||0||10||1||0||0";
+  const multiline = oneLine.split("||").map((v, i) => i ? `|${v}` : v).join("\n");
+  const parsed = parse(template.replace(oneLine, multiline));
+  expect(parsed.observations).toEqual(parse().observations);
+  const truncated = multiline.replace("\n|110", "");
+  const separateUnknown = "\n|-\n| \n|別の未確認選手\n|0.1\n|3\n|1\n|0\n|0\n|1\n|0\n|0\n|0";
+  const rejected = parse(template.replace(oneLine, truncated + separateUnknown));
+  expect(rejected.observations).toHaveLength(0);
+  expect(rejected.issues.some(i => i.reason === "unsupported_box_columns")).toBe(true);
+});

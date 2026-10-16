@@ -1,0 +1,12 @@
+[
+  {
+    "assetUrl": "https://github.com/tomoya41/baseball-notes/releases/download/npb-cs-wikipedia-20261016-v1/npb-cs-wikipedia.json.gz",
+    "sha256": "2f66f68780e7c7605ad45a55f455535532f8a4011ccab18e60859821fab1e836",
+    "bodySha256": "be7bc59301fa222850bd7301a4f62857064ccda3ffdece09192c1a221e92df71",
+    "inputSha256": "362a4c88222069bd046d5782ecada65c0adffd86849b0b4be7306d40a656d573",
+    "bytes": 111154,
+    "games": 8,
+    "players": 125,
+    "rows": 125
+  }
+]
