@@ -37,7 +37,7 @@ After expansion: known pitcher type 330 (279 with History), fielder 188 (162), u
 | ヤクルト | 62 | 46 |
 | 阪神 | 62 | 46 |
 
-Existing profile availability: birthdate 665, position 518, bats/throws 667 each, height 584, weight 486, draft year 623, draft round 602. Uniform number 0. These are saved observations, not refreshed roster assertions. No new current profile/number/registration field is claimed. `careerHistory` remains an empty legacy field; separately sourced schools/affiliations are audited under their own fields.
+Existing profile availability: birthdate 665, position 518, bats/throws 667 each, height 584, weight 486, draft year 623, draft round 602. Separate school strings 456 and affiliation observations 562; neither is complete Career or current roster proof. Uniform number 0. These are saved observations, not refreshed roster assertions. No new current profile/number/registration field is claimed. `careerHistory` remains an empty legacy field; separately sourced schools/affiliations are audited under their own fields.
 
 Reproducible read-only tool: `scripts/audit-npb-active-coverage.ts <directory.json> <catalog.json> <history.gz> .data/report.json`. It validates the three contracts and emits player/year/team/role and profile gaps privately. Missing years are missing observations, not inferred absence. Priority next is independently bridging the 73 identities and correcting source contradictions for Directory players; recent entrants/foreign-only source tables cannot be assumed to have prior NPB seasons.
 
@@ -115,3 +115,11 @@ Physical ADB enumeration is empty; Pixel install, physical 150/200%, gestures, T
 Rollback: revert new code/pins; keep both old releases and namespaces. Future releases must retain v3 root, v4 namespace, v5 namespace **and** this competition hash URL. No DB migration or restoration is necessary.
 
 Checks, reviewed commit, exact Android/Pages runs and public verification are appended after execution, not assumed from prior PRs.
+
+### Local validation before merge
+
+Full suite at `7c8c8f9`: 115 files / 1,338 tests PASS; subsequent source/URL/cache/retired-player boundary tests are included in final CI. Lint/typecheck/Web/Vercel PASS. Final immutable-release and all 24 retained-file guards PASS. Active regular projection is 2,080,999 bytes plus the separate 2,642-byte stage projection; no annual file exceeds 354,459 bytes.
+
+Initial JS measured 483,748 bytes (baseline 482,861, +887 / <0.2%); CSS 66,769 bytes unchanged. Manifest 69,383 bytes; latest-year History/player entry 2 requests / 423,842 uncompressed bytes. Stage entry 2 requests / 72,025 bytes, expanding Regular comparison adds 1 annual payload. Route lists/comparisons remain bounded. New data is not in initial JS.
+
+Browser actual-screen QA (not a physical Android result): 東2025 Regular / CS Final and 2024 Japan Series / optional Regular comparison, year changes, Back, Reload, unsupported scope, source links and null values; 360/390 Light/Dark. Screenshots kept privately in `.data/npb-active-expansion/screenshots`. Desktop/tablet evidence and final Android receipt follow the completed checks. Current main overview / full other-screen visual audit is not implied by the focused-page screenshots.

@@ -30,16 +30,18 @@ function Credits({data,playerId}:{data:Pick<NpbHistoricalDataset,"players">;play
 export function NpbPlayerSeasons() {
   const {playerId}=useParams(),[params,setParams]=useSearchParams();
   const [manifest,setManifest]=useState<NpbHistoricalManifest|null>(null),[failed,setFailed]=useState(false),[attempt,setAttempt]=useState(0);
-  const season=params.get("season")??"2026",role=params.get("role")==="pitching"?"pitching":"batting";
-  const competition=params.get("competition")??"regular",stage=params.get("stage");
-  useEffect(()=>{let active=true;void readNpbHistoricalManifest().then(m=>{if(active){setManifest(m);setFailed(false);}}).catch(()=>{if(active)setFailed(true);});return()=>{active=false;};},[attempt]);
+  const canonical=!!playerId&&/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(playerId);
   const player=manifest?.players.find(p=>p.playerId===playerId);
+  const season=params.get("season")??(player?.identityScope?String(player.seasons.at(-1)):"2026"),role=params.get("role")==="pitching"?"pitching":"batting";
+  const competition=params.get("competition")??"regular",stage=params.get("stage");
+  useEffect(()=>{if(!canonical)return;let active=true;void readNpbHistoricalManifest().then(m=>{if(active){setManifest(m);setFailed(false);}}).catch(()=>{if(active)setFailed(true);});return()=>{active=false;};},[attempt,canonical]);
   const admitted=admittedNpbPostseasonScopes.filter(s=>s.playerId===playerId&&String(s.season)===season);
   const supported=season==="2026"||!!player?.seasons.some(y=>String(y)===season);
   const regular=competition==="regular"&&!stage;
   const validScope=regular||competition==="postseason"&&admitted.some(s=>s.stage===stage);
   const update=(key:string,value:string)=>setParams(previous=>{const p=new URLSearchParams(previous);p.set(key,value);if(key==="season"){p.delete("years");if(!admittedNpbPostseasonScopes.some(s=>s.playerId===playerId&&String(s.season)===value&&s.stage===p.get("stage"))){p.set("competition","regular");p.delete("stage");}}return p;});
-  const currentLink=playerId&&/^[a-f0-9-]{36}$/i.test(playerId)&&!player?.identityScope;
+  const currentLink=manifest&&!player?.identityScope;
+  if(!canonical)return <DataState kind="no-data" title="選手IDを確認できません" action="選手を探す" to="/NPB/search" />;
   return <div className="screen"><PageHeading eyebrow="NPB · 年度・大会" title={player?.name??"選手の年度別成績"} />
     {currentLink&&<Link to={`/NPB/players/${playerId}`}>2026年の選手ページへ</Link>}
     <div className="explorer-filter-grid"><label>年度<select value={season} aria-label="選手成績の年度" onChange={e=>update("season",e.target.value)}>{!player?.identityScope&&<option value="2026">2026年 · 保存済み</option>}{player?.seasons.slice().reverse().map(y=><option key={y} value={y}>{y}年 · 一部収録</option>)}{!supported&&<option value={season}>未収録の年度</option>}</select></label>

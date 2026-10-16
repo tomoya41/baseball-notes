@@ -36,6 +36,10 @@ describe("2026 CS Final independently evidenced rules",()=>{
   it("fails closed on missing standings, a different season or zero decisions",()=>{
     for(const e of [{...evidence,challenger:undefined},{...evidence,season:2025},{...evidence,challenger:{wins:0,losses:0}}])expect(()=>npbCs2026FinalRule(e)).toThrow();
   });
+  it("uses either condition independently and does not round 9.5 games or .500 upward",()=>{
+    expect(npbCs2026FinalRule({...evidence,leader:{wins:75,losses:70},challenger:{wins:70,losses:71}}).reasons).toEqual(["challenger_below_500"]);
+    expect(npbCs2026FinalRule({...evidence,leader:{wins:79,losses:60},challenger:{wins:70,losses:70}})).toMatchObject({advantageWins:1,reasons:[]});
+  });
   it("accepts canonical NPB IDs and verified two-win rules without creating a bye Game",()=>{
     const e={...evidence,challenger:{wins:60,losses:80}};
     const s={id:"npb:series:"+id,league:"NPB",season:2026,competitionType:"postseason",round:"npb_cs_final",name:"Fictional test only",bestOf:7,winsRequired:5,npbFinalRuleEvidence:e,
