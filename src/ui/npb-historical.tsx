@@ -59,20 +59,20 @@ export function NpbPlayerSeasons({repository}:{repository:{findLatestNpb():Promi
 }
 function PostseasonPlayerHistory({manifest,playerId,season,stage,role}:{manifest:NpbHistoricalManifest;playerId:string;season:number;stage:string;role:"batting"|"pitching"}) {
   const [data,setData]=useState<NpbPostseasonAggregateDataset|null>(null),[failed,setFailed]=useState(false),[attempt,setAttempt]=useState(0);
-  const [compare,setCompare]=useState(false),[regular,setRegular]=useState<NpbHistoricalDataset|null>(null),[compareFailed,setCompareFailed]=useState(false);
+  const [compare,setCompare]=useState(false),[regular,setRegular]=useState<NpbHistoricalDataset|null>(null),[compareFailed,setCompareFailed]=useState(false),[compareAttempt,setCompareAttempt]=useState(0);
   useEffect(()=>{let active=true;void readNpbPostseasonAggregates().then(d=>{if(active){setData(d);setFailed(false);}}).catch(()=>{if(active)setFailed(true);});return()=>{active=false;};},[attempt]);
-  useEffect(()=>{if(!compare)return;let active=true;void readNpbHistoricalSeason(season,manifest).then(d=>{if(active)setRegular(d);}).catch(()=>{if(active)setCompareFailed(true);});return()=>{active=false;};},[compare,manifest,season]);
+  useEffect(()=>{if(!compare)return;let active=true;void readNpbHistoricalSeason(season,manifest).then(d=>{if(active)setRegular(d);}).catch(()=>{if(active)setCompareFailed(true);});return()=>{active=false;};},[compare,manifest,season,compareAttempt]);
   if(failed)return <><DataState kind="source-unavailable" title="大会別成績を取得できません" /><button onClick={()=>{setFailed(false);setAttempt(a=>a+1);}}>再試行</button></>;
   if(!data)return <LoadingSkeleton />;
   const rows=data.rows.filter(r=>r.playerId===playerId&&r.season===season&&r.scope.stage===stage&&r.role===role),rs=regular?.rows.filter(r=>r.playerId===playerId&&r.role===role)??[];
   return <section><h2>{season}年 · {npbCompetitionLabels[stage as keyof typeof npbCompetitionLabels]}</h2><p className="data-notice">一部選手の大会別年度成績です。大会全体・全試合・全選手の完全収録ではありません。</p>{rows.length?rows.map(r=><div key={r.teamId}><h3>{teamName(r.teamId)} · {role==="batting"?"打撃":"投球"}</h3><Numbers rows={[r]} role={role} /><AggregateDetails row={r} /></div>):<DataState kind="no-data" title="この役割の大会別成績は未収録です" />}<Credits data={data} playerId={playerId} />
-    <details className="explorer-tools" onToggle={e=>{if(e.currentTarget.open)setCompare(true);}}><summary>同年の公式戦成績と見比べる</summary><p>大会と出場母数が異なります。数値を合計せず、それぞれの収録範囲を示します。</p>{compareFailed?<DataState kind="source-unavailable" title="公式戦成績を取得できません" />:!regular?<LoadingSkeleton />:rs.length?<><h3>{season}年 · 公式戦（一部収録）</h3><Numbers rows={rs} role={role} /><Credits data={regular} playerId={playerId} /></>:<DataState kind="no-data" title="この役割の公式戦成績は未収録です" />}</details>
+    <details className="explorer-tools" onToggle={e=>{if(e.currentTarget.open)setCompare(true);}}><summary>同年の公式戦成績と見比べる</summary><p>大会と出場母数が異なります。数値を合計せず、それぞれの収録範囲を示します。</p>{compareFailed?<><DataState kind="source-unavailable" title="公式戦成績を取得できません" /><button onClick={()=>{setCompareFailed(false);setCompareAttempt(a=>a+1);}}>比較を再試行</button></>:!regular?<LoadingSkeleton />:rs.length?<><h3>{season}年 · 公式戦（一部収録）</h3><Numbers rows={rs} role={role} /><Credits data={regular} playerId={playerId} /></>:<DataState kind="no-data" title="この役割の公式戦成績は未収録です" />}</details>
   </section>;
 }
 function PlayerSeasonHistory({manifest,playerId,season,role}:{manifest:NpbHistoricalManifest;playerId:string;season:number;role:"batting"|"pitching"}) {
-  const [data,setData]=useState<NpbHistoricalDataset|null>(null),[failed,setFailed]=useState(false);
-  useEffect(()=>{let active=true;void readNpbHistoricalSeason(season,manifest).then(d=>{if(active)setData(d);}).catch(()=>{if(active)setFailed(true);});return()=>{active=false;};},[season,manifest]);
-  if(failed)return <DataState kind="source-unavailable" title="年度別成績を取得できません。年度を切り替えて再試行してください" />;
+  const [data,setData]=useState<NpbHistoricalDataset|null>(null),[failed,setFailed]=useState(false),[attempt,setAttempt]=useState(0);
+  useEffect(()=>{let active=true;void readNpbHistoricalSeason(season,manifest).then(d=>{if(active)setData(d);}).catch(()=>{if(active)setFailed(true);});return()=>{active=false;};},[season,manifest,attempt]);
+  if(failed)return <><DataState kind="source-unavailable" title="年度別成績を取得できません" /><button onClick={()=>{setFailed(false);setAttempt(a=>a+1);}}>年度成績を再試行</button></>;
   if(!data)return <LoadingSkeleton />;
   const rows=data.rows.filter(r=>r.playerId===playerId&&r.role===role);
   return <><p className="data-notice">{season}年 · 公式戦 · 球団別成績の一部収録</p>{rows.length?<section><h2>{season}年の{role==="batting"?"打撃":"投球"}成績</h2>{rows.map(r=><div key={r.teamId}><h3>{teamName(r.teamId)}</h3><Numbers rows={[r]} role={role} /><AggregateDetails row={r} /></div>)}<Credits data={data} playerId={playerId} /></section>:<DataState kind="no-data" title="この役割の指定年度成績は未収録です" />}<PlayerHistory manifest={manifest} playerId={playerId} role={role} current={data} activeSeason={season} closeable={false} initialSingle /></>;
@@ -118,6 +118,7 @@ function HistoricalSeason({manifest,season,role,params,update,retry,favorites=[]
     </>}</>;
 }
 function PlayerHistory({manifest,playerId,role,current,activeSeason,closeable=true,initialSingle=false}:{manifest:NpbHistoricalManifest;playerId:string;role:"batting"|"pitching";current:NpbHistoricalDataset;activeSeason:number;closeable?:boolean;initialSingle?:boolean}) {
+  const [attempt,setAttempt]=useState(0);
   const [params,setParams]=useSearchParams(),player=manifest.players.find(p=>p.playerId===playerId)!;
   const raw=params.get("years"),years=useMemo(()=>{
     if(raw!==null) return [...new Set(raw.split(",").filter(y=>/^\d{4}$/.test(y)).map(Number).filter(y=>player.seasons.includes(y)))].slice(0,4);
@@ -125,13 +126,13 @@ function PlayerHistory({manifest,playerId,role,current,activeSeason,closeable=tr
     const start=Math.max(0,player.seasons.filter(y=>y<=activeSeason).length-3);
     return player.seasons.slice(start,start+3);
   },[raw,player,activeSeason,initialSingle]);
-  const key=`${playerId}:${years.join(",")}:${manifest.inputSha256}`;
+  const key=`${playerId}:${years.join(",")}:${manifest.inputSha256}:${attempt}`;
   const [result,setResult]=useState<{key:string;data:NpbHistoricalDataset[];error:boolean}|null>(null);
   useEffect(()=>{let active=true;void Promise.all(years.map(y=>current.rows.some(r=>r.season===y)?Promise.resolve(current):readNpbHistoricalSeason(y,manifest))).then(data=>{if(active)setResult({key,data,error:false});}).catch(()=>{if(active)setResult({key,data:[],error:true});});return()=>{active=false;};},[key,current,manifest,years]);
   const records=result?.key===key?result.data.flatMap(d=>d.rows.filter(r=>r.playerId===playerId&&r.role===role)):[];
   const values:ComparisonRow[]=years.flatMap(season=>{const rs=records.filter(r=>r.season===season);return rs.length?[{id:String(season),name:`${season}年 · ${[...new Set(rs.map(r=>teamName(r.teamId)))].join(" / ")}`,season,date:String(season),coverage:"partial",metrics:Object.fromEntries(Object.entries(sumHistoricalRows(rs).metrics).map(([k,value])=>[k,{value,status:value===null?"unavailable":"partial"}]))}]:[];});
   const sources=new Map((result?.key===key?result.data:[]).filter(d=>d.rows.some(r=>r.playerId===playerId&&r.role===role)).map(d=>{const p=d.players.find(p=>p.playerId===playerId)!;return [`${p.article}:${p.revision}`,d] as const;}));
   return <section className="profile-content"><h2>{player.name} · 収録済み年度の比較</h2>{player.identityScope&&<p className="inline-note">過去年度の選手情報です。現在の登録や所属を示しません。</p>}{closeable&&<button className="text-link" onClick={()=>setParams(previous=>{const p=new URLSearchParams(previous);p.delete("player");p.delete("years");return p;})}>年度比較を閉じる</button>}<fieldset><legend>比較年度（最大4年）</legend><div className="hub-links">{player.seasons.map(y=><label key={y}><input type="checkbox" checked={years.includes(y)} disabled={!years.includes(y)&&years.length>=4} onChange={()=>setParams(previous=>{const p=new URLSearchParams(previous);p.set("years",(years.includes(y)?years.filter(n=>n!==y):[...years,y]).sort((a,b)=>a-b).join(","));return p;})} /> {y}</label>)}</div></fieldset>
-    {!years.length?<p>比較する年度を選んでください。</p>:result?.key!==key?<LoadingSkeleton />:result.error?<DataState kind="source-unavailable" title="年度比較を取得できません" />:!records.length?<DataState kind="no-data" title="選択年度のこの役割の成績は未収録です" />:<><ComparisonBars rows={values} metric={role==="batting"?"OPS":"ERA"} /><h3>{[...new Set(records.map(r=>r.season))].sort((a,b)=>a-b).join(" / ")}年の収録行合計</h3><Numbers rows={records} role={role} /><p className="inline-note">選択した年度・球団別行のみの合計です。欠けた年度・移籍先の行を補わず、全キャリア通算や完全な年度合計とは扱いません。</p><aside aria-label="年度比較・合計データの出典">{[...sources].map(([key,d])=><p key={key}><Credits data={d} playerId={playerId} /></p>)}</aside></>}
+    {!years.length?<p>比較する年度を選んでください。</p>:result?.key!==key?<LoadingSkeleton />:result.error?<><DataState kind="source-unavailable" title="年度比較を取得できません" /><button onClick={()=>setAttempt(a=>a+1)}>年度比較を再試行</button></>:!records.length?<DataState kind="no-data" title="選択年度のこの役割の成績は未収録です" />:<><ComparisonBars rows={values} metric={role==="batting"?"OPS":"ERA"} /><h3>{[...new Set(records.map(r=>r.season))].sort((a,b)=>a-b).join(" / ")}年の収録行合計</h3><Numbers rows={records} role={role} /><p className="inline-note">選択した年度・球団別行のみの合計です。欠けた年度・移籍先の行を補わず、全キャリア通算や完全な年度合計とは扱いません。</p><aside aria-label="年度比較・合計データの出典">{[...sources].map(([key,d])=><p key={key}><Credits data={d} playerId={playerId} /></p>)}</aside></>}
   </section>;
 }
