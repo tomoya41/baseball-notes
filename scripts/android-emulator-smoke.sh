@@ -72,8 +72,12 @@ cat .data/android-emulator/instrumentation.txt
 adb logcat -d -s System.out:I > .data/android-emulator/performance.txt
 adb logcat -d -s Capacitor:V Capacitor/Console:V > .data/android-emulator/bridge.txt
 adb exec-out screencap -p > .data/android-emulator/instrumentation-screen.png
+# Preserve per-screen diagnostics even when instrumentation fails. A successful
+# QA run must still include its expected screenshots, not silently skip a pull.
+screenshot_pull_status=0
+adb pull /sdcard/Android/data/com.tomoya41.baseballnotes/files/ui-redesign .data/android-emulator/ui-redesign || screenshot_pull_status=$?
 grep -q 'OK (' .data/android-emulator/instrumentation.txt
-adb pull /sdcard/Android/data/com.tomoya41.baseballnotes/files/ui-redesign .data/android-emulator/ui-redesign
+test "$screenshot_pull_status" -eq 0
 network_offline
 adb shell am force-stop com.tomoya41.baseballnotes
 adb shell am start -W -a android.intent.action.VIEW -d 'baseballnotes://MLB/players/mlb%3Aplayer%3Ae70b8d12-aa41-50c0-9c1b-d468d451355f' com.tomoya41.baseballnotes > .data/android-emulator/deep-link.txt
