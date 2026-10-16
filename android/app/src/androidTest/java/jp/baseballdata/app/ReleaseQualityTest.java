@@ -8,6 +8,8 @@ import android.net.Uri;
 import android.net.ConnectivityManager;
 import android.net.NetworkCapabilities;
 import android.graphics.Bitmap;
+import android.os.Bundle;
+import android.os.Parcel;
 import android.view.MotionEvent;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -390,6 +392,26 @@ public class ReleaseQualityTest {
         waitCondition("Accessible progression chart", "!!document.querySelector('svg[aria-label*=\"年度推移\"]') && document.querySelectorAll('.player-progression dd').length===4");
         screenshot("npb-progression-360");
         shell("input keyevent KEYCODE_BACK"); waitText("2026年 · CS ファイナル"); waitText("2.2");
+    }
+    @Test public void longNavigationHistoryHasBoundedRecreationState() throws Exception {
+        Intent link = new Intent(Intent.ACTION_VIEW, Uri.parse("baseballnotes://NPB/cs?season=2026&stage=npb_cs_final&role=pitching"));
+        link.setClassName("com.tomoya41.baseballnotes", "jp.baseballdata.app.MainActivity");
+        scenario = ActivityScenario.launch(link);
+        waitText("2026 クライマックスシリーズ"); waitText("リバン・モイネロ");
+        String route = js("location.hash");
+        // Inflate actual WebView history without fetching any extra payload.
+        js("(()=>{const original=location.href;for(let i=0;i<160;i++)history.pushState({},'',original+'&q='+('history-'+i+'-').repeat(450));history.pushState({},'',original)})()");
+        scenario.onActivity(activity -> {
+            Bundle state = new Bundle(); activity.onSaveInstanceState(state);
+            Parcel parcel = Parcel.obtain();
+            try {
+                parcel.writeBundle(state);
+                assertTrue("Activity state remains below 192 KiB after long history", parcel.dataSize() < 192 * 1024);
+                System.out.println("NPB_QA_SAVED_STATE_BYTES " + parcel.dataSize());
+            } finally { parcel.recycle(); }
+        });
+        scenario.recreate(); waitText("2026 クライマックスシリーズ"); waitText("リバン・モイネロ");
+        assertEquals("Long-history recreation retains the current scoped route", route, js("location.hash"));
     }
     @Test public void nativePreferencesSurviveRestartAndFirebaseDisabled() throws Exception {
         String fixture = "{\"items\":[{\"league\":\"NPB\",\"kind\":\"player\",\"entityId\":\"canonical-player\"}]}";
