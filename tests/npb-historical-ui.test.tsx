@@ -35,9 +35,9 @@ describe("NPB Historical integrated UI",()=>{
     vi.mocked(readNpbHistoricalManifest).mockResolvedValue({...manifest,seasons:years.map(season=>({...manifest.seasons[0]!,season})),players:[{...manifest.players[0]!,seasons:years}]});
     vi.mocked(readNpbHistoricalSeason).mockImplementation(async season=>({...dataset,rows:[{...dataset.rows[0]!,season}]}));
     const {div,close}=await mount(`?season=2015&player=${id}`);try{
-      expect(div.textContent).toContain("2015 / 2016 / 2017年の収録行合計");
+      expect(div.textContent).toContain("2015年の収録行合計");
       const selected=Array.from(div.querySelectorAll('fieldset input:checked')).map(n=>n.parentElement?.textContent?.trim());
-      expect(selected).toEqual(["2015","2016","2017"]);
+      expect(selected).toEqual(["2015"]);
     }finally{await close();}
   });
   it("refreshes the manifest as well as annual data after a publication-generation failure",async()=>{

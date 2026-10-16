@@ -1,0 +1,48 @@
+import { expect, it } from "vitest";
+import { parseWikipediaCs } from "../src/infrastructure/providers/wikipedia-npb-cs";
+const id = "00000000-0000-4000-8000-000000000001";
+const template = `=== ファーストステージ ===
+==== 第1戦 ====
+{{Linescore
+|Road=日本ハム|Home=西武|Date=10月10日|RR=1|HR=0|RH=1|HH=0|WP=架空投手
+|R1=1|R2=0|R3=0|R4=0|R5=0|R6=0|R7=0|R8=0|R9=0
+|H1=0|H2=0|H3=0|H4=0|H5=0|H6=0|H7=0|H8=0|H9=0
+|Note2=試合時間：3時間1分}}
+{| class="wikitable"
+!colspan="12"|日本ハム
+|-
+!colspan="2"|選<br/>手!!投球回!!投球数!!打者!!被安打!!被本塁打!!奪三振!!与四死球!!失点!!自責点
+|-
+|勝||[[架空投手]]||9||110||28||0||0||10||1||0||0
+|}
+`;
+const page = (content = template) => ({ pageid: 5301694, title: "2026年のパシフィック・リーグクライマックスシリーズ", revisions: [{ revid: 123, timestamp: "2026-10-15T00:00:00Z", slots: { main: { content } } }] });
+const parse = (content = template) => parseWikipediaCs(page(content), "2026-10-16T00:00:00Z", [{ playerId: id, article: "架空投手" }]);
+it("accepts an explicitly observed final but never splits combined walks and HBP", () => {
+  const result = parse(); expect(result.games).toHaveLength(1); expect(result.observations).toHaveLength(1);
+  const row = result.observations[0]!.aggregate;
+  expect(row.playerId).toBe(id); expect(row.scope.stage).toBe("npb_cs_first"); expect(row.metrics.outsRecorded).toBe(27);
+  expect(row.metrics.SO).toBe(10); expect(row.metrics.BB).toBeNull(); expect(row.metrics.HBP).toBeNull(); expect(row.metrics.WHIP).toBeNull();
+  expect(row.metrics.ERA).toBe(0); expect(row.metrics.W).toBe(1);
+});
+it("preserves blank vs explicit zero and never merges a plain name", () => {
+  const blank = parse(template.replace("||0||0||10||1", "|| ||0||10||1"));
+  expect(blank.observations[0]?.aggregate.metrics.H).toBeNull(); expect(blank.observations[0]?.aggregate.metrics.HR).toBe(0);
+  const unlinked = parse(template.replace("[[架空投手]]", "架空投手")); expect(unlinked.observations).toHaveLength(0); expect(unlinked.issues[0]?.reason).toBe("unverified_article_identity");
+});
+it.each([
+  template.replace("試合時間：3時間1分", "試合時間：時間分"),
+  template.replace("10月10日", "10月17日"),
+  template.replace("|R1=1", "|R1=0"),
+  template.replace("|Road=日本ハム", "|Road=不明球団"),
+  `<!--${template}-->`,
+])("rejects future/placeholders/comments/unknown teams and inconsistent innings", content => { expect(parse(content).games).toHaveLength(0); });
+it("does not read unreviewed columns or convert baseball IP into decimal", () => {
+  expect(parse(template.replace("||9||110", "||0.1||110")).observations[0]?.aggregate.metrics.outsRecorded).toBe(1);
+  expect(parse(template.replace("||9||110", "||0.3||110")).observations).toHaveLength(0);
+  expect(parse(template.replace("!!与四死球", "!!与四球")).observations).toHaveLength(0);
+});
+it("requires exact article identity and does not accept duplicated source fields", () => {
+  expect(() => parseWikipediaCs({ ...page(), title: "wrong" }, "2026-10-16T00:00:00Z", [])).toThrow("Unreviewed");
+  expect(() => parse(template.replace("|RR=1", "|RR=1|RR=2"))).toThrow("Duplicate");
+});

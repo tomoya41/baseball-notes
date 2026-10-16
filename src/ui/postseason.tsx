@@ -10,8 +10,9 @@ import { hasHistoricalPostseason, usePostseasonAvailability } from "./postseason
 export function PostseasonUnavailable({ league }: { league: League }) {
   const availability = usePostseasonAvailability();
   return <div className="screen"><PageHeading eyebrow={`${league} · POSTSEASON`} title="ポストシーズン" />
-    <DataState kind="unsupported" title="試合・選手成績は未対応" detail="公開アプリで利用できるデータ提供元の条件を確認中です。" />
-    <p className="inline-note">Source rights pending · 結果を推測して表示しません。</p>
+    <DataState kind="unsupported" title={league==="NPB"?"指定のシリーズ詳細は未対応":"試合・選手成績は未対応"} detail={league==="NPB"?"2026年CSの一部試合・選手成績は、収録済みCSページで確認できます。":"公開アプリで利用できるデータ提供元の条件を確認中です。"} />
+    <p className="inline-note">{league==="NPB"?"未収録範囲やシリーズ進出結果は推測して表示しません。":"Source rights pending · 結果を推測して表示しません。"}</p>
+    {league==="NPB"&&<Link to="/NPB/cs?season=2026">収録済みのCSを見る →</Link>}
     <div className="chip-list">{(league === "NPB" ? ["npb_cs_first", "npb_cs_final", "japan_series"] as const : ["wild_card", "division_series", "alcs", "nlcs", "world_series"] as const).map(r => <span className="filter-chip" key={r}>{roundLabels[r]}</span>)}</div>
     {league === "NPB" && <p className="inline-note">CSファイナルの1勝アドバンテージは、試合の勝利とは別に扱います。</p>}
     <Link className="text-link" to={`/${league}/schedule`}>Regular Season 日程・結果</Link>

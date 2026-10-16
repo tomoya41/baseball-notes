@@ -13,7 +13,7 @@ it("shows dated saved metrics and unavailable fields without declaring the API h
   const div = document.createElement("div"), root = createRoot(div);
   try {
     await act(async () => root.render(<PublishedPlayerFallback playerId="id" period="season" repository={{ findLatestNpb: async () => ({} as NpbPlayerDirectory) }} />));
-    expect(div.textContent).toContain("APIに接続できない"); expect(div.textContent).toContain("2026-10-08");
+    expect(div.textContent).toContain("成績の更新を確認できない"); expect(div.textContent).toContain("2026-10-08");
     expect(div.textContent).toContain("一部未収集"); expect(div.textContent).toContain("日別の詳細証拠");
     expect(div.querySelectorAll(".metric-tile__value")[3]?.textContent).toBe("—");
     expect(div.textContent).not.toContain("API復旧済み");

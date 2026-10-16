@@ -20,6 +20,7 @@ import { StatGlossary } from "./stat-glossary";
 import { MyLibrary } from "./personal-library";
 import { NpbTeamCompare, SeasonCompare } from "./team-season-compare";
 import { NpbLifecycleExplorer } from "./npb-lifecycle";
+const NpbCsScreen = lazy(()=>import("./npb-cs").then(m=>({default:m.NpbCsScreen})));
 const NpbPlayerSeasons = lazy(()=>import("./npb-historical").then(m=>({default:m.NpbPlayerSeasons})));
 type FavoriteTarget = Pick<Favorite, "kind" | "entityId" | "league">;
 function NpbSearchEntry(props: Parameters<typeof NpbRoutes>[0]) {
@@ -31,6 +32,8 @@ function NpbSearchEntry(props: Parameters<typeof NpbRoutes>[0]) {
 export function NpbRoutes({ services, favorites, toggle, saving }: { services: Services; favorites: Favorite[]; toggle: (target: FavoriteTarget) => void; saving: boolean }) {
   const location = useLocation();
   return <Routes>
+    <Route path="cs" element={<Suspense fallback={<p role="status">CSの収録データを読み込み中…</p>}><NpbCsScreen /></Suspense>} />
+    <Route path="postseason" element={<Suspense fallback={<p role="status">CSの収録データを読み込み中…</p>}><NpbCsScreen /></Suspense>} />
     <Route path="postseason/*" element={<PostseasonUnavailable league="NPB" />} />
     <Route path="explore" element={<ExploreScreen league="NPB" />} />
     <Route path="milestones/*" element={<NpbMilestonesScreen repository={services.product} />} />

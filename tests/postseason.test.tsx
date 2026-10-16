@@ -144,7 +144,7 @@ describe("scope isolation and capabilities", () => {
     const html = renderToStaticMarkup(<MemoryRouter><PostseasonBracket hub={bracket()} /></MemoryRouter>);
     expect(html).toContain("/MLB/postseason/series/"); expect(html).toContain("Best of 1");
     const unavailable = renderToStaticMarkup(<MemoryRouter><PostseasonUnavailable league="NPB" /></MemoryRouter>);
-    expect(unavailable).toContain("Source rights pending"); expect(unavailable).not.toContain("scoreboard-row");
+    expect(unavailable).toContain("未収録範囲やシリーズ進出結果"); expect(unavailable).not.toContain("scoreboard-row");
   });
   it("unions canonical identities without modifying regular seasons or duplicating shared Players", () => {
     const row: HistoricalDirectoryPlayer = { id:historicalId("player","shared"), name:"Player", positions:["1"], seasons:[2021], teamIds:[historicalTeamId("ATL")] };
