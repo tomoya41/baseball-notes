@@ -11,6 +11,7 @@ import type { FavoriteActions } from "./team-favorite";
 import { npbCompetitionLabels } from "../domain/npb-competition";
 import type { NpbPostseasonAggregateDataset } from "../domain/npb-competition";
 import { admittedNpbPostseasonScopes, readNpbPostseasonAggregates } from "../application/npb-competition-reader";
+import type { NpbDirectoryPlayer, NpbPlayerDirectory } from "../domain/npb-player-directory";
 
 const teams:Record<string,string>={giants:"巨人",tigers:"阪神",dragons:"中日",carp:"広島",swallows:"ヤクルト",baystars:"DeNA",hawks:"ソフトバンク",fighters:"日本ハム",lions:"西武",marines:"ロッテ",eagles:"楽天",buffaloes:"オリックス"};
 const teamName=(id:string)=>teams[id.split(":").at(-1)!]??"球団未確認";
@@ -20,35 +21,40 @@ function Numbers({rows,role}:{rows:NpbHistoricalRow[];role:"batting"|"pitching"}
 }
 function AggregateDetails({row}:{row:NpbHistoricalRow}) {
   const [open,setOpen]=useState(false),keys=row.role==="batting"?historicalBattingKeys:historicalPitchingKeys;
-  return <details className="explorer-tools" onToggle={e=>setOpen(e.currentTarget.open)}><summary>詳細成績</summary>{open&&<><dl className="explorer-values">{keys.map(k=><div key={k}><dt><MetricLabel metric={k} label={k==="outsRecorded"?"投球回":k} /></dt><dd>{comparisonValue(k,row.metrics[k]??null)}</dd></div>)}</dl><p className="inline-note">原表にない項目は「—」。率指標は原表の表示値です。</p></>}</details>;
+  const labels:Record<string,string>={outsRecorded:"投球回",noWalkGames:"無四球試合",CG:"完投",SHO:"完封",WPCT:"勝率",BF:"対戦打者",GDP:"併殺打",IBB:"故意四球",WP:"暴投",BK:"ボーク"};
+  return <details className="explorer-tools" onToggle={e=>setOpen(e.currentTarget.open)}><summary>詳細成績</summary>{open&&<><dl className="explorer-values">{keys.map(k=><div key={k}><dt><MetricLabel metric={k} label={labels[k]??k} /></dt><dd>{comparisonValue(k,row.metrics[k]??null)}</dd></div>)}</dl><p className="inline-note">原表にない項目は「—」。率指標は原表の表示値です。</p></>}</details>;
 }
 function Credits({data,playerId}:{data:Pick<NpbHistoricalDataset,"players">;playerId:string}) {
   const p=data.players.find(p=>p.playerId===playerId)!;
   return <small><a href={`https://ja.wikipedia.org/w/index.php?title=${encodeURIComponent(p.article)}&oldid=${p.revision}`} target="_blank" rel="noreferrer">Wikipedia「{p.article}」の執筆者</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noreferrer">CC BY-SA 4.0</a> · 年度表から抽出・正規化{p.sourceObservedAt&&` · 原本取得 ${p.sourceObservedAt.slice(0,10)}`}</small>;
 }
 /** Explicit navigation only: no extra requests on Home or the Current player overview. */
-export function NpbPlayerSeasons() {
+export function NpbPlayerSeasons({repository}:{repository:{findLatestNpb():Promise<NpbPlayerDirectory>}}) {
   const {playerId}=useParams(),[params,setParams]=useSearchParams();
   const [manifest,setManifest]=useState<NpbHistoricalManifest|null>(null),[failed,setFailed]=useState(false),[attempt,setAttempt]=useState(0);
+  const [directoryPlayer,setDirectoryPlayer]=useState<NpbDirectoryPlayer|null>(null),[directoryState,setDirectoryState]=useState<"loading"|"ready"|"error">("loading");
   const canonical=!!playerId&&/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(playerId);
   const player=manifest?.players.find(p=>p.playerId===playerId);
-  const season=params.get("season")??(player?.identityScope?String(player.seasons.at(-1)):"2026"),role=params.get("role")==="pitching"?"pitching":"batting";
+  const season=params.get("season")??(player&&(player.identityScope||directoryState==="ready"&&!directoryPlayer)?String(player.seasons.at(-1)):"2026"),role=params.get("role")==="pitching"?"pitching":"batting";
+  const validRole=!params.has("role")||["batting","pitching"].includes(params.get("role")!);
   const competition=params.get("competition")??"regular",stage=params.get("stage");
   useEffect(()=>{if(!canonical)return;let active=true;void readNpbHistoricalManifest().then(m=>{if(active){setManifest(m);setFailed(false);}}).catch(()=>{if(active)setFailed(true);});return()=>{active=false;};},[attempt,canonical]);
+  useEffect(()=>{if(!canonical||!manifest||player?.identityScope)return;let active=true;queueMicrotask(()=>{if(active){setDirectoryState("loading");setDirectoryPlayer(null);}});void repository.findLatestNpb().then(d=>{if(active){setDirectoryPlayer(d.players.find(p=>p.playerId===playerId)??null);setDirectoryState("ready");}}).catch(()=>{if(active)setDirectoryState("error");});return()=>{active=false;};},[canonical,manifest,player?.identityScope,playerId,repository]);
   const admitted=admittedNpbPostseasonScopes.filter(s=>s.playerId===playerId&&String(s.season)===season);
-  const supported=season==="2026"||!!player?.seasons.some(y=>String(y)===season);
+  const supported=season==="2026"?!!directoryPlayer:!!player?.seasons.some(y=>String(y)===season);
   const regular=competition==="regular"&&!stage;
   const validScope=regular||competition==="postseason"&&admitted.some(s=>s.stage===stage);
   const update=(key:string,value:string)=>setParams(previous=>{const p=new URLSearchParams(previous);p.set(key,value);if(key==="season"){p.delete("years");if(!admittedNpbPostseasonScopes.some(s=>s.playerId===playerId&&String(s.season)===value&&s.stage===p.get("stage"))){p.set("competition","regular");p.delete("stage");}}return p;});
-  const currentLink=manifest&&!player?.identityScope;
+  const currentLink=!!directoryPlayer;
   if(!canonical)return <DataState kind="no-data" title="選手IDを確認できません" action="選手を探す" to="/NPB/search" />;
-  return <div className="screen"><PageHeading eyebrow="NPB · 年度・大会" title={player?.name??"選手の年度別成績"} />
+  if(manifest&&!player&&directoryState==="ready"&&!directoryPlayer)return <DataState kind="no-data" title="収録されていない選手IDです" action="選手を探す" to="/NPB/search" />;
+  return <div className="screen"><PageHeading eyebrow="NPB · 年度・大会" title={player?.name??directoryPlayer?.displayName??"選手の年度別成績"} />
     {currentLink&&<Link to={`/NPB/players/${playerId}`}>2026年の選手ページへ</Link>}
-    <div className="explorer-filter-grid"><label>年度<select value={season} aria-label="選手成績の年度" onChange={e=>update("season",e.target.value)}>{!player?.identityScope&&<option value="2026">2026年 · 保存済み</option>}{player?.seasons.slice().reverse().map(y=><option key={y} value={y}>{y}年 · 一部収録</option>)}{!supported&&<option value={season}>未収録の年度</option>}</select></label>
+    <div className="explorer-filter-grid"><label>年度<select value={season} aria-label="選手成績の年度" onChange={e=>update("season",e.target.value)}>{currentLink&&<option value="2026">2026年 · 保存済み</option>}{player?.seasons.slice().reverse().map(y=><option key={y} value={y}>{y}年 · 一部収録</option>)}{!supported&&<option value={season}>{!player?.identityScope&&directoryState==="loading"?"情報を確認中":"未収録の年度"}</option>}</select></label>
       <label>大会<select value={validScope?(regular?"regular":stage!):"unavailable"} aria-label="選手成績の大会" onChange={e=>setParams(previous=>{const p=new URLSearchParams(previous);if(e.target.value==="regular"){p.set("competition","regular");p.delete("stage");}else{p.set("competition","postseason");p.set("stage",e.target.value);}p.delete("years");return p;})}><option value="regular">公式戦</option>{!validScope&&<option value="unavailable">指定の大会は未収録</option>}{(["preseason","npb_cs_first","npb_cs_final","japan_series"] as const).map(key=>{const available=admitted.some(s=>s.stage===key);return <option key={key} value={key} disabled={!available}>{npbCompetitionLabels[key]}{!available&&" · 未収録"}</option>;})}</select></label>
-      <label>成績<select value={role} onChange={e=>update("role",e.target.value)}><option value="batting">打撃（投手打撃を含む）</option><option value="pitching">投球</option></select></label></div>
+      <label>成績<select value={validRole?role:"unsupported"} onChange={e=>update("role",e.target.value)}>{!validRole&&<option value="unsupported" disabled>未対応の成績区分</option>}<option value="batting">打撃（投手打撃を含む）</option><option value="pitching">投球</option></select></label></div>
     <details className="explorer-tools"><summary>大会ごとの収録状況</summary><p>2026年のオープン戦・CS・日本シリーズの選手成績は未収録です。過去のポストシーズンは一部選手・大会のみ。出場なし・0成績とは判定しません。公式戦へ加算せず、大会ごとの取得・保存・公開条件を確認してから追加します。</p><p>2026年の所属・背番号・登録状態は過去年度の成績から推定しません。年度別成績には試合別成績やRecentは含まれません。</p><div className="hub-links"><a href="https://npb.jp/preseason/2026/" target="_blank" rel="noreferrer">オープン戦の公式情報</a><a href="https://npb.jp/games/2026/info_cs.html" target="_blank" rel="noreferrer">CSの公式規定</a><a href="https://npb.jp/nippons/2026/" target="_blank" rel="noreferrer">日本シリーズの公式情報</a></div></details>
-    {!validScope?<DataState kind="unsupported" title="指定の大会・ステージは未収録です" />:failed?<><DataState kind="source-unavailable" title="年度一覧を取得できません" /><button onClick={()=>{setFailed(false);setAttempt(a=>a+1);}}>再試行</button></>:!manifest?<LoadingSkeleton />:!supported?<DataState kind="no-data" title="この選手の指定年度は未収録です" />:!regular&&player?<PostseasonPlayerHistory key={`${playerId}:${season}:${role}:${stage}`} manifest={manifest} playerId={player.playerId} season={Number(season)} stage={stage!} role={role} />:season==="2026"?<p className="data-notice">2026年の保存済み公式戦成績は、選手ページで確認できます。過去年度と集計範囲・出典が異なるため、自動的に通算へ加算しません。</p>:player?<PlayerSeasonHistory key={`${playerId}:${season}:${role}:${attempt}`} manifest={manifest} playerId={player.playerId} season={Number(season)} role={role} />:<DataState kind="no-data" title="この選手の過去年度成績は未収録です" />}
+    {!validRole?<DataState kind="unsupported" title="指定した成績区分は未対応です" />:!validScope?<DataState kind="unsupported" title="指定の大会・ステージは未収録です" />:failed?<><DataState kind="source-unavailable" title="年度一覧を取得できません" /><button onClick={()=>{setFailed(false);setAttempt(a=>a+1);}}>再試行</button></>:!manifest||(!player&&directoryState==="loading")||!player?.identityScope&&season==="2026"&&directoryState==="loading"?<LoadingSkeleton />:(season==="2026"||!player)&&directoryState==="error"?<><DataState kind="source-unavailable" title="2026年の選手情報を確認できません" /><button onClick={()=>setAttempt(a=>a+1)}>再試行</button></>:!supported?<DataState kind="no-data" title="この選手の指定年度は未収録です" />:!regular&&player?<PostseasonPlayerHistory key={`${playerId}:${season}:${role}:${stage}`} manifest={manifest} playerId={player.playerId} season={Number(season)} stage={stage!} role={role} />:season==="2026"?<p className="data-notice">2026年の保存済み公式戦成績は、選手ページで確認できます。過去年度と集計範囲・出典が異なるため、自動的に通算へ加算しません。</p>:player?<PlayerSeasonHistory key={`${playerId}:${season}:${role}:${attempt}`} manifest={manifest} playerId={player.playerId} season={Number(season)} role={role} />:<DataState kind="no-data" title="この選手の過去年度成績は未収録です" />}
   </div>;
 }
 function PostseasonPlayerHistory({manifest,playerId,season,stage,role}:{manifest:NpbHistoricalManifest;playerId:string;season:number;stage:string;role:"batting"|"pitching"}) {
