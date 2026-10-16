@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { npbCs2026EvidenceSchema, npbCs2026FinalRule } from "./npb-cs-rules";
 
 /** Missing scope means the legacy regular-season contract, never "all". */
 export const competitionTypeSchema = z.enum(["regular", "postseason"]);
@@ -11,15 +12,16 @@ export const roundLabels: Record<PostseasonRound, string> = {
 };
 export const capabilitySchema = z.object({ status: z.enum(["available", "unavailable", "not_ready"]), reason: z.string().nullable() });
 const uuid = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
-const team = z.string().regex(new RegExp(`^(?:mlb:team:)?${uuid}$`));
+const team = z.string().regex(new RegExp(`^(?:(?:mlb:team:)?${uuid}|npb:team:(?:giants|tigers|dragons|carp|swallows|baystars|hawks|fighters|lions|marines|eagles|buffaloes))$`));
 const seriesId = z.string().regex(new RegExp(`^(mlb|npb):series:${uuid}$`));
 const count = z.number().int().nonnegative();
 export const seriesSchema = z.object({
   id: seriesId, league: z.enum(["MLB", "NPB"]), season: z.number().int(),
   competitionType: z.literal("postseason"), round: postseasonRoundSchema, name: z.string(),
   bestOf: z.number().int().positive(), winsRequired: z.number().int().positive(),
+  npbFinalRuleEvidence: npbCs2026EvidenceSchema.optional(),
   teams: z.array(z.object({ teamId: team, playedWins: count, advantageWins: count, seriesTotal: count })).length(2),
-  games: z.array(z.object({ gameId: z.string().regex(new RegExp(`^(?:mlb:game:)?${uuid}$`)), date: z.iso.date(), gameNumber: z.number().int().positive(),
+  games: z.array(z.object({ gameId: z.string().regex(new RegExp(`^(?:(?:mlb:game:)?${uuid}|npb:game:[0-9a-f]{20})$`)), date: z.iso.date(), gameNumber: z.number().int().positive(),
     homeTeamId: team, awayTeamId: team, homeRuns: count.nullable(), awayRuns: count.nullable(),
     status: z.enum(["scheduled", "in_progress", "final", "postponed", "cancelled", "suspended"]),
     scheduledAt: z.iso.datetime({ offset: true }).nullable(), winnerId: team.nullable() })),
@@ -43,7 +45,14 @@ export const seriesSchema = z.object({
   if (s.games.some(g => g.status === "final" ? g.homeRuns === null || g.awayRuns === null ||
     g.winnerId !== (g.homeRuns > g.awayRuns ? g.homeTeamId : g.awayRuns > g.homeRuns ? g.awayTeamId : null) : g.winnerId !== null))
     ctx.addIssue({ code: "custom", message: "Game result mismatch" });
-  if (s.teams.some(t => t.advantageWins > 0 && (s.round !== "npb_cs_final" || t.advantageWins !== 1)))
+  const rule = s.npbFinalRuleEvidence ? npbCs2026FinalRule(s.npbFinalRuleEvidence) : null;
+  if (s.npbFinalRuleEvidence && (s.league !== "NPB" || s.round !== "npb_cs_final" || s.season !== 2026 ||
+    !ids.has(s.npbFinalRuleEvidence.leaderTeamId) || !ids.has(s.npbFinalRuleEvidence.challengerTeamId) ||
+    s.bestOf !== rule!.maxPlayedGames || s.winsRequired !== rule!.winsRequired ||
+    s.games.filter(g=>g.status!=="cancelled"&&g.status!=="postponed").length>rule!.maxPlayedGames ||
+    s.teams.some(t=>t.advantageWins!==(t.teamId===s.npbFinalRuleEvidence!.leaderTeamId?rule!.advantageWins:0))))
+    ctx.addIssue({ code: "custom", message: "2026 Final Stage rule/evidence mismatch" });
+  if (s.teams.some(t => t.advantageWins > 0 && (s.round !== "npb_cs_final" || t.advantageWins !== (rule?.advantageWins ?? 1))) || s.teams.filter(t=>t.advantageWins>0).length>1)
     ctx.addIssue({ code: "custom", message: "Invalid rule advantage" });
   if (s.clinched !== (s.status === "complete") || (s.clinched && (!s.winnerId || !ids.has(s.winnerId))) ||
     (s.clinched && s.clinchReason === "wins_required" && !s.teams.some(t => t.teamId === s.winnerId && t.seriesTotal === s.winsRequired)) ||
