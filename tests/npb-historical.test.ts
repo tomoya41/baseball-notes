@@ -12,6 +12,15 @@ const page=(content:string)=>({title:"架空テスト選手",pageprops:{wikibase
 const table=(body:string,role="batting",league="日本野球機構")=>`=== 年度別${role==="batting"?"打撃":"投手"}成績 ===\n{| {{${role==="batting"?"年度別打撃成績":"投手成績"}|リーグ=${league}}}\n|-\n${body}\n|}`;
 const counts=(m:Record<string,number|null>,keys:readonly string[])=>keys.map(k=>m[k]??"--").join("||");
 describe("NPB historical aggregate source adapter",()=>{
+  it("excludes whole commented tables and rows before applying visible rowspans",()=>{
+    const line=counts(metrics,historicalBattingKeys);
+    const hiddenTable=`<!--${table(`|2024\n|阪神\n|${line}`)}-->`;
+    const source=hiddenTable+"\n"+table(`|2023\n|rowspan=2|阪神\n|${line}\n|-\n<!--|2024\n|${line}\n|-\n-->\n|2025\n|${line}`);
+    const parsed=parseWikipediaHistorical(page(source),bridge,[2023,2024,2025]);
+    expect(parsed.rows.map(r=>[r.season,r.teamId])).toEqual([[2023,"npb:team:tigers"],[2025,"npb:team:tigers"]]);
+    expect(parsed.player.contentSha256).toBe(parseWikipediaHistorical(page(source),bridge,[]).player.contentSha256);
+    expect(parseWikipediaHistorical(page(`<!--${table(`|2025\n|阪神\n|${line}`)}`),bridge,[2025]).rows).toHaveLength(0);
+  });
   it("reads empty MediaWiki cell attributes without accepting malformed nonempty attributes",()=>{
     const read=(title:string)=>{const f=emptyAttributes.find(f=>f.page.title===title)!;return parseWikipediaHistorical(f.page,f.bridge,[2023,2024,2025]);};
     expect(read("山﨑伊織").rows.map(r=>[r.season,r.metrics.G])).toEqual([[2023,23],[2024,24],[2025,25]]);

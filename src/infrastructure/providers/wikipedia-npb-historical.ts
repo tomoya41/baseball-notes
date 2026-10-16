@@ -48,12 +48,15 @@ export function parseWikipediaHistorical(raw: unknown, bridge: HistoricalBridge,
   if (/\{\{\s*(?:著作権侵害|Copyvio|コピペ|転載疑惑)/i.test(text)) throw Error("Article rights warning");
   const npbIds = [...text.matchAll(/npb\.jp\/bis\/players\/(\d+)\.html/g)].map(m=>m[1]);
   if (npbIds.length && !npbIds.includes(bridge.npbId)) throw Error("NPB profile evidence mismatch");
+  // Comments can contain whole future rows/tables, not only numeric annotations.
+  // Parse the visible structure while retaining the original revision hash below.
+  const visibleText = text.replace(/<!--[\s\S]*?(?:-->|$)/g, "");
   const rows: NpbHistoricalRow[] = [], issues: { role: string; reason: string; year: string; cells?:string[]; expectedRates?:Record<string,number|null> }[] = [];
   for (const role of ["batting", "pitching"] as const) {
     const heading = role === "batting" ? "年度別打撃成績" : "年度別投手成績";
-    const section = new RegExp(`^={2,4}\\s*${heading}\\s*={2,4}\\s*$`, "m").exec(text);
+    const section = new RegExp(`^={2,4}\\s*${heading}\\s*={2,4}\\s*$`, "m").exec(visibleText);
     if (!section) continue;
-    const after = text.slice(section.index + section[0].length);
+    const after = visibleText.slice(section.index + section[0].length);
     // These templates have fixed identical numeric columns regardless of the league-link parameter.
     // Template revisions 107218506 / 108239117 independently confirm their headers.
     const boundary = after.search(/^={2,3}[^=]/m), scope=boundary<0?after:after.slice(0,boundary);
@@ -109,7 +112,7 @@ export function parseWikipediaHistorical(raw: unknown, bridge: HistoricalBridge,
 /** Exact reviewed NPB postseason header only. MLB tables and unlabelled stages are excluded. */
 export function parseWikipediaNpbPostseason(raw:unknown,bridge:HistoricalBridge,years:readonly number[]) {
   const identity=parseWikipediaHistorical(raw,bridge,[]).player;
-  const page=pageSchema.parse(raw),text=page.revisions[0]!.slots.main.content;
+  const page=pageSchema.parse(raw),text=page.revisions[0]!.slots.main.content.replace(/<!--[\s\S]*?(?:-->|$)/g, "");
   const h=/^===\s*ポストシーズン投手成績\s*===\s*$/m.exec(text);
   if(!h)return {player:identity,rows:[] as NpbCompetitionAggregate[]};
   const after=text.slice(h.index+h[0].length),end=after.search(/^={2,3}[^=]/m),section=end<0?after:after.slice(0,end);
