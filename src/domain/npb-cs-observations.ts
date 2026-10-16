@@ -1,0 +1,17 @@
+import { z } from "zod";
+import { npbCompetitionAggregateSchema } from "./npb-competition";
+import { npbHistoricalPlayerSchema, npbHistoricalRowSchema } from "./npb-historical";
+
+export const csSourceSchema = z.strictObject({ pageId: z.number().int().positive(), title: z.string().min(1), revision: z.number().int().positive(), revisionAt: z.iso.datetime(), contentSha256: z.string().regex(/^[a-f0-9]{64}$/) });
+const gameSchema = z.strictObject({ id: z.string().regex(/^npb:game:[a-f0-9]{20}$/), date: z.iso.date(), stage: z.enum(["npb_cs_first", "npb_cs_final"]), homeTeamId: npbHistoricalRowSchema.shape.teamId, awayTeamId: npbHistoricalRowSchema.shape.teamId, homeScore: z.number().int().nonnegative(), awayScore: z.number().int().nonnegative(), homeHits: z.number().int().nonnegative().nullable(), awayHits: z.number().int().nonnegative().nullable(), sourcePageId: z.number().int().positive(), status: z.literal("final") });
+export const npbCsDatasetSchema = z.strictObject({ schemaVersion: z.literal(1), league: z.literal("NPB"), season: z.literal(2026), temporalScope: z.literal("saved_current"), competition: z.literal("postseason"), provider: z.literal("Wikipedia"), license: z.literal("CC-BY-SA-4.0"), coverage: z.literal("partial"), granularity: z.literal("collected_game_aggregate"), observedAt: z.iso.datetime(), inputSha256: z.string().regex(/^[a-f0-9]{64}$/), transformation: z.string().min(1), sources: z.array(csSourceSchema).min(1).max(2), players: z.array(npbHistoricalPlayerSchema).max(1000), games: z.array(gameSchema).min(1).max(30), rows: z.array(z.strictObject({ aggregate: npbCompetitionAggregateSchema, gameIds: z.array(z.string()).min(1).max(30) })).max(3000) }).superRefine((d, ctx) => {
+  const sourceIds = new Set(d.sources.map(s => s.pageId)), players = new Set(d.players.map(p => p.playerId)), games = new Map(d.games.map(g => [g.id, g]));
+  const keys = d.rows.map(r => `${r.aggregate.playerId}:${r.aggregate.scope.stage}:${r.aggregate.teamId}:${r.aggregate.role}`);
+  if (sourceIds.size !== d.sources.length || players.size !== d.players.length || new Set(d.players.map(p=>p.npbId)).size!==d.players.length || new Set(d.players.map(p=>p.wikidataId)).size!==d.players.length || games.size !== d.games.length || new Set(keys).size !== keys.length) ctx.addIssue({ code: "custom", message: "Duplicate CS source/identity/game/row" });
+  if (d.players.some(p=>p.identityScope!==undefined||p.revisionAt>(p.sourceObservedAt??d.observedAt)||(p.sourceObservedAt??d.observedAt)>d.observedAt)||d.sources.some(s => s.revisionAt > d.observedAt) || d.games.some(g => g.date > d.observedAt.slice(0, 10) || !g.date.startsWith("2026-") || !sourceIds.has(g.sourcePageId) || g.homeTeamId === g.awayTeamId)) ctx.addIssue({ code: "custom", message: "Invalid observed CS game/source date" });
+  for (const r of d.rows) {
+    const a = r.aggregate;
+    if (!players.has(a.playerId) || a.season !== 2026 || a.scope.temporalScope !== "saved_current" || a.scope.competition !== "postseason" || !["npb_cs_first", "npb_cs_final"].includes(a.scope.stage ?? "") || new Set(r.gameIds).size !== r.gameIds.length || a.metrics.G !== r.gameIds.length || r.gameIds.some(id => { const g = games.get(id); return !g || g.stage !== a.scope.stage || ![g.homeTeamId, g.awayTeamId].includes(a.teamId); })) ctx.addIssue({ code: "custom", message: "Invalid CS participant/scope/sample" });
+  }
+});
+export type NpbCsDataset = z.infer<typeof npbCsDatasetSchema>;

@@ -1,6 +1,7 @@
 import { canonicalEntityRefSchema } from "./cross-league";
 import { z } from "zod";
 import { compareIds } from "./player-compare";
+import { progressionMetrics } from "./npb-player-progression";
 import { metricNumber, selectedTeams } from "./product-comparison";
 import type { CompareMetrics } from "./player-compare";
 import { viewConditions } from "./portable-conditions";
@@ -12,10 +13,21 @@ export function portableRoute(path: string, search = ""): string | null {
   const parts = path.split("/").filter(Boolean), league = parts[0];
   if (league !== "NPB" && league !== "MLB") return null;
   const resource = parts[1], source = new URLSearchParams(search), clean = new URLSearchParams();
+  if (league === "NPB" && parts.length === 2 && ["cs", "postseason"].includes(resource ?? "")) {
+    if(source.has("season")&&source.get("season")!=="2026")return null;
+    clean.set("season","2026");
+    if(source.has("stage")&&!["all","npb_cs_first","npb_cs_final"].includes(source.get("stage")!))return null;
+    if(source.has("role")&&!["batting","pitching"].includes(source.get("role")!))return null;
+    for(const key of ["stage","role"])if(source.has(key))clean.set(key,source.get(key)!);
+    if(source.has("q"))clean.set("q",source.get("q")!.slice(0,100));
+    if(/^\d{1,4}$/.test(source.get("page")??""))clean.set("page",source.get("page")!);
+    return `/${league}/${resource}?${clean}`;
+  }
   if (parts.length === 2 && ["data", "history"].includes(resource ?? "")) {
     const conditions = new URLSearchParams(viewConditions(source, true, league));
     if(league==="NPB"&&resource==="history") {
       if(source.has("years")&&/^(?:20\d{2}(?:,20\d{2}){0,3})?$/.test(source.get("years")!))conditions.set("years",source.get("years")!);
+      if(progressionMetrics.some(k=>k===source.get("trendMetric")))conditions.set("trendMetric",source.get("trendMetric")!);
       if(/^\d{1,3}$/.test(source.get("page")??""))conditions.set("page",source.get("page")!);
     }
     return `/${league}/${resource}${conditions.size ? `?${conditions}` : ""}`;
@@ -29,6 +41,7 @@ export function portableRoute(path: string, search = ""): string | null {
     if(!["regular","preseason","postseason"].includes(competition)||
       (competition==="postseason"?!["npb_cs_first","npb_cs_final","japan_series"].includes(stage??""):stage!==null))return null;
     clean.set("competition",competition);if(stage)clean.set("stage",stage);
+    if(progressionMetrics.some(k=>k===source.get("trendMetric")))clean.set("trendMetric",source.get("trendMetric")!);
     if(["batting","pitching"].includes(source.get("role")??""))clean.set("role",source.get("role")!);
     if(source.has("years")&&/^(?:20\d{2}(?:,20\d{2}){0,3})?$/.test(source.get("years")!))clean.set("years",source.get("years")!);
   } else if (league === "MLB" && parts.length === 2 && resource === "form") {

@@ -7,17 +7,22 @@ import { parseWikipediaHistorical } from "../src/infrastructure/providers/wikipe
 import { npbHistoricalDatasetSchema, npbHistoricalRowSchema } from "../src/domain/npb-historical";
 import { assertHistoricalBridge } from "../src/infrastructure/providers/npb-historical-admission";
 import { z } from "zod";
+import { historicalImportYears, yearsForSavedIdentity } from "../src/data/npb-historical-years";
+import { npbPlayerDirectorySchema } from "../src/domain/npb-player-directory";
 
 // Offline-only replay of documented MediaWiki API archives. No collector, remote DB or identity mutation.
 const [input, output] = process.argv.slice(2);
 if (!input || !output || !resolve(output).startsWith(`${resolve(".data")}/`.replaceAll("/", process.platform === "win32" ? "\\" : "/"))) throw Error("Usage: import-npb-historical-wikipedia.ts archive.json .data/output-directory");
 const started = performance.now(), bytes = await readFile(input), inputSha256 = createHash("sha256").update(bytes).digest("hex");
 const archive = z.object({ observedAt:z.iso.datetime(), pages:z.record(z.string(),z.unknown()),titles:z.array(z.object({ playerId:z.uuid(),npbId:z.string(),wikidataId:z.string(),title:z.string(),identityScope:z.literal("historical_only").optional(),sourceObservedAt:z.iso.datetime().optional() })) }).parse(JSON.parse(bytes.toString("utf8")));
-const years = Array.from({length:11},(_,i)=>2015+i), players=[], rows=[], issues=[];
+const directoryFile=process.argv.find(a=>a.startsWith("--current-directory="))?.slice(20);
+const directory=directoryFile?npbPlayerDirectorySchema.parse(JSON.parse(await readFile(directoryFile,"utf8"))):null;
+const directoryIds=new Set(directory?.players.map(p=>p.playerId)??[]);
+const years = historicalImportYears(Number(process.argv.find(a=>a.startsWith("--from-year="))?.slice(12)??2015),!!directory), players=[], rows=[], issues=[];
 for (const link of archive.titles) {
   assertHistoricalBridge(link);
   try {
-    const parsed = parseWikipediaHistorical(archive.pages[link.title],link,years);
+    const parsed = parseWikipediaHistorical(archive.pages[link.title],link,yearsForSavedIdentity(years,link.playerId,link.identityScope==="historical_only",directoryIds));
     assertHistoricalBridge(link,parsed.player);
     if (parsed.rows.length) { players.push(parsed.player); rows.push(...parsed.rows); }
     issues.push(...parsed.issues.map(issue=>({playerId:link.playerId,title:link.title,...issue})));

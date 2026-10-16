@@ -24,7 +24,7 @@ export function previousYearDelta(rows: readonly ComparisonRow[], row: Compariso
 export function comparisonValue(key: string, value: number | null): string {
   if (value === null) return "—";
   if (key === "outsRecorded") return `${Math.floor(value / 3)}.${value % 3}`;
-  return value.toFixed(["AVG", "OBP", "SLG", "OPS"].includes(key) ? 3 : ["ERA", "K9"].includes(key) ? 2 : 0);
+  return value.toFixed(["AVG", "OBP", "SLG", "OPS"].includes(key) ? 3 : ["ERA", "K9", "WHIP", "BB9"].includes(key) ? 2 : 0);
 }
 export function collectionSeasonCheckpoint(metrics: CompareMetrics | null, role: "batting" | "pitching"): string {
   return (role === "batting" ? ["H", "HR"] as const : ["SO", "SV"] as const).flatMap(k => {

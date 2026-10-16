@@ -8,6 +8,7 @@ import legacy from "../src/data/npb-historical-legacy-release.json";
 import retainedReleases from "../src/data/npb-historical-retained-releases.json";
 import { assertHistoricalBridge } from "../src/infrastructure/providers/npb-historical-admission";
 import { stageNpbCompetition } from "./stage-npb-competition";
+import { stageNpbCs } from "./stage-npb-cs";
 
 const local=process.argv.find(a=>a.startsWith("--input="))?.slice(8), target=process.argv.find(a=>a.startsWith("--output="))?.slice(9) ?? "dist/data/npb/historical";
 const started=performance.now();
@@ -41,4 +42,5 @@ const retained=await stage(legacy,target);
 for(const pin of retainedReleases) await stage(pin,join(target,pin.sha256));
 const current=await stage(release,join(target,release.sha256),local);
 const competition=await stageNpbCompetition(join(target,"..","competitions"));
-console.log(JSON.stringify({retained,current,competition}));
+const cs=await stageNpbCs(join(target,"..","competitions"));
+console.log(JSON.stringify({retained,current,competition,cs}));

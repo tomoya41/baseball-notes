@@ -362,6 +362,34 @@ public class ReleaseQualityTest {
         shell("input keyevent KEYCODE_BACK"); waitText("2025年 · CS ファイナル");
         assertTrue("System Back preserves the exact stage", js("location.hash").contains("stage=npb_cs_final"));
     }
+    @Test public void npbSavedCsAndProgressionRemainSeparateAtLargeFont() throws Exception {
+        Intent link = new Intent(Intent.ACTION_VIEW, Uri.parse("baseballnotes://NPB/cs?season=2026&stage=npb_cs_final&role=pitching"));
+        link.setClassName("com.tomoya41.baseballnotes", "jp.baseballdata.app.MainActivity");
+        scenario = ActivityScenario.launch(link);
+        waitText("2026 クライマックスシリーズ"); waitText("リバン・モイネロ");
+        waitCondition("Bounded CS results", "document.querySelectorAll('a.player-row').length>0 && document.querySelectorAll('a.player-row').length<=30");
+        js("Array.from(document.querySelectorAll('a.player-row')).find(a=>a.textContent.includes('リバン・モイネロ')).click()");
+        waitText("2026年 · CS ファイナル"); waitText("2.2");
+        assertTrue("CS sample stays explicit", js("document.body.innerText").contains("CS全試合・選手の大会通算成績ではありません"));
+        String csHash=js("location.hash");
+        for(String scale:new String[]{"1.5","2.0"}) {
+            shell("settings put system font_scale " + scale); scenario.recreate(); waitText("2.2"); waitViewport(360);
+            assertEquals("CS has no overflow at " + scale, "true", js("document.documentElement.scrollWidth<=innerWidth"));
+            screenshot("npb-cs-font-" + scale.replace(".", "") + "-light");
+            setTheme("dark", "ダーク"); js("location.hash='"+csHash+"'"); waitText("2.2");
+            assertEquals("Dark CS has no overflow", "true", js("document.documentElement.scrollWidth<=innerWidth"));
+            screenshot("npb-cs-font-" + scale.replace(".", "") + "-dark");
+            setTheme("light", "ライト"); js("location.hash='"+csHash+"'"); waitText("2.2");
+        }
+        shell("settings put system font_scale 1.0"); scenario.recreate(); waitText("2.2");
+        js("const s=document.querySelector('select[aria-label=\"選手成績の年度\"]');s.value='2025';s.dispatchEvent(new Event('change',{bubbles:true}))");
+        waitText("成績の変化");
+        assertTrue("Year switch resets unsupported stage", js("location.hash").contains("competition=regular"));
+        assertFalse("No stale CS stage in Regular", js("location.hash").contains("stage="));
+        waitCondition("Accessible progression chart", "!!document.querySelector('svg[aria-label*=\"年度推移\"]') && document.querySelectorAll('.player-progression dd').length===4");
+        screenshot("npb-progression-360");
+        shell("input keyevent KEYCODE_BACK"); waitText("2026年 · CS ファイナル"); waitText("2.2");
+    }
     @Test public void nativePreferencesSurviveRestartAndFirebaseDisabled() throws Exception {
         String fixture = "{\"items\":[{\"league\":\"NPB\",\"kind\":\"player\",\"entityId\":\"canonical-player\"}]}";
         assertTrue(EodMessagingService.isFavoritePlayer(fixture, "canonical-player"));

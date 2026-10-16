@@ -10,6 +10,8 @@ import { canonicalDeepLink, parentNativeRoute } from "../src/domain/native-navig
 import { portableRoute } from "../src/domain/product-sharing";
 import { historicalPitchingKeys } from "../src/domain/npb-historical";
 vi.mock("../src/application/npb-historical-reader",()=>({readNpbHistoricalManifest:vi.fn(),readNpbHistoricalSeason:vi.fn()}));
+vi.mock("../src/application/npb-published-player",()=>({readPublishedPlayerStats:vi.fn(async()=>null)}));
+vi.mock("../src/application/npb-cs-reader",()=>({admittedCsScopes:[{playerId:"00000000-0000-4000-8000-000000000002",season:2026,stage:"npb_cs_final"}],readNpbCs:vi.fn(async()=>({rows:[],games:[],sources:[]}))}));
 vi.mock("../src/application/npb-competition-reader",()=>({admittedNpbPostseasonScopes:[{playerId:"00000000-0000-4000-8000-000000000001",season:2025,competition:"postseason",stage:"npb_cs_final"}],readNpbPostseasonAggregates:vi.fn()}));
 const id="00000000-0000-4000-8000-000000000001",metadata={playerId:id,name:"架空のとても長いテスト選手名",wikidataId:"Q123",npbId:"12345",article:"架空テスト選手",revision:123,revisionAt:"2026-01-01T00:00:00Z",contentSha256:"b".repeat(64)};
 const m={schemaVersion:1 as const,league:"NPB" as const,competition:"regular" as const,temporalScope:"historical" as const,coverage:"partial" as const,license:"CC-BY-SA-4.0" as const,inputSha256:"a".repeat(64),observedAt:"2026-10-02T00:00:00Z",seasons:[{season:2025,rows:1,players:1,sha256:"b".repeat(64),bytes:100}],players:[{playerId:id,name:metadata.name,seasons:[2025]}]};
@@ -21,6 +23,20 @@ afterEach(()=>{vi.clearAllMocks();vi.unstubAllGlobals();});
 function Location(){return <output>{useLocation().search}</output>;}
 async function mount(query:string,playerId=id){const div=document.createElement("div");document.body.append(div);const root=createRoot(div);await act(async()=>root.render(<MemoryRouter initialEntries={[`/NPB/players/${playerId}/seasons${query}`]}><Location/><Routes><Route path="/NPB/players/:playerId/seasons" element={<NpbPlayerSeasons repository={directory}/>}/></Routes></MemoryRouter>));return{div,close:async()=>{await act(async()=>root.unmount());div.remove();}};}
 describe("NPB player year/competition entry",()=>{
+  it("keeps independent saved Current data usable when the historical manifest fails",async()=>{
+    vi.mocked(readNpbHistoricalManifest).mockRejectedValue(Error("Historical unavailable"));
+    const {div,close}=await mount("?season=2026&role=pitching");
+    try {expect(div.textContent).toContain("2026年の保存済みシーズン成績");expect(div.textContent).toContain("過去年度の一覧は取得できません");expect(readNpbHistoricalSeason).not.toHaveBeenCalled();}
+    finally {await close();}
+  });
+  it("keeps independent 2026 CS data usable when the historical manifest fails",async()=>{
+    const csPlayer="00000000-0000-4000-8000-000000000002";
+    vi.mocked(readNpbHistoricalManifest).mockRejectedValue(Error("Historical unavailable"));
+    directory.findLatestNpb.mockResolvedValue({players:[{playerId:csPlayer,displayName:"架空CS選手"}]});
+    const {div,close}=await mount("?season=2026&competition=postseason&stage=npb_cs_final&role=pitching",csPlayer);
+    try {expect(div.textContent).toContain("2026年 · CS ファイナル");expect(div.textContent).toContain("この役割のCS成績は未収録です");expect(readNpbHistoricalSeason).not.toHaveBeenCalled();}
+    finally {await close();}
+  });
   it("retries a failed lazy comparison without changing its canonical scope",async()=>{vi.mocked(readNpbHistoricalSeason).mockRejectedValueOnce(Error("transient offline")).mockResolvedValue(regular);const {div,close}=await mount("?season=2025&role=pitching&competition=postseason&stage=npb_cs_final");try{await act(async()=>{const d=Array.from(div.querySelectorAll("details")).find(d=>d.querySelector("summary")?.textContent==="同年の公式戦成績と見比べる")!;d.open=true;d.dispatchEvent(new Event("toggle",{bubbles:true}));});expect(div.textContent).toContain("公式戦成績を取得できません");await act(async()=>{Array.from(div.querySelectorAll("button")).find(b=>b.textContent==="比較を再試行")!.click();});expect(readNpbHistoricalSeason).toHaveBeenCalledTimes(2);expect(div.textContent).toContain("2025年 · 公式戦（一部収録）");expect(div.textContent).not.toContain("公式戦成績を取得できません");expect(div.querySelector("output")?.textContent).toContain("stage=npb_cs_final");}finally{await close();}});
   it("retries an annual read without requiring a different admitted year",async()=>{vi.mocked(readNpbHistoricalSeason).mockRejectedValueOnce(Error("offline")).mockResolvedValue(regular);const {div,close}=await mount("?season=2025&role=pitching");try{expect(div.textContent).toContain("年度別成績を取得できません");await act(async()=>{Array.from(div.querySelectorAll("button")).find(b=>b.textContent==="年度成績を再試行")!.click();});expect(div.textContent).toContain("2025年の投球成績");expect(readNpbHistoricalSeason).toHaveBeenCalledTimes(2);}finally{await close();}});
   it("rejects unsupported browser role parameters without silently fetching batting",async()=>{const {div,close}=await mount("?season=2025&role=unknown");try{expect(div.textContent).toContain("指定した成績区分は未対応");expect(readNpbHistoricalSeason).not.toHaveBeenCalled();expect(readNpbPostseasonAggregates).not.toHaveBeenCalled();}finally{await close();}});
