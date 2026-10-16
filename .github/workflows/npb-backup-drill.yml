@@ -25,7 +25,9 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Export Turso facts and restore into new scratch SQLite
+        shell: bash
         run: |
+          set -euo pipefail
           mkdir -p .data
           npm run -s backup:npb:drill -- --require-remote | tee .data/backup-drill-report.json
         env:
