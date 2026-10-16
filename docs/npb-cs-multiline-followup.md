@@ -19,6 +19,8 @@ All six rows were re-evaluated from the same previously archived revisions, with
 
 Existing 125 rows and eight Game records are byte-equivalent as data values: changed 0, removed 0; added one player and one pitching row. This is partial collected-game data, not full CS totals or independent evidence for the six shortened Regular games. The 61-item exclusion reduction reflects six physical-cell errors becoming five identity exclusions, **not 61 recovered players**.
 
+The earlier PR #37 Regular extension added 234 rows for **61 saved Directory identities**. Directory-to-Historical matches remain 577/740 and missing 163; across the newly admitted 2002–2025 range, one-year-only players change 91→90 and multi-year players 486→487. These are saved identities, not independently confirmed current registrations. No new active-status, jersey or identity claim is made.
+
 v2 gzip SHA256 `3bfaf6d22d2093a452e93a542ba3b416e9740b86b429792acb93d08fd824455a`; public body SHA256 `b5add5d74403a4ba791bd277f51ae3b4950a5445e0fb12b666cfc698deef0cdd`; same archived-source input SHA256 `362a4c88222069bd046d5782ecada65c0adffd86849b0b4be7306d40a656d573`. New immutable release `npb-cs-wikipedia-20261017-v2`; never overwrite v1.
 
 The v1 public URL/body remains pinned and staged alongside v2 for installed APKs. Publication verification reads and hashes both generations. Current v2 needs one bounded 112,056-byte fetch, at most 30 list rows/page; retained v1 adds no client fetch. Home extra fetch = 0. Independent scratch readback/idempotent replay PASS; canonical writes = 0.
