@@ -6,6 +6,7 @@ import { historicalRates, npbHistoricalRowSchema, sumHistoricalRows, npbHistoric
 /** Additive NPB-only contract. Legacy regular/postseason APIs remain unchanged. */
 export const npbCompetitionScopeSchema=z.strictObject({
   league:z.literal("NPB"),season:npbSeasonMetadataSchema.shape.season,
+  temporalScope:z.enum(["historical","saved_current"]),
   competition:npbSeasonMetadataSchema.shape.competitionType.extract(["regular","preseason","postseason"]),
   stage:postseasonRoundSchema.extract(["npb_cs_first","npb_cs_final","japan_series"]).nullable(),
 }).refine(s=>s.competition==="postseason" ? s.stage!==null : s.stage===null,"Competition/stage mismatch");
@@ -25,7 +26,7 @@ export const npbPostseasonAggregateDatasetSchema=z.strictObject({
   players:z.array(npbHistoricalPlayerSchema).min(1).max(1000),rows:z.array(npbCompetitionAggregateSchema).min(1).max(10000),
 }).superRefine((d,ctx)=>{
   const ids=new Set(d.players.map(p=>p.playerId)),keys=d.rows.map(r=>`${r.playerId}:${r.season}:${r.scope.stage}:${r.teamId}:${r.role}`);
-  if(ids.size!==d.players.length||new Set(d.players.map(p=>p.npbId)).size!==d.players.length||new Set(keys).size!==keys.length||d.rows.some(r=>!ids.has(r.playerId)||r.season>2025||r.scope.competition!=="postseason"))ctx.addIssue({code:"custom",message:"Invalid scoped historical identity/row"});
+  if(ids.size!==d.players.length||new Set(d.players.map(p=>p.npbId)).size!==d.players.length||new Set(keys).size!==keys.length||d.rows.some(r=>!ids.has(r.playerId)||r.season>2025||r.scope.temporalScope!=="historical"||r.scope.competition!=="postseason"))ctx.addIssue({code:"custom",message:"Invalid scoped historical identity/row"});
   if(d.players.some(p=>p.revisionAt>(p.sourceObservedAt??d.observedAt)||(p.sourceObservedAt??d.observedAt)>d.observedAt))ctx.addIssue({code:"custom",message:"Source revision postdates acquisition"});
 });
 export type NpbPostseasonAggregateDataset=z.infer<typeof npbPostseasonAggregateDatasetSchema>;
@@ -33,7 +34,7 @@ export function sumNpbCompetitionRows(input:readonly unknown[]) {
   const rows=input.map(r=>npbCompetitionAggregateSchema.parse(r));
   if(!rows.length)throw Error("Select one competition");
   const scope=rows[0]!.scope;
-  if(rows.some(r=>r.scope.competition!==scope.competition||r.scope.stage!==scope.stage))throw Error("Do not mix competitions or stages");
+  if(rows.some(r=>r.scope.temporalScope!==scope.temporalScope||r.scope.competition!==scope.competition||r.scope.stage!==scope.stage))throw Error("Do not mix temporal scopes, competitions or stages");
   const keys=rows.map(r=>`${r.playerId}:${r.season}:${r.teamId}:${r.role}`);
   if(new Set(keys).size!==keys.length)throw Error("Duplicate aggregate");
   const total=sumHistoricalRows(rows);

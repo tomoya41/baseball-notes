@@ -1,9 +1,9 @@
 {
   "assetUrl": "https://github.com/tomoya41/baseball-notes/releases/download/npb-history-wikipedia-20261016-v5/npb-historical-postseason.json.gz",
-  "sha256": "60813cbccab07494ac4c3186024a2a46897ac6d5f198e4288b2a6cf9a9f96a7e",
+  "sha256": "aedfdd74c9f149779222a9d588862b08a482734281020b2d804430c985d5b5ef",
   "inputSha256": "1e383d106ef9db5329aca692d08e938e4d10dd931e945a604bb859347cdd570f",
-  "bodySha256": "fca7dcac9c4f6cd626a25eac7d08cc7283327b915a5a7e9e313889aa549d1860",
-  "bytes": 2526,
+  "bodySha256": "a5e29a1f854e7b1dd0472ab40862393953473e8ff1826ed8772f36e29b4922ee",
+  "bytes": 2642,
   "players": 1,
   "rows": 4,
   "scopes": [

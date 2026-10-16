@@ -136,7 +136,7 @@ export function parseWikipediaNpbPostseason(raw:unknown,bridge:HistoricalBridge,
     if((stage==="japan_series")!==stageCell.includes("年の日本シリーズ|"))throw Error("Postseason stage link mismatch");
     const metrics:Record<string,number|null>=Object.fromEntries(historicalPitchingKeys.map(k=>[k,null]));
     for(const [i,key] of keys.entries())metrics[key]=key==="outsRecorded"?inningsToOuts(plain(grid[i+3]!)):numeric(grid[i+3]!);
-    rows.push(npbCompetitionAggregateSchema.parse({playerId:bridge.playerId,season:Number(year),teamId:`npb:team:${team}`,role:"pitching",metrics,scope:{league:"NPB",season:Number(year),competition:"postseason",stage}}));
+    rows.push(npbCompetitionAggregateSchema.parse({playerId:bridge.playerId,season:Number(year),teamId:`npb:team:${team}`,role:"pitching",metrics,scope:{league:"NPB",season:Number(year),temporalScope:"historical",competition:"postseason",stage}}));
   }
   return {player:identity,rows};
 }

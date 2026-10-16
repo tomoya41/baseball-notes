@@ -4,7 +4,7 @@ import { historicalBattingKeys, npbHistoricalRowSchema } from "../src/domain/npb
 import { npbCs2026FinalRule } from "../src/domain/npb-cs-rules";
 import { competitionFromSearch, seriesSchema } from "../src/domain/competition";
 const id="00000000-0000-4000-8000-000000000001";
-const scope={league:"NPB" as const,season:2026,competition:"regular" as const,stage:null};
+const scope={league:"NPB" as const,season:2026,temporalScope:"saved_current" as const,competition:"regular" as const,stage:null};
 const row={playerId:id,season:2026,teamId:"npb:team:tigers",role:"batting",metrics:Object.fromEntries(historicalBattingKeys.map(k=>[k,null])),scope};
 const evidence={season:2026,leaderTeamId:"npb:team:tigers",challengerTeamId:"npb:team:giants",leader:{wins:80,losses:60},challenger:{wins:71,losses:69},standingsEvidenceUrl:"https://example.test/fictional-final-standings",observedAt:"2026-10-01T00:00:00Z"};
 describe("NPB scoped aggregates; fictional fixture only",()=>{
@@ -19,6 +19,7 @@ describe("NPB scoped aggregates; fictional fixture only",()=>{
     expect(npbCompetitionScopeSchema.safeParse({...scope,competition:"preseason",stage:"japan_series"}).success).toBe(false);
     expect(npbCompetitionAggregateSchema.safeParse({...row,scope:{...scope,season:2025}}).success).toBe(false);
     expect(()=>sumNpbCompetitionRows([row,row])).toThrow(/Duplicate/);
+    expect(()=>sumNpbCompetitionRows([row,{...row,season:2025,scope:{...scope,season:2025,temporalScope:"historical"}}])).toThrow(/mix/);
     expect(competitionFromSearch(new URLSearchParams())).toBe("regular");
   });
   it("requires independent no-game and completeness evidence",()=>{
