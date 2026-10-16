@@ -1,0 +1,57 @@
+[
+  {
+    "assetUrl": "https://github.com/tomoya41/baseball-notes/releases/download/npb-history-wikipedia-20261016-v4/npb-historical-wikipedia.json.gz",
+    "sha256": "350e1ca2b329a9c9fbbefeed5a2fa697a9edbc425a49afac8cd7884f3464b948",
+    "inputSha256": "1e383d106ef9db5329aca692d08e938e4d10dd931e945a604bb859347cdd570f",
+    "files": {
+      "2015.json": {
+        "bytes": 61876,
+        "sha256": "dae4a9a6a892427f2e762d73e0c21b56aca571887d5358860080ff6dcbe6715e"
+      },
+      "2016.json": {
+        "bytes": 75685,
+        "sha256": "f7191e82aa46c95ac7ab02d1bd8658e36b1331171191db9894db32a60bc9fa93"
+      },
+      "2017.json": {
+        "bytes": 97240,
+        "sha256": "1ceb8082bd5cf891cbf545f6602cf1ca84ac0ad0937d4875802437f196b9799e"
+      },
+      "2018.json": {
+        "bytes": 119518,
+        "sha256": "6d38a441cad119426e9405b5ecc636d8c8d9c8ee5e9e27dff677798864805ffc"
+      },
+      "2019.json": {
+        "bytes": 145626,
+        "sha256": "858e9dd1ae34946a4df026c12cfa676d2a12989245ec80f21e0810b0e57d2aa6"
+      },
+      "2020.json": {
+        "bytes": 166758,
+        "sha256": "82267e5870080d7bf327b68b974970f76a0ec82db7084612ab42a59e81272fbd"
+      },
+      "2021.json": {
+        "bytes": 197115,
+        "sha256": "f1afdcc9e752919baab2b68a74e619ec01a2f01d20b1db8b53d4d2981f71b7ec"
+      },
+      "2022.json": {
+        "bytes": 236928,
+        "sha256": "76f6ddc5899d24f15e398fdbdf19318645562d9658c907f103366bed427551b9"
+      },
+      "2023.json": {
+        "bytes": 254971,
+        "sha256": "411ae92c5ced2aeb04b96e015fc5c37c8ae75ac868bd8c52d39c3e166ee5bed4"
+      },
+      "2024.json": {
+        "bytes": 295417,
+        "sha256": "ab03e18988020f4d25216999a5f7d74baa583d125106916eecf2aa56a28bbc4e"
+      },
+      "2025.json": {
+        "bytes": 348520,
+        "sha256": "c9ebdc5910b52894084cad98aebdef91f9810b0efc46c0af9b3765fe9f522039"
+      },
+      "manifest.json": {
+        "bytes": 68863,
+        "sha256": "2b9b8cc7ac079a0d92c96a1732fdcbf8aa3de3eebd61210dc8d66c1a0c908be5"
+      }
+    }
+  }
+]

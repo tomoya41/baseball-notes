@@ -2,10 +2,15 @@ import {createHash} from "node:crypto";
 import {describe,expect,it,vi} from "vitest";
 import {verifyRetainedFiles} from "../scripts/verify-npb-historical-publication";
 import legacy from "../src/data/npb-historical-legacy-release.json";
+import retained from "../src/data/npb-historical-retained-releases.json";
 const body=Buffer.from("immutable v3"),pin={bytes:body.length,sha256:createHash("sha256").update(body).digest("hex")};
 describe("retained Historical publication guard",()=>{
   it("pins the complete legacy manifest and eleven annual URLs",()=>{
     expect(Object.keys(legacy.files).sort()).toEqual(["manifest.json",...Array.from({length:11},(_,i)=>`${2015+i}.json`)].sort());
+  });
+  it("also protects every namespaced generation used by installed APKs",()=>{
+    expect(retained.length).toBeGreaterThan(0);
+    for(const pin of retained){expect(pin.sha256).toMatch(/^[a-f0-9]{64}$/);expect(Object.keys(pin.files).sort()).toEqual(Object.keys(legacy.files).sort());}
   });
   it("verifies every retained file even when the new generation is valid",async()=>{
     const read=vi.fn().mockResolvedValue(body);expect(await verifyRetainedFiles(read,{"manifest.json":pin,"2025.json":pin})).toBe(2);expect(read.mock.calls.map(([p])=>p)).toEqual(["manifest.json","2025.json"]);

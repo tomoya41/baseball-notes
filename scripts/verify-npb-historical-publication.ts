@@ -5,6 +5,9 @@ import { npbHistoricalDatasetSchema, npbHistoricalManifestSchema } from "../src/
 import release from "../src/data/npb-historical-release.json";
 import { assertHistoricalBridge } from "../src/infrastructure/providers/npb-historical-admission";
 import legacy from "../src/data/npb-historical-legacy-release.json";
+import retainedReleases from "../src/data/npb-historical-retained-releases.json";
+import competitionPin from "../src/data/npb-postseason-release.json";
+import { npbPostseasonAggregateDatasetSchema } from "../src/domain/npb-competition";
 import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 
@@ -26,7 +29,8 @@ async function load(file:string) {
   if(!response.ok)throw Error(`Historical publication HTTP ${response.status}: ${file}`);
   return Buffer.from(await response.arrayBuffer());
 }
-const retainedFiles=await verifyRetainedFiles(load,legacy.files);
+let retainedFiles=await verifyRetainedFiles(load,legacy.files);
+for(const pin of retainedReleases) retainedFiles+=await verifyRetainedFiles(file=>load(`${pin.sha256}/${file}`),pin.files);
 const current=(file:string)=>load(`${release.sha256}/${file}`);
 const manifest=npbHistoricalManifestSchema.parse(JSON.parse((await current("manifest.json")).toString("utf8")));
 if(manifest.inputSha256!==release.inputSha256)throw Error("Unexpected Historical input generation");
@@ -40,6 +44,11 @@ for(const year of manifest.seasons) {
   rows+=d.rows.length;
 }
 if(players.size!==manifest.players.length)throw Error("Historical directory mismatch");
-console.log(JSON.stringify({status:"PASS",retainedFiles,seasons:manifest.seasons.map(s=>s.season),players:players.size,rows,coverage:manifest.coverage,canonicalWrites:0,httpFetches:fetches}));
+const competitionBytes=await load(`../competitions/${competitionPin.sha256}/postseason.json`);
+if(competitionBytes.length!==competitionPin.bytes||createHash("sha256").update(competitionBytes).digest("hex")!==competitionPin.bodySha256)throw Error("Competition publication mismatch");
+const competition=npbPostseasonAggregateDatasetSchema.parse(JSON.parse(competitionBytes.toString("utf8")));
+if(competition.inputSha256!==competitionPin.inputSha256||competition.rows.length!==competitionPin.rows)throw Error("Competition generation mismatch");
+for(const p of competition.players)assertHistoricalBridge(p,p);
+console.log(JSON.stringify({status:"PASS",retainedFiles,seasons:manifest.seasons.map(s=>s.season),players:players.size,rows,competitionRows:competition.rows.length,coverage:manifest.coverage,canonicalWrites:0,httpFetches:fetches}));
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url))await main();
