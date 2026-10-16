@@ -46,6 +46,8 @@ export const seriesSchema = z.object({
     g.winnerId !== (g.homeRuns > g.awayRuns ? g.homeTeamId : g.awayRuns > g.homeRuns ? g.awayTeamId : null) : g.winnerId !== null))
     ctx.addIssue({ code: "custom", message: "Game result mismatch" });
   const rule = s.npbFinalRuleEvidence ? npbCs2026FinalRule(s.npbFinalRuleEvidence) : null;
+  if(s.league==="NPB"&&s.round==="npb_cs_final"&&s.season>=2026&&!rule)
+    ctx.addIssue({code:"custom",message:"Reviewed final-standings evidence required for 2026+ Final Stage"});
   if (s.npbFinalRuleEvidence && (s.league !== "NPB" || s.round !== "npb_cs_final" || s.season !== 2026 ||
     !ids.has(s.npbFinalRuleEvidence.leaderTeamId) || !ids.has(s.npbFinalRuleEvidence.challengerTeamId) ||
     s.bestOf !== rule!.maxPlayedGames || s.winsRequired !== rule!.winsRequired ||

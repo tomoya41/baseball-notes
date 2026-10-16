@@ -45,6 +45,10 @@ describe("2026 CS Final independently evidenced rules",()=>{
     const s={id:"npb:series:"+id,league:"NPB",season:2026,competitionType:"postseason",round:"npb_cs_final",name:"Fictional test only",bestOf:7,winsRequired:5,npbFinalRuleEvidence:e,
       teams:[{teamId:e.leaderTeamId,playedWins:0,advantageWins:2,seriesTotal:2},{teamId:e.challengerTeamId,playedWins:0,advantageWins:0,seriesTotal:0}],games:[],status:"in_progress",winnerId:null,clinched:false,advancesToSeriesId:null,effectiveDate:"2026-10-01"};
     expect(seriesSchema.parse(s).games).toEqual([]);
+    const normal={...s,bestOf:6,winsRequired:4,npbFinalRuleEvidence:evidence,teams:s.teams.map((t,i)=>({...t,advantageWins:i===0?1:0,seriesTotal:i===0?1:0}))};
+    expect(seriesSchema.safeParse(normal).success).toBe(true);
+    expect(seriesSchema.safeParse({...normal,npbFinalRuleEvidence:undefined}).success).toBe(false);
+    expect(seriesSchema.safeParse({...normal,npbFinalRuleEvidence:undefined,bestOf:99,winsRequired:99}).success).toBe(false);
     expect(seriesSchema.safeParse({...s,npbFinalRuleEvidence:undefined}).success).toBe(false);
     expect(seriesSchema.safeParse({...s,bestOf:6}).success).toBe(false);
     expect(seriesSchema.safeParse({...s,npbFinalRuleEvidence:{...e,season:2025}}).success).toBe(false);
