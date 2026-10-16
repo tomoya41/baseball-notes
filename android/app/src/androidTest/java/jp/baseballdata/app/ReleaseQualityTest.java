@@ -394,6 +394,10 @@ public class ReleaseQualityTest {
         shell("input keyevent KEYCODE_BACK"); waitText("2026年 · CS ファイナル"); waitText("2.2");
     }
     @Test public void longNavigationHistoryHasBoundedRecreationState() throws Exception {
+        assertEquals("/NPB/search?q=A%26B%3DC%25", MainActivity.savedRoute("https://localhost/#/NPB/search?q=A%26B%3DC%25"));
+        assertEquals("/privacy", MainActivity.savedRoute("https://localhost/#/privacy"));
+        assertNull("Pre-router load does not consume cold links", MainActivity.savedRoute("https://localhost/"));
+        assertNull("Oversized routes are not put in Activity state", MainActivity.savedRoute("https://localhost/#/NPB/search?q=" + "x".repeat(8200)));
         Intent link = new Intent(Intent.ACTION_VIEW, Uri.parse("baseballnotes://NPB/cs?season=2026&stage=npb_cs_final&role=pitching"));
         link.setClassName("com.tomoya41.baseballnotes", "jp.baseballdata.app.MainActivity");
         scenario = ActivityScenario.launch(link);
@@ -412,6 +416,13 @@ public class ReleaseQualityTest {
         });
         scenario.recreate(); waitText("2026 クライマックスシリーズ"); waitText("リバン・モイネロ");
         assertEquals("Long-history recreation retains the current scoped route", route, js("location.hash"));
+        js("location.hash='#/NPB/cs?season=2026&q=A%26B%3DC%25'");
+        waitCondition("Encoded search rendered", "document.querySelector('main input[type=search]')?.value==='A&B=C%'");
+        scenario.recreate();
+        waitCondition("Encoded search survives recreation", "document.querySelector('main input[type=search]')?.value==='A&B=C%'");
+        js("location.hash='#/privacy'"); waitText("プライバシー・データ");
+        scenario.recreate(); waitText("プライバシー・データ");
+        assertEquals("Top-level privacy is a resumable app screen", "#/privacy", js("location.hash"));
     }
     @Test public void nativePreferencesSurviveRestartAndFirebaseDisabled() throws Exception {
         String fixture = "{\"items\":[{\"league\":\"NPB\",\"kind\":\"player\",\"entityId\":\"canonical-player\"}]}";

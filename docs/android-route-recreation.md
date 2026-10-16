@@ -14,6 +14,8 @@ Font-scale changes retain Android's normal Activity recreation behavior; the man
 
 A pre-router loading page is not saved as a resumed route: until an NPB/MLB hash exists, the original cold-launch Intent remains authoritative.
 
+Follow-up review fixes preserve the **encoded** fragment (so `%26`, `%3D` and `%25` in filters remain data, not new delimiters) and include the existing top-level `/privacy` route. Only the path is decoded for the bounded app-route allowlist. Regression checks cover an encoded search and privacy recreation alongside the long-history test.
+
 Affected areas: Android Activity and native instrumentation only. Web presentation, data/provenance, Gates, canonical DB, persisted Favorites/Collections/Watch and signing remain unchanged. Rollback is a revert of this native-only commit; no migration or data deletion. No new service, permissions, dependency or monthly cost.
 
 Actual rerun results will be recorded in the delivery PR. Physical Pixel is disconnected and TalkBack remains NOT RUN. An emulator rerun does not establish physical-device quality.

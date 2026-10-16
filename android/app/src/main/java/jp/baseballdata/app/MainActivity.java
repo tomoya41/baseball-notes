@@ -18,8 +18,13 @@ public class MainActivity extends BridgeActivity {
     private static final int MAX_ROUTE_LENGTH = 8192;
     private static final int MAX_WEB_STATE_BYTES = 128 * 1024;
     private static boolean isSavedRoute(String route) {
-        return route != null && route.length() <= MAX_ROUTE_LENGTH &&
-            (route.startsWith("/NPB/") || route.startsWith("/MLB/"));
+        if (route == null || route.length() > MAX_ROUTE_LENGTH) return false;
+        String path = Uri.decode(route.split("\\?", 2)[0]);
+        return path.startsWith("/NPB/") || path.startsWith("/MLB/") || path.equals("/privacy");
+    }
+    static String savedRoute(String url) {
+        String route = url == null ? null : Uri.parse(url).getEncodedFragment();
+        return isSavedRoute(route) ? route : null;
     }
     @Override public void onCreate(Bundle savedInstanceState) {
         String route = savedInstanceState == null ? null : savedInstanceState.getString(WEB_ROUTE);
@@ -47,7 +52,7 @@ public class MainActivity extends BridgeActivity {
         super.onSaveInstanceState(outState);
         if (getBridge() != null) {
             String url = getBridge().getWebView().getUrl();
-            String route = url == null ? null : Uri.parse(url).getFragment();
+            String route = savedRoute(url);
             // A pre-router loading page must not consume a pending cold link.
             if (!isSavedRoute(route)) return;
             outState.putString(WEB_ROUTE, route);
