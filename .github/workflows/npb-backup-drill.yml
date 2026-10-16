@@ -1,6 +1,11 @@
 name: NPB portable backup restore drill
 on:
   workflow_dispatch:
+    inputs:
+      retain_encrypted:
+        description: Verify encrypted roundtrip and retain only ciphertext plus a safe summary for seven days
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -20,7 +25,52 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Export Turso facts and restore into new scratch SQLite
-        run: npm run backup:npb:drill -- --require-remote
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .data
+          npm run -s backup:npb:drill -- --require-remote | tee .data/backup-drill-report.json
         env:
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+      - name: Encrypt, decrypt and independently restore the retained archive
+        if: inputs.retain_encrypted
+        shell: bash
+        env:
+          NPB_BACKUP_ENCRYPTION_KEY: ${{ secrets.NPB_BACKUP_ENCRYPTION_KEY }}
+        run: |
+          set -euo pipefail
+          export_dir="$(node --input-type=module -e '
+            import fs from "node:fs"; import path from "node:path";
+            const report=JSON.parse(fs.readFileSync(".data/backup-drill-report.json","utf8"));
+            const dir=path.resolve(report.directory,"export"), base=path.resolve(".data")+path.sep;
+            if(report.result!=="PASS"||!dir.startsWith(base)||!path.basename(path.dirname(dir)).startsWith("backup-drill-"))throw Error("Unverified backup directory");
+            process.stdout.write(dir);')"
+          tar -C "$export_dir" -czf .data/npb-independent-backup.tar.gz .
+          npx tsx scripts/crypt-npb-backup.ts encrypt .data/npb-independent-backup.tar.gz .data/npb-independent-backup.tar.gz.enc
+          npx tsx scripts/crypt-npb-backup.ts decrypt .data/npb-independent-backup.tar.gz.enc .data/npb-independent-decrypted.tar.gz
+          cmp .data/npb-independent-backup.tar.gz .data/npb-independent-decrypted.tar.gz
+          mkdir -p .data/npb-encrypted-roundtrip/export
+          tar -xzf .data/npb-independent-decrypted.tar.gz -C .data/npb-encrypted-roundtrip/export
+          npm run -s backup:npb:restore -- --from=.data/npb-encrypted-roundtrip/export --to=.data/npb-encrypted-roundtrip/scratch.db > .data/npb-independent-restore.json
+          node --input-type=module <<'NODE'
+          import fs from "node:fs"; import {createHash} from "node:crypto";
+          const original=JSON.parse(fs.readFileSync(".data/backup-drill-report.json","utf8"));
+          const restored=JSON.parse(fs.readFileSync(".data/npb-independent-restore.json","utf8"));
+          if(original.result!=="PASS"||restored.result!=="PASS"||original.schemaVersion!==restored.schemaVersion||JSON.stringify(original.tables.map(t=>[t.name,t.rows]))!==JSON.stringify(restored.tables.map(t=>[t.name,t.rows])))throw Error("Independent encrypted restore mismatch");
+          const encrypted=fs.readFileSync(".data/npb-independent-backup.tar.gz.enc");
+          const summary={result:"PASS",observedAt:new Date().toISOString(),runId:process.env.GITHUB_RUN_ID,commit:process.env.GITHUB_SHA,mode:"manual_encrypted_restore",collectionEvidence:false,scheduledProductionEvidence:false,remoteWrites:0,sourceRequests:0,retentionDays:7,schemaVersion:restored.schemaVersion,encryptedBytes:encrypted.length,encryptedSha256:createHash("sha256").update(encrypted).digest("hex"),tables:original.tables.map(t=>({name:t.name,rows:t.rows,sha256:t.sha256})),readback:restored.readback};
+          fs.writeFileSync(".data/npb-independent-backup-summary.json",JSON.stringify(summary,null,2));
+          console.log(JSON.stringify(summary));
+          NODE
+      - name: Retain ciphertext and sanitized evidence only
+        if: inputs.retain_encrypted && success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: npb-independent-encrypted-${{ github.run_id }}
+          path: |
+            .data/npb-independent-backup.tar.gz.enc
+            .data/npb-independent-backup-summary.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
