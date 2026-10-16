@@ -47,8 +47,10 @@ export function parseWikipediaCs(raw: unknown, observedAt: string, identities: r
       const hs = number(fields.HR ?? ""), rs = number(fields.RR ?? "");
       if (hs === null || rs === null || hs !== rs && !plain(fields.WP ?? "")) throw Error("no_final_result_evidence");
       for (const [prefix, total] of [["R", rs], ["H", hs]] as const) {
-        const innings = Array.from({ length: 12 }, (_, i) => fields[`${prefix}${i + 1}`]).filter(v => v !== undefined);
-        if (innings.length < 9 || innings.some((v, i) => !/^\d+[xX]?$/.test(plain(v!)) && !(prefix === "H" && i === innings.length - 1 && /^X$/i.test(plain(v!)))) || innings.reduce((sum, v) => sum + Number(plain(v!).replace(/[xX]/, "") || 0), 0) !== total) throw Error("incomplete_innings_or_score_mismatch");
+        const cells = Array.from({ length: 12 }, (_, i) => fields[`${prefix}${i + 1}`]);
+        const last = cells.reduce((index, value, i) => value === undefined ? index : i, -1), innings = cells.slice(0, last + 1);
+        // No skipped inning becomes an implicit zero; X belongs only to the final home half.
+        if (innings.length < 9 || innings.some((v, i) => v === undefined || !(prefix === "H" && i === last ? /^(?:\d+[xX]?|X)$/i : /^\d+$/).test(plain(v))) || innings.reduce((sum, v) => sum + Number(plain(v!).replace(/[xX]/, "") || 0), 0) !== total) throw Error("incomplete_innings_or_score_mismatch");
       }
       const homeTeamId = npbHistoricalRowSchema.shape.teamId.parse(`npb:team:${home}`), awayTeamId = npbHistoricalRowSchema.shape.teamId.parse(`npb:team:${away}`);
       const id = `npb:game:${createHash("sha256").update([date, homeTeamId, awayTeamId, 1].join(":")).digest("hex").slice(0, 20)}`;

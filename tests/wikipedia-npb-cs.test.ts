@@ -35,6 +35,8 @@ it.each([
   template.replace("10月10日", "10月17日"),
   template.replace("|R1=1", "|R1=0"),
   template.replace("|Road=日本ハム", "|Road=不明球団"),
+  template.replace("|R2=0", "|R10=0"),
+  template.replace("|R1=1", "|R1=1X"),
   `<!--${template}-->`,
 ])("rejects future/placeholders/comments/unknown teams and inconsistent innings", content => { expect(parse(content).games).toHaveLength(0); });
 it("does not read unreviewed columns or convert baseball IP into decimal", () => {

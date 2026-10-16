@@ -20,7 +20,7 @@ export function PublishedPlayerFallback({ playerId, period, repository, pitcherB
   }, [playerId, period, repository, attempt]);
   const retry = () => { setState("loading"); setAttempt(a => a + 1); };
   if (state === "loading") return <LoadingSkeleton />;
-  if (state === "error") return <><DataState kind="source-unavailable" title={period === "currentMonth" ? "今月の成績は現在確認できません" : "APIと保存済み成績を読み込めません"} />{period !== "currentMonth" && <button onClick={retry}>保存済み成績を再試行</button>}</>;
+  if (state === "error") return <><DataState kind="source-unavailable" title={period === "currentMonth" ? "今月の成績は現在確認できません" : reason === "saved" ? "保存済み成績を読み込めません" : "APIと保存済み成績を読み込めません"} />{period !== "currentMonth" && <button onClick={retry}>保存済み成績を再試行</button>}</>;
   return <section className="stats-section" aria-label="公開保存済みの成績">
     <h2>{period === "season" ? "2026年の保存済みシーズン成績" : `${period.slice(0, -1)}日間の保存済み成績`}</h2>
     <p className="data-notice" role="status">{reason === "api_unavailable" ? "成績の更新を確認できないため、公開済みの保存データを表示しています。" : "公開済みの保存データを表示しています。"}現在の更新状況を確認できていません。</p>
