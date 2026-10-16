@@ -23,7 +23,7 @@ const labels: Record<string, string> = { G: "試合", PA: "打席", AB: "打数"
   SB: "盗塁", CS: "盗塁死", GS: "先発", outsRecorded: "IP", ERA: "ERA", K9: "K/9", BF: "対戦打者",
   ER: "自責点", pitchCount: "投球数", W: "勝", L: "敗", HLD: "HLD", SV: "SV" };
 
-export function StatTiles({ stats, keys, labelOverrides = {} }: { stats: PeriodStats; keys: readonly string[]; labelOverrides?: Record<string,string> }) {
+export function StatTiles({ stats, keys, labelOverrides = {} }: { stats: Pick<PeriodStats,"metrics">; keys: readonly string[]; labelOverrides?: Record<string,string> }) {
   return <div className="metric-grid recent-metrics">{keys.map((key) => <div className="metric-tile" key={key}>
     <span className="metric-tile__label"><MetricLabel metric={key} label={labelOverrides[key] ?? labels[key] ?? key} /></span>
     <strong className="metric-tile__value">{formatRecentMetric(key, stats.metrics[key])}</strong>
@@ -45,9 +45,10 @@ export function CoverageNote({ stats, period }: { stats: PeriodStats; period: Re
   </details>;
 }
 
-export function PlayerRecentView({ period, onPeriodChange, payload, state, noFactKnown = false, pitcherBatting=false }: {
+export function PlayerRecentView({ period, onPeriodChange, payload, state, noFactKnown = false, pitcherBatting=false, fallback }: {
   period: RecentPeriod; onPeriodChange: (period: RecentPeriod) => void;
   payload: PlayerRecentResponse | null; state: RecentState; noFactKnown?: boolean; pitcherBatting?:boolean|undefined;
+  fallback?: React.ReactNode;
 }) {
   const stats = [payload?.batting, payload?.pitching].filter((item): item is PeriodStats => item !== null && item !== undefined);
   return <section className="stats-section player-recent" aria-label="最近の成績">
@@ -57,7 +58,7 @@ export function PlayerRecentView({ period, onPeriodChange, payload, state, noFac
         aria-pressed={period === item.id} onClick={() => onPeriodChange(item.id)}>{item.label}</button>)}
     </div>
     {state === "loading" && <div aria-live="polite"><LoadingSkeleton /></div>}
-    {state === "error" && <DataState kind="source-unavailable" title="最近の成績を読み込めません" />}
+    {state === "error" && (fallback ?? <DataState kind="source-unavailable" title="最近の成績を読み込めません" />)}
     {state === "missing" && <DataState kind="no-data" title={noFactKnown ? "最近の成績データはありません" : "この期間の出場データはありません"} />}
     {state === "ready" && payload && <>
       <p className="recent-dates">{period === "season" ? "保存済みシーズン成績" : `${formatDate(payload.asOfDate, true)}終了時点`}{stats[0] && <> · {period === "season" && "シーズン期間 "}

@@ -16,6 +16,7 @@ import { PlayerFutureLinks } from "./future-surfaces";
 import { NpbPlayerProfileFacts } from "./npb-player-profile";
 import { PlayerRecentView } from "./player-recent";
 import { PlayerSeasonView } from "./player-season";
+import { PublishedPlayerFallback } from "./npb-published-player";
 import { HeadlineStats, PlayerContextBar, PlayerIdentity } from "./signature";
 import { formatRecentMetric } from "../presentation/recent-formatter";
 import { positionDefinitions } from "../domain/baseball-terms";
@@ -108,6 +109,7 @@ export function NpbPlayer({ services, favorites, toggle, saving }: { services: S
   if (section && !["stats", "analysis", "more", "game-log", "trends"].includes(section)) return <Navigate to={`/NPB/players/${player.id}`} replace />;
   const base = `/NPB/players/${player.id}`;
   const gameLogTeams = new Map(directoryTeams.map(t => [t.id, t.shortName]));
+  const seasonView = seasonState === "error" ? <PublishedPlayerFallback key={`${player.id}:season`} playerId={player.id} period="season" repository={services.directory} pitcherBatting={directoryPlayer?.position === "P"} /> : <PlayerSeasonView payload={season} state={seasonState} pitcherBatting={directoryPlayer?.position === "P"} />;
   const isFavorite = favorites.some(f => f.league === "NPB" && f.kind === "player" && f.entityId === player.id);
   return <div className="screen player-screen"><PlayerContextBar backTo="/NPB/search" tools={<><Link to={`/NPB/compare?players=${encodeURIComponent(player.id)}`}>比較に追加</Link><Link to={`${base}/trends`} aria-current={section === "trends" ? "page" : undefined}>推移・連続記録</Link><Link to={`${base}/seasons`}>年度・大会別の成績</Link><Link to={`/NPB/season-compare?kind=player&entity=${encodeURIComponent(player.id)}`}>2026年の年度比較</Link>{directoryTeam && <Link to={`/NPB/teams/${encodeURIComponent(directoryTeam.id)}`}>球団を見る</Link>}<CollectionButton league="NPB" playerId={player.id} name={player.name} /></>}><Link className="player-fixed-scope" to={`${base}/seasons`}>2026年 · 公式戦 ▾</Link></PlayerContextBar>
     <PlayerIdentity name={player.name} context={`NPB · ${directoryTeam?.shortName ?? identity?.teamName ?? "所属未確認"}`} detail={`${directoryPlayer?.position ? positionDefinitions[directoryPlayer.position] : "役割未確認"} · 所属は保存済み情報${product?.membership.uniformNumber != null ? ` · #${product.membership.uniformNumber}` : ""}`} visual={product?.visual.photo.usage === "allowed" ? <img className="profile-photo" src={product.visual.photo.url!} alt={player.name} /> : undefined} favorite={<FavoriteButton active={isFavorite} saving={saving} label={player.name} onClick={() => toggle({ league: "NPB", kind: "player", entityId: player.id })} />}>
@@ -115,9 +117,9 @@ export function NpbPlayer({ services, favorites, toggle, saving }: { services: S
     </PlayerIdentity>
     <PlayerTabs base={base} section={section} />
     {section === "trends" && <NpbPlayerTrends services={services} playerId={player.id} />}
-    {!section && <div className="profile-content">{(seasonState !== "ready" || !season?.batting && !season?.pitching) && <PlayerSeasonView payload={season} state={seasonState} pitcherBatting={directoryPlayer?.position === "P"} />}<PlayerRecentView period={period} onPeriodChange={next => { if (next === period) return; setRecentState("loading"); setPeriod(next); }} payload={recent} state={recentState} noFactKnown={directoryPlayer?.recentAvailable === false} pitcherBatting={directoryPlayer?.position==="P"} /><details className="profile-season-details"><summary>シーズン成績・収録状態</summary><PlayerSeasonView payload={season} state={seasonState} pitcherBatting={directoryPlayer?.position==="P"} /></details>
+    {!section && <div className="profile-content">{(seasonState !== "ready" || !season?.batting && !season?.pitching) && seasonView}<PlayerRecentView period={period} onPeriodChange={next => { if (next === period) return; setRecentState("loading"); setPeriod(next); }} payload={recent} state={recentState} fallback={<PublishedPlayerFallback key={`${player.id}:${period}`} playerId={player.id} period={period} repository={services.directory} pitcherBatting={directoryPlayer?.position === "P"} />} noFactKnown={directoryPlayer?.recentAvailable === false} pitcherBatting={directoryPlayer?.position==="P"} />{seasonState !== "error" && <details className="profile-season-details"><summary>シーズン成績・収録状態</summary>{seasonView}</details>}
       <PlayerGameLogView payload={gameLog ? { ...gameLog, batting: gameLog.batting.slice(0, 3), pitching: gameLog.pitching.slice(0, 3) } : null} state={gameLogState} teams={gameLogTeams} /><Link className="button button--secondary" to={`${base}/game-log`}>すべての試合別成績を見る</Link></div>}
-    {section === "stats" && <PlayerSeasonView payload={season} state={seasonState} pitcherBatting={directoryPlayer?.position==="P"} />}
+    {section === "stats" && seasonView}
     {section === "game-log" && <PlayerGameLogView payload={gameLog} state={gameLogState} teams={gameLogTeams} />}
     {section === "more" && <>{product ? <><NpbProfileDetails player={product} /><PlayerLifecycle player={product} /></> : directoryPlayer ? <section className="surface-card"><h2>プロフィール</h2><NpbPlayerProfileFacts player={directoryPlayer} /></section> : <DataState kind="no-data" title="プロフィールを確認できません" />}<PlayerFutureLinks base={base} /></>}
     {section === "analysis" && <div className="profile-content profile-content--analysis">{canonical
