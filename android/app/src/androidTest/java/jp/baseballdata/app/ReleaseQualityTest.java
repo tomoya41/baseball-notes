@@ -354,7 +354,7 @@ public class ReleaseQualityTest {
         js("Array.from(document.querySelectorAll('main a')).find(a=>a.textContent==='2026年の選手ページへ').click()");
         // The same name exists on both screens. Wait for the destination route
         // and a rendered Current profile before sending a real system Back.
-        waitCondition("Current profile navigation committed", "location.hash==='#/NPB/players/21a327b4-3924-422a-a1fc-d853e236a201' && !document.querySelector('.skeleton-page') && !!document.querySelector('.player-screen .headline-stats')");
+        waitCondition("Current profile navigation committed", "location.hash==='#/NPB/players/21a327b4-3924-422a-a1fc-d853e236a201' && !document.querySelector('.skeleton-page') && document.querySelector('.player-screen h1')?.textContent==='東克樹'");
         waitText("東克樹"); waitPaint();
         shell("input keyevent KEYCODE_BACK"); waitText("2025年 · CS ファイナル");
         assertTrue("System Back preserves the exact stage", js("location.hash").contains("stage=npb_cs_final"));
