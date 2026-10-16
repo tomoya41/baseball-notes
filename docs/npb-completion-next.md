@@ -77,13 +77,17 @@ Progression rates are recomputed from nullable components, never averaged. Rate 
 
 ## Operations and remaining tasks
 
-Turso remains **BLOCKED / latest canonical readback not verified**. Latest inspected Freshness scheduled run 38872296730 and EOD watcher 38857965030 fail with `SQL read operations are forbidden`; bounded diagnostic reported one SQL read, zero writes and zero nf3 requests. [Turso usage documentation](https://docs.turso.tech/help/usage-and-billing) explains quota blocking as one possible cause, but does not prove this account exceeded quota. [Provider status](https://status.turso.tech/) was operational on inspection; that does not prove an individual database is healthy. No local account-management access/credentials permit determining Owner Console usage/plan/reset. Owner must supply those three non-secret values or restore service in the account. No retries storm, paid plan, credential disclosure or second account.
+Turso was BLOCKED during the 2026-10-16 investigation. On 2026-10-17 JST, scheduled EOD watcher [38958724866](https://github.com/tomoya41/baseball-notes/actions/runs/38958724866) performed one successful SQL read and correctly skipped outside the reviewed Regular calendar: zero writes, zero source requests, publication false. The preceding watcher [38933531322](https://github.com/tomoya41/baseball-notes/actions/runs/38933531322) still reported the blocked-read error. The exact account-side cause/recovery mechanism is **unknown**; [Turso usage documentation](https://docs.turso.tech/help/usage-and-billing) names quota blocking as a possibility, not proof of this account's cause. No plan/payment/credential/account change was made. Owner Console inspection is no longer needed to continue the delivery; if blocking recurs, usage/plan/reset remain useful diagnostic information.
 
-Last verified pending 6 / partial 5 / stale and closed HOT/Ranking remain protected, **not a fresh SQL integrity PASS**. No repeated shortened-game fetching/dry-run, no canonical repair, no scheduled/backup proof manufactured. Published-response fallback is application availability only.
+Public Recent API returned HTTP 200 for exact canonical ID `3c4b8e86-5a0c-48cb-aeba-44676de9fa38` at `2026-10-16T20:03:43Z` (7d) and `20:03:46Z` (season), both with saved as-of 2026-10-12. Null 7d batting/pitching remains a valid empty observation, not zero statistics. No claim of new live data or permanent provider recovery.
+
+Read-only integrity [38959550926](https://github.com/tomoya41/baseball-notes/actions/runs/38959550926) succeeded: 899 saved Games, 6 pending, 196 reviewed dates = 166 complete + 5 partial + 25 evidenced no-game; input errors 0 / evidence findings 0. Eight protected table counts/hashes were identical before/after, writes 0/source requests 0. Fact quality [38959555123](https://github.com/tomoya41/baseball-notes/actions/runs/38959555123) independently confirmed 23,548 batting / 7,142 pitching Facts, before/after unchanged (11 SELECTs). This is a successful integrity inspection of a **known-partial** database, not complete coverage.
+
+Portable backup/independent scratch restore [38959630755](https://github.com/tomoya41/baseball-notes/actions/runs/38959630755) passed: schema 4, 17 tables, compressed export 1,649,165 B and repository readback. This manual transient restore drill is **not** newly retained encrypted Production backup or scheduled-collection evidence. Freshness remains stale, health warning outside the reviewed calendar, HOT/Ranking closed. No shortened-game refetch/repair or scheduled proof manufactured. Published-response fallback remains useful for future API outages.
 
 | User task | Result / next safe step |
 | --- | --- |
-| 1 Turso | Owner Console usage/plan/reset required; saved-stat display implemented independently |
+| 1 Turso | SQL/API read recovery observed; read-only integrity/restore revalidated; root cause unknown, scheduled skip is not Fact collection |
 | 2 CS | Partial real scores + exact-ID participant observations implemented; recover additional reviewed column layouts next |
 | 3 / 4 Current history / identity | 577/740 unchanged; 73 need independent IDs, 90 need admissible annual rows; no guessed merge |
 | 5 / 13 profile fields | Existing conflict-aware values preserved; dated source observations/explicit units are next incremental work, not current-roster inference |
@@ -100,8 +104,8 @@ Last verified pending 6 / partial 5 / stale and closed HOT/Ranking remain protec
 | Android | Physical ADB inventory empty; Pixel / TalkBack NOT RUN; emulator validation tracked below |
 | 2027 / Push / Play / redesign | No source/gate assumptions or owner-only release actions; independent later units |
 
-Recommended next development: recover supported full article links in the 66 CS layout exclusions, then independently evidenced Current identity gaps and source-dated profile observations. Do not block this on Turso. Preseason/source permissions and six shortened-game final evidence remain separate gates.
+Recommended next development: recover supported full article links in the 66 CS layout exclusions, then independently evidenced Current identity gaps and source-dated profile observations. Monitor actual scheduled behavior independently of product work. Preseason/source permissions and six shortened-game final evidence remain separate gates.
 
 ## Delivery verification
 
-Local full tests: 124 files / 1,400 tests PASS. Lint, typecheck and Web build PASS before PR. Post-review/build/Android/public evidence is appended after the corresponding actual runs; no emulator result is a physical-device PASS.
+Local post-review full tests: 124 files / 1,404 tests PASS. Lint, typecheck and Web/Vercel build PASS. Review P2 (historical-manifest failure blocking independent 2026 Current/CS views) fixed with two failure-isolation tests; skipped innings cannot become implicit zero and X is accepted only in the final home half. Replaying the CS archive after these checks preserved its admitted hash. Initial JS 490,890 B versus previous public 483,943 B (about +7 KB); CSS remains 66,769 B. Post-review CI/Android/public evidence is appended after actual runs; no emulator result is a physical-device PASS.
