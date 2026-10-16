@@ -374,6 +374,7 @@ public class ReleaseQualityTest {
         String csHash=js("location.hash");
         for(String scale:new String[]{"1.5","2.0"}) {
             shell("settings put system font_scale " + scale); scenario.recreate(); waitText("2.2"); waitViewport(360);
+            assertEquals("Recreation retains the selected player, not the initial CS list", csHash, js("location.hash"));
             assertEquals("CS has no overflow at " + scale, "true", js("document.documentElement.scrollWidth<=innerWidth"));
             screenshot("npb-cs-font-" + scale.replace(".", "") + "-light");
             setTheme("dark", "ダーク"); js("location.hash='"+csHash+"'"); waitText("2.2");

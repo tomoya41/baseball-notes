@@ -7,9 +7,17 @@ import androidx.activity.EdgeToEdge;
 import android.view.Window;
 import android.content.res.Configuration;
 import android.webkit.WebView;
+import android.content.Intent;
 
 public class MainActivity extends BridgeActivity {
+    private static final String WEB_STATE = "baseball.webState";
     @Override public void onCreate(Bundle savedInstanceState) {
+        Bundle webState = savedInstanceState == null ? null : savedInstanceState.getBundle(WEB_STATE);
+        Intent launchIntent = getIntent();
+        // A recreated Activity resumes its current WebView route, not the URI
+        // which originally opened the task. New external intents still use the
+        // normal Capacitor appUrlOpen path.
+        if (webState != null && launchIntent != null) setIntent(new Intent(launchIntent).setData(null));
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         registerPlugin(FavoriteNotificationsPlugin.class);
         EdgeToEdge.enable(this);
@@ -18,7 +26,17 @@ public class MainActivity extends BridgeActivity {
         getBridge().addWebViewListener(new WebViewListener() {
             @Override public void onPageLoaded(WebView webView) { applyFontLayout(webView); }
         });
+        if (webState != null && getBridge().getWebView().restoreState(webState) == null && launchIntent != null) {
+            onNewIntent(launchIntent);
+        }
         applyFontLayout(getBridge().getWebView());
+    }
+    @Override public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        if (getBridge() != null) {
+            Bundle webState = new Bundle();
+            if (getBridge().getWebView().saveState(webState) != null) outState.putBundle(WEB_STATE, webState);
+        }
     }
     // WebView text zoom can enlarge painted glyphs without enlarging flex bases.
     // Expose only OS font scale for layout; never reduce the user's text zoom.
