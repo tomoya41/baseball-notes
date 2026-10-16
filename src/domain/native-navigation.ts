@@ -12,12 +12,13 @@ export function canonicalDeepLink(input: string): string | null {
     const expanded = ["data", "history", "compare", "team-compare", "season-compare", "postseason", "matchup", "milestones", "form"].includes(portablePath?.split("/")[2] ?? "");
     if (expanded) return portableRoute(portablePath!, portableSearch ?? uri.search);
     const [leagueRaw, resource, encoded, child, ...extra] = route.split("?")[0]!.replace(/^\//, "").split("/");
-    if (extra.length || (child && !["analysis", "game-log", "stats", "more", "trends", "advanced"].includes(child))) return null;
+    if (extra.length || (child && !["analysis", "game-log", "stats", "more", "trends", "advanced"].includes(child) && !(child === "seasons" && leagueRaw?.toUpperCase() === "NPB"))) return null;
     const league = leagueRaw?.toUpperCase();
     const kind = resource === "players" ? "player" : resource === "games" ? "game" : resource === "teams" ? "team" : undefined;
     const parsed = canonicalEntityRefSchema.safeParse({ league, kind, id: decodeURIComponent(encoded ?? "") });
     if (!parsed.success || (child && kind !== "player")) return null;
     const sourceParams = new URLSearchParams(route.split("?")[1] ?? uri.search);
+    if(child === "seasons")return portableRoute(`${canonicalEntityPath(parsed.data)}/seasons`,sourceParams.toString());
     const params = new URLSearchParams();
     for (const key of ["season", "date", "asOfDate"]) {
       const value = sourceParams.get(key); if (!value) continue;
@@ -35,6 +36,11 @@ export function parentNativeRoute(path: string): string | null {
   }
   if (league === "MLB" && /^20\d{2}$/.test(source.get("season") ?? "")) scope.set("season", source.get("season")!);
   const suffix = scope.size ? `?${scope}` : "";
+  if(league==="NPB"&&segments[1]==="players"&&segments[3]==="seasons") {
+    const history=new URLSearchParams({player:segments[2]!});
+    if(/^20\d{2}$/.test(source.get("season")??""))history.set("season",source.get("season")!);
+    return `/NPB/history?${history}`;
+  }
   if (segments[1] === "watch-center") return `/${league}/my`;
   if (segments[1] === "library" && segments.length > 2) return `/${league}/library`;
   if (["compare", "team-compare", "season-compare", "matchup"].includes(segments[1] ?? "")) return `/${league}/search${suffix}`;

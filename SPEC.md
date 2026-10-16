@@ -1182,3 +1182,7 @@ All-player NPB Recent exploration is a read-only, coverage-aware projection, sep
 ## Product Expansion Batch 5: comparisons and portable views
 
 Support bounded 2–4 Team comparisons, saved-season Player/Team comparisons, local Collection dashboards and canonical-condition URL sharing. Displayed MLB aggregate CSV exports are bounded and credited; provisional NPB data is not exported. Preserve Regular/Postseason, historical/current, null, Coverage and ranking boundaries. See `docs/product-comparison-sharing.md`.
+
+### NPB active-player / competition extension (2026-10-16)
+
+Saved Directory identities can open a dedicated year/competition view from Player. Historical Regular and explicitly labelled historical NPB postseason stage aggregates use separate versioned contracts and bounded readers. Their source, coverage, year and stage stay visible; no automatic addition to Current, Regular or full Career. Unavailable 2026 Preseason/CS/Japan Series choices are disabled. The independently evidenced conditional CS 2026 rule is validated without generating actual series facts. See docs/npb-active-player-expansion.md for exact admitted years, sources, gaps and release evidence. Existing Current and MLB data/gates are unchanged.

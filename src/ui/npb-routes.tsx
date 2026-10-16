@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Link, Navigate, Route, Routes, useLocation, useSearchParams } from "react-router-dom";
 import type { Services } from "../app/services";
 import type { Favorite } from "../domain/models";
@@ -19,6 +20,7 @@ import { StatGlossary } from "./stat-glossary";
 import { MyLibrary } from "./personal-library";
 import { NpbTeamCompare, SeasonCompare } from "./team-season-compare";
 import { NpbLifecycleExplorer } from "./npb-lifecycle";
+const NpbPlayerSeasons = lazy(()=>import("./npb-historical").then(m=>({default:m.NpbPlayerSeasons})));
 type FavoriteTarget = Pick<Favorite, "kind" | "entityId" | "league">;
 function NpbSearchEntry(props: Parameters<typeof NpbRoutes>[0]) {
   const [params] = useSearchParams();
@@ -44,6 +46,7 @@ export function NpbRoutes({ services, favorites, toggle, saving }: { services: S
     <Route path="season-compare" element={<SeasonCompare league="NPB" services={services} />} />
     <Route path="glossary" element={<StatGlossary league="NPB" />} />
     <Route path="analysis" element={<Navigate to="/NPB/search" replace />} />
+    <Route path="players/:playerId/seasons" element={<Suspense fallback={<p role="status">年度別成績を読み込み中…</p>}><NpbPlayerSeasons key={location.pathname} /></Suspense>} />
     <Route path="players/:playerId/:section?" element={<NpbPlayer key={location.pathname.split("/")[3]} services={services} favorites={favorites} toggle={toggle} saving={saving} />} />
     <Route path="teams/:teamId" element={<NpbTeam services={services} hub favorites={favorites} toggle={toggle} saving={saving} />} />
     <Route path="teams" element={<NpbTeams services={services} />} />
