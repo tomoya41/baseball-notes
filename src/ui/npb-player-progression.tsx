@@ -27,8 +27,8 @@ export function NpbPlayerProgression({ rows, years, teamName }: { rows: NpbHisto
         <text x={x(p.season)} y="156" textAnchor="middle" fill="currentColor" fontSize="12">{p.season}</text>
       </g>; })}
     </svg>
-    <dl className="explorer-values">{points.map(p => <div key={p.season}><dt>{p.season}年 · {p.teams.length ? p.teams.map(teamName).join(" / ") : "未収録"}</dt><dd>{comparisonValue(metric, p.metrics[metric] ?? null)}</dd></div>)}</dl>
-    <p className="inline-note">{["AVG", "OPS"].includes(metric) ? "率の比較は収録100打席以上が対象。" : ["ERA", "WHIP", "K9", "BB9"].includes(metric) ? "率の比較は収録30投球回以上が対象。" : ""}公式の規定資格や完全な年度成績ではありません。</p>
+    <dl className="explorer-values">{points.map(p => <div key={p.season}><dt>{p.season}年 · {p.teams.length ? p.teams.map(teamName).join(" / ") : "未収録"}</dt><dd>{comparisonValue(metric, p.metrics[metric] ?? null)}<small style={{ display: "block", fontWeight: 400 }}>{p.sample == null ? "母数未収録" : role === "batting" ? `${p.sample}打席` : `${comparisonValue("outsRecorded", p.sample)}回`}</small></dd></div>)}</dl>
+    <p className="inline-note">{["AVG", "OPS"].includes(metric) ? "率指標の最高値は収録100打席以上が対象。" : ["ERA", "WHIP", "K9", "BB9"].includes(metric) ? "率指標の最高・最小値は収録30投球回以上が対象。" : ""}公式の規定資格や完全な年度成績ではありません。</p>
     <p><strong>この収録範囲の{["ERA", "WHIP", "BB9"].includes(metric) ? "最小" : "最高"}値：</strong>{best.length ? best.map(p => `${p.season}年 ${comparisonValue(metric, p.metrics[metric]!)}`).join(" / ") : "母数不足または未収録"}</p>
     <p><Link to="/NPB/glossary?scope=historical">過去成績で使える指標の説明 →</Link></p><details><summary>所属球団別の変化</summary><p>記録された球団別行を表示します。在籍期間や移籍日を推定せず、未収録球団の行を補いません。</p><dl className="explorer-values">{rows.slice().sort((a,b)=>a.season-b.season||a.teamId.localeCompare(b.teamId)).map(r=><div key={`${r.season}:${r.teamId}`}><dt>{r.season}年 · {teamName(r.teamId)}</dt><dd>{comparisonValue(metric, historicalProgression([r], [r.season])[0]?.metrics[metric] ?? null)}</dd></div>)}</dl></details>
   </section>;
