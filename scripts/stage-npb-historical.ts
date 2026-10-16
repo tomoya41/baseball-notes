@@ -5,7 +5,9 @@ import { gunzipSync } from "node:zlib";
 import { npbHistoricalDatasetSchema, npbHistoricalManifestSchema } from "../src/domain/npb-historical";
 import release from "../src/data/npb-historical-release.json";
 import legacy from "../src/data/npb-historical-legacy-release.json";
+import retainedReleases from "../src/data/npb-historical-retained-releases.json";
 import { assertHistoricalBridge } from "../src/infrastructure/providers/npb-historical-admission";
+import { stageNpbCompetition } from "./stage-npb-competition";
 
 const local=process.argv.find(a=>a.startsWith("--input="))?.slice(8), target=process.argv.find(a=>a.startsWith("--output="))?.slice(9) ?? "dist/data/npb/historical";
 const started=performance.now();
@@ -36,5 +38,7 @@ await writeFile(join(destination,"manifest.json"),JSON.stringify(manifest));
 return {generation:pin.sha256,historicalFiles:seasons.length+1,archiveBytes:bytes.length,publicBytes:seasons.reduce((s,y)=>s+y.bytes,Buffer.byteLength(JSON.stringify(manifest))),maxPayload:Math.max(...seasons.map(s=>s.bytes)),generationMs:Math.round(performance.now()-started),canonicalWrites:0,sourceRequests:response?1:0};
 }
 const retained=await stage(legacy,target);
+for(const pin of retainedReleases) await stage(pin,join(target,pin.sha256));
 const current=await stage(release,join(target,release.sha256),local);
-console.log(JSON.stringify({retained,current}));
+const competition=await stageNpbCompetition(join(target,"..","competitions"));
+console.log(JSON.stringify({retained,current,competition}));

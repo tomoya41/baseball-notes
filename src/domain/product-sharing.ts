@@ -20,7 +20,18 @@ export function portableRoute(path: string, search = ""): string | null {
     }
     return `/${league}/${resource}${conditions.size ? `?${conditions}` : ""}`;
   }
-  if (league === "MLB" && parts.length === 2 && resource === "form") {
+  if (league === "NPB" && resource === "players" && parts.length === 4 && parts[3] === "seasons") {
+    if(!canonicalEntityRefSchema.safeParse({league,kind:"player",id:decodeSafe(parts[2]!)}).success)return null;
+    if(source.has("season")&&!/^20\d{2}$/.test(source.get("season")!))return null;
+    if(source.has("role")&&!["batting","pitching"].includes(source.get("role")!))return null;
+    if(source.has("years")&&!/^(?:20\d{2}(?:,20\d{2}){0,3})?$/.test(source.get("years")!))return null;
+    const competition=source.get("competition")??"regular",stage=source.get("stage");
+    if(!["regular","preseason","postseason"].includes(competition)||
+      (competition==="postseason"?!["npb_cs_first","npb_cs_final","japan_series"].includes(stage??""):stage!==null))return null;
+    clean.set("competition",competition);if(stage)clean.set("stage",stage);
+    if(["batting","pitching"].includes(source.get("role")??""))clean.set("role",source.get("role")!);
+    if(source.has("years")&&/^(?:20\d{2}(?:,20\d{2}){0,3})?$/.test(source.get("years")!))clean.set("years",source.get("years")!);
+  } else if (league === "MLB" && parts.length === 2 && resource === "form") {
     for (const [key,allowed] of [["mode",["hot","monthly","change","monthly-change"]],["category",["batting","starters","relievers"]],["period",["7","14","30"]],["battingView",["standard","pitchers","all"]],["change",["rising","cooling","stable","insufficient","all"]]] as const) if(allowed.some(v=>v===source.get(key)))clean.set(key,source.get(key)!);
     const team=source.get("team");if(team&&canonicalEntityRefSchema.safeParse({league,kind:"team",id:team}).success)clean.set("team",team);
   } else if (league === "MLB" && parts.length === 2 && ["matchup","milestones"].includes(resource ?? "")) {

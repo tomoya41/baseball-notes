@@ -1,0 +1,35 @@
+{
+  "assetUrl": "https://github.com/tomoya41/baseball-notes/releases/download/npb-history-wikipedia-20261016-v5/npb-historical-postseason.json.gz",
+  "sha256": "aedfdd74c9f149779222a9d588862b08a482734281020b2d804430c985d5b5ef",
+  "inputSha256": "1e383d106ef9db5329aca692d08e938e4d10dd931e945a604bb859347cdd570f",
+  "bodySha256": "a5e29a1f854e7b1dd0472ab40862393953473e8ff1826ed8772f36e29b4922ee",
+  "bytes": 2642,
+  "players": 1,
+  "rows": 4,
+  "scopes": [
+    {
+      "playerId": "21a327b4-3924-422a-a1fc-d853e236a201",
+      "season": 2023,
+      "competition": "postseason",
+      "stage": "npb_cs_first"
+    },
+    {
+      "playerId": "21a327b4-3924-422a-a1fc-d853e236a201",
+      "season": 2024,
+      "competition": "postseason",
+      "stage": "npb_cs_first"
+    },
+    {
+      "playerId": "21a327b4-3924-422a-a1fc-d853e236a201",
+      "season": 2024,
+      "competition": "postseason",
+      "stage": "japan_series"
+    },
+    {
+      "playerId": "21a327b4-3924-422a-a1fc-d853e236a201",
+      "season": 2025,
+      "competition": "postseason",
+      "stage": "npb_cs_final"
+    }
+  ]
+}

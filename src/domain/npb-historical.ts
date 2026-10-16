@@ -27,14 +27,14 @@ export const npbHistoricalRowSchema = z.strictObject({
   }
 });
 export type NpbHistoricalRow = z.infer<typeof npbHistoricalRowSchema>;
-const player = z.strictObject({ playerId: z.uuid(), name: z.string().min(1), wikidataId: z.string().regex(/^Q\d+$/), npbId: z.string().regex(/^\d+$/),
+export const npbHistoricalPlayerSchema = z.strictObject({ playerId: z.uuid(), name: z.string().min(1), wikidataId: z.string().regex(/^Q\d+$/), npbId: z.string().regex(/^\d+$/),
   article: z.string().min(1), revision: z.number().int().positive(), revisionAt: z.iso.datetime(), contentSha256: z.string().regex(/^[a-f0-9]{64}$/),
   identityScope: z.literal("historical_only").optional(), sourceObservedAt: z.iso.datetime().optional() });
 export const npbHistoricalDatasetSchema = z.strictObject({
   schemaVersion: z.literal(1), league: z.literal("NPB"), temporalScope: z.literal("historical"), competition: z.literal("regular"),
   granularity: z.literal("season_aggregate"), license: z.literal("CC-BY-SA-4.0"), observedAt: z.iso.datetime(),
   inputSha256: z.string().regex(/^[a-f0-9]{64}$/), transformation: z.string().min(1),
-  coverage: z.literal("partial"), players: z.array(player).max(10000), rows: z.array(npbHistoricalRowSchema).max(50000),
+  coverage: z.literal("partial"), players: z.array(npbHistoricalPlayerSchema).max(10000), rows: z.array(npbHistoricalRowSchema).max(50000),
 }).superRefine((value, ctx) => {
   const ids = new Set(value.players.map(p => p.playerId)), external = new Set(value.players.map(p => p.npbId));
   if (ids.size !== value.players.length || external.size !== value.players.length) ctx.addIssue({ code: "custom", message: "Ambiguous historical identity" });

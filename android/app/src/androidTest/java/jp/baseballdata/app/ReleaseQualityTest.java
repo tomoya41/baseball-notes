@@ -335,6 +335,26 @@ public class ReleaseQualityTest {
         shell("settings put system font_scale 1.0"); scenario.recreate(); waitText("0.924");
         screenshot("npb-history-360");
     }
+    @Test public void npbPlayerCompetitionDeepLinkAndLargeFont() throws Exception {
+        Intent link = new Intent(Intent.ACTION_VIEW, Uri.parse("baseballnotes://NPB/players/21a327b4-3924-422a-a1fc-d853e236a201/seasons?season=2025&role=pitching&competition=postseason&stage=npb_cs_final"));
+        link.setClassName("com.tomoya41.baseballnotes", "jp.baseballdata.app.MainActivity");
+        scenario = ActivityScenario.launch(link);
+        waitText("2025年 · CS ファイナル"); waitText("5.2");
+        waitCondition("Exact native competition", "location.hash.includes('stage=npb_cs_final') && location.hash.includes('role=pitching') && !!document.querySelector('a[href*=\"oldid=110944738\"]')");
+        String scopedHash=js("location.hash");
+        for(String scale:new String[]{"1.5","2.0"}) {
+            shell("settings put system font_scale " + scale); scenario.recreate(); waitText("5.2"); waitViewport(360);
+            assertEquals("Scoped player has no large-font overflow", "true", js("document.documentElement.scrollWidth<=innerWidth"));
+            screenshot("npb-player-competition-font-" + scale.replace(".", "") + "-light");
+            setTheme("dark", "ダーク"); js("location.hash='"+scopedHash+"'"); waitText("5.2"); waitViewport(360);
+            assertEquals("Dark scoped player has no large-font overflow", "true", js("document.documentElement.scrollWidth<=innerWidth"));
+            screenshot("npb-player-competition-font-" + scale.replace(".", "") + "-dark");
+            setTheme("light", "ライト"); js("location.hash='"+scopedHash+"'"); waitText("5.2");
+        }
+        js("Array.from(document.querySelectorAll('main a')).find(a=>a.textContent==='2026年の選手ページへ').click()"); waitText("東克樹");
+        shell("input keyevent KEYCODE_BACK"); waitText("2025年 · CS ファイナル");
+        assertTrue("System Back preserves the exact stage", js("location.hash").contains("stage=npb_cs_final"));
+    }
     @Test public void nativePreferencesSurviveRestartAndFirebaseDisabled() throws Exception {
         String fixture = "{\"items\":[{\"league\":\"NPB\",\"kind\":\"player\",\"entityId\":\"canonical-player\"}]}";
         assertTrue(EodMessagingService.isFavoritePlayer(fixture, "canonical-player"));

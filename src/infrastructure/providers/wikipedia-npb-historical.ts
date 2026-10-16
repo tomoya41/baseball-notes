@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import { historicalBattingKeys, historicalPitchingKeys, historicalRates, npbHistoricalRowSchema, type NpbHistoricalRow } from "../../domain/npb-historical";
+import { npbCompetitionAggregateSchema, type NpbCompetitionAggregate } from "../../domain/npb-competition";
 
 const teams: Record<string, string> = { "巨人": "giants", "阪神": "tigers", "中日": "dragons", "広島": "carp", "ヤクルト": "swallows", "DeNA": "baystars", "ソフトバンク": "hawks", "日本ハム": "fighters", "西武": "lions", "ロッテ": "marines", "楽天": "eagles", "オリックス": "buffaloes" };
 const pageSchema = z.object({ title: z.string(), pageprops: z.object({ wikibase_item: z.string() }), revisions: z.array(z.object({ revid: z.number().int().positive(), timestamp: z.iso.datetime(), slots: z.object({ main: z.object({ content: z.string() }) }) })).length(1) });
@@ -20,7 +21,9 @@ function splitCells(text: string) {
 function cell(raw: string) {
   const trimmed = raw.replace(/<!--[\s\S]*?-->/g, "").trim();
   const match = /^(?:(?:style|rowspan|colspan|align|class)\s*=)[^]*?\|/.exec(trimmed);
-  const attributes = match?.[0] ?? "", value = trimmed.slice(attributes.length).trim();
+  // MediaWiki permits an empty attribute field before the cell separator.
+  // Accept that exact form only; malformed nonempty attributes (2|19) stay quarantined.
+  const attributes = match?.[0] ?? (trimmed.startsWith("|") && !trimmed.startsWith("||") ? "|" : ""), value = trimmed.slice(attributes.length).trim();
   const rowspan = /rowspan\s*=\s*["']?(\d+)/i.exec(attributes)?.[1];
   if (/colspan/i.test(attributes)) throw Error("Unsupported colspan; no team-total duplication");
   return { value, span: rowspan ? Number(rowspan) : 1 };
@@ -101,4 +104,39 @@ export function parseWikipediaHistorical(raw: unknown, bridge: HistoricalBridge,
     }
   }
   return { player:{ playerId:bridge.playerId,name:page.title,wikidataId:bridge.wikidataId,npbId:bridge.npbId,article:page.title,revision:revision.revid,revisionAt:revision.timestamp,contentSha256:createHash("sha256").update(text).digest("hex"),...(bridge.identityScope?{identityScope:bridge.identityScope}:{}),...(bridge.sourceObservedAt?{sourceObservedAt:bridge.sourceObservedAt}:{}) }, rows, issues };
+}
+
+/** Exact reviewed NPB postseason header only. MLB tables and unlabelled stages are excluded. */
+export function parseWikipediaNpbPostseason(raw:unknown,bridge:HistoricalBridge,years:readonly number[]) {
+  const identity=parseWikipediaHistorical(raw,bridge,[]).player;
+  const page=pageSchema.parse(raw),text=page.revisions[0]!.slots.main.content;
+  const h=/^===\s*ポストシーズン投手成績\s*===\s*$/m.exec(text);
+  if(!h)return {player:identity,rows:[] as NpbCompetitionAggregate[]};
+  const after=text.slice(h.index+h[0].length),end=after.search(/^={2,3}[^=]/m),section=end<0?after:after.slice(0,end);
+  const table=/\{\|[^\n]*\n([^]*?)\n\|\}/.exec(section);
+  if(!table)throw Error("Unsupported postseason table");
+  const expected=["年度","プロ野球チーム一覧","ポストシーズン","登板","先発投手","勝利投手","敗戦投手","セーブ","ホールド","勝率","打者","投球回","安打","本塁打","四球","故意四球","死球","三振","暴投","ボーク","失点","自責点","防御率"];
+  const head=table[1]!.split(/\r?\n/).find(l=>l.startsWith("!"))?.slice(1).split("!!").map(c=>/^\[\[([^|\]]+)/.exec(c.trim())?.[1]);
+  if(JSON.stringify(head)!==JSON.stringify(expected))throw Error("Unreviewed postseason column definitions");
+  const keys=["G","GS","W","L","SV","HLD","WPCT","BF","outsRecorded","H","HR","BB","IBB","HBP","SO","WP","BK","R","ER","ERA"];
+  const carried=new Map<number,{value:string;remaining:number}>(),rows:NpbCompetitionAggregate[]=[];
+  for(const physical of table[1]!.split(/\n\|-[^\n]*(?:\n|$)/).slice(1)) {
+    if(physical.split(/\r?\n/).some(l=>l.startsWith("!")))break;
+    const grid:string[]=[];let position=0;
+    const carry=()=>{while(carried.has(position)){const c=carried.get(position)!;grid.push(c.value);if(--c.remaining===0)carried.delete(position);position++;}};
+    for(const c of physical.split(/\r?\n/).filter(l=>l.startsWith("|")).flatMap(l=>splitCells(l.slice(1))).map(cell)){carry();grid.push(c.value);if(c.span>1)carried.set(position,{value:c.value,remaining:c.span-1});position++;}carry();
+    if(grid.length!==23)throw Error("Ambiguous postseason columns");
+    const year=/^\{\{by2\|(\d{4})\}\}$/i.exec(grid[0]!)?.[1],team=teams[plain(grid[1]!)];
+    // Only exact labelled series links; references are attribution, not extra numeric evidence.
+    const stageCell=grid[2]!.replace(/<ref\b[^>]*>[^]*?<\/ref>/g,"").trim();
+    const stageMatch=/^\[\[(\d{4})年の(?:セントラル・リーグクライマックスシリーズ|パシフィック・リーグクライマックスシリーズ|日本シリーズ)\|(CSファースト|CSファイナル|日本シリーズ)\]\]$/.exec(stageCell);
+    if(!year||!team||!stageMatch||stageMatch[1]!==year)throw Error("Unverified postseason year/team/stage");
+    if(!years.includes(Number(year)))continue;
+    const stage=stageMatch[2]==="CSファースト"?"npb_cs_first":stageMatch[2]==="CSファイナル"?"npb_cs_final":"japan_series";
+    if((stage==="japan_series")!==stageCell.includes("年の日本シリーズ|"))throw Error("Postseason stage link mismatch");
+    const metrics:Record<string,number|null>=Object.fromEntries(historicalPitchingKeys.map(k=>[k,null]));
+    for(const [i,key] of keys.entries())metrics[key]=key==="outsRecorded"?inningsToOuts(plain(grid[i+3]!)):numeric(grid[i+3]!);
+    rows.push(npbCompetitionAggregateSchema.parse({playerId:bridge.playerId,season:Number(year),teamId:`npb:team:${team}`,role:"pitching",metrics,scope:{league:"NPB",season:Number(year),temporalScope:"historical",competition:"postseason",stage}}));
+  }
+  return {player:identity,rows};
 }

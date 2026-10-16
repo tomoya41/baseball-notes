@@ -568,3 +568,7 @@ MLB-only WHIP/BB9/K%/BB%を実装。既存Historicalのみで、Source/Gate/Care
 [Phase 2](npb-historical-phase2.md)で593選手・3,072球団別年度行（打撃1,673/投球1,399）へ拡張。旧2,060行は数値変更・削除0。既存記事から894行、独立Identity照合したHistorical-only21選手から118行を追加した。全年度partial。History内で同年最大4人、最大4年度、選択収録行合計、別年度OB検索、Favorites/MyのHistorical導線を提供する。
 
 NPB Historicalは引き続きPARTIAL。全OB、全年度、Game/Recent、球団全体年度成績、規定資格/公式ranking、Full Careerは未完成。Historical-only IDsを2026 Current一覧やCurrent Watchへ混入させない。Turso最新SQL readはBLOCKED、2026 Gates/freshness条件は変えない。次は残る曖昧形式・算術不一致の独立検証と、実機Pixel/TalkBack QAを進める。
+
+## 2026-10-16 — Active-player historical / competition expansion
+
+[Active-player audit and delivery](npb-active-player-expansion.md): Directory 740 (saved affiliation, not registered roster), Historical matches 572→577; 13 Directory players gain 17 Regular rows. Overall Regular 598 players / 3,090 rows, plus one existing OB row recovered without new identity. All old 3,072 rows and 21 Historical-only IDs retained; all years partial. New bounded Wikipedia aggregate covers only 東克樹's 2023 CS First, 2024 CS First/Japan Series and 2025 CS Final (4 rows), not a full competition feed. Player year/stage entry reuses History comparison/collected-year sums and credits. 2026 Preseason/CS/Japan Series data, official roster/number, full Career and Current HOT/Ranking remain unavailable/pending. Turso SQL read is still blocked; latest canonical integrity is not verified. Do not call those source/operational gaps COMPLETE.

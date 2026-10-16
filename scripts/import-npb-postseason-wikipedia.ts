@@ -1,0 +1,21 @@
+import { readFile,writeFile,mkdir } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { gzipSync } from "node:zlib";
+import { DatabaseSync } from "node:sqlite";
+import { z } from "zod";
+import { parseWikipediaNpbPostseason } from "../src/infrastructure/providers/wikipedia-npb-historical";
+import { assertHistoricalBridge } from "../src/infrastructure/providers/npb-historical-admission";
+import { npbPostseasonAggregateDatasetSchema } from "../src/domain/npb-competition";
+import { resolve,join } from "node:path";
+const [input,output]=process.argv.slice(2);
+if(!input||!output||!resolve(output).startsWith(resolve(".data")+ (process.platform==="win32"?"\\":"/")))throw Error("Private .data output required");
+const bytes=await readFile(input),inputSha256=createHash("sha256").update(bytes).digest("hex");
+const archive=z.object({observedAt:z.iso.datetime(),titles:z.array(z.object({playerId:z.uuid(),wikidataId:z.string(),npbId:z.string(),title:z.string(),identityScope:z.literal("historical_only").optional(),sourceObservedAt:z.iso.datetime().optional()})),pages:z.record(z.string(),z.unknown())}).parse(JSON.parse(bytes.toString()));
+const players=[],rows=[];
+for(const link of archive.titles){assertHistoricalBridge(link);const p=parseWikipediaNpbPostseason(archive.pages[link.title],link,Array.from({length:11},(_,i)=>2015+i));if(p.rows.length){assertHistoricalBridge(link,p.player);players.push(p.player);rows.push(...p.rows);}}
+const dataset=npbPostseasonAggregateDatasetSchema.parse({schemaVersion:1,provider:"Wikipedia",license:"CC-BY-SA-4.0",temporalScope:"historical",coverage:"partial",granularity:"season_stage_aggregate",observedAt:archive.observedAt,inputSha256,players,rows,transformation:"Explicit reviewed NPB postseason pitching headers and labelled year/stage only; no career totals, article prose, images, schedule, Game Facts or inferred appearances; missing fields remain null"});
+const db=new DatabaseSync(":memory:");db.exec("CREATE TABLE scoped(k TEXT PRIMARY KEY,payload TEXT NOT NULL)");const insert=db.prepare("INSERT INTO scoped VALUES(?,?) ON CONFLICT DO NOTHING");
+for(let replay=0;replay<2;replay++)for(const r of rows)insert.run(`${r.playerId}:${r.season}:${r.scope.stage}:${r.teamId}:${r.role}`,JSON.stringify(r));
+const actual=db.prepare("SELECT payload FROM scoped").all().map(r=>String(r.payload)).sort();if(JSON.stringify(actual)!==JSON.stringify(rows.map(r=>JSON.stringify(r)).sort()))throw Error("Scratch scoped readback/replay mismatch");db.close();
+await mkdir(output,{recursive:true});const body=JSON.stringify(dataset),gzip=gzipSync(body,{level:9});await writeFile(join(output,"npb-historical-postseason.json.gz"),gzip);
+const report={inputSha256,sha256:createHash("sha256").update(gzip).digest("hex"),bodySha256:createHash("sha256").update(body).digest("hex"),bytes:Buffer.byteLength(body),gzipBytes:gzip.length,players:players.length,rows:rows.length,scopes:rows.map(r=>({playerId:r.playerId,season:r.season,competition:r.scope.competition,stage:r.scope.stage})),canonicalWrites:0,sourceRequests:0,scratchReadback:true,idempotentReplay:true};await writeFile(join(output,"report.json"),JSON.stringify(report,null,2));console.log(JSON.stringify(report));
