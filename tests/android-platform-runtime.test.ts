@@ -10,7 +10,7 @@ const consume = vi.hoisted(() => vi.fn(async () => {
   if (state.unsupported) throw Error("Plugin unavailable in an older APK");
   return { route: state.saved };
 }));
-const remember = vi.hoisted(() => vi.fn(async (_options: { route: string }) => undefined));
+const remember = vi.hoisted(() => vi.fn(async () => undefined));
 vi.mock("@capacitor/core", () => ({ Capacitor: { getPlatform: () => state.platform },
   registerPlugin: (name: string) => name === "RouteRestore" ? { consume, remember } : {} }));
 vi.mock("@capacitor/app", () => ({ App: {
