@@ -33,7 +33,7 @@ export function activityFromRoute(path: string, search: string, now: number): Ac
   }
   const params = new URLSearchParams(search);
   // Activity never stores search text or Explorer cohorts; saving these requires an explicit Saved View.
-  params.delete("recentPlayers");
+  for(const key of ["recentPlayers","cohort","peer"])params.delete(key);
   return { league: parsedLeague.data, kind, entityId, conditions: viewConditions(params, false), visitedAt: now };
 }
 export function activityPath(item: Activity): string {

@@ -108,5 +108,112 @@
         "sha256": "d84045bff01d669e730e2724d1d7f1e8708f9d838b23f3a745f31b225c0c4733"
       }
     }
+  },
+  {
+    "assetUrl": "https://github.com/tomoya41/baseball-notes/releases/download/npb-history-wikipedia-20261016-v6/npb-historical-wikipedia.json.gz",
+    "sha256": "3546cea6b2c3767c973739ab5a902c98b02a89e81d33e47444f079efabbd21b4",
+    "inputSha256": "1e383d106ef9db5329aca692d08e938e4d10dd931e945a604bb859347cdd570f",
+    "files": {
+      "manifest.json": {
+        "bytes": 72211,
+        "sha256": "64897d3927c1100703fc4b739a1fa7b6f12b582c4b4bbeb7f4bfc4dc435443ed"
+      },
+      "2002.json": {
+        "bytes": 1295,
+        "sha256": "30b5ed5b5c3191bd27ee79f30a787ac240803f6b8eb9a93f5735af1d31f36965"
+      },
+      "2003.json": {
+        "bytes": 1926,
+        "sha256": "109424c53369da1f0b861784a19c51efc1ea989024403ba76d64e190cd28fa30"
+      },
+      "2004.json": {
+        "bytes": 2552,
+        "sha256": "1e058475f45b80009045bd321de7dec8241757c9504423273c20d3d7598cb979"
+      },
+      "2005.json": {
+        "bytes": 3235,
+        "sha256": "1bf627a6fd5db130a94d2d43cba3936daf181316fb1a35084f83bb10ee7383a8"
+      },
+      "2006.json": {
+        "bytes": 3899,
+        "sha256": "685e41b63390635d1d7f28766ec3c67f2a756b1a4349bcc8fe232e1bdcd749ad"
+      },
+      "2007.json": {
+        "bytes": 6495,
+        "sha256": "a49e524509908290c9964de0e5da217ed2a9bcdd15d717d40fba29f6d275a38d"
+      },
+      "2008.json": {
+        "bytes": 9108,
+        "sha256": "76a4c0e267ddd3b05d38c8412e97907a6b2c35f82659a3e299a57666654acb95"
+      },
+      "2009.json": {
+        "bytes": 10429,
+        "sha256": "d52af6f0d734b63cda350f532bc7bab12df7fab6e7e81a643677245af96e295f"
+      },
+      "2010.json": {
+        "bytes": 13605,
+        "sha256": "e3f574c9b39e2ac442633ac03477ab27d8a26306e59b0e3d03b4964cc72cb601"
+      },
+      "2011.json": {
+        "bytes": 16855,
+        "sha256": "c9306fb9a1cfd8d37076ca25727f8624406064dd91adbfd83b4452fc64f9f9a8"
+      },
+      "2012.json": {
+        "bytes": 22755,
+        "sha256": "7d4996dd9a74afbf1f406bb8e8294e00dc7459d3a7062127f0cea9c7b7226a3b"
+      },
+      "2013.json": {
+        "bytes": 30612,
+        "sha256": "cbb4ddc2ec7e39774a0cefd2d85972dd1f356eb0ea2bd7d90a1ada0448dd0632"
+      },
+      "2014.json": {
+        "bytes": 37816,
+        "sha256": "e673713225b6537d548db8844b76560bbb36cc37e8fb00bfb3c1e9a3601c9748"
+      },
+      "2015.json": {
+        "bytes": 61876,
+        "sha256": "dae4a9a6a892427f2e762d73e0c21b56aca571887d5358860080ff6dcbe6715e"
+      },
+      "2016.json": {
+        "bytes": 76382,
+        "sha256": "61ccd5b8a8e1973bad10dbef5aba38299f91d77753002db3735185cf08339da1"
+      },
+      "2017.json": {
+        "bytes": 97927,
+        "sha256": "3f2e6ad614716f9c56b22cc7c7c4c00abe566b9a9c32dcf54d41581ef5218486"
+      },
+      "2018.json": {
+        "bytes": 119518,
+        "sha256": "6d38a441cad119426e9405b5ecc636d8c8d9c8ee5e9e27dff677798864805ffc"
+      },
+      "2019.json": {
+        "bytes": 145626,
+        "sha256": "858e9dd1ae34946a4df026c12cfa676d2a12989245ec80f21e0810b0e57d2aa6"
+      },
+      "2020.json": {
+        "bytes": 166758,
+        "sha256": "82267e5870080d7bf327b68b974970f76a0ec82db7084612ab42a59e81272fbd"
+      },
+      "2021.json": {
+        "bytes": 197115,
+        "sha256": "f1afdcc9e752919baab2b68a74e619ec01a2f01d20b1db8b53d4d2981f71b7ec"
+      },
+      "2022.json": {
+        "bytes": 236928,
+        "sha256": "76f6ddc5899d24f15e398fdbdf19318645562d9658c907f103366bed427551b9"
+      },
+      "2023.json": {
+        "bytes": 255640,
+        "sha256": "f6a17b3aa96f99ee17c4e0d9a5fa325b489630381b916aea00169a25e595f781"
+      },
+      "2024.json": {
+        "bytes": 299387,
+        "sha256": "26eee99e29b739853ab18b1e5f5c790a3269db13551b20fc45a74302c829a236"
+      },
+      "2025.json": {
+        "bytes": 354459,
+        "sha256": "8911960a521fd2f7029f912c21453ab948edaf0b90727c2d46b82e5405887b29"
+      }
+    }
   }
 ]

@@ -1192,3 +1192,8 @@ Saved Directory identities can open a dedicated year/competition view from Playe
 Historical Regular year comparisons show up to four selected years, missing-year gaps, club-year observations and collected-range best values with explicit rate-sample thresholds. They are not complete Career totals or official qualified rankings. Older years are admitted only for independently bridged saved Directory identities; no name-only merge or implied current registration.
 
 When the NPB period API is unavailable, Player/Recent may read already published, validated season or exact 7/14/30-day projections. Show their original dates, partial coverage and inability to verify current freshness. Do not invent daily coverage from a summary, use this fallback as new collection evidence, or feed it into Watch/HOT/Ranking gates. No monthly fallback without a matching published month projection. Home adds no requests.
+
+
+### NPB peer analysis (2026-10-18)
+
+Historical Regular supports one-season peer discovery by explicit birth year or draft year, with 2–4 canonical players, per-player samples and source credits. Unknown metadata never becomes a matched cohort; no rookie/roster/official-ranking qualification is inferred. Adjacent single-club year observations may show metric differences without inferring transfer timing or causation. See docs/npb-cohorts-and-evidence.md for licensed immutable releases, scope, preserved URLs and operating gates.

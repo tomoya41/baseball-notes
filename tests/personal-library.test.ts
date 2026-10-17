@@ -7,6 +7,18 @@ function setup(now = 1000000000000) {
   return { data, storage, store: new PersonalLibrary(storage, () => now, () => `local-${++serial}`), now };
 }
 describe("versioned local personal library", () => {
+  it("requires an explicit Saved View for cohort references rather than recording them automatically", async()=>{
+    const {store,now}=setup(),params=new URLSearchParams(`season=2025&role=pitching&cohort=birthYear&peer=${player}&recentPlayers=${player}&q=private-search`);
+    const activity=activityFromRoute("/NPB/history",params.toString(),now)!;
+    await store.visit(activity);
+    expect(activity.conditions).toBe("season=2025&role=pitching");
+    expect(activityPath(activity)).not.toContain("peer");
+    await store.saveView("明示して保存した同期", "NPB", "history",params);
+    const saved=(await store.read()).views[0]!;
+    expect(new URLSearchParams(saved.conditions).get("cohort")).toBe("birthYear");
+    expect(new URLSearchParams(saved.conditions).get("peer")).toBe(player);
+    expect((await store.read()).activity[0]!.conditions).not.toContain("cohort");
+  });
   it("creates, renames, deletes and reloads Collections without touching Favorites", async () => {
     const { store, data, storage } = setup(); data.set("baseball:favorites:v1", "existing");
     const c = (await store.createCollection("若手")).collections[0]!;

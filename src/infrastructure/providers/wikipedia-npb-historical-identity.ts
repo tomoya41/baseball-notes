@@ -25,7 +25,8 @@ export function verifyHistoricalIdentity(rawPage:unknown,rawEntity:unknown,obser
   const p=z.object({pageid:z.number().int().positive(),title:z.string(),pageprops:z.object({wikibase_item:z.string()}),revisions:z.array(z.object({revid:z.number().int().positive(),slots:z.object({main:z.object({content:z.string()})})})).length(1)}).parse(rawPage);
   const e=z.object({id:z.string(),lastrevid:z.number().int().positive(),sitelinks:z.object({jawiki:z.object({title:z.string()})}),claims:z.record(z.string(),z.array(claim))}).parse(rawEntity);
   if(e.id!==p.pageprops.wikibase_item||e.sitelinks.jawiki.title!==p.title)throw Error("Article/QID/sitelink mismatch");
-  const text=p.revisions[0]!.slots.main.content;
+  // Hidden documentation/examples are not independent ID or birthdate evidence.
+  const text=p.revisions[0]!.slots.main.content.replace(/<!--[\s\S]*?(?:-->|$)/g,"");
   const ids=[...new Set([...text.matchAll(/(?:\{\{NPB\s*\|\s*|https?:\/\/(?:www\.)?npb\.(?:jp|or\.jp)\/bis\/players\/)(\d{8})(?=[\s|}.])/gi)].map(m=>m[1]!))];
   const wd=usable(e.claims.P4260);
   if(ids.length!==1||wd.length!==1||wd[0]!==ids[0])throw Error("NPB external-ID evidence mismatch");

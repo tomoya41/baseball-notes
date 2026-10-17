@@ -1,6 +1,6 @@
 import { describe,expect,it } from "vitest";
 import { historicalIdentityId,verifyHistoricalIdentity } from "../src/infrastructure/providers/wikipedia-npb-historical-identity";
-import { assertHistoricalBridge } from "../src/infrastructure/providers/npb-historical-admission";
+import { assertHistoricalBridge, historicalCurrentBridges } from "../src/infrastructure/providers/npb-historical-admission";
 import registry from "../src/data/npb-historical-only-identities.json";
 const claim=(value:unknown,rank="normal")=>({rank,mainsnak:{datavalue:{value}}});
 const birth={time:"+1980-04-05T00:00:00Z",precision:11,calendarmodel:"http://www.wikidata.org/entity/Q1985727"};
@@ -20,6 +20,22 @@ describe("historical-only identity admission",()=>{
     expect(verifyHistoricalIdentity(page,entity,at,[existing])).toEqual({kind:"existing",bridge:existing});
     expect(()=>verifyHistoricalIdentity(page,entity,at,[{...existing,npbId:"87654321"}])).toThrow(/Conflicting/);
     expect(()=>verifyHistoricalIdentity(page,{...entity,claims:{...entity.claims,P4260:[claim("12345678"),claim("87654321")]}},at,[])).toThrow();
+  });
+  it("ignores hidden birthdate instructions and ID examples without accepting visible contradictions",()=>{
+    const content=page.revisions[0]!.slots.main.content.replace("{{生年月日と年齢|1980|4|5}}","{{生年月日と年齢|1980|4|5}}<!-- {{生年月日と年齢|生年|月|日|no}} {{NPB|87654321}} -->");
+    const changed={...page,revisions:[{...page.revisions[0]!,slots:{main:{content}}}]};
+    expect(verifyHistoricalIdentity(changed,entity,at,[]).kind).toBe("new");
+    expect(()=>verifyHistoricalIdentity({...changed,revisions:[{...page.revisions[0]!,slots:{main:{content:content+"{{NPB|87654321}}"}}}]},entity,at,[])).toThrow(/external-ID/);
+    expect(()=>verifyHistoricalIdentity({...changed,revisions:[{...page.revisions[0]!,slots:{main:{content:content.replace("{{生年月日と年齢|1980|4|5}}","<!-- {{生年月日と年齢|1980|4|5}} -->")}}}]},entity,at,[])).toThrow(/birthdate/);
+  });
+  it("keeps independently reviewed registered abbreviations on the existing canonical ID",()=>{
+    const ariel=historicalCurrentBridges.find(b=>b.npbId==="73975136")!;
+    expect(ariel.playerId).toBe("79e33d14-9021-4db8-a976-74c9d02df328");
+    expect(()=>assertHistoricalBridge(ariel)).not.toThrow();
+    expect(()=>assertHistoricalBridge({...ariel,playerId:historicalIdentityId(ariel.npbId)})).toThrow();
+    expect(()=>assertHistoricalBridge({...ariel,identityScope:"historical_only"})).toThrow();
+    expect(()=>assertHistoricalBridge({...ariel,npbId:"13415155"})).toThrow();
+    for(const key of ["playerId","npbId","wikidataId"] as const)expect(new Set(historicalCurrentBridges.map(b=>b[key])).size).toBe(historicalCurrentBridges.length);
   });
   it("does not merge equal names, and ignores deprecated claims",()=>{
     expect(historicalIdentityId("12345678")).not.toBe(historicalIdentityId("87654321"));

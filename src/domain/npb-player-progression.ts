@@ -32,3 +32,12 @@ export function bestObservedSeasons(points: readonly SeasonObservation[], metric
   const value = (lower ? Math.min : Math.max)(...candidates.map(p => p.metrics[metric]!));
   return candidates.filter(p => p.metrics[metric] === value).sort((a, b) => a.season - b.season);
 }
+
+/** Adjacent collected years with one different club each. No inferred transfer date or causation. */
+export function observedClubChanges(points: readonly SeasonObservation[]) {
+  const sorted=points.slice().sort((a,b)=>a.season-b.season);
+  return sorted.flatMap((after,i)=>{
+    const before=sorted[i-1];
+    return before&&after.season===before.season+1&&before.teams.length===1&&after.teams.length===1&&before.teams[0]!==after.teams[0]?[{before,after}]:[];
+  });
+}

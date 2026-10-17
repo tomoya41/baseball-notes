@@ -1,7 +1,7 @@
 import { readFile,writeFile } from "node:fs/promises";
 import { gunzipSync } from "node:zlib";
 import { resolve } from "node:path";
-import bridges from "../src/data/npb-free-profile-identities.json";
+import { historicalCurrentBridges as bridges } from "../src/infrastructure/providers/npb-historical-admission";
 import { npbPlayerDirectorySchema } from "../src/domain/npb-player-directory";
 import { npbCatalogSchema } from "../src/domain/npb-product-contract";
 import { npbHistoricalDatasetSchema } from "../src/domain/npb-historical";
