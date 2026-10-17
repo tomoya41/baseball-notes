@@ -36,15 +36,14 @@ it("opens a validated cold launch without saved state", async () => {
   expect(window.location.hash).toContain("#/NPB/cs?");
   expect(window.location.hash).toContain("stage=npb_cs_final");
 });
-it("resumes the selected route, ignores one retained launch replay, then accepts the same new external link", async () => {
+it("resumes the selected route and accepts the first genuine matching external link after bootstrap", async () => {
   state.saved = "/NPB/players/6bf4b271-e16c-43f9-9142-8c7ca7de9887/seasons?season=2026&competition=postseason&stage=npb_cs_final&role=pitching";
   await installPlatformRuntime(); expect(window.location.hash).toBe(`#${state.saved}`);
-  state.listener!({ url: state.launch }); expect(window.location.hash).toBe(`#${state.saved}`);
   state.listener!({ url: state.launch }); expect(window.location.hash).toContain("#/NPB/cs?");
 });
-it("does not replay an initial retained URI over restored state during listener registration", async () => {
+it("also accepts a genuine matching external URI during listener registration", async () => {
   state.saved = "/privacy"; state.bootEvent = state.launch;
-  await installPlatformRuntime(); expect(window.location.hash).toBe("#/privacy");
+  await installPlatformRuntime(); expect(window.location.hash).toContain("#/NPB/cs?");
 });
 it("a different valid external link arriving during boot takes priority", async () => {
   state.saved = "/privacy"; state.bootEvent = "baseballnotes://NPB/cs?season=2026&stage=npb_cs_first";
@@ -72,8 +71,12 @@ it("records an encoded SPA route without relying on WebView.getUrl", async () =>
   const route = "/NPB/cs?season=2026&q=A%26B";
   await rememberNativeRoute(route); expect(remember).toHaveBeenCalledWith({ route });
 });
-it("does not record invalid state or any route on Web", async () => {
-  await rememberNativeRoute("/other"); expect(remember).not.toHaveBeenCalled();
+it("clears a stale native snapshot for invalid state, and records nothing on Web", async () => {
+  await rememberNativeRoute("/privacy");
+  await rememberNativeRoute("/NPB/cs?q=" + "x".repeat(8300));
+  expect(remember).toHaveBeenLastCalledWith({ route: null });
+  await rememberNativeRoute("/other"); expect(remember).toHaveBeenLastCalledWith({ route: null });
+  remember.mockClear();
   state.platform = "web"; await rememberNativeRoute("/privacy"); expect(remember).not.toHaveBeenCalled();
 });
 it("an older native adapter cannot break navigation while recording", async () => {

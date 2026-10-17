@@ -8,12 +8,15 @@ import android.view.Window;
 import android.content.res.Configuration;
 import android.webkit.WebView;
 import android.net.Uri;
+import android.content.Intent;
 
 public class MainActivity extends BridgeActivity {
     private static final String WEB_ROUTE = "baseball.webRoute";
     private static final int MAX_ROUTE_LENGTH = 8192;
     private String restoredRoute;
     private volatile String currentRoute;
+    private volatile boolean routerObserved;
+    private boolean initialIntentPending = true;
     private static boolean isSavedRoute(String route) {
         if (route == null || route.length() > MAX_ROUTE_LENGTH) return false;
         String path = Uri.decode(route.split("\\?", 2)[0]);
@@ -29,12 +32,14 @@ public class MainActivity extends BridgeActivity {
         return route;
     }
     void rememberRoute(String route) {
-        if (isSavedRoute(route)) currentRoute = route;
+        currentRoute = isSavedRoute(route) ? route : null;
+        routerObserved = true;
     }
     @Override public void onCreate(Bundle savedInstanceState) {
         String route = savedInstanceState == null ? null : savedInstanceState.getString(WEB_ROUTE);
         restoredRoute = isSavedRoute(route) ? route : null;
         currentRoute = restoredRoute;
+        routerObserved = restoredRoute != null;
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         registerPlugin(FavoriteNotificationsPlugin.class);
         registerPlugin(RouteRestorePlugin.class);
@@ -53,11 +58,21 @@ public class MainActivity extends BridgeActivity {
             // React Router pushState need not update WebView.getUrl. The
             // router's acknowledged route also survives a second recreation
             // while the new WebView is still on its pre-router loading page.
-            String route = currentRoute != null ? currentRoute : savedRoute(url);
+            String route = routerObserved ? currentRoute : savedRoute(url);
             // A pre-router loading page must not consume a pending cold link.
+            outState.remove(WEB_ROUTE);
             if (route == null) return;
             outState.putString(WEB_ROUTE, route);
         }
+    }
+    @Override protected void onNewIntent(Intent intent) {
+        // Pinned Capacitor BridgeActivity.load invokes this once during create.
+        // A restored Activity must not replay that original URI; real later
+        // external intents are always forwarded without a time-based filter.
+        boolean initial = initialIntentPending;
+        initialIntentPending = false;
+        if (initial && restoredRoute != null) return;
+        super.onNewIntent(intent);
     }
     // WebView text zoom can enlarge painted glyphs without enlarging flex bases.
     // Expose only OS font scale for layout; never reduce the user's text zoom.

@@ -37,3 +37,11 @@ Repository instrumentation exercises actual canonical MLB Player/Game, native Ba
 The added emulator test exposed an actual nested-dialog bug, also reproduced with Escape on the published browser: React close propagation dismissed both the collection picker and its parent actions sheet. `AppDialog` now isolates its close event. Regression uses a real parent close-state handler rather than the previous no-op test handler, and native QA waits for picker unmount and trigger focus before proceeding. No visual redesign or persistence contract change.
 
 Signed builds, signing-key ownership and Play steps are in [Play preparation](play-release-readiness.md). No release key was generated or modified.
+
+## 2026-10-17補足：更新前に署名を確認
+
+CIのdebug APKが、Pixelへ初回導入したAPKと同じ署名とは限りません。初回保管APK（SHA256 `3fc935e113aafa419a03efc084c9df36c0b0657b2a6b31378d0f15f35672ac09`）の公開証明書SHA256は `223912d3da4f0c257f9a849c05a6db9dabb11caa7b2d36fba92803ce00ce360f` です。今回調べたCI版の証明書はこれと異なりました。これはAPK内の公開証明書の照合であり、未接続端末の現在のインストール状態を調べた結果ではありません。
+
+実機更新前に、接続中Pixelの当該パッケージと候補APKの署名継続性を確認してください。同じ署名を使えない場合は更新を停止し、**アンインストール／pm clearで回避しない**でください。元の署名キーでのビルド可否、または既存アプリを残す別QA環境を所有者と決める必要があります。既定のWindows／workspace debug keystoreは今回見つかっていませんが、所有者管理の別保管先が存在しないとは断定しません。秘密鍵をチャットや公開Artifactへ送らないこと。
+
+署名キーの生成・変更・新規Secretsの追加・Play公開は行っていません。Androidの署名・更新方針は [公式ガイド](https://developer.android.com/studio/publish/app-signing) を参照してください。物理Pixel／TalkBackのNOT RUNは、エミュレーター結果で置き換えません。

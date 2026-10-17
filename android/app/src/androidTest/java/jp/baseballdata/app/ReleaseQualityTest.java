@@ -428,6 +428,16 @@ public class ReleaseQualityTest {
         js("location.hash='#/privacy'"); waitText("プライバシー・データ");
         scenario.recreate(); waitText("プライバシー・データ");
         assertEquals("Top-level privacy is a resumable app screen", "#/privacy", js("location.hash"));
+        scenario.onActivity(activity -> activity.onNewIntent(link));
+        waitText("2026 クライマックスシリーズ"); waitText("リバン・モイネロ");
+        assertTrue("The same genuine external launch URI is not suppressed after bootstrap", js("location.hash").contains("stage=npb_cs_final"));
+        js("location.hash='#/NPB/cs?season=2026&q='+ 'x'.repeat(8300)");
+        waitCondition("Oversized filter rendered", "document.querySelector('main input[type=search]')?.value.length===8300");
+        waitPaint();
+        scenario.onActivity(activity -> {
+            Bundle saved = new Bundle(); activity.onSaveInstanceState(saved);
+            assertNull("Oversized current route clears the old privacy/CS snapshot", saved.getString("baseball.webRoute"));
+        });
     }
     @Test public void nativePreferencesSurviveRestartAndFirebaseDisabled() throws Exception {
         String fixture = "{\"items\":[{\"league\":\"NPB\",\"kind\":\"player\",\"entityId\":\"canonical-player\"}]}";

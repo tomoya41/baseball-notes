@@ -22,12 +22,12 @@ function incoming(url: string) {
 }
 const routeRestore = registerPlugin<{
   consume(): Promise<{ route?: string }>;
-  remember(options: { route: string }): Promise<void>;
+  remember(options: { route: string | null }): Promise<void>;
 }>("RouteRestore");
 export async function rememberNativeRoute(value: string): Promise<void> {
   if (!isAndroid()) return;
   const route = resumableNativeRoute(value);
-  if (route) await routeRestore.remember({ route }).catch(() => undefined);
+  await routeRestore.remember({ route }).catch(() => undefined);
 }
 export async function installPlatformRuntime() {
   const refreshed = () => { if (needsPublicDataRefresh()) { clearSavedResponseFallback(); window.dispatchEvent(new Event("baseball:refresh-data")); } };
@@ -36,12 +36,10 @@ export async function installPlatformRuntime() {
   const restored = await routeRestore.consume().catch(() => ({} as { route?: string }));
   const resume = resumableNativeRoute(restored.route) ?? resumableNativeRoute(window.location.hash.slice(1));
   const launch = await App.getLaunchUrl();
-  // Capacitor retains the initial ACTION_VIEW event as well as getLaunchUrl.
-  // Suppress that one replay when resuming; later external intents still work.
-  let ignoredLaunch = resume ? launch?.url : undefined;
+  // The restored Activity suppresses only its own create-time URI dispatch.
+  // Every real appUrlOpen event (even the same URI during boot) takes priority.
   let openedDuringBoot = false;
   await App.addListener("appUrlOpen", event => {
-    if (ignoredLaunch && event.url === ignoredLaunch) { ignoredLaunch = undefined; return; }
     openedDuringBoot = incoming(event.url) || openedDuringBoot;
   });
   if (!openedDuringBoot) {
