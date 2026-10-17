@@ -8,6 +8,8 @@ import android.net.Uri;
 import android.net.ConnectivityManager;
 import android.net.NetworkCapabilities;
 import android.graphics.Bitmap;
+import android.os.Bundle;
+import android.os.Parcel;
 import android.view.MotionEvent;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -31,7 +33,7 @@ public class ReleaseQualityTest {
     }
     private long waitText(String text) throws Exception {
         long start = System.currentTimeMillis();
-        while (System.currentTimeMillis() - start < 40000) { if (js("document.body.innerText").contains(text)) return System.currentTimeMillis()-start; Thread.sleep(100); }
+        while (System.currentTimeMillis() - start < 40000) { if (js("document.body?.innerText || ''").contains(text)) return System.currentTimeMillis()-start; Thread.sleep(100); }
         fail("Screen did not load: " + text + " / " + js("document.body.innerText")); return 0;
     }
     private void shell(String command) throws Exception {
@@ -351,6 +353,7 @@ public class ReleaseQualityTest {
             screenshot("npb-player-competition-font-" + scale.replace(".", "") + "-dark");
             setTheme("light", "ライト"); js("location.hash='"+scopedHash+"'"); waitText("5.2");
         }
+        waitCondition("Current profile link available after Directory validation", "Array.from(document.querySelectorAll('main a')).some(a=>a.textContent==='2026年の選手ページへ')");
         js("Array.from(document.querySelectorAll('main a')).find(a=>a.textContent==='2026年の選手ページへ').click()");
         // The same name exists on both screens. Wait for the destination route
         // and a rendered Current profile before sending a real system Back.
@@ -372,8 +375,14 @@ public class ReleaseQualityTest {
         waitText("2026年 · CS ファイナル"); waitText("2.2");
         assertTrue("CS sample stays explicit", js("document.body.innerText").contains("CS全試合・選手の大会通算成績ではありません"));
         String csHash=js("location.hash");
+        waitPaint();
+        scenario.onActivity(activity -> {
+            Bundle saved = new Bundle(); activity.onSaveInstanceState(saved);
+            assertEquals("The native snapshot uses the selected SPA player, not the original list", csHash.substring(1), saved.getString("baseball.webRoute"));
+        });
         for(String scale:new String[]{"1.5","2.0"}) {
             shell("settings put system font_scale " + scale); scenario.recreate(); waitText("2.2"); waitViewport(360);
+            assertEquals("Recreation retains the selected player, not the initial CS list", csHash, js("location.hash"));
             assertEquals("CS has no overflow at " + scale, "true", js("document.documentElement.scrollWidth<=innerWidth"));
             screenshot("npb-cs-font-" + scale.replace(".", "") + "-light");
             setTheme("dark", "ダーク"); js("location.hash='"+csHash+"'"); waitText("2.2");
@@ -382,13 +391,59 @@ public class ReleaseQualityTest {
             setTheme("light", "ライト"); js("location.hash='"+csHash+"'"); waitText("2.2");
         }
         shell("settings put system font_scale 1.0"); scenario.recreate(); waitText("2.2");
+        shell("input keyevent KEYCODE_BACK"); waitText("2026 クライマックスシリーズ");
+        assertTrue("Cold restored Back retains CS stage and role", js("location.hash").contains("stage=npb_cs_final") && js("location.hash").contains("role=pitching"));
+        waitText("リバン・モイネロ");
+        js("Array.from(document.querySelectorAll('a.player-row')).find(a=>a.textContent.includes('リバン・モイネロ')).click()");
+        waitText("2026年 · CS ファイナル"); waitText("2.2");
         js("const s=document.querySelector('select[aria-label=\"選手成績の年度\"]');s.value='2025';s.dispatchEvent(new Event('change',{bubbles:true}))");
         waitText("成績の変化");
         assertTrue("Year switch resets unsupported stage", js("location.hash").contains("competition=regular"));
         assertFalse("No stale CS stage in Regular", js("location.hash").contains("stage="));
-        waitCondition("Accessible progression chart", "!!document.querySelector('svg[aria-label*=\"年度推移\"]') && document.querySelectorAll('.player-progression dd').length===4");
+        waitCondition("Accessible progression chart with four primary samples", "!!document.querySelector('svg[aria-label*=\"年度推移\"]') && document.querySelectorAll('.player-progression > dl.explorer-values dd').length===4");
         screenshot("npb-progression-360");
         shell("input keyevent KEYCODE_BACK"); waitText("2026年 · CS ファイナル"); waitText("2.2");
+    }
+    @Test public void longNavigationHistoryHasBoundedRecreationState() throws Exception {
+        assertEquals("/NPB/search?q=A%26B%3DC%25", MainActivity.savedRoute("https://localhost/#/NPB/search?q=A%26B%3DC%25"));
+        assertEquals("/privacy", MainActivity.savedRoute("https://localhost/#/privacy"));
+        assertNull("Pre-router load does not consume cold links", MainActivity.savedRoute("https://localhost/"));
+        assertNull("Oversized routes are not put in Activity state", MainActivity.savedRoute("https://localhost/#/NPB/search?q=" + "x".repeat(8200)));
+        Intent link = new Intent(Intent.ACTION_VIEW, Uri.parse("baseballnotes://NPB/cs?season=2026&stage=npb_cs_final&role=pitching"));
+        link.setClassName("com.tomoya41.baseballnotes", "jp.baseballdata.app.MainActivity");
+        scenario = ActivityScenario.launch(link);
+        waitText("2026 クライマックスシリーズ"); waitText("リバン・モイネロ");
+        String route = js("location.hash");
+        // Inflate actual WebView history without fetching any extra payload.
+        js("(()=>{const original=location.href;for(let i=0;i<160;i++)history.pushState({},'',original+'&q='+('history-'+i+'-').repeat(450));history.pushState({},'',original)})()");
+        scenario.onActivity(activity -> {
+            Bundle state = new Bundle(); activity.onSaveInstanceState(state);
+            Parcel parcel = Parcel.obtain();
+            try {
+                parcel.writeBundle(state);
+                assertTrue("Activity state remains below 192 KiB after long history", parcel.dataSize() < 192 * 1024);
+                System.out.println("NPB_QA_SAVED_STATE_BYTES " + parcel.dataSize());
+            } finally { parcel.recycle(); }
+        });
+        scenario.recreate(); waitText("2026 クライマックスシリーズ"); waitText("リバン・モイネロ");
+        assertEquals("Long-history recreation retains the current scoped route", route, js("location.hash"));
+        js("location.hash='#/NPB/cs?season=2026&q=A%26B%3DC%25'");
+        waitCondition("Encoded search rendered", "document.querySelector('main input[type=search]')?.value==='A&B=C%'");
+        scenario.recreate();
+        waitCondition("Encoded search survives recreation", "document.querySelector('main input[type=search]')?.value==='A&B=C%'");
+        js("location.hash='#/privacy'"); waitText("プライバシー・データ");
+        scenario.recreate(); waitText("プライバシー・データ");
+        assertEquals("Top-level privacy is a resumable app screen", "#/privacy", js("location.hash"));
+        scenario.onActivity(activity -> activity.onNewIntent(link));
+        waitText("2026 クライマックスシリーズ"); waitText("リバン・モイネロ");
+        assertTrue("The same genuine external launch URI is not suppressed after bootstrap", js("location.hash").contains("stage=npb_cs_final"));
+        js("location.hash='#/NPB/cs?season=2026&q='+ 'x'.repeat(8300)");
+        waitCondition("Oversized filter rendered", "document.querySelector('main input[type=search]')?.value.length===8300");
+        waitPaint();
+        scenario.onActivity(activity -> {
+            Bundle saved = new Bundle(); activity.onSaveInstanceState(saved);
+            assertNull("Oversized current route clears the old privacy/CS snapshot", saved.getString("baseball.webRoute"));
+        });
     }
     @Test public void nativePreferencesSurviveRestartAndFirebaseDisabled() throws Exception {
         String fixture = "{\"items\":[{\"league\":\"NPB\",\"kind\":\"player\",\"entityId\":\"canonical-player\"}]}";

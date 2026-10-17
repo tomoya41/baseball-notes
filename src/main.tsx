@@ -9,6 +9,7 @@ import "./ui/styles.css";
 import "./ui/feature-layouts.css";
 import "./ui/final-design.css";
 import { restoreAppearance } from "./app/appearance";
+import { NativeRouteState } from "./app/native-route-state";
 
 void installAndroidBackHandler();
 const root = document.getElementById("root");
@@ -20,6 +21,7 @@ async function mount() {
   ReactDOM.createRoot(root!).render(
   <React.StrictMode>
     <HashRouter>
+      <NativeRouteState />
       <App services={services} />
     </HashRouter>
   </React.StrictMode>,

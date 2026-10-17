@@ -37,6 +37,15 @@ export function parentNativeRoute(path: string): string | null {
   if (league === "MLB" && /^20\d{2}$/.test(source.get("season") ?? "")) scope.set("season", source.get("season")!);
   const suffix = scope.size ? `?${scope}` : "";
   if(league==="NPB"&&segments[1]==="players"&&segments[3]==="seasons") {
+    if (source.get("season") === "2026") {
+      const stage = source.get("stage"), role = source.get("role");
+      if (source.get("competition") === "postseason" && (stage === "npb_cs_first" || stage === "npb_cs_final")) {
+        const cs = new URLSearchParams({ season: "2026", stage });
+        if (role === "batting" || role === "pitching") cs.set("role", role);
+        return `/NPB/cs?${cs}`;
+      }
+      return `/NPB/players/${segments[2]}`;
+    }
     const history=new URLSearchParams({player:segments[2]!});
     if(/^20\d{2}$/.test(source.get("season")??""))history.set("season",source.get("season")!);
     return `/NPB/history?${history}`;

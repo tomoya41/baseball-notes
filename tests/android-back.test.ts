@@ -41,3 +41,15 @@ it("exits only a cold home without a parent", async () => {
 it("does not install an Android handler on Web", async () => {
   native.platform = false; await installAndroidBackHandler(); expect(native.listener).toBeNull();
 });
+it.each(["npb_cs_first", "npb_cs_final"])("a cold restored CS player returns to the exact %s explorer", async stage => {
+  window.history.state.idx = 0;
+  window.location.hash = `#/NPB/players/21a327b4-3924-422a-a1fc-d853e236a201/seasons?season=2026&competition=postseason&stage=${stage}&role=pitching`;
+  await installAndroidBackHandler(); native.listener!({ canGoBack: false });
+  expect(replace).toHaveBeenCalledWith(`#/NPB/cs?season=2026&stage=${stage}&role=pitching`);
+});
+it("a cold saved-2026 Regular view returns to its Current profile, not unavailable Historical 2026", async () => {
+  window.history.state.idx = 0;
+  window.location.hash = "#/NPB/players/21a327b4-3924-422a-a1fc-d853e236a201/seasons?season=2026&competition=regular";
+  await installAndroidBackHandler(); native.listener!({ canGoBack: false });
+  expect(replace).toHaveBeenCalledWith("#/NPB/players/21a327b4-3924-422a-a1fc-d853e236a201");
+});
