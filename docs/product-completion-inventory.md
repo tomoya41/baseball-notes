@@ -586,3 +586,10 @@ SQL reads and Current API HTTP 200 were observed again without account/plan/code
 ### CS multiline / hidden-template follow-up
 
 [Narrow follow-up](npb-cs-multiline-followup.md): one additional independently linked pitching row brings partial 2026 CS to 126 players / 126 rows (97 batting / 29 pitching), still eight observed-final scores. Preserve the previous 125 rows and v1 public payload for installed APKs. Removing hidden 2026 templates from structural parsing eliminates three diagnostic-only exclusions; original 55 become 52, plus four earlier-year exclusions = 56 overall. No Regular row changes: the v6 archive hash remains identical. This does not resolve the other identity, profile, Preseason, complete-CS, Career or Current Gate gaps.
+
+
+## 2026-10-18 — Current identity reuse, CS refresh and peer analysis
+
+Regular v7: 600 players / 3,334 rows (1,805 batting, 1,529 pitching), 2002–2025, all partial. Two existing reviewed Current identities add 10 rows; prior 3,324 metrics/identities unchanged, Historical-only 21 unchanged. Saved Directory 740: Historical matches 579, missing 161, Historical bridge gaps 71. No new current roster/jersey/profile assertion. CS v3: 11 observed-final scores / 145 participant rows (112 batting, 33 pitching), collected on October 17, still partial; +3 games/+19 rows, prior values unchanged and v1/v2 retained.
+
+One-season same-birth-year / same-draft-year exploration and 2–4 peer comparison are implemented for admitted Historical rows with source/sample/URL state. Adjacent single-club year differences are available without inferring transfer dates; full career, current registration and complete historical rankings remain unfinished. Freshness is stale, six pending Games/five partial dates and Current HOT/Ranking gates remain. October 18 SQL-read blocking recurred, so do not report permanent Turso recovery or new live integrity PASS. Physical Pixel/TalkBack and original signer continuity remain open. Details and evidence: [NPB cohorts and evidence](npb-cohorts-and-evidence.md).

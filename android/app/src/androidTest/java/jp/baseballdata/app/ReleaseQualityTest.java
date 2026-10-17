@@ -410,8 +410,8 @@ public class ReleaseQualityTest {
         js("location.hash='#/NPB/history?season=2025&role=pitching&cohort=birthYear'");
         // Use the actual UI to pick an admitted reference; no guessed identity/name merge.
         waitText("基準の選手");
-        waitCondition("Reference options loaded", "Array.from(document.querySelectorAll('select')).some(s=>Array.from(s.options).some(o=>o.text==='リバン・モイネロ'))");
-        js("const s=Array.from(document.querySelectorAll('select')).find(s=>Array.from(s.options).some(o=>o.text==='リバン・モイネロ'));s.value=Array.from(s.options).find(o=>o.text==='リバン・モイネロ').value;s.dispatchEvent(new Event('change',{bubbles:true}))");
+        waitCondition("Reference options loaded", "Array.from(document.querySelectorAll('select')).some(s=>Array.from(s.options).some(o=>o.value==='3c4b8e86-5a0c-48cb-aeba-44676de9fa38'))");
+        js("const s=Array.from(document.querySelectorAll('select')).find(s=>Array.from(s.options).some(o=>o.value==='3c4b8e86-5a0c-48cb-aeba-44676de9fa38'));s.value='3c4b8e86-5a0c-48cb-aeba-44676de9fa38';s.dispatchEvent(new Event('change',{bubbles:true}))");
         waitText("1995年生まれ");
         waitCondition("Two independently indexed peers", "document.querySelectorAll('.explorer-results input[type=checkbox]').length>=2");
         js("document.querySelectorAll('.explorer-results input[type=checkbox]')[0].click()");

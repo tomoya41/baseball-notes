@@ -393,3 +393,8 @@ Admit pinned Wikipedia CS score/participant observations only with observed-fina
 ## Android resumes a bounded route after Activity recreation (2026-10-17)
 
 Persist only the current encoded route (maximum 8,192 characters) in private Android instance state and consume it through a small RouteRestore adapter before React mounts. Record committed router locations and clear invalid/oversized snapshots. Do not mutate the launch Intent or serialize/restore the whole WebView history after Capacitor starts loading. This avoids saved-state size and initialization races. Suppress only the native bridge's create-time initial-intent dispatch when resuming; always accept real external events through canonical validation. Keep normal OS font scaling; use the existing safe parent Back fallback after recreation rather than claiming complete browsing-history restoration. See [recreation regression evidence](android-route-recreation.md). No data migration or monthly cost.
+
+
+## 2026-10-18 — Reuse proved identities and compare observed cohorts
+
+Historical admission reuses the collision-checked union of free-profile and independently reviewed nf3/NPB-ID/QID bridges. Do not create a Historical-only UUID for an existing saved canonical player whose registered abbreviation differs from the article title. Recheck the article/QID/NPB-ID/day-precision DOB before admission. Peer analysis combines immutable birth/draft fields with the same canonical ID in one admitted Regular season; it never treats absent profiles as a cohort match or infers rookie/registration evidence. Preserve samples, nullable components, licensed attribution and separate Current/competition gates. See [delivery](npb-cohorts-and-evidence.md).
