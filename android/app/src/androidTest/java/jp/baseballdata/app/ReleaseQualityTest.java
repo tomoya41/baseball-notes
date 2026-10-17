@@ -404,6 +404,27 @@ public class ReleaseQualityTest {
         screenshot("npb-progression-360");
         shell("input keyevent KEYCODE_BACK"); waitText("2026年 · CS ファイナル"); waitText("2.2");
     }
+    @Test public void historicalCohortKeepsSelectionAndScopeAtLargeFont() throws Exception {
+        scenario=ActivityScenario.launch(MainActivity.class);
+        waitText("BASEBALL");
+        js("location.hash='#/NPB/history?season=2025&role=pitching&cohort=birthYear'");
+        // Use the actual UI to pick an admitted reference; no guessed identity/name merge.
+        waitText("基準の選手");
+        waitCondition("Reference options loaded", "Array.from(document.querySelectorAll('select')).some(s=>Array.from(s.options).some(o=>o.text==='リバン・モイネロ'))");
+        js("const s=Array.from(document.querySelectorAll('select')).find(s=>Array.from(s.options).some(o=>o.text==='リバン・モイネロ'));s.value=Array.from(s.options).find(o=>o.text==='リバン・モイネロ').value;s.dispatchEvent(new Event('change',{bubbles:true}))");
+        waitText("1995年生まれ");
+        waitCondition("Two independently indexed peers", "document.querySelectorAll('.explorer-results input[type=checkbox]').length>=2");
+        js("document.querySelectorAll('.explorer-results input[type=checkbox]')[0].click()");
+        waitText("比較 1/4人");
+        js("document.querySelectorAll('.explorer-results input[type=checkbox]')[1].click()");
+        waitText("比較 2/4人");
+        assertEquals("Comparison keeps its year and sample caveat", "true", js("!!document.querySelector('section[aria-label=\"同期の成績比較\"]') && document.body.innerText.includes('規定資格や優劣の判定ではありません')"));
+        String route=js("location.hash");screenshot("npb-cohort-360");
+        shell("settings put system font_scale 2.0");scenario.recreate();waitText("比較 2/4人");waitViewport(360);
+        assertEquals("Recreation retains cohort and selected canonical IDs",route,js("location.hash"));
+        assertEquals("Cohort large text has no horizontal overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));
+        screenshot("npb-cohort-font-20");
+    }
     @Test public void longNavigationHistoryHasBoundedRecreationState() throws Exception {
         assertEquals("/NPB/search?q=A%26B%3DC%25", MainActivity.savedRoute("https://localhost/#/NPB/search?q=A%26B%3DC%25"));
         assertEquals("/privacy", MainActivity.savedRoute("https://localhost/#/privacy"));

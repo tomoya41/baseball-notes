@@ -16,6 +16,8 @@ import { NpbPlayerProgression } from "./npb-player-progression";
 import { admittedCsScopes } from "../application/npb-cs-reader";
 import { NpbCsPlayerStats } from "./npb-cs";
 import { PublishedPlayerFallback } from "./npb-published-player";
+import { HistoricalCredits as Credits } from "./npb-historical-credits";
+import { NpbHistoricalCohort, type CohortRepository } from "./npb-historical-cohort";
 
 const teams:Record<string,string>={giants:"巨人",tigers:"阪神",dragons:"中日",carp:"広島",swallows:"ヤクルト",baystars:"DeNA",hawks:"ソフトバンク",fighters:"日本ハム",lions:"西武",marines:"ロッテ",eagles:"楽天",buffaloes:"オリックス"};
 const teamName=(id:string)=>teams[id.split(":").at(-1)!]??"球団未確認";
@@ -27,10 +29,6 @@ function AggregateDetails({row}:{row:NpbHistoricalRow}) {
   const [open,setOpen]=useState(false),keys=row.role==="batting"?historicalBattingKeys:historicalPitchingKeys;
   const labels:Record<string,string>={outsRecorded:"投球回",noWalkGames:"無四球試合",CG:"完投",SHO:"完封",WPCT:"勝率",BF:"対戦打者",GDP:"併殺打",IBB:"故意四球",WP:"暴投",BK:"ボーク"};
   return <details className="explorer-tools" onToggle={e=>setOpen(e.currentTarget.open)}><summary>詳細成績</summary>{open&&<><dl className="explorer-values">{keys.map(k=><div key={k}><dt><MetricLabel metric={k} label={labels[k]??k} /></dt><dd>{comparisonValue(k,row.metrics[k]??null)}</dd></div>)}</dl><p className="inline-note">原表にない項目は「—」。率指標は原表の表示値です。</p></>}</details>;
-}
-function Credits({data,playerId}:{data:Pick<NpbHistoricalDataset,"players">;playerId:string}) {
-  const p=data.players.find(p=>p.playerId===playerId)!;
-  return <small><a href={`https://ja.wikipedia.org/w/index.php?title=${encodeURIComponent(p.article)}&oldid=${p.revision}`} target="_blank" rel="noreferrer">Wikipedia「{p.article}」の執筆者</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noreferrer">CC BY-SA 4.0</a> · 年度表から抽出・正規化{p.sourceObservedAt&&` · 原本取得 ${p.sourceObservedAt.slice(0,10)}`}</small>;
 }
 /** Explicit navigation only: no extra requests on Home or the Current player overview. */
 export function NpbPlayerSeasons({repository}:{repository:{findLatestNpb():Promise<NpbPlayerDirectory>}}) {
@@ -83,7 +81,7 @@ function PlayerSeasonHistory({manifest,playerId,season,role}:{manifest:NpbHistor
   const rows=data.rows.filter(r=>r.playerId===playerId&&r.role===role);
   return <><p className="data-notice">{season}年 · 公式戦 · 球団別成績の一部収録</p>{rows.length?<section><h2>{season}年の{role==="batting"?"打撃":"投球"}成績</h2>{rows.map(r=><div key={r.teamId}><h3>{teamName(r.teamId)}</h3><Numbers rows={[r]} role={role} /><AggregateDetails row={r} /></div>)}<Credits data={data} playerId={playerId} /></section>:<DataState kind="no-data" title="この役割の指定年度成績は未収録です" />}<PlayerHistory manifest={manifest} playerId={playerId} role={role} current={data} activeSeason={season} closeable={false} /></>;
 }
-export function NpbHistoricalHistory({current,...favorites}:{current:React.ReactNode}&Partial<FavoriteActions>) {
+export function NpbHistoricalHistory({current,cohortRepository,...favorites}:{current:React.ReactNode;cohortRepository?:CohortRepository}&Partial<FavoriteActions>) {
   const [params,setParams]=useSearchParams(),[manifest,setManifest]=useState<NpbHistoricalManifest|null>(null),[failed,setFailed]=useState(false),[attempt,setAttempt]=useState(0);
   const season=params.get("season")??"2026",role=params.get("role")==="pitching"?"pitching":"batting";
   useEffect(()=>{let active=true;void readNpbHistoricalManifest().then(m=>{if(active){setManifest(m);setFailed(false);}}).catch(()=>{if(active)setFailed(true);});return()=>{active=false;};},[attempt]);
@@ -92,7 +90,7 @@ export function NpbHistoricalHistory({current,...favorites}:{current:React.React
   const supported=season==="2026"||!!manifest?.seasons.some(s=>String(s.season)===season);
   return <div className="screen"><PageHeading eyebrow="NPB · 公式戦" title="シーズン履歴" />
     <label className="competition-season">年度<select aria-label="NPB履歴の年度" value={season} onChange={e=>update("season",e.target.value)}><option value="2026">2026年 · 保存済みの今季</option>{manifest?.seasons.slice().reverse().map(y=><option key={y.season} value={y.season}>{y.season}年 · 過去の成績（一部）</option>)}{!supported&&<option value={season}>未収録の年度</option>}</select></label>
-    {params.get("competition")==="postseason"?<DataState kind="unsupported" title="NPBの過去のポストシーズンは未収録です" />:season==="2026"?current:failed?<><DataState kind="source-unavailable" title="過去年度の一覧を取得できません" /><button onClick={retry}>再試行</button></>:!manifest?<LoadingSkeleton />:!supported?<DataState kind="unsupported" title="指定した年度は未収録です" />:<HistoricalSeason key={`${season}:${attempt}`} manifest={manifest} season={Number(season)} role={role} params={params} update={update} retry={retry} {...favorites} />}
+    {params.get("competition")==="postseason"?<DataState kind="unsupported" title="NPBの過去のポストシーズンは未収録です" />:season==="2026"?(params.has("cohort")?<DataState kind="unsupported" title="同期の過去年度比較は収録済みの過去年を選んでください" />:current):failed?<><DataState kind="source-unavailable" title="過去年度の一覧を取得できません" /><button onClick={retry}>再試行</button></>:!manifest?<LoadingSkeleton />:!supported?<DataState kind="unsupported" title="指定した年度は未収録です" />:params.has("cohort")&&cohortRepository?<NpbHistoricalCohort key={`${season}:${attempt}`} manifest={manifest} season={Number(season)} repository={cohortRepository} />:<><Link to={`/NPB/history?season=${season}&role=${role}&cohort=birthYear`}>同世代・ドラフト同期の年度比較 →</Link><HistoricalSeason key={`${season}:${attempt}`} manifest={manifest} season={Number(season)} role={role} params={params} update={update} retry={retry} {...favorites} /></>}
     {failed&&season==="2026"&&<p className="inline-note">過去年度の一覧を取得できません。<button onClick={retry}>再試行</button></p>}
   </div>;
 }

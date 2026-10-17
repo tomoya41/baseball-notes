@@ -1,9 +1,11 @@
-const keys = ["season", "competition", "period", "role", "battingView", "team", "minimum", "sample", "metric1", "op1", "value1", "metric2", "op2", "value2", "sort1", "dir1", "sort2", "dir2", "metrics", "recentPlayers", "recentMode", "player", "date", "asOfDate"];
+const keys = ["season", "competition", "period", "role", "battingView", "team", "minimum", "sample", "metric1", "op1", "value1", "metric2", "op2", "value2", "sort1", "dir1", "sort2", "dir2", "metrics", "recentPlayers", "recentMode", "player", "date", "asOfDate", "cohort", "peer"];
 import { canonicalEntityRefSchema } from "./cross-league";
 import type { League } from "./models";
 export function viewConditions(params: URLSearchParams, includeName = true, league?: League): string {
   const clean = new URLSearchParams();
   for (const key of [...keys, ...(includeName ? ["q"] : [])]) { const value = params.get(key); if (value && value.length <= 2000) clean.set(key, value); }
+  if(league==="MLB"||!["birthYear","draftYear"].includes(clean.get("cohort")??"")){clean.delete("cohort");clean.delete("peer");}
+  if(clean.has("peer")&&!canonicalEntityRefSchema.safeParse({league:"NPB",kind:"player",id:clean.get("peer")}).success)clean.delete("peer");
   // Local storage retains its legacy schema; public URLs additionally require
   // the route's league and canonical identities, never opaque/local IDs.
   if (league) {

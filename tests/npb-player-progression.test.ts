@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { bestObservedSeasons, historicalProgression } from "../src/domain/npb-player-progression";
+import { bestObservedSeasons, historicalProgression, observedClubChanges } from "../src/domain/npb-player-progression";
 import { historicalBattingKeys, historicalPitchingKeys, npbHistoricalRowSchema } from "../src/domain/npb-historical";
 import { comparisonValue } from "../src/domain/product-comparison";
 import { portableRoute } from "../src/domain/product-sharing";
@@ -27,6 +27,13 @@ it("rejects duplicate and mixed player/role observations", () => {
   const r = row(2025, "batting", { PA: 1 });
   expect(() => historicalProgression([r, r], [2025])).toThrow("Duplicate");
   expect(() => historicalProgression([r, { ...r, playerId: "other" }], [2025])).toThrow("One player");
+});
+it("compares only adjacent single-club years, without inventing transfer timing across missing or split seasons",()=>{
+  const a=row(2022,"batting",{PA:100,AB:100,H:20}),b={...row(2023,"batting",{PA:200,AB:200,H:60}),teamId:"npb:team:hawks" as const};
+  const points=historicalProgression([a,b],[2022,2023,2024]);
+  expect(observedClubChanges(points)).toHaveLength(1);expect(observedClubChanges(points)[0]!.after.metrics.AVG).toBe(.3);
+  expect(observedClubChanges(historicalProgression([a,{...b,season:2024}],[2022,2023,2024]))).toEqual([]);
+  expect(observedClubChanges(historicalProgression([a,b,{...b,teamId:"npb:team:tigers"}],[2022,2023]))).toEqual([]);
 });
 it("keeps rates readable and a validated trend metric in share/deep-link state", () => {
   expect(comparisonValue("WHIP", 1.234)).toBe("1.23"); expect(comparisonValue("BB9", 2.345)).toBe("2.35");
