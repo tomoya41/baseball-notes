@@ -7,16 +7,12 @@ import androidx.activity.EdgeToEdge;
 import android.view.Window;
 import android.content.res.Configuration;
 import android.webkit.WebView;
-import android.content.Intent;
 import android.net.Uri;
-import androidx.webkit.WebViewCompat;
-import androidx.webkit.WebViewFeature;
 
 public class MainActivity extends BridgeActivity {
-    private static final String WEB_STATE = "baseball.webState";
     private static final String WEB_ROUTE = "baseball.webRoute";
     private static final int MAX_ROUTE_LENGTH = 8192;
-    private static final int MAX_WEB_STATE_BYTES = 128 * 1024;
+    private String restoredRoute;
     private static boolean isSavedRoute(String route) {
         if (route == null || route.length() > MAX_ROUTE_LENGTH) return false;
         String path = Uri.decode(route.split("\\?", 2)[0]);
@@ -26,26 +22,23 @@ public class MainActivity extends BridgeActivity {
         String route = url == null ? null : Uri.parse(url).getEncodedFragment();
         return isSavedRoute(route) ? route : null;
     }
+    String consumeRestoredRoute() {
+        String route = restoredRoute;
+        restoredRoute = null;
+        return route;
+    }
     @Override public void onCreate(Bundle savedInstanceState) {
         String route = savedInstanceState == null ? null : savedInstanceState.getString(WEB_ROUTE);
-        boolean resume = isSavedRoute(route);
-        Bundle webState = !resume ? null : savedInstanceState.getBundle(WEB_STATE);
-        Intent launchIntent = getIntent();
-        // A recreated Activity resumes its current WebView route, not the URI
-        // which originally opened the task. New external intents still use the
-        // normal Capacitor appUrlOpen path.
-        if (resume && launchIntent != null) setIntent(new Intent(launchIntent).setData(null));
+        restoredRoute = isSavedRoute(route) ? route : null;
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         registerPlugin(FavoriteNotificationsPlugin.class);
+        registerPlugin(RouteRestorePlugin.class);
         EdgeToEdge.enable(this);
         setTheme(R.style.AppTheme_NoActionBar);
         super.onCreate(savedInstanceState);
         getBridge().addWebViewListener(new WebViewListener() {
             @Override public void onPageLoaded(WebView webView) { applyFontLayout(webView); }
         });
-        if (resume && (webState == null || getBridge().getWebView().restoreState(webState) == null)) {
-            getBridge().getWebView().loadUrl(getBridge().getLocalUrl() + "/#" + route);
-        }
         applyFontLayout(getBridge().getWebView());
     }
     @Override public void onSaveInstanceState(Bundle outState) {
@@ -54,13 +47,8 @@ public class MainActivity extends BridgeActivity {
             String url = getBridge().getWebView().getUrl();
             String route = savedRoute(url);
             // A pre-router loading page must not consume a pending cold link.
-            if (!isSavedRoute(route)) return;
+            if (route == null) return;
             outState.putString(WEB_ROUTE, route);
-            if (WebViewFeature.isFeatureSupported(WebViewFeature.SAVE_STATE)) {
-                Bundle webState = new Bundle();
-                WebViewCompat.saveState(getBridge().getWebView(), webState, MAX_WEB_STATE_BYTES, false);
-                outState.putBundle(WEB_STATE, webState);
-            }
         }
     }
     // WebView text zoom can enlarge painted glyphs without enlarging flex bases.
