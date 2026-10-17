@@ -377,7 +377,7 @@ public class ReleaseQualityTest {
         waitPaint();
         scenario.onActivity(activity -> {
             Bundle saved = new Bundle(); activity.onSaveInstanceState(saved);
-            assertEquals("The native snapshot uses the selected SPA player, not the original list", csHash, saved.getString("baseball.webRoute"));
+            assertEquals("The native snapshot uses the selected SPA player, not the original list", csHash.substring(1), saved.getString("baseball.webRoute"));
         });
         for(String scale:new String[]{"1.5","2.0"}) {
             shell("settings put system font_scale " + scale); scenario.recreate(); waitText("2.2"); waitViewport(360);
