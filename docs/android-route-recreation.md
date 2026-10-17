@@ -14,6 +14,8 @@ The first route-only run (38989721504) passed five of seven tests, including lon
 
 Non-resumable routes explicitly clear the native snapshot instead of retaining an unrelated previous screen. The long-history test also delivers a real matching new Intent after privacy recreation and checks oversized filters leave no stale saved route. No signing key is generated/changed. Pixel update installation additionally requires signing continuity: CI debug builds must not be assumed to match the initial device APK's signer.
 
+The existing cold-Back parent policy is corrected for 2026 player-year views: collected CS First/Final returns to the corresponding CS explorer with stage/role; saved Regular returns to the Current profile. It must not navigate to unavailable Historical 2026. Historical-year parents remain unchanged. Native and unit regressions exercise the restored CS Back flow.
+
 ## Review corrections and regression
 
 Review identified the size risk of serializing unlimited WebView history and the ordering risk of calling restoreState after Capacitor has already started loading. [Android's state guidance](https://developer.android.com/develop/ui/views/layout/webapps/managing-webview#preserve-state) supports size-bounded preservation; this app needs only one route and therefore avoids WebView saveState/restoreState and any added WebKit dependency entirely. Review also identified encoded-query and privacy-route handling; both are fixed with regressions.

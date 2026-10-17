@@ -390,6 +390,11 @@ public class ReleaseQualityTest {
             setTheme("light", "ライト"); js("location.hash='"+csHash+"'"); waitText("2.2");
         }
         shell("settings put system font_scale 1.0"); scenario.recreate(); waitText("2.2");
+        shell("input keyevent KEYCODE_BACK"); waitText("2026 クライマックスシリーズ");
+        assertTrue("Cold restored Back retains CS stage and role", js("location.hash").contains("stage=npb_cs_final") && js("location.hash").contains("role=pitching"));
+        waitText("リバン・モイネロ");
+        js("Array.from(document.querySelectorAll('a.player-row')).find(a=>a.textContent.includes('リバン・モイネロ')).click()");
+        waitText("2026年 · CS ファイナル"); waitText("2.2");
         js("const s=document.querySelector('select[aria-label=\"選手成績の年度\"]');s.value='2025';s.dispatchEvent(new Event('change',{bubbles:true}))");
         waitText("成績の変化");
         assertTrue("Year switch resets unsupported stage", js("location.hash").contains("competition=regular"));
