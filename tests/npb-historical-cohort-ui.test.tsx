@@ -7,6 +7,8 @@ import {NpbHistoricalCohort} from "../src/ui/npb-historical-cohort";
 import {NpbHistoricalHistory} from "../src/ui/npb-historical";
 import {readNpbHistoricalManifest,readNpbHistoricalSeason} from "../src/application/npb-historical-reader";
 import {cohortFixture,cohortId} from "./fixtures/npb-cohort";
+import {PersonalLibrary} from "../src/application/personal-library";
+import {PersonalLibraryProvider} from "../src/ui/library-provider";
 vi.mock("../src/application/npb-historical-reader",()=>({readNpbHistoricalManifest:vi.fn(),readNpbHistoricalSeason:vi.fn()}));
 const fixture=cohortFixture();
 beforeEach(()=>{vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);vi.mocked(readNpbHistoricalManifest).mockResolvedValue(fixture.manifest);vi.mocked(readNpbHistoricalSeason).mockResolvedValue(fixture.data);});
@@ -49,4 +51,19 @@ it("does not fetch cohort metadata or past facts for Current history",async()=>{
   const before=repository.catalog.mock.calls.length;expect(before).toBe(1);
   expect(vi.mocked(readNpbHistoricalSeason).mock.calls.every(([year])=>year===2025)).toBe(true);
  }finally{await close();}
+});
+it("offers explicit cohort saving while automatic Activity omits the reference and selection",async()=>{
+ const storage=new Map<string,string>(),store=new PersonalLibrary({get:async k=>storage.get(k)??null,set:async(k,v)=>{storage.set(k,v);}});
+ const host=document.createElement("div"),root=createRoot(host),params=`season=2025&role=batting&cohort=draftYear&peer=${cohortId(0)}&recentPlayers=${cohortId(0)},${cohortId(1)}`;
+ try{
+  await act(async()=>root.render(<MemoryRouter initialEntries={["/NPB/history?"+params]}><PersonalLibraryProvider store={store}><NpbHistoricalCohort manifest={fixture.manifest} season={2025} repository={{catalog:async()=>fixture.catalog}}/></PersonalLibraryProvider></MemoryRouter>));
+  expect((await store.read()).activity.every(a=>!a.conditions.includes("cohort")&&!a.conditions.includes("peer"))).toBe(true);
+  await act(async()=>Array.from(host.querySelectorAll("button")).find(b=>b.textContent==="この条件を保存")!.click());
+  const input=host.querySelector('input[placeholder="例：阪神・直近14日"]')!;
+  await act(async()=>{Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value")!.set!.call(input,"ドラフト同期の比較");input.dispatchEvent(new Event("input",{bubbles:true}));});
+  await act(async()=>host.querySelector("form")!.dispatchEvent(new Event("submit",{bubbles:true,cancelable:true})));
+  const saved=new URLSearchParams((await store.read()).views[0]!.conditions);
+  expect(saved.get("peer")).toBe(cohortId(0));expect(saved.get("cohort")).toBe("draftYear");expect(saved.get("recentPlayers")).toContain(cohortId(1));
+  expect(host.textContent).toContain("保存しました");
+ }finally{await act(async()=>root.unmount());}
 });

@@ -8,6 +8,7 @@ import { comparisonValue, type ComparisonRow } from "../domain/product-compariso
 import { ComparisonBars } from "./comparison-bars";
 import { DataState, LoadingSkeleton, MetricLabel } from "./components";
 import { HistoricalCredits } from "./npb-historical-credits";
+import { SaveViewButton } from "./personal-library";
 
 export type CohortRepository={catalog():Promise<NpbCatalog>};
 export function NpbHistoricalCohort({manifest,season,repository}:{manifest:NpbHistoricalManifest;season:number;repository:CohortRepository}) {
@@ -29,7 +30,7 @@ export function NpbHistoricalCohort({manifest,season,repository}:{manifest:NpbHi
   const pageRaw=params.get("page")??"1",pages=Math.max(1,Math.ceil(cohort.members.length/30)),page=/^[1-9]\d{0,3}$/.test(pageRaw)?Math.min(Number(pageRaw),pages):1;
   const teamName=(id:string)=>catalog.teams.find(t=>t.teamId===id)?.shortName??"球団未確認";
   const exit=new URLSearchParams(params);for(const k of ["cohort","peer","recentPlayers","page"])exit.delete(k);
-  return <section aria-label="同世代・ドラフト同期の年度比較">
+  return <section className="historical-cohort" aria-label="同世代・ドラフト同期の年度比較">
     <h2>同世代・ドラフト同期を比較</h2><p className="inline-note">{season}年公式戦・一部収録。同じ生年、または指名年が確認できる選手を探します。現在の登録や新人資格は判定しません。</p>
     <div className="explorer-filter-grid"><label>同期の条件<select value={kind} onChange={e=>update("cohort",e.target.value)}><option value="birthYear">同じ生年</option><option value="draftYear">同じ指名年</option></select></label><label>基準の選手<select value={referenceId} onChange={e=>update("peer",e.target.value)}><option value="">選手を選ぶ</option>{referenceId&&!referenceOptions.some(p=>p.playerId===referenceId)&&<option value={referenceId}>{cohort.reference?.displayName??"未確認の選手"} · この年度・役割の成績は未収録</option>}{referenceOptions.map(p=><option key={p.playerId} value={p.playerId}>{p.displayName}</option>)}</select></label><label>成績<select value={role} onChange={e=>update("role",e.target.value)}><option value="batting">打撃（投手打撃を含む）</option><option value="pitching">投球</option></select></label></div>
     {cohort.year===null?<DataState kind="no-data" title={referenceId?"この選手の同期条件は未確認です":"基準にする選手を選んでください"} detail="未確認の生年・指名年を推定せず、同姓同名を統合しません。" />:<><h3>{cohort.year}年{kind==="birthYear"?"生まれ":"指名"} · {cohort.members.length}人の収録成績</h3><p>2〜4人を選んで比較できます。率指標は球団別行の構成値から再計算し、母数も併記します。</p>
@@ -42,6 +43,7 @@ export function NpbHistoricalCohort({manifest,season,repository}:{manifest:NpbHi
       <details><summary>成績・同期条件の出典</summary><HistoricalCredits data={data} playerId={m.player.playerId} /><p>プロフィールの保存基準日 {catalog.effectiveDate}。過去の所属は年度成績の球団別行です。</p>{m.player.profile.credits?.map((c,i)=><p key={i}><a href={c.url} target="_blank" rel="noreferrer">{c.name}</a> · <a href={c.licenseUrl} target="_blank" rel="noreferrer">利用条件</a> · 構造化・加工済み</p>)}</details>
     </article>)}</div>{!cohort.members.length&&<DataState kind="no-data" title="この年度・役割の同期成績は未収録です" />}
     {pages>1&&<nav aria-label="同期のページ"><button disabled={page===1} onClick={()=>update("page",String(page-1))}>前へ</button><button disabled={page===pages} onClick={()=>update("page",String(page+1))}>次へ</button></nav>}</>}
+    <SaveViewButton league="NPB" kind="history" params={params} />
     <Link to={`/NPB/history?${exit}`}>年度の全収録選手へ →</Link>
   </section>;
 }

@@ -423,6 +423,7 @@ public class ReleaseQualityTest {
         shell("settings put system font_scale 2.0");scenario.recreate();waitText("比較 2/4人");waitViewport(360);
         assertEquals("Recreation retains cohort and selected canonical IDs",route,js("location.hash"));
         assertEquals("Cohort large text has no horizontal overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));
+        assertEquals("Expanded cohort statistic values remain readable on one line","true",js("Array.from(document.querySelectorAll('.historical-cohort .explorer-values dd')).every(e=>{const r=document.createRange();r.selectNodeContents(e);return r.getClientRects().length===1;})"));
         screenshot("npb-cohort-font-20");
     }
     @Test public void longNavigationHistoryHasBoundedRecreationState() throws Exception {
