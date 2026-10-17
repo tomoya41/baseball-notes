@@ -2,7 +2,7 @@ import {readFile,writeFile,mkdir} from "node:fs/promises";
 import {createHash} from "node:crypto";
 import {resolve,join} from "node:path";
 import {z} from "zod";
-import existing from "../src/data/npb-free-profile-identities.json";
+import { historicalCurrentBridges as existing } from "../src/infrastructure/providers/npb-historical-admission";
 import {verifyHistoricalIdentity} from "../src/infrastructure/providers/wikipedia-npb-historical-identity";
 
 // Explicit bounded release-time collection, never scheduled or run by build. Official APIs only.

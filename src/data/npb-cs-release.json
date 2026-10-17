@@ -1,12 +1,12 @@
 {
-  "assetUrl": "https://github.com/tomoya41/baseball-notes/releases/download/npb-cs-wikipedia-20261017-v2/npb-cs-wikipedia.json.gz",
-  "sha256": "3bfaf6d22d2093a452e93a542ba3b416e9740b86b429792acb93d08fd824455a",
-  "bodySha256": "b5add5d74403a4ba791bd277f51ae3b4950a5445e0fb12b666cfc698deef0cdd",
-  "inputSha256": "362a4c88222069bd046d5782ecada65c0adffd86849b0b4be7306d40a656d573",
-  "bytes": 112056,
-  "games": 8,
-  "players": 126,
-  "rows": 126,
+  "assetUrl": "https://github.com/tomoya41/baseball-notes/releases/download/npb-cs-wikipedia-20261017-v3/npb-cs-wikipedia.json.gz",
+  "sha256": "8cdd5f9fc9993311b81c3163fce96be004b782b0629aa43d06bff3723ae325f6",
+  "bodySha256": "af9a051d4c26eafa9de81c045af5e60f1579e50ad536058b80bccaa3f7e70cbd",
+  "inputSha256": "7d967af005c05126b3d4865627aa301345fca3c7a93872eae77bf21fe3b3722a",
+  "bytes": 129207,
+  "games": 11,
+  "players": 145,
+  "rows": 145,
   "scopes": {
     "42bf18e7-4db9-42fc-987d-48b3a2a950b1": [
       "npb_cs_first"
@@ -200,10 +200,16 @@
     "bd979a76-ac10-44c8-bb0c-7c193d3f0d75": [
       "npb_cs_final"
     ],
+    "a4d2116b-07d3-4a7a-8f8e-32f6d28759e4": [
+      "npb_cs_final"
+    ],
     "87a6fa52-0973-4575-940d-b89bee5cdf13": [
       "npb_cs_final"
     ],
     "304e870e-71ba-4df7-8682-99ad852ee751": [
+      "npb_cs_final"
+    ],
+    "dc165f2e-9539-4ad0-b206-5d75794fee96": [
       "npb_cs_final"
     ],
     "4f984dde-e742-41aa-99ce-2b4c747afca8": [
@@ -213,6 +219,21 @@
       "npb_cs_final"
     ],
     "0946a52f-8f86-4556-b75b-2a68bf7a9725": [
+      "npb_cs_final"
+    ],
+    "8e6c9ca6-1b2a-4032-83bd-b203810432ff": [
+      "npb_cs_final"
+    ],
+    "3085c31f-f941-4f03-971f-e96eae20cfeb": [
+      "npb_cs_final"
+    ],
+    "84858858-e48a-42bb-b198-1101cb5432c7": [
+      "npb_cs_final"
+    ],
+    "4df361a0-a85a-4d00-8fde-dbff55bbe20d": [
+      "npb_cs_final"
+    ],
+    "51e8504b-e5ac-4bd8-99f3-bf34c65ee244": [
       "npb_cs_final"
     ],
     "b1cd976f-ee49-4db9-955f-d06423f7b1ce": [
@@ -384,6 +405,42 @@
       "npb_cs_final"
     ],
     "02893740-7fd5-43dc-9ff4-bb014e13a691": [
+      "npb_cs_final"
+    ],
+    "2ef0916f-a072-42fa-90ba-9b897506e86c": [
+      "npb_cs_final"
+    ],
+    "95b5a715-b42f-41e1-bdbe-d09755b64f5b": [
+      "npb_cs_final"
+    ],
+    "295de20a-f0bf-48a7-98b9-7c819a6c1b6f": [
+      "npb_cs_final"
+    ],
+    "5adb8a97-5c1f-4ea0-b62a-1bfc63eef6c5": [
+      "npb_cs_final"
+    ],
+    "08bbf73b-0468-4e24-b3f9-83acaa0b255a": [
+      "npb_cs_final"
+    ],
+    "1f973712-4dc4-4be4-9f15-4e4b2eb4d64b": [
+      "npb_cs_final"
+    ],
+    "c886cebf-2c72-4a1f-b5b4-1c99e7533a9f": [
+      "npb_cs_final"
+    ],
+    "85a25b73-7e9e-4b64-83f2-eaf4989a8a91": [
+      "npb_cs_final"
+    ],
+    "74ad1634-e924-4f79-9f1c-1b95217a65f0": [
+      "npb_cs_final"
+    ],
+    "af82af06-ce8b-4d74-bd74-7ed1b3463e63": [
+      "npb_cs_final"
+    ],
+    "5d13e00c-ac0b-4c70-87be-a6fb988a6246": [
+      "npb_cs_final"
+    ],
+    "4729b1b3-9896-485a-a41b-0b269ed5b0b6": [
       "npb_cs_final"
     ]
   }

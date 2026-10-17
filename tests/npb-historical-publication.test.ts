@@ -17,7 +17,9 @@ describe("retained Historical publication guard",()=>{
   });
   it("also protects every namespaced generation used by installed APKs",()=>{
     expect(retained.length).toBeGreaterThan(0);
-    for(const pin of retained){expect(pin.sha256).toMatch(/^[a-f0-9]{64}$/);expect(Object.keys(pin.files).sort()).toEqual(Object.keys(legacy.files).sort());}
+    for(const pin of retained){expect(pin.sha256).toMatch(/^[a-f0-9]{64}$/);expect(Object.keys(pin.files)).toContain("manifest.json");expect(Object.keys(pin.files).filter(k=>k!=="manifest.json").every(k=>/^20\d{2}\.json$/.test(k))).toBe(true);for(const file of Object.keys(legacy.files))expect(pin.files).toHaveProperty(file);}
+    expect(Object.keys(retained.find(p=>p.sha256==="3546cea6b2c3767c973739ab5a902c98b02a89e81d33e47444f079efabbd21b4")!.files)).toHaveLength(25);
+    expect(retainedCs.find(p=>p.sha256==="3bfaf6d22d2093a452e93a542ba3b416e9740b86b429792acb93d08fd824455a")).toMatchObject({games:8,rows:126,bytes:112056});
   });
   it("verifies every retained file even when the new generation is valid",async()=>{
     const read=vi.fn().mockResolvedValue(body);expect(await verifyRetainedFiles(read,{"manifest.json":pin,"2025.json":pin})).toBe(2);expect(read.mock.calls.map(([p])=>p)).toEqual(["manifest.json","2025.json"]);
