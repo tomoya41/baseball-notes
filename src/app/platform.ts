@@ -20,7 +20,15 @@ function incoming(url: string) {
   window.location.hash = `#${route}`;
   return true;
 }
-const routeRestore = registerPlugin<{ consume(): Promise<{ route?: string }> }>("RouteRestore");
+const routeRestore = registerPlugin<{
+  consume(): Promise<{ route?: string }>;
+  remember(options: { route: string }): Promise<void>;
+}>("RouteRestore");
+export async function rememberNativeRoute(value: string): Promise<void> {
+  if (!isAndroid()) return;
+  const route = resumableNativeRoute(value);
+  if (route) await routeRestore.remember({ route }).catch(() => undefined);
+}
 export async function installPlatformRuntime() {
   const refreshed = () => { if (needsPublicDataRefresh()) { clearSavedResponseFallback(); window.dispatchEvent(new Event("baseball:refresh-data")); } };
   window.addEventListener("online", refreshed);

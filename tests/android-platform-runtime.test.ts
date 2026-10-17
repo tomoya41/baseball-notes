@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { installPlatformRuntime } from "../src/app/platform";
+import { installPlatformRuntime, rememberNativeRoute } from "../src/app/platform";
 import { resumableNativeRoute } from "../src/app/native-resume";
 
 const state = vi.hoisted(() => ({ platform: "android", saved: undefined as string | undefined,
@@ -10,8 +10,9 @@ const consume = vi.hoisted(() => vi.fn(async () => {
   if (state.unsupported) throw Error("Plugin unavailable in an older APK");
   return { route: state.saved };
 }));
+const remember = vi.hoisted(() => vi.fn(async (_options: { route: string }) => undefined));
 vi.mock("@capacitor/core", () => ({ Capacitor: { getPlatform: () => state.platform },
-  registerPlugin: (name: string) => name === "RouteRestore" ? { consume } : {} }));
+  registerPlugin: (name: string) => name === "RouteRestore" ? { consume, remember } : {} }));
 vi.mock("@capacitor/app", () => ({ App: {
   getLaunchUrl: vi.fn(async () => ({ url: state.launch })),
   addListener: vi.fn(async (name, callback) => {
@@ -66,4 +67,16 @@ it("Web does not consume native state or apply native launch URIs", async () => 
   state.platform = "web"; window.location.hash = "#/MLB/home";
   await installPlatformRuntime(); expect(consume).not.toHaveBeenCalled();
   expect(state.listener).toBeUndefined(); expect(window.location.hash).toBe("#/MLB/home");
+});
+it("records an encoded SPA route without relying on WebView.getUrl", async () => {
+  const route = "/NPB/cs?season=2026&q=A%26B";
+  await rememberNativeRoute(route); expect(remember).toHaveBeenCalledWith({ route });
+});
+it("does not record invalid state or any route on Web", async () => {
+  await rememberNativeRoute("/other"); expect(remember).not.toHaveBeenCalled();
+  state.platform = "web"; await rememberNativeRoute("/privacy"); expect(remember).not.toHaveBeenCalled();
+});
+it("an older native adapter cannot break navigation while recording", async () => {
+  remember.mockRejectedValueOnce(Error("Plugin unavailable"));
+  await expect(rememberNativeRoute("/privacy")).resolves.toBeUndefined();
 });

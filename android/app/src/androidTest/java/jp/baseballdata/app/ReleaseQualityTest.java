@@ -374,6 +374,11 @@ public class ReleaseQualityTest {
         waitText("2026年 · CS ファイナル"); waitText("2.2");
         assertTrue("CS sample stays explicit", js("document.body.innerText").contains("CS全試合・選手の大会通算成績ではありません"));
         String csHash=js("location.hash");
+        waitPaint();
+        scenario.onActivity(activity -> {
+            Bundle saved = new Bundle(); activity.onSaveInstanceState(saved);
+            assertEquals("The native snapshot uses the selected SPA player, not the original list", csHash, saved.getString("baseball.webRoute"));
+        });
         for(String scale:new String[]{"1.5","2.0"}) {
             shell("settings put system font_scale " + scale); scenario.recreate(); waitText("2.2"); waitViewport(360);
             assertEquals("Recreation retains the selected player, not the initial CS list", csHash, js("location.hash"));

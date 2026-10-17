@@ -10,6 +10,8 @@ Capacitor retains the initial ACTION_VIEW event as well as `getLaunchUrl`. When 
 
 The route policy includes NPB, MLB and the app's `/privacy` screen; validates the decoded path only; preserves encoded query delimiters such as `%26`, `%3D`, `%25`; rejects oversized/invalid state. A pre-router loading page does not consume a pending cold link. Font scaling retains Android's normal recreation behavior and the user's actual OS scale.
 
+The first route-only run (38989721504) passed five of seven tests, including long-history, encoded-filter and privacy recreation, but still failed the two original SPA navigation cases. The router now explicitly records each committed encoded route through the same adapter; relying only on `WebView.getUrl()` was insufficient after React Router navigation. Keep that acknowledged route through a second recreation while the new WebView is still loading. The CS regression checks the actual native instance-state snapshot equals the selected player URL before changing font scale. This adds a small in-process bridge call per route, zero network requests or preference/Fact writes.
+
 ## Review corrections and regression
 
 Review identified the size risk of serializing unlimited WebView history and the ordering risk of calling restoreState after Capacitor has already started loading. [Android's state guidance](https://developer.android.com/develop/ui/views/layout/webapps/managing-webview#preserve-state) supports size-bounded preservation; this app needs only one route and therefore avoids WebView saveState/restoreState and any added WebKit dependency entirely. Review also identified encoded-query and privacy-route handling; both are fixed with regressions.

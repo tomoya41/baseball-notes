@@ -9,6 +9,10 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 /** One-shot, private Activity route; never exports browsing history or data. */
 @CapacitorPlugin(name = "RouteRestore")
 public class RouteRestorePlugin extends Plugin {
+    @PluginMethod public void remember(PluginCall call) {
+        ((MainActivity) getActivity()).rememberRoute(call.getString("route"));
+        call.resolve();
+    }
     @PluginMethod public void consume(PluginCall call) {
         JSObject result = new JSObject();
         String route = ((MainActivity) getActivity()).consumeRestoredRoute();

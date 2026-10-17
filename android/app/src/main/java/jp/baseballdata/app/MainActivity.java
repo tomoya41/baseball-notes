@@ -13,6 +13,7 @@ public class MainActivity extends BridgeActivity {
     private static final String WEB_ROUTE = "baseball.webRoute";
     private static final int MAX_ROUTE_LENGTH = 8192;
     private String restoredRoute;
+    private volatile String currentRoute;
     private static boolean isSavedRoute(String route) {
         if (route == null || route.length() > MAX_ROUTE_LENGTH) return false;
         String path = Uri.decode(route.split("\\?", 2)[0]);
@@ -27,9 +28,13 @@ public class MainActivity extends BridgeActivity {
         restoredRoute = null;
         return route;
     }
+    void rememberRoute(String route) {
+        if (isSavedRoute(route)) currentRoute = route;
+    }
     @Override public void onCreate(Bundle savedInstanceState) {
         String route = savedInstanceState == null ? null : savedInstanceState.getString(WEB_ROUTE);
         restoredRoute = isSavedRoute(route) ? route : null;
+        currentRoute = restoredRoute;
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         registerPlugin(FavoriteNotificationsPlugin.class);
         registerPlugin(RouteRestorePlugin.class);
@@ -45,7 +50,10 @@ public class MainActivity extends BridgeActivity {
         super.onSaveInstanceState(outState);
         if (getBridge() != null) {
             String url = getBridge().getWebView().getUrl();
-            String route = savedRoute(url);
+            // React Router pushState need not update WebView.getUrl. The
+            // router's acknowledged route also survives a second recreation
+            // while the new WebView is still on its pre-router loading page.
+            String route = currentRoute != null ? currentRoute : savedRoute(url);
             // A pre-router loading page must not consume a pending cold link.
             if (route == null) return;
             outState.putString(WEB_ROUTE, route);
