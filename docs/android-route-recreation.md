@@ -16,6 +16,8 @@ Non-resumable routes explicitly clear the native snapshot instead of retaining a
 
 The existing cold-Back parent policy is corrected for 2026 player-year views: collected CS First/Final returns to the corresponding CS explorer with stage/role; saved Regular returns to the Current profile. It must not navigate to unavailable Historical 2026. Historical-year parents remain unchanged. Native and unit regressions exercise the restored CS Back flow.
 
+Run 38991759117 reached the restored CS player/font flow and the Regular progression, but exposed two harness assumptions: the Current-profile link is conditional on separately validated Directory metadata and must be awaited before clicking; the primary four graph samples must be counted separately from the four hidden club-year detail rows. Fix those preconditions/selectors without dropping the route, graph, sample or Back assertions. Loading polls use an optional body instead of generating test-only JavaScript errors before the DOM exists.
+
 ## Review corrections and regression
 
 Review identified the size risk of serializing unlimited WebView history and the ordering risk of calling restoreState after Capacitor has already started loading. [Android's state guidance](https://developer.android.com/develop/ui/views/layout/webapps/managing-webview#preserve-state) supports size-bounded preservation; this app needs only one route and therefore avoids WebView saveState/restoreState and any added WebKit dependency entirely. Review also identified encoded-query and privacy-route handling; both are fixed with regressions.

@@ -33,7 +33,7 @@ public class ReleaseQualityTest {
     }
     private long waitText(String text) throws Exception {
         long start = System.currentTimeMillis();
-        while (System.currentTimeMillis() - start < 40000) { if (js("document.body.innerText").contains(text)) return System.currentTimeMillis()-start; Thread.sleep(100); }
+        while (System.currentTimeMillis() - start < 40000) { if (js("document.body?.innerText || ''").contains(text)) return System.currentTimeMillis()-start; Thread.sleep(100); }
         fail("Screen did not load: " + text + " / " + js("document.body.innerText")); return 0;
     }
     private void shell(String command) throws Exception {
@@ -353,6 +353,7 @@ public class ReleaseQualityTest {
             screenshot("npb-player-competition-font-" + scale.replace(".", "") + "-dark");
             setTheme("light", "ライト"); js("location.hash='"+scopedHash+"'"); waitText("5.2");
         }
+        waitCondition("Current profile link available after Directory validation", "Array.from(document.querySelectorAll('main a')).some(a=>a.textContent==='2026年の選手ページへ')");
         js("Array.from(document.querySelectorAll('main a')).find(a=>a.textContent==='2026年の選手ページへ').click()");
         // The same name exists on both screens. Wait for the destination route
         // and a rendered Current profile before sending a real system Back.
@@ -399,7 +400,7 @@ public class ReleaseQualityTest {
         waitText("成績の変化");
         assertTrue("Year switch resets unsupported stage", js("location.hash").contains("competition=regular"));
         assertFalse("No stale CS stage in Regular", js("location.hash").contains("stage="));
-        waitCondition("Accessible progression chart", "!!document.querySelector('svg[aria-label*=\"年度推移\"]') && document.querySelectorAll('.player-progression dd').length===4");
+        waitCondition("Accessible progression chart with four primary samples", "!!document.querySelector('svg[aria-label*=\"年度推移\"]') && document.querySelectorAll('.player-progression > dl.explorer-values dd').length===4");
         screenshot("npb-progression-360");
         shell("input keyevent KEYCODE_BACK"); waitText("2026年 · CS ファイナル"); waitText("2.2");
     }
