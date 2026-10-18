@@ -92,6 +92,19 @@ public class ReleaseQualityTest {
         waitCondition("Viewport " + width, "window.innerWidth===" + width);
         waitPaint();
     }
+    private static boolean expectedFontTransition(RuntimeException transition) {
+        String message = String.valueOf(transition.getMessage());
+        return transition instanceof NullPointerException
+            ? message.equals("Cannot run onActivity since Activity has been destroyed already")
+            : transition instanceof IllegalStateException && message.endsWith("but was DESTROYED");
+    }
+    @Test public void fontTransitionGuardDoesNotHideUnrelatedFailures() {
+        assertTrue(expectedFontTransition(new NullPointerException("Cannot run onActivity since Activity has been destroyed already")));
+        assertTrue(expectedFontTransition(new IllegalStateException("Activity's stage must be [PAUSED, RESUMED, STOPPED] but was DESTROYED")));
+        assertFalse(expectedFontTransition(new NullPointerException("WebView is null")));
+        assertFalse(expectedFontTransition(new IllegalStateException("Unexpected route state")));
+        assertFalse(expectedFontTransition(new RuntimeException("Cannot run onActivity since Activity has been destroyed already")));
+    }
     private void fontScaleAndRecreate(float scale) throws Exception {
         shell("settings put system font_scale " + scale);
         // fontScale deliberately uses normal OS recreation. Do not ask
@@ -102,11 +115,11 @@ public class ReleaseQualityTest {
             boolean ready = false;
             try {
                 if (scenario.getState() == androidx.lifecycle.Lifecycle.State.RESUMED)
-                    ready = js("getComputedStyle(document.documentElement).getPropertyValue('--android-font-scale').trim()").equals(Float.toString(scale));
-            } catch (IllegalStateException transition) {
+                    ready = js("document.documentElement ? getComputedStyle(document.documentElement).getPropertyValue('--android-font-scale').trim() : ''").equals(Float.toString(scale));
+            } catch (RuntimeException transition) {
                 // Only this bounded, expected configuration transition may wait.
                 // A destroyed app that never resumes still fails the deadline.
-                if (!String.valueOf(transition.getMessage()).contains("DESTROYED")) throw transition;
+                if (!expectedFontTransition(transition)) throw transition;
             }
             if (!ready) readySince = 0;
             else if (readySince == 0) readySince = System.currentTimeMillis();
