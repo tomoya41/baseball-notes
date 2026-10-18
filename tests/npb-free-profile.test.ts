@@ -29,6 +29,12 @@ const sourceClaim = (value: unknown) => ({ mainsnak: { datavalue: { value } }, r
 const bridge = { playerId: id, wikidataId: "Q1", npbId: "12345678" };
 
 describe("rights-safe field registry", () => {
+  it("dates an added measurement by its actual observation without inventing a measurement effective day", () => {
+    const c=catalog();c.players[0]!.profile.heightCm=180;c.players[0]!.profile.measurementsObservedAt=at;
+    const addedAt="2026-10-03T01:00:00.000Z";
+    const r=applyNpbProfileRegistry(directory,c,snapshot([entry("weightKg",80,{verifiedAt:addedAt})]));
+    expect(r.catalog.players[0]!.profile).toMatchObject({heightCm:180,weightKg:80,measurementsObservedAt:addedAt,measurementsEffectiveDate:null});
+  });
   it("fills nullable profiles and keeps IDs, names, affiliations and Fact availability", () => {
     const r = apply([entry("bats", "left"), entry("throws", "right"), entry("position", "P"), entry("birthDate", "2000-10-01")]);
     expect(r.directory.players[0]).toMatchObject({ playerId: id, displayName: "保存済み選手", teamId: "npb:team:tigers", bats: "left", throws: "right", playerType: "pitcher", battingAvailable: true, pitchingAvailable: false });

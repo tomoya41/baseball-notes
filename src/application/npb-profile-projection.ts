@@ -30,7 +30,7 @@ export function projectNpbFreeProfiles(directory: NpbPlayerDirectory, savedCatal
         Reflect.set(p.profile, key, structuredClone(value));
   }
   const result = applyNpbProfileRegistry(legacy.directory, catalog, { ...registry,
-    observedAt: curated.observedAt, entries: [...registry.entries, ...wikipedia.entries, ...curated.entries, ...assisted.entries] });
+    observedAt: [registry.observedAt,wikipedia.observedAt,curated.observedAt,assisted.observedAt].sort().at(-1)!, entries: [...registry.entries, ...wikipedia.entries, ...curated.entries, ...assisted.entries] });
   // A verified bridge is useful even when every profile value remains unavailable/conflicted.
   const linked = new Set(identities.map(b => b.playerId));
   for (const p of result.catalog.players) if (linked.has(p.playerId)) p.profile.identityLinked = true;

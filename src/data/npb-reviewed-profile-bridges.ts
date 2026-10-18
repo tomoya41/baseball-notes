@@ -5,6 +5,7 @@ const reviewedEntities: Record<string, string> = {
   "81285138": "Q58420279", "81085150": "Q130726841", "73975136": "Q52083715",
   "23125136": "Q43426179", "53555153": "Q105259074", "61365136": "Q57314556",
   "31835153": "Q102246615", "13415155": "Q19793652",
+  "33035152": "Q90743792", "93995152": "Q127516948",
 };
 export const reviewedProfileBridges = [...new Map(verifiedNf3Identities.map(p => {
   const npbId = /\/players\/(\d+)\.html$/.exec(p.officialProfileUrl)?.[1];
