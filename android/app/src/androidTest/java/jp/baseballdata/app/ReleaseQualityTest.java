@@ -92,6 +92,32 @@ public class ReleaseQualityTest {
         waitCondition("Viewport " + width, "window.innerWidth===" + width);
         waitPaint();
     }
+    private void fontScaleAndRecreate(float scale) throws Exception {
+        shell("settings put system font_scale " + scale);
+        // fontScale deliberately uses normal OS recreation. Do not ask
+        // ActivityScenario to recreate the old Activity while Android replaces it.
+        // Observe the new WebView's actual native-provided layout scale first.
+        long start = System.currentTimeMillis(), readySince = 0;
+        while (System.currentTimeMillis() - start < 20000) {
+            boolean ready = false;
+            try {
+                if (scenario.getState() == androidx.lifecycle.Lifecycle.State.RESUMED)
+                    ready = js("getComputedStyle(document.documentElement).getPropertyValue('--android-font-scale').trim()").equals(Float.toString(scale));
+            } catch (IllegalStateException transition) {
+                // Only this bounded, expected configuration transition may wait.
+                // A destroyed app that never resumes still fails the deadline.
+                if (!String.valueOf(transition.getMessage()).contains("DESTROYED")) throw transition;
+            }
+            if (!ready) readySince = 0;
+            else if (readySince == 0) readySince = System.currentTimeMillis();
+            else if (System.currentTimeMillis() - readySince >= 500) {
+                InstrumentationRegistry.getInstrumentation().waitForIdleSync();
+                scenario.recreate(); return;
+            }
+            Thread.sleep(100);
+        }
+        fail("Native font configuration did not settle at " + scale + "; Activity=" + scenario.getState());
+    }
     private void waitHomeStatistics() throws Exception {
         long start = System.currentTimeMillis(); int retries = 0;
         while (System.currentTimeMillis() - start < 60000) {
@@ -197,14 +223,14 @@ public class ReleaseQualityTest {
         waitCondition("Player actions dialog", "!!document.querySelector('dialog[open]')");
         scenario.onActivity(activity -> activity.getOnBackPressedDispatcher().onBackPressed());
         waitCondition("Back closes actions without leaving Player", "!document.querySelector('dialog[open]') && location.hash.includes('e70b8d12')");
-        shell("settings put system font_scale 1.5"); scenario.recreate(); waitText("大谷翔平"); waitViewport(360);
+        fontScaleAndRecreate(1.5f); waitText("大谷翔平"); waitViewport(360);
         assertEquals("Large system font has no horizontal overflow", "true", js("document.documentElement.scrollWidth <= window.innerWidth"));
         assertEquals("Expanded headline numbers remain one readable line", "true", js("Array.from(document.querySelectorAll('.headline-stats dd')).length>0 && Array.from(document.querySelectorAll('.headline-stats dd')).every(e=>{const r=document.createRange();r.selectNodeContents(e);return r.getClientRects().length===1;})"));
         screenshot("mlb-player-font-150");
         shell("wm size 800x360"); scenario.recreate(); waitText("大谷翔平"); waitViewport(800);
         assertEquals("Landscape has no horizontal overflow", "true", js("document.documentElement.scrollWidth <= window.innerWidth"));
         screenshot("mlb-player-landscape");
-        shell("settings put system font_scale 1.0"); shell("wm size 360x800"); scenario.recreate(); waitText("大谷翔平"); waitViewport(360);
+        shell("wm size 360x800"); fontScaleAndRecreate(1.0f); waitText("大谷翔平"); waitViewport(360);
         assertTrue(js("location.hash").contains("e70b8d12"));
         assertEquals("true", js("!!document.querySelector('button[aria-label=\"大谷翔平をお気に入りに追加\"]')"));
         js("document.querySelector('button[aria-label=\"大谷翔平をお気に入りに追加\"]').click()");
@@ -294,7 +320,7 @@ public class ReleaseQualityTest {
         waitCondition("Two real comparison columns", "document.querySelector('.compare-table tbody tr td') && document.querySelector('.compare-table tbody tr').querySelectorAll('td').length===2 && !document.querySelector('.skeleton-page')");
         assertEquals("Comparison is not all unavailable", "true", js("Array.from(document.querySelectorAll('.compare-table td')).some(e=>e.textContent.trim()!=='—')"));
         screenshot("compare-actual-360");
-        shell("settings put system font_scale 2.0"); scenario.recreate(); waitText("BASEBALL"); waitViewport(360);
+        fontScaleAndRecreate(2.0f); waitText("BASEBALL"); waitViewport(360);
         js("location.hash='#/MLB/players/mlb%3Aplayer%3Ae70b8d12-aa41-50c0-9c1b-d468d451355f?season=2024'");
         waitCondition("200% font Player metrics", "document.querySelector('.headline-stats')?.textContent.includes('1.036')");
         assertEquals("200% system font page has no horizontal overflow", "true", js("document.documentElement.scrollWidth<=innerWidth"));
@@ -302,7 +328,7 @@ public class ReleaseQualityTest {
         waitCondition("Large metric glyphs fit their cells without overlap", "Array.from(document.querySelectorAll('.headline-stats dd')).every(e=>{const r=document.createRange();r.selectNodeContents(e);const text=r.getBoundingClientRect(),cell=e.parentElement.getBoundingClientRect();return text.left>=cell.left-1&&text.right<=cell.right+1;})");
         assertEquals("Header actions stay inside the viewport", "true", js("Array.from(document.querySelectorAll('.app-header a,.app-header button')).every(e=>{const r=e.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth;})"));
         screenshot("player-font-200");
-        shell("settings put system font_scale 1.0"); scenario.recreate(); waitText("BASEBALL"); waitViewport(360);
+        fontScaleAndRecreate(1.0f); waitText("BASEBALL"); waitViewport(360);
         js("location.hash='#/MLB/search?season=2024'");
         waitCondition("Actual Player Search", "location.hash.includes('/MLB/search') && !!document.querySelector('main input[type=search]') && !document.querySelector('.skeleton-page')");
         tapSearchInput();
@@ -323,7 +349,7 @@ public class ReleaseQualityTest {
         waitCondition("Comparison attribution", "!!document.querySelector('[aria-label=\"年度比較・合計データの出典\"] a[href*=\"oldid=\"]')");
         String historicalHash=js("location.hash");
         for (String scale : new String[]{"1.5", "2.0"}) {
-            shell("settings put system font_scale " + scale); scenario.recreate();
+            fontScaleAndRecreate(Float.parseFloat(scale));
             waitText("2023 / 2024 / 2025年の収録行合計"); waitViewport(360);
             waitCondition("OS font scale reaches Historical view", "Number(getComputedStyle(document.documentElement).getPropertyValue('--android-font-scale')) >= " + scale);
             assertEquals("Historical view has no horizontal overflow at " + scale, "true", js("document.documentElement.scrollWidth <= window.innerWidth"));
@@ -336,7 +362,7 @@ public class ReleaseQualityTest {
             setTheme("light", "ライト"); js("location.hash='" + historicalHash + "'");
             waitText("2023 / 2024 / 2025年の収録行合計");
         }
-        shell("settings put system font_scale 1.0"); scenario.recreate(); waitText("0.924");
+        fontScaleAndRecreate(1.0f); waitText("0.924");
         screenshot("npb-history-360");
     }
     @Test public void npbPlayerCompetitionDeepLinkAndLargeFont() throws Exception {
@@ -347,7 +373,7 @@ public class ReleaseQualityTest {
         waitCondition("Exact native competition", "location.hash.includes('stage=npb_cs_final') && location.hash.includes('role=pitching') && !!document.querySelector('a[href*=\"oldid=110944738\"]')");
         String scopedHash=js("location.hash");
         for(String scale:new String[]{"1.5","2.0"}) {
-            shell("settings put system font_scale " + scale); scenario.recreate(); waitText("5.2"); waitViewport(360);
+            fontScaleAndRecreate(Float.parseFloat(scale)); waitText("5.2"); waitViewport(360);
             assertEquals("Scoped player has no large-font overflow", "true", js("document.documentElement.scrollWidth<=innerWidth"));
             screenshot("npb-player-competition-font-" + scale.replace(".", "") + "-light");
             setTheme("dark", "ダーク"); js("location.hash='"+scopedHash+"'"); waitText("5.2"); waitViewport(360);
@@ -383,7 +409,7 @@ public class ReleaseQualityTest {
             assertEquals("The native snapshot uses the selected SPA player, not the original list", csHash.substring(1), saved.getString("baseball.webRoute"));
         });
         for(String scale:new String[]{"1.5","2.0"}) {
-            shell("settings put system font_scale " + scale); scenario.recreate(); waitText("2.2"); waitViewport(360);
+            fontScaleAndRecreate(Float.parseFloat(scale)); waitText("2.2"); waitViewport(360);
             assertEquals("Recreation retains the selected player, not the initial CS list", csHash, js("location.hash"));
             assertEquals("CS has no overflow at " + scale, "true", js("document.documentElement.scrollWidth<=innerWidth"));
             screenshot("npb-cs-font-" + scale.replace(".", "") + "-light");
@@ -392,7 +418,7 @@ public class ReleaseQualityTest {
             screenshot("npb-cs-font-" + scale.replace(".", "") + "-dark");
             setTheme("light", "ライト"); js("location.hash='"+csHash+"'"); waitText("2.2");
         }
-        shell("settings put system font_scale 1.0"); scenario.recreate(); waitText("2.2");
+        fontScaleAndRecreate(1.0f); waitText("2.2");
         shell("input keyevent KEYCODE_BACK"); waitText("2026 クライマックスシリーズ");
         assertTrue("Cold restored Back retains CS stage and role", js("location.hash").contains("stage=npb_cs_final") && js("location.hash").contains("role=pitching"));
         waitText("リバン・モイネロ");
@@ -422,7 +448,7 @@ public class ReleaseQualityTest {
         waitText("比較 2/4人");
         assertEquals("Comparison keeps its year and sample caveat", "true", js("!!document.querySelector('section[aria-label=\"同期の成績比較\"]') && document.body.innerText.includes('規定資格や優劣の判定ではありません')"));
         String route=js("location.hash");screenshot("npb-cohort-360");
-        shell("settings put system font_scale 2.0");scenario.recreate();waitText("比較 2/4人");waitViewport(360);
+        fontScaleAndRecreate(2.0f);waitText("比較 2/4人");waitViewport(360);
         assertEquals("Recreation retains cohort and selected canonical IDs",route,js("location.hash"));
         assertEquals("Cohort large text has no horizontal overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));
         assertEquals("Expanded cohort statistic values remain readable on one line","true",js("Array.from(document.querySelectorAll('.historical-cohort .explorer-values dd')).every(e=>{const r=document.createRange();r.selectNodeContents(e);return r.getClientRects().length===1;})"));
@@ -435,7 +461,7 @@ public class ReleaseQualityTest {
         waitCondition("Both actual age seasons loaded", "!!document.querySelector('section[aria-label=\"同年齢の比較結果\"]')");
         assertTrue("Collected seasons are not full career totals", js("document.body.innerText").contains("完全なキャリアではありません"));
         screenshot("npb-age-season-360");String route=js("location.hash");
-        shell("settings put system font_scale 2.0");scenario.recreate();waitText("2025年 · 年末26歳");waitText("2024年 · 年末26歳");waitViewport(360);
+        fontScaleAndRecreate(2.0f);waitText("2025年 · 年末26歳");waitText("2024年 · 年末26歳");waitViewport(360);
         assertEquals("Age comparison restores exact years, role and IDs",route,js("location.hash"));
         assertEquals("Age comparison large text has no overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));
         screenshot("npb-age-season-font-20");
@@ -464,7 +490,7 @@ public class ReleaseQualityTest {
         assertEquals("Club rates recompute actual collected hits and at-bats", "true", js("document.querySelector('section[aria-label=\"ソフトバンクの収録成績\"]')?.textContent.includes('0.307')"));
         js("Array.from(document.querySelectorAll('details')).find(d=>d.querySelector('summary')?.textContent.startsWith('球団別に見比べる')).scrollIntoView({block:'start'})");
         screenshot("npb-club-comparison-360");
-        shell("settings put system font_scale 2.0");scenario.recreate();waitText("球団別に見比べる · 2球団");waitViewport(360);
+        fontScaleAndRecreate(2.0f);waitText("球団別に見比べる · 2球団");waitViewport(360);
         js("Array.from(document.querySelectorAll('details')).find(d=>d.querySelector('summary')?.textContent.startsWith('球団別に見比べる')).open=true");
         assertEquals("Club comparison large text has no overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));
         js("Array.from(document.querySelectorAll('details')).find(d=>d.querySelector('summary')?.textContent.startsWith('球団別に見比べる')).scrollIntoView({block:'start'})");
@@ -479,7 +505,7 @@ public class ReleaseQualityTest {
         assertEquals("CS game shows source's single-game HR, not stage total","true",js("Array.from(document.querySelectorAll('th.stat-table-identity')).some(th=>th.textContent.includes('森下翔太') && th.parentElement.querySelectorAll('td')[2]?.textContent==='HR2')"));
         assertEquals("Per-game source is reachable","true",js("!!document.querySelector('a[href*=\"oldid=111424439\"]')"));
         screenshot("npb-cs-game-detail-360");
-        shell("settings put system font_scale 2.0");scenario.recreate();waitText("森下翔太");waitViewport(360);
+        fontScaleAndRecreate(2.0f);waitText("森下翔太");waitViewport(360);
         assertEquals("CS detail remains within the viewport at 200 percent","true",js("document.documentElement.scrollWidth<=innerWidth"));screenshot("npb-cs-game-detail-font-20");
         js("Array.from(document.querySelectorAll('a')).find(a=>a.textContent==='森下翔太').click()");waitText("2026年 · CS ファイナル");
         assertTrue("Player link retains postseason/role",js("location.hash").contains("competition=postseason&stage=npb_cs_final&role=batting"));
@@ -494,7 +520,7 @@ public class ReleaseQualityTest {
         waitText("記録への歩み");waitText("合計対象：2023・2024・2025年");
         assertEquals("Collected comparison never claims complete Career","true",js("document.body.innerText.includes('年齢到達日までの通算や完全なキャリアではありません')"));
         screenshot("npb-age-collected-360");
-        shell("settings put system font_scale 2.0");scenario.recreate();waitText("収録分の合計を読み込む");waitViewport(360);
+        fontScaleAndRecreate(2.0f);waitText("収録分の合計を読み込む");waitViewport(360);
         assertEquals("Collected comparison has no overflow at 200 percent","true",js("document.documentElement.scrollWidth<=innerWidth"));screenshot("npb-age-collected-font-20");
     }
     @Test public void sourcedPlayerEventsKeepEvidenceAndLargeFont() throws Exception {
@@ -504,7 +530,7 @@ public class ReleaseQualityTest {
         assertEquals("Events retain exact licensed source", "true", js("!!document.querySelector('a[href*=\"oldid=111421457\"]')"));
         assertEquals("Events do not certify current membership", "true", js("document.body.innerText.includes('現在の所属や登録の認定ではありません')"));
         screenshot("npb-player-events-360");
-        shell("settings put system font_scale 2.0"); scenario.recreate(); waitText("金銭トレードの記載"); waitViewport(360);
+        fontScaleAndRecreate(2.0f); waitText("金銭トレードの記載"); waitViewport(360);
         assertEquals("Events fit at 200 percent", "true", js("document.documentElement.scrollWidth<=innerWidth")); screenshot("npb-player-events-font-20");
         assertTrue("Recreation retains event conditions", js("location.hash").contains("kind=trade&player=3deea6d2-3347-430e-93c3-26ca2ebf15fa"));
     }
