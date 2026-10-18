@@ -4,6 +4,15 @@ export const progressionMetrics = ["AVG", "OPS", "HR", "H", "RBI", "PA", "G", "E
 export type ProgressionMetric = typeof progressionMetrics[number];
 export type SeasonObservation = { season: number; teams: string[]; metrics: Record<string, number | null>; sample: number | null };
 
+function observedMetrics(rows: readonly NpbHistoricalRow[]) {
+  const metrics = sumHistoricalRows(rows).metrics, outs = metrics.outsRecorded;
+  if (rows[0]!.role === "pitching") {
+    metrics.K9 = outs != null && outs > 0 && metrics.SO != null ? metrics.SO * 27 / outs : null;
+    metrics.BB9 = outs != null && outs > 0 && metrics.BB != null ? metrics.BB * 27 / outs : null;
+  }
+  return metrics;
+}
+
 /** Summarize observations, never impute missing seasons or merge other competitions. */
 export function historicalProgression(rows: readonly NpbHistoricalRow[], years: readonly number[]): SeasonObservation[] {
   if (!rows.length) return [];
@@ -13,14 +22,24 @@ export function historicalProgression(rows: readonly NpbHistoricalRow[], years: 
   return [...new Set(years)].sort((a, b) => a - b).map(season => {
     const records = rows.filter(r => r.season === season);
     if (!records.length) return { season, teams: [], metrics: {}, sample: null };
-    const metrics = sumHistoricalRows(records).metrics;
-    const outs = metrics.outsRecorded;
-    if (rows[0]!.role === "pitching") {
-      metrics.K9 = outs != null && outs > 0 && metrics.SO != null ? metrics.SO * 27 / outs : null;
-      metrics.BB9 = outs != null && outs > 0 && metrics.BB != null ? metrics.BB * 27 / outs : null;
-    }
+    const metrics = observedMetrics(records);
     return { season, teams: [...new Set(records.map(r => r.teamId))], metrics, sample: metrics[rows[0]!.role === "batting" ? "PA" : "outsRecorded"] ?? null };
   });
+}
+
+/** Recorded club rows only. Discontinuous years never establish a continuous tenure or transaction. */
+export function historicalClubComparison(rows: readonly NpbHistoricalRow[], years: readonly number[]) {
+  const selectedYears = [...new Set(years)].sort((a, b) => a - b);
+  if (selectedYears.length > 4) throw Error("Select at most four seasons");
+  // Reuse identity/role/duplicate validation, including rows outside the selection.
+  historicalProgression(rows, selectedYears);
+  const selected = rows.filter(r => selectedYears.includes(r.season));
+  const clubs = [...new Set(selected.map(r => r.teamId))].map(teamId => {
+    const records = selected.filter(r => r.teamId === teamId), metrics = observedMetrics(records);
+    return { teamId, seasons: [...new Set(records.map(r => r.season))].sort((a, b) => a - b), metrics,
+      sample: metrics[records[0]!.role === "batting" ? "PA" : "outsRecorded"] ?? null };
+  }).sort((a, b) => a.seasons[0]! - b.seasons[0]! || a.teamId.localeCompare(b.teamId));
+  return { clubs, missingSeasons: selectedYears.filter(year => !selected.some(r => r.season === year)) };
 }
 
 export function bestObservedSeasons(points: readonly SeasonObservation[], metric: ProgressionMetric) {

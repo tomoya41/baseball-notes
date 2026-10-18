@@ -453,6 +453,23 @@ public class ReleaseQualityTest {
         js("Array.from(document.querySelectorAll('section[aria-label=\"経歴と収録シーズンのつながり\"] a')).find(a=>a.getAttribute('href')?.includes('season=2025')).click()");
         waitText("2025年の投球成績");assertTrue("Collected pitcher year retains role",js("location.hash").contains("role=pitching"));
     }
+    @Test public void collectedClubComparisonPreservesSamplesAndAnnualNavigation() throws Exception {
+        scenario=ActivityScenario.launch(MainActivity.class);waitText("BASEBALL");
+        js("location.hash='#/NPB/players/54f9b289-4717-4fb8-b1c3-7c8cf37e2e42/seasons?season=2025&role=batting&years=2022,2023,2024,2025&trendMetric=AVG'");
+        waitText("球団別に見比べる · 2球団");
+        js("Array.from(document.querySelectorAll('details')).find(d=>d.querySelector('summary')?.textContent==='球団別に見比べる · 2球団').open=true");
+        waitText("収録年度：2022年 · 396打席");waitText("収録年度：2023 / 2024 / 2025年 · 1455打席");
+        assertEquals("Club rates recompute actual collected hits and at-bats", "true", js("document.querySelector('section[aria-label=\"ソフトバンクの収録成績\"]')?.textContent.includes('0.307')"));
+        js("Array.from(document.querySelectorAll('details')).find(d=>d.querySelector('summary')?.textContent.startsWith('球団別に見比べる')).scrollIntoView({block:'start'})");
+        screenshot("npb-club-comparison-360");
+        shell("settings put system font_scale 2.0");scenario.recreate();waitText("球団別に見比べる · 2球団");waitViewport(360);
+        js("Array.from(document.querySelectorAll('details')).find(d=>d.querySelector('summary')?.textContent.startsWith('球団別に見比べる')).open=true");
+        assertEquals("Club comparison large text has no overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));
+        js("Array.from(document.querySelectorAll('details')).find(d=>d.querySelector('summary')?.textContent.startsWith('球団別に見比べる')).scrollIntoView({block:'start'})");
+        screenshot("npb-club-comparison-font-20");
+        js("document.querySelector('section[aria-label=\"日本ハムの収録成績\"] a').click()");waitText("2022年の打撃成績");
+        assertTrue("Annual detail keeps exact year and role",js("location.hash").contains("season=2022&role=batting&years=2022"));
+    }
     @Test public void longNavigationHistoryHasBoundedRecreationState() throws Exception {
         assertEquals("/NPB/search?q=A%26B%3DC%25", MainActivity.savedRoute("https://localhost/#/NPB/search?q=A%26B%3DC%25"));
         assertEquals("/privacy", MainActivity.savedRoute("https://localhost/#/privacy"));
