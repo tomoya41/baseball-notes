@@ -43,7 +43,7 @@ for(const year of manifest.seasons) {
   if(bytes.length!==year.bytes||createHash("sha256").update(bytes).digest("hex")!==year.sha256)throw Error("Historical year hash/size mismatch");
   const d=npbHistoricalDatasetSchema.parse(JSON.parse(bytes.toString("utf8")));
   if(d.inputSha256!==manifest.inputSha256||d.observedAt!==manifest.observedAt||d.rows.length!==year.rows||d.players.length!==year.players||d.rows.some(r=>r.season!==year.season))throw Error("Historical family mismatch");
-  for(const p of d.players){assertHistoricalBridge(p,p);if(!manifest.players.some(m=>m.playerId===p.playerId&&m.identityScope===p.identityScope&&m.seasons.includes(year.season)))throw Error("Historical canonical bridge mismatch");players.add(p.playerId);}
+  for(const p of d.players){assertHistoricalBridge(p,p);if(!manifest.players.some(m=>m.playerId===p.playerId&&m.identityScope===p.identityScope&&m.birthDate===p.birthDate&&m.seasons.includes(year.season)))throw Error("Historical canonical bridge mismatch");players.add(p.playerId);}
   rows+=d.rows.length;
 }
 if(players.size!==manifest.players.length)throw Error("Historical directory mismatch");

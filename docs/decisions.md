@@ -406,3 +406,11 @@ Use verified birth date plus selected year-end age to identify one admitted Hist
 ### Same-grade clarification
 
 Japanese same-grade discovery uses April 2 through the following April 1, following the Ministry of Education's published boundary rule. Group by verified DOB only, never by inferred graduation, school name or real enrollment. Preserve calendar-birth-year deep links as a distinct legacy-compatible condition; primary peer navigation uses same-grade grouping.
+
+## 2026-10-18 — Observed game evidence, collected age totals and seasonal context
+
+Keep licensed per-game CS observations alongside stage aggregates in a new immutable publication family. Independently replay source/identity archives and preserve previous game observations when extending a stage total. Never derive a box score from an annual/stage aggregate. Reuse score/table presentation with explicit competition/stage and separate readers; preserve old APK assets.
+
+Year-end age comparison additionally supports explicitly requested collected-year totals. Show exact included years, missing scope and source; never label these birthday-time or complete Career totals. Bound confirmed aggregate reads to 36 annual files / 8 MB and two workers; suppress a player's sum on any required read failure. Record checkpoints describe recorded rows, not certified achievements or predictions. Previously verified Historical-only DOBs may support comparisons without creating Current membership.
+
+Seasonal Home is editorial navigation driven by the JST calendar, distinct from official schedules, source freshness and production evidence. Only existing admitted destinations are linked with explicit stored years; uncollected FA/draft predictions/preseason remain unavailable. Optional AI news will use a separately admitted sourced-event lane with announcement/report/rumor/correction states; generated summaries never directly mutate canonical memberships or Facts. See [integrated scope](npb-integrated-expansion.md) and [news readiness](npb-sourced-news-readiness.md).

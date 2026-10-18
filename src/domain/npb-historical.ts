@@ -38,6 +38,7 @@ export const npbHistoricalDatasetSchema = z.strictObject({
 }).superRefine((value, ctx) => {
   const ids = new Set(value.players.map(p => p.playerId)), external = new Set(value.players.map(p => p.npbId));
   if (ids.size !== value.players.length || external.size !== value.players.length) ctx.addIssue({ code: "custom", message: "Ambiguous historical identity" });
+  if(value.players.some(p=>p.birthDate!==undefined&&p.identityScope!=="historical_only"))ctx.addIssue({code:"custom",message:"Historical DOB requires an admitted historical-only identity"});
   if(value.players.some(p=>p.revisionAt>(p.sourceObservedAt??value.observedAt)||(p.sourceObservedAt??value.observedAt)>value.observedAt)) ctx.addIssue({code:"custom",message:"Source revision postdates acquisition"});
   const keys = new Set<string>();
   for (const row of value.rows) {
@@ -55,6 +56,7 @@ export const npbHistoricalManifestSchema = z.strictObject({
 }).superRefine((m,c)=>{
   const seasons=new Set(m.seasons.map(s=>s.season));
   if(seasons.size!==m.seasons.length || new Set(m.players.map(p=>p.playerId)).size!==m.players.length || m.players.some(p=>p.seasons.some(y=>!seasons.has(y)))) c.addIssue({code:"custom",message:"Invalid historical index"});
+  if(m.players.some(p=>p.birthDate!==undefined&&p.identityScope!=="historical_only"))c.addIssue({code:"custom",message:"Historical index DOB requires historical-only identity"});
 });
 export type NpbHistoricalManifest=z.infer<typeof npbHistoricalManifestSchema>;
 
