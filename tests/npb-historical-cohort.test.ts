@@ -1,9 +1,21 @@
 import { expect,it } from "vitest";
-import { historicalCohort } from "../src/domain/npb-historical-cohort";
+import { historicalCohort, japaneseSchoolCohort } from "../src/domain/npb-historical-cohort";
 import { canonicalDeepLink } from "../src/domain/native-navigation";
 import { portableRoute } from "../src/domain/product-sharing";
 import { viewConditions } from "../src/domain/portable-conditions";
 import { cohortFixture,cohortId } from "./fixtures/npb-cohort";
+
+it.each([["1998-04-01",1997],["1998-04-02",1998],["1999-01-01",1998],["1999-03-31",1998],["1999-04-01",1998],["1999-04-02",1999],["2000-02-29",1999],[null,null]] as const)("groups Japanese grades at April 2/April 1: %s",(dob,year)=>{
+ expect(japaneseSchoolCohort(dob)).toBe(year);
+});
+it("finds the same Japanese grade across calendar years, without inferring actual school enrollment",()=>{
+ const {data,catalog}=cohortFixture();["1998-04-02","1999-04-01","1998-04-01","1999-04-02","1999-03-31",null].forEach((dob,i)=>catalog.players[i]!.profile.birthDate=dob);
+ const group=historicalCohort(data,catalog,cohortId(0),"schoolYear","batting");
+ expect(group.year).toBe(1998);expect(group.members.map(m=>m.player.playerId).sort()).toEqual([cohortId(0),cohortId(1),cohortId(4)]);
+ expect(historicalCohort(data,catalog,cohortId(5),"schoolYear","batting").year).toBeNull();
+ const search=`season=2025&cohort=schoolYear&peer=${cohortId(0)}&recentPlayers=${cohortId(0)},${cohortId(1)}`;
+ expect(portableRoute("/NPB/history",search)).toContain("cohort=schoolYear");expect(viewConditions(new URLSearchParams(search),true,"NPB")).toContain("cohort=schoolYear");
+});
 
 it("uses known birth years rather than names, saved ages or rookie assumptions",()=>{
  const {data,catalog}=cohortFixture();

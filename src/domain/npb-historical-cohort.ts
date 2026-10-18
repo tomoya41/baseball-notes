@@ -1,12 +1,16 @@
 import { sumHistoricalRows, type NpbHistoricalDataset } from "./npb-historical";
 import type { NpbCatalog } from "./npb-product-contract";
 
-export type HistoricalCohortKind = "birthYear" | "draftYear";
+export type HistoricalCohortKind = "birthYear" | "draftYear" | "schoolYear";
+/** Japanese grade grouping: April 2 through April 1 of the next year. DOB is validated by Catalog. */
+export function japaneseSchoolCohort(birthDate: string | null): number | null {
+  return birthDate ? Number(birthDate.slice(0,4)) - Number(birthDate.slice(5) < "04-02") : null;
+}
 /** Same immutable birth year or explicit draft year; never rookie/current-roster evidence. */
 export function historicalCohort(data: NpbHistoricalDataset, catalog: NpbCatalog, referenceId: string, kind: HistoricalCohortKind, role: "batting" | "pitching") {
   if(new Set(data.rows.map(r=>r.season)).size!==1)throw Error("Cohort requires one Historical season");
   const reference=catalog.players.find(p=>p.playerId===referenceId);
-  const value=(p:NpbCatalog["players"][number])=>kind==="birthYear"?(p.profile.birthDate?Number(p.profile.birthDate.slice(0,4)):null):p.profile.draftYear;
+  const value=(p:NpbCatalog["players"][number])=>kind==="schoolYear"?japaneseSchoolCohort(p.profile.birthDate):kind==="birthYear"?(p.profile.birthDate?Number(p.profile.birthDate.slice(0,4)):null):p.profile.draftYear;
   const year=reference?value(reference):null;
   if(year===null)return {year:null,reference,members:[]};
   const rowsById=new Map<string,NpbHistoricalDataset["rows"]>();
