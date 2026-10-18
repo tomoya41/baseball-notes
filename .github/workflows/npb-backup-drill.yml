@@ -104,5 +104,6 @@ jobs:
         with:
           name: retained-identity-inspection
           path: .data/retained-identity/identity-report.json
+          include-hidden-files: true
           if-no-files-found: error
           retention-days: 7
