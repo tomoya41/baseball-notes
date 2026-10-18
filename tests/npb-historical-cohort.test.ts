@@ -1,5 +1,5 @@
 import { expect,it } from "vitest";
-import { historicalCohort, japaneseSchoolCohort } from "../src/domain/npb-historical-cohort";
+import { cohortIdentities, historicalCohort, japaneseSchoolCohort } from "../src/domain/npb-historical-cohort";
 import { canonicalDeepLink } from "../src/domain/native-navigation";
 import { portableRoute } from "../src/domain/product-sharing";
 import { viewConditions } from "../src/domain/portable-conditions";
@@ -24,6 +24,21 @@ it("uses known birth years rather than names, saved ages or rookie assumptions",
  expect(result.members.filter(m=>m.player.displayName==="同姓同名")).toHaveLength(2);
  expect(historicalCohort(data,catalog,cohortId(2),"birthYear","batting").year).toBeNull();
  expect(historicalCohort(data,catalog,"unknown","birthYear","batting").members).toEqual([]);
+});
+it("uses admitted historical-only DOBs for school cohorts without adding Current membership or inventing draft years",()=>{
+ const {data,catalog}=cohortFixture(),original=JSON.stringify(catalog);
+ const oldId=cohortId(50),unknownId=cohortId(51);
+ data.players.push({...data.players[0]!,playerId:oldId,identityScope:"historical_only",birthDate:"1999-04-01"},{...data.players[0]!,playerId:unknownId,identityScope:"historical_only"});
+ data.rows.push({...data.rows[0]!,playerId:oldId},{...data.rows[0]!,playerId:unknownId});
+ catalog.players[0]!.profile.birthDate="1998-04-02";
+ const current=JSON.stringify(catalog),view=cohortIdentities(data,catalog);
+ expect(view.filter(p=>p.playerId===oldId)).toHaveLength(1);expect(view.some(p=>p.playerId===unknownId)).toBe(false);
+ expect(historicalCohort(data,catalog,oldId,"schoolYear","batting").members.map(m=>m.player.playerId)).toContain(cohortId(0));
+ expect(historicalCohort(data,catalog,oldId,"draftYear","batting").year).toBeNull();
+ expect(JSON.stringify(catalog)).toBe(current);expect(current).not.toBe(original);
+ data.players.push({...data.players[0]!,identityScope:"historical_only",birthDate:"1900-01-01"});
+ expect(cohortIdentities(data,catalog).filter(p=>p.playerId===cohortId(0))).toHaveLength(1);
+ expect(historicalCohort(data,catalog,cohortId(0),"schoolYear","batting").year).toBe(1998);
 });
 it("keeps unknown draft years distinct and separates roles",()=>{
  const {data,catalog}=cohortFixture();

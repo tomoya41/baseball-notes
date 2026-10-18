@@ -14,6 +14,11 @@ export function portableRoute(path: string, search = ""): string | null {
   const parts = path.split("/").filter(Boolean), league = parts[0];
   if (league !== "NPB" && league !== "MLB") return null;
   const resource = parts[1], source = new URLSearchParams(search), clean = new URLSearchParams();
+  if(league==="NPB"&&resource==="games"&&source.get("competition")==="postseason"){
+    if(parts.length!==3||!canonicalEntityRefSchema.safeParse({league,kind:"game",id:decodeSafe(parts[2]!)}).success||source.has("season")&&source.get("season")!=="2026"||source.has("stage")&&!["npb_cs_first","npb_cs_final"].includes(source.get("stage")!))return null;
+    clean.set("competition","postseason");if(source.has("stage"))clean.set("stage",source.get("stage")!);clean.set("season","2026");
+    return `${path}?${clean}`;
+  }
   if (league === "NPB" && parts.length === 2 && ["cs", "postseason"].includes(resource ?? "")) {
     if(source.has("season")&&source.get("season")!=="2026")return null;
     clean.set("season","2026");

@@ -6,7 +6,7 @@ import pin from "../src/data/npb-cs-release.json";
 import retained from "../src/data/npb-cs-retained-releases.json";
 import { npbCsDatasetSchema } from "../src/domain/npb-cs-observations";
 import { assertHistoricalBridge } from "../src/infrastructure/providers/npb-historical-admission";
-type CsReleasePin = Omit<typeof pin, "scopes"> & { scopes?: Record<string, string[]> };
+type CsReleasePin = Omit<typeof pin, "scopes"|"gameIds"> & { scopes?: Record<string, string[]>;gameIds?:string[] };
 async function stageGeneration(root: string, release: CsReleasePin) {
   const cache = join(".data/npb-history-release", `${release.sha256}.gz`);
   let bytes = await readFile(cache).catch(() => null);
@@ -20,6 +20,7 @@ async function stageGeneration(root: string, release: CsReleasePin) {
   const data = npbCsDatasetSchema.parse(JSON.parse(body.toString()));
   for (const p of data.players) assertHistoricalBridge(p, p);
   if (data.inputSha256 !== release.inputSha256 || data.games.length !== release.games || data.rows.length !== release.rows || data.players.length !== release.players || release.scopes && data.rows.some(r => !release.scopes![r.aggregate.playerId]?.includes(r.aggregate.scope.stage!))) throw Error("CS admission index mismatch");
+  if(release.gameIds&&(JSON.stringify(data.games.map(g=>g.id))!==JSON.stringify(release.gameIds)||!data.observations))throw Error("CS game-detail admission mismatch");
   const destination = join(root, release.sha256); await mkdir(destination, { recursive: true }); await writeFile(join(destination, "cs-2026.json"), body); await writeFile(cache, bytes);
   return { files: 1, bytes: body.length, games: data.games.length, rows: data.rows.length, canonicalWrites: 0 };
 }

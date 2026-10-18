@@ -2,6 +2,21 @@
 // NPB player page below; the Swallows' J. Osuna is a different person.
 export const verifiedNf3Identities = [
   {
+    sourceId: "2026:DB:uniform:69", playerId: "bab3e29d-faa7-44e3-abe1-ee7023163a63",
+    existingCanonical: true, name: "エンカーナシオン", teamId: "npb:team:baystars",
+    profileUrl: "https://nf3.sakura.ne.jp/Central/DB/f/69_stat.htm",
+    officialProfileUrl: "https://npb.jp/bis/players/33035152.html", verifiedAt: "2026-10-18",
+    note: "Codex source verification, not human review: retained backup 38963670207 independently restored in 39102325654 proves this canonical/source-ID/URL mapping; existing archived nf3 HTML links to NPB 33035152; Wikipedia/Q90743792/day-precision DOB independently agree. No source refetch, current roster or uniform-number assertion. See npb-integrated-expansion.md.",
+  },
+  {
+    sourceId: "2026:DB:uniform:62", playerId: "e88b4e3d-1c6c-4b81-9c7c-9af1e8e133f3",
+    existingCanonical: true, name: "レイノルズ", teamId: "npb:team:baystars",
+    profileUrl: "https://nf3.sakura.ne.jp/Central/DB/f/62_stat.htm",
+    additionalProfileUrls: ["https://nf3.sakura.ne.jp/Central/DB/p/62_stat.htm"],
+    officialProfileUrl: "https://npb.jp/bis/players/93995152.html", verifiedAt: "2026-10-18",
+    note: "Codex source verification, not human review: retained backup 38963670207 independently restored in 39102325654 proves this canonical/source-ID/URL mapping; existing archived nf3 batting/pitching pages both link to NPB 93995152; Wikipedia/Q127516948/day-precision DOB independently agree. No source refetch, current roster or uniform-number assertion. See npb-integrated-expansion.md.",
+  },
+  {
     sourceId: "2026:D:uniform:30", playerId: "7996a107-69eb-4950-820d-913760f6669e",
     existingCanonical: true, name: "根尾昂", teamId: "npb:team:dragons",
     profileUrl: "https://nf3.sakura.ne.jp/Central/D/f/30f_stat.htm",

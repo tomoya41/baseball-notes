@@ -604,3 +604,19 @@ User correction: primary same-generation discovery now means **同学年 (4月2�
 ## 2026-10-18 — Collected club-season comparison
 
 [Club-season comparison](npb-club-season-comparison.md) adds a bounded, explicit comparison of a player’s actual club rows across up to four selected Historical Regular years. It lists exact years and samples, recomputes component rates, preserves nulls/split-team rows and links annual details plus licensed sources with no extra fetch. This improves recorded affiliation/performance analysis; it does not complete dated transactions, tenure history, full Career or transfer-effect analysis. Conflicting profile affiliation claims remain unchanged and do not become events. Existing data/Gates and physical/operational blockers remain separate.
+
+## 2026-10-18 — Integrated NPB data / records / seasonal context (PR #44)
+
+[Evidence and delivery status](npb-integrated-expansion.md) separates implementation/admission from final public and physical QA receipts. Regular v8 admits 600 players / 3,524 rows, 2000–2025, all partial: 190 earlier-year rows for the same 21 verified Historical-only identities, no change to prior 3,334 rows. A 49-Current-article refresh yields no additional admitted Current past rows; Directory matches remain 579/740, missing 161. Two verified existing canonical bridges reduce bridge gaps to 69, enable CS/profile use, and do not invent pre-2026 NPB seasons.
+
+| Priority vision | Implemented increment | Still unfinished |
+|---|---|---|
+| Postseason game experience | CS v4: 12 observed-final games, 153 identified players, 179 stage rows and 185 exact game observations; score rows link to game-specific responsive batting/pitching details | Complete CS population, game order/substitutions/innings feed, 2026 Japan Series / Preseason admission |
+| Record Watch | Selected recorded Regular years and age-collected sums expose recorded-count checkpoints with exact years/nulls | Complete NPB Career source totals, certified achievement dates, official proximity, background push |
+| Age cumulative comparison | Up to four players, sum recorded years through the selected year-end-age season, explicit bounded loading and failure guard | Exact birthday-time totals; full career coverage; no imputation of missing years |
+| Seasonal Home | No-fetch spring/regular/autumn/winter editorial navigation, manual URL override, actual saved-year labels and unavailable-source notes | Actual FA/transactions/current Draft/preseason news/events and year-round source coverage |
+| Advanced analysis | Existing component metrics and selected-year comparisons retained | Defensive/catcher/pitch tracking data and detailed analysis remain Source/Rights/admission work |
+| Player profiles | Four saved players / 21 missing facts with independent IDs and licensed revision evidence | Current jersey/registration certification, full affiliation/awards; competing source claims stay unresolved |
+| Sourced news / optional AI | Architecture/rights/cost readiness documented; existing Plus/Google AI Pro options assessed | No approved news source adapter/API credential/periodic collector/public summaries claimed yet |
+
+The user prioritizes **record/age analysis and seasonal use** next, plus full game-detail access for admitted postseason observations. Retain Draft-to-retirement, farm/Rookie/Prospect, FA/Posting/IN-OUT, full records, measurements, notifications and release-readiness gaps independently. An increment over partial data does not complete the original vision. Current six pending Games/five partial dates/stale/closed Gates, Turso stability, original Pixel signer, physical TalkBack and Play owner steps remain separate.

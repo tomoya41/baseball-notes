@@ -24,7 +24,7 @@ export async function readNpbHistoricalSeason(season:number,manifest:NpbHistoric
   const entry=manifest.seasons.find(s=>s.season===season);if(!entry) throw Error("NPB season is not admitted");
   const validate=(v:unknown)=>{
     const d=npbHistoricalDatasetSchema.parse(v);
-    if(d.inputSha256!==manifest.inputSha256||d.observedAt!==manifest.observedAt||d.rows.some(r=>r.season!==season)||d.rows.length!==entry.rows||d.players.length!==entry.players||d.players.some(p=>!manifest.players.some(m=>m.playerId===p.playerId&&m.identityScope===p.identityScope&&m.seasons.includes(season)))) throw Error("Historical generation or season mismatch");
+    if(d.inputSha256!==manifest.inputSha256||d.observedAt!==manifest.observedAt||d.rows.some(r=>r.season!==season)||d.rows.length!==entry.rows||d.players.length!==entry.players||d.players.some(p=>!manifest.players.some(m=>m.playerId===p.playerId&&m.identityScope===p.identityScope&&m.birthDate===p.birthDate&&m.seasons.includes(season)))) throw Error("Historical generation or season mismatch");
     return d;
   };
   const load=async()=>read(`${season}.json`,validate,request,entry.sha256);

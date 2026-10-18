@@ -4,6 +4,6 @@ export function historicalImportYears(from: number, hasDirectory: boolean): numb
   if (from < 2015 && !hasDirectory) throw Error("Older-year expansion requires the saved Current Directory");
   return Array.from({ length: 2026 - from }, (_, i) => from + i);
 }
-export function yearsForSavedIdentity(years: readonly number[], playerId: string, historicalOnly: boolean, directoryIds: ReadonlySet<string>): number[] {
-  return years.filter(year => year >= 2015 || !historicalOnly && directoryIds.has(playerId));
+export function yearsForSavedIdentity(years: readonly number[], playerId: string, historicalOnly: boolean, directoryIds: ReadonlySet<string>, reviewedHistoricalIds: ReadonlySet<string> = new Set()): number[] {
+  return years.filter(year => year >= 2015 || !historicalOnly && directoryIds.has(playerId) || historicalOnly && reviewedHistoricalIds.has(playerId));
 }

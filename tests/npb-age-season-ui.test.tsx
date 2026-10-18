@@ -59,3 +59,18 @@ it("bounds discovery to 30 candidates and removes the picker at four selections"
   const f=await mount("",false,40);try{expect(f.host.querySelectorAll("button.player-row")).toHaveLength(30);}finally{await f.close();}
   const full=await mount(`&recentPlayers=${[0,1,3,5].map(cohortId).join(",")}`);try{expect(full.host.querySelector('input[type="search"]')).toBeNull();expect(full.host.textContent).toContain("比較 4/4人");}finally{await full.close();}
 });
+it("loads collected-year totals only after an explicit action, shares annual reads and retains nulls and exact scope",async()=>{
+ const f=await mount("ageMode=collected");try{
+   expect(readNpbHistoricalSeason).not.toHaveBeenCalled();expect(f.host.textContent).toContain("約2KB");
+   await act(async()=>Array.from(f.host.querySelectorAll("button")).find(b=>b.textContent==="収録分の合計を読み込む")!.click());
+   expect(readNpbHistoricalSeason).toHaveBeenCalledTimes(2);expect(f.host.textContent).toContain("合計対象：2024・2025年");
+   expect(f.host.textContent).toContain("228");expect(f.host.textContent).toContain("記録への歩み");expect(f.host.textContent).toContain("完全なキャリアではありません");
+ }finally{await f.close();}
+});
+it("does not publish a silently incomplete sum when any selected annual request fails",async()=>{
+ const f=await mount("ageMode=collected",true);try{
+   await act(async()=>Array.from(f.host.querySelectorAll("button")).find(b=>b.textContent==="収録分の合計を読み込む")!.click());
+   expect(f.host.textContent).toContain("合計は表示しません");expect(f.host.textContent).not.toContain("記録への歩み");
+   expect(f.host.querySelector('[aria-label="同年齢の比較結果"]')).toBeNull();
+ }finally{await f.close();}
+});

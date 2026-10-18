@@ -18,6 +18,7 @@ export function canonicalDeepLink(input: string): string | null {
     const parsed = canonicalEntityRefSchema.safeParse({ league, kind, id: decodeURIComponent(encoded ?? "") });
     if (!parsed.success || (child && kind !== "player")) return null;
     const sourceParams = new URLSearchParams(route.split("?")[1] ?? uri.search);
+    if(league==="NPB"&&kind==="game"&&sourceParams.get("competition")==="postseason")return portableRoute(canonicalEntityPath(parsed.data),sourceParams.toString());
     if(child === "seasons")return portableRoute(`${canonicalEntityPath(parsed.data)}/seasons`,sourceParams.toString());
     const params = new URLSearchParams();
     for (const key of ["season", "date", "asOfDate"]) {
@@ -36,6 +37,9 @@ export function parentNativeRoute(path: string): string | null {
   }
   if (league === "MLB" && /^20\d{2}$/.test(source.get("season") ?? "")) scope.set("season", source.get("season")!);
   const suffix = scope.size ? `?${scope}` : "";
+  if(league==="NPB"&&segments[1]==="games"&&source.get("competition")==="postseason"){
+    const stage=source.get("stage");return `/NPB/cs?season=2026${stage==="npb_cs_first"||stage==="npb_cs_final"?`&stage=${stage}`:""}`;
+  }
   if(league==="NPB"&&segments[1]==="players"&&segments[3]==="seasons") {
     if (source.get("season") === "2026") {
       const stage = source.get("stage"), role = source.get("role");

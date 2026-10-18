@@ -50,6 +50,7 @@ export function NpbMilestonesScreen({ repository }: { repository: NpbSeasonMiles
   return <div className="screen"><Link className="back-link" to="/NPB/explore">← 野球をもっと知る</Link>
     <PageHeading eyebrow="NPB" title="達成記録" />
     <nav className="profile-tabs" aria-label="達成記録の表示切替"><Link to="/NPB/milestones?tab=0" aria-current="page">シーズン</Link><Link to="/NPB/milestones?tab=1">キャリア <span className="soon-badge">Soon</span></Link></nav>
+    <p><Link to="/NPB/history?cohort=ageSeason&age=26&ageMode=collected">年齢ごとの収録分合計・記録への歩みを見る →</Link></p>
     {state === "loading" && <LoadingSkeleton />}
     {state === "error" && <DataState kind="source-unavailable" title="保存済み成績を読み込めません" />}
     {state === "unavailable" && <DataState kind="not-implemented" title="シーズンの節目は準備中です" />}

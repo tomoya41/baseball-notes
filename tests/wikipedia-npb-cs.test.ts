@@ -59,3 +59,32 @@ it("reads an explicitly separated multiline pitching row without borrowing from 
   expect(rejected.observations).toHaveLength(0);
   expect(rejected.issues.some(i => i.reason === "unsupported_box_columns")).toBe(true);
 });
+
+it("resolves only a source-authored article reference in the same final Game, club and role", () => {
+  const content=template.replace("[[架空投手]]", "先発").replace("|WP=架空投手", "|WP=架空投手|RSP=[[架空投手|先発]]（9回） - [[架空捕手]]");
+  const result=parseWikipediaCs(page(content),"2026-10-16T00:00:00Z",[{playerId:id,article:"架空投手"}],{summaryReferences:true});
+  expect(result.observations[0]?.aggregate.metrics.outsRecorded).toBe(27);
+  expect(result.observations[0]?.identityReference).toEqual({field:"RSP",article:"架空投手",label:"先発"});
+  expect(parse(content).observations).toHaveLength(0); // Legacy/default admission remains strict.
+  const wrongClub=content.replace("|RSP=","|HSP=");
+  expect(parseWikipediaCs(page(wrongClub),"2026-10-16T00:00:00Z",[{playerId:id,article:"架空投手"}],{summaryReferences:true}).observations).toHaveLength(0);
+});
+it.each([
+  "[[架空投手|先発]]、[[別の投手|先発]] - [[架空捕手]]", // Unknown target poisons a duplicate alias.
+  "先発 - [[架空捕手]]", // No article identity.
+  "[[別の投手|先発]] - [[架空捕手]]", // No known canonical bridge.
+  "[[架空捕手]] - [[架空投手|先発]]", // Catcher is not a pitcher reference.
+  "[[架空投手|先発]]", // Battery boundary not independently clear.
+])("does not accept ambiguous or wrong-role battery references: %s", summary=>{
+  const content=template.replace("[[架空投手]]","先発").replace("|WP=架空投手",`|WP=架空投手|RSP=${summary}`);
+  expect(parseWikipediaCs(page(content),"2026-10-16T00:00:00Z",[{playerId:id,article:"架空投手"}],{summaryReferences:true}).observations).toHaveLength(0);
+});
+it("never carries an alias into another Game or applies pitcher references to a batter",()=>{
+  const first=template.replace("[[架空投手]]","先発").replace("|WP=架空投手","|WP=架空投手|RSP=[[架空投手|先発]] - 架空捕手");
+  const next=template.replace("10月10日","10月11日").replace("[[架空投手]]","先発");
+  const r=parseWikipediaCs(page(first+next),"2026-10-16T00:00:00Z",[{playerId:id,article:"架空投手"}],{summaryReferences:true});
+  expect(r.games).toHaveLength(2);expect(r.observations).toHaveLength(1);
+  expect(r.observations[0]?.gameId).toBe(r.games[0]?.id);
+  const batting=first.replace(/!colspan="2"[^\n]+/,"!打順!!守備!!選手!!打数!!安打!!本塁打!!打点!!得点!!三振!!四死球!!犠打!!盗塁").replace("|勝||先発||9||110||28||0||0||10||1||0||0","|1||右||先発||1||1||0||1||1||0||0||0||0");
+  expect(parseWikipediaCs(page(batting),"2026-10-16T00:00:00Z",[{playerId:id,article:"架空投手"}],{summaryReferences:true}).observations).toHaveLength(0);
+});

@@ -1,6 +1,6 @@
 import { StatTable } from "./stat-table";
-import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { lazy, Suspense, useEffect, useState } from "react";
+import { useParams, useSearchParams } from "react-router-dom";
 import { formatOuts } from "../domain/player-game-log";
 import type { NpbGameDetail } from "../domain/npb-game-detail";
 import { formatDate } from "../presentation/formatters";
@@ -10,6 +10,8 @@ import { GameHeading } from "./signature";
 import type { Services } from "../app/services";
 import { GameRecap, GameTeamLinks, NpbGamePreview } from "./game-story";
 import type { FavoriteActions } from "./team-favorite";
+import { admittedCsGameIds } from "../application/npb-cs-reader";
+const CsGame=lazy(()=>import("./npb-cs").then(m=>({default:m.NpbCsGameDetail})));
 
 type DetailState = "loading" | "ready" | "missing" | "error";
 const value = (number: number | null) => number === null ? "—" : String(number);
@@ -66,7 +68,14 @@ export function NpbGameDetailView({ payload, state, services, actions }: { paylo
   </div>;
 }
 
-export function NpbGameDetailScreen({ repository, services, favorites = [], toggle, saving = false }: { repository: { find(gameId: string): Promise<NpbGameDetail | null> }; services?: Services; favorites?: FavoriteActions["favorites"]; toggle?: FavoriteActions["toggle"]; saving?: boolean }) {
+type GameScreenProps={ repository: { find(gameId: string): Promise<NpbGameDetail | null> }; services?: Services; favorites?: FavoriteActions["favorites"]; toggle?: FavoriteActions["toggle"]; saving?: boolean };
+export function NpbGameDetailScreen(props:GameScreenProps){
+  const {gameId}=useParams(),[params]=useSearchParams();
+  if(gameId&&admittedCsGameIds.includes(gameId)||params.get("competition")==="postseason")return <Suspense fallback={<LoadingSkeleton />}><CsGame key={gameId} /></Suspense>;
+  if(params.has("competition")&&params.get("competition")!=="regular"||params.has("stage"))return <DataState kind="unsupported" title="試合の大会条件を確認してください" />;
+  return <NpbRegularGameDetailScreen {...props} />;
+}
+function NpbRegularGameDetailScreen({ repository, services, favorites = [], toggle, saving = false }:GameScreenProps) {
   const { gameId } = useParams();
   const [payload, setPayload] = useState<NpbGameDetail | null>(null);
   const [state, setState] = useState<DetailState>("loading");

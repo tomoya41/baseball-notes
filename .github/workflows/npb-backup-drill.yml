@@ -6,8 +6,13 @@ on:
         description: Verify encrypted roundtrip and retain only ciphertext plus a safe summary for seven days
         type: boolean
         default: false
+      inspect_retained_identity:
+        description: Inspect only two fixed canonical identity mappings on the verified October 17 retained backup; no Turso access
+        type: boolean
+        default: false
 permissions:
   contents: read
+  actions: read
 concurrency:
   group: daily-npb-collector-and-pages
   cancel-in-progress: false
@@ -25,6 +30,7 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Export Turso facts and restore into new scratch SQLite
+        if: inputs.inspect_retained_identity != true
         shell: bash
         run: |
           set -euo pipefail
@@ -34,7 +40,7 @@ jobs:
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
       - name: Encrypt, decrypt and independently restore the retained archive
-        if: inputs.retain_encrypted
+        if: inputs.retain_encrypted && inputs.inspect_retained_identity != true
         shell: bash
         env:
           NPB_BACKUP_ENCRYPTION_KEY: ${{ secrets.NPB_BACKUP_ENCRYPTION_KEY }}
@@ -64,13 +70,40 @@ jobs:
           console.log(JSON.stringify(summary));
           NODE
       - name: Retain ciphertext and sanitized evidence only
-        if: inputs.retain_encrypted && success()
+        if: inputs.retain_encrypted && inputs.inspect_retained_identity != true && success()
         uses: actions/upload-artifact@v4
         with:
           name: npb-independent-encrypted-${{ github.run_id }}
           path: |
             .data/npb-independent-backup.tar.gz.enc
             .data/npb-independent-backup-summary.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
+      - name: Download fixed retained encrypted backup
+        if: inputs.inspect_retained_identity
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh run download 38963670207 --repo "$GITHUB_REPOSITORY" -n npb-independent-encrypted-38963670207 --dir .data/retained-identity/encrypted
+      - name: Independently restore and inspect two scoped identity mappings
+        if: inputs.inspect_retained_identity
+        env:
+          NPB_BACKUP_ENCRYPTION_KEY: ${{ secrets.NPB_BACKUP_ENCRYPTION_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module -e 'import fs from "node:fs";import{createHash}from"node:crypto";const b=fs.readFileSync(".data/retained-identity/encrypted/npb-independent-backup.tar.gz.enc");if(createHash("sha256").update(b).digest("hex")!=="6aff8770a2f90923a75a21ed24b6d84a007cafb30bbda05b1756ffd0996ddd2e")throw Error("Unreviewed retained ciphertext");'
+          npx tsx scripts/crypt-npb-backup.ts decrypt .data/retained-identity/encrypted/npb-independent-backup.tar.gz.enc .data/retained-identity/decrypted.tar.gz
+          mkdir -p .data/retained-identity/export
+          tar -xzf .data/retained-identity/decrypted.tar.gz -C .data/retained-identity/export
+          npm run -s backup:npb:restore -- --from=.data/retained-identity/export --to=.data/retained-identity/scratch.db > .data/retained-identity/restore.json
+          npx tsx scripts/inspect-retained-npb-identities.ts .data/retained-identity/scratch.db .data/retained-identity/encrypted/npb-independent-backup-summary.json .data/retained-identity/restore.json .data/retained-identity/identity-report.json
+      - name: Retain scoped public identity references only
+        if: inputs.inspect_retained_identity && success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: retained-identity-inspection
+          path: .data/retained-identity/identity-report.json
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 7

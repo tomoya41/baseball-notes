@@ -18,5 +18,15 @@
     "games": 8,
     "players": 126,
     "rows": 126
+  },
+  {
+    "assetUrl": "https://github.com/tomoya41/baseball-notes/releases/download/npb-cs-wikipedia-20261017-v3/npb-cs-wikipedia.json.gz",
+    "sha256": "8cdd5f9fc9993311b81c3163fce96be004b782b0629aa43d06bff3723ae325f6",
+    "bodySha256": "af9a051d4c26eafa9de81c045af5e60f1579e50ad536058b80bccaa3f7e70cbd",
+    "inputSha256": "7d967af005c05126b3d4865627aa301345fca3c7a93872eae77bf21fe3b3722a",
+    "bytes": 129207,
+    "games": 11,
+    "players": 145,
+    "rows": 145
   }
 ]

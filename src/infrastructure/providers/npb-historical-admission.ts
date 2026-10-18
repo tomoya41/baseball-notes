@@ -19,10 +19,10 @@ for (const key of ["playerId","npbId","wikidataId"] as const) {
   if(new Set(ids).size!==ids.length)throw Error(`Conflicting historical registry ${key}`);
 }
 if(historical.some(p=>p.playerId!==historicalIdentityId(p.npbId)))throw Error("Historical namespace mismatch");
-export function assertHistoricalBridge(link:HistoricalBridge, source?:{article:string;revision:number}) {
+export function assertHistoricalBridge(link:HistoricalBridge, source?:{article:string;revision:number;birthDate?:string|undefined}) {
   const existing=historicalCurrentBridges.find(b=>b.playerId===link.playerId&&b.npbId===link.npbId&&b.wikidataId===link.wikidataId);
   const added=historical.find(b=>b.playerId===link.playerId&&b.npbId===link.npbId&&b.wikidataId===link.wikidataId);
-  if(existing&&!link.identityScope)return;
-  if(added&&link.identityScope==="historical_only"&&(!source||(added.article===source.article&&added.revision===source.revision)))return;
+  if(existing&&!link.identityScope&&source?.birthDate===undefined)return;
+  if(added&&link.identityScope==="historical_only"&&(!source||(added.article===source.article&&added.revision===source.revision&&(source.birthDate===undefined||source.birthDate===added.birthDate))))return;
   throw Error("Unverified cross-season canonical bridge");
 }

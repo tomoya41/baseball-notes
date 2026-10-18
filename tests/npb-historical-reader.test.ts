@@ -46,6 +46,14 @@ describe("NPB Historical bounded validated reader",()=>{
     await expect(readNpbHistoricalSeason(2026,index(),request)).rejects.toThrow(/not admitted/);expect(request).not.toHaveBeenCalled();
     await expect(readNpbHistoricalSeason(2025,index(),request)).rejects.toThrow(/404/);
   });
+  it("requires historical-only DOB metadata to match the verified annual identity before caching",async()=>{
+    const text=JSON.stringify({...dataset,players:[{...dataset.players[0]!,identityScope:"historical_only",birthDate:"1980-04-01"}]}),m=index(text);
+    m.players[0]!.identityScope="historical_only";m.players[0]!.birthDate="1980-04-01";
+    expect((await readNpbHistoricalSeason(2025,m,vi.fn<typeof fetch>().mockResolvedValue(new Response(text)))).players[0]!.birthDate).toBe("1980-04-01");
+    remember.mockClear();m.players[0]!.birthDate="1981-04-01";
+    await expect(readNpbHistoricalSeason(2025,m,vi.fn<typeof fetch>().mockResolvedValue(new Response(text)))).rejects.toThrow(/generation/);expect(remember).not.toHaveBeenCalled();
+    delete m.players[0]!.identityScope;expect(npbHistoricalManifestSchema.safeParse(m).success).toBe(false);
+  });
   it("validates manifest shape and refuses oversized payloads",async()=>{
     await expect(readNpbHistoricalManifest(vi.fn<typeof fetch>().mockResolvedValue(new Response('{}')))).rejects.toThrow();
     await expect(readNpbHistoricalSeason(2025,index(),vi.fn<typeof fetch>().mockResolvedValue(new Response(' '.repeat(500001))))).rejects.toThrow(/bound/);

@@ -470,6 +470,31 @@ public class ReleaseQualityTest {
         js("document.querySelector('section[aria-label=\"日本ハムの収録成績\"] a').click()");waitText("2022年の打撃成績");
         assertTrue("Annual detail keeps exact year and role",js("location.hash").contains("season=2022&role=batting&years=2022"));
     }
+    @Test public void postseasonGameDetailUsesExactGameScopeAndScalesText() throws Exception {
+        Intent link=new Intent(Intent.ACTION_VIEW,Uri.parse("baseballnotes://NPB/games/npb%3Agame%3Ac0e3700f483b5a5239d5?competition=postseason&stage=npb_cs_final"));
+        link.setClassName("com.tomoya41.baseballnotes","jp.baseballdata.app.MainActivity");
+        scenario=ActivityScenario.launch(link);waitText("ポストシーズン · CS ファイナル");waitText("森下翔太");
+        assertEquals("CS game shows source's single-game HR, not stage total","true",js("Array.from(document.querySelectorAll('th.stat-table-identity')).some(th=>th.textContent.includes('森下翔太') && th.parentElement.querySelectorAll('td')[2]?.textContent==='HR2')"));
+        assertEquals("Per-game source is reachable","true",js("!!document.querySelector('a[href*=\"oldid=111424439\"]')"));
+        screenshot("npb-cs-game-detail-360");
+        shell("settings put system font_scale 2.0");scenario.recreate();waitText("森下翔太");waitViewport(360);
+        assertEquals("CS detail remains within the viewport at 200 percent","true",js("document.documentElement.scrollWidth<=innerWidth"));screenshot("npb-cs-game-detail-font-20");
+        js("Array.from(document.querySelectorAll('a')).find(a=>a.textContent==='森下翔太').click()");waitText("2026年 · CS ファイナル");
+        assertTrue("Player link retains postseason/role",js("location.hash").contains("competition=postseason&stage=npb_cs_final&role=batting"));
+    }
+    @Test public void seasonalHomeAndCollectedAgeTotalsKeepScopeAndExplicitLoading() throws Exception {
+        scenario=ActivityScenario.launch(MainActivity.class);waitText("BASEBALL");
+        js("location.hash='#/NPB/home?homeSeason=autumn'");waitText("CSとドラフトから、選手を深掘り");
+        js("location.hash='#/NPB/history?cohort=ageSeason&age=26&ageMode=collected&role=batting&recentPlayers=92a02594-a4f7-498c-bb83-8a41855b4645'");
+        waitText("収録分の合計を読み込む");
+        assertEquals("Age totals wait for the user before annual loading","false",js("!!document.querySelector('[aria-label=\"収録分の記録ウォッチ\"]')"));
+        js("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='収録分の合計を読み込む').click()");
+        waitText("記録への歩み");waitText("合計対象：2023・2024・2025年");
+        assertEquals("Collected comparison never claims complete Career","true",js("document.body.innerText.includes('年齢到達日までの通算や完全なキャリアではありません')"));
+        screenshot("npb-age-collected-360");
+        shell("settings put system font_scale 2.0");scenario.recreate();waitText("収録分の合計を読み込む");waitViewport(360);
+        assertEquals("Collected comparison has no overflow at 200 percent","true",js("document.documentElement.scrollWidth<=innerWidth"));screenshot("npb-age-collected-font-20");
+    }
     @Test public void longNavigationHistoryHasBoundedRecreationState() throws Exception {
         assertEquals("/NPB/search?q=A%26B%3DC%25", MainActivity.savedRoute("https://localhost/#/NPB/search?q=A%26B%3DC%25"));
         assertEquals("/privacy", MainActivity.savedRoute("https://localhost/#/privacy"));

@@ -41,6 +41,12 @@ describe("historical-only identity admission",()=>{
     expect(historicalIdentityId("12345678")).not.toBe(historicalIdentityId("87654321"));
     expect(verifyHistoricalIdentity(page,{...entity,claims:{...entity.claims,P4260:[claim("12345678"),claim("87654321","deprecated")]}},at,[]).kind).toBe("new");
   });
+  it("preserves the two backup/cache/external-ID verified canonical bridges without issuing historical-only IDs",()=>{
+    for(const b of [{playerId:"bab3e29d-faa7-44e3-abe1-ee7023163a63",npbId:"33035152",wikidataId:"Q90743792"},{playerId:"e88b4e3d-1c6c-4b81-9c7c-9af1e8e133f3",npbId:"93995152",wikidataId:"Q127516948"}]){
+      expect(historicalCurrentBridges).toContainEqual(b);expect(()=>assertHistoricalBridge(b)).not.toThrow();
+      expect(()=>assertHistoricalBridge({...b,playerId:historicalIdentityId(b.npbId)})).toThrow();
+    }
+  });
   it.each(["{{R|npb_prof}}",'<ref name="source">{{Cite web|title=source}}</ref>'])("accepts a cited exact birth date without accepting extra dates: %s",suffix=>{
     const cited={...page,revisions:[{...page.revisions[0]!,slots:{main:{content:page.revisions[0]!.slots.main.content.replace("{{生年月日と年齢|1980|4|5}}",`{{生年月日と年齢|1980|4|5}}${suffix}`)}}}]};
     expect(verifyHistoricalIdentity(cited,entity,at,[]).kind).toBe("new");
@@ -48,7 +54,7 @@ describe("historical-only identity admission",()=>{
     expect(()=>verifyHistoricalIdentity(ambiguous,entity,at,[])).toThrow(/birthdate/);
   });
   it("admits only the curated, noncolliding historical namespace and pinned article revisions",()=>{
-    for(const p of registry.players){const b={...p,identityScope:"historical_only" as const};expect(()=>assertHistoricalBridge(b,{article:p.article,revision:p.revision})).not.toThrow();expect(()=>assertHistoricalBridge(b,{article:p.article,revision:p.revision+1})).toThrow();expect(()=>assertHistoricalBridge({playerId:p.playerId,npbId:p.npbId,wikidataId:p.wikidataId})).toThrow();}
+    for(const p of registry.players){const b={...p,identityScope:"historical_only" as const};expect(()=>assertHistoricalBridge(b,{article:p.article,revision:p.revision})).not.toThrow();expect(()=>assertHistoricalBridge(b,{article:p.article,revision:p.revision,birthDate:p.birthDate})).not.toThrow();expect(()=>assertHistoricalBridge(b,{article:p.article,revision:p.revision,birthDate:"1900-01-01"})).toThrow();expect(()=>assertHistoricalBridge(b,{article:p.article,revision:p.revision+1})).toThrow();expect(()=>assertHistoricalBridge({playerId:p.playerId,npbId:p.npbId,wikidataId:p.wikidataId})).toThrow();}
     expect(()=>assertHistoricalBridge({playerId:historicalIdentityId("12345678"),npbId:"12345678",wikidataId:"Q123",identityScope:"historical_only"})).toThrow();
   });
 });

@@ -22,12 +22,12 @@ const pageSchema = z.object({ pageid: z.number().int().positive(), title: z.stri
 type Identity = { playerId: string; article: string };
 
 /** Pinned, reviewed Wikipedia layouts only. Blank cells and combined BB/HBP stay unknown. */
-export function parseWikipediaCs(raw: unknown, observedAt: string, identities: readonly Identity[]) {
+export function parseWikipediaCs(raw: unknown, observedAt: string, identities: readonly Identity[], options: { summaryReferences?: boolean } = {}) {
   const p = pageSchema.parse(raw), rev = p.revisions[0]!, original = rev.slots.main.content;
   if (({ 5301694: "2026年のパシフィック・リーグクライマックスシリーズ", 5302364: "2026年のセントラル・リーグクライマックスシリーズ" } as Record<number, string>)[p.pageid] !== p.title || rev.timestamp > observedAt || /\{\{\s*(?:著作権侵害|Copyvio|転載疑惑)/i.test(original)) throw Error("Unreviewed CS article/revision");
   const text = original.replace(/<!--[\s\S]*?-->/g, ""), byArticle = new Map(identities.map(v => [v.article, v.playerId]));
   if (byArticle.size !== identities.length) throw Error("Ambiguous article identity");
-  const games: NpbCsDataset["games"] = [], observations: { aggregate: NpbCompetitionAggregate; gameId: string }[] = [], issues: { date?: string; reason: string; article?: string }[] = [];
+  const games: NpbCsDataset["games"] = [], observations: { aggregate: NpbCompetitionAggregate; gameId: string; identityReference?: { field: string; article: string; label: string } }[] = [], issues: { date?: string; reason: string; article?: string }[] = [];
   const starts = [...text.matchAll(/\{\{Linescore\s*\n/g)];
   for (let n = 0; n < starts.length; n++) {
     const start = starts[n]!.index!, end = starts[n + 1]?.index ?? text.length, block = text.slice(start, end), before = text.slice(0, start);
@@ -56,6 +56,22 @@ export function parseWikipediaCs(raw: unknown, observedAt: string, identities: r
       const id = `npb:game:${createHash("sha256").update([date, homeTeamId, awayTeamId, 1].join(":")).digest("hex").slice(0, 20)}`;
       if (games.some(g => g.id === id)) throw Error("duplicate_game_identity");
       const game: NpbCsDataset["games"][number] = { id, date, stage, homeTeamId, awayTeamId, homeScore: hs, awayScore: rs, homeHits: number(fields.HH ?? ""), awayHits: number(fields.RH ?? ""), sourcePageId: p.pageid, status: "final" };
+      // A source-authored link declares its own alias within this Game/team/role.
+      // Never propagate aliases between Games, clubs, roles or articles. Unknown
+      // targets poison that alias too, so a known player cannot absorb a namesake.
+      const reference = (team: string, batting: boolean, value: string) => {
+        if (!options.summaryReferences || /[[\]{}<>]/.test(value)) return null;
+        const field = batting ? team === home ? "HomeHR" : "RoadHR" : team === home ? "HSP" : "RSP";
+        const summary = fields[field] ?? "";
+        // RSP/HSP are battery lists: catcher links after " - " cannot identify a pitcher.
+        if (!batting && !/\s+-\s+/.test(summary)) return null;
+        const pitchers = batting ? summary : summary.split(/\s+-\s+/)[0]!;
+        const matches = [...pitchers.matchAll(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g)]
+          .filter(m => [plain(m[1]!), plain(m[2] ?? m[1]!)].includes(plain(value)));
+        const articles = [...new Set(matches.map(m => m[1]!))];
+        if (articles.length !== 1 || !byArticle.has(articles[0]!)) return null;
+        return { field, article: articles[0]!, label: plain(value) };
+      };
       const perGame: typeof observations = [];
       const ambiguous = new Set<string>();
       for (const table of block.slice(close + 2).matchAll(/\{\|[^\n]*class="wikitable"[^]*?\n\|\}/g)) {
@@ -73,7 +89,9 @@ export function parseWikipediaCs(raw: unknown, observedAt: string, identities: r
           const cells = rowLines.filter(l => /^\|(?![-}])/.test(l)).flatMap(l => split(l.slice(1), "||"));
           if (!cells.length) continue;
           if (cells.length !== (batting ? 12 : 11)) { issues.push({ date, reason: "unsupported_box_columns" }); continue; }
-          const article = /^\[\[([^\]|]+)(?:\|[^\]]+)?\]\]$/.exec(cells[batting ? 2 : 1]!.trim())?.[1];
+          const nameCell = cells[batting ? 2 : 1]!.trim();
+          const identityReference = reference(team, batting, nameCell);
+          const article = /^\[\[([^\]|]+)(?:\|[^\]]+)?\]\]$/.exec(nameCell)?.[1] ?? identityReference?.article;
           const playerId = article ? byArticle.get(article) : null;
           if (!article || !playerId) { issues.push({ date, reason: "unverified_article_identity", ...(article ? { article } : {}) }); continue; }
           try {
@@ -91,7 +109,7 @@ export function parseWikipediaCs(raw: unknown, observedAt: string, identities: r
             const participant = `${playerId}:${role}`, duplicate = perGame.findIndex(v => v.aggregate.playerId === playerId && v.aggregate.role === role);
             if (duplicate >= 0) { perGame.splice(duplicate, 1); ambiguous.add(participant); }
             if (ambiguous.has(participant)) throw Error("duplicate_participant");
-            perGame.push({ aggregate, gameId: id });
+            perGame.push({ aggregate, gameId: id, ...(identityReference ? { identityReference } : {}) });
           } catch (e) { issues.push({ date, reason: `box_validation:${(e as Error).message}`, article }); }
         }
       }

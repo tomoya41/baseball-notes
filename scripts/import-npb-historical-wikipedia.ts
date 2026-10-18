@@ -9,6 +9,7 @@ import { assertHistoricalBridge } from "../src/infrastructure/providers/npb-hist
 import { z } from "zod";
 import { historicalImportYears, yearsForSavedIdentity } from "../src/data/npb-historical-years";
 import { npbPlayerDirectorySchema } from "../src/domain/npb-player-directory";
+import historicalRegistry from "../src/data/npb-historical-only-identities.json";
 
 // Offline-only replay of documented MediaWiki API archives. No collector, remote DB or identity mutation.
 const [input, output] = process.argv.slice(2);
@@ -18,11 +19,15 @@ const archive = z.object({ observedAt:z.iso.datetime(), pages:z.record(z.string(
 const directoryFile=process.argv.find(a=>a.startsWith("--current-directory="))?.slice(20);
 const directory=directoryFile?npbPlayerDirectorySchema.parse(JSON.parse(await readFile(directoryFile,"utf8"))):null;
 const directoryIds=new Set(directory?.players.map(p=>p.playerId)??[]);
+// Explicit opt-in for already admitted identities only; no new OB namespace/identity is minted.
+const historicalIds=new Set(process.argv.includes("--include-registered-history")?historicalRegistry.players.map(p=>p.playerId):[]);
 const years = historicalImportYears(Number(process.argv.find(a=>a.startsWith("--from-year="))?.slice(12)??2015),!!directory), players=[], rows=[], issues=[];
 for (const link of archive.titles) {
   assertHistoricalBridge(link);
   try {
-    const parsed = parseWikipediaHistorical(archive.pages[link.title],link,yearsForSavedIdentity(years,link.playerId,link.identityScope==="historical_only",directoryIds));
+    const parsed = parseWikipediaHistorical(archive.pages[link.title],link,yearsForSavedIdentity(years,link.playerId,link.identityScope==="historical_only",directoryIds,historicalIds));
+    const identity=historicalRegistry.players.find(p=>p.playerId===link.playerId);
+    if(identity&&historicalIds.has(identity.playerId))Object.assign(parsed.player,{birthDate:identity.birthDate});
     assertHistoricalBridge(link,parsed.player);
     if (parsed.rows.length) { players.push(parsed.player); rows.push(...parsed.rows); }
     issues.push(...parsed.issues.map(issue=>({playerId:link.playerId,title:link.title,...issue})));

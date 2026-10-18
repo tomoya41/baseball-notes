@@ -74,7 +74,8 @@ export function applyNpbProfileRegistry(directory: NpbPlayerDirectory, catalog: 
     if (["position", "bats", "throws", "birthDate", "birthPlace", "nationality"].includes(field)) Reflect.set(p, field, e.value);
     if (field === "position" && p.playerType === null) p.playerType = e.value === "P" ? "pitcher" : "fielder";
     if (field === "heightCm" || field === "weightKg") {
-      c.profile.measurementsObservedAt ??= e.verifiedAt; c.profile.measurementsEffectiveDate = null;
+      if (!c.profile.measurementsObservedAt || c.profile.measurementsObservedAt < e.verifiedAt) c.profile.measurementsObservedAt = e.verifiedAt;
+      c.profile.measurementsEffectiveDate = null;
     }
     if (field === "birthDate") {
       const birth = String(e.value); c.profile.ageYears = Number(directory.effectiveDate.slice(0, 4)) - Number(birth.slice(0, 4)) - Number(directory.effectiveDate.slice(5) < birth.slice(5));

@@ -16,6 +16,7 @@ import { TeamFavorite } from "./team-favorite";
 import { ExplorerLinks } from "./data-explorer";
 import { LifecycleLinks } from "./npb-lifecycle";
 import { HomeDiscover, TeamRecord } from "./signature";
+import { NpbSeasonalHome } from "./npb-seasonal-home";
 
 type Target = Pick<Favorite, "kind" | "entityId" | "league">;
 export function NpbStandings({ services, onEffectiveDate }: { services: Services; onEffectiveDate?: (date: string) => void }) {
@@ -46,6 +47,7 @@ export function NpbHome({ services, favorites, toggle, saving }: { services: Ser
     {view === "scores" && <div className="home-main"><NpbToday services={services} favorites={favorites} toggle={toggle} saving={saving} onEffectiveDate={setEffectiveDate} /><div className="home-follow"><NpbPersonalDashboard services={services} favorites={favorites} toggle={toggle} saving={saving} compact /></div></div>}
     {view === "standings" && <NpbStandings services={services} onEffectiveDate={setEffectiveDate} />}
     {view === "follow" && <><NpbToday services={services} favorites={favorites} toggle={toggle} saving={saving} personal /><NpbPersonalDashboard services={services} favorites={favorites} toggle={toggle} saving={saving} compact /><section className="home-section"><SectionHeader title="お気に入り選手" action="My" to="/NPB/my" /><NpbSavedPlayers repository={services.directory} favorites={favorites} toggle={toggle} saving={saving} compact /></section></>}
+    <NpbSeasonalHome />
     <HomeDiscover league="NPB" />
     <details className="home-availability"><summary>HOT · 公開状況を確認</summary><NpbHotSection repository={services.hot} /></details>
     <details className="home-tools"><summary>記録・ポストシーズン・その他の機能</summary><div className="hub-links"><Link to="/NPB/records">個人成績 →</Link><Link to="/NPB/postseason">ポストシーズン →</Link></div><ExplorerLinks league="NPB" /></details>

@@ -14,6 +14,7 @@ import type { NpbPlayerDirectory } from "../src/domain/npb-player-directory";
 import type { NpbSeasonPayload } from "../src/application/npb-season-payload";
 import { StaticNpbProductRepository } from "../src/infrastructure/providers/static-npb-product-repository";
 
+const snapshotBridges=reviewedProfileBridges.filter(b=>reviewed.players.some(p=>p.playerId===b.playerId));
 const id = reviewed.players[2]!.playerId, at = reviewed.observedAt;
 const directory: NpbPlayerDirectory = { schemaVersion: 2, league: "NPB", effectiveDate: "2026-09-30", generatedAt: at,
   teams: npbTeams.map(t => ({ id: t.id, name: t.name, shortName: t.short })),
@@ -33,7 +34,9 @@ export function sampleMilestoneSeason() {
 }
 describe("reviewed CC0 profile supplement", () => {
   it("reproduces all eight reviewed external-ID results from the source fixture", () => {
-    expect(readNpbProfileSupplements(source, labels, reviewedProfileBridges, at)).toEqual(reviewed);
+    expect(readNpbProfileSupplements(source, labels, snapshotBridges, at)).toEqual(reviewed);
+    expect(snapshotBridges).toHaveLength(8);
+    expect(()=>readNpbProfileSupplements(source,labels,reviewedProfileBridges,at)).toThrow(/identity/);
   });
   it("preserves year-only DOB, missing measurements and absent position as unknown", () => {
     expect(reviewed.players[0]).toMatchObject({ birthDate: null, position: "P", heightCm: null });
@@ -60,23 +63,23 @@ describe("reviewed CC0 profile supplement", () => {
   });
   it("rejects a name-only match and a mismatched bridge", () => {
     const raw = structuredClone(source); Reflect.deleteProperty(raw.entities.Q52083715.claims, "P4260");
-    expect(() => readNpbProfileSupplements(raw, labels, reviewedProfileBridges, at)).toThrow(/identity/);
+    expect(() => readNpbProfileSupplements(raw, labels, snapshotBridges, at)).toThrow(/identity/);
     expect(() => readNpbProfileSupplements(source, labels, [{ ...reviewedProfileBridges[0]!, npbId: "13415155" }], at)).toThrow(/identity/);
   });
   it("rejects duplicate canonical/external mappings and duplicate source IDs", () => {
     expect(() => readNpbProfileSupplements(source, labels, [reviewedProfileBridges[0]!, reviewedProfileBridges[0]!], at)).toThrow(/Ambiguous/);
     const raw = structuredClone(source);
     raw.entities.Q130726841.claims.P4260 = structuredClone(raw.entities.Q52083715.claims.P4260);
-    expect(() => readNpbProfileSupplements(raw, labels, reviewedProfileBridges, at)).toThrow(/identity/);
+    expect(() => readNpbProfileSupplements(raw, labels, snapshotBridges, at)).toThrow(/identity/);
   });
   it("honors preferred/deprecated claims and rejects unknown measurement units", () => {
     const raw = structuredClone(source);
     const claim = raw.entities.Q52083715.claims.P2048![0]!;
     raw.entities.Q52083715.claims.P2048 = [{ ...claim, rank: "preferred" }, { ...claim, rank: "deprecated" }];
-    expect(readNpbProfileSupplements(raw, labels, reviewedProfileBridges, at).players[2]!.heightCm).toBe(190);
+    expect(readNpbProfileSupplements(raw, labels, snapshotBridges, at).players[2]!.heightCm).toBe(190);
     claim.mainsnak.datavalue!.value.unit = "unknown";
     raw.entities.Q52083715.claims.P2048 = [claim];
-    expect(readNpbProfileSupplements(raw, labels, reviewedProfileBridges, at).players[2]!.heightCm).toBeNull();
+    expect(readNpbProfileSupplements(raw, labels, snapshotBridges, at).players[2]!.heightCm).toBeNull();
   });
   it("does not overwrite known profiles, records conflicts and is idempotent", () => {
     const existing = structuredClone(directory); existing.players[0]!.birthDate = "1996-05-29";
