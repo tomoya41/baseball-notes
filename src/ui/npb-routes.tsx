@@ -49,7 +49,7 @@ export function NpbRoutes({ services, favorites, toggle, saving }: { services: S
     <Route path="season-compare" element={<SeasonCompare league="NPB" services={services} />} />
     <Route path="glossary" element={<StatGlossary league="NPB" />} />
     <Route path="analysis" element={<Navigate to="/NPB/search" replace />} />
-    <Route path="players/:playerId/seasons" element={<Suspense fallback={<p role="status">年度別成績を読み込み中…</p>}><NpbPlayerSeasons key={location.pathname} repository={services.directory} /></Suspense>} />
+    <Route path="players/:playerId/seasons" element={<Suspense fallback={<p role="status">年度別成績を読み込み中…</p>}><NpbPlayerSeasons key={location.pathname} repository={services.directory} profileRepository={services.product} /></Suspense>} />
     <Route path="players/:playerId/:section?" element={<NpbPlayer key={location.pathname.split("/")[3]} services={services} favorites={favorites} toggle={toggle} saving={saving} />} />
     <Route path="teams/:teamId" element={<NpbTeam services={services} hub favorites={favorites} toggle={toggle} saving={saving} />} />
     <Route path="teams" element={<NpbTeams services={services} />} />

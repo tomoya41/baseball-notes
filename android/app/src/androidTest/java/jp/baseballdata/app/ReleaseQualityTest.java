@@ -426,6 +426,23 @@ public class ReleaseQualityTest {
         assertEquals("Expanded cohort statistic values remain readable on one line","true",js("Array.from(document.querySelectorAll('.historical-cohort .explorer-values dd')).every(e=>{const r=document.createRange();r.selectNodeContents(e);return r.getClientRects().length===1;})"));
         screenshot("npb-cohort-font-20");
     }
+    @Test public void sameAgeSeasonsAndPlayerStoryRetainScopeAndLargeText() throws Exception {
+        scenario=ActivityScenario.launch(MainActivity.class);waitText("BASEBALL");
+        js("location.hash='#/NPB/history?cohort=ageSeason&age=26&role=batting&recentPlayers=a1ca7cac-f9be-4993-a78c-bcd1e1ae3399,852bed28-a3f1-4b60-8a1f-950cc2947686&sort1=HR'");
+        waitText("2025年 · 年末26歳");waitText("2024年 · 年末26歳");
+        waitCondition("Both actual age seasons loaded", "!!document.querySelector('section[aria-label=\"同年齢の比較結果\"]')");
+        assertTrue("Collected seasons are not full career totals", js("document.body.innerText").contains("完全なキャリアではありません"));
+        screenshot("npb-age-season-360");String route=js("location.hash");
+        shell("settings put system font_scale 2.0");scenario.recreate();waitText("2025年 · 年末26歳");waitText("2024年 · 年末26歳");waitViewport(360);
+        assertEquals("Age comparison restores exact years, role and IDs",route,js("location.hash"));
+        assertEquals("Age comparison large text has no overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));
+        screenshot("npb-age-season-font-20");
+        js("location.hash='#/NPB/players/852bed28-a3f1-4b60-8a1f-950cc2947686/seasons?season=2024&role=batting&story=1'");
+        waitText("選手経歴");waitText("収録されたシーズンへ");waitText("2024年 · 年末26歳");
+        assertEquals("Story keeps scope and recorded source links","true",js("!!document.querySelector('section[aria-label=\"経歴と収録シーズンのつながり\"] a[href*=\"story=1\"]') && location.hash.includes('season=2024')"));
+        assertEquals("Story large text has no overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));
+        screenshot("npb-story-font-20");
+    }
     @Test public void longNavigationHistoryHasBoundedRecreationState() throws Exception {
         assertEquals("/NPB/search?q=A%26B%3DC%25", MainActivity.savedRoute("https://localhost/#/NPB/search?q=A%26B%3DC%25"));
         assertEquals("/privacy", MainActivity.savedRoute("https://localhost/#/privacy"));

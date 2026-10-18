@@ -2,6 +2,7 @@ import { canonicalEntityRefSchema } from "./cross-league";
 import { z } from "zod";
 import { compareIds } from "./player-compare";
 import { progressionMetrics } from "./npb-player-progression";
+import { ageSeasonQuery } from "./npb-age-season";
 import { metricNumber, selectedTeams } from "./product-comparison";
 import type { CompareMetrics } from "./player-compare";
 import { viewConditions } from "./portable-conditions";
@@ -26,7 +27,8 @@ export function portableRoute(path: string, search = ""): string | null {
   if (parts.length === 2 && ["data", "history"].includes(resource ?? "")) {
     const conditions = new URLSearchParams(viewConditions(source, true, league));
     if(league==="NPB"&&resource==="history") {
-      if(source.has("cohort")&&(!["birthYear","draftYear"].includes(source.get("cohort")!)||source.has("peer")&&!canonicalEntityRefSchema.safeParse({league,kind:"player",id:source.get("peer")}).success))return null;
+      if(source.has("cohort")&&(!["birthYear","draftYear","ageSeason"].includes(source.get("cohort")!)||source.has("peer")&&!canonicalEntityRefSchema.safeParse({league,kind:"player",id:source.get("peer")}).success))return null;
+      if(source.get("cohort")==="ageSeason"&&!ageSeasonQuery(source).valid)return null;
       if(source.has("years")&&/^(?:20\d{2}(?:,20\d{2}){0,3})?$/.test(source.get("years")!))conditions.set("years",source.get("years")!);
       if(progressionMetrics.some(k=>k===source.get("trendMetric")))conditions.set("trendMetric",source.get("trendMetric")!);
       if(/^\d{1,3}$/.test(source.get("page")??""))conditions.set("page",source.get("page")!);
@@ -43,6 +45,7 @@ export function portableRoute(path: string, search = ""): string | null {
       (competition==="postseason"?!["npb_cs_first","npb_cs_final","japan_series"].includes(stage??""):stage!==null))return null;
     clean.set("competition",competition);if(stage)clean.set("stage",stage);
     if(progressionMetrics.some(k=>k===source.get("trendMetric")))clean.set("trendMetric",source.get("trendMetric")!);
+    if(source.get("story")==="1")clean.set("story","1");
     if(["batting","pitching"].includes(source.get("role")??""))clean.set("role",source.get("role")!);
     if(source.has("years")&&/^(?:20\d{2}(?:,20\d{2}){0,3})?$/.test(source.get("years")!))clean.set("years",source.get("years")!);
   } else if (league === "MLB" && parts.length === 2 && resource === "form") {

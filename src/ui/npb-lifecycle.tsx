@@ -16,7 +16,7 @@ export function LifecycleLinks({ teamId, active }: {teamId?:string;active?:strin
 export function ProfileCredits({ player }: {player:LifecyclePlayer}) {
   return <details className="advanced-disclosure"><summary>プロフィールの出典・利用条件</summary><p>公開masterに採用済みの情報だけを使用しています。未確認・競合中の候補は補完しません。</p>{player.profile.credits?.map((c,i) => <p key={i}><a href={c.url} target="_blank" rel="noreferrer">{c.name}</a> · <a href={c.licenseUrl} target="_blank" rel="noreferrer">利用条件</a><small> · {c.fields.join(" / ")} · 構造化・加工済み</small></p>)}<Link to="/MLB/sources">Data Sources / Attribution →</Link></details>;
 }
-export function PlayerLifecycle({ player, effectiveDate }: {player:LifecyclePlayer;effectiveDate?:string}) {
+export function PlayerLifecycle({ player, effectiveDate, storyLink=true }: {player:LifecyclePlayer;effectiveDate?:string;storyLink?:boolean}) {
   const f=player.profile, schools=playerSchools(player), date=effectiveDate ?? f.ageAsOfDate;
   return <section className="player-lifecycle" aria-labelledby="lifecycle-title"><h2 id="lifecycle-title">選手経歴</h2><details className="advanced-disclosure"><summary>経歴の補足</summary><p>確認済みの部分履歴です。完全なCareer・在籍期間・現在の登録を示しません。指名年から入団年・NPB初出場年を推定しません。</p></details>
     <ol className="lifecycle-timeline">
@@ -24,7 +24,7 @@ export function PlayerLifecycle({ player, effectiveDate }: {player:LifecyclePlay
       {f.draftYear !== null && <li><h3>{f.draftYear}年 ドラフト</h3><p>{f.draftRound ?? "順位不明"} · {f.draftType === "regular" ? "通常指名" : f.draftType === "developmental" ? "育成指名" : "区分不明"} · {f.draftTeamName ?? "指名球団不明"}</p><Link to={`/NPB/talent?year=${f.draftYear}`}>{f.draftYear}年 ドラフト同期 →</Link></li>}
       {!!f.affiliations?.length && <li><h3>所属履歴</h3>{f.affiliations.map((a,i) => <p key={i}>{a.name}{a.from || a.to ? ` · ${a.from ?? "開始未確認"}〜${a.to ?? "終了未確認"}` : " · 期間未確認"}</p>)}</li>}
       <li><h3>{date.slice(0,4)} シーズン</h3><p>情報基準日 {date}</p><Link to={`/NPB/players/${player.playerId}/stats`}>シーズン成績 →</Link></li>
-    </ol><LifecycleLinks /><ProfileCredits player={player} />
+    </ol>{storyLink&&<p><Link to={`/NPB/players/${player.playerId}/seasons?story=1`}>経歴と年度成績をたどる →</Link></p>}<LifecycleLinks /><ProfileCredits player={player} />
   </section>;
 }
 type StatsState = {key:string;throughDate?:string;rows:ExplorerRow[];coverage:"complete"|"partial"|"unknown"|"unavailable";error:boolean};
