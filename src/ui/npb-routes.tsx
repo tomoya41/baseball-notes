@@ -21,6 +21,7 @@ import { MyLibrary } from "./personal-library";
 import { NpbTeamCompare, SeasonCompare } from "./team-season-compare";
 import { NpbLifecycleExplorer } from "./npb-lifecycle";
 const NpbCsScreen = lazy(()=>import("./npb-cs").then(m=>({default:m.NpbCsScreen})));
+const NpbPlayerEventsScreen = lazy(()=>import("./npb-player-events").then(m=>({default:m.NpbPlayerEventsScreen})));
 const NpbPlayerSeasons = lazy(()=>import("./npb-historical").then(m=>({default:m.NpbPlayerSeasons})));
 type FavoriteTarget = Pick<Favorite, "kind" | "entityId" | "league">;
 function NpbSearchEntry(props: Parameters<typeof NpbRoutes>[0]) {
@@ -32,13 +33,14 @@ function NpbSearchEntry(props: Parameters<typeof NpbRoutes>[0]) {
 export function NpbRoutes({ services, favorites, toggle, saving }: { services: Services; favorites: Favorite[]; toggle: (target: FavoriteTarget) => void; saving: boolean }) {
   const location = useLocation();
   return <Routes>
+    <Route path="moves" element={<Suspense fallback={<p role="status">選手の動きを読み込み中…</p>}><NpbPlayerEventsScreen favorites={favorites} /></Suspense>} />
     <Route path="cs" element={<Suspense fallback={<p role="status">CSの収録データを読み込み中…</p>}><NpbCsScreen /></Suspense>} />
     <Route path="postseason" element={<Suspense fallback={<p role="status">CSの収録データを読み込み中…</p>}><NpbCsScreen /></Suspense>} />
     <Route path="postseason/*" element={<PostseasonUnavailable league="NPB" />} />
     <Route path="explore" element={<ExploreScreen league="NPB" />} />
     <Route path="milestones/*" element={<NpbMilestonesScreen repository={services.product} />} />
     <Route path="talent/*" element={new URLSearchParams(location.search).get("tab") === "1" ? <FutureFeatureScreen feature="talent" league="NPB" /> : <NpbLifecycleExplorer services={services} />} />
-    {(["moves", "preseason", "matchup", "watch"] as const).map(feature => <Route key={feature} path={`${feature}/*`} element={<FutureFeatureScreen feature={feature} league="NPB" />} />)}
+    {(["preseason", "matchup", "watch"] as const).map(feature => <Route key={feature} path={`${feature}/*`} element={<FutureFeatureScreen feature={feature} league="NPB" />} />)}
     {(["career", "advanced"] as const).map(feature => <Route key={feature} path={`players/:playerId/${feature}`} element={<FutureFeatureScreen feature={feature} league="NPB" />} />)}
     <Route path="home" element={<NpbHome services={services} favorites={favorites} toggle={toggle} saving={saving} />} />
     <Route path="schedule" element={<NpbScheduleScreen repository={services.gameSurface} favorites={favorites} toggle={toggle} saving={saving} />} />
@@ -56,7 +58,7 @@ export function NpbRoutes({ services, favorites, toggle, saving }: { services: S
     <Route path="compare" element={<NpbPlayerCompare services={services} />} />
     <Route path="records" element={<NpbRecordsScreen repository={services.gameSurface} />} />
     <Route path="ranking" element={<Navigate to="/NPB/records" replace />} />
-    <Route path="my" element={<div className="screen"><header><p className="eyebrow">NPB / My</p><h1>My</h1></header>{favorites.some(f => f.league === "NPB") ? <><NpbPersonalDashboard services={services} favorites={favorites} toggle={toggle} saving={saving} /><NpbSavedPlayers heading={false} repository={services.directory} favorites={favorites} toggle={toggle} saving={saving} /></> : <section className="my-start"><p>選手・球団をフォローすると、ここで成績や変化を追えます。</p><div className="hub-links"><Link to="/NPB/search">選手を探す →</Link><Link to="/NPB/teams">球団を探す →</Link></div></section>}<MyLibrary league="NPB" /></div>} />
+    <Route path="my" element={<div className="screen"><header><p className="eyebrow">NPB / My</p><h1>My</h1></header>{favorites.some(f => f.league === "NPB") ? <><NpbPersonalDashboard services={services} favorites={favorites} toggle={toggle} saving={saving} /><NpbSavedPlayers heading={false} repository={services.directory} favorites={favorites} toggle={toggle} saving={saving} /></> : <section className="my-start"><p>選手・球団をフォローすると、ここで成績や変化を追えます。</p><div className="hub-links"><Link to="/NPB/search">選手を探す →</Link><Link to="/NPB/teams">球団を探す →</Link></div></section>}<Link className="section-action" to="/NPB/moves?follow=1">フォローに関連する選手の動き →</Link><MyLibrary league="NPB" /></div>} />
     <Route path="favorites" element={<Navigate to="/NPB/my" replace />} />
     <Route path="players" element={<Navigate to="/NPB/search" replace />} />
     <Route path="*" element={<Navigate to="/NPB/home" replace />} />

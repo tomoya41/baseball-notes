@@ -43,4 +43,6 @@ for(const pin of retainedReleases) await stage(pin,join(target,pin.sha256));
 const current=await stage(release,join(target,release.sha256),local);
 const competition=await stageNpbCompetition(join(target,"..","competitions"));
 const cs=await stageNpbCs(join(target,"..","competitions"));
-console.log(JSON.stringify({retained,current,competition,cs}));
+const { stageNpbPlayerEvents } = await import("./stage-npb-player-events");
+const events = await stageNpbPlayerEvents(join(target,"..","events"));
+console.log(JSON.stringify({retained,current,competition,cs,events}));

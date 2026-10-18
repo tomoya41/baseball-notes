@@ -497,6 +497,17 @@ public class ReleaseQualityTest {
         shell("settings put system font_scale 2.0");scenario.recreate();waitText("収録分の合計を読み込む");waitViewport(360);
         assertEquals("Collected comparison has no overflow at 200 percent","true",js("document.documentElement.scrollWidth<=innerWidth"));screenshot("npb-age-collected-font-20");
     }
+    @Test public void sourcedPlayerEventsKeepEvidenceAndLargeFont() throws Exception {
+        Intent link = new Intent(Intent.ACTION_VIEW, Uri.parse("baseballnotes://NPB/moves?kind=trade&player=3deea6d2-3347-430e-93c3-26ca2ebf15fa"));
+        link.setClassName("com.tomoya41.baseballnotes", "jp.baseballdata.app.MainActivity");
+        scenario = ActivityScenario.launch(link); waitText("杉浦稔大"); waitText("金銭トレードの記載");
+        assertEquals("Events retain exact licensed source", "true", js("!!document.querySelector('a[href*=\"oldid=111421457\"]')"));
+        assertEquals("Events do not certify current membership", "true", js("document.body.innerText.includes('現在の所属や登録の認定ではありません')"));
+        screenshot("npb-player-events-360");
+        shell("settings put system font_scale 2.0"); scenario.recreate(); waitText("金銭トレードの記載"); waitViewport(360);
+        assertEquals("Events fit at 200 percent", "true", js("document.documentElement.scrollWidth<=innerWidth")); screenshot("npb-player-events-font-20");
+        assertTrue("Recreation retains event conditions", js("location.hash").contains("kind=trade&player=3deea6d2-3347-430e-93c3-26ca2ebf15fa"));
+    }
     @Test public void longNavigationHistoryHasBoundedRecreationState() throws Exception {
         assertEquals("/NPB/search?q=A%26B%3DC%25", MainActivity.savedRoute("https://localhost/#/NPB/search?q=A%26B%3DC%25"));
         assertEquals("/privacy", MainActivity.savedRoute("https://localhost/#/privacy"));

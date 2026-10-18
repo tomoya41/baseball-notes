@@ -620,3 +620,7 @@ User correction: primary same-generation discovery now means **同学年 (4月2�
 | Sourced news / optional AI | Architecture/rights/cost readiness documented; existing Plus/Google AI Pro options assessed | No approved news source adapter/API credential/periodic collector/public summaries claimed yet |
 
 The user prioritizes **record/age analysis and seasonal use** next, plus full game-detail access for admitted postseason observations. Retain Draft-to-retirement, farm/Rookie/Prospect, FA/Posting/IN-OUT, full records, measurements, notifications and release-readiness gaps independently. An increment over partial data does not complete the original vision. Current six pending Games/five partial dates/stale/closed Gates, Turso stability, original Pixel signer, physical TalkBack and Play owner steps remain separate.
+
+## 2026-10-19 — Sourced event increment (PARTIAL)
+
+[Wikipedia chronology event lane](npb-sourced-player-events.md): 19 admitted records / 19 existing canonical players (13 controlled-player contracts, 5 retirement announcements, 1 trade), partial 2026 coverage. Home/Player/Team/My links and read-only Favorites filtering; bounded daily candidate check. Not a complete official transaction/FA/Posting/draft feed, inferred current roster or unattended AI news publication. Original lifecycle/offseason vision remains PARTIAL; API/rights, full ledger and notification gaps remain separately tracked.
