@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { readNpbHistoricalSeason } from "../application/npb-historical-reader";
 import type { NpbHistoricalDataset, NpbHistoricalManifest } from "../domain/npb-historical";
-import { historicalCohort, type HistoricalCohortKind } from "../domain/npb-historical-cohort";
+import { cohortIdentities, historicalCohort, type HistoricalCohortKind } from "../domain/npb-historical-cohort";
 import type { NpbCatalog } from "../domain/npb-product-contract";
 import { comparisonValue, type ComparisonRow } from "../domain/product-comparison";
 import { ComparisonBars } from "./comparison-bars";
@@ -22,7 +22,7 @@ export function NpbHistoricalCohort({manifest,season,repository}:{manifest:NpbHi
   if(failed)return <><DataState kind="source-unavailable" title="同期の成績・プロフィールを取得できません" /><button onClick={()=>{setFailed(false);setAttempt(a=>a+1);}}>再試行</button></>;
   if(!result)return <LoadingSkeleton />;
   const {data,catalog}=result,cohort=historicalCohort(data,catalog,referenceId,kind as HistoricalCohortKind,role as "batting"|"pitching");
-  const referenceOptions=catalog.players.filter(p=>data.rows.some(r=>r.playerId===p.playerId&&r.role===role));
+  const referenceOptions=cohortIdentities(data,catalog).filter(p=>data.rows.some(r=>r.playerId===p.playerId&&r.role===role));
   const ids=[...new Set((params.get("recentPlayers")??"").split(","))].filter(id=>cohort.members.some(m=>m.player.playerId===id)).slice(0,4);
   const keys=role==="batting"?["OPS","AVG","HR","H"]:["ERA","SO","outsRecorded"];
   const metric=keys.includes(params.get("sort1")??"")?params.get("sort1")!:keys[0]!;
@@ -40,7 +40,7 @@ export function NpbHistoricalCohort({manifest,season,repository}:{manifest:NpbHi
       <h3 className="explorer-result-title"><Link to={`/NPB/players/${m.player.playerId}/seasons?season=${season}&role=${role}`}>{m.player.displayName}</Link></h3><p>{m.teams.map(teamName).join(" / ")} · {kind==="schoolYear"?`${m.player.profile.birthDate}生まれ`:`${cohort.year}年${kind==="birthYear"?"生まれ":"指名"}`}</p>
       <dl className="explorer-values">{[role==="batting"?"PA":"outsRecorded",...keys.slice(0,2)].map(k=><div key={k}><dt><MetricLabel metric={k} label={k==="outsRecorded"?"投球回":k} /></dt><dd>{comparisonValue(k,m.metrics[k]??null)}</dd></div>)}</dl>
       <div className="lifecycle-actions"><label><input type="checkbox" aria-label={`${m.player.displayName}を同期比較に選択`} checked={ids.includes(m.player.playerId)} disabled={!ids.includes(m.player.playerId)&&ids.length>=4} onChange={()=>update("recentPlayers",(ids.includes(m.player.playerId)?ids.filter(id=>id!==m.player.playerId):[...ids,m.player.playerId]).join(","))} />比較に選ぶ</label></div>
-      <details><summary>成績・同期条件の出典</summary><HistoricalCredits data={data} playerId={m.player.playerId} /><p>プロフィールの保存基準日 {catalog.effectiveDate}。過去の所属は年度成績の球団別行です。</p>{m.player.profile.credits?.map((c,i)=><p key={i}><a href={c.url} target="_blank" rel="noreferrer">{c.name}</a> · <a href={c.licenseUrl} target="_blank" rel="noreferrer">利用条件</a> · 構造化・加工済み</p>)}</details>
+      <details><summary>成績・同期条件の出典</summary><HistoricalCredits data={data} playerId={m.player.playerId} /><p>{m.player.identityScope==="historical_only"?"生年月日は過去成績の確認済みIdentityに基づきます。":`プロフィールの保存基準日 ${catalog.effectiveDate}。`}過去の所属は年度成績の球団別行です。</p>{m.player.profile.credits?.map((c,i)=><p key={i}><a href={c.url} target="_blank" rel="noreferrer">{c.name}</a> · <a href={c.licenseUrl} target="_blank" rel="noreferrer">利用条件</a> · 構造化・加工済み</p>)}</details>
     </article>)}</div>{!cohort.members.length&&<DataState kind="no-data" title="この年度・役割の同期成績は未収録です" />}
     {pages>1&&<nav aria-label="同期のページ"><button disabled={page===1} onClick={()=>update("page",String(page-1))}>前へ</button><button disabled={page===pages} onClick={()=>update("page",String(page+1))}>次へ</button></nav>}</>}
     <SaveViewButton league="NPB" kind="history" params={params} />
