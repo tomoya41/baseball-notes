@@ -1,0 +1,56 @@
+name: NPB sourced player events check
+on:
+  schedule:
+    - cron: "17 23 * * *"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: npb-sourced-player-events-check
+  cancel-in-progress: false
+jobs:
+  check:
+    if: github.event.repository.private == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v7
+        with: { persist-credentials: false }
+      - name: Restrict the admitted source to its reviewed year
+        id: season
+        shell: bash
+        run: |
+          if [ "$(TZ=Asia/Tokyo date +%Y)" = '2026' ]; then
+            echo 'enabled=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'enabled=false' >> "$GITHUB_OUTPUT"
+            echo 'Reviewed 2026 source only; a new year needs separate admission.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/setup-node@v7
+        if: steps.season.outputs.enabled == 'true'
+        with: { node-version-file: .nvmrc, cache: npm }
+      - run: npm ci
+        if: steps.season.outputs.enabled == 'true'
+      - name: Validate source and event boundaries
+        if: steps.season.outputs.enabled == 'true'
+        run: npx vitest run tests/npb-player-events.test.ts tests/npb-event-source.test.ts
+      - name: One source request, candidate only; never canonical or public writes
+        if: steps.season.outputs.enabled == 'true'
+        run: npx tsx scripts/collect-npb-player-events.ts --fetch --previous-published --output=.data/npb-player-events/check
+      - name: Record exact review scope
+        if: steps.season.outputs.enabled == 'true'
+        shell: bash
+        run: |
+          node --input-type=module -e "import fs from 'node:fs'; const r=JSON.parse(fs.readFileSync('.data/npb-player-events/check/report.json')); console.log(JSON.stringify({status:r.status,revision:r.sourceRevision,added:r.diff.added.length,removed:r.diff.removed.length,changed:r.diff.changed.length,canonicalWrites:r.canonicalWrites,sourceRequests:r.sourceRequests}));" >> "$GITHUB_STEP_SUMMARY"
+          echo 'Normalized CC BY-SA candidate only. No source article bodies, AI keys, DB files, current roster edits or automatic publication.' >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: steps.season.outputs.enabled == 'true' && success()
+        with:
+          name: npb-player-events-candidate
+          path: |
+            .data/npb-player-events/check/report.json
+            .data/npb-player-events/check/dataset.json
+            .data/npb-player-events/check/quarantine.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
