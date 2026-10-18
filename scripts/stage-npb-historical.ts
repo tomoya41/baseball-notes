@@ -34,7 +34,7 @@ for(const season of [...new Set(dataset.rows.map(r=>r.season))].sort((a,b)=>a-b)
   await writeFile(join(destination,`${season}.json`),body);
 }
 const manifest=npbHistoricalManifestSchema.parse({schemaVersion:1,league:"NPB",competition:"regular",temporalScope:"historical",coverage:"partial",license:dataset.license,inputSha256:dataset.inputSha256,observedAt:dataset.observedAt,seasons,
-  players:dataset.players.map(p=>({playerId:p.playerId,name:p.name,...(p.identityScope?{identityScope:p.identityScope}:{}),seasons:[...new Set(dataset.rows.filter(r=>r.playerId===p.playerId).map(r=>r.season))].sort((a,b)=>a-b)}))});
+  players:dataset.players.map(p=>({playerId:p.playerId,name:p.name,...(p.identityScope?{identityScope:p.identityScope}:{}),...(p.birthDate?{birthDate:p.birthDate}:{}),seasons:[...new Set(dataset.rows.filter(r=>r.playerId===p.playerId).map(r=>r.season))].sort((a,b)=>a-b)}))});
 await writeFile(join(destination,"manifest.json"),JSON.stringify(manifest));
 return {generation:pin.sha256,historicalFiles:seasons.length+1,archiveBytes:bytes.length,publicBytes:seasons.reduce((s,y)=>s+y.bytes,Buffer.byteLength(JSON.stringify(manifest))),maxPayload:Math.max(...seasons.map(s=>s.bytes)),generationMs:Math.round(performance.now()-started),canonicalWrites:0,sourceRequests:response?1:0};
 }

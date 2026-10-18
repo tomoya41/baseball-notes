@@ -29,7 +29,7 @@ export const npbHistoricalRowSchema = z.strictObject({
 export type NpbHistoricalRow = z.infer<typeof npbHistoricalRowSchema>;
 export const npbHistoricalPlayerSchema = z.strictObject({ playerId: z.uuid(), name: z.string().min(1), wikidataId: z.string().regex(/^Q\d+$/), npbId: z.string().regex(/^\d+$/),
   article: z.string().min(1), revision: z.number().int().positive(), revisionAt: z.iso.datetime(), contentSha256: z.string().regex(/^[a-f0-9]{64}$/),
-  identityScope: z.literal("historical_only").optional(), sourceObservedAt: z.iso.datetime().optional() });
+  identityScope: z.literal("historical_only").optional(), sourceObservedAt: z.iso.datetime().optional(), birthDate: z.iso.date().optional() });
 export const npbHistoricalDatasetSchema = z.strictObject({
   schemaVersion: z.literal(1), league: z.literal("NPB"), temporalScope: z.literal("historical"), competition: z.literal("regular"),
   granularity: z.literal("season_aggregate"), license: z.literal("CC-BY-SA-4.0"), observedAt: z.iso.datetime(),
@@ -51,7 +51,7 @@ export const npbHistoricalManifestSchema = z.strictObject({
   schemaVersion:z.literal(1), league:z.literal("NPB"), competition:z.literal("regular"), temporalScope:z.literal("historical"),
   coverage:z.literal("partial"), license:z.literal("CC-BY-SA-4.0"), inputSha256:z.string().regex(/^[a-f0-9]{64}$/), observedAt:z.iso.datetime(),
   seasons:z.array(z.strictObject({season:z.number().int().min(1936).max(2025),rows:z.number().int().positive(),players:z.number().int().positive(),sha256:z.string().regex(/^[a-f0-9]{64}$/),bytes:z.number().int().positive().max(500000)})).max(100),
-  players:z.array(z.strictObject({playerId:z.uuid(),name:z.string().min(1),identityScope:z.literal("historical_only").optional(),seasons:z.array(z.number().int().min(1936).max(2025)).min(1).max(100)})).max(10000),
+  players:z.array(z.strictObject({playerId:z.uuid(),name:z.string().min(1),identityScope:z.literal("historical_only").optional(),birthDate:z.iso.date().optional(),seasons:z.array(z.number().int().min(1936).max(2025)).min(1).max(100)})).max(10000),
 }).superRefine((m,c)=>{
   const seasons=new Set(m.seasons.map(s=>s.season));
   if(seasons.size!==m.seasons.length || new Set(m.players.map(p=>p.playerId)).size!==m.players.length || m.players.some(p=>p.seasons.some(y=>!seasons.has(y)))) c.addIssue({code:"custom",message:"Invalid historical index"});

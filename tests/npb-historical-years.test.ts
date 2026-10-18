@@ -14,3 +14,9 @@ it("expands only saved Directory identities and never broadens OB rows", () => {
   expect(yearsForSavedIdentity(years, "current", true, ids)).toEqual([2015, 2025]);
   expect(yearsForSavedIdentity(years, "unknown", false, ids)).toEqual([2015, 2025]);
 });
+it("requires an explicit registered-identity opt-in for earlier existing historical players",()=>{
+  const years=[2000,2005,2015,2025],ids=new Set<string>(),registered=new Set(["reviewed"]);
+  expect(yearsForSavedIdentity(years,"reviewed",true,ids,registered)).toEqual(years);
+  expect(yearsForSavedIdentity(years,"unreviewed",true,ids,registered)).toEqual([2015,2025]);
+  expect(yearsForSavedIdentity(years,"reviewed",false,ids,registered)).toEqual([2015,2025]);
+});
