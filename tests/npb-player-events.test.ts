@@ -52,6 +52,9 @@ describe("explicit sourced movement observations", () => {
     expect(compareEventSnapshots(d, structuredClone(d)).added).toEqual([]);
     const corrected = structuredClone(d); corrected.events[0]!.excerpt += "訂正";
     expect(compareEventSnapshots(d, corrected).changed).toEqual([d.events[0]!.id]);
+    const renamed = structuredClone(d); renamed.players[0]!.name = "架空登録名の訂正";
+    expect(compareEventSnapshots(d, renamed).playersChanged).toEqual([d.players[0]!.playerId]);
+    renamed.identityInputSha256 = "c".repeat(64); expect(compareEventSnapshots(d, renamed).identityInputChanged).toBe(true);
     const empty = { ...structuredClone(d), events: [] }; expect(compareEventSnapshots(d, empty).removed).toEqual([d.events[0]!.id]);
     expect(d.events[0]!.status).toBe("encyclopedia_record");
   });

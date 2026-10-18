@@ -38,5 +38,9 @@ export async function admittedEventIdentities(directory: unknown) {
     identities.push(eventIdentitySchema.parse({ ...bridge, name: player.displayName, article, identityRevision }));
   }
   const ambiguous = new Set(identities.filter(p => identities.some(q => q.playerId !== p.playerId && q.article === p.article)).map(p => p.article));
-  return { identities: identities.filter(p => !ambiguous.has(p.article)), inputSha256: hash.digest("hex"), ambiguousArticles: ambiguous.size };
+  const accepted = identities.filter(p => !ambiguous.has(p.article));
+  // Names are published metadata, not identity proof. Bind exactly the Directory
+  // fields consumed by this projection, independently of row order/timestamps.
+  hash.update(JSON.stringify(accepted.map(p => ({ playerId: p.playerId, displayName: p.name })).sort((a, b) => a.playerId.localeCompare(b.playerId))));
+  return { identities: accepted, inputSha256: hash.digest("hex"), ambiguousArticles: ambiguous.size };
 }

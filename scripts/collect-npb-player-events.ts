@@ -33,7 +33,7 @@ if (args.includes("--previous-published")) {
   previous = npbPlayerEventsSchema.parse(JSON.parse(body.toString()));
 }
 if (previous && (Date.parse(archive.observedAt) < Date.parse(previous.observedAt) || parsed.dataset.source.revision < previous.source.revision)) throw Error("Source revision/acquisition regressed; keep the published snapshot");
-const diff = previous ? compareEventSnapshots(previous, parsed.dataset) : { added: parsed.dataset.events.map(e => e.id), removed: [], changed: [], sourceChanged: true };
+const diff = previous ? compareEventSnapshots(previous, parsed.dataset) : { added: parsed.dataset.events.map(e => e.id), removed: [], changed: [], playersChanged: [], identityInputChanged: true, sourceChanged: true };
 const body = Buffer.from(JSON.stringify(parsed.dataset)), compressed = gzipSync(body, { level: 9 });
 if (body.length > 250000 || compressed.length > 100000) throw Error("Event projection budget exceeded");
 // Exact schema readback and deterministic replay, with no canonical repository dependency.
@@ -44,7 +44,7 @@ const sha = (b: Uint8Array) => createHash("sha256").update(b).digest("hex");
 const report = { status: "CANDIDATE_ONLY", observedAt: parsed.dataset.observedAt, sourceRevision: parsed.dataset.source.revision, coverage: "partial", events: parsed.dataset.events.length, players: parsed.dataset.players.length,
   identityPool: admitted.identities.length, ambiguousArticles: admitted.ambiguousArticles, issues: parsed.issues.length,
   issueReasons: parsed.issues.reduce<Record<string, number>>((counts, i) => ({ ...counts, [i.reason]: (counts[i.reason] ?? 0) + 1 }), {}),
-  diff, requiresRemovalOrCorrectionReview: !!(diff.removed.length || diff.changed.length), sourceRequests: archiveFile ? 0 : 1, ownRequests, canonicalWrites: 0,
+  diff, requiresRemovalOrCorrectionReview: !!(diff.removed.length || diff.changed.length || diff.playersChanged.length || diff.identityInputChanged && previous), sourceRequests: archiveFile ? 0 : 1, ownRequests, canonicalWrites: 0,
   bytes: body.length, gzipBytes: compressed.length, sha256: sha(compressed), bodySha256: sha(body), identityInputSha256: admitted.inputSha256, deterministicReplay: true, apiSummaryCalls: 0, additionalCostYen: 0 };
 await writeFile(join(output, "report.json"), JSON.stringify(report, null, 2));
 // Hash-only quarantine diagnostics: no article body or speculative identity dump in CI artifacts.

@@ -41,11 +41,14 @@ export type NpbPlayerEvents = z.infer<typeof npbPlayerEventsSchema>;
 /** A missing/changed source row requires review, never an automatic retraction or roster edit. */
 export function compareEventSnapshots(previous: NpbPlayerEvents, candidate: NpbPlayerEvents) {
   const before = new Map(previous.events.map(e => [e.id, e])), after = new Map(candidate.events.map(e => [e.id, e]));
+  const previousPlayers = new Map(previous.players.map(p => [p.playerId, p]));
   const semantic = (e: PlayerEvent) => JSON.stringify({ ...e, sourceRevision: 0, statementSha256: "" });
   return {
     added: candidate.events.filter(e => !before.has(e.id)).map(e => e.id),
     removed: previous.events.filter(e => !after.has(e.id)).map(e => e.id),
     changed: candidate.events.filter(e => before.has(e.id) && semantic(e) !== semantic(before.get(e.id)!)).map(e => e.id),
+    playersChanged: candidate.players.filter(p => previousPlayers.has(p.playerId) && JSON.stringify(p) !== JSON.stringify(previousPlayers.get(p.playerId))).map(p => p.playerId),
+    identityInputChanged: candidate.identityInputSha256 !== previous.identityInputSha256,
     sourceChanged: candidate.source.contentSha256 !== previous.source.contentSha256,
   };
 }
