@@ -1197,3 +1197,7 @@ When the NPB period API is unavailable, Player/Recent may read already published
 ### NPB peer analysis (2026-10-18)
 
 Historical Regular supports one-season peer discovery by explicit birth year or draft year, with 2–4 canonical players, per-player samples and source credits. Unknown metadata never becomes a matched cohort; no rookie/roster/official-ranking qualification is inferred. Adjacent single-club year observations may show metric differences without inferring transfer timing or causation. See docs/npb-cohorts-and-evidence.md for licensed immutable releases, scope, preserved URLs and operating gates.
+
+## NPB collected player story and year-end age comparison
+
+NPB Historical supports a maximum four-player comparison of seasons where each player's verified birth date makes them the selected age at December 31. This is a collected Regular Season comparison, not cumulative Career through an age/birthday, official qualification or era-adjusted ranking. The existing manifest, Catalog and bounded annual readers preserve identity/null/sample/provenance. Explicit Saved Views retain conditions; automatic Activity does not. Player annual stats also connect confirmed school/Draft/affiliation metadata to actually collected season links on explicit story expansion. See `docs/npb-player-story-age-comparison.md` for unfinished original-vision areas and evidence.

@@ -398,3 +398,7 @@ Persist only the current encoded route (maximum 8,192 characters) in private And
 ## 2026-10-18 — Reuse proved identities and compare observed cohorts
 
 Historical admission reuses the collision-checked union of free-profile and independently reviewed nf3/NPB-ID/QID bridges. Do not create a Historical-only UUID for an existing saved canonical player whose registered abbreviation differs from the article title. Recheck the article/QID/NPB-ID/day-precision DOB before admission. Peer analysis combines immutable birth/draft fields with the same canonical ID in one admitted Regular season; it never treats absent profiles as a cohort match or infers rookie/registration evidence. Preserve samples, nullable components, licensed attribution and separate Current/competition gates. See [delivery](npb-cohorts-and-evidence.md).
+
+## 2026-10-18 — Age comparison uses year-end season observations
+
+Use verified birth date plus selected year-end age to identify one admitted Historical Regular season per selected canonical player. Do not infer a full Career, age-at-debut, participation in uncollected years or Rookie qualification. Reuse component-based aggregates, samples and per-revision credits; at most four seasons are fetched and independent failures remain separate. Link profile/Draft history to the same collected annual pages without promoting saved affiliations into current roster/transaction evidence. These are presentation/domain increments over immutable existing data; canonical and persistence schemas remain unchanged.
