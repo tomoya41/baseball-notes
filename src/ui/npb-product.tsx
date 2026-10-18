@@ -94,6 +94,7 @@ export function NpbTeam({ services, hub = false, favorites = [], toggle, saving 
     </section>
     {hub && <>{stats && <details className="team-stat-details"><summary>チーム打撃・投球成績</summary><TeamMetrics batting={stats.batting} pitching={stats.pitching} /></details>}<NpbTeamActivity key={team.teamId} services={services} teamId={team.teamId} /><div className="hub-links"><Link to="/NPB/compare">選手比較 →</Link><Link to="/NPB/my">お気に入り →</Link></div></>}
     <LifecycleLinks teamId={team.teamId} />
+    <Link className="section-action" to={`/NPB/moves?team=${encodeURIComponent(team.teamId)}`}>この球団に関する選手の動き →</Link>
     <details className="team-roster"><summary>所属選手</summary><p className="inline-note">保存済みの所属情報。現在の登録公示を示すものではありません。</p><div className="row-list">{catalog.players.filter(p => p.membership.teamId === teamId).map(p => <Link className="player-row" key={p.playerId} to={`/NPB/players/${p.playerId}`}><Monogram name={p.displayName} /><span className="player-row__body"><strong>{favorites.some(f => f.league === "NPB" && f.kind === "player" && f.entityId === p.playerId) && "★ "}{p.displayName}</strong>{p.profile.position && <small>{positionDefinitions[p.profile.position]}</small>}</span><span aria-hidden="true">↗</span></Link>)}</div></details>
   </div>;
 }

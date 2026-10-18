@@ -7,6 +7,7 @@ import { metricNumber, selectedTeams } from "./product-comparison";
 import type { CompareMetrics } from "./player-compare";
 import { viewConditions } from "./portable-conditions";
 import type { League } from "./models";
+import { npbEventQuery } from "./npb-event-query";
 
 export const PUBLIC_APP_URL = "https://tomoya41.github.io/baseball-notes/";
 // Local IDs and unknown keys never travel through a shareable URL.
@@ -14,6 +15,11 @@ export function portableRoute(path: string, search = ""): string | null {
   const parts = path.split("/").filter(Boolean), league = parts[0];
   if (league !== "NPB" && league !== "MLB") return null;
   const resource = parts[1], source = new URLSearchParams(search), clean = new URLSearchParams();
+  if (league === "NPB" && resource === "moves" && parts.length === 2) {
+    if (!npbEventQuery(source).valid) return null;
+    for (const key of ["season", "kind", "team", "player", "q", "page", "follow"]) { const value = source.get(key); if (value) clean.set(key, value); }
+    return `${path}${clean.size ? `?${clean}` : ""}`;
+  }
   if(league==="NPB"&&resource==="games"&&source.get("competition")==="postseason"){
     if(parts.length!==3||!canonicalEntityRefSchema.safeParse({league,kind:"game",id:decodeSafe(parts[2]!)}).success||source.has("season")&&source.get("season")!=="2026"||source.has("stage")&&!["npb_cs_first","npb_cs_final"].includes(source.get("stage")!))return null;
     clean.set("competition","postseason");if(source.has("stage"))clean.set("stage",source.get("stage")!);clean.set("season","2026");

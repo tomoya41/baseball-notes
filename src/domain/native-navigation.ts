@@ -9,7 +9,7 @@ export function canonicalDeepLink(input: string): string | null {
     const route = uri.protocol === "baseballnotes:" ? `/${uri.hostname}${uri.pathname}` :
       uri.hash.startsWith("#/") ? uri.hash.slice(1) : uri.pathname.replace(/^\/baseball-notes/, "");
     const [portablePath, portableSearch] = route.split("?");
-    const expanded = ["data", "history", "compare", "team-compare", "season-compare", "postseason", "matchup", "milestones", "form", "cs"].includes(portablePath?.split("/")[2] ?? "");
+    const expanded = ["data", "history", "compare", "team-compare", "season-compare", "postseason", "matchup", "milestones", "form", "cs", "moves"].includes(portablePath?.split("/")[2] ?? "");
     if (expanded) return portableRoute(portablePath!, portableSearch ?? uri.search);
     const [leagueRaw, resource, encoded, child, ...extra] = route.split("?")[0]!.replace(/^\//, "").split("/");
     if (extra.length || (child && !["analysis", "game-log", "stats", "more", "trends", "advanced"].includes(child) && !(child === "seasons" && leagueRaw?.toUpperCase() === "NPB"))) return null;
@@ -55,6 +55,11 @@ export function parentNativeRoute(path: string): string | null {
     return `/NPB/history?${history}`;
   }
   if (segments[1] === "watch-center") return `/${league}/my`;
+  if (league === "NPB" && segments[1] === "moves") {
+    const player = source.get("player"), team = source.get("team");
+    if (canonicalEntityRefSchema.safeParse({ league, kind: "player", id: player }).success) return `/NPB/players/${player}`;
+    if (canonicalEntityRefSchema.safeParse({ league, kind: "team", id: team }).success) return `/NPB/teams/${team}`;
+  }
   if (segments[1] === "library" && segments.length > 2) return `/${league}/library`;
   if (["compare", "team-compare", "season-compare", "matchup"].includes(segments[1] ?? "")) return `/${league}/search${suffix}`;
   if (segments[1] === "players" && segments.length > 3) return `/${league}/players/${segments[2]}${suffix}`;
