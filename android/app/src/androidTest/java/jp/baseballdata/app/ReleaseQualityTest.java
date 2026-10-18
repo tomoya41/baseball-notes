@@ -168,7 +168,9 @@ public class ReleaseQualityTest {
         js("location.hash='#/MLB/sources'"); waitText("Retrosheet"); waitText("Chadwick");
         setNetwork(true);
         long homeStart = System.currentTimeMillis(); js("location.hash='#/MLB/home'");
-        waitText("日本人選手");
+        // A transient fetch error after restoring transport needs the real Retry
+        // control. Waiting for a heading first would fail before the bounded
+        // recovery helper can verify the actual four-player statistics.
         waitHomeStatistics();
         System.out.println("PERF mlb_home_ms=" + (System.currentTimeMillis() - homeStart));
         assertEquals("Four actual Player summaries", "4", js("document.querySelectorAll('.follow-player').length"));
