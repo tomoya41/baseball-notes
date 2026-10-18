@@ -4,9 +4,19 @@ import {createRoot} from "react-dom/client";
 import {MemoryRouter} from "react-router-dom";
 import {afterEach,beforeEach,expect,it,vi} from "vitest";
 import {NpbPlayerStory} from "../src/ui/npb-player-story";
+import {PlayerLifecycle} from "../src/ui/npb-lifecycle";
 import {cohortFixture,cohortId} from "./fixtures/npb-cohort";
 beforeEach(()=>vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true));
 afterEach(()=>vi.unstubAllGlobals());
+it.each([
+  ["P",true,true,"pitching"],["OF",true,false,"batting"],[null,false,true,"pitching"],[null,true,true,"batting"],
+] as const)("opens the appropriate available story role (%s) without hiding other recorded roles",async(position,battingAvailable,pitchingAvailable,expected)=>{
+  const f=cohortFixture(),player={...f.catalog.players[0]!,profile:{...f.catalog.players[0]!.profile,position},battingAvailable,pitchingAvailable},host=document.createElement("div"),root=createRoot(host);
+  try{
+    await act(async()=>root.render(<MemoryRouter><PlayerLifecycle player={player}/></MemoryRouter>));
+    const link=host.querySelector('a[href*="story=1"]')!;expect(new URLSearchParams(link.getAttribute("href")!.split("?")[1]).get("role")).toBe(expected);
+  }finally{await act(async()=>root.unmount());}
+});
 it("connects licensed school/draft/history to recorded years without estimating entry, current roster or missing periods",async()=>{
   const f=cohortFixture(),p=f.catalog.players[0]!;p.profile.schools=["架空高校"];p.profile.draftRound="1位";
   f.manifest.players[0]!.seasons=[2023,2025];

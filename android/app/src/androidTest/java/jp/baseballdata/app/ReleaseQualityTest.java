@@ -447,6 +447,11 @@ public class ReleaseQualityTest {
         assertTrue("Japanese grade includes early-year and prior calendar-year birthdays",js("document.body.innerText").contains("1999-03-13生まれ") && js("document.body.innerText").contains("1998-04-21生まれ"));
         assertEquals("Japanese grade large text has no overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));
         screenshot("npb-school-cohort-font-20");
+        js("location.hash='#/NPB/players/3c4b8e86-5a0c-48cb-aeba-44676de9fa38/more'");waitText("経歴と年度成績をたどる");
+        assertEquals("Pitcher More story entry keeps pitching role","true",js("document.querySelector('a[href*=\"story=1\"]')?.getAttribute('href').includes('role=pitching')"));
+        js("document.querySelector('a[href*=\"story=1\"]').click()");waitText("収録されたシーズンへ");
+        js("Array.from(document.querySelectorAll('section[aria-label=\"経歴と収録シーズンのつながり\"] a')).find(a=>a.getAttribute('href')?.includes('season=2025')).click()");
+        waitText("2025年の投球成績");assertTrue("Collected pitcher year retains role",js("location.hash").contains("role=pitching"));
     }
     @Test public void longNavigationHistoryHasBoundedRecreationState() throws Exception {
         assertEquals("/NPB/search?q=A%26B%3DC%25", MainActivity.savedRoute("https://localhost/#/NPB/search?q=A%26B%3DC%25"));

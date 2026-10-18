@@ -18,13 +18,15 @@ export function ProfileCredits({ player }: {player:LifecyclePlayer}) {
 }
 export function PlayerLifecycle({ player, effectiveDate, storyLink=true }: {player:LifecyclePlayer;effectiveDate?:string;storyLink?:boolean}) {
   const f=player.profile, schools=playerSchools(player), date=effectiveDate ?? f.ageAsOfDate;
+  // Initial view only. Both roles remain selectable; this never classifies past seasons or two-way status.
+  const storyRole=f.position==="P"||player.pitchingAvailable&&!player.battingAvailable?"pitching":"batting";
   return <section className="player-lifecycle" aria-labelledby="lifecycle-title"><h2 id="lifecycle-title">選手経歴</h2><details className="advanced-disclosure"><summary>経歴の補足</summary><p>確認済みの部分履歴です。完全なCareer・在籍期間・現在の登録を示しません。指名年から入団年・NPB初出場年を推定しません。</p></details>
     <ol className="lifecycle-timeline">
       {!!schools.length && <li><h3>学校・アマチュア球歴</h3>{schools.map(name => <Link key={name} to={`/NPB/talent?view=school&school=${encodeURIComponent(name)}`}>{name}</Link>)}</li>}
       {f.draftYear !== null && <li><h3>{f.draftYear}年 ドラフト</h3><p>{f.draftRound ?? "順位不明"} · {f.draftType === "regular" ? "通常指名" : f.draftType === "developmental" ? "育成指名" : "区分不明"} · {f.draftTeamName ?? "指名球団不明"}</p><Link to={`/NPB/talent?year=${f.draftYear}`}>{f.draftYear}年 ドラフト同期 →</Link></li>}
       {!!f.affiliations?.length && <li><h3>所属履歴</h3>{f.affiliations.map((a,i) => <p key={i}>{a.name}{a.from || a.to ? ` · ${a.from ?? "開始未確認"}〜${a.to ?? "終了未確認"}` : " · 期間未確認"}</p>)}</li>}
       <li><h3>{date.slice(0,4)} シーズン</h3><p>情報基準日 {date}</p><Link to={`/NPB/players/${player.playerId}/stats`}>シーズン成績 →</Link></li>
-    </ol>{storyLink&&<p><Link to={`/NPB/players/${player.playerId}/seasons?story=1`}>経歴と年度成績をたどる →</Link></p>}<LifecycleLinks /><ProfileCredits player={player} />
+    </ol>{storyLink&&<p><Link to={`/NPB/players/${player.playerId}/seasons?story=1&role=${storyRole}`}>経歴と年度成績をたどる →</Link></p>}<LifecycleLinks /><ProfileCredits player={player} />
   </section>;
 }
 type StatsState = {key:string;throughDate?:string;rows:ExplorerRow[];coverage:"complete"|"partial"|"unknown"|"unavailable";error:boolean};
