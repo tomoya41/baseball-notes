@@ -442,6 +442,11 @@ public class ReleaseQualityTest {
         assertEquals("Story keeps scope and recorded source links","true",js("!!document.querySelector('section[aria-label=\"経歴と収録シーズンのつながり\"] a[href*=\"story=1\"]') && location.hash.includes('season=2024')"));
         assertEquals("Story large text has no overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));
         screenshot("npb-story-font-20");
+        js("location.hash='#/NPB/history?season=2025&role=batting&cohort=schoolYear&peer=852bed28-a3f1-4b60-8a1f-950cc2947686&recentPlayers=a1ca7cac-f9be-4993-a78c-bcd1e1ae3399,852bed28-a3f1-4b60-8a1f-950cc2947686'");
+        waitText("1998年4月2日〜1999年4月1日生まれ");waitText("比較 2/4人");waitViewport(360);
+        assertTrue("Japanese grade includes early-year and prior calendar-year birthdays",js("document.body.innerText").contains("1999-03-13生まれ") && js("document.body.innerText").contains("1998-04-21生まれ"));
+        assertEquals("Japanese grade large text has no overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));
+        screenshot("npb-school-cohort-font-20");
     }
     @Test public void longNavigationHistoryHasBoundedRecreationState() throws Exception {
         assertEquals("/NPB/search?q=A%26B%3DC%25", MainActivity.savedRoute("https://localhost/#/NPB/search?q=A%26B%3DC%25"));

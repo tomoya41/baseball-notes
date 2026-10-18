@@ -27,7 +27,7 @@ export function portableRoute(path: string, search = ""): string | null {
   if (parts.length === 2 && ["data", "history"].includes(resource ?? "")) {
     const conditions = new URLSearchParams(viewConditions(source, true, league));
     if(league==="NPB"&&resource==="history") {
-      if(source.has("cohort")&&(!["birthYear","draftYear","ageSeason"].includes(source.get("cohort")!)||source.has("peer")&&!canonicalEntityRefSchema.safeParse({league,kind:"player",id:source.get("peer")}).success))return null;
+      if(source.has("cohort")&&(!["birthYear","draftYear","schoolYear","ageSeason"].includes(source.get("cohort")!)||source.has("peer")&&!canonicalEntityRefSchema.safeParse({league,kind:"player",id:source.get("peer")}).success))return null;
       if(source.get("cohort")==="ageSeason"&&!ageSeasonQuery(source).valid)return null;
       if(source.has("years")&&/^(?:20\d{2}(?:,20\d{2}){0,3})?$/.test(source.get("years")!))conditions.set("years",source.get("years")!);
       if(progressionMetrics.some(k=>k===source.get("trendMetric")))conditions.set("trendMetric",source.get("trendMetric")!);

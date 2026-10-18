@@ -50,6 +50,7 @@ function AgeWorkspace({ manifest, catalog, params, update }: { manifest: NpbHist
   const candidates = manifest.players.filter(p => catalog.players.some(c => c.playerId === p.playerId && c.profile.birthDate !== null) && !query.ids.includes(p.playerId) && (!search || normalizePlayerSearch(p.name).includes(normalizePlayerSearch(search))));
   const teamName = (id: string) => catalog.teams.find(t => t.teamId === id)?.shortName ?? "球団未確認";
   return <section className="historical-cohort" aria-label="同年齢の年度成績比較">
+    <p><Link to={`/NPB/history?season=${Math.max(...manifest.seasons.map(s=>s.season))}&role=${query.role}&cohort=schoolYear${query.ids[0]?`&peer=${query.ids[0]}`:""}`}>同学年の選手を同じ年度で比較 →</Link></p>
     <p className="data-notice">各年度の12月31日時点で{query.age}歳となるシーズンを比較します。年齢到達日までの通算や完全なキャリアではありません。公式戦の収録分だけが対象です。</p>
     <div className="explorer-filter-grid"><form onSubmit={e => { e.preventDefault(); update("age", String(new FormData(e.currentTarget).get("age"))); }}><label>年末時点の年齢<input key={params.get("age") ?? "26"} name="age" type="number" min="0" max="99" step="1" required defaultValue={params.get("age") ?? "26"} /></label><button>年齢を適用</button></form><label>成績<select value={query.role} onChange={e => update("role", e.target.value)}><option value="batting">打撃（投手打撃を含む）</option><option value="pitching">投球</option></select></label></div>
     <p role="status">比較 {query.ids.length}/4人</p>

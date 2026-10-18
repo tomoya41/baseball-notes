@@ -32,6 +32,16 @@ it("compares 2–4 canonical peers, carries sources/sample and restores filters 
   expect(repository.catalog).toHaveBeenCalledTimes(1);expect(readNpbHistoricalSeason).toHaveBeenCalledTimes(1);
  }finally{await close();}
 });
+it("shows an explicit Japanese grade range and birthday, preserving calendar-year legacy URLs",async()=>{
+ const {host,close}=await mount(`cohort=schoolYear&peer=${cohortId(0)}&recentPlayers=${cohortId(0)},${cohortId(1)}`);
+ try{
+  expect(host.textContent).toContain("1999年4月2日〜2000年4月1日生まれ");expect(host.textContent).toContain("2000-01-01生まれ");
+  expect(host.querySelector('a[href="https://www.mext.go.jp/a_menu/shotou/shugaku/detail/1422233.htm"]')).not.toBeNull();
+  const conditions=host.querySelector("select")!;expect(conditions.value).toBe("schoolYear");
+  await act(async()=>{conditions.value="birthYear";conditions.dispatchEvent(new Event("change",{bubbles:true}));});
+  expect(host.textContent).toContain("1999年生まれ");expect(host.textContent).not.toContain("2000-01-01生まれ");
+ }finally{await close();}
+});
 it("keeps missing cohort fields unknown and fails metadata reads without silently showing all players",async()=>{
  const {host,close}=await mount(`cohort=birthYear&peer=${cohortId(2)}`);try{expect(host.textContent).toContain("同期条件は未確認");expect(host.querySelectorAll("article")).toHaveLength(0);}finally{await close();}
  const bad=await mount(`cohort=draftYear&peer=${cohortId(4)}`);try{expect(bad.host.textContent).toContain("同期条件は未確認");}finally{await bad.close();}

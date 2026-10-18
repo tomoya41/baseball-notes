@@ -402,3 +402,7 @@ Historical admission reuses the collision-checked union of free-profile and inde
 ## 2026-10-18 — Age comparison uses year-end season observations
 
 Use verified birth date plus selected year-end age to identify one admitted Historical Regular season per selected canonical player. Do not infer a full Career, age-at-debut, participation in uncollected years or Rookie qualification. Reuse component-based aggregates, samples and per-revision credits; at most four seasons are fetched and independent failures remain separate. Link profile/Draft history to the same collected annual pages without promoting saved affiliations into current roster/transaction evidence. These are presentation/domain increments over immutable existing data; canonical and persistence schemas remain unchanged.
+
+### Same-grade clarification
+
+Japanese same-grade discovery uses April 2 through the following April 1, following the Ministry of Education's published boundary rule. Group by verified DOB only, never by inferred graduation, school name or real enrollment. Preserve calendar-birth-year deep links as a distinct legacy-compatible condition; primary peer navigation uses same-grade grouping.

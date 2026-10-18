@@ -4,7 +4,7 @@ import type { League } from "./models";
 export function viewConditions(params: URLSearchParams, includeName = true, league?: League): string {
   const clean = new URLSearchParams();
   for (const key of [...keys, ...(includeName ? ["q"] : [])]) { const value = params.get(key); if (value && value.length <= 2000) clean.set(key, value); }
-  if(league==="MLB"||!["birthYear","draftYear","ageSeason"].includes(clean.get("cohort")??"")){clean.delete("cohort");clean.delete("peer");}
+  if(league==="MLB"||!["birthYear","draftYear","schoolYear","ageSeason"].includes(clean.get("cohort")??"")){clean.delete("cohort");clean.delete("peer");}
   if(clean.get("cohort")!=="ageSeason"||!/^\d{1,2}$/.test(clean.get("age")??""))clean.delete("age");
   if(clean.has("peer")&&!canonicalEntityRefSchema.safeParse({league:"NPB",kind:"player",id:clean.get("peer")}).success)clean.delete("peer");
   // Local storage retains its legacy schema; public URLs additionally require
