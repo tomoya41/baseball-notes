@@ -546,6 +546,15 @@ public class ReleaseQualityTest {
         fontScaleAndRecreate(2.0f); waitText("金銭トレードの記載"); waitViewport(360);
         assertEquals("Events fit at 200 percent", "true", js("document.documentElement.scrollWidth<=innerWidth")); screenshot("npb-player-events-font-20");
         assertTrue("Recreation retains event conditions", js("location.hash").contains("kind=trade&player=3deea6d2-3347-430e-93c3-26ca2ebf15fa"));
+        js("location.hash='#/NPB/players/3deea6d2-3347-430e-93c3-26ca2ebf15fa/seasons?season=2025&role=pitching&story=1'");
+        waitText("収録されたシーズンへ");
+        js("Array.from(document.querySelectorAll('summary')).find(e=>e.textContent==='2026年の契約・移籍・戦力外・引退発表').click()");
+        waitText("新しい記載から表示");
+        assertEquals("Player history retains explicit trade evidence", "true", js("document.querySelector('section[aria-label=\"記事でたどる選手の動き\"]').textContent.includes('トレード')"));
+        assertEquals("History fits at 200 percent", "true", js("document.documentElement.scrollWidth<=innerWidth")); screenshot("npb-player-event-history-font-20");
+        js("location.hash='#/NPB/moves?kind=nonrenewal_notice'"); waitText("藤浪晋太郎"); waitText("戦力外通告");
+        assertFalse("Nonrenewal is not promoted to free agency", js("document.querySelector('main').innerText").contains("自由契約の公示済み"));
+        screenshot("npb-nonrenewal-font-20");
     }
     @Test public void longNavigationHistoryHasBoundedRecreationState() throws Exception {
         assertEquals("/NPB/search?q=A%26B%3DC%25", MainActivity.savedRoute("https://localhost/#/NPB/search?q=A%26B%3DC%25"));

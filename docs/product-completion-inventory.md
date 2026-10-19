@@ -624,3 +624,7 @@ The user prioritizes **record/age analysis and seasonal use** next, plus full ga
 ## 2026-10-19 — Sourced event increment (PARTIAL)
 
 [Wikipedia chronology event lane](npb-sourced-player-events.md): 19 admitted records / 19 existing canonical players (13 controlled-player contracts, 5 retirement announcements, 1 trade), partial 2026 coverage. Home/Player/Team/My links and read-only Favorites filtering; bounded daily candidate check. Not a complete official transaction/FA/Posting/draft feed, inferred current roster or unattended AI news publication. Original lifecycle/offseason vision remains PARTIAL; API/rights, full ledger and notification gaps remain separately tracked.
+
+### Follow-up — player-context events and nonrenewal (still PARTIAL)
+
+Sourced events v3 adds six independently ID-matched nonrenewal notices, bringing the partial 2026 chronology to 25 events / 25 existing canonical players. Profile More and recorded-season story expose a lazy, bounded, individually attributed history. Nonrenewal, free-contract notices and retirement stay distinct; free-contract real observations remain uncollected in this increment. No Current affiliation/effective-date inference, complete Career/IN-OUT claim, external media collection or Gate change. Earlier 19 event values and retained releases are unchanged.
