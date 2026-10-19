@@ -17,10 +17,43 @@ describe("explicit sourced movement observations", () => {
     [`** 阪神タイガースは、育成選手の[[架空太郎]]と支配下選手契約を結んだことを発表。背番号は128→'''85'''${citation}。`, "registration_change"],
     [`** 阪神タイガースは、[[架空太郎]]と育成選手契約を締結したことを発表${citation}。`, "signing"],
     [`** 阪神タイガースは、[[架空太郎]]に自由契約を通達したと発表${citation}。`, "release"],
+    [`** 阪神タイガースは、[[架空太郎]]に来季の契約を結ばない旨を通知したことを発表${citation}。`, "nonrenewal_notice"],
   ])("interprets only the explicit event grammar: %s", (body, kind) => {
     const e = parse(body).dataset.events[0]!; expect(e.kind).toBe(kind);
     if (kind === "trade") expect([e.fromTeamId, e.toTeamId]).toEqual(["npb:team:fighters", "npb:team:dragons"]);
     else expect([e.fromTeamId, e.toTeamId]).toEqual([null, null]);
+  });
+  it("splits an unambiguous shared nonrenewal notice by independently matched IDs, preserving the single shared evidence", () => {
+    const body = `** 阪神タイガースは、[[架空太郎]]、育成の[[架空次郎]]の2選手に、来季の契約を結ばない旨を通知したことを発表${citation}。架空次郎は現役引退を表明${citation}。`;
+    const d = parse(body).dataset;
+    expect(d.events).toHaveLength(2); expect(new Set(d.events.map(e => e.playerId)).size).toBe(2);
+    expect(d.events.every(e => e.kind === "nonrenewal_notice" && e.effectiveDate === null && e.fromTeamId === null && e.toTeamId === null)).toBe(true);
+    expect(new Set(d.events.map(e => e.statementSha256)).size).toBe(1);
+    expect(d.events[0]!.excerpt).not.toContain("引退");
+    const partial = parse(body.replace("[[架空次郎]]", "[[未照合次郎]]"));
+    expect(partial.dataset.events).toHaveLength(1); expect(partial.dataset.events[0]!.playerId).toBe(eventPerson.playerId);
+    expect(partial.issues.map(i => i.reason)).toContain("unresolved_notice_participants");
+  });
+  it.each([
+    `** 阪神タイガースは、[[架空太郎]]、[[架空次郎]]の3選手に、来季の契約を結ばない旨を通知したことを発表${citation}。`,
+    `** 阪神タイガースは、[[架空太郎]]、架空次郎の2選手に、来季の契約を結ばない旨を通知したことを発表${citation}。`,
+    `** 阪神タイガースは、[[架空太郎]]、[[架空太郎]]の2選手に、来季の契約を結ばない旨を通知したことを発表${citation}。`,
+    `** 阪神タイガースは、[[架空太郎]]と[[架空次郎]]に自由契約を通達したと発表${citation}。`,
+    `** 阪神タイガースは、[[架空太郎]]に来季の支配下契約を結ばない旨を通知し、育成選手契約を打診したことを発表${citation}。`,
+    `** 阪神タイガースは、[[架空太郎]]に来季の契約を結ばない可能性を発表${citation}。`,
+  ])("holds ambiguous/count-mismatched/differently scoped notices: %s", body => { expect(parse(body).dataset.events).toHaveLength(0); });
+  it("never converts past nonrenewal or a waiver request into free agency or another new notice", () => {
+    for (const body of [
+      `** 阪神タイガースは、前年に戦力外となっていた[[架空太郎]]の現役引退を発表${citation}。`,
+      `** 阪神タイガースは、[[架空太郎]]のウェーバー公示申請を発表${citation}。後に自由契約となった${citation}。`,
+    ]) expect(parse(body).dataset.events).toHaveLength(0);
+  });
+  it("rejects source text that impersonates parser-owned identity, team or citation markers", () => {
+    expect(() => parse(retirement.replace(citation, "§REF§"))).toThrow("Reserved reference marker");
+    for (const body of [
+      `** @tigers@は、[[架空太郎]]に来季の契約を結ばない旨を通知したことを発表${citation}。`,
+      `** 阪神タイガースは、[[架空太郎]]、@PLAYER@の1選手に、来季の契約を結ばない旨を通知したことを発表${citation}。`,
+    ]) expect(parse(body).dataset.events).toHaveLength(0);
   });
   it.each([
     retirement.replace("[[架空太郎]]", "架空太郎"), retirement.replace("[[架空太郎]]", "[[未照合太郎|架空太郎]]"),

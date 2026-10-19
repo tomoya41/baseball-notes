@@ -62,3 +62,7 @@ The test helper now waits, bounded to 20 seconds, for a resumed Activity and the
 
 Review of the harness additionally identified AndroidX onActivity's exact destroyed-instance NullPointerException. The bounded guard now accepts that exact framework message/type as well as the observed IllegalStateException, while explicitly rejecting unrelated NPE/route/runtime errors. A dedicated instrumentation guard regression is added (14 total tests). Framework basis: https://github.com/android/android-test/blob/main/core/java/androidx/test/core/app/ActivityScenario.java . No general exception suppression or replacement of a failed result with PASS.
 
+
+## 2026-10-19 — Inactive event asset preloading
+
+Android intentionally reads public projections from Pages and does not bundle provider databases. Native validation of a new immutable event pin therefore needs that exact hashed asset to be available first. The v3 archive is staged as an additional retained/inactive asset before app promotion: active pin remains v2 (19 records), source rights and all Current/Gate data remain unchanged. The separately reviewed next app pin can then be exercised against real HTTP; no fixtures, reader bypass or fake success replaces that check. v3's 25 partial observations are the original 19 unchanged plus six independently ID-matched next-season nonrenewal notices, distinct from free contract and retirement. Existing archived Wikipedia revision, CC BY-SA attribution and canonical bridges are retained. This is not canonical ingestion or a scheduled Fact evidence change.
