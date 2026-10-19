@@ -4,7 +4,7 @@ import { playerEventKinds } from "./npb-event-query";
 export { playerEventKinds } from "./npb-event-query";
 
 export const playerEventLabels: Record<typeof playerEventKinds[number], string> = {
-  trade: "トレード", signing: "契約発表", retirement_announcement: "引退発表", release: "契約終了の発表",
+  trade: "トレード", signing: "契約発表", retirement_announcement: "引退発表", nonrenewal_notice: "戦力外通告", release: "自由契約",
   registration_change: "支配下契約", fa_declaration: "FA宣言", posting_application: "ポスティング申請", draft_selection: "ドラフト指名",
 };
 const team = z.string().regex(/^npb:team:(giants|tigers|dragons|carp|swallows|baystars|hawks|fighters|lions|marines|eagles|buffaloes)$/);
