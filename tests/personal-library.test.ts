@@ -70,6 +70,15 @@ describe("versioned local personal library", () => {
     expect(activityFromRoute("/MLB/players/%ZZ", "", 1)).toBeNull(); expect(activityFromRoute(`/NPB/players/${mlb}`, "", 1)).toBeNull();
     expect(viewConditions(new URLSearchParams("url=https://evil&credential=secret"))).toBe("");
   });
+  it("records NPB series in recent activity without losing season/scope or accepting a Game/foreign ID", async () => {
+    const {store,now}=setup(),entity=`npb:series:${player}`,path=`/NPB/postseason/series/${encodeURIComponent(entity)}`;
+    const activity=activityFromRoute(path,"?season=2026&competition=postseason&q=private",now)!;
+    expect(activity.kind).toBe("series");expect(activity.entityId).toBe(entity);await store.visit(activity);
+    expect(activityPath((await store.read()).activity[0]!)).toBe(path+"?season=2026&competition=postseason");
+    expect(activityFromRoute(path.replace("npb%3Aseries","npb%3Agame"),"",now)).toBeNull();
+    expect(activityFromRoute(path.replace("npb%3Aseries","mlb%3Aseries"),"",now)).toBeNull();
+    expect(activityFromRoute("/NPB/postseason/series/npb:series:invalid","",now)).toBeNull();
+  });
   it.each(["invalid json", JSON.stringify({ version: 99, views: [], collections: [], activity: [] })])("keeps corrupt/future storage intact until explicit reset", async raw => {
     const { store, data } = setup(); data.set(PERSONAL_LIBRARY_KEY, raw);
     await expect(store.read()).rejects.toThrow(); await expect(store.createCollection("new")).rejects.toThrow(); expect(data.get(PERSONAL_LIBRARY_KEY)).toBe(raw);

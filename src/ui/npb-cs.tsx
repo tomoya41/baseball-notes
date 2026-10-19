@@ -11,9 +11,8 @@ import { normalizePlayerSearch } from "../domain/npb-player-directory";
 import { GameHeading } from "./signature";
 import { ScoreHero } from "./design-system";
 import { StatTable } from "./stat-table";
+import { npbTeamShortName as name } from "./npb-team-names";
 
-const names: Record<string, string> = { lions: "西武", fighters: "日本ハム", hawks: "ソフトバンク", giants: "巨人", baystars: "DeNA", tigers: "阪神" };
-const name = (id: string) => names[id.split(":").at(-1)!] ?? "球団未確認";
 function useCs(enabled = true) {
   const [data, setData] = useState<NpbCsDataset | null>(null), [failed, setFailed] = useState(false), [attempt, setAttempt] = useState(0);
   useEffect(() => { if(!enabled)return;let active = true; void readNpbCs().then(d => { if (active) { setData(d); setFailed(false); } }).catch(() => { if (active) setFailed(true); }); return () => { active = false; }; }, [attempt, enabled]);

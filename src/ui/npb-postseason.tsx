@@ -6,9 +6,8 @@ import { assertCsSeriesSnapshot, type NpbPostseasonSeries } from "../domain/npb-
 import type { PostseasonSeries } from "../domain/competition";
 import { DataState, LoadingSkeleton, PageHeading } from "./components";
 import { ScoreboardRow } from "./design-system";
+import { npbTeamShortName as name } from "./npb-team-names";
 
-const names: Record<string, string> = { lions: "西武", fighters: "日本ハム", hawks: "ソフトバンク", giants: "巨人", baystars: "DeNA", tigers: "阪神" };
-const name = (id: string) => names[id.split(":").at(-1)!] ?? "球団未確認";
 const seriesUrl = (id: string) => `/NPB/postseason/series/${encodeURIComponent(id)}?season=2026`;
 function SeriesScore({ series }: { series: PostseasonSeries }) {
   return <div className="series-score">{series.teams.map(t => <div key={t.teamId} className={t.teamId === series.winnerId ? "series-winner" : ""}>

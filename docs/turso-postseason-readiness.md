@@ -107,6 +107,15 @@ Home追加fetch 0。新画面は既存CS 249,383 bytes＋新sidecar 6,674 bytes�
 主画面は既存のseries-score/scoreboardを再利用し、NPBの2ステージだけdesktopを2列にする。
 初回／失敗／未対応条件は別表示し、失敗時に再試行と既存CS一覧への導線を残す。
 
+### Review corrections
+
+PR #53の初回Codex ReviewでP2が2件：新しいNPB seriesがActivityに残らない／Searchのシリーズ入口に古いrights-pending表示が残る。
+Activityのnamespace判定・UUID検証と、NPB検索のSeries/Game専用read-only導線を追加した。
+シリーズ検索はsidecar 1 fetch、試合検索は既存CS 1 fetchのみで、Current DirectoryやRegular repositoryへfallbackしない。
+年度・stage・日付・球団名の絞り込み、未収録と試合なしの区別、出典リンクを維持する。
+既存Collections/Favorites/Watchのstorage schemaは変更せず、Activityの検索文字列除外も保持する。
+合成800試合での速度改善は上記の通りであり、production read制限の解除とは別の成果。
+
 ## Device/release gates
 
 今回のADB inventoryでは物理端末0台。Pixel・TalkBackはNOT RUN。

@@ -10,6 +10,8 @@ import { buildWikipediaNpbSeries } from "../src/infrastructure/providers/wikiped
 import { seriesFixture } from "./fixtures/npb-series";
 import { portableRoute } from "../src/domain/product-sharing";
 import { canonicalDeepLink, parentNativeRoute } from "../src/domain/native-navigation";
+import { NpbDiscovery } from "../src/ui/discovery";
+import type { Services } from "../src/app/services";
 vi.mock("../src/application/npb-cs-reader", () => ({ readNpbCs: vi.fn() }));
 vi.mock("../src/application/npb-series-reader", () => ({ readNpbSeries: vi.fn() }));
 afterEach(() => { vi.clearAllMocks(); vi.unstubAllGlobals(); });
@@ -18,8 +20,9 @@ async function mount(path = "/NPB/postseason?season=2026", failure = false) {
   const {archive,cs}=seriesFixture(), data=buildWikipediaNpbSeries(archive,cs,"b".repeat(64));
   vi.mocked(readNpbCs).mockResolvedValue(cs); vi.mocked(readNpbSeries).mockImplementation(async()=>{if(failure)throw Error("offline");return data;});
   const host=document.createElement("div"),root=createRoot(host);document.body.append(host);
-  await act(async()=>root.render(<MemoryRouter initialEntries={[path]}><Routes><Route path="/NPB/postseason" element={<NpbPostseasonScreen/>}/><Route path="/NPB/postseason/series/:seriesId" element={<NpbPostseasonScreen/>}/></Routes></MemoryRouter>));
-  return {host,data,close:async()=>{await act(async()=>root.unmount());host.remove();}};
+  const regular={directory:{findLatestNpb:vi.fn()},gameSurface:{manifest:vi.fn(),date:vi.fn()}};
+  await act(async()=>root.render(<MemoryRouter initialEntries={[path]}><Routes><Route path="/NPB/search" element={<NpbDiscovery services={regular as unknown as Services}/>}/><Route path="/NPB/postseason" element={<NpbPostseasonScreen/>}/><Route path="/NPB/postseason/series/:seriesId" element={<NpbPostseasonScreen/>}/></Routes></MemoryRouter>));
+  return {host,data,regular,close:async()=>{await act(async()=>root.unmount());host.remove();}};
 }
 it("shows both leagues' advancement and separates Japan Series uncollected from CS outcomes",async()=>{
   const f=await mount();try{
@@ -50,4 +53,23 @@ it("retains retry/fallback and correct native Back/share semantics without permi
   expect(canonicalDeepLink("baseballnotes:/"+path+"?season=2026")).toBe(path+"?season=2026");
   expect(parentNativeRoute(path+"?season=2026")).toBe("/NPB/postseason?season=2026");
   expect(portableRoute(path,"season=2025")).toBeNull();expect(portableRoute(path.replace("npb%3Aseries","mlb%3Aseries"))).toBeNull();
+});
+it("discovers filtered NPB series from the bounded licensed sidecar and keeps series-to-game navigation in postseason",async()=>{
+  const f=await mount("/NPB/search?kind=series&season=2026&q=ソフトバンク");try{
+    expect(f.host.querySelectorAll("a.player-row")).toHaveLength(1);expect(f.host.textContent).toContain("パ・リーグ CS ファイナル");
+    expect(f.host.querySelector("a.player-row")!.getAttribute("href")).toContain("/NPB/postseason/series/");
+    expect(f.host.textContent).not.toContain("Source rights pending");expect(readNpbSeries).toHaveBeenCalledTimes(1);expect(readNpbCs).not.toHaveBeenCalled();
+    expect(f.regular.directory.findLatestNpb).not.toHaveBeenCalled();expect(f.regular.gameSurface.manifest).not.toHaveBeenCalled();
+    const nav=f.host.querySelector('nav[aria-label="検索対象"]')!;
+    expect(Array.from(nav.querySelectorAll("a")).find(a=>a.textContent==="試合")!.href).toContain("competition=postseason");
+    expect(Array.from(nav.querySelectorAll("a")).find(a=>a.textContent==="選手")!.href).not.toContain("competition=postseason");
+  }finally{await f.close();}
+});
+it("discovers exact saved postseason Games by date without any Regular repository fallback",async()=>{
+  const f=await mount("/NPB/search?kind=game&season=2026&competition=postseason&date=2026-10-14");try{
+    expect(f.host.querySelectorAll("a.player-row")).toHaveLength(2);expect(readNpbCs).toHaveBeenCalledTimes(1);expect(readNpbSeries).not.toHaveBeenCalled();
+    expect(f.host.querySelector("a.player-row")!.getAttribute("href")).toContain("competition=postseason");
+    expect(f.regular.gameSurface.manifest).not.toHaveBeenCalled();expect(f.regular.gameSurface.date).not.toHaveBeenCalled();
+    expect(f.host.textContent).toContain("一部収録");expect(f.host.querySelectorAll('a[href*="oldid="]')).toHaveLength(2);
+  }finally{await f.close();}
 });
