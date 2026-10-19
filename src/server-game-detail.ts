@@ -1,3 +1,4 @@
+import { npbApiReadCache } from "./application/npb-api-read-cache";
 import { openDataClient } from "./data/database";
 import { NpbGameDetailRepository } from "./data/npb-game-detail-repository";
 
@@ -11,19 +12,21 @@ export async function GET(request: Request): Promise<Response> {
   const params = new URL(request.url, "https://game-detail.local").searchParams;
   const gameId = params.get("gameId");
   if (!gameId || !/^npb:game:[0-9a-f]{20}$/.test(gameId) || [...params.keys()].some((key) => key !== "gameId"))
-    return new Response(JSON.stringify({ error: "invalid_query" }), { status: 400, headers });
-  const url = process.env.TURSO_DATABASE_URL, token = process.env.TURSO_AUTH_TOKEN;
-  if (!url || !token) return new Response(JSON.stringify({ error: "service_unavailable" }), { status: 503, headers });
-  const client = openDataClient(url, token);
-  try {
-    const started = performance.now();
-    const result = await new NpbGameDetailRepository(client).find(gameId);
-    if (!result) return new Response(JSON.stringify({ error: "game_not_found" }), { status: 404, headers });
-    const readMs = performance.now() - started - result.projectionMs;
-    const body = JSON.stringify(result.payload);
-    return new Response(body, { status: 200, headers: { ...headers,
-      "Server-Timing": `db;dur=${readMs.toFixed(1)}, project;dur=${result.projectionMs.toFixed(1)}` } });
-  } catch {
-    return new Response(JSON.stringify({ error: "game_detail_unavailable" }), { status: 503, headers });
-  } finally { client.close(); }
+    return new Response(JSON.stringify({ error: "invalid_query" }), { status: 400, headers: { ...headers, "Cache-Control": "no-store" } });
+  return npbApiReadCache.read("game-detail:" + gameId, headers, async () => {
+    const url = process.env.TURSO_DATABASE_URL, token = process.env.TURSO_AUTH_TOKEN;
+    if (!url || !token) return new Response(JSON.stringify({ error: "service_unavailable" }), { status: 503, headers });
+    const client = openDataClient(url, token);
+    try {
+      const started = performance.now();
+      const result = await new NpbGameDetailRepository(client).find(gameId);
+      if (!result) return new Response(JSON.stringify({ error: "game_not_found" }), { status: 404, headers });
+      const readMs = performance.now() - started - result.projectionMs;
+      const body = JSON.stringify(result.payload);
+      return new Response(body, { status: 200, headers: { ...headers,
+        "Server-Timing": `db;dur=${readMs.toFixed(1)}, project;dur=${result.projectionMs.toFixed(1)}` } });
+    } catch (error) {
+      return npbApiReadCache.failure(error, "game_detail_unavailable", headers);
+    } finally { client.close(); }
+  });
 }
