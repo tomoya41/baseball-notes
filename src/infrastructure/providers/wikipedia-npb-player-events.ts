@@ -9,6 +9,7 @@ const digest = (s: string) => createHash("sha256").update(s).digest("hex");
 export function parseWikipediaPlayerEvents(raw: unknown, observedAt: string, identities: readonly EventIdentity[], identityInputSha256: string) {
   const p = pageSchema.parse(raw), r = p.revisions[0]!, text = r.slots.main.content;
   if (/\{\{\s*(?:著作権侵害|Copyvio|コピペ|転載疑惑)/i.test(text)) throw Error("Article rights warning");
+  if (text.includes("§REF§")) throw Error("Reserved reference marker in source");
   if (new Set(identities.map(i => i.article)).size !== identities.length) throw Error("Ambiguous article bridge");
   const articles = new Map(identities.map(i => [i.article, i]));
   // Remove self-closing references first; they must not consume the next paired reference.
@@ -37,6 +38,7 @@ export function parseWikipediaPlayerEvents(raw: unknown, observedAt: string, ide
     if (!/引退|トレード|契約|戦力外|ポスティング|FA宣言|指名/.test(statement)) continue;
     const statementSha256 = digest(statement);
     const reject = (reason: string) => issues.push({ date, reason, statementSha256 });
+    if (/@\w+@/.test(statement)) { reject("reserved_parser_marker"); continue; }
     if (!date || date > dateInZone(Date.parse(observedAt), "Asia/Tokyo")) { reject("missing_or_future_source_date"); continue; }
     if (!cited) { reject("missing_statement_citation"); continue; }
     const linked: EventIdentity[] = [], unresolvedArticles: string[] = [];
