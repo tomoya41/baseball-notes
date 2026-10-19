@@ -7,12 +7,12 @@ import { shortenedFinalEvidenceSchema } from "../domain/npb-game-completion";
 import { NpbRepository } from "./npb-repository";
 import { validateNpbGameFacts } from "./npb-game-collector";
 import type { NpbGame } from "./npb-nf3";
-import { npbGameFactCountsCte, npbGameFactCountsJoins } from "./npb-game-fact-counts";
+import { npbGameFactCountsJoins } from "./npb-game-fact-counts";
 
 // Only SELECTs; no migrations, collectors, repairs or inferred completion evidence.
 export async function auditNpbIntegrity(client: DataClient, window: PeriodWindow, asOfDate: string) {
   const season = Number(window.from.slice(0, 4));
-  const saved = await client.execute({ sql: `${npbGameFactCountsCte} SELECT g.*,c.game_status,c.batting_status,c.pitching_status,
+  const saved = await client.execute({ sql: `SELECT g.*,c.game_status,c.batting_status,c.pitching_status,
     c.game_id AS completeness_game_id,c.source_key AS completeness_source_key,
     c.expected_batters,c.collected_batters,c.mapped_batters,c.expected_pitchers,c.collected_pitchers,
     c.mapped_pitchers,c.checks_json,c.issues_json,c.verified_at,
@@ -31,7 +31,7 @@ export async function auditNpbIntegrity(client: DataClient, window: PeriodWindow
     WHERE target_date BETWEEN ? AND ?) WHERE ordinal=1 ORDER BY target_date`, args: [window.from, asOfDate] });
   const stages = await client.execute({ sql: "SELECT * FROM npb_ingestion_stages WHERE target_date BETWEEN ? AND ? ORDER BY target_date,stage",
     args: [window.from, asOfDate] });
-  const boundary = await client.execute({ sql: `${npbGameFactCountsCte} SELECT g.*,c.game_status,c.batting_status,c.pitching_status,
+  const boundary = await client.execute({ sql: `SELECT g.*,c.game_status,c.batting_status,c.pitching_status,
     COALESCE(bc.saved_batting,0) AS saved_batting,COALESCE(pc.saved_pitching,0) AS saved_pitching
     FROM npb_games g LEFT JOIN npb_game_completeness c ON c.game_id=g.game_id ${npbGameFactCountsJoins}
     WHERE g.season=? AND g.game_date>=? ORDER BY g.game_date,g.game_id`, args: [season, window.to] });

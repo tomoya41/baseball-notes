@@ -51,13 +51,13 @@ Owner ConsoleのAnalytics「Top Queries / 今月」で、以下の実SQLと平�
 | Game indexのGameごとのFact EXISTS | 3.35M | 34 |
 
 これらは呼び出し回数が少なくても、投球表等をGameごとに繰り返し走査する。
-`npbGameFactCountsCte`で打撃・投球をそれぞれ一括materializeしてjoinし、既存の判定式・日付条件・query数を維持した。
+`npbGameFactCountsJoins`で打撃・投球をそれぞれ一括集計してjoinし、既存の判定式・日付条件・query数を維持した。
 COUNTの欠損groupは0、SUMの欠損／全nullはnullを維持し、球団不一致Factsも総件数には保持する。
 Scratchの旧SQL/新SQL結果一致、query planからFact相関走査が消えること、既存pending/Coverage/完了証拠の回帰を検証する。
 DB index/schema/Facts変更は0。Productionでの削減後使用量と復旧は、quota解除後の別証拠が必要。
 
 追加の合成scratch benchmark（800 Game・打撃16,000・投球6,400行）で、同一結果hashを保った。
-3回の中央値は旧1,654.44ms → 新20.08ms。これはlocal synthetic測定であり、本番rows-read削減率や回復を保証する値ではない。
+3回の中央値は旧912.60ms → 新13.22ms。これはlocal synthetic測定であり、本番rows-read削減率や回復を保証する値ではない。
 
 API公開後smokeで、circuit応答のCache-Controlに大小文字の異なる重複keyが残る問題を検出。
 `Headers.set`で`no-store`を単独設定する修正と回帰テストを追加した。
@@ -115,6 +115,11 @@ Activityのnamespace判定・UUID検証と、NPB検索のSeries/Game専用read-o
 年度・stage・日付・球団名の絞り込み、未収録と試合なしの区別、出典リンクを維持する。
 既存Collections/Favorites/Watchのstorage schemaは変更せず、Activityの検索文字列除外も保持する。
 合成800試合での速度改善は上記の通りであり、production read制限の解除とは別の成果。
+
+再レビューで、最初のCTE形式が既存のSELECT-only運用proxyに拒否されるP1を確認。
+ガードは変更せず、`SELECT`で始まるGROUP BY派生表joinへ修正した。
+既存の厳格なread-only clientを通してGame index・Calendar・Integrityの実queryをscratch実行し、保護8表のhash不変も検証する。
+WITHやUPDATEの拒否は維持し、query planでは一括materializeと相関Fact走査の除去を確認した。
 
 ## Device/release gates
 

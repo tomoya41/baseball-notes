@@ -2,7 +2,7 @@ import { addDays } from "./npb-collector";
 import { findNpbRegularSeason } from "./npb-season-metadata";
 import type { DataClient } from "./database";
 import type { PublishedFreshness, IngestionHealth, ScheduledActionHealth } from "./npb-freshness";
-import { npbGameFactCountsCte, npbGameFactCountsJoins } from "./npb-game-fact-counts";
+import { npbGameFactCountsJoins } from "./npb-game-fact-counts";
 
 export type ScheduleMode = "season" | "monthly" | "weekly" | "daily";
 // The reviewed calendar is an acquisition boundary, not proof that a season ended.
@@ -28,7 +28,7 @@ export function planNpbCalendar(mode: ScheduleMode, date: string, savedGames = 0
 
 export async function inspectNpbCalendar(client: DataClient, date: string) {
   const calendar = planNpbCalendar("daily", date);
-  const result = await client.execute({ sql: `${npbGameFactCountsCte} SELECT MAX(g.game_date) AS latest_game_date,
+  const result = await client.execute({ sql: `SELECT MAX(g.game_date) AS latest_game_date,
     SUM(CASE WHEN g.game_date=? THEN 1 ELSE 0 END) AS target_games,
     SUM(CASE WHEN g.game_date<=? AND (g.status NOT IN ('final','postponed','canceled') OR
       (g.status='final' AND (COALESCE(c.game_status,'unknown')!='complete' OR
