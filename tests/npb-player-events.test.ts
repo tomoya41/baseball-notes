@@ -48,6 +48,35 @@ describe("explicit sourced movement observations", () => {
       `** 阪神タイガースは、[[架空太郎]]のウェーバー公示申請を発表${citation}。後に自由契約となった${citation}。`,
     ]) expect(parse(body).dataset.events).toHaveLength(0);
   });
+  const mixedNotice = `** 阪神タイガースは、[[架空太郎]]、[[未照合次郎]]、[[未照合三郎]]の3選手に来季の契約を結ばないことを通知したこと、[[架空次郎]]を自由契約とすることを発表${citation}。`;
+  it("assigns each explicit action only to the article-linked participants in its own clause", () => {
+    const result = parse(mixedNotice), events = result.dataset.events;
+    expect(events).toHaveLength(2);
+    expect(events.find(e => e.playerId === eventPerson.playerId)?.kind).toBe("nonrenewal_notice");
+    expect(events.find(e => e.playerId === otherEventPerson.playerId)).toMatchObject({ kind: "release", effectiveDate: null, announcementDate: null, fromTeamId: null, toTeamId: null, status: "encyclopedia_record" });
+    expect(new Set(events.map(e => e.statementSha256)).size).toBe(1);
+    expect(result.issues.map(i => i.reason)).toEqual(["unresolved_clause_participants"]);
+    const resolved = parse(mixedNotice.replace("、[[未照合次郎]]、[[未照合三郎]]の3選手", "の1選手"));
+    expect(resolved.dataset.events.map(e => [e.playerId, e.kind]).sort()).toEqual(events.map(e => [e.playerId, e.kind]).sort());
+    expect(resolved.issues).toEqual([]);
+    // Missing IDs must retain their positions rather than shift the final action.
+    const onlyRelease = parse(mixedNotice.replace("[[架空太郎]]", "[[未照合太郎]]"));
+    expect(onlyRelease.dataset.events.map(e => [e.playerId, e.kind])).toEqual([[otherEventPerson.playerId, "release"]]);
+    const onlyNotice = parse(mixedNotice.replace("[[架空次郎]]", "[[未照合四郎]]"));
+    expect(onlyNotice.dataset.events.map(e => [e.playerId, e.kind])).toEqual([[eventPerson.playerId, "nonrenewal_notice"]]);
+  });
+  it.each([
+    mixedNotice.replace("の3選手", "の2選手"),
+    mixedNotice.replace("[[未照合次郎]]", "未照合次郎"),
+    mixedNotice.replace("[[架空次郎]]", "[[架空太郎]]"),
+    mixedNotice.replace("[[未照合三郎]]", "[[未照合次郎]]"),
+    mixedNotice.replace("自由契約とすることを発表", "育成契約を打診することを発表"),
+    mixedNotice.replace("自由契約とすることを発表", "自由契約とする可能性を発表"),
+    mixedNotice.replace("通知したこと、", "通知したこと、来季は"),
+    mixedNotice.replace(citation, ""),
+  ])("holds ambiguous, mismatched or unsupported compound statements: %s", body => {
+    expect(parse(body).dataset.events).toHaveLength(0);
+  });
   it("rejects source text that impersonates parser-owned identity, team or citation markers", () => {
     expect(() => parse(retirement.replace(citation, "§REF§"))).toThrow("Reserved reference marker");
     for (const body of [

@@ -41,14 +41,14 @@ export function parseWikipediaPlayerEvents(raw: unknown, observedAt: string, ide
     if (/@\w+@/.test(statement)) { reject("reserved_parser_marker"); continue; }
     if (!date || date > dateInZone(Date.parse(observedAt), "Asia/Tokyo")) { reject("missing_or_future_source_date"); continue; }
     if (!cited) { reject("missing_statement_citation"); continue; }
-    const linked: EventIdentity[] = [], unresolvedArticles: string[] = [];
+    const linked: EventIdentity[] = [], unresolvedArticles: string[] = [], participants: (EventIdentity | null)[] = [];
     let normalized = statement.replace(/\[\[([^\]|#]+)(?:\|[^\]]+)?\]\]/g, (_all, title: string) => {
       const identity = articles.get(title);
       if (!identity) {
         if (clubNames[title]) return title;
-        unresolvedArticles.push(title); return "@UNRESOLVED@";
+        unresolvedArticles.push(title); participants.push(null); return "@UNRESOLVED@";
       }
-      linked.push(identity); return "@PLAYER@";
+      linked.push(identity); participants.push(identity); return "@PLAYER@";
     }).replace(/'''?/g, "");
     if (!linked.length || new Set(linked.map(p => p.playerId)).size !== linked.length) { reject("missing_or_duplicate_explicit_player_articles"); continue; }
     for (const [name, code] of Object.entries(clubNames)) normalized = normalized.replaceAll(name, `@${code}@`);
@@ -64,9 +64,20 @@ export function parseWikipediaPlayerEvents(raw: unknown, observedAt: string, ide
     // and the entire sentence has one meaning. Unresolved entries get no IDs.
     // No retirement, development offer or free-agency status is inferred from it.
     const nonrenewal = /^@(\w+)@は、(?:育成(?:契約)?の)?(@(?:PLAYER|UNRESOLVED)@(?:、(?:育成の)?@(?:PLAYER|UNRESOLVED)@)*)(?:の([1-9]\d?)選手)?に(?:対し)?、?(?:来季の契約を結ばない旨を通知したことを|来季の契約は締結しない旨を通達したと|来季契約を行わない旨を通知したと|来季の契約を結ばないことを通告したと)発表$/.exec(normalized);
+    // This exact two-clause form states two different actions. Keep the article
+    // positions (including unresolved participants) so the final player's release
+    // cannot be attributed to anyone in the preceding nonrenewal list.
+    const mixed = /^@(\w+)@は、(@(?:PLAYER|UNRESOLVED)@(?:、@(?:PLAYER|UNRESOLVED)@)*)の([1-9]\d?)選手に来季の契約を結ばないことを通知したこと、@(?:PLAYER|UNRESOLVED)@を自由契約とすることを発表$/.exec(normalized);
+    const noticeParticipants = mixed?.[2]?.match(/@(?:PLAYER|UNRESOLVED)@/g)?.length;
+    let selected: { identity: EventIdentity; kind: PlayerEvent["kind"] }[] | undefined;
     const listedCount = linked.length + unresolvedArticles.length;
     const noticeCountMatches = nonrenewal && (nonrenewal[3] ? Number(nonrenewal[3]) === listedCount : listedCount === 1) && new Set(unresolvedArticles).size === unresolvedArticles.length;
-    if (noticeCountMatches) { kind = "nonrenewal_notice"; clubs = [nonrenewal[1]!]; if (unresolvedArticles.length) reject("unresolved_notice_participants"); }
+    if (mixed && noticeParticipants === Number(mixed[3]) && participants.length === noticeParticipants + 1 && new Set(unresolvedArticles).size === unresolvedArticles.length) {
+      clubs = [mixed[1]!];
+      selected = participants.flatMap((identity, index) => identity ? [{ identity, kind: index < noticeParticipants ? "nonrenewal_notice" as const : "release" as const }] : []);
+      if (unresolvedArticles.length) reject("unresolved_clause_participants");
+    }
+    else if (noticeCountMatches) { kind = "nonrenewal_notice"; clubs = [nonrenewal[1]!]; if (unresolvedArticles.length) reject("unresolved_notice_participants"); }
     else if (unresolvedArticles.length) { reject("unresolved_article_outside_notice_list"); continue; }
     else if (linked.length !== 1) { reject("unsupported_multiple_player_statement"); continue; }
     else if (trade) { kind = "trade"; clubs = [trade[1]!, trade[2]!]; from = `npb:team:${trade[1]}`; to = `npb:team:${trade[2]}`; }
@@ -74,13 +85,13 @@ export function parseWikipediaPlayerEvents(raw: unknown, observedAt: string, ide
     else if (registration) { kind = "registration_change"; clubs = [registration[1]!]; }
     else if (signing) { kind = "signing"; clubs = [signing[1]!]; }
     else if (release) { kind = "release"; clubs = [release[1]!]; }
-    if (!kind) { reject("unsupported_event_grammar"); continue; }
+    if (!kind && !selected) { reject("unsupported_event_grammar"); continue; }
     const excerpt = statement.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_, title: string, label?: string) => label ?? title).replace(/'''?/g, "") + "。";
     if (excerpt.length > 300) { reject("statement_budget_exceeded"); continue; }
-    for (const identity of linked) {
-      const id = `npb:event:${digest(JSON.stringify([date, kind, identity.playerId, clubs])).slice(0, 24)}`;
+    for (const { identity, kind: eventKind } of selected ?? linked.map(identity => ({ identity, kind: kind! }))) {
+      const id = `npb:event:${digest(JSON.stringify([date, eventKind, identity.playerId, clubs])).slice(0, 24)}`;
       if (events.some(e => e.id === id)) { reject("duplicate_statement"); continue; }
-      events.push({ id, kind, playerId: identity.playerId, recordedDate: date, announcementDate: null, effectiveDate: null, status: "encyclopedia_record", relatedTeamIds: clubs.map(c => `npb:team:${c}`), fromTeamId: from, toTeamId: to, sourceRevision: r.revid, statementSha256, excerpt });
+      events.push({ id, kind: eventKind, playerId: identity.playerId, recordedDate: date, announcementDate: null, effectiveDate: null, status: "encyclopedia_record", relatedTeamIds: clubs.map(c => `npb:team:${c}`), fromTeamId: from, toTeamId: to, sourceRevision: r.revid, statementSha256, excerpt });
     }
   }
   const used = new Set(events.map(e => e.playerId));
