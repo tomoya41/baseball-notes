@@ -555,6 +555,14 @@ public class ReleaseQualityTest {
         js("location.hash='#/NPB/moves?kind=nonrenewal_notice'"); waitText("藤浪晋太郎"); waitText("戦力外通告");
         assertFalse("Nonrenewal is not promoted to free agency", js("document.querySelector('main').innerText").contains("自由契約の公示済み"));
         screenshot("npb-nonrenewal-font-20");
+        js("location.hash='#/NPB/moves?kind=release'"); waitText("萩尾匡也"); waitText("自由契約");
+        assertEquals("Release filter keeps its explicit participant only", "1", js("String(document.querySelectorAll('article.explorer-result').length)"));
+        assertEquals("Other clause participants stay out of the free-contract filter", "false", js("Array.from(document.querySelectorAll('article.explorer-result h2')).some(e=>/山田龍聖|岡田悠希/.test(e.textContent))"));
+        assertEquals("Release retains independent player identity", "true", js("!!document.querySelector('article a[href*=\"db66a48c-6dea-4b0c-8d10-b17e34a49856\"]')"));
+        assertEquals("Free-contract observation fits at 200 percent", "true", js("document.documentElement.scrollWidth<=innerWidth"));
+        scenario.recreate(); waitText("萩尾匡也");
+        assertTrue("Recreation retains free-contract filter", js("location.hash").contains("kind=release"));
+        screenshot("npb-release-font-20");
     }
     @Test public void longNavigationHistoryHasBoundedRecreationState() throws Exception {
         assertEquals("/NPB/search?q=A%26B%3DC%25", MainActivity.savedRoute("https://localhost/#/NPB/search?q=A%26B%3DC%25"));
