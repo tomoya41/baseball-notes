@@ -6,13 +6,14 @@ import { afterEach, expect, it, vi } from "vitest";
 import { NpbPlayerEventsScreen } from "../src/ui/npb-player-events";
 import { NpbSeasonalHome } from "../src/ui/npb-seasonal-home";
 import { readNpbPlayerEvents } from "../src/application/npb-player-events-reader";
-import { eventFixture, eventPerson } from "./fixtures/npb-player-events";
+import { citation, eventFixture, eventPage, eventPerson, otherEventPerson } from "./fixtures/npb-player-events";
+import { parseWikipediaPlayerEvents } from "../src/infrastructure/providers/wikipedia-npb-player-events";
 import type { Favorite } from "../src/domain/models";
 vi.mock("../src/application/npb-player-events-reader", () => ({ readNpbPlayerEvents: vi.fn() }));
 afterEach(() => { vi.clearAllMocks(); vi.unstubAllGlobals(); });
 function Location() { return <output data-location>{useLocation().search}</output>; }
-async function mount(query = "", favorites: Favorite[] = [], failed = false, home = false) {
-  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true); vi.mocked(readNpbPlayerEvents).mockImplementation(async () => { if (failed) throw Error("offline"); return eventFixture(); });
+async function mount(query = "", favorites: Favorite[] = [], failed = false, home = false, dataset = eventFixture()) {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true); vi.mocked(readNpbPlayerEvents).mockImplementation(async () => { if (failed) throw Error("offline"); return dataset; });
   const host = document.createElement("div"), root = createRoot(host); document.body.append(host);
   await act(async () => root.render(<MemoryRouter initialEntries={[`/NPB/moves${query}`]}>{home ? <NpbSeasonalHome /> : <NpbPlayerEventsScreen favorites={favorites} />}<Location /></MemoryRouter>));
   return { host, close: async () => { await act(async () => root.unmount()); host.remove(); } };
@@ -39,5 +40,17 @@ it("offers Retry after an acquisition error", async () => {
   const f = await mount("", [], true); try {
     expect(f.host.textContent).toContain("読み込めません"); vi.mocked(readNpbPlayerEvents).mockResolvedValue(eventFixture());
     await act(async () => f.host.querySelector("button")!.click()); expect(f.host.textContent).toContain("架空太郎");
+  } finally { await f.close(); }
+});
+it("filters a compound announcement by the participant's own action without losing source or treating release as FA", async () => {
+  const dataset = parseWikipediaPlayerEvents(eventPage(`** 阪神タイガースは、[[架空太郎]]の1選手に来季の契約を結ばないことを通知したこと、[[架空次郎]]を自由契約とすることを発表${citation}。`), "2026-10-19T00:00:00Z", [eventPerson, otherEventPerson], "a".repeat(64)).dataset;
+  const f = await mount("?kind=release", [], false, false, dataset); try {
+    expect(f.host.querySelectorAll("article")).toHaveLength(1);
+    expect(f.host.querySelector("article h2")?.textContent).toBe("架空次郎 · 自由契約");
+    expect(f.host.querySelector('article a[href*="oldid=200"]')).not.toBeNull();
+    expect(f.host.querySelector('option[value="fa_declaration"]')?.textContent).toContain("未収録");
+    const select = f.host.querySelector("select")!; await act(async () => { select.value = "nonrenewal_notice"; select.dispatchEvent(new Event("change", { bubbles: true })); });
+    expect(f.host.querySelector("article h2")?.textContent).toBe("架空太郎 · 戦力外通告");
+    expect(readNpbPlayerEvents).toHaveBeenCalledTimes(1);
   } finally { await f.close(); }
 });

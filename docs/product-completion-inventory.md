@@ -628,3 +628,7 @@ The user prioritizes **record/age analysis and seasonal use** next, plus full ga
 ### Follow-up — player-context events and nonrenewal (still PARTIAL)
 
 Sourced events v3 adds six independently ID-matched nonrenewal notices, bringing the partial 2026 chronology to 25 events / 25 existing canonical players. Profile More and recorded-season story expose a lazy, bounded, individually attributed history. Nonrenewal, free-contract notices and retirement stay distinct; free-contract real observations remain uncollected in this increment. No Current affiliation/effective-date inference, complete Career/IN-OUT claim, external media collection or Gate change. Earlier 19 event values and retained releases are unchanged.
+
+### 2026-10-19 — First free-contract observation (v4)
+
+After separately staging the immutable asset, v4 promotes 28 partial chronology observations: previous25 unchanged plus2 nonrenewal notices and1 free-contract observation. An exact compound statement keeps each action attached to its own explicitly linked, independently ID-verified participant; unknown participants remain held. Free-contract support is now populated but remains PARTIAL, not a complete release ledger or an official current-status certification. Source rights, individual revisions, retained v1/v2/v3 assets, Current/Historical boundaries, canonical Facts and Production Gates are unchanged. No new monthly cost or external source requests. Details: [source contract and limits](npb-sourced-player-events.md#2026-10-19--explicit-free-contract-clause-recovery-v4).
