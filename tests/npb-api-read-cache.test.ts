@@ -17,7 +17,7 @@ it("backs off only an explicit read block, preserves previously valid cached val
   const failed = await c.read("blocked", headers, async () => c.failure(Error("BLOCKED: SQL read operations are forbidden (secret)"), "unavailable", headers));
   expect(failed.status).toBe(503); expect(failed.headers.get("Cache-Control")).toBe("no-store"); expect(await failed.text()).not.toContain("secret");
   expect((await c.read("saved", headers, load)).status).toBe(200);
-  const other = await c.read("other", headers, load); expect(other.status).toBe(503); expect(other.headers.get("Retry-After")).toBe("30"); expect(load).toHaveBeenCalledTimes(1);
+  const other = await c.read("other", headers, load); expect(other.status).toBe(503); expect(other.headers.get("Cache-Control")).toBe("no-store"); expect(other.headers.get("Retry-After")).toBe("30"); expect(load).toHaveBeenCalledTimes(1);
   time = 30_001; expect((await c.read("other", headers, load)).status).toBe(200); expect(load).toHaveBeenCalledTimes(2);
 });
 it("never caches error results or converts ordinary failures into a global block", async () => {

@@ -9,8 +9,11 @@ NPB Current、MLB Historical 2014–2025、既存の出典・Coverage・Gate・�
 ## Turso: confirmed versus unknown
 
 2026-10-19のEOD run `39208922455` は `SQL read operations are forbidden`。
-これはproviderによる読み取り拒否の証拠であり、無料枠超過・請求状態・アカウント制約のどれが原因かは未確定。
-最新Usage/リセット時刻は未取得で、Owner Consoleでの確認が必要。接続成功だけでもDB全体の整合性PASSとはしない。
+その後、既存GitHubログインでOwner Consoleのread-only確認ができた。
+ConsoleはFreeプランのrows-read上限超過によるアカウントブロックを明示している。
+月間使用量561,729,860 / 500,000,000行、DB storage 15.89MB。単なる認証エラーとは扱わない。
+Billing画面はprovider側の表示エラーで、正確なリセット日時は未確認。支払い・プラン変更・制限回避はしていない。
+接続成功だけでもDB全体の整合性PASSとはしない。Console screenshotはprivate `.data/`のみとし公開repoに含めない。
 
 確認日2026-10-19の[公式料金](https://turso.tech/pricing)は無料枠 $0、月間500M rows read。
 [公式の使用量説明](https://turso.tech/blog/tips-for-maximizing-your-turso-billing-allowances-48a0fca163e9)では、返却行数だけでなく走査した行もread量に関係する。
@@ -35,7 +38,26 @@ Collector、Scheduled evidence、Backup、Production Gateには適用しない�
 拒否時は失敗として残し、retryを自動増殖させない。従来の完全診断は明示的に通常modeを選んだ場合だけ。
 
 実行 `39227277414`（2026-10-19 09:04 UTC）は1 query / write 0 / table scan 0で `reads_blocked`。
-最新でも読み取り拒否が継続している。リセット日や正確な超過量は未確認。最新Canonical integrityはNOT VERIFIED。
+最小queryでも読み取り拒否が継続している。リセット日は未確認。最新Canonical integrityはNOT VERIFIED。
+
+### Repeated scan root cause
+
+Owner ConsoleのAnalytics「Top Queries / 今月」で、以下の実SQLと平均read量を確認。
+
+| Query | 平均rows read（Console丸め値） | 実行回数 |
+|---|---:|---:|
+| Integrity auditのGameごとの相関Fact count/SUM | 19.28M | 17 |
+| Calendar lifecycleのGameごとのFact count | 6.10M | 16 |
+| Game indexのGameごとのFact EXISTS | 3.35M | 34 |
+
+これらは呼び出し回数が少なくても、投球表等をGameごとに繰り返し走査する。
+`npbGameFactCountsCte`で打撃・投球をそれぞれ一括materializeしてjoinし、既存の判定式・日付条件・query数を維持した。
+COUNTの欠損groupは0、SUMの欠損／全nullはnullを維持し、球団不一致Factsも総件数には保持する。
+Scratchの旧SQL/新SQL結果一致、query planからFact相関走査が消えること、既存pending/Coverage/完了証拠の回帰を検証する。
+DB index/schema/Facts変更は0。Productionでの削減後使用量と復旧は、quota解除後の別証拠が必要。
+
+API公開後smokeで、circuit応答のCache-Controlに大小文字の異なる重複keyが残る問題を検出。
+`Headers.set`で`no-store`を単独設定する修正と回帰テストを追加した。
 
 ## Licensed CS series evidence
 
@@ -64,6 +86,11 @@ sidecarは6,674 bytes・4 seriesの1ファイル。既存アーカイブを変�
 2. Pagesへsidecarを先行配信し、body hash・参照Game hash・既存payload不変を確認。
 3. Hub/Series UIを別commit/PRで有効化。旧APKのCS v1–v4は保持する。
 4. Android/公開HTTP/実画面確認。APIはVercel側のdeployment状態を別途記録する。
+
+先行PR #52は`5a2bf31`へmerge、Codex Review対象`b262552`は指摘なし。
+Pages `39228386376`成功。公開23 HTTPで保護対象20payloadのhash/size不変、sidecar 6,674 bytesと参照12 Game/185 observationsの一致を確認した。
+APIの最初のdeploymentは`dpl_3hh6UBSzcVFrgDqa4K52wyggoSp6`、READY／既存production aliasへ反映。
+400/503の実応答を確認し、上記header修正を追加したため最終API再deploymentと再smokeを別途行う。
 
 ## Device/release gates
 

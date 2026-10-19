@@ -7,21 +7,19 @@ import { shortenedFinalEvidenceSchema } from "../domain/npb-game-completion";
 import { NpbRepository } from "./npb-repository";
 import { validateNpbGameFacts } from "./npb-game-collector";
 import type { NpbGame } from "./npb-nf3";
+import { npbGameFactCountsCte, npbGameFactCountsJoins } from "./npb-game-fact-counts";
 
 // Only SELECTs; no migrations, collectors, repairs or inferred completion evidence.
 export async function auditNpbIntegrity(client: DataClient, window: PeriodWindow, asOfDate: string) {
   const season = Number(window.from.slice(0, 4));
-  const saved = await client.execute({ sql: `SELECT g.*,c.game_status,c.batting_status,c.pitching_status,
+  const saved = await client.execute({ sql: `${npbGameFactCountsCte} SELECT g.*,c.game_status,c.batting_status,c.pitching_status,
     c.game_id AS completeness_game_id,c.source_key AS completeness_source_key,
     c.expected_batters,c.collected_batters,c.mapped_batters,c.expected_pitchers,c.collected_pitchers,
     c.mapped_pitchers,c.checks_json,c.issues_json,c.verified_at,
-    (SELECT COUNT(*) FROM player_game_batting b WHERE b.game_id=g.game_id) AS saved_batting,
-    (SELECT COUNT(*) FROM player_game_batting b WHERE b.game_id=g.game_id AND b.pa IS NULL) AS unknown_pa,
-    (SELECT COUNT(*) FROM player_game_pitching p WHERE p.game_id=g.game_id) AS saved_pitching,
-    (SELECT SUM(ip_outs) FROM player_game_pitching p WHERE p.game_id=g.game_id AND p.team_id=g.home_team_id) AS home_outs,
-    (SELECT SUM(ip_outs) FROM player_game_pitching p WHERE p.game_id=g.game_id AND p.team_id=g.away_team_id) AS away_outs,
+    COALESCE(bc.saved_batting,0) AS saved_batting,COALESCE(bc.unknown_pa,0) AS unknown_pa,
+    COALESCE(pc.saved_pitching,0) AS saved_pitching,pc.home_outs,pc.away_outs,
     (SELECT payload_json FROM permanent_events e WHERE e.event_id='npb:shortened-final:'||g.game_id) AS shortened_evidence
-    FROM npb_games g LEFT JOIN npb_game_completeness c ON c.game_id=g.game_id
+    FROM npb_games g LEFT JOIN npb_game_completeness c ON c.game_id=g.game_id ${npbGameFactCountsJoins}
     WHERE g.season=? AND g.game_date<=?
     ORDER BY g.game_date,g.game_id`, args: [season, asOfDate] });
   // Reviewed calendar and evaluated past coverage are different windows. Future
@@ -33,10 +31,9 @@ export async function auditNpbIntegrity(client: DataClient, window: PeriodWindow
     WHERE target_date BETWEEN ? AND ?) WHERE ordinal=1 ORDER BY target_date`, args: [window.from, asOfDate] });
   const stages = await client.execute({ sql: "SELECT * FROM npb_ingestion_stages WHERE target_date BETWEEN ? AND ? ORDER BY target_date,stage",
     args: [window.from, asOfDate] });
-  const boundary = await client.execute({ sql: `SELECT g.*,c.game_status,c.batting_status,c.pitching_status,
-    (SELECT COUNT(*) FROM player_game_batting b WHERE b.game_id=g.game_id) AS saved_batting,
-    (SELECT COUNT(*) FROM player_game_pitching p WHERE p.game_id=g.game_id) AS saved_pitching
-    FROM npb_games g LEFT JOIN npb_game_completeness c ON c.game_id=g.game_id
+  const boundary = await client.execute({ sql: `${npbGameFactCountsCte} SELECT g.*,c.game_status,c.batting_status,c.pitching_status,
+    COALESCE(bc.saved_batting,0) AS saved_batting,COALESCE(pc.saved_pitching,0) AS saved_pitching
+    FROM npb_games g LEFT JOIN npb_game_completeness c ON c.game_id=g.game_id ${npbGameFactCountsJoins}
     WHERE g.season=? AND g.game_date>=? ORDER BY g.game_date,g.game_id`, args: [season, window.to] });
   const repo = new NpbRepository(client);
   const inputErrors: string[] = [];

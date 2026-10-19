@@ -4,6 +4,7 @@ import { NpbPeriodCoverageRepository } from "./npb-period-coverage-repository";
 import { findNpbRegularSeason } from "./npb-season-metadata";
 import { gameIndexRowSchema,gameDateIndexSchema,orderGames,type GameIndexRow } from "../domain/npb-game-index";
 import { periodDates } from "../domain/period-coverage";
+import { npbGameFactCountsCte, npbGameFactCountsJoins } from "./npb-game-fact-counts";
 
 // Five batch SELECTs (teams, Games+availability, three coverage evidence queries).
 export async function readNpbGameIndex(client:DataClient,effectiveDate:string) {
@@ -13,11 +14,10 @@ export async function readNpbGameIndex(client:DataClient,effectiveDate:string) {
   const calendarTo=effectiveDate>season.endDate?effectiveDate:season.endDate;
   const [teams,result,coverage]=await Promise.all([
     new NpbRepository(client).findTeams(),
-    client.execute({sql:`SELECT g.game_id,g.game_date,g.game_number,g.scheduled_time,g.status,
+    client.execute({sql:`${npbGameFactCountsCte} SELECT g.game_id,g.game_date,g.game_number,g.scheduled_time,g.status,
       g.home_team_id,g.away_team_id,g.home_score,g.away_score,c.game_status,
-      EXISTS(SELECT 1 FROM player_game_batting b WHERE b.game_id=g.game_id) AS has_batting,
-      EXISTS(SELECT 1 FROM player_game_pitching p WHERE p.game_id=g.game_id) AS has_pitching
-      FROM npb_games g LEFT JOIN npb_game_completeness c ON c.game_id=g.game_id
+      COALESCE(bc.saved_batting,0)>0 AS has_batting,COALESCE(pc.saved_pitching,0)>0 AS has_pitching
+      FROM npb_games g LEFT JOIN npb_game_completeness c ON c.game_id=g.game_id ${npbGameFactCountsJoins}
       WHERE g.game_date BETWEEN ? AND ? ORDER BY g.game_date,g.game_id`,args:[season.startDate,season.endDate]}),
     new NpbPeriodCoverageRepository(client).findPeriodCoverage({from:season.startDate,to:throughDate,timeZone:"Asia/Tokyo"}),
   ]);
