@@ -16,6 +16,8 @@ import { resolve } from "node:path";
 import eventsPin from "../src/data/npb-player-events-release.json";
 import retainedEvents from "../src/data/npb-player-events-retained-releases.json";
 import { npbPlayerEventsSchema } from "../src/domain/npb-player-events";
+import seriesPin from "../src/data/npb-series-release.json";
+import { assertCsSeriesSnapshot, npbPostseasonSeriesSchema } from "../src/domain/npb-postseason-series";
 
 export async function verifyRetainedFiles(read:(path:string)=>Promise<Uint8Array>,files:Record<string,{bytes:number;sha256:string}>) {
   for(const [file,expected] of Object.entries(files)) {
@@ -59,6 +61,11 @@ const csBytes=await load(`../competitions/${csPin.sha256}/cs-2026.json`);
 const retainedCsFiles=await verifyRetainedFiles(load,Object.fromEntries(retainedCs.map(p=>[`../competitions/${p.sha256}/cs-2026.json`,{bytes:p.bytes,sha256:p.bodySha256}])));
 if(csBytes.length!==csPin.bytes||createHash("sha256").update(csBytes).digest("hex")!==csPin.bodySha256)throw Error("CS publication mismatch");
 const cs=npbCsDatasetSchema.parse(JSON.parse(csBytes.toString()));
+const seriesBytes=await load(`../competitions/${seriesPin.sha256}/series-2026.json`);
+if(seriesBytes.length!==seriesPin.bytes||createHash("sha256").update(seriesBytes).digest("hex")!==seriesPin.bodySha256)throw Error("Series publication mismatch");
+const series=npbPostseasonSeriesSchema.parse(JSON.parse(seriesBytes.toString()));
+if(series.baseBodySha256!==seriesPin.baseBodySha256||series.baseBodySha256!==csPin.bodySha256)throw Error("Series publication base mismatch");
+assertCsSeriesSnapshot(series,cs);
 if(cs.inputSha256!==csPin.inputSha256||cs.games.length!==csPin.games||cs.rows.length!==csPin.rows||cs.players.length!==csPin.players)throw Error("CS publication generation mismatch");
 for(const p of cs.players)assertHistoricalBridge(p,p);
 const eventBytes=await load(`../events/${eventsPin.sha256}/2026.json`);
