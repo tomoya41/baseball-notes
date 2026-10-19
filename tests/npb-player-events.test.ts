@@ -48,6 +48,13 @@ describe("explicit sourced movement observations", () => {
       `** 阪神タイガースは、[[架空太郎]]のウェーバー公示申請を発表${citation}。後に自由契約となった${citation}。`,
     ]) expect(parse(body).dataset.events).toHaveLength(0);
   });
+  it("rejects source text that impersonates parser-owned identity, team or citation markers", () => {
+    expect(() => parse(retirement.replace(citation, "§REF§"))).toThrow("Reserved reference marker");
+    for (const body of [
+      `** @tigers@は、[[架空太郎]]に来季の契約を結ばない旨を通知したことを発表${citation}。`,
+      `** 阪神タイガースは、[[架空太郎]]、@PLAYER@の1選手に、来季の契約を結ばない旨を通知したことを発表${citation}。`,
+    ]) expect(parse(body).dataset.events).toHaveLength(0);
+  });
   it.each([
     retirement.replace("[[架空太郎]]", "架空太郎"), retirement.replace("[[架空太郎]]", "[[未照合太郎|架空太郎]]"),
     retirement.replace("[[架空太郎]]", "[[架空太郎]]と[[架空次郎]]"), retirement.replace("の今季限りでの", "の引退予想と今季限りでの"),
