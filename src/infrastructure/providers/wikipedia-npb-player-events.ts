@@ -40,7 +40,7 @@ export function parseWikipediaPlayerEvents(raw: unknown, observedAt: string, ide
     if (!date || date > dateInZone(Date.parse(observedAt), "Asia/Tokyo")) { reject("missing_or_future_source_date"); continue; }
     if (!cited) { reject("missing_statement_citation"); continue; }
     const linked: EventIdentity[] = [], unresolvedArticles: string[] = [];
-    let normalized = statement.replace(/\[\[([^\]|#]+)(?:\|[^\]]+)?\]\]/g, (all, title: string) => {
+    let normalized = statement.replace(/\[\[([^\]|#]+)(?:\|[^\]]+)?\]\]/g, (_all, title: string) => {
       const identity = articles.get(title);
       if (!identity) {
         if (clubNames[title]) return title;
