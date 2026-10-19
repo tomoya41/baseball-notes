@@ -192,6 +192,60 @@
       "npbId": "21325155",
       "identityRevision": 111182386,
       "identityContentSha256": "c208767df5237b6508562c7154c42d33128c0b7e2ed39ea253459a761d50b124"
+    },
+    {
+      "playerId": "a7ec9a1a-9d64-40cd-a6c5-0cccfefc35db",
+      "name": "阿部翔太",
+      "article": "阿部翔太",
+      "wikidataId": "Q105704468",
+      "npbId": "01105153",
+      "identityRevision": 110761599,
+      "identityContentSha256": "77c3ab12957fc2d8421ec97ff666230dfe829dc5487173e7758dede45c26748e"
+    },
+    {
+      "playerId": "a0c28d0b-3a10-4c73-adbe-a2dab554cde2",
+      "name": "井上絢登",
+      "article": "井上絢登",
+      "wikidataId": "Q123406004",
+      "npbId": "31335159",
+      "identityRevision": 111206756,
+      "identityContentSha256": "7dbe462c9fbd82bfe88eedc234211f97d4dd0918636b3d518f452d87cede1604"
+    },
+    {
+      "playerId": "fc034d21-016b-403a-8ac0-1e4586df5e51",
+      "name": "佐々木千隼",
+      "article": "佐々木千隼",
+      "wikidataId": "Q27917454",
+      "npbId": "71975134",
+      "identityRevision": 111205971,
+      "identityContentSha256": "3793ac8ad07e0a485cfb0293858d7dd345bd3fa44e3f0d8efa8ecdab43692e3a"
+    },
+    {
+      "playerId": "dafe0159-83dc-4fa2-a5e6-4e0e2e4c6b3c",
+      "name": "中川颯",
+      "article": "中川颯",
+      "wikidataId": "Q102246892",
+      "npbId": "21425153",
+      "identityRevision": 111236977,
+      "identityContentSha256": "e585f4ed49593e550e933c23bdbcf07b23b32b7a72488c0c81fde6e35015ff07"
+    },
+    {
+      "playerId": "f41cac52-d31d-4ac3-86b6-b90c2e677606",
+      "name": "藤浪晋太郎",
+      "article": "藤浪晋太郎",
+      "wikidataId": "Q392329",
+      "npbId": "41045137",
+      "identityRevision": 111207000,
+      "identityContentSha256": "0ba50a6fd3d58bb30cefd749b5ecdf0d321db07149f8da7095c441517a8b5f18"
+    },
+    {
+      "playerId": "ce638dac-7a1b-40c2-b99f-71a63b9fb9f3",
+      "name": "堀岡隼人",
+      "article": "堀岡隼人",
+      "wikidataId": "Q30927731",
+      "npbId": "71875134",
+      "identityRevision": 111205866,
+      "identityContentSha256": "4a9ccd39b2ee684aa079de1be946e6d97e136b016ee333d861fbb4e92e224714"
     }
   ]
 }
