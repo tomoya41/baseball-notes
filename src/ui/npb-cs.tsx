@@ -47,6 +47,7 @@ export function NpbCsScreen() {
   const matching = data?.rows.filter(r => (stage === "all" || r.aggregate.scope.stage === stage) && r.aggregate.role === role && normalizePlayerSearch(data.players.find(p => p.playerId === r.aggregate.playerId)?.name??"").includes(normalizePlayerSearch(query))) ?? [];
   const page = Math.max(1, Math.min(Math.ceil(matching.length / 30) || 1, Number(params.get("page")) || 1)), visible = matching.slice((page - 1) * 30, page * 30);
   return <div className="screen"><PageHeading eyebrow="NPB · 保存済みの大会記録" title="2026 クライマックスシリーズ" />
+    <Link className="section-action" to="/NPB/postseason?season=2026">シリーズ勝敗・勝ち上がりを見る →</Link>
     <p className="data-notice">一部試合・一部選手の収録です。速報・公式ランキング・シリーズ全体の完全収録ではありません。未開催・終了未確認のテンプレートは掲載しません。</p>
     {!valid ? <DataState kind="unsupported" title="指定した年度・大会条件は未対応です" /> : failed ? <><DataState kind="source-unavailable" title="CSの収録データを取得できません" /><button onClick={retry}>再試行</button></> : !data ? <LoadingSkeleton /> : <>
       <p className="inline-note">原本取得 {data.observedAt.slice(0, 16).replace("T", " ")} UTC · {data.games.length}試合のスコア、{data.players.length}選手の該当表を収録。RegularのFacts・Coverage・HOT／ランキングとは別です。</p>

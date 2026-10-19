@@ -1,5 +1,11 @@
 # Product Completion Inventory / Remaining Roadmap
 
+2026-10-19追補：[Turso／Postseason統合](turso-postseason-readiness.md)を参照。
+MLB Historicalは現在2014–2025 Regular/Postseason。NPBは既存12試合の試合別部分成績に加え、記事の明示的勝敗と照合した2026 CSの4シリーズ・勝ち上がりを接続する。
+NPB全個人成績と日本シリーズは未完成。2026 CurrentのHOT／Rankingは閉鎖を維持。
+TursoはOwner Consoleで無料read枠超過によるblockを確認し、繰り返しFact走査を一括集計へ変更した。Quota解除・最新Canonical readback・実Scheduled evidenceは未完了。
+以下の2026-10-10集計は当時の監査snapshotであり、最新件数・完成率の再集計ではない。
+
 Delivery追補：本inventoryは下記基準mainでの監査snapshot。Draft/Young PlayerとHistorical Product Track 2に続く2016〜2019拡張は[Integrated source/history delivery](integrated-source-history-delivery.md)を参照。過去の2020〜2025件数を最新Production件数として読み替えない。
 
 確認日：**2026-10-10 JST**。対象main：`8632e20f47c43523ae12f90769fc2bbd65e4f50c`（local mainとGitHub mainを照合）。公開版：[Baseball Notes](https://tomoya41.github.io/baseball-notes/)。これは現状確定の監査であり、機能実装、canonical DB write、collector実行、公開データ変更、Gate解除、デプロイは行っていない。

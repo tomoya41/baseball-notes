@@ -41,6 +41,7 @@ export function buildWikipediaNpbSeries(raw: unknown, saved: unknown, baseBodySh
   if (archive.observedAt !== cs.observedAt) throw Error("Archive observation mismatch");
   const series: PostseasonSeries[] = [];
   for (const page of archive.response.query.pages) {
+    if (![5301694,5302364].includes(page.pageid)) throw Error("Unreviewed series article");
     const rev = page.revisions[0]!, source = cs.sources.find(s => s.pageId === page.pageid);
     if (!source || source.title !== page.title || source.revision !== rev.revid || source.revisionAt !== rev.timestamp ||
       source.contentSha256 !== createHash("sha256").update(rev.slots.main.content).digest("hex")) throw Error("Unpinned series source");

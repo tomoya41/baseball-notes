@@ -56,6 +56,9 @@ COUNTの欠損groupは0、SUMの欠損／全nullはnullを維持し、球団不�
 Scratchの旧SQL/新SQL結果一致、query planからFact相関走査が消えること、既存pending/Coverage/完了証拠の回帰を検証する。
 DB index/schema/Facts変更は0。Productionでの削減後使用量と復旧は、quota解除後の別証拠が必要。
 
+追加の合成scratch benchmark（800 Game・打撃16,000・投球6,400行）で、同一結果hashを保った。
+3回の中央値は旧1,654.44ms → 新20.08ms。これはlocal synthetic測定であり、本番rows-read削減率や回復を保証する値ではない。
+
 API公開後smokeで、circuit応答のCache-Controlに大小文字の異なる重複keyが残る問題を検出。
 `Headers.set`で`no-store`を単独設定する修正と回帰テストを追加した。
 
@@ -91,6 +94,18 @@ sidecarは6,674 bytes・4 seriesの1ファイル。既存アーカイブを変�
 Pages `39228386376`成功。公開23 HTTPで保護対象20payloadのhash/size不変、sidecar 6,674 bytesと参照12 Game/185 observationsの一致を確認した。
 APIの最初のdeploymentは`dpl_3hh6UBSzcVFrgDqa4K52wyggoSp6`、READY／既存production aliasへ反映。
 400/503の実応答を確認し、上記header修正を追加したため最終API再deploymentと再smokeを別途行う。
+
+## Product integration
+
+`/NPB/postseason?season=2026`は4シリーズの勝敗と進出、Series → Game → 選手の大会別成績へ接続。
+旧`/NPB/cs`と、`/NPB/postseason`の選手検索用role/q/page付きURLは既存Explorerを保持する。
+Series専用URLは共有・custom scheme deep link・Android Backへ対応し、違う年度／Competitionは取得前に拒否する。
+原本は既存許諾済みWikipediaのみ。日本シリーズは進出球団の記事記載と「試合・選手成績未収録」を分離し、未来の結果は生成しない。
+MLB 2014–2025の既存Hub/Series/Game/個人成績を維持し、2026 Current/Postseasonの権利Gateは閉じたまま。
+
+Home追加fetch 0。新画面は既存CS 249,383 bytes＋新sidecar 6,674 bytesの2 bounded fetch、profile個別大量取得なし。
+主画面は既存のseries-score/scoreboardを再利用し、NPBの2ステージだけdesktopを2列にする。
+初回／失敗／未対応条件は別表示し、失敗時に再試行と既存CS一覧への導線を残す。
 
 ## Device/release gates
 
