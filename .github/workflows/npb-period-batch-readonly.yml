@@ -2,6 +2,11 @@ name: NPB period batch read-only verification
 on:
   workflow_dispatch:
     inputs:
+      connection_only:
+        description: "One SELECT 1 only; no table scans, diagnostics or publication"
+        required: false
+        type: boolean
+        default: false
       as_of_date:
         description: "Completed JST date (YYYY-MM-DD); blank uses latest stored standings"
         required: false
@@ -21,7 +26,14 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      - name: Minimal read-only connection probe
+        if: inputs.connection_only
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+        run: npm run -s verify:npb:remote -- --connection-only
       - name: Read-only Turso batch and count verification
+        if: ${{ !inputs.connection_only }}
         shell: bash
         env:
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
@@ -32,6 +44,7 @@ jobs:
           if [[ -n "$AS_OF_DATE" ]]; then args+=(--date="$AS_OF_DATE"); fi
           npm run -s verify:npb:period-batch -- "${args[@]}"
       - name: Read-only Player Analysis Context and batting-order diagnostic
+        if: ${{ !inputs.connection_only }}
         env:
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
@@ -42,6 +55,7 @@ jobs:
           if [[ -n "$AS_OF_DATE" ]]; then args+=("--date=$AS_OF_DATE"); fi
           npx tsx scripts/verify-npb-analysis-context.ts "${args[@]}"
       - name: Read-only HOT candidate diagnostic
+        if: ${{ !inputs.connection_only }}
         shell: bash
         env:
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
@@ -52,6 +66,7 @@ jobs:
           if [[ -n "$AS_OF_DATE" ]]; then args+=(--date="$AS_OF_DATE"); fi
           npm run -s verify:npb:hot -- "${args[@]}"
       - name: Stage validated HOT JSON privately (not Pages)
+        if: ${{ !inputs.connection_only }}
         shell: bash
         env:
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}

@@ -1,3 +1,4 @@
+import { npbApiReadCache } from "./application/npb-api-read-cache";
 import { z } from "zod";
 import { openDataClient } from "./data/database";
 import { NpbRepository } from "./data/npb-repository";
@@ -13,22 +14,24 @@ export function OPTIONS(): Response { return new Response(null, { status: 204, h
 
 export async function GET(request: Request): Promise<Response> {
   const query = querySchema.safeParse(Object.fromEntries(new URL(request.url, "https://opponent.local").searchParams));
-  if (!query.success) return new Response(JSON.stringify({ error: "invalid_query" }), { status: 400, headers });
-  const url = process.env.TURSO_DATABASE_URL;
-  const token = process.env.TURSO_AUTH_TOKEN;
-  if (!url || !token) return new Response(JSON.stringify({ error: "service_unavailable" }), { status: 503, headers });
-  const client = openDataClient(url, token);
-  try {
-    const repository = new NpbRepository(client);
-    const standings = await repository.findLatestStandings();
-    const asOfDate = standings[0]?.date;
-    if (!asOfDate) return new Response(JSON.stringify({ error: "no_standings" }), { status: 503, headers });
-    const result = await new PlayerOpponentService(repository, new NpbPeriodCoverageRepository(client))
-      .find(query.data.playerId, asOfDate);
-    if (!result) return new Response(JSON.stringify({ error: "player_not_found" }), { status: 404, headers });
-    return new Response(JSON.stringify(result.payload), { status: 200, headers: { ...headers,
-      "Server-Timing": `db;dur=${result.dbReadMs.toFixed(1)}, classify;dur=${result.classificationMs.toFixed(1)}, aggregate;dur=${result.aggregationMs.toFixed(1)}` } });
-  } catch {
-    return new Response(JSON.stringify({ error: "opponent_unavailable" }), { status: 503, headers });
-  } finally { client.close(); }
+  if (!query.success) return new Response(JSON.stringify({ error: "invalid_query" }), { status: 400, headers: { ...headers, "Cache-Control": "no-store" } });
+  return npbApiReadCache.read("opponent:" + JSON.stringify(query.data), headers, async () => {
+    const url = process.env.TURSO_DATABASE_URL;
+    const token = process.env.TURSO_AUTH_TOKEN;
+    if (!url || !token) return new Response(JSON.stringify({ error: "service_unavailable" }), { status: 503, headers });
+    const client = openDataClient(url, token);
+    try {
+      const repository = new NpbRepository(client);
+      const standings = await repository.findLatestStandings();
+      const asOfDate = standings[0]?.date;
+      if (!asOfDate) return new Response(JSON.stringify({ error: "no_standings" }), { status: 503, headers });
+      const result = await new PlayerOpponentService(repository, new NpbPeriodCoverageRepository(client))
+        .find(query.data.playerId, asOfDate);
+      if (!result) return new Response(JSON.stringify({ error: "player_not_found" }), { status: 404, headers });
+      return new Response(JSON.stringify(result.payload), { status: 200, headers: { ...headers,
+        "Server-Timing": `db;dur=${result.dbReadMs.toFixed(1)}, classify;dur=${result.classificationMs.toFixed(1)}, aggregate;dur=${result.aggregationMs.toFixed(1)}` } });
+    } catch (error) {
+      return npbApiReadCache.failure(error, "opponent_unavailable", headers);
+    } finally { client.close(); }
+  });
 }

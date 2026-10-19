@@ -16,8 +16,15 @@ if (!url || url.startsWith("file:") || !token) throw new Error("Remote database 
 const client = openDataClient(url, token);
 try {
   if (process.argv.includes("--connection-only")) {
-    await client.execute("SELECT 1");
-    process.stdout.write('{"connection":"ok"}\n');
+    try {
+      await client.execute("SELECT 1");
+      process.stdout.write('{"connection":"ok","queries":1,"writes":0,"tableScans":0,"integrityVerified":false}\n');
+    } catch (error) {
+      // No credentials, database URL, table contents or unredacted provider exception.
+      const blocked = error instanceof Error && /SQL read operations are forbidden/i.test(error.message);
+      process.stdout.write(`${JSON.stringify({ connection: blocked ? "reads_blocked" : "unavailable", queries: 1, writes: 0, tableScans: 0, integrityVerified: false })}\n`);
+      process.exitCode = 1;
+    }
   } else {
     const targetDate = option("--date") ?? addDays(jstToday(), -1);
     const report = await verifyNpbDatabase(client, targetDate);
