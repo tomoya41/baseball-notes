@@ -523,6 +523,23 @@ public class ReleaseQualityTest {
         js("Array.from(document.querySelectorAll('a')).find(a=>a.textContent==='森下翔太').click()");waitText("2026年 · CS ファイナル");
         assertTrue("Player link retains postseason/role",js("location.hash").contains("competition=postseason&stage=npb_cs_final&role=batting"));
     }
+    @Test public void npbSeriesColdDeepLinkKeepsAdvantageAndSystemBackAtLargeFont() throws Exception {
+        Intent link=new Intent(Intent.ACTION_VIEW,Uri.parse("baseballnotes://NPB/postseason/series/npb%3Aseries%3A19106473-c7b5-5171-bf77-40b5d93190a0?season=2026"));
+        link.setClassName("com.tomoya41.baseballnotes","jp.baseballdata.app.MainActivity");
+        scenario=ActivityScenario.launch(link);waitText("試合3勝 ＋ アドバンテージ2勝");
+        String seriesHash=js("location.hash");
+        fontScaleAndRecreate(2.0f);waitText("試合3勝 ＋ アドバンテージ2勝");waitViewport(360);
+        assertEquals("Series survives recreation",seriesHash,js("location.hash"));
+        assertEquals("Series has no 200-percent overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));
+        screenshot("npb-series-font-20-light");
+        setTheme("dark","ダーク");js("location.hash='"+seriesHash+"'");waitText("試合3勝 ＋ アドバンテージ2勝");
+        assertEquals("Dark series has no 200-percent overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));
+        screenshot("npb-series-font-20-dark");
+        js("document.querySelector('a.scoreboard-row').click()");waitText("ポストシーズン · CS ファイナル");waitText("ボックススコア");
+        assertTrue("Game retains exact competition",js("location.hash").contains("competition=postseason&stage=npb_cs_final"));
+        shell("input keyevent KEYCODE_BACK");waitText("試合3勝 ＋ アドバンテージ2勝");
+        assertEquals("Real system Back returns to exact series",seriesHash,js("location.hash"));
+    }
     @Test public void seasonalHomeAndCollectedAgeTotalsKeepScopeAndExplicitLoading() throws Exception {
         scenario=ActivityScenario.launch(MainActivity.class);waitText("BASEBALL");
         js("location.hash='#/NPB/home?homeSeason=autumn'");waitText("CSとドラフトから、選手を深掘り");
