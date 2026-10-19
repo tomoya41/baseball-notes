@@ -246,6 +246,33 @@
       "npbId": "71875134",
       "identityRevision": 111205866,
       "identityContentSha256": "4a9ccd39b2ee684aa079de1be946e6d97e136b016ee333d861fbb4e92e224714"
+    },
+    {
+      "playerId": "624bc9e1-cb09-42c6-8445-d43494040d94",
+      "name": "岡田悠希",
+      "article": "岡田悠希",
+      "wikidataId": "Q110403414",
+      "npbId": "81385155",
+      "identityRevision": 111144511,
+      "identityContentSha256": "091749024f27b41c5f34f6c00fc2acc980abec666b991dcfe04a3d878372d62c"
+    },
+    {
+      "playerId": "4871f2fe-bd6d-4a9b-9919-cd901159ecfa",
+      "name": "山田龍聖",
+      "article": "山田龍聖",
+      "wikidataId": "Q109288268",
+      "npbId": "53555155",
+      "identityRevision": 111163111,
+      "identityContentSha256": "196f09fe3cb941c0b7c6cea7ddce7982bb670c8ce4ff9d2d0c2c0d1f7a7f334e"
+    },
+    {
+      "playerId": "db66a48c-6dea-4b0c-8d10-b17e34a49856",
+      "name": "萩尾匡也",
+      "article": "萩尾匡也",
+      "wikidataId": "Q115529824",
+      "npbId": "81485157",
+      "identityRevision": 111106782,
+      "identityContentSha256": "4cdb38f9d4ec8ec06bf6614e3a3f32d981ac6fedafd84e27e234f714a150db1e"
     }
   ]
 }
