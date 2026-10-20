@@ -18,6 +18,8 @@ import retainedEvents from "../src/data/npb-player-events-retained-releases.json
 import { npbPlayerEventsSchema } from "../src/domain/npb-player-events";
 import seriesPin from "../src/data/npb-series-release.json";
 import { assertCsSeriesSnapshot, npbPostseasonSeriesSchema } from "../src/domain/npb-postseason-series";
+import japanPin from "../src/data/npb-japan-series-release.json";
+import { npbJapanSeriesSchema, assertJapanSeriesAdvancement } from "../src/domain/npb-japan-series";
 
 export async function verifyRetainedFiles(read:(path:string)=>Promise<Uint8Array>,files:Record<string,{bytes:number;sha256:string}>) {
   for(const [file,expected] of Object.entries(files)) {
@@ -66,6 +68,11 @@ if(seriesBytes.length!==seriesPin.bytes||createHash("sha256").update(seriesBytes
 const series=npbPostseasonSeriesSchema.parse(JSON.parse(seriesBytes.toString()));
 if(series.baseBodySha256!==seriesPin.baseBodySha256||series.baseBodySha256!==csPin.bodySha256)throw Error("Series publication base mismatch");
 assertCsSeriesSnapshot(series,cs);
+const japanBytes=await load(`../competitions/${japanPin.sha256}/japan-series-2026.json`);
+if(japanBytes.length!==japanPin.bytes||createHash("sha256").update(japanBytes).digest("hex")!==japanPin.bodySha256)throw Error("Japan Series publication mismatch");
+const japan=npbJapanSeriesSchema.parse(JSON.parse(japanBytes.toString()));
+if(japan.csSeriesBodySha256!==japanPin.csSeriesBodySha256||japan.csSeriesBodySha256!==seriesPin.bodySha256||japan.series.id!==japanPin.seriesId||JSON.stringify(japan.series.games.map(g=>g.gameId))!==JSON.stringify(japanPin.gameIds))throw Error("Japan Series publication identity mismatch");
+assertJapanSeriesAdvancement(japan,series);
 if(cs.inputSha256!==csPin.inputSha256||cs.games.length!==csPin.games||cs.rows.length!==csPin.rows||cs.players.length!==csPin.players)throw Error("CS publication generation mismatch");
 for(const p of cs.players)assertHistoricalBridge(p,p);
 const eventBytes=await load(`../events/${eventsPin.sha256}/2026.json`);

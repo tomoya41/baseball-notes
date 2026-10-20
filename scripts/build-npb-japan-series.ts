@@ -1,0 +1,15 @@
+import { readFile,writeFile,mkdir } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { gzipSync } from "node:zlib";
+import { join } from "node:path";
+import { buildWikipediaJapanSeries } from "../src/infrastructure/providers/wikipedia-npb-japan-series";
+import { npbPostseasonSeriesSchema } from "../src/domain/npb-postseason-series";
+import pin from "../src/data/npb-series-release.json";
+const option=(key:string)=>process.argv.find(a=>a.startsWith(`--${key}=`))?.slice(key.length+3);
+const archive=option("archive"),base=option("cs"),output=option("output");
+if(!archive||!base||!output?.startsWith(".data/"))throw Error("Explicit private archive, CS file and .data output required");
+const hash=(b:Uint8Array)=>createHash("sha256").update(b).digest("hex"),cs=await readFile(base);
+if(hash(cs)!==pin.bodySha256)throw Error("Unpinned CS snapshot");
+const data=buildWikipediaJapanSeries(JSON.parse(await readFile(archive,"utf8")),npbPostseasonSeriesSchema.parse(JSON.parse(cs.toString())),pin.bodySha256),body=Buffer.from(JSON.stringify(data)),gzip=gzipSync(body,{level:9});
+await mkdir(output,{recursive:true});await writeFile(join(output,"npb-japan-series.json.gz"),gzip);
+console.log(JSON.stringify({bodySha256:hash(body),sha256:hash(gzip),bytes:body.length,compressedBytes:gzip.length,seriesId:data.series.id,games:data.series.games.length,results:data.results.length,playerStats:data.playerStats,canonicalWrites:0,sourceRequests:0}));
