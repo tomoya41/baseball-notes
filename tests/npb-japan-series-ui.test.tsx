@@ -4,9 +4,9 @@ import{NpbJapanSeriesScreen}from"../src/ui/npb-japan-series";import{NpbDiscovery
 import {seriesFixture} from "./fixtures/npb-series";
 vi.mock("../src/application/npb-japan-series-reader",()=>({readNpbJapanSeries:vi.fn()}));vi.mock("../src/application/npb-cs-reader",()=>({readNpbCs:vi.fn()}));vi.mock("../src/application/npb-series-reader",()=>({readNpbSeries:vi.fn()}));
 afterEach(()=>{vi.clearAllMocks();vi.unstubAllGlobals();});
-async function mount(path="/NPB/postseason?stage=japan_series",failed=false){
+async function mount(path="/NPB/postseason?stage=japan_series",failed=false,update?:(data:ReturnType<typeof buildWikipediaJapanSeries>)=>void){
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);const f=japanFixture(),data=buildWikipediaJapanSeries(f.archive,f.cs,"b".repeat(64),f.admission);
-  vi.mocked(readNpbJapanSeries).mockImplementation(async()=>{if(failed)throw Error("offline");return data;});
+  update?.(data);vi.mocked(readNpbJapanSeries).mockImplementation(async()=>{if(failed)throw Error("offline");return data;});
   vi.mocked(readNpbSeries).mockResolvedValue(f.cs);vi.mocked(readNpbCs).mockResolvedValue(seriesFixture().cs);
   const host=document.createElement("div"),root=createRoot(host);document.body.append(host);const regular={directory:{findLatestNpb:vi.fn()},gameSurface:{manifest:vi.fn(),date:vi.fn()}};
   await act(async()=>root.render(<MemoryRouter initialEntries={[path]}><Routes><Route path="/NPB/postseason" element={<NpbJapanSeriesScreen/>}/><Route path="/NPB/postseason/series/:seriesId" element={<NpbJapanSeriesScreen/>}/><Route path="/NPB/games/:gameId" element={<NpbJapanSeriesScreen gameDetail/>}/><Route path="/NPB/search" element={<NpbDiscovery services={regular as unknown as Services}/>}/></Routes></MemoryRouter>));
@@ -32,4 +32,7 @@ it("preserves native/share scope and returns a cold Game to Japan Series rather 
 });
 it.each([["series",5],["game",19]] as const)("combines admitted CS and Japan Series in %s discovery without leaking into Regular",async(kind,count)=>{
   const f=await mount(`/NPB/search?kind=${kind}&season=2026&competition=postseason`);try{expect(f.host.querySelectorAll("a.player-row")).toHaveLength(count);expect(f.regular.gameSurface.date).not.toHaveBeenCalled();expect(f.host.textContent).toContain("未収録");}finally{await f.close();}
+});
+it("does not infer pre-opening or no-games from missing results after the scheduled opening, and uses JST observation dates",async()=>{
+  const f=await mount(undefined,false,d=>{d.observedAt="2026-10-24T16:00:00Z";});try{expect(f.host.textContent).toContain("記事取得 2026-10-25時点");expect(f.host.textContent).not.toContain("取得時点で開幕前");expect(f.host.textContent).toContain("シリーズ勝敗は確認できません");}finally{await f.close();}
 });
