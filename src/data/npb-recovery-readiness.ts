@@ -21,7 +21,7 @@ export async function verifyRecoveryReadiness(source:DataClient,options:{mode:"c
   let expired=false;
   const cancel=()=>{if(!expired){expired=true;try{options.cancelReads?.();}finally{source.close();}}};
   let timer:ReturnType<typeof setTimeout>;
-  const deadline=new Promise<never>((_,reject)=>{timer=setTimeout(()=>{try{cancel();}finally{reject(Error("Recovery deadline exceeded"));}},30000);});
+  const deadline=new Promise<never>((_,reject)=>{timer=setTimeout(()=>{try{cancel();}catch{/* Report the bounded failure even if cleanup fails. */}reject(Error("Recovery deadline exceeded"));},30000);});
   const read=async(statement:string|InStatement)=>{
     const sql=typeof statement==="string"?statement:statement.sql;
     if(expired||!/^\s*SELECT\b/i.test(sql)||sql.includes(";")||attempted>=8||performance.now()-started>=30000)throw Error("Read-only recovery budget exceeded");
@@ -45,5 +45,5 @@ export async function verifyRecoveryReadiness(source:DataClient,options:{mode:"c
     return {status:"readable" as const,queries,attempted,writes:0,tableScans:0,scannedRows:"not_exposed_by_client",integrityVerified:false,scheduledEvidence:false};
   }catch(error){
     return {status:error instanceof Error&&/SQL read operations are forbidden/i.test(error.message)?"reads_blocked" as const:"verification_failed" as const,queries,attempted,writes:0,scannedRows:"unknown",integrityVerified:false,scheduledEvidence:false};
-  }finally{clearTimeout(timer!);await Promise.allSettled([...pending]);}
+  }finally{await Promise.allSettled([...pending]);clearTimeout(timer!);}
 }

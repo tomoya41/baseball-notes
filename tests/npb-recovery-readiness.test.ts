@@ -26,3 +26,8 @@ it("aborts an in-flight HTTP read and returns failure at the deadline even when 
   const source=new Proxy(underlying,{get(t,k){if(k==="execute")return()=>transport("https://example.test/recovery");if(k==="close")return()=>{closed=true;t.close();};return Reflect.get(t,k);}});
   try{const pending=verifyRecoveryReadiness(source,{mode:"connection",asOfDate:"2026-10-08",now:Date.now(),cancelReads:()=>abort.abort()});await vi.advanceTimersByTimeAsync(30001);const result=await pending;expect(result.status).toBe("verification_failed");expect(requests).toBe(1);expect(transportAborted).toBe(true);expect(closed).toBe(true);expect(result.integrityVerified).toBe(false);}finally{vi.useRealTimers();underlying.close();}
 });
+it("keeps the deadline active for sibling reads when one parallel projection query fails",async()=>{
+  vi.useFakeTimers();const base=openDataClient("file::memory:");let count=0;const cancel=vi.fn();
+  const source=new Proxy(base,{get(t,k){if(k==="execute")return()=>{count++;if(count===1)return Promise.resolve({rows:[]});if(count===2)return Promise.reject(Error("network failure"));return new Promise(()=>{});};if(k==="close")return()=>t.close();return Reflect.get(t,k);}});
+  try{const now=Date.now(),p=verifyRecoveryReadiness(source,{mode:"projection",asOfDate:"2026-10-08",now,quota:{plan:"Free",monthlyRowsReadLimit:500000000,rowsReadUsed:1,observedAt:new Date(now).toISOString()},cancelReads:cancel});await vi.advanceTimersByTimeAsync(30001);expect((await p).status).toBe("verification_failed");expect(cancel).toHaveBeenCalledTimes(1);expect(count).toBeLessThanOrEqual(8);}finally{vi.useRealTimers();base.close();}
+});
