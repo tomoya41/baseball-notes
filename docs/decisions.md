@@ -418,3 +418,7 @@ Seasonal Home is editorial navigation driven by the JST calendar, distinct from 
 ## 2026-10-19 — Licensed chronology records stay separate from official transactions
 
 The first sourced-event adapter admits only explicitly linked, cited, dated Wikipedia chronology statements under CC BY-SA 4.0. Its `encyclopedia_record` status never certifies an official announcement or current membership. Event day, independent announcement/effective dates and article acquisition time are distinct. Daily collection produces a bounded review candidate, never direct canonical/public writes; missing/corrected statements require review. Preserve each immutable publication family for older APKs. AI is optional and cannot create facts or bypass source/identity admission. See [contract, rights and delivery](npb-sourced-player-events.md).
+
+## 2026-10-20: recovery diagnostics default to a minimal probe
+
+Manual NPB period verification defaults to connection-only and always probes before an explicitly selected full diagnostic. A separate bounded read-only projection check requires recent owner-console Free quota headroom. Readability, returned rows and local benchmarks are not scanned-row billing, Scheduled/Backup evidence, full integrity or Gate readiness. This prevents accidental heavy diagnostic retries while retaining the existing explicit complete validation path.

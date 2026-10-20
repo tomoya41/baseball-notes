@@ -3,11 +3,11 @@ import { fileURLToPath } from "node:url";
 import { createClient, type Client } from "@libsql/client";
 
 export type DataClient = Client;
-export function openDataClient(url: string, authToken?: string): DataClient {
+export function openDataClient(url: string, authToken?: string, request?: typeof fetch): DataClient {
   if (!url.startsWith("file:") && !url.startsWith("libsql:") && !url.startsWith("https:"))
     throw new Error("Unsupported database URL");
   if (!url.startsWith("file:") && !authToken) throw new Error("Remote database token required");
-  return createClient(authToken ? { url, authToken } : { url });
+  return createClient({url,...(authToken?{authToken}:{}),...(request?{fetch:request}:{})});
 }
 
 export async function migrateData(client: DataClient): Promise<void> {

@@ -6,7 +6,7 @@ on:
         description: "One SELECT 1 only; no table scans, diagnostics or publication"
         required: false
         type: boolean
-        default: false
+        default: true
       as_of_date:
         description: "Completed JST date (YYYY-MM-DD); blank uses latest stored standings"
         required: false
@@ -27,7 +27,6 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Minimal read-only connection probe
-        if: inputs.connection_only
         env:
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
