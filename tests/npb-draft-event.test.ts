@@ -1,6 +1,6 @@
 import { describe,it,expect } from "vitest";
 import { draftEventSchema,draftTeams,draftPredictionOutcome } from "../src/domain/npb-draft-event";
-import { applyReviewedDraftResults,draftCandidateId,draftHash,draftRosterCandidates,admittedDraftArchive,draftTeamTableRows } from "../src/infrastructure/providers/wikipedia-npb-draft";
+import { applyReviewedDraftResults,draftCandidateId,draftHash,draftRosterCandidates,admittedDraftArchive,draftTeamTableRows,fetchDraftCandidateArchive } from "../src/infrastructure/providers/wikipedia-npb-draft";
 
 // Synthetic fixtures; these are not real candidates, results or source revisions.
 const line="|1||[[架空一]]||Example One|| {{left}}架空大学||4||右||左||";
@@ -13,6 +13,7 @@ const content=event+"\n"+result;
 const review=()=>({reviewedBy:"fixture reviewer",reviewedAt:"2026-10-22T08:00:00Z",eventState:"in_progress",eventProof:{pageId:5282993,row:event},selections:[{teamId:"npb:team:tigers",type:"regular",round:1,name:"架空一",article:"架空一",affiliation:"架空大学",proof:{pageId:5282993,row:result}}],lotteries:[]});
 
 describe("draft snapshots and identities",()=>{
+  it("bounds API retrieval and never retries an over-budget response",async()=>{let calls=0;await expect(fetchDraftCandidateArchive(async(input,init)=>{calls++;expect(String(input)).toContain("maxlag=5");expect(init?.headers).toHaveProperty("User-Agent");return new Response("x".repeat(500001));})).rejects.toThrow("byte budget");expect(calls).toBe(1);});
   it("extracts explicit fourth years only and never creates a canonical Player ID",()=>{const c=draftRosterCandidates(roster);expect(c).toHaveLength(1);expect(c[0]).toMatchObject({name:"架空一",affiliation:"架空大学",position:"投手",throws:"右",bats:"左",eligibility:"unverified"});expect(c[0]!.id).toMatch(/^npb:draft:2026:/);expect(draftCandidateId("架空一","別大学")).not.toBe(c[0]!.id);});
   it("rejects changed headers, cells and unknown handedness",()=>{for(const input of [roster.replace("所属大学","所属"),roster.replace("||4||","||4||extra||"),roster.replace("||右||左||","||?||左||")])expect(()=>draftRosterCandidates(input)).toThrow();});
   it("preserves 12 team hypotheses and missing outcomes",()=>{const d=base();expect(d.forecast.predictions).toHaveLength(12);expect(d.selections).toEqual([]);expect(draftPredictionOutcome(d,"npb:team:tigers")).toBe("unavailable");});
@@ -36,4 +37,3 @@ describe("reviewed postmeeting results",()=>{
     expect(()=>draftTeamTableRows(table.replace("!順位!!選手名!!守備!!所属!!結果","!順位!!選手名!!不明!!所属!!結果"))).toThrow();
   });
 });
-

@@ -6,6 +6,20 @@ export const draftHash=(value:string|Uint8Array)=>createHash("sha256").update(va
 export const draftCandidateId=(article:string,affiliation:string)=>`npb:draft:2026:${draftHash(JSON.stringify([article,affiliation])).slice(0,24)}`;
 const plain=(s:string)=>s.replace(/\{\{left\}\}/g,"").replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g,(_,a:string,b?:string)=>b??a).trim();
 const archiveSchema=z.object({observedAt:z.iso.datetime(),response:z.object({query:z.object({pages:z.array(z.object({pageid:z.number().int().positive(),title:z.string(),revisions:z.array(z.object({revid:z.number().int().positive(),timestamp:z.iso.datetime(),slots:z.object({main:z.object({content:z.string().max(150000)})})})).length(1)}))})})});
+/** One documented API request; new revisions remain private candidates until admission review. */
+export async function fetchDraftCandidateArchive(request:typeof fetch=fetch){
+  const url=new URL("https://ja.wikipedia.org/w/api.php");
+  for(const [key,value] of Object.entries({action:"query",format:"json",formatversion:"2",prop:"revisions",rvprop:"ids|timestamp|content",rvslots:"main",pageids:"5282993|5209342",maxlag:"5"}))url.searchParams.set(key,value);
+  const response=await request(url,{headers:{"User-Agent":"BaseballNotes/1.0 (https://github.com/tomoya41/baseball-notes; licensed draft snapshot)"},signal:AbortSignal.timeout(30000)});
+  if(!response.ok||!response.body)throw Error(`Draft candidate HTTP ${response.status}`);
+  const reader=response.body.getReader(),parts:Uint8Array[]=[];let length=0;
+  try{for(;;){const part=await reader.read();if(part.done)break;length+=part.value.length;if(length>500000)throw Error("Draft API byte budget exceeded");parts.push(part.value);}}catch(error){await reader.cancel().catch(()=>undefined);throw error;}finally{reader.releaseLock();}
+  const bytes=new Uint8Array(length);let offset=0;for(const part of parts){bytes.set(part,offset);offset+=part.length;}
+  const archive=archiveSchema.parse({observedAt:new Date().toISOString(),response:JSON.parse(new TextDecoder().decode(bytes))});
+  const allowed=new Map([[5282993,"2026年度新人選手選択会議 (日本プロ野球)"],[5209342,"2026年の野球日本代表"]]);
+  if(archive.response.query.pages.length!==2||new Set(archive.response.query.pages.map(p=>p.pageid)).size!==2||archive.response.query.pages.some(p=>allowed.get(p.pageid)!==p.title))throw Error("Unexpected draft source identity");
+  return archive;
+}
 export function admittedDraftArchive(raw:unknown,admitted:readonly z.infer<typeof draftSourceSchema>[]){
   const a=archiveSchema.parse(raw);const pages=a.response.query.pages.map(p=>{
     const r=p.revisions[0]!,content=r.slots.main.content;

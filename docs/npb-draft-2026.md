@@ -20,7 +20,7 @@
 
 ## 当日の更新手順（自動速報ではない）
 
-1. 同じWikipedia会議記事を正規APIで1回取得しprivate archiveへ保存。revision/timestamp/hash/差分を人が確認してSource registryへ追加・固定する。元記事の結果掲載を公式発表直接確認と表現しない。
+1. `npx tsx scripts/fetch-npb-draft-candidate.ts --output=.data/draft-2026/new-archive.json`で同じ2記事を正規APIの1要求・最大500KB・retry 0でprivate保存。既存ファイルがあれば通信0でcacheを使い、明示的な`--refresh`のみ再取得する。候補取得であり、registryのadmissionや本番公開は行わない。revision/timestamp/hash/差分を人が確認してSource registryへ追加・固定する。元記事の結果掲載を公式発表直接確認と表現しない。
 2. private review JSONにreviewedBy、reviewedAt、eventState、eventProof、selections、lotteriesを作成する。現在のadapterは**1行に球団・順位・記事リンク付き選手・所属・支配下/育成が独立した5セル**を持つ表と、2025年実表で確認した**球団見出し＋新人/育成区分＋順位/選手名/守備/所属/結果の5列**を対象とする。後者はproof.mode=`team_table`、proof.rowに`!1位`と次の選手行の2行を指定する。球団・大会区分・正確なヘッダーを独立に検証する。チームが列見出しだけのmatrix、rowspan、曖昧な氏名は未対応として止める。実際の当日表が別形式ならその形式のfixtureとadapterを先にreviewし、無理に正規化しない。
 3. 開始・終了の明示的な過去形の1行をeventProofにする。「終了した後に開催予定」や予定日時から開催中・終了を作らない。抽選は実際の候補・参加球団・回次・当選を示す独立行が必要。未確認の当選はnull。
 4. offlineで実行する：
@@ -41,4 +41,3 @@ review JSONの行（**架空fixture形式**、実データに使わない）:
 
 初版は18候補 / 12独自案 / 指名0 / 抽選0、10,405 bytes JSON / 2,946 bytes gzip、1ファイル。Home追加fetch 0。特集のlazy routeだけで1回、SHA/size/schema確認後に既存offline response cacheへ保存。候補の個別Profile fetchは0。
 先にinactive data/stagingを公開し、HTTP hash確認後に画面を公開する。rollbackはUI/pinのrevert、immutable assetは保持。既存Draft/Youngのqueryは維持。Physical Pixel/TalkBackと署名/Play Gateは独立し、未実施をPASSにしない。
-
