@@ -544,7 +544,8 @@ public class ReleaseQualityTest {
         Intent link=new Intent(Intent.ACTION_VIEW,Uri.parse("baseballnotes://NPB/postseason/series/npb%3Aseries%3Afae89d8d-b1f8-5675-82e8-d9136be4f7c1?season=2026"));
         link.setClassName("com.tomoya41.baseballnotes","jp.baseballdata.app.MainActivity");
         scenario=ActivityScenario.launch(link);waitText("日程・試合詳細");waitText("取得時点で開幕前");
-        String route=js("location.hash");fontScaleAndRecreate(2.0f);waitText("日程・試合詳細");waitViewport(360);
+        String route=js("location.hash");setTheme("light","ライト");js("location.hash='"+route+"'");waitText("日程・試合詳細");
+        fontScaleAndRecreate(2.0f);waitText("日程・試合詳細");waitViewport(360);
         assertEquals("Japan Series route survives recreation",route,js("location.hash"));
         assertEquals("Seven admitted scheduled Games","7",js("String(document.querySelectorAll('a.scoreboard-row').length)"));
         assertEquals("No 200-percent overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));screenshot("japan-series-font-20-light");
