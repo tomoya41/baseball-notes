@@ -548,7 +548,8 @@ public class ReleaseQualityTest {
         assertEquals("Japan Series route survives recreation",route,js("location.hash"));
         assertEquals("Seven admitted scheduled Games","7",js("String(document.querySelectorAll('a.scoreboard-row').length)"));
         assertEquals("No 200-percent overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));screenshot("japan-series-font-20-light");
-        setTheme("dark","ダーク");waitText("日程・試合詳細");screenshot("japan-series-font-20-dark");
+        setTheme("dark","ダーク");js("location.hash='"+route+"'");waitText("日程・試合詳細");
+        assertEquals("Dark Japan Series has no 200-percent overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));screenshot("japan-series-font-20-dark");
         js("document.querySelector('a.scoreboard-row').click()");waitText("第1戦 · ソフトバンク対DeNA");waitText("結果・打撃・投球成績はまだ収録していません");
         assertTrue("Scheduled Game retains Japan Series scope",js("location.hash").contains("stage=japan_series"));
         assertEquals("No fabricated box score","0",js("String(document.querySelectorAll('main table').length)"));
