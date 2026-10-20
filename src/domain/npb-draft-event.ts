@@ -8,7 +8,7 @@ const candidate = z.strictObject({id:z.string().regex(/^npb:draft:2026:[a-f0-9]{
 const prediction = z.strictObject({teamId:team,candidateId:z.string(),reason:z.string().min(1).max(240)});
 const selection = z.strictObject({teamId:team,candidateId:z.string(),type:z.enum(["regular","developmental"]),round:z.number().int().min(1).max(30),status:z.literal("confirmed"),sourcePageId:z.number().int().positive(),evidenceSha256:digest});
 const lottery = z.strictObject({attempt:z.number().int().min(1).max(12),candidateId:z.string(),teamIds:z.array(team).min(2).max(12),winnerId:team.nullable(),sourcePageId:z.number().int().positive(),evidenceSha256:digest});
-export const draftEventSchema = z.strictObject({schemaVersion:z.literal(1),league:z.literal("NPB"),season:z.literal(2026),scheduledAt:z.literal("2026-10-22T16:50:00+09:00"),observedAt:z.iso.datetime(),eventState:z.enum(["scheduled","checking","in_progress","ended"]),coverage:z.enum(["unavailable","partial"]),license:z.literal("CC-BY-SA-4.0"),sources:z.array(draftSourceSchema).min(1).max(6),candidates:z.array(candidate).max(250),forecast:z.strictObject({id:z.literal("2026-premeeting-v1"),createdAt:z.iso.datetime(),author:z.literal("Baseball Notes（独自仮説）"),predictions:z.array(prediction).length(12)}),selections:z.array(selection).max(240),lotteries:z.array(lottery).max(30)}).superRefine((d,ctx)=>{
+export const draftEventSchema = z.strictObject({schemaVersion:z.literal(1),league:z.literal("NPB"),season:z.literal(2026),scheduledAt:z.literal("2026-10-22T16:50:00+09:00"),observedAt:z.iso.datetime(),review:z.strictObject({reviewedBy:z.string().min(1).max(80),reviewedAt:z.iso.datetime()}).optional(),eventState:z.enum(["scheduled","checking","in_progress","ended"]),coverage:z.enum(["unavailable","partial"]),license:z.literal("CC-BY-SA-4.0"),sources:z.array(draftSourceSchema).min(1).max(6),candidates:z.array(candidate).max(250),forecast:z.strictObject({id:z.literal("2026-premeeting-v1"),createdAt:z.iso.datetime(),author:z.literal("Baseball Notes（独自仮説）"),predictions:z.array(prediction).length(12)}),selections:z.array(selection).max(240),lotteries:z.array(lottery).max(30)}).superRefine((d,ctx)=>{
   const fail=(message:string)=>ctx.addIssue({code:"custom",message});
   const ids=new Set(d.candidates.map(c=>c.id)),pages=new Set(d.sources.map(s=>s.pageId));
   if(ids.size!==d.candidates.length||pages.size!==d.sources.length)fail("Duplicate identity/source");
@@ -24,12 +24,15 @@ export const draftEventSchema = z.strictObject({schemaVersion:z.literal(1),leagu
   if(d.eventState==="scheduled"&&(d.selections.length||d.lotteries.length))fail("No premeeting results");
   if(Date.parse(d.observedAt)<Date.parse(d.scheduledAt)&&d.eventState!=="scheduled")fail("Future meeting results");
   if(d.coverage==="unavailable"&&(d.selections.length||d.lotteries.length))fail("Unavailable results must be empty");
+  if((d.selections.length||d.lotteries.length||d.eventState==="in_progress"||d.eventState==="ended")&&!d.review)fail("Results need public review metadata");
+  if(d.review&&Date.parse(d.review.reviewedAt)<Date.parse(d.observedAt))fail("Review precedes acquisition");
 });
 export type DraftEvent = z.infer<typeof draftEventSchema>;
 /** Normal updates append evidence. Corrections/deletions require a separate reviewed migration. */
 export function assertDraftSnapshotAdvance(previous:DraftEvent,next:DraftEvent){
   const rank={scheduled:0,checking:1,in_progress:2,ended:3};
   if(Date.parse(next.observedAt)<Date.parse(previous.observedAt)||rank[next.eventState]<rank[previous.eventState]||previous.coverage==="partial"&&next.coverage!=="partial")throw Error("Draft snapshot state/time regression");
+  if(previous.review&&(!next.review||Date.parse(next.review.reviewedAt)<Date.parse(previous.review.reviewedAt)))throw Error("Draft review timestamp regression");
   if(JSON.stringify(previous.forecast)!==JSON.stringify(next.forecast))throw Error("Premeeting forecast must remain immutable");
   for(const candidate of previous.candidates){const current=next.candidates.find(c=>c.id===candidate.id);if(!current||JSON.stringify(current)!==JSON.stringify(candidate))throw Error("Candidate correction requires separate review");}
   const keys=new Set(next.selections.map(s=>JSON.stringify(s)));
