@@ -1,7 +1,7 @@
 import { readFile,writeFile,mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { gzipSync } from "node:zlib";
-import { draftEventSchema } from "../src/domain/npb-draft-event";
+import { draftEventSchema,assertDraftSnapshotAdvance } from "../src/domain/npb-draft-event";
 import { admittedDraftArchive,applyReviewedDraftResults,draftHash,draftRosterCandidates } from "../src/infrastructure/providers/wikipedia-npb-draft";
 import sources from "../src/data/npb-draft-2026-sources.json";
 import forecast from "../src/data/npb-draft-2026-forecast.json";
@@ -15,7 +15,7 @@ const roster=a.pages.find(p=>p.source.pageId===5209342),event=a.pages.find(p=>p.
 if(!roster||!event||!event.content.includes("開催日 = 2026年10月22日"))throw Error("Missing draft/roster source");
 let data=draftEventSchema.parse({schemaVersion:1,league:"NPB",season:2026,scheduledAt:"2026-10-22T16:50:00+09:00",observedAt:a.observedAt,eventState:Date.parse(a.observedAt)<Date.parse("2026-10-22T16:50:00+09:00")?"scheduled":"checking",coverage:"unavailable",license:"CC-BY-SA-4.0",sources:a.pages.map(p=>p.source),candidates:draftRosterCandidates(roster.content),forecast,selections:[],lotteries:[]});
 if(review){if(!previous||!process.argv.includes("--review-confirmed"))throw Error("Reviewed update needs prior immutable dataset and explicit review confirmation");data=applyReviewedDraftResults(data,event.content,JSON.parse(await readFile(review,"utf8")),a.observedAt);}
-if(previous){const old=draftEventSchema.parse(JSON.parse(await readFile(previous,"utf8")));if(draftHash(JSON.stringify(old.forecast))!==draftHash(JSON.stringify(data.forecast)))throw Error("Premeeting forecast must remain immutable");const currentKeys=new Set(data.selections.map(s=>JSON.stringify(s)));if(old.selections.some(s=>!currentKeys.has(JSON.stringify(s))))throw Error("Correction/deletion requires separate reviewed migration; no silent result removal");}
+if(previous)assertDraftSnapshotAdvance(draftEventSchema.parse(JSON.parse(await readFile(previous,"utf8"))),data);
 const body=JSON.stringify(data),bytes=Buffer.from(body),gzip=gzipSync(bytes);
 await mkdir(output,{recursive:true});await writeFile(join(output,"draft-2026.json"),bytes);await writeFile(join(output,"draft-2026.json.gz"),gzip);
 const tag=arg("tag");if(tag&&!/^npb-draft-2026-[a-z0-9-]+$/.test(tag))throw Error("Invalid release tag");if(tag)await writeFile(join(output,"pin.json"),JSON.stringify({tag,assetUrl:`https://github.com/tomoya41/baseball-notes/releases/download/${tag}/draft-2026.json.gz`,sha256:draftHash(gzip),bodySha256:draftHash(body),bytes:bytes.length,forecastSha256:draftHash(JSON.stringify(data.forecast))},null,2));

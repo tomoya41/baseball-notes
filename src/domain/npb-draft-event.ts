@@ -26,6 +26,19 @@ export const draftEventSchema = z.strictObject({schemaVersion:z.literal(1),leagu
   if(d.coverage==="unavailable"&&(d.selections.length||d.lotteries.length))fail("Unavailable results must be empty");
 });
 export type DraftEvent = z.infer<typeof draftEventSchema>;
+/** Normal updates append evidence. Corrections/deletions require a separate reviewed migration. */
+export function assertDraftSnapshotAdvance(previous:DraftEvent,next:DraftEvent){
+  const rank={scheduled:0,checking:1,in_progress:2,ended:3};
+  if(Date.parse(next.observedAt)<Date.parse(previous.observedAt)||rank[next.eventState]<rank[previous.eventState]||previous.coverage==="partial"&&next.coverage!=="partial")throw Error("Draft snapshot state/time regression");
+  if(JSON.stringify(previous.forecast)!==JSON.stringify(next.forecast))throw Error("Premeeting forecast must remain immutable");
+  for(const candidate of previous.candidates){const current=next.candidates.find(c=>c.id===candidate.id);if(!current||JSON.stringify(current)!==JSON.stringify(candidate))throw Error("Candidate correction requires separate review");}
+  const keys=new Set(next.selections.map(s=>JSON.stringify(s)));
+  if(previous.selections.some(s=>!keys.has(JSON.stringify(s))))throw Error("Selection correction/deletion requires separate review");
+  for(const old of previous.lotteries){
+    const current=next.lotteries.find(l=>l.attempt===old.attempt&&l.candidateId===old.candidateId);
+    if(!current||JSON.stringify([...current.teamIds].sort())!==JSON.stringify([...old.teamIds].sort())||old.winnerId!==null&&current.winnerId!==old.winnerId)throw Error("Lottery correction/deletion requires separate review");
+  }
+}
 /** First actual selection, distinct from first-bid lottery. Missing results never mean a miss. */
 export function draftPredictionOutcome(data:DraftEvent,teamId:string){
   const prediction=data.forecast.predictions.find(p=>p.teamId===teamId);

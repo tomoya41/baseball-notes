@@ -1,5 +1,5 @@
 import { describe,it,expect } from "vitest";
-import { draftEventSchema,draftTeams,draftPredictionOutcome } from "../src/domain/npb-draft-event";
+import { draftEventSchema,draftTeams,draftPredictionOutcome,assertDraftSnapshotAdvance } from "../src/domain/npb-draft-event";
 import { applyReviewedDraftResults,draftCandidateId,draftHash,draftRosterCandidates,admittedDraftArchive,draftTeamTableRows,fetchDraftCandidateArchive } from "../src/infrastructure/providers/wikipedia-npb-draft";
 
 // Synthetic fixtures; these are not real candidates, results or source revisions.
@@ -21,6 +21,11 @@ describe("draft snapshots and identities",()=>{
   it("requires exact source admission",()=>{const raw={observedAt:"2026-10-21T01:00:00Z",response:{query:{pages:[{pageid:5282993,title:source.title,revisions:[{revid:1,timestamp:source.revisionAt,slots:{main:{content:"fixture"}}}]}]}}};expect(admittedDraftArchive(raw,[source]).pages).toHaveLength(1);expect(()=>admittedDraftArchive(raw,[{...source,revision:2}])).toThrow("Unadmitted");});
 });
 describe("reviewed postmeeting results",()=>{
+  it("prevents prior result/state/time loss while allowing unknown lottery winner confirmation",()=>{
+    const old=base();old.observedAt="2026-10-22T10:00:00Z";old.eventState="ended";old.coverage="partial";old.lotteries=[{attempt:1,candidateId:old.candidates[0]!.id,teamIds:["npb:team:tigers","npb:team:giants"],winnerId:"npb:team:tigers",sourcePageId:5282993,evidenceSha256:"a".repeat(64)}];
+    for(const update of [(d:typeof old)=>{d.observedAt="2026-10-22T09:00:00Z";},(d:typeof old)=>{d.eventState="in_progress";},(d:typeof old)=>{d.lotteries=[];},(d:typeof old)=>{d.lotteries[0]!.winnerId=null;},(d:typeof old)=>{d.lotteries[0]!.teamIds=["npb:team:tigers","npb:team:hawks"];},(d:typeof old)=>{d.coverage="unavailable";},(d:typeof old)=>{d.candidates=[];}]){const next=structuredClone(old);update(next);expect(()=>assertDraftSnapshotAdvance(old,next)).toThrow();}
+    const unknown=structuredClone(old);unknown.lotteries[0]!.winnerId=null;expect(()=>assertDraftSnapshotAdvance(unknown,old)).not.toThrow();expect(()=>assertDraftSnapshotAdvance(old,structuredClone(old))).not.toThrow();
+  });
   it("accepts proved results, compares actual first selection, and replays deterministically",()=>{const a=applyReviewedDraftResults(base(),content,review(),"2026-10-22T08:01:00Z"),b=applyReviewedDraftResults(base(),content,review(),"2026-10-22T08:01:00Z");expect(a).toEqual(b);expect(a.coverage).toBe("partial");expect(a.selections).toHaveLength(1);expect(a.candidates).toHaveLength(1);expect(draftPredictionOutcome(a,"npb:team:tigers")).toBe("match");expect(draftPredictionOutcome(a,"npb:team:giants")).toBe("unavailable");expect(base().selections).toHaveLength(0);});
   it("rejects future/premeeting results and a prospective ending sentence",()=>{expect(()=>applyReviewedDraftResults(base(),content,review(),"2026-10-22T07:00:00Z")).toThrow();const r=review();r.eventState="ended";r.eventProof.row="ドラフト会議が終了した後にイベントを行う。";expect(()=>applyReviewedDraftResults(base(),r.eventProof.row+"\n"+result,r,"2026-10-22T08:01:00Z")).toThrow();});
   it("does not merge same names with another affiliation",()=>{const r=review();r.selections[0]!.affiliation="別大学";r.selections[0]!.proof.row=result.replace("架空大学","別大学");const d=applyReviewedDraftResults(base(),event+"\n"+r.selections[0]!.proof.row,r,"2026-10-22T08:01:00Z");expect(d.candidates).toHaveLength(2);expect(draftPredictionOutcome(d,"npb:team:tigers")).toBe("unverified");});
