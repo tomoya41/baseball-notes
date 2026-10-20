@@ -1,0 +1,67 @@
+{
+  "id": "2026-premeeting-v1",
+  "createdAt": "2026-10-20T21:27:20.222Z",
+  "author": "Baseball Notes（独自仮説）",
+  "predictions": [
+    {
+      "teamId": "npb:team:giants",
+      "candidateId": "npb:draft:2026:1dc09f3414fba269aa9a81b6",
+      "reason": "外野の左打者を優先する仮説。大学代表の外野手という経験に注目する案。"
+    },
+    {
+      "teamId": "npb:team:tigers",
+      "candidateId": "npb:draft:2026:5ddbeb04bbb237bee3649822",
+      "reason": "捕手を優先する仮説。大学代表で捕手・主将として記載された選手を選ぶ案。"
+    },
+    {
+      "teamId": "npb:team:dragons",
+      "candidateId": "npb:draft:2026:4671e2754a20c964147efb46",
+      "reason": "左投手を優先する仮説。大学代表の左投手を選ぶ案。"
+    },
+    {
+      "teamId": "npb:team:carp",
+      "candidateId": "npb:draft:2026:5ddbeb04bbb237bee3649822",
+      "reason": "捕手を重視する独自案。同じ選手への重複入札を想定し、抽選結果は予測しない。"
+    },
+    {
+      "teamId": "npb:team:swallows",
+      "candidateId": "npb:draft:2026:0f5d26ee680133c325ed4542",
+      "reason": "大学生投手を優先する仮説。大学代表の右投手を選ぶ案。"
+    },
+    {
+      "teamId": "npb:team:baystars",
+      "candidateId": "npb:draft:2026:852ee8d07c42ddf95d3521ef",
+      "reason": "左投手を重視する仮説。大学代表で左投左打と記載される投手を選ぶ案。"
+    },
+    {
+      "teamId": "npb:team:hawks",
+      "candidateId": "npb:draft:2026:0f5d26ee680133c325ed4542",
+      "reason": "大学生右投手を重視する独自案。球団公表やスカウト評価を示すものではない。"
+    },
+    {
+      "teamId": "npb:team:fighters",
+      "candidateId": "npb:draft:2026:104a779c213c32e08a4db17b",
+      "reason": "外野手を優先する独自案。大学代表の左打ち外野手という役割に注目する。"
+    },
+    {
+      "teamId": "npb:team:lions",
+      "candidateId": "npb:draft:2026:1dc09f3414fba269aa9a81b6",
+      "reason": "左打ちの外野手を優先する仮説。代表での守備位置を選択理由にする。"
+    },
+    {
+      "teamId": "npb:team:marines",
+      "candidateId": "npb:draft:2026:ca6169aff349fb15bd077ae1",
+      "reason": "大学生の右投手を優先する仮説。大学代表名簿から投手を選ぶ案。"
+    },
+    {
+      "teamId": "npb:team:eagles",
+      "candidateId": "npb:draft:2026:5ddbeb04bbb237bee3649822",
+      "reason": "捕手の確保を優先する独自案。大学代表での役割に注目し、競合の可能性を残す。"
+    },
+    {
+      "teamId": "npb:team:buffaloes",
+      "candidateId": "npb:draft:2026:78734d6764f069089e2bb2fb",
+      "reason": "内野手を重視する仮説。大学代表の内野手を選ぶ案。"
+    }
+  ]
+}

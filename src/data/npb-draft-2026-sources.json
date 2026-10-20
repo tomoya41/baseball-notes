@@ -1,0 +1,20 @@
+[
+  {
+    "provider": "Wikipedia",
+    "pageId": 5282993,
+    "title": "2026年度新人選手選択会議 (日本プロ野球)",
+    "revision": 111388948,
+    "revisionAt": "2026-10-14T19:05:34Z",
+    "contentSha256": "41897289654d0e24b2842f21fd0485a7623c0c4cf6a943172513bdbd8f0d46d3",
+    "license": "CC-BY-SA-4.0"
+  },
+  {
+    "provider": "Wikipedia",
+    "pageId": 5209342,
+    "title": "2026年の野球日本代表",
+    "revision": 111304047,
+    "revisionAt": "2026-10-07T07:21:20Z",
+    "contentSha256": "784bea3eb201a9e0f10199f6ee12b16dbd5dc6f3cf0acea5f642748f4bd7dcbd",
+    "license": "CC-BY-SA-4.0"
+  }
+]
