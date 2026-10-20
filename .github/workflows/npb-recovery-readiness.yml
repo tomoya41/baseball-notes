@@ -1,0 +1,51 @@
+name: NPB bounded recovery readiness
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        type: choice
+        options: [connection, projection]
+        default: connection
+        description: "Manual only; connection uses SELECT 1, projection needs recent owner quota evidence"
+      quota_used_rows:
+        type: string
+        description: "Owner Console monthly rows read (projection only, at most 400000000)"
+      quota_observed_at:
+        type: string
+        description: "Owner Console observation ISO UTC timestamp within 24 hours (projection only)"
+permissions:
+  contents: read
+concurrency:
+  group: npb-bounded-recovery-readiness
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v7
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@v7
+        with: { node-version-file: .nvmrc, cache: npm }
+      - run: npm ci
+      - name: Validate owner quota attestation without DB access
+        if: inputs.mode == 'projection'
+        env:
+          QUOTA_USED: ${{ inputs.quota_used_rows }}
+          QUOTA_OBSERVED: ${{ inputs.quota_observed_at }}
+        run: |
+          node --input-type=module -e "import fs from 'node:fs'; if(!/^[0-9]+$/.test(process.env.QUOTA_USED??''))throw Error('Owner quota value required'); fs.mkdirSync('.data/npb-recovery',{recursive:true}); fs.writeFileSync('.data/npb-recovery/quota.json',JSON.stringify({plan:'Free',monthlyRowsReadLimit:500000000,rowsReadUsed:Number(process.env.QUOTA_USED),observedAt:process.env.QUOTA_OBSERVED}));"
+      - name: One probe, at most eight SELECTs, no retries or publication
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          RECOVERY_MODE: ${{ inputs.mode }}
+        run: npx tsx scripts/verify-npb-recovery-readiness.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: npb-recovery-readiness
+          path: .data/npb-recovery/report.json
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 7
