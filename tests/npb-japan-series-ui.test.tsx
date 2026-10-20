@@ -4,10 +4,10 @@ import{NpbJapanSeriesScreen}from"../src/ui/npb-japan-series";import{NpbDiscovery
 import {seriesFixture} from "./fixtures/npb-series";
 vi.mock("../src/application/npb-japan-series-reader",()=>({readNpbJapanSeries:vi.fn()}));vi.mock("../src/application/npb-cs-reader",()=>({readNpbCs:vi.fn()}));vi.mock("../src/application/npb-series-reader",()=>({readNpbSeries:vi.fn()}));
 afterEach(()=>{vi.clearAllMocks();vi.unstubAllGlobals();});
-async function mount(path="/NPB/postseason?stage=japan_series",failed=false,update?:(data:ReturnType<typeof buildWikipediaJapanSeries>)=>void){
+async function mount(path="/NPB/postseason?stage=japan_series",failed=false,update?:(data:ReturnType<typeof buildWikipediaJapanSeries>)=>void,csFails=false){
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);const f=japanFixture(),data=buildWikipediaJapanSeries(f.archive,f.cs,"b".repeat(64),f.admission);
   update?.(data);vi.mocked(readNpbJapanSeries).mockImplementation(async()=>{if(failed)throw Error("offline");return data;});
-  vi.mocked(readNpbSeries).mockResolvedValue(f.cs);vi.mocked(readNpbCs).mockResolvedValue(seriesFixture().cs);
+  vi.mocked(readNpbSeries).mockImplementation(async()=>{if(csFails)throw Error("CS offline");return f.cs;});vi.mocked(readNpbCs).mockImplementation(async()=>{if(csFails)throw Error("CS offline");return seriesFixture().cs;});
   const host=document.createElement("div"),root=createRoot(host);document.body.append(host);const regular={directory:{findLatestNpb:vi.fn()},gameSurface:{manifest:vi.fn(),date:vi.fn()}};
   await act(async()=>root.render(<MemoryRouter initialEntries={[path]}><Routes><Route path="/NPB/postseason" element={<NpbJapanSeriesScreen/>}/><Route path="/NPB/postseason/series/:seriesId" element={<NpbJapanSeriesScreen/>}/><Route path="/NPB/games/:gameId" element={<NpbJapanSeriesScreen gameDetail/>}/><Route path="/NPB/search" element={<NpbDiscovery services={regular as unknown as Services}/>}/></Routes></MemoryRouter>));
   return {host,data,regular,close:async()=>{await act(async()=>root.unmount());host.remove();}};
@@ -29,10 +29,17 @@ it.each(["series","game"])("discovers Japan Series %s independently of Current/C
 it("preserves native/share scope and returns a cold Game to Japan Series rather than Regular or CS",()=>{
   const game="/NPB/games/npb%3Agame%3A9f6c547e7852f6c5a928",q="season=2026&competition=postseason&stage=japan_series";
   expect(portableRoute(game,q)).toBe(game+"?competition=postseason&stage=japan_series&season=2026");expect(canonicalDeepLink("baseballnotes:/"+game+"?"+q)).toContain("stage=japan_series");expect(parentNativeRoute(game+"?"+q)).toBe("/NPB/postseason?season=2026&stage=japan_series");expect(portableRoute("/NPB/cs","stage=japan_series")).toBeNull();
+  expect(canonicalDeepLink("baseballnotes:/"+game)).toBe(game+"?competition=postseason&stage=japan_series&season=2026");expect(parentNativeRoute(game)).toBe("/NPB/postseason?season=2026&stage=japan_series");
 });
 it.each([["series",5],["game",19]] as const)("combines admitted CS and Japan Series in %s discovery without leaking into Regular",async(kind,count)=>{
   const f=await mount(`/NPB/search?kind=${kind}&season=2026&competition=postseason`);try{expect(f.host.querySelectorAll("a.player-row")).toHaveLength(count);expect(f.regular.gameSurface.date).not.toHaveBeenCalled();expect(f.host.textContent).toContain("未収録");}finally{await f.close();}
 });
 it("does not infer pre-opening or no-games from missing results after the scheduled opening, and uses JST observation dates",async()=>{
   const f=await mount(undefined,false,d=>{d.observedAt="2026-10-24T16:00:00Z";});try{expect(f.host.textContent).toContain("記事取得 2026-10-25時点");expect(f.host.textContent).not.toContain("取得時点で開幕前");expect(f.host.textContent).toContain("シリーズ勝敗は確認できません");}finally{await f.close();}
+});
+it.each(["series","game"])("keeps available Japan Series %s rows when the independent CS source fails",async kind=>{
+  const f=await mount(`/NPB/search?kind=${kind}&competition=postseason`,false,undefined,true);try{expect(f.host.querySelectorAll("a.player-row")).toHaveLength(kind==="series"?1:7);expect(f.host.textContent).toContain("CSの追加情報を取得できません");expect(f.host.textContent).not.toContain("保存済みの大会記録を取得できません");expect(f.regular.gameSurface.manifest).not.toHaveBeenCalled();}finally{await f.close();}
+});
+it("keeps CS rows usable when Japan Series fails, with an explicit partial warning",async()=>{
+  const f=await mount("/NPB/search?kind=series&competition=postseason",true);try{expect(f.host.querySelectorAll("a.player-row")).toHaveLength(4);expect(f.host.textContent).toContain("日本シリーズの追加情報を取得できません");}finally{await f.close();}
 });

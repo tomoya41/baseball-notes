@@ -8,7 +8,7 @@ import { DataState, LoadingSkeleton, PageHeading } from "./components";
 import { ScoreboardRow } from "./design-system";
 import { npbTeamShortName as name } from "./npb-team-names";
 import japanPin from "../data/npb-japan-series-release.json";
-import { JapanSeriesEntry,NpbJapanSeriesScreen } from "./npb-japan-series";
+import { JapanSeriesEntry,NpbJapanSeriesScreen,japanSeriesUrl } from "./npb-japan-series";
 
 const seriesUrl = (id: string) => `/NPB/postseason/series/${encodeURIComponent(id)}?season=2026`;
 function SeriesScore({ series }: { series: PostseasonSeries }) {
@@ -34,7 +34,7 @@ function NpbCsPostseasonScreen() {
   }, [valid,attempt]);
   const retry = () => { setFailed(false); setAttempt(a => a + 1); }, series = data?.series.find(s => s.id === seriesId);
   return <div className="screen postseason-screen npb-postseason-screen"><PageHeading eyebrow="NPB · 2026 · ポストシーズン" title={series?.name ?? "ポストシーズン"} />
-    {!valid ? <DataState kind="unsupported" title="指定の年度・大会条件は未対応です" /> : failed ? <><DataState kind="source-unavailable" title="シリーズ情報を取得できません" /><button onClick={retry}>再試行</button><Link to="/NPB/cs?season=2026">収録済みの試合・選手成績へ →</Link></> : !data ? <LoadingSkeleton /> : seriesId && (!series || stage !== "all" && series.round !== stage) ? <DataState kind="no-data" title="この条件のシリーズは未収録です" /> : <>
+    {!valid ? <DataState kind="unsupported" title="指定の年度・大会条件は未対応です" /> : failed ? <><DataState kind="source-unavailable" title="シリーズ情報を取得できません" /><button onClick={retry}>再試行</button><Link to="/NPB/cs?season=2026">収録済みの試合・選手成績へ →</Link><Link to={japanSeriesUrl}>日本シリーズの日程へ →</Link></> : !data ? <LoadingSkeleton /> : seriesId && (!series || stage !== "all" && series.round !== stage) ? <DataState kind="no-data" title="この条件のシリーズは未収録です" /> : <>
       <p className="inline-note">記事取得 {data.observedAt.slice(0,10)} · CSの勝敗を収録。試合別の選手成績は一部収録です。</p>
       {series ? <>
         <SeriesScore series={series} />

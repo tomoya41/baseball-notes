@@ -555,6 +555,14 @@ public class ReleaseQualityTest {
         assertEquals("No fabricated box score","0",js("String(document.querySelectorAll('main table').length)"));
         shell("input keyevent KEYCODE_BACK");waitText("日程・試合詳細");assertEquals("System Back returns to exact series",route,js("location.hash"));
     }
+    @Test public void japanSeriesIdOnlyColdGameBackStaysInPostseason() throws Exception {
+        Intent link=new Intent(Intent.ACTION_VIEW,Uri.parse("baseballnotes://NPB/games/npb%3Agame%3A9f6c547e7852f6c5a928"));
+        link.setClassName("com.tomoya41.baseballnotes","jp.baseballdata.app.MainActivity");
+        scenario=ActivityScenario.launch(link);waitText("第1戦 · ソフトバンク対DeNA");
+        assertTrue("ID-only cold link gains exact postseason scope",js("location.hash").contains("stage=japan_series"));
+        shell("input keyevent KEYCODE_BACK");waitText("日程・試合詳細");
+        assertTrue("Cold Back cannot enter Regular schedule",js("location.hash").contains("/NPB/postseason"));
+    }
     @Test public void seasonalHomeAndCollectedAgeTotalsKeepScopeAndExplicitLoading() throws Exception {
         scenario=ActivityScenario.launch(MainActivity.class);waitText("BASEBALL");
         js("location.hash='#/NPB/home?homeSeason=autumn'");waitText("CSとドラフトから、選手を深掘り");
