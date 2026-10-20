@@ -80,7 +80,10 @@ export function applyReviewedDraftResults(base:DraftEvent,content:string,raw:unk
   const review=reviewSchema.parse(raw),d=structuredClone(base);
   if(Date.parse(review.reviewedAt)<Date.parse(base.scheduledAt)||Date.parse(review.reviewedAt)<Date.parse(observedAt)||Date.parse(review.reviewedAt)>buildTime)throw Error("Invalid review time");
   function evidence(p:z.infer<typeof proof>){if(p.row.includes("\n")||!content.split("\n").includes(p.row)||content.split(p.row).length!==2)throw Error("Evidence must be one unique source line");return plain(p.row).split(/\|\|/).map(s=>s.replace(/^\|/,"").trim());}
-  evidence(review.eventProof);if(!new RegExp(review.eventState==="ended"?"終了した。$":"(?:開始|開催)した。$").test(plain(review.eventProof.row)))throw Error("Missing actual event evidence");
+  evidence(review.eventProof);
+  const eventText=plain(review.eventProof.row).replace(/<ref\b[^>]*>[\s\S]*?<\/ref>|<ref\b[^>]*\/>/g,"").replace(/'{2,5}/g,"");
+  const actual=review.eventState==="ended"?/終了(?:した|された)。$/:/(?:開始|開催)(?:した。|された(?:。|第\d+回))/;
+  if(!eventText.includes("2026年10月22日")||!/(?:ドラフト会議|新人選手選択会議)/.test(eventText)||/予定|場合|終了した後/.test(eventText)||!actual.test(eventText))throw Error("Missing actual event evidence");
   d.observedAt=observedAt;d.review={reviewedBy:review.reviewedBy,reviewedAt:review.reviewedAt};d.eventState=review.eventState;d.coverage="partial";d.selections=[];d.lotteries=[];
   for(const r of review.selections){
     if(r.proof.mode==="team_table"){
