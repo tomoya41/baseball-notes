@@ -21,7 +21,7 @@
 ## 当日の更新手順（自動速報ではない）
 
 1. `npx tsx scripts/fetch-npb-draft-candidate.ts --output=.data/draft-2026/new-archive.json`で同じ2記事を正規APIの1要求・最大500KB・retry 0でprivate保存。既存ファイルがあれば通信0でcacheを使い、明示的な`--refresh`のみ再取得する。候補取得であり、registryのadmissionや本番公開は行わない。revision/timestamp/hash/差分を人が確認してSource registryへ追加・固定する。元記事の結果掲載を公式発表直接確認と表現しない。
-2. private review JSONにreviewedBy、reviewedAt、eventState、eventProof、selections、lotteriesを作成する。現在のadapterは**1行に球団・順位・記事リンク付き選手・所属・支配下/育成が独立した5セル**を持つ表と、2025年実表で確認した**球団見出し＋新人/育成区分＋順位/選手名/守備/所属/結果の5列**を対象とする。後者はproof.mode=`team_table`、proof.rowに`!1位`と次の選手行の2行を指定する。球団・大会区分・正確なヘッダーを独立に検証する。チームが列見出しだけのmatrix、rowspan、曖昧な氏名は未対応として止める。実際の当日表が別形式ならその形式のfixtureとadapterを先にreviewし、無理に正規化しない。
+2. private review JSONに公開用のreviewer名（個人情報・メールは不要）、reviewedAt、eventState、eventProof、selections、lotteriesを作成する。現在のadapterは**1行に球団・順位・記事リンク付き選手・所属・支配下/育成が独立した5セル**を持つ表と、2025年実表で確認した**球団見出し＋新人/育成区分＋順位/選手名/守備/所属/結果の5列**を対象とする。後者はproof.mode=`team_table`、proof.rowに`!1位`と次の選手行の2行を指定する。球団・大会区分・正確なヘッダーを独立に検証する。チームが列見出しだけのmatrix、rowspan、曖昧な氏名は未対応として止める。実際の当日表が別形式ならその形式のfixtureとadapterを先にreviewし、無理に正規化しない。
 3. 開始・終了の明示的な過去形の1行をeventProofにする。「終了した後に開催予定」や予定日時から開催中・終了を作らない。抽選は実際の候補・参加球団・回次・当選を示す独立行が必要。未確認の当選はnull。
 4. offlineで実行する：
    ```powershell
@@ -35,7 +35,7 @@ review JSONの行（**架空fixture形式**、実データに使わない）:
 {"reviewedBy":"reviewer","reviewedAt":"2026-10-22T08:00:00Z","eventState":"in_progress","eventProof":{"pageId":5282993,"row":"2026年10月22日にドラフト会議を開始した。"},"selections":[{"teamId":"npb:team:tigers","type":"regular","round":1,"name":"架空一","article":"架空一","affiliation":"架空大学","proof":{"pageId":5282993,"row":"|阪神タイガース||1位||[[架空一]]||架空大学||支配下"}}],"lotteries":[]}
 ```
 
-開催前・確認中・記事で開催中/終了確認を区別し、各指名行は確認済みだけを公開する。Coverageはunavailable/partialのみ。全件完了の独立した母集団証拠がないためcompleteは実装しない。時計だけで結果や開催状態を更新せず、最終確認時刻を表示する。会議後も古いsnapshotは「取得時点で開催前」のまま、リアルタイムを保証しない。
+Source取得時刻observedAtと最終確認review.reviewedAt/reviewedByを別々に保持する。取得→レビュー→buildの順で時刻を検証し、レビューの未来時刻と公開後の時刻後退も拒否する。開催前・確認中・記事で開催中/終了確認を区別し、各指名行は確認済みだけを公開する。Coverageはunavailable/partialのみ。全件完了の独立した母集団証拠がないためcompleteは実装しない。時計だけで結果や開催状態を更新せず、最終確認時刻を表示する。会議後も古いsnapshotは「取得時点で開催前」のまま、リアルタイムを保証しない。
 
 ## 配信・rollback
 

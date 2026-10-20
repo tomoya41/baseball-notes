@@ -76,12 +76,12 @@ export function draftTeamTableRows(content:string){
   }return result;
 }
 /** A deliberately narrow reviewed-row adapter. Unsupported/matrix tables require an independently tested adapter, never broad token matching. */
-export function applyReviewedDraftResults(base:DraftEvent,content:string,raw:unknown,observedAt:string){
+export function applyReviewedDraftResults(base:DraftEvent,content:string,raw:unknown,observedAt:string,buildTime:number=Date.now()){
   const review=reviewSchema.parse(raw),d=structuredClone(base);
-  if(Date.parse(review.reviewedAt)<Date.parse(base.scheduledAt)||Date.parse(review.reviewedAt)>Date.parse(observedAt))throw Error("Invalid review time");
+  if(Date.parse(review.reviewedAt)<Date.parse(base.scheduledAt)||Date.parse(review.reviewedAt)<Date.parse(observedAt)||Date.parse(review.reviewedAt)>buildTime)throw Error("Invalid review time");
   function evidence(p:z.infer<typeof proof>){if(p.row.includes("\n")||!content.split("\n").includes(p.row)||content.split(p.row).length!==2)throw Error("Evidence must be one unique source line");return plain(p.row).split(/\|\|/).map(s=>s.replace(/^\|/,"").trim());}
   evidence(review.eventProof);if(!new RegExp(review.eventState==="ended"?"終了した。$":"(?:開始|開催)した。$").test(plain(review.eventProof.row)))throw Error("Missing actual event evidence");
-  d.observedAt=observedAt;d.eventState=review.eventState;d.coverage="partial";d.selections=[];d.lotteries=[];
+  d.observedAt=observedAt;d.review={reviewedBy:review.reviewedBy,reviewedAt:review.reviewedAt};d.eventState=review.eventState;d.coverage="partial";d.selections=[];d.lotteries=[];
   for(const r of review.selections){
     if(r.proof.mode==="team_table"){
       const rows=draftTeamTableRows(content).filter(row=>row.row===r.proof.row&&row.teamId===r.teamId&&row.type===r.type&&row.round===r.round&&row.name===r.name&&row.article===r.article&&row.affiliation===r.affiliation);
