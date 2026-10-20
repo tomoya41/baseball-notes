@@ -11,7 +11,7 @@ export function canonicalDeepLink(input: string): string | null {
       uri.hash.startsWith("#/") ? uri.hash.slice(1) : uri.pathname.replace(/^\/baseball-notes/, "");
     const [portablePath, portableSearch] = route.split("?");
     const expanded = ["data", "history", "compare", "team-compare", "season-compare", "postseason", "matchup", "milestones", "form", "cs", "moves"].includes(portablePath?.split("/")[2] ?? "");
-    if (expanded) return portableRoute(portablePath!, portableSearch ?? uri.search);
+    if (expanded || portablePath === "/NPB/talent/2026") return portableRoute(portablePath!, portableSearch ?? uri.search);
     const [leagueRaw, resource, encoded, child, ...extra] = route.split("?")[0]!.replace(/^\//, "").split("/");
     if (extra.length || (child && !["analysis", "game-log", "stats", "more", "trends", "advanced"].includes(child) && !(child === "seasons" && leagueRaw?.toUpperCase() === "NPB"))) return null;
     const league = leagueRaw?.toUpperCase();
@@ -38,6 +38,7 @@ export function parentNativeRoute(path: string): string | null {
   }
   if (league === "MLB" && /^20\d{2}$/.test(source.get("season") ?? "")) scope.set("season", source.get("season")!);
   const suffix = scope.size ? `?${scope}` : "";
+  if(league==="NPB"&&segments[1]==="talent"&&segments[2]==="2026")return "/NPB/talent";
   if(league==="NPB"&&segments[1]==="games"){
     try{if(japanPin.gameIds.includes(decodeURIComponent(segments[2]??"")))return "/NPB/postseason?season=2026&stage=japan_series";}catch{/* Invalid encoding follows the safe generic parent. */}
   }

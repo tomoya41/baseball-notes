@@ -9,6 +9,7 @@ import { viewConditions } from "./portable-conditions";
 import type { League } from "./models";
 import { npbEventQuery } from "./npb-event-query";
 import japanPin from "../data/npb-japan-series-release.json";
+import { draftEventQuery } from "./npb-draft-query";
 
 export const PUBLIC_APP_URL = "https://tomoya41.github.io/baseball-notes/";
 // Local IDs and unknown keys never travel through a shareable URL.
@@ -16,6 +17,11 @@ export function portableRoute(path: string, search = ""): string | null {
   const parts = path.split("/").filter(Boolean), league = parts[0];
   if (league !== "NPB" && league !== "MLB") return null;
   const resource = parts[1], source = new URLSearchParams(search), clean = new URLSearchParams();
+  if(league==="NPB"&&resource==="talent"&&parts.length===3&&parts[2]==="2026"){
+    if(!draftEventQuery(source).valid)return null;
+    for(const key of ["view","team","type","q","page"]){const value=source.get(key);if(value)clean.set(key,value);}
+    return `${path}${clean.size?`?${clean}`:""}`;
+  }
   if (league === "NPB" && resource === "postseason" && parts[2] === "series" && parts.length === 4) {
     if (!/^npb:series:[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(decodeSafe(parts[3]!)) || source.has("season") && source.get("season") !== "2026" || source.has("competition") && source.get("competition") !== "postseason") return null;
     return `${path}?season=2026`;

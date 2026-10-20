@@ -23,6 +23,7 @@ import { NpbLifecycleExplorer } from "./npb-lifecycle";
 const NpbCsScreen = lazy(()=>import("./npb-cs").then(m=>({default:m.NpbCsScreen})));
 const NpbPostseasonScreen = lazy(()=>import("./npb-postseason").then(m=>({default:m.NpbPostseasonScreen})));
 const NpbPlayerEventsScreen = lazy(()=>import("./npb-player-events").then(m=>({default:m.NpbPlayerEventsScreen})));
+const NpbDraftEventScreen = lazy(()=>import("./npb-draft-event").then(m=>({default:m.NpbDraftEventScreen})));
 const NpbPlayerSeasons = lazy(()=>import("./npb-historical").then(m=>({default:m.NpbPlayerSeasons})));
 type FavoriteTarget = Pick<Favorite, "kind" | "entityId" | "league">;
 function NpbSearchEntry(props: Parameters<typeof NpbRoutes>[0]) {
@@ -43,6 +44,7 @@ export function NpbRoutes({ services, favorites, toggle, saving }: { services: S
     <Route path="postseason/*" element={<PostseasonUnavailable league="NPB" />} />
     <Route path="explore" element={<ExploreScreen league="NPB" />} />
     <Route path="milestones/*" element={<NpbMilestonesScreen repository={services.product} />} />
+    <Route path="talent/2026" element={<Suspense fallback={null}><NpbDraftEventScreen/></Suspense>} />
     <Route path="talent/*" element={new URLSearchParams(location.search).get("tab") === "1" ? <FutureFeatureScreen feature="talent" league="NPB" /> : <NpbLifecycleExplorer services={services} />} />
     {(["preseason", "matchup", "watch"] as const).map(feature => <Route key={feature} path={`${feature}/*`} element={<FutureFeatureScreen feature={feature} league="NPB" />} />)}
     {(["career", "advanced"] as const).map(feature => <Route key={feature} path={`players/:playerId/${feature}`} element={<FutureFeatureScreen feature={feature} league="NPB" />} />)}
