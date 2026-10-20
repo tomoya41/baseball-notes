@@ -4,6 +4,8 @@ import { dateInZone } from "../../domain/analysis-query";
 import { npbJapanSeriesSchema, assertJapanSeriesAdvancement, type NpbJapanSeries } from "../../domain/npb-japan-series";
 import type { NpbPostseasonSeries } from "../../domain/npb-postseason-series";
 import { npbSeriesId } from "./wikipedia-npb-series";
+import reviewedSources from "../../data/npb-japan-series-sources.json";
+import { csSourceSchema } from "../../domain/npb-cs-observations";
 
 const page=z.object({pageid:z.number().int(),title:z.string(),revisions:z.array(z.object({revid:z.number().int().positive(),timestamp:z.iso.datetime(),slots:z.object({main:z.object({content:z.string().max(100000)})})})).length(1)});
 const archiveSchema=z.object({observedAt:z.iso.datetime(),response:z.object({query:z.object({pages:z.array(page).length(2)})})});
@@ -13,10 +15,14 @@ const digest=(s:string)=>createHash("sha256").update(s).digest("hex");
 export function japanGameId(gameNumber:number){return `npb:game:${digest(`baseball-notes:npb:japan-series:v1:2026:5306035:${gameNumber}`).slice(0,20)}`;}
 
 /** Only the admitted article + its exact schedule transclusion; never news bodies or NPB scraping. */
-export function buildWikipediaJapanSeries(raw:unknown,cs:NpbPostseasonSeries,csSeriesBodySha256:string){
+export function buildWikipediaJapanSeries(raw:unknown,cs:NpbPostseasonSeries,csSeriesBodySha256:string,admittedSources:readonly z.infer<typeof csSourceSchema>[]=reviewedSources){
   const archive=archiveSchema.parse(raw),asOf=dateInZone(Date.parse(archive.observedAt),"Asia/Tokyo");
   const article=archive.response.query.pages.find(p=>p.pageid===5306035&&p.title==="2026年の日本シリーズ"),schedule=archive.response.query.pages.find(p=>p.pageid===5307595&&p.title==="Template:2026年の日本シリーズ");
   if(!article||!schedule||archive.response.query.pages.some(p=>p.revisions[0]!.timestamp>archive.observedAt||/\{\{\s*(?:著作権侵害|Copyvio|転載疑惑)/i.test(p.revisions[0]!.slots.main.content)))throw Error("Unadmitted Japan Series source/revision");
+  const admitted=z.array(csSourceSchema).length(2).parse(admittedSources);
+  for(const p of archive.response.query.pages){const a=admitted.find(s=>s.pageId===p.pageid),v=p.revisions[0]!;
+    if(!a||a.title!==p.title||a.revision!==v.revid||a.revisionAt!==v.timestamp||a.contentSha256!==digest(v.slots.main.content))throw Error("Japan Series reviewed revision/hash mismatch");
+  }
   const text=article.revisions[0]!.slots.main.content.replace(/<!--[\s\S]*?-->/g,"");
   if(!text.includes("{{2026年の日本シリーズ}}")||!["横浜DeNAベイスターズ","福岡ソフトバンクホークス"].every(t=>text.includes(`[[${t}]]`))||!text.includes("4勝先取"))throw Error("Unverified Japan Series participants/rules");
   const games:NpbJapanSeries["series"]["games"]=[],venues:Record<string,string>={},results:NpbJapanSeries["results"]=[];
