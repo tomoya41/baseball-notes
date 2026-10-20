@@ -8,6 +8,7 @@ import type { CompareMetrics } from "./player-compare";
 import { viewConditions } from "./portable-conditions";
 import type { League } from "./models";
 import { npbEventQuery } from "./npb-event-query";
+import japanPin from "../data/npb-japan-series-release.json";
 
 export const PUBLIC_APP_URL = "https://tomoya41.github.io/baseball-notes/";
 // Local IDs and unknown keys never travel through a shareable URL.
@@ -24,15 +25,17 @@ export function portableRoute(path: string, search = ""): string | null {
     for (const key of ["season", "kind", "team", "player", "q", "page", "follow"]) { const value = source.get(key); if (value) clean.set(key, value); }
     return `${path}${clean.size ? `?${clean}` : ""}`;
   }
-  if(league==="NPB"&&resource==="games"&&source.get("competition")==="postseason"){
-    if(parts.length!==3||!canonicalEntityRefSchema.safeParse({league,kind:"game",id:decodeSafe(parts[2]!)}).success||source.has("season")&&source.get("season")!=="2026"||source.has("stage")&&!["npb_cs_first","npb_cs_final"].includes(source.get("stage")!))return null;
-    clean.set("competition","postseason");if(source.has("stage"))clean.set("stage",source.get("stage")!);clean.set("season","2026");
+  if(league==="NPB"&&resource==="games"&&(source.get("competition")==="postseason"||japanPin.gameIds.includes(decodeSafe(parts[2]??"")))){
+    const isJapan=japanPin.gameIds.includes(decodeSafe(parts[2]??"")),stage=source.get("stage");
+    if(source.has("competition")&&source.get("competition")!=="postseason"||stage==="japan_series"&&!isJapan||isJapan&&stage!==null&&stage!=="japan_series")return null;
+    if(parts.length!==3||!canonicalEntityRefSchema.safeParse({league,kind:"game",id:decodeSafe(parts[2]!)}).success||source.has("season")&&source.get("season")!=="2026"||source.has("stage")&&!["npb_cs_first","npb_cs_final","japan_series"].includes(source.get("stage")!))return null;
+    clean.set("competition","postseason");if(isJapan)clean.set("stage","japan_series");else if(stage)clean.set("stage",stage);clean.set("season","2026");
     return `${path}?${clean}`;
   }
   if (league === "NPB" && parts.length === 2 && ["cs", "postseason"].includes(resource ?? "")) {
     if(source.has("season")&&source.get("season")!=="2026")return null;
     clean.set("season","2026");
-    if(source.has("stage")&&!["all","npb_cs_first","npb_cs_final"].includes(source.get("stage")!))return null;
+    if(source.has("stage")&&!["all","npb_cs_first","npb_cs_final",...(resource==="postseason"?["japan_series"]:[])].includes(source.get("stage")!))return null;
     if(source.has("role")&&!["batting","pitching"].includes(source.get("role")!))return null;
     for(const key of ["stage","role"])if(source.has(key))clean.set(key,source.get(key)!);
     if(source.has("q"))clean.set("q",source.get("q")!.slice(0,100));
