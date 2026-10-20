@@ -1,6 +1,6 @@
 import { describe,it,expect } from "vitest";
 import { draftEventSchema,draftTeams,draftPredictionOutcome } from "../src/domain/npb-draft-event";
-import { applyReviewedDraftResults,draftCandidateId,draftHash,draftRosterCandidates,admittedDraftArchive } from "../src/infrastructure/providers/wikipedia-npb-draft";
+import { applyReviewedDraftResults,draftCandidateId,draftHash,draftRosterCandidates,admittedDraftArchive,draftTeamTableRows } from "../src/infrastructure/providers/wikipedia-npb-draft";
 
 // Synthetic fixtures; these are not real candidates, results or source revisions.
 const line="|1||[[架空一]]||Example One|| {{left}}架空大学||4||右||左||";
@@ -22,8 +22,18 @@ describe("draft snapshots and identities",()=>{
 describe("reviewed postmeeting results",()=>{
   it("accepts proved results, compares actual first selection, and replays deterministically",()=>{const a=applyReviewedDraftResults(base(),content,review(),"2026-10-22T08:01:00Z"),b=applyReviewedDraftResults(base(),content,review(),"2026-10-22T08:01:00Z");expect(a).toEqual(b);expect(a.coverage).toBe("partial");expect(a.selections).toHaveLength(1);expect(a.candidates).toHaveLength(1);expect(draftPredictionOutcome(a,"npb:team:tigers")).toBe("match");expect(draftPredictionOutcome(a,"npb:team:giants")).toBe("unavailable");expect(base().selections).toHaveLength(0);});
   it("rejects future/premeeting results and a prospective ending sentence",()=>{expect(()=>applyReviewedDraftResults(base(),content,review(),"2026-10-22T07:00:00Z")).toThrow();const r=review();r.eventState="ended";r.eventProof.row="ドラフト会議が終了した後にイベントを行う。";expect(()=>applyReviewedDraftResults(base(),r.eventProof.row+"\n"+result,r,"2026-10-22T08:01:00Z")).toThrow();});
-  it("does not merge same names with another affiliation",()=>{const r=review();r.selections[0]!.affiliation="別大学";r.selections[0]!.proof.row=result.replace("架空大学","別大学");const d=applyReviewedDraftResults(base(),event+"\n"+r.selections[0]!.proof.row,r,"2026-10-22T08:01:00Z");expect(d.candidates).toHaveLength(2);expect(draftPredictionOutcome(d,"npb:team:tigers")).toBe("different");});
+  it("does not merge same names with another affiliation",()=>{const r=review();r.selections[0]!.affiliation="別大学";r.selections[0]!.proof.row=result.replace("架空大学","別大学");const d=applyReviewedDraftResults(base(),event+"\n"+r.selections[0]!.proof.row,r,"2026-10-22T08:01:00Z");expect(d.candidates).toHaveLength(2);expect(draftPredictionOutcome(d,"npb:team:tigers")).toBe("unverified");});
   it.each(["team","round","type","article","duplicate"])("rejects %s mismatch rather than guessing",kind=>{const r=review();if(kind==="team")r.selections[0]!.teamId="npb:team:giants";if(kind==="round")r.selections[0]!.round=2;if(kind==="type")r.selections[0]!.type="developmental";if(kind==="article")r.selections[0]!.article="別記事";if(kind==="duplicate")r.selections.push(r.selections[0]!);expect(()=>applyReviewedDraftResults(base(),content,r,"2026-10-22T08:01:00Z")).toThrow();});
   it("keeps developmental results separate from first regular selections",()=>{const r=review();r.selections[0]!.type="developmental";r.selections[0]!.proof.row=result.replace("支配下","育成");const d=applyReviewedDraftResults(base(),event+"\n"+r.selections[0]!.proof.row,r,"2026-10-22T08:01:00Z");expect(draftPredictionOutcome(d,"npb:team:tigers")).toBe("unavailable");});
   it("records explicit lottery winner only, rejects a nonparticipant",()=>{const r={...review(),lotteries:[{attempt:1,candidateId:base().candidates[0]!.id,teamIds:["npb:team:tigers","npb:team:giants"],winnerId:"npb:team:tigers",proof:{pageId:5282993,row:"|第1回抽選||架空一||阪神タイガース・読売ジャイアンツ||当選：阪神タイガース"}}]};const d=applyReviewedDraftResults(base(),content+"\n"+r.lotteries[0]!.proof.row,r,"2026-10-22T08:01:00Z");expect(d.lotteries[0]!.winnerId).toBe("npb:team:tigers");r.lotteries[0]!.winnerId="npb:team:hawks";expect(()=>applyReviewedDraftResults(base(),content+"\n"+r.lotteries[0]!.proof.row,r,"2026-10-22T08:01:00Z")).toThrow();});
+  it("supports independently scoped 2025-style team tables with synthetic names",()=>{
+    const row="!1位\n|[[架空一]]||投手||[[架空大学]]||交渉中";
+    const table=`${event}\n== 球団別指名選手一覧 ==\n=== 阪神タイガース ===\n{| class="wikitable"\n! colspan="5" |新人選手選択会議\n|-\n!順位!!選手名!!守備!!所属!!結果\n|-\n${row}\n|-\n! colspan="5" |育成選手選択会議\n|-\n!順位!!選手名!!守備!!所属!!結果\n|-\n!1位\n|[[架空三]]||捕手||別大学||交渉中\n|}`;
+    expect(draftTeamTableRows(table).map(r=>r.type)).toEqual(["regular","developmental"]);
+    const r=review();r.selections[0]!.proof={pageId:5282993,row,mode:"team_table"} as typeof r.selections[0]["proof"];
+    expect(applyReviewedDraftResults(base(),table,r,"2026-10-22T08:01:00Z").selections).toHaveLength(1);
+    r.selections[0]!.type="developmental";expect(()=>applyReviewedDraftResults(base(),table,r,"2026-10-22T08:01:00Z")).toThrow();
+    expect(()=>draftTeamTableRows(table.replace("!順位!!選手名!!守備!!所属!!結果","!順位!!選手名!!不明!!所属!!結果"))).toThrow();
+  });
 });
+

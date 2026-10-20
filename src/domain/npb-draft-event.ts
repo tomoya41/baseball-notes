@@ -30,5 +30,10 @@ export type DraftEvent = z.infer<typeof draftEventSchema>;
 export function draftPredictionOutcome(data:DraftEvent,teamId:string){
   const prediction=data.forecast.predictions.find(p=>p.teamId===teamId);
   const result=data.selections.find(p=>p.teamId===teamId&&p.type==="regular"&&p.round===1);
-  return !prediction||!result?"unavailable":prediction.candidateId===result.candidateId?"match":"different";
+  if(!prediction||!result)return "unavailable";
+  if(prediction.candidateId===result.candidateId)return "match";
+  const expected=data.candidates.find(c=>c.id===prediction.candidateId),actual=data.candidates.find(c=>c.id===result.candidateId);
+  // Same article/name with differing school labels is not proof of a different person or of a match.
+  if(expected?.article===actual?.article||expected?.name===actual?.name)return "unverified";
+  return "different";
 }

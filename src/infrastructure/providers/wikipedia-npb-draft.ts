@@ -33,12 +33,34 @@ export function draftRosterCandidates(content:string){
   return candidates;
 }
 
-const proof=z.strictObject({pageId:z.literal(5282993),row:z.string().min(1).max(2000)});
+const proof=z.strictObject({pageId:z.literal(5282993),row:z.string().min(1).max(2000),mode:z.literal("team_table").optional()});
 const reviewedSelection=z.strictObject({teamId:z.string(),type:z.enum(["regular","developmental"]),round:z.number().int().positive(),name:z.string(),article:z.string(),affiliation:z.string(),proof});
 const reviewedLottery=z.strictObject({attempt:z.number().int().positive(),candidateId:z.string(),teamIds:z.array(z.string()),winnerId:z.string().nullable(),proof});
 const reviewSchema=z.strictObject({reviewedBy:z.string().min(1).max(80),reviewedAt:z.iso.datetime(),eventState:z.enum(["in_progress","ended"]),eventProof:proof,selections:z.array(reviewedSelection),lotteries:z.array(reviewedLottery)});
 const teamNames:Record<string,string>={giants:"読売ジャイアンツ",tigers:"阪神タイガース",dragons:"中日ドラゴンズ",carp:"広島東洋カープ",swallows:"東京ヤクルトスワローズ",baystars:"横浜DeNAベイスターズ",hawks:"福岡ソフトバンクホークス",fighters:"北海道日本ハムファイターズ",lions:"埼玉西武ライオンズ",marines:"千葉ロッテマリーンズ",eagles:"東北楽天ゴールデンイーグルス",buffaloes:"オリックス・バファローズ"};
 const teamName=(id:string)=>{const value=teamNames[id.replace(/^npb:team:/,"")];if(!value)throw Error("Unknown team");return value;};
+/** Reviewed 2025-style team tables. Selection is not evidence of signing or roster membership. */
+export function draftTeamTableRows(content:string){
+  const section=content.split("== 球団別指名選手一覧 ==\n")[1];if(!section)return [];
+  const result:{teamId:string;type:"regular"|"developmental";round:number;name:string;article:string;affiliation:string;row:string}[]=[];
+  for(const [key,team] of Object.entries(teamNames)){
+    const marker=`=== ${team} ===\n`,parts=section.split(marker);if(parts.length===1)continue;if(parts.length!==2)throw Error("Duplicate team section");
+    const table=parts[1]!.split(/\n==+ /)[0]!;let type:"regular"|"developmental"|null=null,header=false;
+    for(const raw of table.split("|-\n")){
+      const block=raw.trim().replace(/^\{\| class="wikitable"\n/,"");
+      const mode=block.match(/^! colspan="5" \|(新人選手選択会議|育成選手選択会議)$/);
+      if(mode){type=mode[1]==="新人選手選択会議"?"regular":"developmental";header=false;continue;}
+      if(block==="!順位!!選手名!!守備!!所属!!結果"){if(!type)throw Error("Table scope missing");header=true;continue;}
+      const row=block.match(/^!([1-9]\d*)位\n(\|[^\n]+)(?:\n\|\})?$/);if(!row){if(/^!\d+位/.test(block))throw Error("Unsupported selection structure");continue;}
+      if(/^[|\s\-—]*$/.test(row[2]!))continue;
+      if(!type||!header)throw Error("Unverified selection table header");
+      const cells=row[2]!.slice(1).split("||");if(cells.length!==4)throw Error("Unsupported selection columns");
+      const linked=cells[0]!.replace(/'''/g,"").match(/^\[\[([^\]|]+)(?:\|([^\]]+))?\]\]$/);
+      if(!linked||!['投手','捕手','内野手','外野手'].includes(cells[1]!)||!plain(cells[2]!))throw Error("Unverified table identity");
+      result.push({teamId:`npb:team:${key}`,type,round:Number(row[1]),article:linked[1]!,name:linked[2]??linked[1]!,affiliation:plain(cells[2]!),row:`!${row[1]}位\n${row[2]}`});
+    }
+  }return result;
+}
 /** A deliberately narrow reviewed-row adapter. Unsupported/matrix tables require an independently tested adapter, never broad token matching. */
 export function applyReviewedDraftResults(base:DraftEvent,content:string,raw:unknown,observedAt:string){
   const review=reviewSchema.parse(raw),d=structuredClone(base);
@@ -47,9 +69,14 @@ export function applyReviewedDraftResults(base:DraftEvent,content:string,raw:unk
   evidence(review.eventProof);if(!new RegExp(review.eventState==="ended"?"終了した。$":"(?:開始|開催)した。$").test(plain(review.eventProof.row)))throw Error("Missing actual event evidence");
   d.observedAt=observedAt;d.eventState=review.eventState;d.coverage="partial";d.selections=[];d.lotteries=[];
   for(const r of review.selections){
+    if(r.proof.mode==="team_table"){
+      const rows=draftTeamTableRows(content).filter(row=>row.row===r.proof.row&&row.teamId===r.teamId&&row.type===r.type&&row.round===r.round&&row.name===r.name&&row.article===r.article&&row.affiliation===r.affiliation);
+      if(rows.length!==1)throw Error("Unverified team table selection");
+    }else{
     const cells=evidence(r.proof),type=r.type==="regular"?"支配下":"育成";
     const link=r.article===r.name?`[[${r.article}]]`:`[[${r.article}|${r.name}]]`;
     if(cells.length!==5||cells[0]!==teamName(r.teamId)||cells[1]!==`${r.round}位`||cells[2]!==r.name||cells[3]!==r.affiliation||cells[4]!==type||!r.proof.row.includes(link))throw Error("Unsupported selection row/identity");
+    }
     const id=draftCandidateId(r.article,r.affiliation),existing=d.candidates.find(c=>c.id===id);
     if(existing&&existing.name!==r.name)throw Error("Conflicting candidate identity");
     if(!existing)d.candidates.push({id,name:r.name,article:r.article,affiliation:r.affiliation,position:"未確認",throws:"未確認",bats:"未確認",context:"指名結果表の所属（入団・現在所属の認定ではありません）",eligibility:"unverified",sourcePageId:5282993,evidenceSha256:draftHash(r.proof.row)});
