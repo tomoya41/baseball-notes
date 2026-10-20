@@ -7,11 +7,13 @@ import { formatDate } from "../presentation/formatters";
 import { DataState, LoadingSkeleton, MetricLabel } from "./components";
 import { ScoreHero } from "./design-system";
 import { GameHeading } from "./signature";
+import japanPin from "../data/npb-japan-series-release.json";
 import type { Services } from "../app/services";
 import { GameRecap, GameTeamLinks, NpbGamePreview } from "./game-story";
 import type { FavoriteActions } from "./team-favorite";
 import { admittedCsGameIds } from "../application/npb-cs-reader";
 const CsGame=lazy(()=>import("./npb-cs").then(m=>({default:m.NpbCsGameDetail})));
+const JapanGame=lazy(()=>import("./npb-japan-series").then(m=>({default:m.NpbJapanSeriesScreen})));
 
 type DetailState = "loading" | "ready" | "missing" | "error";
 const value = (number: number | null) => number === null ? "—" : String(number);
@@ -71,6 +73,7 @@ export function NpbGameDetailView({ payload, state, services, actions }: { paylo
 type GameScreenProps={ repository: { find(gameId: string): Promise<NpbGameDetail | null> }; services?: Services; favorites?: FavoriteActions["favorites"]; toggle?: FavoriteActions["toggle"]; saving?: boolean };
 export function NpbGameDetailScreen(props:GameScreenProps){
   const {gameId}=useParams(),[params]=useSearchParams();
+  if(gameId&&japanPin.gameIds.includes(gameId)||params.get("competition")==="postseason"&&params.get("stage")==="japan_series")return <Suspense fallback={<LoadingSkeleton/>}><JapanGame key={gameId} gameDetail/></Suspense>;
   if(gameId&&admittedCsGameIds.includes(gameId)||params.get("competition")==="postseason")return <Suspense fallback={<LoadingSkeleton />}><CsGame key={gameId} /></Suspense>;
   if(params.has("competition")&&params.get("competition")!=="regular"||params.has("stage"))return <DataState kind="unsupported" title="試合の大会条件を確認してください" />;
   return <NpbRegularGameDetailScreen {...props} />;

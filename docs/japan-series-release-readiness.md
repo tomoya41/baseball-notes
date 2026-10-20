@@ -39,6 +39,10 @@ Series IDは既存factoryのpage 5306035 / japan_series。Game IDは`baseball-no
 Home追加fetch 0、全選手Profileの追加fetch 0。日本シリーズ画面はbounded sidecarのみ（CS進出検証が必要なHubは既存seriesも取得）。
 ロールバックはUI/pinのrevert。公開済みassetは残し、既存APKのURLを壊さない。Raw wikitextはprivate `.data`、公開するのは必要な予定aggregateのみ。
 
+UIはCS Hub→日本シリーズ→各試合予定へ接続。Searchのシリーズ・試合にも追加し、Japan Seriesのstage付きURL、Back、Reload、Activityを維持する。
+CSと日本シリーズのSourceエラーは分離し、追加Source失敗時も既存CSを隠さない。未開催用の勝敗0–0をメイン画面に出さず「取得時点で開幕前」「結果未収録」と表示する。
+360px実画面で、日程行の状態文が細い列に過度に折り返す問題を確認し、行は「第n戦・予定」、全体と詳細画面で結果未収録を説明する構成へ整理した。
+
 再生成はネットワークもDBも使わない：
 ```powershell
 npx tsx scripts/build-npb-japan-series.ts --archive=.data/japan-series/archive.json --cs=dist/data/npb/competitions/9dc4b97286fac0c1976c6d7c58ff69db428571045804e1688d894ee91e1aa0a4/series-2026.json --output=.data/japan-series/replay
@@ -59,6 +63,7 @@ npx tsx scripts/build-npb-japan-series.ts --archive=.data/japan-series/archive.j
 
 既存period-batch workflowも既定をconnection-onlyへ変更し、明示的full modeでも最初にprobeを要求する。Collector/Gateの意味は変更しない。
 新readiness workflowにschedule・書込み・公開callback・新Secretsはない。既知のblocked中は実行を増やさない。
+実行中HTTP要求にも共有30秒deadlineを適用し、AbortSignalとclient closeで中断する。並行要求の一つが失敗しても、残った要求へのdeadlineは解除しない。サーバー内部の処理・課金走査を完全に取り消せる保証ではなく、継続試行や「readable」誤判定を防ぐ上限である。
 
 ## 再超過の防止と限界
 
@@ -67,6 +72,7 @@ npx tsx scripts/build-npb-japan-series.ts --archive=.data/japan-series/archive.j
 - NPB Historical/CS/日本シリーズ/選手イベントとMLB Historicalは静的配信。Home追加fetch 0を維持し、診断のために全選手を個別取得しない。
 - 高負荷診断をcronへ追加しない。再実行前に前回run/SHAを確認。通常の監視を停止したり、失敗を正常化して費用削減の証拠を作らない。
 - 月間read予算は400M以下を運用目標、100Mを余裕として残す。1回の走査量×定期実行回数×日数をConsole実測で評価する。返却件数やlocal速度だけから達成を宣言しない。
+- [公式料金](https://turso.tech/pricing)は2026-10-20再確認：Free $0/月、500M rows read。プラン・Overages設定は変更しない。
 - Consoleのリセット日・複数instanceの総read量・無料枠復旧後のproduction効果は未確認。課金・別アカウント回避・有料fallbackを行わない。
 
 Pixel/TalkBackは接続環境がある場合だけ別QA。署名・保存データ削除・Play公開は行わない。追加月額費用¥0。

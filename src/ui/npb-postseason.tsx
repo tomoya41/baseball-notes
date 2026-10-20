@@ -7,6 +7,8 @@ import type { PostseasonSeries } from "../domain/competition";
 import { DataState, LoadingSkeleton, PageHeading } from "./components";
 import { ScoreboardRow } from "./design-system";
 import { npbTeamShortName as name } from "./npb-team-names";
+import japanPin from "../data/npb-japan-series-release.json";
+import { JapanSeriesEntry,NpbJapanSeriesScreen,japanSeriesUrl } from "./npb-japan-series";
 
 const seriesUrl = (id: string) => `/NPB/postseason/series/${encodeURIComponent(id)}?season=2026`;
 function SeriesScore({ series }: { series: PostseasonSeries }) {
@@ -16,6 +18,10 @@ function SeriesScore({ series }: { series: PostseasonSeries }) {
   </div>)}</div>;
 }
 export function NpbPostseasonScreen() {
+  const {seriesId}=useParams(),[params]=useSearchParams();
+  return seriesId===japanPin.seriesId||!seriesId&&params.get("stage")==="japan_series"?<NpbJapanSeriesScreen/>:<NpbCsPostseasonScreen/>;
+}
+function NpbCsPostseasonScreen() {
   const [params] = useSearchParams(), {seriesId} = useParams();
   const stage = params.get("stage") ?? "all";
   const valid = (!params.has("season") || params.get("season") === "2026") && (!params.has("competition") || params.get("competition") === "postseason") &&
@@ -28,7 +34,7 @@ export function NpbPostseasonScreen() {
   }, [valid,attempt]);
   const retry = () => { setFailed(false); setAttempt(a => a + 1); }, series = data?.series.find(s => s.id === seriesId);
   return <div className="screen postseason-screen npb-postseason-screen"><PageHeading eyebrow="NPB · 2026 · ポストシーズン" title={series?.name ?? "ポストシーズン"} />
-    {!valid ? <DataState kind="unsupported" title="指定の年度・大会条件は未対応です" /> : failed ? <><DataState kind="source-unavailable" title="シリーズ情報を取得できません" /><button onClick={retry}>再試行</button><Link to="/NPB/cs?season=2026">収録済みの試合・選手成績へ →</Link></> : !data ? <LoadingSkeleton /> : seriesId && (!series || stage !== "all" && series.round !== stage) ? <DataState kind="no-data" title="この条件のシリーズは未収録です" /> : <>
+    {!valid ? <DataState kind="unsupported" title="指定の年度・大会条件は未対応です" /> : failed ? <><DataState kind="source-unavailable" title="シリーズ情報を取得できません" /><button onClick={retry}>再試行</button><Link to="/NPB/cs?season=2026">収録済みの試合・選手成績へ →</Link><Link to={japanSeriesUrl}>日本シリーズの日程へ →</Link></> : !data ? <LoadingSkeleton /> : seriesId && (!series || stage !== "all" && series.round !== stage) ? <DataState kind="no-data" title="この条件のシリーズは未収録です" /> : <>
       <p className="inline-note">記事取得 {data.observedAt.slice(0,10)} · CSの勝敗を収録。試合別の選手成績は一部収録です。</p>
       {series ? <>
         <SeriesScore series={series} />
@@ -44,7 +50,7 @@ export function NpbPostseasonScreen() {
           <h2>{round === "npb_cs_first" ? "ファーストステージ" : "ファイナルステージ"}</h2>
           {data.series.filter(s => s.round === round).map(s => <Link className="series-entry" to={seriesUrl(s.id)} key={s.id}><h3>{s.name}</h3><SeriesScore series={s} /><span className="series-meta">{name(s.winnerId!)}が進出 · 試合詳細へ →</span></Link>)}
         </section>)}</div>
-        <section><h2>日本シリーズ</h2><p>CSの記事に記載された進出球団：{data.series.filter(s => s.round === "npb_cs_final").map(s => name(s.winnerId!)).join(" ／ ")}</p><p className="data-notice">日本シリーズの試合・選手成績は未収録です。開催前・未取得の結果を生成せず、CSの成績とも合算しません。</p></section>
+        <JapanSeriesEntry cs={data}/>
       </>}
       <div className="hub-links"><Link to={`/NPB/cs?season=2026${stage === "all" ? "" : `&stage=${stage}`}`}>CSの全収録試合・選手から探す →</Link>{seriesId && <Link to="/NPB/postseason?season=2026">全体の勝ち上がり →</Link>}<Link to="/NPB/schedule">公式戦の日程・結果 →</Link></div>
       <details><summary>収録範囲・出典</summary><p>Wikipediaの記事記載を正規化した情報です。シリーズの決着と、全選手成績の完全収録は別です。RegularのFacts・Coverage・HOT／ランキングGateは変更しません。</p>{data.sources.map(s => <p key={s.pageId}><a href={`https://ja.wikipedia.org/w/index.php?curid=${s.pageId}&oldid=${s.revision}`}>Wikipedia「{s.title}」の執筆者</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a> · 勝敗・順位別成績を抽出、既存試合と照合</p>)}</details>

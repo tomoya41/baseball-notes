@@ -33,7 +33,8 @@ function NpbSearchEntry(props: Parameters<typeof NpbRoutes>[0]) {
 }
 export function NpbRoutes({ services, favorites, toggle, saving }: { services: Services; favorites: Favorite[]; toggle: (target: FavoriteTarget) => void; saving: boolean }) {
   const location = useLocation();
-  const legacyCsQuery = ["role", "q", "page"].some(key => new URLSearchParams(location.search).has(key));
+  const legacyParams=new URLSearchParams(location.search);
+  const legacyCsQuery = legacyParams.get("stage")!=="japan_series"&&["role", "q", "page"].some(key => legacyParams.has(key));
   return <Routes>
     <Route path="moves" element={<Suspense fallback={<p role="status">選手の動きを読み込み中…</p>}><NpbPlayerEventsScreen favorites={favorites} /></Suspense>} />
     <Route path="cs" element={<Suspense fallback={<p role="status">CSの収録データを読み込み中…</p>}><NpbCsScreen /></Suspense>} />

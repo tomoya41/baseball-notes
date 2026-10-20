@@ -1,6 +1,7 @@
 import { canonicalEntityRefSchema, canonicalEntityPath } from "./cross-league";
 import { portableRoute } from "./product-sharing";
 import { z } from "zod";
+import japanPin from "../data/npb-japan-series-release.json";
 export function canonicalDeepLink(input: string): string | null {
   try {
     const uri = new URL(input);
@@ -18,7 +19,7 @@ export function canonicalDeepLink(input: string): string | null {
     const parsed = canonicalEntityRefSchema.safeParse({ league, kind, id: decodeURIComponent(encoded ?? "") });
     if (!parsed.success || (child && kind !== "player")) return null;
     const sourceParams = new URLSearchParams(route.split("?")[1] ?? uri.search);
-    if(league==="NPB"&&kind==="game"&&sourceParams.get("competition")==="postseason")return portableRoute(canonicalEntityPath(parsed.data),sourceParams.toString());
+    if(league==="NPB"&&kind==="game"&&(sourceParams.get("competition")==="postseason"||japanPin.gameIds.includes(parsed.data.id)))return portableRoute(canonicalEntityPath(parsed.data),sourceParams.toString());
     if(child === "seasons")return portableRoute(`${canonicalEntityPath(parsed.data)}/seasons`,sourceParams.toString());
     const params = new URLSearchParams();
     for (const key of ["season", "date", "asOfDate"]) {
@@ -37,7 +38,11 @@ export function parentNativeRoute(path: string): string | null {
   }
   if (league === "MLB" && /^20\d{2}$/.test(source.get("season") ?? "")) scope.set("season", source.get("season")!);
   const suffix = scope.size ? `?${scope}` : "";
+  if(league==="NPB"&&segments[1]==="games"){
+    try{if(japanPin.gameIds.includes(decodeURIComponent(segments[2]??"")))return "/NPB/postseason?season=2026&stage=japan_series";}catch{/* Invalid encoding follows the safe generic parent. */}
+  }
   if(league==="NPB"&&segments[1]==="games"&&source.get("competition")==="postseason"){
+    if(source.get("stage")==="japan_series")return "/NPB/postseason?season=2026&stage=japan_series";
     const stage=source.get("stage");return `/NPB/cs?season=2026${stage==="npb_cs_first"||stage==="npb_cs_final"?`&stage=${stage}`:""}`;
   }
   if(league==="NPB"&&segments[1]==="players"&&segments[3]==="seasons") {

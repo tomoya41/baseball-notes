@@ -638,3 +638,7 @@ Sourced events v3 adds six independently ID-matched nonrenewal notices, bringing
 ### 2026-10-19 — First free-contract observation (v4)
 
 After separately staging the immutable asset, v4 promotes 28 partial chronology observations: previous25 unchanged plus2 nonrenewal notices and1 free-contract observation. An exact compound statement keeps each action attached to its own explicitly linked, independently ID-verified participant; unknown participants remain held. Free-contract support is now populated but remains PARTIAL, not a complete release ledger or an official current-status certification. Source rights, individual revisions, retained v1/v2/v3 assets, Current/Historical boundaries, canonical Facts and Production Gates are unchanged. No new monthly cost or external source requests. Details: [source contract and limits](npb-sourced-player-events.md#2026-10-19--explicit-free-contract-clause-recovery-v4).
+## 2026-10-20 日本シリーズ開幕前の追加差分
+
+PR #53のCS基盤を維持し、日本シリーズの専用日程・試合予定・Search導線を追加。Wikipediaの独立固定revisionから7予定試合・球場を収録し、結果0件・選手成績unavailable・Coverage partialを明示する。開始時刻・試合終了・完全な個人成績や大会全体の完成は認定しない。
+Tursoは復旧準備（軽いprobe、quota確認、時間・query上限）を追加した段階で、read-blocked解消・最新Canonical integrity・Scheduled/Backup・HOT/Rankingの達成とは別。詳細は[日本シリーズ・無料DB復旧準備](japan-series-release-readiness.md)。以前の棚卸し総数は再集計していない。
