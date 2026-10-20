@@ -2,6 +2,7 @@ import { addDays } from "./npb-collector";
 import { findNpbRegularSeason } from "./npb-season-metadata";
 import type { DataClient } from "./database";
 import type { PublishedFreshness, IngestionHealth, ScheduledActionHealth } from "./npb-freshness";
+import { npbGameFactCountsJoins } from "./npb-game-fact-counts";
 
 export type ScheduleMode = "season" | "monthly" | "weekly" | "daily";
 // The reviewed calendar is an acquisition boundary, not proof that a season ended.
@@ -35,9 +36,9 @@ export async function inspectNpbCalendar(client: DataClient, date: string) {
         c.expected_batters<18 OR c.expected_pitchers<2 OR
         c.expected_batters!=c.collected_batters OR c.mapped_batters!=c.collected_batters OR
         c.expected_pitchers!=c.collected_pitchers OR c.mapped_pitchers!=c.collected_pitchers OR
-        c.collected_batters!=(SELECT COUNT(*) FROM player_game_batting b WHERE b.game_id=g.game_id) OR
-        c.collected_pitchers!=(SELECT COUNT(*) FROM player_game_pitching p WHERE p.game_id=g.game_id)))) THEN 1 ELSE 0 END) AS pending_games
-    FROM npb_games g LEFT JOIN npb_game_completeness c ON c.game_id=g.game_id WHERE g.season=?`,
+        c.collected_batters!=COALESCE(bc.saved_batting,0) OR
+        c.collected_pitchers!=COALESCE(pc.saved_pitching,0)))) THEN 1 ELSE 0 END) AS pending_games
+    FROM npb_games g LEFT JOIN npb_game_completeness c ON c.game_id=g.game_id ${npbGameFactCountsJoins} WHERE g.season=?`,
     args: [date, date, Number(date.slice(0, 4))] });
   const row = result.rows[0];
   const latestSavedGameDate = row?.latest_game_date == null ? null : String(row.latest_game_date);

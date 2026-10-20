@@ -292,10 +292,10 @@ describe("discovery and glossary", () => {
       expect(link.href).toContain("season=2020"); expect(link.href).toContain("competition=postseason"); expect(link.href).not.toContain("q=OPS");
     }
   });
-  it("does not download Directory or game data for unsupported NPB Postseason discovery", async () => {
+  it("does not download Current Directory or game data for unsupported NPB Postseason years", async () => {
     const { deps } = seedNpb(), findLatestNpb = vi.fn(deps.directory.findLatestNpb), manifest = vi.fn(), date = vi.fn();
-    await mount(<NpbDiscovery services={{ ...deps, directory: { findLatestNpb } as unknown as typeof services.directory, gameSurface: { manifest, date } as unknown as typeof services.gameSurface }} />, "/NPB/search?kind=game&competition=postseason");
-    expect(container.textContent).toContain("Source rights pending");
+    await mount(<NpbDiscovery services={{ ...deps, directory: { findLatestNpb } as unknown as typeof services.directory, gameSurface: { manifest, date } as unknown as typeof services.gameSurface }} />, "/NPB/search?kind=game&competition=postseason&season=2025");
+    expect(container.textContent).toContain("指定の年度・大会条件は未対応");
     expect(findLatestNpb).not.toHaveBeenCalled(); expect(manifest).not.toHaveBeenCalled(); expect(date).not.toHaveBeenCalled();
   });
   it("keeps team discovery independent of an unavailable game manifest", async () => {

@@ -28,8 +28,9 @@ export function activityFromRoute(path: string, search: string, now: number): Ac
     else return null;
     try { entityId = decodeURIComponent(resource === "postseason" ? path.split("/")[4] ?? "" : rawId ?? ""); } catch { return null; }
     if (!id.safeParse(entityId).success) return null;
-    const prefix = parsedLeague.data === "MLB" ? `mlb:${kind === "players" ? "player" : kind === "teams" ? "team" : kind === "games" ? "game" : "series"}:` : kind === "players" ? "" : `npb:${kind === "teams" ? "team" : "game"}:`;
+    const prefix = parsedLeague.data === "MLB" ? `mlb:${kind === "players" ? "player" : kind === "teams" ? "team" : kind === "games" ? "game" : "series"}:` : kind === "players" ? "" : `npb:${kind === "teams" ? "team" : kind === "series" ? "series" : "game"}:`;
     if (!entityId.startsWith(prefix) || (kind === "players" && parsedLeague.data === "NPB" && !/^[0-9a-f-]{36}$/i.test(entityId))) return null;
+    if (kind === "series" && !/^(npb|mlb):series:[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(entityId)) return null;
   }
   const params = new URLSearchParams(search);
   // Activity never stores search text or Explorer cohorts; saving these requires an explicit Saved View.

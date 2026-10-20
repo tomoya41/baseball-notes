@@ -11,12 +11,18 @@ import { ExplorerLinks, type ExplorerManifest } from "./data-explorer";
 import { useHistoricalStatic } from "./use-mlb-historical";
 import { useHistoricalCompetition } from "./historical-competition-context";
 import { LibraryShortcuts } from "./personal-library";
+import { readNpbSeries } from "../application/npb-series-reader";
+import { readNpbCs } from "../application/npb-cs-reader";
+import type { NpbPostseasonSeries } from "../domain/npb-postseason-series";
+import type { NpbCsDataset } from "../domain/npb-cs-observations";
+import { npbTeamShortName } from "./npb-team-names";
 
 export function DiscoveryNavigation({ league }: { league: "NPB" | "MLB" }) {
   const [params] = useSearchParams(), active = params.get("kind") ?? "player";
   return <><nav className="explorer-links" aria-label="検索対象">{[{ key: "player", label: "選手" }, { key: "team", label: "球団" }, { key: "game", label: "試合" }, { key: "series", label: "シリーズ" }].map(item => {
     const next = new URLSearchParams(params); next.set("kind", item.key);
-    if (league === "MLB" && item.key === "series") next.set("competition", "postseason");
+    if (item.key === "series" || league === "NPB" && active === "series" && item.key === "game") next.set("competition", "postseason");
+    else if (league === "NPB" && ["player", "team"].includes(item.key)) { next.delete("competition"); next.delete("stage"); }
     return <Link key={item.key} aria-current={active === item.key ? "page" : undefined} to={`/${league}/search?${next}`}>{item.label}</Link>;
   })}</nav><details className="discovery-tools"><summary>条件で探す・保存したものから探す</summary><ExplorerLinks league={league} scope={`?${params}`} /><Link className="text-link" to={`/${league}/my`}>お気に入りから探す →</Link><LibraryShortcuts league={league} /><Link className="text-link" to={`/${league}/team-compare${params.get("season") ? `?season=${params.get("season")}${params.get("competition") === "postseason" ? "&competition=postseason" : ""}` : ""}`}>球団比較 →</Link></details></>;
 }
@@ -42,8 +48,30 @@ export function NpbDiscovery({ services }: { services: Services }) {
     return () => { active = false; };
   }, [services, kind, supported]);
   useEffect(() => { if (!supported || kind !== "game" || !validDate) return; let active = true; void services.gameSurface.date(date).then(value => { if (active) setDates({ date, value, error: false }); }).catch(() => { if (active) setDates({ date, value: null, error: true }); }); return () => { active = false; }; }, [kind, validDate, date, services, supported]);
-  if (!supported) return <div className="screen"><PageHeading eyebrow="NPB" title="探す" /><DiscoveryNavigation league="NPB" /><DataState kind="unsupported" title="NPB PostseasonはSource rights pendingです" action="利用状況" to="/NPB/postseason" /></div>;
+  if (kind === "series" || kind === "game" && params.get("competition") === "postseason") return <NpbPostseasonDiscovery kind={kind} />;
+  if (!supported) return <div className="screen"><PageHeading eyebrow="NPB" title="探す" /><DiscoveryNavigation league="NPB" /><DataState kind="unsupported" title="指定の大会条件では検索できません" action="収録済みの大会記録" to="/NPB/postseason" /></div>;
   return <div className="screen"><PageHeading eyebrow="NPB" title="探す" /><DiscoveryNavigation league="NPB" />{failedKind === kind ? <DataState kind="source-unavailable" title="検索用データを取得できません" /> : (kind === "team" ? !directory : !manifest) ? <LoadingSkeleton /> : <>{kind === "game" && manifest && <label>保存済み試合日<input type="date" value={date} min={manifest.from} max={manifest.to} onChange={e => setParams(previous => { const next = new URLSearchParams(previous); next.set("date", e.target.value); return next; })} /></label>}{kind === "game" && (!validDate ? <DataState kind="unsupported" title="指定日は保存済み範囲外です" /> : dates?.date !== date ? <LoadingSkeleton /> : dates.error ? <DataState kind="source-unavailable" title="指定日の試合情報を取得できません" /> : dates.value?.coverage === "no_games" ? <p>確認済み · 試合なし</p> : dates.value?.coverage !== "complete" && <p className="inline-note">この日のデータは一部確認中です。</p>)}{kind !== "game" || (validDate && dates?.date === date && dates.value) ? <DiscoveryList league="NPB" scope="" teams={directory?.teams.map(t => ({ id: t.id, name: t.name })) ?? []} games={dates?.value?.games.map(g => ({ id: g.gameId, home: g.home.name, away: g.away.name, homeScore: g.home.score, awayScore: g.away.score, state: g.status }))} /> : null}</>}</div>;
+}
+function NpbPostseasonDiscovery({ kind }: { kind: "series" | "game" }) {
+  const [params] = useSearchParams(), [series,setSeries]=useState<NpbPostseasonSeries|null>(null), [cs,setCs]=useState<NpbCsDataset|null>(null), [failed,setFailed]=useState(false), [attempt,setAttempt]=useState(0);
+  const stage=params.get("stage"), date=params.get("date");
+  const valid=(!params.has("season")||params.get("season")==="2026")&&(!params.has("competition")||params.get("competition")==="postseason")&&(!stage||["all","npb_cs_first","npb_cs_final"].includes(stage))&&(!date||z.iso.date().safeParse(date).success);
+  useEffect(()=>{if(!valid)return;let active=true;
+    const load=kind==="series"?readNpbSeries().then(value=>{if(active)setSeries(value);}):readNpbCs().then(value=>{if(active)setCs(value);});
+    void load.then(()=>{if(active)setFailed(false);}).catch(()=>{if(active)setFailed(true);});return()=>{active=false;};
+  },[kind,valid,attempt]);
+  const sources=kind==="series"?series?.sources:cs?.sources;
+  const teams=[...new Set(series?.series.flatMap(s=>s.teams.map(t=>t.teamId))??cs?.games.flatMap(g=>[g.homeTeamId,g.awayTeamId])??[])].map(id=>({id,name:npbTeamShortName(id)}));
+  return <div className="screen"><PageHeading eyebrow="NPB · 2026 · ポストシーズン" title="探す"/><DiscoveryNavigation league="NPB"/>
+    {!valid?<DataState kind="unsupported" title="指定の年度・大会条件は未対応です"/>:failed?<><DataState kind="source-unavailable" title="保存済みの大会記録を取得できません"/><button onClick={()=>{setFailed(false);setAttempt(a=>a+1);}}>再試行</button></>:!(kind==="series"?series:cs)?<LoadingSkeleton/>:<>
+      <DiscoveryList league="NPB" teams={teams} scope="?season=2026&competition=postseason"
+        message={kind==="series"?"2026年CSの収録シリーズ。勝数にはアドバンテージを含み、実際の試合勝数とは区別します。":"2026年CSの収録試合。選手成績は一部収録。検索結果がないことを試合なしとは判定しません。"}
+        series={series?.series.filter(s=>!stage||stage==="all"||s.round===stage)}
+        games={cs?.games.filter(g=>(!stage||stage==="all"||g.stage===stage)&&(!date||g.date===date)).map(g=>({id:g.id,home:npbTeamShortName(g.homeTeamId),away:npbTeamShortName(g.awayTeamId),homeScore:g.homeScore,awayScore:g.awayScore,state:`${g.date} · 終了`}))}/>
+      <details><summary>出典・収録範囲</summary><p>日本シリーズの試合・個人成績は未収録です。公式戦とは別に表示します。</p>{sources?.map(s=><p key={s.pageId}><a href={`https://ja.wikipedia.org/w/index.php?curid=${s.pageId}&oldid=${s.revision}`}>Wikipedia「{s.title}」の執筆者</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a> · 勝敗・試合表を正規化</p>)}</details>
+    </>}
+    <Link className="section-action" to="/NPB/postseason?season=2026">シリーズ勝敗・勝ち上がり →</Link>
+  </div>;
 }
 export function MlbDiscovery({ manifest }: { manifest: ExplorerManifest }) {
   const [params, setParams] = useSearchParams(), kind = params.get("kind"), competition = useHistoricalCompetition();

@@ -15,6 +15,10 @@ export function portableRoute(path: string, search = ""): string | null {
   const parts = path.split("/").filter(Boolean), league = parts[0];
   if (league !== "NPB" && league !== "MLB") return null;
   const resource = parts[1], source = new URLSearchParams(search), clean = new URLSearchParams();
+  if (league === "NPB" && resource === "postseason" && parts[2] === "series" && parts.length === 4) {
+    if (!/^npb:series:[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(decodeSafe(parts[3]!)) || source.has("season") && source.get("season") !== "2026" || source.has("competition") && source.get("competition") !== "postseason") return null;
+    return `${path}?season=2026`;
+  }
   if (league === "NPB" && resource === "moves" && parts.length === 2) {
     if (!npbEventQuery(source).valid) return null;
     for (const key of ["season", "kind", "team", "player", "q", "page", "follow"]) { const value = source.get(key); if (value) clean.set(key, value); }

@@ -4,9 +4,11 @@ export function createNpbApiReadCache(now: () => number = Date.now) {
   const cache = new Map<string, Entry>(), pending = new Map<string, Promise<Response>>();
   const maxEntries = 32, maxBytes = 8 * 1024 * 1024;
   let blockedUntil = 0, bytes = 0;
-  const unavailable = (error: string, retry: number, headers: HeadersInit) => new Response(JSON.stringify({ error }), {
-    status: 503, headers: { ...Object.fromEntries(new Headers(headers)), "Cache-Control": "no-store", "Retry-After": String(retry) },
-  });
+  const unavailable = (error: string, retry: number, headers: HeadersInit) => {
+    const responseHeaders = new Headers(headers);
+    responseHeaders.set("Cache-Control", "no-store"); responseHeaders.set("Retry-After", String(retry));
+    return new Response(JSON.stringify({ error }), { status: 503, headers: responseHeaders });
+  };
   function failure(error: unknown, code: string, headers: HeadersInit) {
     // An ordinary SQL, network or credential error must not trip the quota circuit.
     if (error instanceof Error && /SQL read operations are forbidden/i.test(error.message)) blockedUntil = now() + 30_000;

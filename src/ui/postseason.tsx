@@ -14,7 +14,7 @@ export function PostseasonUnavailable({ league }: { league: League }) {
     <p className="inline-note">{league==="NPB"?"未収録範囲やシリーズ進出結果は推測して表示しません。":"Source rights pending · 結果を推測して表示しません。"}</p>
     {league==="NPB"&&<Link to="/NPB/cs?season=2026">収録済みのCSを見る →</Link>}
     <div className="chip-list">{(league === "NPB" ? ["npb_cs_first", "npb_cs_final", "japan_series"] as const : ["wild_card", "division_series", "alcs", "nlcs", "world_series"] as const).map(r => <span className="filter-chip" key={r}>{roundLabels[r]}</span>)}</div>
-    {league === "NPB" && <p className="inline-note">CSファイナルの1勝アドバンテージは、試合の勝利とは別に扱います。</p>}
+    {league === "NPB" && <p className="inline-note">2026年CSファイナルのアドバンテージは条件に応じて1勝または2勝です。試合の勝利とは別に扱います。</p>}
     <Link className="text-link" to={`/${league}/schedule`}>Regular Season 日程・結果</Link>
     {league === "MLB" && hasHistoricalPostseason(availability) && <Link className="button button--secondary" to={`/MLB/postseason?season=${availability.value.leagues.MLB.historicalSeasons.at(-1)}`}>収録済みのPostseasonへ</Link>}
   </div>;
