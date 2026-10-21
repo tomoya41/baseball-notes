@@ -53,3 +53,8 @@ export function draftPredictionOutcome(data:DraftEvent,teamId:string){
   if(expected?.article===actual?.article||expected?.name===actual?.name)return "unverified";
   return "different";
 }
+
+export function draftPredictionComparison(data:DraftEvent,teamId:string){
+  const prediction=data.forecast.predictions.find(p=>p.teamId===teamId),selection=data.selections.find(s=>s.teamId===teamId&&s.type==="regular"&&s.round===1);
+  return {teamId,outcome:draftPredictionOutcome(data,teamId),expected:data.candidates.find(c=>c.id===prediction?.candidateId),actual:data.candidates.find(c=>c.id===selection?.candidateId)};
+}
