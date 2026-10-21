@@ -56,3 +56,5 @@ private reviewは`reviewedBy`、取得後かつbuild以前の`reviewedAt`、`gam
 全tests/lint/typecheck/Web/Vercel/Android packaging・エミュレーター・公開HTTPと実画面の証拠はdelivery PRに記録する。Pixel未接続なら物理QA/TalkBackはNOT RUN。Source不足、Turso、署名/Play Owner Gateを独立管理する。UI全面改修、source権利拡張、canonical DB write、課金は行わない。
 
 実画面検証中、再build前のタブが旧hashのlazy moduleを読み込めず、既存「再表示」がReact.lazyの失敗Promiseを繰り返す事象を再現した。dynamic module取得失敗だけ、明示操作「最新版を読み込む」でdocumentをreloadする。自動reload loopは作らず、通常のrender errorは従来の画面内retryを維持する。Favorites/Collections/WatchやURLを消去する処理はない。
+
+10/21夜の追補：[追加試合・順延の境界検証](npb-result-boundaries-2026-10-21.md)。Contractに第8戦以降の成立条件・引き分け制限・延長各回前の同点検証を追加。実際の新しいSource表形式は別途admission待ちで、実結果0件・公開pinは維持する。
