@@ -24,6 +24,7 @@ export const npbJapanSeriesSchema = z.strictObject({
   if(s.games.some((g,i)=>g.status==="suspended"||i>0&&g.date<=s.games[i-1]!.date))
     c.addIssue({code:"custom",message:"Japan Series requires ordered observed dates and does not use suspended games"});
   for(const g of s.games.filter(g=>g.gameNumber>=8)){
+    if(g.gameNumber>9){c.addIssue({code:"custom",message:"Japan Series Games after nine require separately reviewed venue/rule evidence"});continue;}
     const previous=s.games.filter(p=>p.gameNumber<g.gameNumber);
     if(previous.some(p=>p.status!=="final")||!previous.some(p=>p.winnerId===null)||s.teams.some(t=>previous.filter(p=>p.winnerId===t.teamId).length>=4))
       c.addIssue({code:"custom",message:"Additional Japan Series Game requires seven or more reviewed finals, a tie and no prior clinch"});

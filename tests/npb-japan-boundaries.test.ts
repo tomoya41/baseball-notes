@@ -52,6 +52,11 @@ it.each([8,9])("holds reversed home clubs or an unproved venue for extra Game %s
   const reversed=structuredClone(d),r=reversed.series.games[n-1]!;[r.homeTeamId,r.awayTeamId]=[r.awayTeamId,r.homeTeamId];expect(valid(reversed)).toBe(false);
   d.venues[g.gameId]=n===8?"みずほPayPayドーム福岡":"横浜スタジアム";expect(valid(d)).toBe(false);
 });
+it("holds Game ten even when three ties and split extra Games leave a real need for another Game",()=>{
+  const nine=[bay,hawks,bay,hawks,null,null,null,bay,hawks];
+  const d=snapshot(nine);expect(valid(d)).toBe(true);expect(d.series.teams.map(t=>t.playedWins)).toEqual([3,3]);
+  expect(valid(snapshot(nine,10))).toBe(false);expect(valid(snapshot([...nine,bay]))).toBe(false);
+});
 it("does not permit an innings-limit tie from the eighth Game onward",()=>{
   expect(valid(snapshot([...splitSeven,null]))).toBe(false);
   const d=snapshot([...splitSeven,bay]),g=d.series.games[7]!,r=d.results[7]!;
