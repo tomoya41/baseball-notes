@@ -1574,6 +1574,20 @@
   color: var(--brand);
 }
 
+.series-innings {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+.series-innings th,.series-innings td {
+  padding: 10px 6px;
+  text-align: center;
+  border-bottom: 1px solid var(--color-border);
+  overflow-wrap: anywhere;
+}
+.series-innings th:first-child { width: 16%; }
+
 .series-meta {
   display: block;
   color: var(--color-muted);

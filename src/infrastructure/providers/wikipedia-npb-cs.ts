@@ -4,19 +4,10 @@ import { inningsToOuts } from "./wikipedia-npb-historical";
 import { historicalBattingKeys, historicalPitchingKeys, historicalRates, npbHistoricalRowSchema } from "../../domain/npb-historical";
 import { npbCompetitionAggregateSchema, type NpbCompetitionAggregate } from "../../domain/npb-competition";
 import type { NpbCsDataset } from "../../domain/npb-cs-observations";
+import { splitWikipediaCells as split } from "./wikipedia-cells";
 
 const teams: Record<string, string> = { 日本ハム: "fighters", 西武: "lions", ソフトバンク: "hawks", DeNA: "baystars", 巨人: "giants", 阪神: "tigers" };
 const plain = (v: string) => v.replace(/'''?/g, "").replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_, a: string, b?: string) => b ?? a).replace(/<[^>]*>/g, "").replace(/\s/g, "");
-function split(text: string, separator: string): string[] {
-  const result: string[] = []; let link = 0, template = 0, start = 0;
-  for (let i = 0; i < text.length; i++) {
-    const pair = text.slice(i, i + 2);
-    if (pair === "[[") { link++; i++; } else if (pair === "]]") { link--; i++; }
-    else if (pair === "{{") { template++; i++; } else if (pair === "}}") { template--; i++; }
-    else if (!link && !template && text.startsWith(separator, i)) { result.push(text.slice(start, i)); start = i + separator.length; i += separator.length - 1; }
-  }
-  result.push(text.slice(start)); return result;
-}
 function number(raw: string): number | null { const v = plain(raw); if (!v || v === "—" || v === "-") return null; if (!/^\d+$/.test(v)) throw Error("Unknown CS numeric cell"); return Number(v); }
 const pageSchema = z.object({ pageid: z.number().int().positive(), title: z.string(), revisions: z.array(z.object({ revid: z.number().int().positive(), timestamp: z.iso.datetime(), slots: z.object({ main: z.object({ content: z.string() }) }) })).length(1) });
 type Identity = { playerId: string; article: string };

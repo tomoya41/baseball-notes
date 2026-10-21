@@ -10,3 +10,15 @@ export function japanFixture(){
   const admission=pages.map(p=>({pageId:p.pageid,title:p.title,revision:p.revisions[0]!.revid,revisionAt:p.revisions[0]!.timestamp,contentSha256:createHash("sha256").update(p.revisions[0]!.slots.main.content).digest("hex")}));
   return {cs,admission,archive:{observedAt:"2026-10-20T10:00:00Z",response:{query:{pages}}}};
 }
+
+/** Synthetic result/source text only; never published as a real Game. */
+export function japanResultFixture(homeLast="X",homeRuns=1,awayRuns=0,innings=9){
+  const f=japanFixture(),pages=f.archive.response.query.pages;
+  const cells=(prefix:string)=>Array.from({length:innings},(_,i)=>`|${prefix}${i+1}=${prefix==="H"&&i===innings-1?homeLast:i===0?prefix==="H"?homeRuns:awayRuns:0}`).join("");
+  const block=`{{Linescore\n|Date=10月24日\n|Road=ソフトバンク\n|Home=DeNA\n${cells("R")}\n${cells("H")}\n|RR=${awayRuns}|HR=${homeRuns}\n|WP=架空投手\n|Note2=試合時間：3時間12分\n}}`;
+  pages[0]!.revisions[0]!.slots.main.content+="\n"+block;
+  pages[1]!.revisions[0]!.slots.main.content=pages[1]!.revisions[0]!.slots.main.content.replace("|| - ||",`|| ${awayRuns} - ${homeRuns} ||`);
+  f.archive.observedAt="2026-10-25T00:00:00Z";
+  for(const p of pages)f.admission.find(a=>a.pageId===p.pageid)!.contentSha256=createHash("sha256").update(p.revisions[0]!.slots.main.content).digest("hex");
+  return {...f,block,now:Date.parse("2026-10-25T00:02:00Z"),review:{reviewedBy:"synthetic fixture",reviewedAt:"2026-10-25T00:01:00Z",games:[{gameId:"npb:game:9f6c547e7852f6c5a928",linescore:block}]}};
+}

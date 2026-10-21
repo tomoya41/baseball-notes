@@ -19,6 +19,7 @@ import { npbPlayerEventsSchema } from "../src/domain/npb-player-events";
 import seriesPin from "../src/data/npb-series-release.json";
 import { assertCsSeriesSnapshot, npbPostseasonSeriesSchema } from "../src/domain/npb-postseason-series";
 import japanPin from "../src/data/npb-japan-series-release.json";
+import retainedJapan from "../src/data/npb-japan-series-retained-releases.json";
 import { npbJapanSeriesSchema, assertJapanSeriesAdvancement } from "../src/domain/npb-japan-series";
 import draftPin from "../src/data/npb-draft-2026-release.json";
 import retainedDrafts from "../src/data/npb-draft-retained-releases.json";
@@ -74,6 +75,7 @@ assertCsSeriesSnapshot(series,cs);
 const japanBytes=await load(`../competitions/${japanPin.sha256}/japan-series-2026.json`);
 if(japanBytes.length!==japanPin.bytes||createHash("sha256").update(japanBytes).digest("hex")!==japanPin.bodySha256)throw Error("Japan Series publication mismatch");
 const japan=npbJapanSeriesSchema.parse(JSON.parse(japanBytes.toString()));
+const retainedJapanFiles=await verifyRetainedFiles(load,Object.fromEntries((retainedJapan as (typeof japanPin)[]).map(p=>[`../competitions/${p.sha256}/japan-series-2026.json`,{bytes:p.bytes,sha256:p.bodySha256}])));
 for(const pin of [...retainedDrafts,draftPin] as (typeof draftPin)[]){
   const bytes=await load(`../draft/${pin.sha256}/draft-2026.json`),data=draftEventSchema.parse(JSON.parse(bytes.toString()));
   if(bytes.length!==pin.bytes||createHash("sha256").update(bytes).digest("hex")!==pin.bodySha256||createHash("sha256").update(JSON.stringify(data.forecast)).digest("hex")!==pin.forecastSha256)throw Error("Draft publication mismatch");
@@ -88,6 +90,6 @@ if(eventBytes.length!==eventsPin.bytes||createHash("sha256").update(eventBytes).
 const events=npbPlayerEventsSchema.parse(JSON.parse(eventBytes.toString()));
 if(events.events.length!==eventsPin.events||events.players.length!==eventsPin.players||events.source.revision!==eventsPin.sourceRevision||events.identityInputSha256!==eventsPin.identityInputSha256)throw Error("Event publication generation mismatch");
 for(const p of events.players)assertHistoricalBridge(p);
-console.log(JSON.stringify({status:"PASS",retainedFiles,retainedCsFiles,retainedEventFiles,seasons:manifest.seasons.map(s=>s.season),players:players.size,rows,competitionRows:competition.rows.length,csGames:cs.games.length,csRows:cs.rows.length,playerEvents:events.events.length,coverage:manifest.coverage,canonicalWrites:0,httpFetches:fetches}));
+console.log(JSON.stringify({status:"PASS",retainedFiles,retainedCsFiles,retainedEventFiles,retainedJapanFiles,seasons:manifest.seasons.map(s=>s.season),players:players.size,rows,competitionRows:competition.rows.length,csGames:cs.games.length,csRows:cs.rows.length,playerEvents:events.events.length,coverage:manifest.coverage,canonicalWrites:0,httpFetches:fetches}));
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url))await main();
