@@ -11,3 +11,11 @@ ChromeのメニューからのインストールはService Workerなしでも対
 既存USB導入版 `com.tomoya41.baseballnotes` はそのまま残す。Chromeのホーム画面版は別の保存領域で、ネイティブ版のFavorites / Collections / Watchは自動移行しない。データ削除や無断アンインストールは不要。WebAPKの生成が利用できない場合、Chromeはショートカットへfallbackすることがある。実際の導入方式と動作はPixelで確認する。
 
 手動の場合：PixelのChromeで[公開版](https://tomoya41.github.io/baseball-notes/#/NPB/home)を開く → ︙ →「ホーム画面に追加」→「インストール」。ホームから起動し、アドレスバーなしの画面、ホーム/試合/選手/記録/My、戻る操作を確認する。TalkBackや通信断の確認は別の実機QAで管理する。
+
+## 導入結果（2026-10-22）
+
+- Pixel 11 / Android 17はADBの認証済み物理端末として確認。以前のUSB版パッケージが存在し、既存Activityの起動成功も確認した。アンインストール・データ削除・署名変更は0。
+- Chrome操作の自動化は承認審査でpolicyにより拒否されたため、その操作を繰り返さず、公開後のメニュー操作をユーザーへ案内した。
+- ユーザーがPixelで「ホーム画面に追加」し、ホームから起動できたと回答。**ホーム画面追加・起動：PASS（ユーザーによる実機確認）**。エージェントによる画面観測やWebAPK生成方式の確認ではない。
+- TalkBack、PWAのBack/通信断cold start/保存領域の実機検証、ネイティブ版からのデータ移行は未実施。エミュレーターの成績と混同しない。
+- PR #60 / merge `1a38d4d`、Pages run `39619960984`成功。公開manifestのContent-Typeと3アイコンのbyte hash一致、既存23公開payloadの不変をHTTP確認。Codex Reviewはmerge後に完了し、指摘なし。オンライン公開版の起動・再読み込みで更新を利用し、閉じたままの即時更新とは表現しない。
