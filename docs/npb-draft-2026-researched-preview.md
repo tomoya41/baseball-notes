@@ -52,11 +52,14 @@ UIは同じroute。既定で根拠付き版を開き、球団・保存版の切�
 - P2：オフライン予想builderはactive pinだけでなくretained predecessorをhashで照合する。公開版切り替え後も同じ入力から再現できる。
 - P2：正式archive CLIに `--scope=preview`（既存5記事）と `--scope=research`（既存6記事）を追加。coreは従来2記事のまま。各scopeは1回の正規API、500KB上限、retry0、未知page/title拒否。新revisionを自動admitせずprivate候補として保存する。今回の実データは既存cacheだけで構築し、このコマンドによる新取得は0。
 - P2：初版保存版もURLの球団filterを適用する。
+- P2：新しく追加された大学4年生は、厳格な大学名簿parserが証明した区分を付けて引き継ぐ。旧候補の区分を保持し、大学生filterから消えないよう回帰検証。
+- P2：各代表区分で役割状態をリセットし、最初の役割見出しが欠けた選手行は明示的に拒否する。
 
 ## 検証記録
 
-- 全161テストファイル：1,718 PASS / WindowsでLinux専用1件skip。lint、strict typecheck、Web build PASS。Vercel build PASS（本文fixture差分の前段で実施、最終版もCIで再確認）。
+- 全161テストファイル：1,719 PASS / WindowsでLinux専用1件skip。lint、strict typecheck、Web build PASS。最終版のVercel build PASS。
 - v2のretained predecessorからの再生成、v3の再生成、結果更新CLIのoffline replayは各body hashが固定版と一致。初版予想hash `25a1bb0d7a2c00e231b3e5510519ab13096fbdea06eb14f614fe22c81c5adbb9` 不変。Source要求0、canonical write0。
 - 実Chrome画面：360 Light/Dark、390 Light/Dark、768、1280。球団filter、初版切替、URL、Back、reload、4所属区分、独立リーグの長い球団名、検索empty、結果未収録を確認。横はみ出しなし。360pxで最初の候補がy818付近まで下がったため、重複説明を詳細へ整理しy593付近に改善。検索labelと入力文字が並んで狭くなる問題も修正。
 - 私有Before/After：`.data/draft-2026/expanded-visual/`。実表示の画像だけを採用し、loading/modalが写った途中画像はQA済みの根拠にしない。
 - Pixelホーム画面追加・起動はユーザー確認済み。新版ネイティブAPKのPixel更新、TalkBack、通信断cold startなどは未実施。既存ネイティブ保存データの削除・署名変更は0。
+外部Codex ReviewはP1/P2計6件を確認し修正。再レビューは依頼済みだが、一度は利用上限により失敗した。自己レビュー、Source証拠・immutable再現・UI実画面・独立fixtureで補完し、未完了の外部再レビューをPASSとは扱わない。追加課金0。
