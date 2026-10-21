@@ -1,3 +1,4 @@
+import {draftResearchedPredictionOutcome} from "../domain/npb-draft-research";
 import {assertDraftSnapshotAdvance,draftPredictionComparison,draftExpandedPredictionOutcome,type DraftEvent} from "../domain/npb-draft-event";
 
 /** Offline review aid, never source admission or publication authorization. */
@@ -8,6 +9,6 @@ export function draftUpdateReport(previous:DraftEvent,next:DraftEvent){
     addedCandidateIds:next.candidates.filter(c=>!previous.candidates.some(p=>p.id===c.id)).map(c=>c.id),
     addedSelections:next.selections.filter(s=>!oldSelections.has(JSON.stringify(s))),
     lotteryChanges:next.lotteries.filter(l=>!previous.lotteries.some(p=>JSON.stringify(p)===JSON.stringify(l))),
-    comparisons:next.forecast.predictions.map(p=>draftPredictionComparison(next,p.teamId)),expandedForecastUnchanged:previous.expandedForecast?JSON.stringify(previous.expandedForecast)===JSON.stringify(next.expandedForecast):null,
+    researchedForecastUnchanged:previous.researchedForecast?JSON.stringify(previous.researchedForecast)===JSON.stringify(next.researchedForecast):null,researchedComparisons:next.researchedForecast?.predictions.map(p=>({teamId:p.teamId,round:p.round,outcome:draftResearchedPredictionOutcome(next,p.teamId,p.round)}))??[],comparisons:next.forecast.predictions.map(p=>draftPredictionComparison(next,p.teamId)),expandedForecastUnchanged:previous.expandedForecast?JSON.stringify(previous.expandedForecast)===JSON.stringify(next.expandedForecast):null,
     expandedComparisons:next.expandedForecast?.predictions.map(p=>({teamId:p.teamId,round:p.round,outcome:draftExpandedPredictionOutcome(next,p.teamId,p.round)}))??[],canonicalWrites:0,sourceRequests:0};
 }

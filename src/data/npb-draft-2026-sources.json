@@ -43,5 +43,14 @@
     "revisionAt": "2026-10-15T08:28:18Z",
     "contentSha256": "6e8ef6ad5521541e3e298f3348ae42ee53585a2498a25c1c9da7623c1263ce31",
     "license": "CC-BY-SA-4.0"
+  },
+  {
+    "provider": "Wikipedia",
+    "pageId": 5110570,
+    "title": "第98回選抜高等学校野球大会",
+    "revision": 111181266,
+    "revisionAt": "2026-09-27T09:59:17Z",
+    "contentSha256": "643d94facb87b2390590eb4aebaab98fefb59110c63a7b1c01034762a92cee10",
+    "license": "CC-BY-SA-4.0"
   }
 ]

@@ -5,7 +5,7 @@ import { createRoot } from "react-dom/client";
 import { MemoryRouter } from "react-router-dom";
 import { NpbDraftEventScreen } from "../src/ui/npb-draft-event";
 import { readNpbDraftEvent } from "../src/application/npb-draft-event-reader";
-import { draftFixture,expandedDraftFixture } from "./fixtures/npb-draft";
+import { draftFixture,expandedDraftFixture,researchedDraftFixture } from "./fixtures/npb-draft";
 import { draftEventQuery } from "../src/domain/npb-draft-query";
 import { portableRoute } from "../src/domain/product-sharing";
 import { canonicalDeepLink,parentNativeRoute } from "../src/domain/native-navigation";
@@ -45,4 +45,11 @@ it("filters amateur categories and teams and preserves the new conditions in sha
   const h=await mount("?team=npb:team:giants&forecast=original",false,d=>Object.assign(d,expandedDraftFixture()));try{expect(h.host.querySelectorAll("article")).toHaveLength(1);}finally{await h.close();}
   const route="/NPB/talent/2026?view=candidates&group=high_school&forecast=original";expect(portableRoute("/NPB/talent/2026",route.split("?")[1])).toBe(route);expect(canonicalDeepLink("baseballnotes:/"+route)).toBe(route);
   expect(draftEventQuery(new URLSearchParams("group=pro" )).valid).toBe(false);expect(draftEventQuery(new URLSearchParams("forecast=edited")).valid).toBe(false);
+});
+
+it("prioritizes researched club forecasts with attributed opinion links, preserving both earlier editions",async()=>{
+  const f=await mount("?team=npb:team:giants",false,d=>Object.assign(d,researchedDraftFixture()));try{
+    expect(f.host.querySelectorAll("article")).toHaveLength(3);expect(f.host.textContent).toContain("球団事情から考える1〜3位予想");expect(f.host.textContent).toContain("1位・初回入札予想");expect(f.host.textContent).toContain("2位・残っている場合");expect(f.host.textContent).toContain("論評・提案（球団の意向とは別）");expect(f.host.textContent).toContain("最終的な1位指名からは判定しません");expect(f.host.querySelector('a[href="https://sportiva.shueisha.co.jp/clm/baseball/fixture/"]')).not.toBeNull();expect(readNpbDraftEvent).toHaveBeenCalledTimes(1);
+  }finally{await f.close();}
+  const g=await mount("?forecast=expanded",false,d=>Object.assign(d,researchedDraftFixture()));try{expect(g.host.querySelectorAll("article")).toHaveLength(36);expect(g.host.textContent).toContain("12球団の1〜3位予想");expect(g.host.textContent).not.toContain("球団事情から考える1〜3位予想");}finally{await g.close();}
 });

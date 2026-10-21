@@ -56,3 +56,11 @@ export function draftIndependentPitcher(content:string,pageId:number,article:str
   if(found.length!==1)throw Error("Independent candidate needs one exact linked roster row");
   return found[0]!;
 }
+
+/** An explicitly named school/tournament observation is not an individual article or canonical identity. */
+export function draftTournamentObservation(content:string,pageId:number,row:string):Candidate{
+  const section=content.split("== 大会本塁打 ==\n")[1]?.split("\n== ")[0];
+  const match=row.match(/^\* 第[1-9]\d*号：([^\s（）[\]<>]+)（([^\s（）[\]<>]+)）$/);
+  if(pageId!==5110570||!match||section?.split("\n").filter(line=>line===row).length!==1)throw Error("Unverified tournament observation");
+  return {id:draftCandidateId(`source-record:${pageId}:${draftHash(row)}`,match[2]!),article:null,name:match[1]!,affiliation:match[2]!,position:"未確認",throws:"未確認",bats:"未確認",eligibility:"unverified",sourcePageId:pageId,evidenceSha256:draftHash(row),context:"2026年選抜大会の記事に氏名・学校を記載（個人記事・守備位置・指名資格は未確認）"};
+}

@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { gzipSync } from "node:zlib";
 import {resolve,sep} from "node:path";
 import { draftEventSchema,assertDraftSnapshotAdvance } from "../src/domain/npb-draft-event";
-import { admittedDraftArchive,applyReviewedDraftResults,draftHash,draftRosterCandidates } from "../src/infrastructure/providers/wikipedia-npb-draft";
+import { admittedDraftArchive,applyReviewedDraftResults,draftHash,draftRosterCandidates,assertCarriedDraftEvidence } from "../src/infrastructure/providers/wikipedia-npb-draft";
 import sources from "../src/data/npb-draft-2026-sources.json";
 import forecast from "../src/data/npb-draft-2026-forecast.json";
 import pin from "../src/data/npb-draft-2026-release.json";
@@ -24,8 +24,9 @@ let data=draftEventSchema.parse({schemaVersion:1,league:"NPB",season:2026,schedu
 let old:ReturnType<typeof draftEventSchema.parse>|undefined;
 if(previous){const bytes=await readFile(previous);if(draftHash(bytes)!==pin.bodySha256)throw Error("Unpinned previous Draft snapshot");old=draftEventSchema.parse(JSON.parse(bytes.toString()));
   if(old.expandedForecast){
+    assertCarriedDraftEvidence(old,a.pages);
     for(const c of data.candidates){const prior=old.candidates.find(p=>p.id===c.id);if(prior&&JSON.stringify(prior)!==JSON.stringify(c))throw Error("Candidate correction requires separate review");}
-    data={...data,candidates:[...old.candidates,...data.candidates.filter(c=>!old!.candidates.some(p=>p.id===c.id))],sources:[...data.sources,...old.sources.filter(s=>!data.sources.some(p=>p.pageId===s.pageId))],expandedForecast:old.expandedForecast,candidateGroups:old.candidateGroups,review:old.review};
+    data={...data,candidates:[...old.candidates,...data.candidates.filter(c=>!old!.candidates.some(p=>p.id===c.id))],sources:[...data.sources,...old.sources.filter(s=>!data.sources.some(p=>p.pageId===s.pageId))],expandedForecast:old.expandedForecast,researchedForecast:old.researchedForecast,candidateGroups:old.candidateGroups,review:old.review};
   }
 }
 if(review){if(!previous||!process.argv.includes("--review-confirmed"))throw Error("Reviewed update needs prior immutable dataset and explicit review confirmation");data=applyReviewedDraftResults(data,event.content,JSON.parse(await readFile(review,"utf8")),a.observedAt);}

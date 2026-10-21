@@ -10,3 +10,9 @@ export function expandedDraftFixture(){
   data.expandedForecast={id:"2026-premeeting-v2",createdAt:"2026-10-21T00:01:00Z",author:"Baseball Notes（独自仮説）",predictions:draftTeams.flatMap((teamId,i)=>[1,2,3].map(round=>({teamId,round,candidateId:data.candidates[i*3+round-1]!.id,reason:"架空の検証用予想"})))};
   return draftEventSchema.parse(data);
 }
+
+export function researchedDraftFixture(){
+  const d=expandedDraftFixture();
+  d.researchedForecast={id:"2026-premeeting-v3",createdAt:"2026-10-21T00:01:00Z",author:"Baseball Notes（独自予想）",references:[{id:"fixture",url:"https://sportiva.shueisha.co.jp/clm/baseball/fixture/",publisher:"架空の参照資料",author:"架空の執筆者",publishedOn:"2026-10-20",updatedOn:"2026-10-20",checkedAt:"2026-10-20T23:00:00Z",kind:"commentary",topic:"検証用・実際の報道ではありません"}],clubs:draftTeams.map(teamId=>({teamId,context:"架空の編成仮説",judgment:"架空の独自判断",referenceIds:["fixture"]})),predictions:structuredClone(d.expandedForecast!.predictions)};
+  return draftEventSchema.parse(d);
+}

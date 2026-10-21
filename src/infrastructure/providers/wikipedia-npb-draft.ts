@@ -1,23 +1,24 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import { draftEventSchema,draftSourceSchema,type DraftEvent } from "../../domain/npb-draft-event";
+import admittedSources from "../../data/npb-draft-2026-sources.json";
 
 export const draftHash=(value:string|Uint8Array)=>createHash("sha256").update(value).digest("hex");
 export const draftCandidateId=(article:string,affiliation:string)=>`npb:draft:2026:${draftHash(JSON.stringify([article,affiliation])).slice(0,24)}`;
 const plain=(s:string)=>s.replace(/\{\{left\}\}/g,"").replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g,(_,a:string,b?:string)=>b??a).trim();
 const archiveSchema=z.object({observedAt:z.iso.datetime(),response:z.object({query:z.object({pages:z.array(z.object({pageid:z.number().int().positive(),title:z.string(),revisions:z.array(z.object({revid:z.number().int().positive(),timestamp:z.iso.datetime(),slots:z.object({main:z.object({content:z.string().max(150000)})})})).length(1)}))})})});
 /** One documented API request; new revisions remain private candidates until admission review. */
-export async function fetchDraftCandidateArchive(request:typeof fetch=fetch){
+export async function fetchDraftCandidateArchive(request:typeof fetch=fetch,scope:"core"|"preview"|"research"="core"){
+  const allowed=new Map(admittedSources.filter(s=>scope==="research"||scope==="preview"&&s.pageId!==5110570||[5282993,5209342].includes(s.pageId)).map(s=>[s.pageId,s.title]));
   const url=new URL("https://ja.wikipedia.org/w/api.php");
-  for(const [key,value] of Object.entries({action:"query",format:"json",formatversion:"2",prop:"revisions",rvprop:"ids|timestamp|content",rvslots:"main",pageids:"5282993|5209342",maxlag:"5"}))url.searchParams.set(key,value);
+  for(const [key,value] of Object.entries({action:"query",format:"json",formatversion:"2",prop:"revisions",rvprop:"ids|timestamp|content",rvslots:"main",pageids:[...allowed.keys()].join("|"),maxlag:"5"}))url.searchParams.set(key,value);
   const response=await request(url,{headers:{"User-Agent":"BaseballNotes/1.0 (https://github.com/tomoya41/baseball-notes; licensed draft snapshot)"},signal:AbortSignal.timeout(30000)});
   if(!response.ok||!response.body)throw Error(`Draft candidate HTTP ${response.status}`);
   const reader=response.body.getReader(),parts:Uint8Array[]=[];let length=0;
   try{for(;;){const part=await reader.read();if(part.done)break;length+=part.value.length;if(length>500000)throw Error("Draft API byte budget exceeded");parts.push(part.value);}}catch(error){await reader.cancel().catch(()=>undefined);throw error;}finally{reader.releaseLock();}
   const bytes=new Uint8Array(length);let offset=0;for(const part of parts){bytes.set(part,offset);offset+=part.length;}
   const archive=archiveSchema.parse({observedAt:new Date().toISOString(),response:JSON.parse(new TextDecoder().decode(bytes))});
-  const allowed=new Map([[5282993,"2026年度新人選手選択会議 (日本プロ野球)"],[5209342,"2026年の野球日本代表"]]);
-  if(archive.response.query.pages.length!==2||new Set(archive.response.query.pages.map(p=>p.pageid)).size!==2||archive.response.query.pages.some(p=>allowed.get(p.pageid)!==p.title))throw Error("Unexpected draft source identity");
+  if(archive.response.query.pages.length!==allowed.size||new Set(archive.response.query.pages.map(p=>p.pageid)).size!==allowed.size||archive.response.query.pages.some(p=>allowed.get(p.pageid)!==p.title))throw Error("Unexpected draft source identity");
   return archive;
 }
 export function admittedDraftArchive(raw:unknown,admitted:readonly z.infer<typeof draftSourceSchema>[]){
@@ -28,6 +29,26 @@ export function admittedDraftArchive(raw:unknown,admitted:readonly z.infer<typeo
     if(Date.parse(r.timestamp)>Date.parse(a.observedAt))throw Error("Future source revision");
     return {source,content};
   });return {observedAt:a.observedAt,pages};
+}
+
+/** Retained predecessors remain reproducible after the active pin advances. */
+export function pinnedDraftPredecessor(bytes:Uint8Array,pins:readonly {bodySha256:string;forecastSha256:string}[]){
+  const known=pins.find(p=>p.bodySha256===draftHash(bytes));if(!known)throw Error("Unpinned previous Draft snapshot");
+  const data=draftEventSchema.parse(JSON.parse(new TextDecoder().decode(bytes)));
+  if(draftHash(JSON.stringify(data.forecast))!==known.forecastSha256)throw Error("Pinned forecast mismatch");
+  return data;
+}
+
+/** A new revision may not silently become provenance for a carried row that it no longer contains. */
+export function assertCarriedDraftEvidence(previous:DraftEvent,pages:ReturnType<typeof admittedDraftArchive>["pages"]){
+  for(const page of pages){
+    const prior=previous.sources.find(s=>s.pageId===page.source.pageId);
+    if(!prior||JSON.stringify(prior)===JSON.stringify(page.source))continue;
+    const lines=page.content.split("\n"),proofs=new Map<string,number>();
+    for(let i=0;i<lines.length;i++)for(const text of [lines[i]!,i?lines[i-1]+"\n"+lines[i]:null])if(text){const h=draftHash(text);proofs.set(h,(proofs.get(h)??0)+1);}
+    const rows=[...previous.candidates,...previous.selections,...previous.lotteries].filter(c=>c.sourcePageId===page.source.pageId);
+    if(rows.some(c=>proofs.get(c.evidenceSha256)!==1))throw Error("Carried Draft evidence changed or removed; separate source/candidate review required");
+  }
 }
 /** Exact reviewed university roster, four-year students only; eligibility is deliberately not inferred. */
 export function draftRosterCandidates(content:string){
