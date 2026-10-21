@@ -6,6 +6,8 @@ import { buildWikipediaJapanSeries } from "../src/infrastructure/providers/wikip
 import { npbPostseasonSeriesSchema } from "../src/domain/npb-postseason-series";
 import pin from "../src/data/npb-series-release.json";
 import japanPin from "../src/data/npb-japan-series-release.json";
+import retained from "../src/data/npb-japan-series-retained-releases.json";
+import {assertImmutableReleaseTag} from "../src/data/immutable-release-tag";
 import {npbJapanSeriesSchema,assertJapanSeriesAdvance} from "../src/domain/npb-japan-series";
 const option=(key:string)=>process.argv.find(a=>a.startsWith(`--${key}=`))?.slice(key.length+3);
 const archive=option("archive"),base=option("cs"),output=option("output");
@@ -17,7 +19,8 @@ const review=option("review"),previous=option("previous"),tag=option("tag");
 if(review&&(!previous||!process.argv.includes("--review-confirmed")))throw Error("Result update requires pinned previous snapshot and review confirmation");
 const data=buildWikipediaJapanSeries(JSON.parse(await readFile(archive,"utf8")),npbPostseasonSeriesSchema.parse(JSON.parse(cs.toString())),pin.bodySha256,undefined,review?JSON.parse(await readFile(review,"utf8")):undefined),body=Buffer.from(JSON.stringify(data)),gzip=gzipSync(body,{level:9});
 if(previous){const old=await readFile(previous);if(hash(old)!==japanPin.bodySha256)throw Error("Unpinned previous Japan Series snapshot");assertJapanSeriesAdvance(npbJapanSeriesSchema.parse(JSON.parse(old.toString())),data);}
-if(tag&&(!/^npb-japan-series-wikipedia-[a-z0-9-]+$/.test(tag)||japanPin.assetUrl.includes(`/download/${tag}/`)))throw Error("New immutable release tag required");
+if(tag&&!/^npb-japan-series-wikipedia-[a-z0-9-]+$/.test(tag))throw Error("New immutable release tag required");
+if(tag)assertImmutableReleaseTag(tag,hash(body),hash(gzip),[...retained,japanPin]);
 await mkdir(output,{recursive:true});await writeFile(join(output,"npb-japan-series.json.gz"),gzip);
 await writeFile(join(output,"japan-series-2026.json"),body);
 if(tag)await writeFile(join(output,"pin.json"),JSON.stringify({assetUrl:`https://github.com/tomoya41/baseball-notes/releases/download/${tag}/npb-japan-series.json.gz`,sha256:hash(gzip),bodySha256:hash(body),bytes:body.length,csSeriesBodySha256:pin.bodySha256,seriesId:data.series.id,gameIds:data.series.games.map(g=>g.gameId)},null,2));

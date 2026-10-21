@@ -7,6 +7,8 @@ import { admittedDraftArchive,applyReviewedDraftResults,draftHash,draftRosterCan
 import sources from "../src/data/npb-draft-2026-sources.json";
 import forecast from "../src/data/npb-draft-2026-forecast.json";
 import pin from "../src/data/npb-draft-2026-release.json";
+import retained from "../src/data/npb-draft-retained-releases.json";
+import {assertImmutableReleaseTag} from "../src/data/immutable-release-tag";
 import {draftUpdateReport} from "../src/application/npb-draft-update-report";
 
 const arg=(name:string)=>process.argv.find(a=>a.startsWith(`--${name}=`))?.slice(name.length+3);
@@ -23,7 +25,8 @@ if(review){if(!previous||!process.argv.includes("--review-confirmed"))throw Erro
 let report:ReturnType<typeof draftUpdateReport>|undefined;
 if(previous){const bytes=await readFile(previous);if(draftHash(bytes)!==pin.bodySha256)throw Error("Unpinned previous Draft snapshot");const old=draftEventSchema.parse(JSON.parse(bytes.toString()));assertDraftSnapshotAdvance(old,data);report=draftUpdateReport(old,data);}
 const body=JSON.stringify(data),bytes=Buffer.from(body),gzip=gzipSync(bytes);
-const tag=arg("tag");if(tag&&(!/^npb-draft-2026-[a-z0-9-]+$/.test(tag)||tag===pin.tag&&draftHash(body)!==pin.bodySha256))throw Error("New immutable release tag required");
+const tag=arg("tag");if(tag&&!/^npb-draft-2026-[a-z0-9-]+$/.test(tag))throw Error("New immutable release tag required");
+if(tag)assertImmutableReleaseTag(tag,draftHash(body),draftHash(gzip),[...retained,pin]);
 if(tag&&draftHash(body)!==pin.bodySha256&&!previous)throw Error("New publication proposal requires pinned previous snapshot");
 await mkdir(output,{recursive:true});await writeFile(join(output,"draft-2026.json"),bytes);await writeFile(join(output,"draft-2026.json.gz"),gzip);
 if(report)await writeFile(join(output,"review-report.json"),JSON.stringify(report,null,2));
