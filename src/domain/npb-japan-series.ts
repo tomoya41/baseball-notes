@@ -26,6 +26,7 @@ export const npbJapanSeriesSchema = z.strictObject({
   for(const r of d.results){const g=s.games.find(g=>g.gameId===r.gameId);
     if(r.sourcePageId!==5306035||!d.sources.some(p=>p.pageId===r.sourcePageId)||!r.evidenceSha256||!r.homeLastInning||r.homeLastInning!=="completed"&&(!g||g.homeRuns!<=g.awayRuns!||r.homeLastInning==="not_played"&&r.homeInnings.at(-1)!==0)||g&&g.gameNumber<=7&&(r.awayInnings.length>12||g.homeRuns===g.awayRuns&&r.awayInnings.length!==12))c.addIssue({code:"custom",message:"Invalid final half-inning or source evidence"});
     if(r.homeLastInning==="walk_off"&&(!r.homeInnings.at(-1)||g&&g.homeRuns!-r.homeInnings.at(-1)!>g.awayRuns!))c.addIssue({code:"custom",message:"Invalid walk-off inning"});
+    if(g&&g.homeRuns!>g.awayRuns!&&r.homeLastInning==="completed")c.addIssue({code:"custom",message:"Home win requires explicit X or walk-off evidence"});
   }
   const clinchIndex=s.games.findIndex((_,i)=>s.teams.some(t=>s.games.slice(0,i+1).filter(g=>g.winnerId===t.teamId).length===4));
   if(clinchIndex>=0&&s.games.slice(clinchIndex+1).some(g=>g.status==="final"))c.addIssue({code:"custom",message:"Played Game after four-win clinch"});

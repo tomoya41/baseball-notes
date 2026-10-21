@@ -29,7 +29,7 @@ function Unavailable({failed,retry}:{failed:boolean;retry:()=>void}){return fail
 export function JapanSeriesEntry({cs}:{cs:NpbPostseasonSeries}){
   const state=useJapan(true);let consistent=false;
   if(state.data){try{assertJapanSeriesAdvancement(state.data,cs);consistent=true;}catch{/* Keep the independently valid CS visible. */}}
-  return <section><h2>日本シリーズ</h2>{!state.data?<Unavailable {...state}/>:!consistent?<DataState kind="source-unavailable" title="進出情報の照合を確認中です"/>:<><Link className="player-row" to={japanSeriesUrl}><strong>{state.data.series.teams.map(t=>name(t.teamId)).join(" vs ")}</strong><span>日程・大会詳細 →</span></Link><p>10月24日開幕予定 · 4勝先取</p><p className="inline-note">記事取得 {observedDate(state.data)} · {state.data.results.length?`終了確認した${state.data.results.length}試合の結果を収録。個人成績は未収録。`:`試合結果・選手成績は未収録。`}予定は変更される場合があります。</p><Sources data={state.data}/></>}</section>;
+  return <section><h2>日本シリーズ</h2>{!state.data?<Unavailable {...state}/>:!consistent?<DataState kind="source-unavailable" title="進出情報の照合を確認中です"/>:<><Link className="player-row" to={japanSeriesUrl}><strong>{state.data.series.teams.map(t=>name(t.teamId)).join(" vs ")}</strong><span>日程・大会詳細 →</span></Link><p>{state.data.results.length?"収録結果 · 4勝先取":"10月24日開幕予定 · 4勝先取"}</p><p className="inline-note">記事取得 {observedDate(state.data)} · {state.data.results.length?`終了確認した${state.data.results.length}試合の結果を収録。個人成績は未収録。`:`試合結果・選手成績は未収録。`}予定は変更される場合があります。</p><Sources data={state.data}/></>}</section>;
 }
 export function NpbJapanSeriesScreen({gameDetail=false}:{gameDetail?:boolean}){
   const [params]=useSearchParams(),{gameId}=useParams();
