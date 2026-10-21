@@ -1,0 +1,366 @@
+{
+  "season": 2026,
+  "checkedAt": "2026-10-21T22:04:33Z",
+  "records": [
+    {
+      "candidateId": "npb:draft:2026:0f5d26ee680133c325ed4542",
+      "name": "鈴木泰成",
+      "affiliation": "青山学院大",
+      "evidenceSha256": "cf91948fc2e6e2603e237edf367cf023a01c28a6c3bd2032b6a5d581f204d0f0",
+      "sourcePageId": 5209342,
+      "group": "university",
+      "status": "listed",
+      "note": "公式の2026年NPBドラフト対象者欄で氏名・学校を個別に照合し、志望届の提出を確認。指名・入団・現在所属の証明ではありません。"
+    },
+    {
+      "candidateId": "npb:draft:2026:051f107add87484d599780d0",
+      "name": "馬場拓海",
+      "affiliation": "日本体育大",
+      "evidenceSha256": "fd57ce6127667637cc088654ea56cf10d9bfc46f12b658fad143a069672345d1",
+      "sourcePageId": 5209342,
+      "group": "university",
+      "status": "listed",
+      "note": "公式の2026年NPBドラフト対象者欄で氏名・学校を個別に照合し、志望届の提出を確認。指名・入団・現在所属の証明ではありません。"
+    },
+    {
+      "candidateId": "npb:draft:2026:ca6169aff349fb15bd077ae1",
+      "name": "宮原廉",
+      "affiliation": "近畿大",
+      "evidenceSha256": "bb77b97aa9489ac2f7bca43e1f14a496714775c63633dd7b2e926551efe25a17",
+      "sourcePageId": 5209342,
+      "group": "university",
+      "status": "listed",
+      "note": "公式の2026年NPBドラフト対象者欄で氏名・学校を個別に照合し、志望届の提出を確認。指名・入団・現在所属の証明ではありません。"
+    },
+    {
+      "candidateId": "npb:draft:2026:a95b5a04557c73667a1c919f",
+      "name": "角田楓斗",
+      "affiliation": "富士大",
+      "evidenceSha256": "74ef273c56217ff9cd7ce9400b877f479096df57abb842a83546263d1d5894df",
+      "sourcePageId": 5209342,
+      "group": "university",
+      "status": "listed",
+      "note": "公式の2026年NPBドラフト対象者欄で氏名・学校を個別に照合し、志望届の提出を確認。指名・入団・現在所属の証明ではありません。"
+    },
+    {
+      "candidateId": "npb:draft:2026:cb24d52bd283a9968211d878",
+      "name": "星野世那",
+      "affiliation": "大阪商業大",
+      "evidenceSha256": "da7040943111b1fac8aef6bdfb42ba85754853b90ae413fbe5f2c148f55057a9",
+      "sourcePageId": 5209342,
+      "group": "university",
+      "status": "listed",
+      "note": "公式の2026年NPBドラフト対象者欄で氏名・学校を個別に照合し、志望届の提出を確認。指名・入団・現在所属の証明ではありません。"
+    },
+    {
+      "candidateId": "npb:draft:2026:852ee8d07c42ddf95d3521ef",
+      "name": "渡辺和大",
+      "affiliation": "慶應義塾大",
+      "evidenceSha256": "ab58b0ba26ecad63d62fd60b740640f9d479c1d3754bf3617910e73f91ca2127",
+      "sourcePageId": 5209342,
+      "group": "university",
+      "status": "listed",
+      "note": "公式の2026年NPBドラフト対象者欄で氏名・学校を個別に照合し、志望届の提出を確認。指名・入団・現在所属の証明ではありません。"
+    },
+    {
+      "candidateId": "npb:draft:2026:f2bad191341a3c6b68e3e67d",
+      "name": "猪俣駿太",
+      "affiliation": "東北福祉大",
+      "evidenceSha256": "6c216be8d7e335fffce6b910abd37dbe6772d2a4d722aba8f990507aec27e4e3",
+      "sourcePageId": 5209342,
+      "group": "university",
+      "status": "listed",
+      "note": "公式の2026年NPBドラフト対象者欄で氏名・学校を個別に照合し、志望届の提出を確認。指名・入団・現在所属の証明ではありません。"
+    },
+    {
+      "candidateId": "npb:draft:2026:4671e2754a20c964147efb46",
+      "name": "米沢友翔",
+      "affiliation": "関西大",
+      "evidenceSha256": "feb6fa43986abeeac2112491eac5fc6a8e96fb53f565aa5bfe2bc32adb7d5e25",
+      "sourcePageId": 5209342,
+      "group": "university",
+      "status": "listed",
+      "note": "公式の2026年NPBドラフト対象者欄で氏名・学校を個別に照合し、志望届の提出を確認。指名・入団・現在所属の証明ではありません。"
+    },
+    {
+      "candidateId": "npb:draft:2026:5ddbeb04bbb237bee3649822",
+      "name": "渡部海",
+      "affiliation": "青山学院大",
+      "evidenceSha256": "381588da8d853cfb4fe769180fcabd4cb5176009f3e91020cff7e942b8ae86c3",
+      "sourcePageId": 5209342,
+      "group": "university",
+      "status": "listed",
+      "note": "公式の2026年NPBドラフト対象者欄で氏名・学校を個別に照合し、志望届の提出を確認。指名・入団・現在所属の証明ではありません。"
+    },
+    {
+      "candidateId": "npb:draft:2026:a2558a96835c4458bf34dac6",
+      "name": "前嶋藍",
+      "affiliation": "亜細亜大",
+      "evidenceSha256": "85aae5989a70dbb1ca812fc1be62d07da696e36f6fea6a2ea02ebb2452e46183",
+      "sourcePageId": 5209342,
+      "group": "university",
+      "status": "listed",
+      "note": "公式の2026年NPBドラフト対象者欄で氏名・学校を個別に照合し、志望届の提出を確認。指名・入団・現在所属の証明ではありません。"
+    },
+    {
+      "candidateId": "npb:draft:2026:ec006778ad5b6a2e6037ca68",
+      "name": "西野啓也",
+      "affiliation": "立命館大",
+      "evidenceSha256": "c28c05f2facdd0e23d6d09145418e205ff16724dbabedd76ef12d54aeac78164",
+      "sourcePageId": 5209342,
+      "group": "university",
+      "status": "listed",
+      "note": "公式の2026年NPBドラフト対象者欄で氏名・学校を個別に照合し、志望届の提出を確認。指名・入団・現在所属の証明ではありません。"
+    },
+    {
+      "candidateId": "npb:draft:2026:40d3417004affe2d49adbda6",
+      "name": "赤堀颯",
+      "affiliation": "國學院大",
+      "evidenceSha256": "dc053a80ca16a2d7a4fceee28bdfddb4b5ff602d4d37187dd1f78245642822b0",
+      "sourcePageId": 5209342,
+      "group": "university",
+      "status": "listed",
+      "note": "公式の2026年NPBドラフト対象者欄で氏名・学校を個別に照合し、志望届の提出を確認。指名・入団・現在所属の証明ではありません。"
+    },
+    {
+      "candidateId": "npb:draft:2026:7f0ffc2601be5157f2181181",
+      "name": "岡田啓吾",
+      "affiliation": "明治大",
+      "evidenceSha256": "4d44551090d08adb72a2b2a3ee4b7472fd8e7ab6539c6d29e12352e10f0919bd",
+      "sourcePageId": 5209342,
+      "group": "university",
+      "status": "listed",
+      "note": "公式の2026年NPBドラフト対象者欄で氏名・学校を個別に照合し、志望届の提出を確認。指名・入団・現在所属の証明ではありません。"
+    },
+    {
+      "candidateId": "npb:draft:2026:78734d6764f069089e2bb2fb",
+      "name": "山里宝",
+      "affiliation": "亜細亜大",
+      "evidenceSha256": "0fbb1b1e1253ebcc1e8d201cd2764b0b5a065605a4a921f01375fad99f74471f",
+      "sourcePageId": 5209342,
+      "group": "university",
+      "status": "listed",
+      "note": "公式の2026年NPBドラフト対象者欄で氏名・学校を個別に照合し、志望届の提出を確認。指名・入団・現在所属の証明ではありません。"
+    },
+    {
+      "candidateId": "npb:draft:2026:a83815082a79a3a43cc3200a",
+      "name": "今津慶介",
+      "affiliation": "慶應義塾大",
+      "evidenceSha256": "ad97f36267d88c4bf691afcea43a0c5b479a2a652954374c980e7c76e90c6a36",
+      "sourcePageId": 5209342,
+      "group": "university",
+      "status": "listed",
+      "note": "公式の2026年NPBドラフト対象者欄で氏名・学校を個別に照合し、志望届の提出を確認。指名・入団・現在所属の証明ではありません。"
+    },
+    {
+      "candidateId": "npb:draft:2026:1dc09f3414fba269aa9a81b6",
+      "name": "榊原七斗",
+      "affiliation": "明治大",
+      "evidenceSha256": "57cd6fc1a59e032533d04490987ff22199c326c29dd508533f755fff8e0ef154",
+      "sourcePageId": 5209342,
+      "group": "university",
+      "status": "listed",
+      "note": "公式の2026年NPBドラフト対象者欄で氏名・学校を個別に照合し、志望届の提出を確認。指名・入団・現在所属の証明ではありません。"
+    },
+    {
+      "candidateId": "npb:draft:2026:ec95ea09687ac53752efdaf3",
+      "name": "春山陽登",
+      "affiliation": "大阪商業大",
+      "evidenceSha256": "a591e55b470d47b5fb0ff8a27575335ce5abb97221731c7ef4f18b7a1612dfeb",
+      "sourcePageId": 5209342,
+      "group": "university",
+      "status": "listed",
+      "note": "公式の2026年NPBドラフト対象者欄で氏名・学校を個別に照合し、志望届の提出を確認。指名・入団・現在所属の証明ではありません。"
+    },
+    {
+      "candidateId": "npb:draft:2026:104a779c213c32e08a4db17b",
+      "name": "黒田義信",
+      "affiliation": "東日本国際大学",
+      "evidenceSha256": "931a7fc6732a6cbc9a5469e6a97c96fc241774f9c4d203062cb8eb0c81811a73",
+      "sourcePageId": 5209342,
+      "group": "university",
+      "status": "listed",
+      "note": "公式の2026年NPBドラフト対象者欄で氏名・学校を個別に照合し、志望届の提出を確認。指名・入団・現在所属の証明ではありません。"
+    },
+    {
+      "candidateId": "npb:draft:2026:a869eb7a3634cc122e993cff",
+      "name": "門倉昂大",
+      "affiliation": "専大松戸",
+      "evidenceSha256": "8573368583eef35c26c0edcb5f0491a8907ae56e49a0c8dd3fd63022e475ef84",
+      "sourcePageId": 5209342,
+      "group": "high_school",
+      "status": "not_listed",
+      "note": "公式の2026年NPBドラフト対象者欄で該当する氏名・学校を確認できず、現在の予想対象から除外。未指名・進路の断定はしません。"
+    },
+    {
+      "candidateId": "npb:draft:2026:58a116ab1540d53561601825",
+      "name": "前田侑仁",
+      "affiliation": "高岡第一",
+      "evidenceSha256": "ab0f7e06f637cbb384ceb579d6bcd3c6b8774ae68b5df3305b35e7cbf2ad24b9",
+      "sourcePageId": 5209342,
+      "group": "high_school",
+      "status": "identity_mismatch",
+      "note": "収録名は前田侑仁、公式対象者欄は前田侑大。学校が同じでも別人・誤記と断定せず、照合できるまで保留します。"
+    },
+    {
+      "candidateId": "npb:draft:2026:93ba2b4b0c3dfdf968147d7a",
+      "name": "鈴木悠悟",
+      "affiliation": "中京",
+      "evidenceSha256": "28bfb20d3b3ef1e27570f08914b2243fb68afcebbbaab82fe99dce18c1ef5b82",
+      "sourcePageId": 5209342,
+      "group": "high_school",
+      "status": "listed",
+      "note": "公式の2026年NPBドラフト対象者欄で氏名・学校を個別に照合し、志望届の提出を確認。指名・入団・現在所属の証明ではありません。"
+    },
+    {
+      "candidateId": "npb:draft:2026:853bb8b46544da2e398f21f3",
+      "name": "萬谷堅心",
+      "affiliation": "花巻東",
+      "evidenceSha256": "b23fabfe0e8a6c6cca8ab9c34b864e3db9dd1acdfe567bda6b8acf95c3bf86c0",
+      "sourcePageId": 5209342,
+      "group": "high_school",
+      "status": "not_listed",
+      "note": "公式の2026年NPBドラフト対象者欄で該当する氏名・学校を確認できず、現在の予想対象から除外。未指名・進路の断定はしません。"
+    },
+    {
+      "candidateId": "npb:draft:2026:e5e33a7e260146db9f9ef81f",
+      "name": "末吉良丞",
+      "affiliation": "沖縄尚学",
+      "evidenceSha256": "2de1e8ed1d52b64535846f5d0681e612c38fd00308da9f7545bd800b6508ffa9",
+      "sourcePageId": 5209342,
+      "group": "high_school",
+      "status": "listed",
+      "note": "公式の2026年NPBドラフト対象者欄で氏名・学校を個別に照合し、志望届の提出を確認。指名・入団・現在所属の証明ではありません。"
+    },
+    {
+      "candidateId": "npb:draft:2026:018a2b568df77aa58679ef55",
+      "name": "小林鉄三郎",
+      "affiliation": "横浜",
+      "evidenceSha256": "3ffb9629fd51a26bd40cafba2d2b25cf0429b0b18ead2579f41b784a08256f47",
+      "sourcePageId": 5209342,
+      "group": "high_school",
+      "status": "not_listed",
+      "note": "公式の2026年NPBドラフト対象者欄で該当する氏名・学校を確認できず、現在の予想対象から除外。未指名・進路の断定はしません。"
+    },
+    {
+      "candidateId": "npb:draft:2026:5fc472c5d8496778cb51574e",
+      "name": "杉本真滉",
+      "affiliation": "智弁学園",
+      "evidenceSha256": "a44fa7f4af77f80e053d5f093f8242dd497858dc013e4f808b73751c17607829",
+      "sourcePageId": 5209342,
+      "group": "high_school",
+      "status": "listed",
+      "note": "公式の2026年NPBドラフト対象者欄で氏名・学校を個別に照合し、志望届の提出を確認。指名・入団・現在所属の証明ではありません。"
+    },
+    {
+      "candidateId": "npb:draft:2026:6b79e3285dd112d927bf6bdb",
+      "name": "山田凜虎",
+      "affiliation": "智弁和歌山",
+      "evidenceSha256": "d88ccc3721fd0381af449320b2e803b47b2517ec0b9defde9535dfa5bed89d2b",
+      "sourcePageId": 5209342,
+      "group": "high_school",
+      "status": "not_listed",
+      "note": "公式の2026年NPBドラフト対象者欄で該当する氏名・学校を確認できず、現在の予想対象から除外。未指名・進路の断定はしません。"
+    },
+    {
+      "candidateId": "npb:draft:2026:1796d94b2ba39f40007aa37e",
+      "name": "角谷哲人",
+      "affiliation": "智弁学園",
+      "evidenceSha256": "173e03da3b992b1478a30e93a960b7a0a80ad7f01c6190ad1d376a829a5b2600",
+      "sourcePageId": 5209342,
+      "group": "high_school",
+      "status": "not_listed",
+      "note": "公式の2026年NPBドラフト対象者欄で該当する氏名・学校を確認できず、現在の予想対象から除外。未指名・進路の断定はしません。"
+    },
+    {
+      "candidateId": "npb:draft:2026:88eb28a1cd06bc06ddd8878c",
+      "name": "杉本将吾",
+      "affiliation": "近江",
+      "evidenceSha256": "81a181cca3ed498ffe6f88c56d22b71b2b76f670c606d9065a7f8952828491b4",
+      "sourcePageId": 5209342,
+      "group": "high_school",
+      "status": "not_listed",
+      "note": "公式の2026年NPBドラフト対象者欄で該当する氏名・学校を確認できず、現在の予想対象から除外。未指名・進路の断定はしません。"
+    },
+    {
+      "candidateId": "npb:draft:2026:f2953936f73c700fd1ba6e67",
+      "name": "小野舜友",
+      "affiliation": "横浜",
+      "evidenceSha256": "d28ea6c238ffe5910f8c2afd4e5ca1577bad4d7522301a7329a29591831dad10",
+      "sourcePageId": 5209342,
+      "group": "high_school",
+      "status": "not_listed",
+      "note": "公式の2026年NPBドラフト対象者欄で該当する氏名・学校を確認できず、現在の予想対象から除外。未指名・進路の断定はしません。"
+    },
+    {
+      "candidateId": "npb:draft:2026:a8dcf0024e6b987682da2880",
+      "name": "井口瑛太",
+      "affiliation": "関東第一",
+      "evidenceSha256": "8883d1e1e7da2b424318248003e896753316741c4b096d5a59cbc62d95f42420",
+      "sourcePageId": 5209342,
+      "group": "high_school",
+      "status": "not_listed",
+      "note": "公式の2026年NPBドラフト対象者欄で該当する氏名・学校を確認できず、現在の予想対象から除外。未指名・進路の断定はしません。"
+    },
+    {
+      "candidateId": "npb:draft:2026:6f6b5ca949d312be01022512",
+      "name": "川上慧",
+      "affiliation": "横浜",
+      "evidenceSha256": "6aea61c72e3d15a528125bae4eb4172d3e40ab53277b386efb69b37c1fd92e10",
+      "sourcePageId": 5209342,
+      "group": "high_school",
+      "status": "not_listed",
+      "note": "公式の2026年NPBドラフト対象者欄で該当する氏名・学校を確認できず、現在の予想対象から除外。未指名・進路の断定はしません。"
+    },
+    {
+      "candidateId": "npb:draft:2026:8b85a97b31a8b97e601a33b9",
+      "name": "池田聖摩",
+      "affiliation": "横浜",
+      "evidenceSha256": "2f56e627820b42307fa8e5c5908febded0ee3a1fa85a75342c6c0cbb29a814bd",
+      "sourcePageId": 5209342,
+      "group": "high_school",
+      "status": "listed",
+      "note": "公式の2026年NPBドラフト対象者欄で氏名・学校を個別に照合し、志望届の提出を確認。指名・入団・現在所属の証明ではありません。"
+    },
+    {
+      "candidateId": "npb:draft:2026:a3f0248dddb8f29c7a3cedb7",
+      "name": "福島陽奈汰",
+      "affiliation": "東海大熊本星翔",
+      "evidenceSha256": "89f20db4e5cd709e776f9be31f0b0aaa255ff082571f8cb05c5815354d7c0e7c",
+      "sourcePageId": 5209342,
+      "group": "high_school",
+      "status": "not_listed",
+      "note": "公式の2026年NPBドラフト対象者欄で該当する氏名・学校を確認できず、現在の予想対象から除外。未指名・進路の断定はしません。"
+    },
+    {
+      "candidateId": "npb:draft:2026:e895029dcc28efea95b484e9",
+      "name": "石田雄星",
+      "affiliation": "健大高崎",
+      "evidenceSha256": "68a859b24185d9efd86a09905d8cdf512625a6d6068a03fdfb83eff6b67c7648",
+      "sourcePageId": 5209342,
+      "group": "high_school",
+      "status": "not_listed",
+      "note": "公式の2026年NPBドラフト対象者欄で該当する氏名・学校を確認できず、現在の予想対象から除外。未指名・進路の断定はしません。"
+    },
+    {
+      "candidateId": "npb:draft:2026:cf33892059e53dafebb255a5",
+      "name": "梶山侑政",
+      "affiliation": "神村学園",
+      "evidenceSha256": "1400a6258ea6d0d2cd3519ce133fca306456a0b9ee8d2183b2b08e04d04c679f",
+      "sourcePageId": 5209342,
+      "group": "high_school",
+      "status": "not_listed",
+      "note": "公式の2026年NPBドラフト対象者欄で該当する氏名・学校を確認できず、現在の予想対象から除外。未指名・進路の断定はしません。"
+    },
+    {
+      "candidateId": "npb:draft:2026:5a072b9b853a73de618277b3",
+      "name": "菰田陽生",
+      "affiliation": "山梨学院",
+      "evidenceSha256": "db91ac7ff38d8749dce06658baf97d86d36cbd066f5b8070d5d522fa373e8967",
+      "sourcePageId": 5110570,
+      "group": "high_school",
+      "status": "listed",
+      "note": "公式の2026年NPBドラフト対象者欄で氏名・学校を個別に照合し、志望届の提出を確認。指名・入団・現在所属の証明ではありません。"
+    }
+  ]
+}

@@ -562,7 +562,10 @@ public class ReleaseQualityTest {
         scenario=ActivityScenario.launch(link);waitText("球団事情から考える1〜3位予想");waitText("1位は初回入札");
         String route=js("location.hash");setTheme("light","ライト");js("location.hash='"+route+"'");waitText("球団事情から考える1〜3位予想");
         fontScaleAndRecreate(2.0f);waitText("球団事情から考える1〜3位予想");waitViewport(360);
-        assertEquals("Thirty-six researched targets","36",js("String(document.querySelectorAll('main article').length)"));
+        assertEquals("Thirty-six slots, including withheld forecasts","36",js("String(document.querySelectorAll('main article').length)"));
+        assertEquals("Only reviewed student targets are active","20",js("String(document.querySelectorAll('main article > a.player-row').length)"));
+        assertEquals("Sixteen unsafe targets are withheld","16",js("String(Array.from(document.querySelectorAll('main article')).filter(e=>e.textContent.includes('予想を保留')).length)"));
+        assertEquals("Yamada has no active forecast link","false",js("Array.from(document.querySelectorAll('main article > a.player-row')).some(e=>e.textContent.includes('山田凜虎'))"));
         assertEquals("Draft preview no large-font overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));screenshot("draft-2026-font-20-light");
         setTheme("dark","ダーク");js("location.hash='"+route+"'");waitText("球団事情から考える1〜3位予想");
         assertEquals("Dark draft preview no overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));screenshot("draft-2026-font-20-dark");
