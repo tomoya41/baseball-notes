@@ -76,3 +76,5 @@ npx tsx scripts/build-npb-japan-series.ts --archive=.data/japan-series/archive.j
 - Consoleのリセット日・複数instanceの総read量・無料枠復旧後のproduction効果は未確認。課金・別アカウント回避・有料fallbackを行わない。
 
 Pixel/TalkBackは接続環境がある場合だけ別QA。署名・保存データ削除・Play公開は行わない。追加月額費用¥0。
+
+10/21追補：[結果更新・開幕準備](draft-japan-opening-2026-10.md)で、日程専用モードを保ちながら明示的review付き結果更新、終了イニングの表示、旧APK向けretained asset保護を追加。個人成績のadmissionは別で、現在の公開7予定/結果0/成績未収録は不変。最新Scheduledログもread-blockedで、追加DB要求を行わず復旧後の既存手順を維持した。

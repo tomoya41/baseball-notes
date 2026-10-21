@@ -28,7 +28,8 @@ it("keeps final/tie arithmetic separate, rejects unsupported final or nonfinal z
   const future=structuredClone(d);future.series.games[0]!.homeRuns=0;expect(npbJapanSeriesSchema.safeParse(future).success).toBe(false);
   d.observedAt="2026-10-25T10:00:00Z";const g=d.series.games[0]!;g.status="final";g.homeRuns=0;g.awayRuns=0;
   expect(npbJapanSeriesSchema.safeParse(d).success).toBe(false);
-  d.results.push({gameId:g.gameId,homeInnings:Array(12).fill(0),awayInnings:Array(12).fill(0),durationMinutes:240});
+  d.review={reviewedBy:"fixture reviewer",reviewedAt:d.observedAt};
+  d.results.push({gameId:g.gameId,homeInnings:Array(12).fill(0),awayInnings:Array(12).fill(0),durationMinutes:240,homeLastInning:"completed",sourcePageId:5306035,evidenceSha256:"a".repeat(64)});
   expect(npbJapanSeriesSchema.safeParse(d).success).toBe(true);
   d.series.teams[0]!.advantageWins=1;d.series.teams[0]!.seriesTotal=1;expect(npbJapanSeriesSchema.safeParse(d).success).toBe(false);
 });

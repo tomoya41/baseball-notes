@@ -2,6 +2,7 @@
 import {act}from"react";import{createRoot}from"react-dom/client";import{MemoryRouter,Routes,Route}from"react-router-dom";import{afterEach,expect,it,vi}from"vitest";
 import{NpbJapanSeriesScreen}from"../src/ui/npb-japan-series";import{NpbDiscovery}from"../src/ui/discovery";import{readNpbJapanSeries}from"../src/application/npb-japan-series-reader";import{readNpbCs}from"../src/application/npb-cs-reader";import{readNpbSeries}from"../src/application/npb-series-reader";import{japanFixture}from"./fixtures/npb-japan-series";import{buildWikipediaJapanSeries}from"../src/infrastructure/providers/wikipedia-npb-japan-series";import{portableRoute}from"../src/domain/product-sharing";import{canonicalDeepLink,parentNativeRoute}from"../src/domain/native-navigation";import type{Services}from"../src/app/services";
 import {seriesFixture} from "./fixtures/npb-series";
+import {japanResultFixture} from "./fixtures/npb-japan-series";
 vi.mock("../src/application/npb-japan-series-reader",()=>({readNpbJapanSeries:vi.fn()}));vi.mock("../src/application/npb-cs-reader",()=>({readNpbCs:vi.fn()}));vi.mock("../src/application/npb-series-reader",()=>({readNpbSeries:vi.fn()}));
 afterEach(()=>{vi.clearAllMocks();vi.unstubAllGlobals();});
 async function mount(path="/NPB/postseason?stage=japan_series",failed=false,update?:(data:ReturnType<typeof buildWikipediaJapanSeries>)=>void,csFails=false){
@@ -35,11 +36,15 @@ it.each([["series",5],["game",19]] as const)("combines admitted CS and Japan Ser
   const f=await mount(`/NPB/search?kind=${kind}&season=2026&competition=postseason`);try{expect(f.host.querySelectorAll("a.player-row")).toHaveLength(count);expect(f.regular.gameSurface.date).not.toHaveBeenCalled();expect(f.host.textContent).toContain("未収録");}finally{await f.close();}
 });
 it("does not infer pre-opening or no-games from missing results after the scheduled opening, and uses JST observation dates",async()=>{
-  const f=await mount(undefined,false,d=>{d.observedAt="2026-10-24T16:00:00Z";});try{expect(f.host.textContent).toContain("記事取得 2026-10-25時点");expect(f.host.textContent).not.toContain("取得時点で開幕前");expect(f.host.textContent).toContain("シリーズ勝敗は確認できません");}finally{await f.close();}
+  const f=await mount(undefined,false,d=>{d.observedAt="2026-10-24T16:00:00Z";});try{expect(f.host.textContent).toContain("記事取得 10/25 01:00（日本時間）");expect(f.host.textContent).not.toContain("取得時点で開幕前");expect(f.host.textContent).toContain("シリーズ勝敗は確認できません");}finally{await f.close();}
 });
 it.each(["series","game"])("keeps available Japan Series %s rows when the independent CS source fails",async kind=>{
   const f=await mount(`/NPB/search?kind=${kind}&competition=postseason`,false,undefined,true);try{expect(f.host.querySelectorAll("a.player-row")).toHaveLength(kind==="series"?1:7);expect(f.host.textContent).toContain("CSの追加情報を取得できません");expect(f.host.textContent).not.toContain("保存済みの大会記録を取得できません");expect(f.regular.gameSurface.manifest).not.toHaveBeenCalled();}finally{await f.close();}
 });
 it("keeps CS rows usable when Japan Series fails, with an explicit partial warning",async()=>{
   const f=await mount("/NPB/search?kind=series&competition=postseason",true);try{expect(f.host.querySelectorAll("a.player-row")).toHaveLength(4);expect(f.host.textContent).toContain("日本シリーズの追加情報を取得できません");}finally{await f.close();}
+});
+it("shows source-reviewed inning scores and X in an accessible narrow table, without inventing individual stats",async()=>{
+  const f=await mount("/NPB/games/npb:game:9f6c547e7852f6c5a928?competition=postseason&stage=japan_series",false,d=>{const r=japanResultFixture();Object.assign(d,buildWikipediaJapanSeries(r.archive,r.cs,"b".repeat(64),r.admission,r.review,r.now));});
+  try{expect(f.host.textContent).toContain("イニング別得点");expect(f.host.textContent).toContain("試合時間 3時間12分");expect(f.host.textContent).toContain("最終確認");expect(f.host.querySelectorAll("tbody tr")).toHaveLength(9);expect(f.host.querySelector("tbody tr:last-child td:last-child")!.textContent).toBe("X");expect(f.host.textContent).toContain("投球成績は未収録");expect(f.host.querySelectorAll("table")).toHaveLength(1);}finally{await f.close();}
 });

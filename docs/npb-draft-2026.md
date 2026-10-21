@@ -41,3 +41,5 @@ Source取得時刻observedAtと最終確認review.reviewedAt/reviewedByを別々
 
 初版は18候補 / 12独自案 / 指名0 / 抽選0、10,405 bytes JSON / 2,946 bytes gzip、1ファイル。Home追加fetch 0。特集のlazy routeだけで1回、SHA/size/schema確認後に既存offline response cacheへ保存。候補の個別Profile fetchは0。
 先にinactive data/stagingを公開し、HTTP hash確認後に画面を公開する。rollbackはUI/pinのrevert、immutable assetは保持。既存Draft/Youngのqueryは維持。Physical Pixel/TalkBackと署名/Play Gateは独立し、未実施をPASSにしない。
+
+10/21追補：新しい公開提案は現在pinのprevious body hash・保存forecast hashを確認し、private `review-report.json`で追加行と12球団の比較を確認する。詳細は[開幕・結果更新準備](draft-japan-opening-2026-10.md)。開催前の独自案と現在の公開結果0件は変更していない。

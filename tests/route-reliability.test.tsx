@@ -24,6 +24,17 @@ function Screens() {
     </RouteErrorBoundary></main></>;
 }
 describe("screen isolation and keyboard navigation", () => {
+  it("reloads the app on explicit retry after a replaced dynamic chunk, instead of retrying the cached rejected import",async()=>{
+    vi.spyOn(console,"error").mockImplementation(()=>undefined);const reload=vi.fn();
+    function MissingModule():never{throw new TypeError("Failed to fetch dynamically imported module: https://example.test/old.js");}
+    await act(async()=>root.render(<RouteErrorBoundary reload={reload}><MissingModule/></RouteErrorBoundary>));
+    expect(reload).not.toHaveBeenCalled();await click("最新版を読み込む");expect(reload).toHaveBeenCalledOnce();expect(container.textContent).toContain("保存データは変更していません");
+  });
+  it("keeps ordinary render retries local and recovers a temporary failure without forcing reload",async()=>{
+    vi.spyOn(console,"error").mockImplementation(()=>undefined);const reload=vi.fn();let broken=true;
+    function Temporary(){if(broken)throw Error("temporary screen failure");return <p>復旧した画面</p>;}
+    await act(async()=>root.render(<RouteErrorBoundary reload={reload}><Temporary/></RouteErrorBoundary>));broken=false;await click("再表示");expect(reload).not.toHaveBeenCalled();expect(container.textContent).toContain("復旧した画面");
+  });
   it("keeps input focus for query-only edits and focuses main for a new screen", async () => {
     await act(async () => root.render(<MemoryRouter initialEntries={["/MLB/search"]}><Screens /></MemoryRouter>));
     const input = container.querySelector("input")!; input.focus(); await click("条件変更");
