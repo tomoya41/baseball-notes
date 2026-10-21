@@ -4,7 +4,7 @@ import { draftCandidateId } from "../src/infrastructure/providers/wikipedia-npb-
 import { assertDraftSnapshotAdvance,draftEventSchema,draftExpandedPredictionOutcome } from "../src/domain/npb-draft-event";
 import { expandedDraftFixture } from "./fixtures/npb-draft";
 
-const table=(section:string,name:string)=>`=== ${section} ===\n!!!#!!氏名!!英語表記!!所属!!投!!打!!備考\n|-\n|rowspan="1"|コーチ\n|90||[[架空コーチ]]||Coach||架空大学||||||\n|-\n|rowspan="1"|投手\n|11||[[${name}]]||Player||[[架空所属|架空チーム]]||左||左||\n|-\n|rowspan="1"|捕手\n|2||[[架空捕手${section}]]||Catcher||架空チーム||右||左||\n|}\n`;
+const table=(section:string,name:string)=>`=== ${section} ===\n!!!#!!氏名!!英語表記!!所属!!投!!打!!備考\n|-\n|監督\n|79||[[架空監督]]||Manager||<small>架空学校</small>||||||\n|-\n|rowspan="1"|コーチ\n|90||[[架空コーチ]]||Coach||架空大学||||||\n|-\n|rowspan="1"|投手\n|11||[[${name}]]||Player||[[架空所属|架空チーム]]||左||左||\n|-\n|rowspan="1"|捕手\n|2||[[架空捕手${section}]]||Catcher||架空チーム||右||左||\n|}\n`;
 const national=`== 招集選手 ==\n${table("社会人","架空社会人")}${table("U-18","架空高校生")}=== U-15 ===\n${table("別大会","対象外")}== 試合結果 ==\n`;
 it("extracts separate corporate/high-school roster scopes, roles and exact identities without coaches or inferred eligibility",()=>{
   const rows=draftAdditionalAmateurs(national);expect(rows).toHaveLength(4);expect(rows.map(r=>r.group)).toEqual(["corporate","corporate","high_school","high_school"]);
@@ -14,6 +14,10 @@ it.each([national.replace("氏名!!英語表記","所属!!氏名"),national.repl
 it("does not inherit the prior section's role when a corrected U-18 table lacks its first role marker",()=>{
   const malformed=national.replace(table("U-18","架空高校生"),table("U-18","架空高校生").replace(/\|rowspan="1"\|コーチ\n\|90[^\n]+\n\|-\n/,"").replace('|rowspan="1"|投手\n',""));
   expect(()=>draftAdditionalAmateurs(malformed)).toThrow(/role missing/);
+});
+it("rejects incomplete or exhausted rowspan evidence rather than assigning the preceding role",()=>{
+  expect(()=>draftAdditionalAmateurs(national.replace('rowspan="1"|投手','rowspan="2"|投手'))).toThrow(/Incomplete amateur role span/);
+  expect(()=>draftAdditionalAmateurs(national.replace('rowspan="1"|投手','rowspan="0"|投手'))).toThrow(/role span/);
 });
 const independent=`== 現役選手・スタッフ ==\n=== 投手 ===\n!名前!!背番号!!投打!!備考\n|-\n|[[架空独立]]||20||右左||2026年度新入団\n|}\n=== 捕手 ===\n|[[別人]]||3||右右||\n== 過去に在籍した選手 ==\n|[[架空退団]]||14||右右||\n`;
 it("reads independent pitchers only from the exact current-roster section, keeping source-local identity",()=>{

@@ -18,11 +18,12 @@ export function draftAdditionalAmateurs(content:string){
   for(const [heading,group] of [["社会人","corporate"],["U-18","high_school"]] as const){
     const section=roster.split(`=== ${heading} ===\n`)[1]?.split("\n=== ")[0]?.split("; 選出後の辞退選手")[0];
     if(!section?.includes("!!!#!!氏名!!英語表記!!所属!!投!!打!!備考"))throw Error("Unsupported amateur roster header");
-    let position:Candidate["position"]|null=null,coaching=false;
+    let position:Candidate["position"]|null=null,coaching=false,remaining=0;
     for(const block of section.split("|-\n")){
-      const roleHeading=block.match(/^\|rowspan="\d+"\|([^\n]+)\n/);
-      if(roleHeading){coaching=roleHeading[1]==="コーチ";if(coaching)position=null;else if(["投手","捕手","内野手","外野手"].includes(roleHeading[1]!))position=roleHeading[1] as Candidate["position"];else throw Error("Unsupported amateur role");}
+      const roleHeading=block.match(/^\|(?:rowspan="(\d+)"\|)?([^|\n]+)\n/);
+      if(roleHeading){if(remaining!==0)throw Error("Incomplete amateur role span");remaining=Number(roleHeading[1]??1);if(remaining<1||remaining>50)throw Error("Unsupported amateur role span");coaching=["監督","コーチ"].includes(roleHeading[2]!);if(coaching)position=null;else if(["投手","捕手","内野手","外野手"].includes(roleHeading[2]!))position=roleHeading[2] as Candidate["position"];else throw Error("Unsupported amateur role");}
       const row=block.split("\n").find(r=>/^\|\d+\|\|/.test(r));if(!row)continue;
+      if(remaining<=0)throw Error("Amateur player role missing in this section");remaining--;
       if(!position){if(coaching)continue;throw Error("Amateur player role missing in this section");}
       const cells=row.slice(1).split("||"),person=link(cells[1]??"");
       if(cells.length!==7||!person)throw Error("Unsupported amateur roster row");
@@ -30,6 +31,7 @@ export function draftAdditionalAmateurs(content:string){
       if(person[1]==="織田翔希")continue;
       result.push({candidate:candidate(person[1]!,person[2]??person[1]!,label(cells[3]!),position,cells[4]!,cells[5]!,5209342,row,`2026年${heading}代表名簿（所属・役割は大会当時、指名資格未確認）`),group});
     }
+    if(remaining!==0)throw Error("Incomplete amateur role span");
   }
   return result;
 }

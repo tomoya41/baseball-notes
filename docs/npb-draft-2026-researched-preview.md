@@ -63,3 +63,5 @@ UIは同じroute。既定で根拠付き版を開き、球団・保存版の切�
 - 私有Before/After：`.data/draft-2026/expanded-visual/`。実表示の画像だけを採用し、loading/modalが写った途中画像はQA済みの根拠にしない。
 - Pixelホーム画面追加・起動はユーザー確認済み。新版ネイティブAPKのPixel更新、TalkBack、通信断cold startなどは未実施。既存ネイティブ保存データの削除・署名変更は0。
 外部Codex ReviewはP1/P2計6件を確認し修正。再レビューは依頼済みだが、一度は利用上限により失敗した。自己レビュー、Source証拠・immutable再現・UI実画面・独立fixtureで補完し、未完了の外部再レビューをPASSとは扱わない。追加課金0。
+
+最終archive再現で、監督の単独role行（`|監督`）を明示的に扱うfixtureも追加した。監督・コーチは採用せず、roleのrowspanを実際の行数だけ消費し、使い切ったroleの流用・欠けたspanを拒否する。実archiveからのv2再生成hashは固定版と一致。Androidの既存ドラフト試験も旧12人案の見出し・件数から、実際の根拠付き版36枠へ更新する。
