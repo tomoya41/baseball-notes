@@ -12,6 +12,7 @@ it("accepts separately reviewed final evidence, preserves X and counts only play
   expect(d.series.teams.map(t=>t.playedWins)).toEqual([1,0]);expect(d.series.clinched).toBe(false);expect(d.playerStats).toBe("unavailable");
   expect(d).toEqual(build(f));expect(npbJapanSeriesSchema.parse(JSON.parse(JSON.stringify(d)))).toEqual(d);expect(()=>assertJapanSeriesAdvance(before,d)).not.toThrow();
   expect(()=>assertJapanSeriesAdvance(d,before)).toThrow();const corrected=structuredClone(d);corrected.results[0]!.durationMinutes++;expect(()=>assertJapanSeriesAdvance(d,corrected)).toThrow();
+  const relocated=structuredClone(d);relocated.venues[d.series.games[0]!.gameId]="みずほPayPayドーム福岡";expect(()=>assertJapanSeriesAdvance(d,relocated)).toThrow();
 });
 it.each(["duration","inning","score","date","team","review","duplicate","future"])("fails closed on missing/mismatched %s",kind=>{
   const f=japanResultFixture();let changed=f.block;

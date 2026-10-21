@@ -41,6 +41,6 @@ export function assertJapanSeriesAdvancement(japan:NpbJapanSeries,cs:NpbPostseas
 export function assertJapanSeriesAdvance(previous:NpbJapanSeries,next:NpbJapanSeries){
   if(next.series.id!==previous.series.id||next.csSeriesBodySha256!==previous.csSeriesBodySha256||Date.parse(next.observedAt)<Date.parse(previous.observedAt)||previous.review&&(!next.review||next.review.reviewedAt<previous.review.reviewedAt))throw Error("Japan Series snapshot regression");
   for(const old of previous.series.games){const game=next.series.games.find(g=>g.gameId===old.gameId);
-    if(!game||game.gameNumber!==old.gameNumber||game.awayTeamId!==old.awayTeamId||game.homeTeamId!==old.homeTeamId||old.status==="final"&&(JSON.stringify(game)!==JSON.stringify(old)||JSON.stringify(next.results.find(r=>r.gameId===old.gameId))!==JSON.stringify(previous.results.find(r=>r.gameId===old.gameId))))throw Error("Final correction/deletion or identity change requires separate review");
+    if(!game||game.gameNumber!==old.gameNumber||game.awayTeamId!==old.awayTeamId||game.homeTeamId!==old.homeTeamId||old.status==="final"&&(JSON.stringify(game)!==JSON.stringify(old)||next.venues[old.gameId]!==previous.venues[old.gameId]||JSON.stringify(next.results.find(r=>r.gameId===old.gameId))!==JSON.stringify(previous.results.find(r=>r.gameId===old.gameId))))throw Error("Final correction/deletion or identity change requires separate review");
   }
 }
