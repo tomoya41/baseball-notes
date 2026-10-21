@@ -16,5 +16,41 @@
     "revisionAt": "2026-10-07T07:21:20Z",
     "contentSha256": "784bea3eb201a9e0f10199f6ee12b16dbd5dc6f3cf0acea5f642748f4bd7dcbd",
     "license": "CC-BY-SA-4.0"
+  },
+  {
+    "provider": "Wikipedia",
+    "pageId": 528913,
+    "title": "徳島インディゴソックスの選手一覧",
+    "revision": 110981980,
+    "revisionAt": "2026-09-11T12:57:53Z",
+    "contentSha256": "f95ea1e38979a310972c2135f17523014f1db1b23381567ecbfb1bfea454b8db",
+    "license": "CC-BY-SA-4.0"
+  },
+  {
+    "provider": "Wikipedia",
+    "pageId": 565473,
+    "title": "高知ファイティングドッグスの選手一覧",
+    "revision": 110876339,
+    "revisionAt": "2026-09-03T02:30:51Z",
+    "contentSha256": "bbfdb673df2ee0efa660eeec133f95113c9acb4ed734b0bb8bb6a647396b8769",
+    "license": "CC-BY-SA-4.0"
+  },
+  {
+    "provider": "Wikipedia",
+    "pageId": 3859496,
+    "title": "茨城アストロプラネッツの選手一覧",
+    "revision": 111393625,
+    "revisionAt": "2026-10-15T08:28:18Z",
+    "contentSha256": "6e8ef6ad5521541e3e298f3348ae42ee53585a2498a25c1c9da7623c1263ce31",
+    "license": "CC-BY-SA-4.0"
+  },
+  {
+    "provider": "Wikipedia",
+    "pageId": 5110570,
+    "title": "第98回選抜高等学校野球大会",
+    "revision": 111181266,
+    "revisionAt": "2026-09-27T09:59:17Z",
+    "contentSha256": "643d94facb87b2390590eb4aebaab98fefb59110c63a7b1c01034762a92cee10",
+    "license": "CC-BY-SA-4.0"
   }
 ]

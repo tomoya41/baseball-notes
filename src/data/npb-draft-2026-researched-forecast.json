@@ -1,0 +1,491 @@
+{
+  "id": "2026-premeeting-v3",
+  "createdAt": "2026-10-21T15:25:10.117Z",
+  "author": "Baseball Notes（独自予想）",
+  "references": [
+    {
+      "id": "tigers",
+      "url": "https://sportiva.shueisha.co.jp/clm/baseball/npb/2026/10/20/2026dh/",
+      "publisher": "web Sportiva（集英社）",
+      "author": "高木豊（見解）／浜田哲男（取材・文）",
+      "publishedOn": "2026-10-20",
+      "updatedOn": "2026-10-20",
+      "checkedAt": "2026-10-21T15:25:10.116Z",
+      "kind": "commentary",
+      "topic": "阪神の捕手・内野手補強について"
+    },
+    {
+      "id": "giants",
+      "url": "https://sportiva.shueisha.co.jp/clm/baseball/npb/2026/10/20/2026dh/?page=2",
+      "publisher": "web Sportiva（集英社）",
+      "author": "高木豊（見解）／浜田哲男（取材・文）",
+      "publishedOn": "2026-10-20",
+      "updatedOn": "2026-10-20",
+      "checkedAt": "2026-10-21T15:25:10.116Z",
+      "kind": "commentary",
+      "topic": "巨人の野手補強について"
+    },
+    {
+      "id": "baystars",
+      "url": "https://sportiva.shueisha.co.jp/clm/baseball/npb/2026/10/20/2026dh/?page=3",
+      "publisher": "web Sportiva（集英社）",
+      "author": "高木豊（見解）／浜田哲男（取材・文）",
+      "publishedOn": "2026-10-20",
+      "updatedOn": "2026-10-20",
+      "checkedAt": "2026-10-21T15:25:10.116Z",
+      "kind": "commentary",
+      "topic": "DeNAの投手・捕手補強について"
+    },
+    {
+      "id": "carp",
+      "url": "https://sportiva.shueisha.co.jp/clm/baseball/npb/2026/10/20/2026_27/",
+      "publisher": "web Sportiva（集英社）",
+      "author": "高木豊（見解）／浜田哲男（取材・文）",
+      "publishedOn": "2026-10-20",
+      "updatedOn": "2026-10-21",
+      "checkedAt": "2026-10-21T15:25:10.116Z",
+      "kind": "commentary",
+      "topic": "広島の投手・内野手補強について"
+    },
+    {
+      "id": "swallows",
+      "url": "https://sportiva.shueisha.co.jp/clm/baseball/npb/2026/10/20/2026_27/?page=2",
+      "publisher": "web Sportiva（集英社）",
+      "author": "高木豊（見解）／浜田哲男（取材・文）",
+      "publishedOn": "2026-10-20",
+      "updatedOn": "2026-10-21",
+      "checkedAt": "2026-10-21T15:25:10.116Z",
+      "kind": "commentary",
+      "topic": "ヤクルトの投手・外野手補強について"
+    },
+    {
+      "id": "dragons",
+      "url": "https://sportiva.shueisha.co.jp/clm/baseball/npb/2026/10/20/2026_27/?page=3",
+      "publisher": "web Sportiva（集英社）",
+      "author": "高木豊（見解）／浜田哲男（取材・文）",
+      "publishedOn": "2026-10-20",
+      "updatedOn": "2026-10-21",
+      "checkedAt": "2026-10-21T15:25:10.116Z",
+      "kind": "commentary",
+      "topic": "中日の捕手・投手補強について"
+    },
+    {
+      "id": "hawks",
+      "url": "https://sportiva.shueisha.co.jp/clm/baseball/npb/2026/10/21/_2026dh/",
+      "publisher": "web Sportiva（集英社）",
+      "author": "高木豊（見解）／浜田哲男（取材・文）",
+      "publishedOn": "2026-10-21",
+      "updatedOn": "2026-10-21",
+      "checkedAt": "2026-10-21T15:25:10.116Z",
+      "kind": "commentary",
+      "topic": "ソフトバンクの育成・外野手補強について"
+    },
+    {
+      "id": "lions",
+      "url": "https://sportiva.shueisha.co.jp/clm/baseball/npb/2026/10/21/_2026dh/?page=2",
+      "publisher": "web Sportiva（集英社）",
+      "author": "高木豊（見解）／浜田哲男（取材・文）",
+      "publishedOn": "2026-10-21",
+      "updatedOn": "2026-10-21",
+      "checkedAt": "2026-10-21T15:25:10.116Z",
+      "kind": "commentary",
+      "topic": "西武の投手補強について"
+    },
+    {
+      "id": "fighters",
+      "url": "https://sportiva.shueisha.co.jp/clm/baseball/npb/2026/10/21/_2026dh/?page=3",
+      "publisher": "web Sportiva（集英社）",
+      "author": "高木豊（見解）／浜田哲男（取材・文）",
+      "publishedOn": "2026-10-21",
+      "updatedOn": "2026-10-21",
+      "checkedAt": "2026-10-21T15:25:10.116Z",
+      "kind": "commentary",
+      "topic": "日本ハムの長期育成について"
+    },
+    {
+      "id": "buffaloes",
+      "url": "https://sportiva.shueisha.co.jp/clm/baseball/npb/2026/10/21/_2026/",
+      "publisher": "web Sportiva（集英社）",
+      "author": "高木豊（見解）／浜田哲男（取材・文）",
+      "publishedOn": "2026-10-21",
+      "updatedOn": "2026-10-21",
+      "checkedAt": "2026-10-21T15:25:10.116Z",
+      "kind": "commentary",
+      "topic": "オリックスの投手層について"
+    },
+    {
+      "id": "marines",
+      "url": "https://sportiva.shueisha.co.jp/clm/baseball/npb/2026/10/21/_2026/?page=2",
+      "publisher": "web Sportiva（集英社）",
+      "author": "高木豊（見解）／浜田哲男（取材・文）",
+      "publishedOn": "2026-10-21",
+      "updatedOn": "2026-10-21",
+      "checkedAt": "2026-10-21T15:25:10.116Z",
+      "kind": "commentary",
+      "topic": "ロッテの投手・内野手補強について"
+    },
+    {
+      "id": "eagles",
+      "url": "https://sportiva.shueisha.co.jp/clm/baseball/npb/2026/10/21/_2026/?page=3",
+      "publisher": "web Sportiva（集英社）",
+      "author": "高木豊（見解）／浜田哲男（取材・文）",
+      "publishedOn": "2026-10-21",
+      "updatedOn": "2026-10-21",
+      "checkedAt": "2026-10-21T15:25:10.116Z",
+      "kind": "commentary",
+      "topic": "楽天の捕手・投手補強について"
+    },
+    {
+      "id": "giants-longterm",
+      "url": "https://thedigestweb.com/baseball/detail/id=121697",
+      "publisher": "THE DIGEST／SLUGGER",
+      "author": "西尾典文",
+      "publishedOn": "2026-10-19",
+      "updatedOn": "2026-10-19",
+      "checkedAt": "2026-10-21T15:25:10.116Z",
+      "kind": "commentary",
+      "topic": "巨人の長期的な指名戦略について"
+    },
+    {
+      "id": "carp-catcher",
+      "url": "https://thedigestweb.com/baseball/detail/id=121695",
+      "publisher": "THE DIGEST／SLUGGER",
+      "author": "西尾典文",
+      "publishedOn": "2026-10-19",
+      "updatedOn": "2026-10-19",
+      "checkedAt": "2026-10-21T15:25:10.116Z",
+      "kind": "commentary",
+      "topic": "広島の捕手補強について"
+    },
+    {
+      "id": "giants-report",
+      "url": "https://www.nikkan-gendai.com/articles/view/sports/394202",
+      "publisher": "日刊ゲンダイDIGITAL",
+      "author": "編集部（個人署名の記載なし）",
+      "publishedOn": "2026-10-15",
+      "updatedOn": "2026-10-15",
+      "checkedAt": "2026-10-21T15:25:10.116Z",
+      "kind": "report",
+      "topic": "巨人の野手候補に関する報道"
+    }
+  ],
+  "clubs": [
+    {
+      "teamId": "npb:team:giants",
+      "context": "野手の世代更新を先に進め、投手層も補う組み立てを想定。特定選手の退団・FA成立を前提にはしません。",
+      "judgment": "将来性を先に取る見方もありますが、今回は大学外野手を最優先にする独自判断です。投手は社会人・独立リーグから段階的に検討します。",
+      "referenceIds": [
+        "giants",
+        "giants-longterm",
+        "giants-report"
+      ]
+    },
+    {
+      "teamId": "npb:team:tigers",
+      "context": "捕手の次世代と内野の育成を両立させる指名を想定します。現在の登録状態や来季の先発を確定するものではありません。",
+      "judgment": "捕手を上位で押さえる外部の見方を重くし、2位は高校内野手へ。3位で投手を補う順番を独自に組みました。",
+      "referenceIds": [
+        "tigers"
+      ]
+    },
+    {
+      "teamId": "npb:team:dragons",
+      "context": "捕手の層と投手の補完を軸に、将来の外野手も加える案です。特定選手の移籍成立を前提にしません。",
+      "judgment": "捕手先行と投手先行の両案を比較し、今回は捕手を優先。抽選を外した場合は投手先行への切り替えが必要です。",
+      "referenceIds": [
+        "dragons"
+      ]
+    },
+    {
+      "teamId": "npb:team:carp",
+      "context": "投手層を補いながら、内野と高校投手へ配分する案です。FA資格や退団の確定を推測しません。",
+      "judgment": "外部には捕手優先の見方もありますが、今回は大学投手を先にする判断。捕手獲得を最優先する場合は別の指名順になります。",
+      "referenceIds": [
+        "carp",
+        "carp-catcher"
+      ]
+    },
+    {
+      "teamId": "npb:team:swallows",
+      "context": "上位で投手を補い、外野手と追加の投手枠を組み合わせる案。故障・退団を推測した戦力表ではありません。",
+      "judgment": "外部の先発層重視という論点を採り、1位は大学投手。2位の外野手は残っている場合の案で、先行指名なら見直します。",
+      "referenceIds": [
+        "swallows"
+      ]
+    },
+    {
+      "teamId": "npb:team:baystars",
+      "context": "投手を複数確保し、捕手の選択肢も残す構成を想定します。未確定の去就を戦力減として数えません。",
+      "judgment": "投手補強の論点を優先し、左投手・右投手の順に組みます。3位は捕手が残る場合に限る条件付きの選択です。",
+      "referenceIds": [
+        "baystars"
+      ]
+    },
+    {
+      "teamId": "npb:team:hawks",
+      "context": "大学投手を先に選び、高校野手の育成と独立リーグ投手の選択肢を残す案です。",
+      "judgment": "長期育成を重視する見方を参考にしつつ、1位は高校生ではなく大学左投手を選択。以降で所属区分と役割を分散します。",
+      "referenceIds": [
+        "hawks"
+      ]
+    },
+    {
+      "teamId": "npb:team:fighters",
+      "context": "1位に長期育成の候補を置き、大学投手と内野手でバランスを取る案です。既存選手の役割や去就は書き換えません。",
+      "judgment": "外部の育成重視の見方を参考に菰田を初回入札へ。候補記事との個人ID照合は未完了なので、氏名・学校の観測以上のプロフィールを補完しません。",
+      "referenceIds": [
+        "fighters"
+      ]
+    },
+    {
+      "teamId": "npb:team:lions",
+      "context": "投手を厚めに確保し、外野手も補う案です。海外移籍の可能性を退団確定として扱いません。",
+      "judgment": "投手優先という外部の論点を採り、大学・社会人で投手を一人ずつ。その後に外野手を置き、投手一辺倒を避けます。",
+      "referenceIds": [
+        "lions"
+      ]
+    },
+    {
+      "teamId": "npb:team:marines",
+      "context": "大学投手を軸に、社会人内野手と高校捕手を組み合わせる案です。FAの結果や現在の登録状態を推測しません。",
+      "judgment": "外部の投手・内野手という論点を採り、3位は捕手の年齢層を変える育成枠へ。即戦力と長期育成を同時に狙います。",
+      "referenceIds": [
+        "marines"
+      ]
+    },
+    {
+      "teamId": "npb:team:eagles",
+      "context": "捕手と投手の両方に枠を割く編成を想定します。FA宣言・移籍成立を先取りしません。",
+      "judgment": "投手先行も考えられますが、今回は捕手を1位にして投手を後続へ。抽選に外れた場合は捕手と投手の優先順位を見直す必要があります。",
+      "referenceIds": [
+        "eagles"
+      ]
+    },
+    {
+      "teamId": "npb:team:buffaloes",
+      "context": "投手層を補いながら、大学外野手と高校内野手を組み込む案。捕手や他選手の健康状態を断定するものではありません。",
+      "judgment": "外部の投手層重視の論点を採り、1位は左投手。2位は外野手が残る場合、3位は高校内野手に振る構成です。",
+      "referenceIds": [
+        "buffaloes"
+      ]
+    }
+  ],
+  "predictions": [
+    {
+      "teamId": "npb:team:giants",
+      "round": 1,
+      "candidateId": "npb:draft:2026:1dc09f3414fba269aa9a81b6",
+      "reason": "報道で候補として言及された点と、外野手を優先する編成案を合わせて榊原を初回入札に置きます。球団の指名公表ではありません。"
+    },
+    {
+      "teamId": "npb:team:giants",
+      "round": 2,
+      "candidateId": "npb:draft:2026:3721cb6fb28b28580fb4d16d",
+      "reason": "野手を先に確保する場合の投手枠。大学生だけに偏らせず、社会人代表で投手として記載された谷脇を選ぶ案です。"
+    },
+    {
+      "teamId": "npb:team:giants",
+      "round": 3,
+      "candidateId": "npb:draft:2026:82e2d6896ffb114b248334d0",
+      "reason": "上位で野手と社会人投手を取れた場合の独立リーグ枠。記事に明示された所属・役割を根拠に選ぶ挑戦的な案で、3位相当の外部評価を確認したものではありません。"
+    },
+    {
+      "teamId": "npb:team:tigers",
+      "round": 1,
+      "candidateId": "npb:draft:2026:5ddbeb04bbb237bee3649822",
+      "reason": "捕手の世代更新を最優先にする案です。他球団と候補が重なる初回入札を許容し、抽選の当選までは予想しません。"
+    },
+    {
+      "teamId": "npb:team:tigers",
+      "round": 2,
+      "candidateId": "npb:draft:2026:8b85a97b31a8b97e601a33b9",
+      "reason": "捕手を取れた場合は、別の年齢層の内野手へ。高校生を育てる枠を早めに置きます。他球団の先行指名で変更が必要です。"
+    },
+    {
+      "teamId": "npb:team:tigers",
+      "round": 3,
+      "candidateId": "npb:draft:2026:5d3ca5f63262aa2263c8ae33",
+      "reason": "捕手・内野手を先に選んだ場合、3位は社会人の投手。記事に記載された役割を使った補完案で、即戦力を保証しません。"
+    },
+    {
+      "teamId": "npb:team:dragons",
+      "round": 1,
+      "candidateId": "npb:draft:2026:5ddbeb04bbb237bee3649822",
+      "reason": "捕手を初回入札の優先枠に置きます。阪神などと同じ候補を挙げますが、これは競合の可能性を考える仮説で実際の入札ではありません。"
+    },
+    {
+      "teamId": "npb:team:dragons",
+      "round": 2,
+      "candidateId": "npb:draft:2026:d1ed5520537d0b46214ae81f",
+      "reason": "1位で捕手を取れた場合、社会人の左投手を補う構成。記事の投打・役割に基づく選択で、現在の球団方針の断定ではありません。"
+    },
+    {
+      "teamId": "npb:team:dragons",
+      "round": 3,
+      "candidateId": "npb:draft:2026:e895029dcc28efea95b484e9",
+      "reason": "上位で捕手と投手を補えた場合の高校外野手枠。早期の一軍起用より、年齢層を分けて育てるプランです。"
+    },
+    {
+      "teamId": "npb:team:carp",
+      "round": 1,
+      "candidateId": "npb:draft:2026:ca6169aff349fb15bd077ae1",
+      "reason": "捕手優先案との違いを明確にし、1位は大学投手へ。近い年度で投手層を厚くする編成を優先した独自案です。"
+    },
+    {
+      "teamId": "npb:team:carp",
+      "round": 2,
+      "candidateId": "npb:draft:2026:78734d6764f069089e2bb2fb",
+      "reason": "投手を1位で押さえる想定で、2位は大学内野手。役割の重複を避け、投手と野手を一人ずつ確保する組み立てです。"
+    },
+    {
+      "teamId": "npb:team:carp",
+      "round": 3,
+      "candidateId": "npb:draft:2026:5fc472c5d8496778cb51574e",
+      "reason": "大学投手・大学内野手の後に、高校投手を加える長期枠。同順位まで残ることや志望資格を保証するものではありません。"
+    },
+    {
+      "teamId": "npb:team:swallows",
+      "round": 1,
+      "candidateId": "npb:draft:2026:0f5d26ee680133c325ed4542",
+      "reason": "大学投手を初回入札に置き、上位の投手枠を優先します。特定大学出身者の成功・失敗から能力を決めつけません。"
+    },
+    {
+      "teamId": "npb:team:swallows",
+      "round": 2,
+      "candidateId": "npb:draft:2026:39a5e94eeb1b955a80fdd95d",
+      "reason": "1位で投手を取れた場合、社会人の外野手を加える案。投手ばかりにせず野手の選択肢を残します。2位まで残る保証はありません。"
+    },
+    {
+      "teamId": "npb:team:swallows",
+      "round": 3,
+      "candidateId": "npb:draft:2026:e5e221cc51da45320f604ca5",
+      "reason": "大学・社会人を先に選んだ場合の独立リーグ投手枠。記事で所属と役割を確認できる選手から挙げた独自案で、外部の3位評価ではありません。"
+    },
+    {
+      "teamId": "npb:team:baystars",
+      "round": 1,
+      "candidateId": "npb:draft:2026:4671e2754a20c964147efb46",
+      "reason": "初回入札は大学の左投手。将来性だけの指名より、大学で投手として記載された候補を先に置く編成判断です。"
+    },
+    {
+      "teamId": "npb:team:baystars",
+      "round": 2,
+      "candidateId": "npb:draft:2026:3721cb6fb28b28580fb4d16d",
+      "reason": "左投手を先に確保した場合、社会人の右投手を追加。異なる所属区分から投手層を補います。獲得可能性の数値評価ではありません。"
+    },
+    {
+      "teamId": "npb:team:baystars",
+      "round": 3,
+      "candidateId": "npb:draft:2026:a2558a96835c4458bf34dac6",
+      "reason": "投手を二人選べた場合は、大学捕手で構成を変える案。上位で捕手が消える可能性があり、残っている場合だけの候補です。"
+    },
+    {
+      "teamId": "npb:team:hawks",
+      "round": 1,
+      "candidateId": "npb:draft:2026:852ee8d07c42ddf95d3521ef",
+      "reason": "大学の左投手を初回入札へ。大学と球団の過去のつながりだけを根拠に確定せず、投手枠を優先した独自判断です。"
+    },
+    {
+      "teamId": "npb:team:hawks",
+      "round": 2,
+      "candidateId": "npb:draft:2026:cf33892059e53dafebb255a5",
+      "reason": "上位投手を確保できた場合、2位を高校外野手に振る育成案。所属地域だけで指名を確定させません。"
+    },
+    {
+      "teamId": "npb:team:hawks",
+      "round": 3,
+      "candidateId": "npb:draft:2026:7830bed6d0be5be20bfa03ce",
+      "reason": "投手と野手を一人ずつ選べた場合の独立リーグ枠。代表入りや身長、未確認の球速を能力の根拠には使いません。"
+    },
+    {
+      "teamId": "npb:team:fighters",
+      "round": 1,
+      "candidateId": "npb:draft:2026:5a072b9b853a73de618277b3",
+      "reason": "大会記事に氏名と学校が記載された菰田を、長期育成の初回入札候補にします。個人記事・指名資格・投打の確認は未完了で、二刀流属性を登録するものではありません。"
+    },
+    {
+      "teamId": "npb:team:fighters",
+      "round": 2,
+      "candidateId": "npb:draft:2026:cb24d52bd283a9968211d878",
+      "reason": "1位を長期育成枠にした場合、大学投手を追加する構成。名簿に記載された投手としての役割を用い、将来の勝利数などは予測しません。"
+    },
+    {
+      "teamId": "npb:team:fighters",
+      "round": 3,
+      "candidateId": "npb:draft:2026:40d3417004affe2d49adbda6",
+      "reason": "上位二人と役割を変え、大学内野手を加える案。守備の細かいポジションや即戦力性は未確認として扱います。"
+    },
+    {
+      "teamId": "npb:team:lions",
+      "round": 1,
+      "candidateId": "npb:draft:2026:f2bad191341a3c6b68e3e67d",
+      "reason": "大学投手を初回入札へ置く案。既存投手が必ず移籍するという前提を使わず、層を厚くする判断です。"
+    },
+    {
+      "teamId": "npb:team:lions",
+      "round": 2,
+      "candidateId": "npb:draft:2026:d1ed5520537d0b46214ae81f",
+      "reason": "1位で大学投手を取れた場合、2位は社会人左投手。異なるタイプの育成経路を持つ投手枠を組み合わせます。"
+    },
+    {
+      "teamId": "npb:team:lions",
+      "round": 3,
+      "candidateId": "npb:draft:2026:104a779c213c32e08a4db17b",
+      "reason": "投手を二人選べた場合は大学外野手へ。外部記事の候補表を写さず、収録済みの役割から選んだ独自案です。"
+    },
+    {
+      "teamId": "npb:team:marines",
+      "round": 1,
+      "candidateId": "npb:draft:2026:ca6169aff349fb15bd077ae1",
+      "reason": "初回入札は大学投手。特定の現役投手の退団を断定せず、投手層を増やす判断として選びます。"
+    },
+    {
+      "teamId": "npb:team:marines",
+      "round": 2,
+      "candidateId": "npb:draft:2026:df24cf591b64e77f80d1e1ab",
+      "reason": "投手を先に確保できた場合、社会人の内野手を補う案。既存選手の守備位置変更や出場予定は推測しません。"
+    },
+    {
+      "teamId": "npb:team:marines",
+      "round": 3,
+      "candidateId": "npb:draft:2026:6b79e3285dd112d927bf6bdb",
+      "reason": "大学・社会人を選べた場合の高校捕手枠。高校代表での役割を用いた案で、3位まで残るかと志望資格は未確認です。"
+    },
+    {
+      "teamId": "npb:team:eagles",
+      "round": 1,
+      "candidateId": "npb:draft:2026:5ddbeb04bbb237bee3649822",
+      "reason": "捕手を初回入札に置く案です。同じ候補を他球団にも挙げ、抽選で確実に獲得できるとは扱いません。"
+    },
+    {
+      "teamId": "npb:team:eagles",
+      "round": 2,
+      "candidateId": "npb:draft:2026:7009aca3e5057ed3ed68aefd",
+      "reason": "捕手を取れた場合は社会人投手へ。記事に明示された役割から選び、未確認の成績や能力ランクを追加しません。"
+    },
+    {
+      "teamId": "npb:team:eagles",
+      "round": 3,
+      "candidateId": "npb:draft:2026:19466a44e23831041e867ed6",
+      "reason": "捕手・社会人投手の後に、独立リーグ投手を検討する独自案。球団の関心や外部の3位評価を確認した選択ではありません。"
+    },
+    {
+      "teamId": "npb:team:buffaloes",
+      "round": 1,
+      "candidateId": "npb:draft:2026:4671e2754a20c964147efb46",
+      "reason": "大学左投手を初回入札に置きます。球団が公表した指名ではなく、投手枠を先に確保したいという独自判断です。"
+    },
+    {
+      "teamId": "npb:team:buffaloes",
+      "round": 2,
+      "candidateId": "npb:draft:2026:ec95ea09687ac53752efdaf3",
+      "reason": "1位を投手に使えた場合、大学外野手を狙う案。先に他球団から指名されれば成立しない、条件付きの2位です。"
+    },
+    {
+      "teamId": "npb:team:buffaloes",
+      "round": 3,
+      "candidateId": "npb:draft:2026:a3f0248dddb8f29c7a3cedb7",
+      "reason": "大学投手・大学外野手の後に、高校内野手を加える長期枠。個人の出身地だけを根拠に球団との結びつきを作りません。"
+    }
+  ]
+}

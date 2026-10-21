@@ -559,17 +559,17 @@ public class ReleaseQualityTest {
     @Test public void draftPreviewRemainsSeparateFromResultsAtLargeFont() throws Exception {
         Intent link=new Intent(Intent.ACTION_VIEW,Uri.parse("baseballnotes://NPB/talent/2026?view=preview"));
         link.setClassName("com.tomoya41.baseballnotes","jp.baseballdata.app.MainActivity");
-        scenario=ActivityScenario.launch(link);waitText("12球団の1位候補案");waitText("志望届・指名資格は未確認");
-        String route=js("location.hash");setTheme("light","ライト");js("location.hash='"+route+"'");waitText("12球団の1位候補案");
-        fontScaleAndRecreate(2.0f);waitText("12球団の1位候補案");waitViewport(360);
-        assertEquals("Twelve independent team hypotheses","12",js("String(document.querySelectorAll('main article').length)"));
+        scenario=ActivityScenario.launch(link);waitText("球団事情から考える1〜3位予想");waitText("1位は初回入札");
+        String route=js("location.hash");setTheme("light","ライト");js("location.hash='"+route+"'");waitText("球団事情から考える1〜3位予想");
+        fontScaleAndRecreate(2.0f);waitText("球団事情から考える1〜3位予想");waitViewport(360);
+        assertEquals("Thirty-six researched targets","36",js("String(document.querySelectorAll('main article').length)"));
         assertEquals("Draft preview no large-font overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));screenshot("draft-2026-font-20-light");
-        setTheme("dark","ダーク");js("location.hash='"+route+"'");waitText("12球団の1位候補案");
+        setTheme("dark","ダーク");js("location.hash='"+route+"'");waitText("球団事情から考える1〜3位予想");
         assertEquals("Dark draft preview no overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));screenshot("draft-2026-font-20-dark");
         js("Array.from(document.querySelectorAll('nav[aria-label=\"ドラフト特集の表示\"] a')).find(a=>a.textContent==='指名結果').click()");
         waitText("この条件の指名結果は未収録");waitText("未収録は未指名・指名終了を意味しません");
         assertEquals("No future selection rows","0",js("String(document.querySelectorAll('main article').length)"));
-        shell("input keyevent KEYCODE_BACK");waitText("12球団の1位候補案");assertEquals("Draft Back restores premeeting view",route,js("location.hash"));
+        shell("input keyevent KEYCODE_BACK");waitText("球団事情から考える1〜3位予想");assertEquals("Draft Back restores premeeting view",route,js("location.hash"));
     }
     @Test public void japanSeriesIdOnlyColdGameBackStaysInPostseason() throws Exception {
         Intent link=new Intent(Intent.ACTION_VIEW,Uri.parse("baseballnotes://NPB/games/npb%3Agame%3A9f6c547e7852f6c5a928"));
