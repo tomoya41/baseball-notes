@@ -3,7 +3,7 @@ import {draftResearchedPredictionOutcome} from "../src/domain/npb-draft-research
 import {draftEventSchema,assertDraftSnapshotAdvance} from "../src/domain/npb-draft-event";
 import {draftTournamentObservation} from "../src/infrastructure/providers/wikipedia-npb-draft-amateurs";
 import {researchedDraftFixture} from "./fixtures/npb-draft";
-import {assertCarriedDraftEvidence,pinnedDraftPredecessor,draftHash,fetchDraftCandidateArchive} from "../src/infrastructure/providers/wikipedia-npb-draft";
+import {assertCarriedDraftEvidence,pinnedDraftPredecessor,draftHash,fetchDraftCandidateArchive,carryDraftPreview} from "../src/infrastructure/providers/wikipedia-npb-draft";
 import sources from "../src/data/npb-draft-2026-sources.json";
 
 it("keeps independent club scenarios, allowing shared first bids without calling them actual lotteries",()=>{
@@ -55,6 +55,11 @@ it("revalidates carried evidence on source revision changes, including non-unive
 it("recognizes an immutable retained predecessor after the active pin changes",()=>{
   const d=researchedDraftFixture(),bytes=new TextEncoder().encode(JSON.stringify(d)),old={bodySha256:draftHash(bytes),forecastSha256:draftHash(JSON.stringify(d.forecast))},current={...old,bodySha256:"c".repeat(64)};
   expect(pinnedDraftPredecessor(bytes,[current,old])).toEqual(d);expect(()=>pinnedDraftPredecessor(bytes,[current])).toThrow(/Unpinned/);
+});
+it("adds the proven university group when a reviewed university roster acquires a new candidate, keeping old categories",()=>{
+  const old=researchedDraftFixture(),incoming=structuredClone(old),added={...old.candidates[0]!,id:"npb:draft:2026:"+"e".repeat(24),article:"架空の追加大学生",name:"架空の追加大学生"};
+  incoming.candidates=[added];delete incoming.candidateGroups;delete incoming.expandedForecast;delete incoming.researchedForecast;
+  const result=carryDraftPreview(old,incoming,[]);expect(result.candidates).toHaveLength(old.candidates.length+1);expect(result.candidateGroups).toEqual([...old.candidateGroups!,{candidateId:added.id,group:"university"}]);expect(result.researchedForecast).toEqual(old.researchedForecast);expect(draftEventSchema.safeParse(result).success).toBe(true);
 });
 it.each(["core","preview","research"] as const)("retrieves only the documented %s page set in one bounded request",async scope=>{
   let count=0;const pages=sources.filter(s=>scope==="research"||scope==="preview"&&s.pageId!==5110570||[5282993,5209342].includes(s.pageId));

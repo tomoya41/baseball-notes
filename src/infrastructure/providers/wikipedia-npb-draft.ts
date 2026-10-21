@@ -50,6 +50,19 @@ export function assertCarriedDraftEvidence(previous:DraftEvent,pages:ReturnType<
     if(rows.some(c=>proofs.get(c.evidenceSha256)!==1))throw Error("Carried Draft evidence changed or removed; separate source/candidate review required");
   }
 }
+
+/** Carry frozen preview context while adding only the university category proven by the strict roster parser. */
+export function carryDraftPreview(previous:DraftEvent,incoming:DraftEvent,pages:ReturnType<typeof admittedDraftArchive>["pages"]):DraftEvent{
+  assertCarriedDraftEvidence(previous,pages);
+  for(const c of incoming.candidates){const prior=previous.candidates.find(p=>p.id===c.id);if(prior&&JSON.stringify(prior)!==JSON.stringify(c))throw Error("Candidate correction requires separate review");}
+  return {...incoming,
+    candidates:[...previous.candidates,...incoming.candidates.filter(c=>!previous.candidates.some(p=>p.id===c.id))],
+    sources:[...incoming.sources,...previous.sources.filter(s=>!incoming.sources.some(p=>p.pageId===s.pageId))],
+    expandedForecast:previous.expandedForecast,researchedForecast:previous.researchedForecast,
+    candidateGroups:[...previous.candidateGroups??[],...incoming.candidates.filter(c=>!previous.candidateGroups?.some(g=>g.candidateId===c.id)).map(c=>({candidateId:c.id,group:"university" as const}))],
+    review:previous.review,
+  };
+}
 /** Exact reviewed university roster, four-year students only; eligibility is deliberately not inferred. */
 export function draftRosterCandidates(content:string){
   const section=content.split("=== 大学 ===\n")[1]?.split("=== U-18 ===")[0];
