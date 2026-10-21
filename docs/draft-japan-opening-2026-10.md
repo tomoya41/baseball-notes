@@ -54,3 +54,5 @@ private reviewは`reviewedBy`、取得後かつbuild以前の`reviewedAt`、`gam
 新しい結果の試験は明示的な架空fixtureのみ。未来日時、試合/Source不一致、X/サヨナラ/12回引分け、空欄・0、終了証拠不足、差分・再投入、forecast不変、UI結果比較、Current/CS/Regular分離を検証する。既存の公開23ファイル（Draftも含む）をbaselineとしてhash保護する。
 
 全tests/lint/typecheck/Web/Vercel/Android packaging・エミュレーター・公開HTTPと実画面の証拠はdelivery PRに記録する。Pixel未接続なら物理QA/TalkBackはNOT RUN。Source不足、Turso、署名/Play Owner Gateを独立管理する。UI全面改修、source権利拡張、canonical DB write、課金は行わない。
+
+実画面検証中、再build前のタブが旧hashのlazy moduleを読み込めず、既存「再表示」がReact.lazyの失敗Promiseを繰り返す事象を再現した。dynamic module取得失敗だけ、明示操作「最新版を読み込む」でdocumentをreloadする。自動reload loopは作らず、通常のrender errorは従来の画面内retryを維持する。Favorites/Collections/WatchやURLを消去する処理はない。
