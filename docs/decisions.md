@@ -427,3 +427,7 @@ Manual NPB period verification defaults to connection-only and always probes bef
 ## 2026-10-22 — Draft forecast editions and comparison scope
 
 Keep each premeeting forecast immutable. An initial-bid prediction is compared only with direct first-bid evidence, separately from final first-round selection and lottery success. Later-round conditional targets become inapplicable if a confirmed earlier regular selection already took the exact candidate; missing results and ambiguous identity remain distinct. Media research contributes bibliographic references and independent editorial reasoning, without redistributing article bodies or forecast tables. Roster-source revisions carrying candidate context require a separately reviewed migration rather than row-only proof reuse. This protects reproducibility, source attribution and fair before/after comparison.
+
+## 2026-10-22 — Candidate admission precedes forecast display
+
+Representative/team roster observations do not establish draft eligibility. Apply a separate, explicitly reviewed name-and-school application check before displaying student predictions. Retain immutable older editions with visible corrections, withhold unsupported slots and their scoring, and default new/changed identities or evidence to unverified. Nonstudents use different eligibility rules and must not be labeled non-applicants merely because student lists do not contain them. See [the correction](npb-draft-2026-eligibility-correction.md).

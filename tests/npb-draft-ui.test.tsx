@@ -10,6 +10,11 @@ import { draftEventQuery } from "../src/domain/npb-draft-query";
 import { portableRoute } from "../src/domain/product-sharing";
 import { canonicalDeepLink,parentNativeRoute } from "../src/domain/native-navigation";
 vi.mock("../src/application/npb-draft-event-reader",()=>({readNpbDraftEvent:vi.fn()}));
+// Synthetic navigation fixtures have no real application evidence. Real admission has separate tests.
+vi.mock("../src/domain/npb-draft-eligibility",async original=>{
+  const actual=await original<typeof import("../src/domain/npb-draft-eligibility")>();
+  return {...actual,draftForecastAdmission:(...args:Parameters<typeof actual.draftForecastAdmission>)=>args[0].name.startsWith("架空")||args[0].name==="実指名の架空選手"?{status:"listed",admitted:true,note:"Synthetic only",url:null}:actual.draftForecastAdmission(...args)};
+});
 afterEach(()=>{vi.clearAllMocks();vi.unstubAllGlobals();});
 async function mount(query="",fail=false,modify?:(data:ReturnType<typeof draftFixture>)=>void){
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);const data=draftFixture();modify?.(data);vi.mocked(readNpbDraftEvent).mockImplementation(async()=>{if(fail)throw Error("offline");return data;});
