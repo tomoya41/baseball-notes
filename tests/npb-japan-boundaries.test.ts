@@ -11,7 +11,7 @@ function snapshot(outcomes:readonly (string|null)[]=splitSeven,total=outcomes.le
   d.observedAt="2026-11-04T10:00:00Z";d.review={reviewedBy:"synthetic fixture",reviewedAt:d.observedAt};d.series.effectiveDate="2026-11-04";
   for(let n=8;n<=total;n++){
     const home=n===8?bay:hawks,away=home===bay?hawks:bay,gameId=japanGameId(n);
-    d.series.games.push({gameId,gameNumber:n,date:`2026-11-0${n-6}`,homeTeamId:home,awayTeamId:away,homeRuns:null,awayRuns:null,status:"scheduled",scheduledAt:null,winnerId:null});
+    d.series.games.push({gameId,gameNumber:n,date:`2026-11-${String(n===8?2:n-5).padStart(2,"0")}`,homeTeamId:home,awayTeamId:away,homeRuns:null,awayRuns:null,status:"scheduled",scheduledAt:null,winnerId:null});
     d.venues[gameId]=home===bay?"横浜スタジアム":"みずほPayPayドーム福岡";
   }
   outcomes.forEach((winner,i)=>{
@@ -41,6 +41,16 @@ it("accepts independently recorded eighth/ninth finals beyond twelve innings and
 it("rejects additional finals or schedules after a four-win clinch",()=>{
   expect(valid(snapshot([bay,hawks,bay,hawks,bay,hawks,bay,hawks]))).toBe(false);
   expect(valid(snapshot([bay,hawks,bay,hawks,bay,hawks,bay],8))).toBe(false);
+});
+it("requires the eighth Game at the seventh Game's venue and a travel day before the ninth",()=>{
+  const eighth=snapshot(splitSeven,8);eighth.venues[japanGameId(8)]="みずほPayPayドーム福岡";expect(valid(eighth)).toBe(false);
+  const ninth=snapshot([bay,hawks,bay,hawks,bay,null,null,hawks,bay]);ninth.series.games[8]!.date="2026-11-03";expect(valid(ninth)).toBe(false);
+});
+it.each([8,9])("holds reversed home clubs or an unproved venue for extra Game %s",n=>{
+  const before=n===8?splitSeven:[bay,hawks,bay,hawks,bay,null,null,hawks];
+  const d=snapshot(before,n),g=d.series.games[n-1]!;expect(valid(d)).toBe(true);
+  const reversed=structuredClone(d),r=reversed.series.games[n-1]!;[r.homeTeamId,r.awayTeamId]=[r.awayTeamId,r.homeTeamId];expect(valid(reversed)).toBe(false);
+  d.venues[g.gameId]=n===8?"みずほPayPayドーム福岡":"横浜スタジアム";expect(valid(d)).toBe(false);
 });
 it("does not permit an innings-limit tie from the eighth Game onward",()=>{
   expect(valid(snapshot([...splitSeven,null]))).toBe(false);

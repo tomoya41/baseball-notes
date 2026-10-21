@@ -29,6 +29,11 @@ export const npbJapanSeriesSchema = z.strictObject({
       c.addIssue({code:"custom",message:"Additional Japan Series Game requires seven or more reviewed finals, a tie and no prior clinch"});
     if(g.status==="final"&&g.winnerId===null)
       c.addIssue({code:"custom",message:"Japan Series Game eight onward cannot finish as an innings-limit tie"});
+    const seventh=s.games[6],last=previous.at(-1);
+    const home=g.gameNumber===8?seventh?.homeTeamId:seventh?.awayTeamId,away=g.gameNumber===8?seventh?.awayTeamId:seventh?.homeTeamId;
+    const homeVenues=new Set(previous.filter(p=>p.gameNumber<=7&&p.homeTeamId===home).map(p=>d.venues[p.gameId]));
+    if(g.gameNumber===8&&(!seventh||g.homeTeamId!==home||g.awayTeamId!==away||d.venues[g.gameId]!==d.venues[seventh.gameId])||g.gameNumber===9&&(!last||g.homeTeamId!==home||g.awayTeamId!==away||homeVenues.size!==1||!homeVenues.has(d.venues[g.gameId])||Date.parse(g.date)-Date.parse(last.date)<2*86400000))
+      c.addIssue({code:"custom",message:"Additional Japan Series venue/travel-day evidence violates the reviewed rules"});
   }
   if(d.results.some(r=>!s.games.some(g=>g.gameId===r.gameId&&g.status==="final")))c.addIssue({code:"custom",message:"Orphan Japan Series evidence"});
   if(d.results.length&&(!d.review||Date.parse(d.review.reviewedAt)<Date.parse(d.observedAt)))c.addIssue({code:"custom",message:"Results require review after acquisition"});
