@@ -1,8 +1,8 @@
 {
-  "tag": "npb-draft-2026-20261021-v1",
-  "assetUrl": "https://github.com/tomoya41/baseball-notes/releases/download/npb-draft-2026-20261021-v1/draft-2026.json.gz",
-  "sha256": "284c2d4ed08df466cad537ceaf95082b1f6ae5f3017feda427a15816df2e68aa",
-  "bodySha256": "4628abf77d81ec9f731340308bf6550b782ba55ce3481641749f48357f83d826",
-  "bytes": 10405,
+  "tag": "npb-draft-2026-20261021-v2",
+  "assetUrl": "https://github.com/tomoya41/baseball-notes/releases/download/npb-draft-2026-20261021-v2/draft-2026.json.gz",
+  "sha256": "b403f3c19ad87c3ff863234ffa1a1d6841efaccfb5ad165639e40cfa4ed00418",
+  "bodySha256": "1611e096c7b53c3c6328b0b4574dca64fd974f9ab13bdc255f77827c57dda600",
+  "bytes": 47319,
   "forecastSha256": "25a1bb0d7a2c00e231b3e5510519ab13096fbdea06eb14f614fe22c81c5adbb9"
 }

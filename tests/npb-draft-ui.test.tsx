@@ -5,7 +5,7 @@ import { createRoot } from "react-dom/client";
 import { MemoryRouter } from "react-router-dom";
 import { NpbDraftEventScreen } from "../src/ui/npb-draft-event";
 import { readNpbDraftEvent } from "../src/application/npb-draft-event-reader";
-import { draftFixture } from "./fixtures/npb-draft";
+import { draftFixture,expandedDraftFixture } from "./fixtures/npb-draft";
 import { draftEventQuery } from "../src/domain/npb-draft-query";
 import { portableRoute } from "../src/domain/product-sharing";
 import { canonicalDeepLink,parentNativeRoute } from "../src/domain/native-navigation";
@@ -33,4 +33,15 @@ it("does not mix regular first-pick lotteries into developmental results",async(
 it("shows the saved scenario and actual final first selection together without rewriting the prediction",async()=>{
   const f=await mount(undefined,false,d=>{const c={...d.candidates[0]!,id:"npb:draft:2026:"+"e".repeat(24),article:"架空の別選手",name:"実指名の架空選手",affiliation:"別の架空大学"};d.candidates.push(c);d.observedAt="2026-10-22T10:00:00Z";d.eventState="ended";d.review={reviewedBy:"fixture",reviewedAt:"2026-10-22T10:01:00Z"};d.coverage="partial";d.selections=[{teamId:"npb:team:tigers",candidateId:c.id,type:"regular",round:1,status:"confirmed",sourcePageId:5209342,evidenceSha256:"f".repeat(64)}];});
   try{expect(f.host.textContent).toContain("保存した独自案");expect(f.host.textContent).toContain("収録済みの支配下1位");expect(f.host.textContent).toContain("実指名の架空選手");expect(f.host.textContent).toContain("候補案と異なります");expect(f.data.forecast.predictions[0]!.candidateId).toBe(draftFixture().candidates[0]!.id);}finally{await f.close();}
+});
+
+it("shows the new three-round edition and preserves the original saved forecast",async()=>{
+  const f=await mount(undefined,false,d=>Object.assign(d,expandedDraftFixture()));try{expect(f.host.querySelectorAll("article")).toHaveLength(36);expect(f.host.textContent).toContain("12球団の1〜3位予想");expect(f.host.textContent).toContain("独立リーグ");expect(f.host.textContent).toContain("3位の理由・答え合わせ");}finally{await f.close();}
+  const g=await mount("?forecast=original",false,d=>Object.assign(d,expandedDraftFixture()));try{expect(g.host.querySelectorAll("article")).toHaveLength(12);expect(g.host.textContent).toContain("12球団の1位候補案");}finally{await g.close();}
+});
+it("filters amateur categories and teams and preserves the new conditions in shared/native URLs",async()=>{
+  const f=await mount("?view=candidates&group=independent",false,d=>Object.assign(d,expandedDraftFixture()));try{expect(f.host.querySelectorAll("article")).toHaveLength(9);expect((f.host.querySelector("select") as HTMLSelectElement).value).toBe("independent");}finally{await f.close();}
+  const g=await mount("?team=npb:team:giants",false,d=>Object.assign(d,expandedDraftFixture()));try{expect(g.host.querySelectorAll("article")).toHaveLength(3);}finally{await g.close();}
+  const route="/NPB/talent/2026?view=candidates&group=high_school&forecast=original";expect(portableRoute("/NPB/talent/2026",route.split("?")[1])).toBe(route);expect(canonicalDeepLink("baseballnotes:/"+route)).toBe(route);
+  expect(draftEventQuery(new URLSearchParams("group=pro" )).valid).toBe(false);expect(draftEventQuery(new URLSearchParams("forecast=edited")).valid).toBe(false);
 });
