@@ -1,0 +1,16 @@
+{
+  "id": "./",
+  "name": "Baseball Notes",
+  "short_name": "Baseball Notes",
+  "lang": "ja",
+  "dir": "ltr",
+  "start_url": "./#/NPB/home",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f7fb",
+  "theme_color": "#15568e",
+  "icons": [
+    { "src": "icons/baseball-notes-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/baseball-notes-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
