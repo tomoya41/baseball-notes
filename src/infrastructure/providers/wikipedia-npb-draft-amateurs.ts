@@ -18,11 +18,12 @@ export function draftAdditionalAmateurs(content:string){
   for(const [heading,group] of [["社会人","corporate"],["U-18","high_school"]] as const){
     const section=roster.split(`=== ${heading} ===\n`)[1]?.split("\n=== ")[0]?.split("; 選出後の辞退選手")[0];
     if(!section?.includes("!!!#!!氏名!!英語表記!!所属!!投!!打!!備考"))throw Error("Unsupported amateur roster header");
-    let position:Candidate["position"]|null=null;
+    let position:Candidate["position"]|null=null,coaching=false;
     for(const block of section.split("|-\n")){
       const roleHeading=block.match(/^\|rowspan="\d+"\|([^\n]+)\n/);
-      if(roleHeading){if(roleHeading[1]==="コーチ")position=null;else if(["投手","捕手","内野手","外野手"].includes(roleHeading[1]!))position=roleHeading[1] as Candidate["position"];else throw Error("Unsupported amateur role");}
-      const row=block.split("\n").find(r=>/^\|\d+\|\|/.test(r));if(!row||!position)continue;
+      if(roleHeading){coaching=roleHeading[1]==="コーチ";if(coaching)position=null;else if(["投手","捕手","内野手","外野手"].includes(roleHeading[1]!))position=roleHeading[1] as Candidate["position"];else throw Error("Unsupported amateur role");}
+      const row=block.split("\n").find(r=>/^\|\d+\|\|/.test(r));if(!row)continue;
+      if(!position){if(coaching)continue;throw Error("Amateur player role missing in this section");}
       const cells=row.slice(1).split("||"),person=link(cells[1]??"");
       if(cells.length!==7||!person)throw Error("Unsupported amateur roster row");
       // Not a full prospect universe. This overseas-path player is deliberately outside this scenario.

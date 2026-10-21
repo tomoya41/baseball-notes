@@ -10,13 +10,12 @@ export function NpbResearchedDraftPreview({data,team}:{data:DraftEvent;team:stri
   const candidates=new Map(data.candidates.map(c=>[c.id,c])),groups=new Map(data.candidateGroups?.map(g=>[g.candidateId,g.group])),references=new Map(f.references.map(r=>[r.id,r]));
   return <>
     <h2>球団事情から考える1〜3位予想</h2>
-    <p className="inline-note">{f.author} · {time(f.createdAt)}保存（日本時間）</p>
-    <p>1位は初回入札、2・3位は残っている場合の候補。高校・大学・社会人・独立リーグから考えます。</p>
-    <details><summary>外部情報と独自予想の違い</summary><p>外部の見解・報道を読み、補強の優先順をBaseball Notesが独自に考えた案です。球団発表・公式予想ではありません。記事本文・予想表・評価点の転載はせず、参照先で元の見方を確認できます。各球団の状況欄も独自の編成仮説で、最新の登録名簿や去就の確定情報ではありません。</p><p>複数球団で同じ1位候補を予想できますが、実際の入札・抽選を示すものではありません。2・3位も各球団別の条件付き案で、12球団を一つにした指名順のシミュレーションではありません。志望届・指名資格は未確認です。未収録の選手もいるため、全候補を比較した予想ではありません。</p></details>
+    <p className="inline-note">独自予想 · {time(f.createdAt)}保存（日本時間）</p>
+    <p>1位は初回入札、2・3位は残っている場合の候補。</p>
+
     {f.clubs.filter(c=>team==="all"||c.teamId===team).map(club=><section key={club.teamId} aria-label={`${teamName(club.teamId)}の根拠付き予想`}>
       <h3>{teamName(club.teamId)}</h3>
-      <p>{club.context}</p>
-      <details><summary>補強ポイント・参照した外部の見方</summary><p><strong>独自の判断：</strong>{club.judgment}</p>{club.referenceIds.map(id=>{const r=references.get(id)!;return <p key={id}><a href={r.url} target="_blank" rel="noreferrer">{r.publisher} · {r.topic} ↗</a><br/><small>{r.kind==="report"?"報道（公式発表ではありません）":"論評・提案（球団の意向とは別）"} · {r.author}<br/>公開 {r.publishedOn} · 更新 {r.updatedOn} · 確認 {time(r.checkedAt)}（日本時間）</small></p>;})}</details>
+      <details><summary>補強ポイント・参照した外部の見方</summary><p>{club.context}</p><p><strong>独自の判断：</strong>{club.judgment}</p>{club.referenceIds.map(id=>{const r=references.get(id)!;return <p key={id}><a href={r.url} target="_blank" rel="noreferrer">{r.publisher} · {r.topic} ↗</a><br/><small>{r.kind==="report"?"報道（公式発表ではありません）":"論評・提案（球団の意向とは別）"} · {r.author}<br/>公開 {r.publishedOn} · 更新 {r.updatedOn} · 確認 {time(r.checkedAt)}（日本時間）</small></p>;})}</details>
       {f.predictions.filter(p=>p.teamId===club.teamId).sort((a,b)=>a.round-b.round).map(p=>{
         const c=candidates.get(p.candidateId)!,g=groups.get(c.id),outcome=draftResearchedPredictionOutcome(data,club.teamId,p.round);
         return <article key={p.round}>
@@ -25,5 +24,6 @@ export function NpbResearchedDraftPreview({data,team}:{data:DraftEvent;team:stri
         </article>;
       })}
     </section>)}
+    <details><summary>外部情報と独自予想の違い</summary><p>外部の見解・報道を読み、補強の優先順をBaseball Notesが独自に考えた案です。球団発表・公式予想ではありません。記事本文・予想表・評価点の転載はせず、参照先で元の見方を確認できます。各球団の状況欄も独自の編成仮説で、最新の登録名簿や去就の確定情報ではありません。</p><p>複数球団で同じ1位候補を予想できますが、実際の入札・抽選を示すものではありません。2・3位も各球団別の条件付き案で、12球団を一つにした指名順のシミュレーションではありません。志望届・指名資格は未確認です。未収録の選手もいるため、全候補を比較した予想ではありません。</p></details>
   </>;
 }

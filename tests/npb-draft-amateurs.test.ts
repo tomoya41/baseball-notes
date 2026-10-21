@@ -11,6 +11,10 @@ it("extracts separate corporate/high-school roster scopes, roles and exact ident
   expect(rows[0]!.candidate.id).toBe(draftCandidateId("架空社会人","架空チーム"));expect(rows[0]!.candidate.context).toContain("2026年社会人代表");expect(rows[2]!.candidate.context).toContain("2026年U-18代表");expect(rows[1]!.candidate.position).toBe("捕手");expect(rows.every(r=>r.candidate.eligibility==="unverified")).toBe(true);
 });
 it.each([national.replace("氏名!!英語表記","所属!!氏名"),national.replace("[[架空社会人]]","架空社会人"),national.replace('rowspan="1"|捕手','rowspan="1"|不明役割'),national.replace("||左||左||","||不明||左||"),national.replace("[[架空所属|架空チーム]]","{{未対応所属}}")])("holds unreviewed roster layouts/fields",content=>expect(()=>draftAdditionalAmateurs(content)).toThrow());
+it("does not inherit the prior section's role when a corrected U-18 table lacks its first role marker",()=>{
+  const malformed=national.replace(table("U-18","架空高校生"),table("U-18","架空高校生").replace(/\|rowspan="1"\|コーチ\n\|90[^\n]+\n\|-\n/,"").replace('|rowspan="1"|投手\n',""));
+  expect(()=>draftAdditionalAmateurs(malformed)).toThrow(/role missing/);
+});
 const independent=`== 現役選手・スタッフ ==\n=== 投手 ===\n!名前!!背番号!!投打!!備考\n|-\n|[[架空独立]]||20||右左||2026年度新入団\n|}\n=== 捕手 ===\n|[[別人]]||3||右右||\n== 過去に在籍した選手 ==\n|[[架空退団]]||14||右右||\n`;
 it("reads independent pitchers only from the exact current-roster section, keeping source-local identity",()=>{
   const c=draftIndependentPitcher(independent,528913,"架空独立");expect(c.affiliation).toBe("徳島インディゴソックス");expect(c.throws).toBe("右");expect(c.bats).toBe("左");expect(c.sourcePageId).toBe(528913);expect(c.id).toMatch(/^npb:draft:2026:/);

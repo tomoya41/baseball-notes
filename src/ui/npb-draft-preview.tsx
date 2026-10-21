@@ -8,8 +8,8 @@ export function NpbDraftCandidates({data,q,group,onSearch,onGroup}:{data:DraftEv
   const rows=data.candidates.filter(c=>(group==="all"||groups.get(c.id)===group)&&`${c.name} ${c.affiliation} ${c.position}`.includes(q));
   return <><h2>注目候補を探す</h2><p>所属・役割を記事から収録した選手です。全候補の一覧や、指名資格の確認済み名簿ではありません。</p>
     {data.candidateGroups&&<label>所属区分<select value={group} onChange={e=>onGroup(e.target.value)}><option value="all">すべて</option>{Object.entries(draftGroupLabels).map(([key,name])=><option key={key} value={key}>{name}</option>)}</select></label>}
-    <label className="search-field">名前・学校・所属・守備位置<input type="search" maxLength={80} value={q} onChange={e=>onSearch(e.target.value)} placeholder="選手・学校・チームから探す"/></label><p className="inline-note">{rows.length}人 · 一部収録</p>
-    {rows.map(c=><article className="player-row" key={c.id}><div className="player-row__body"><small>{groups.has(c.id)?draftGroupLabels[groups.get(c.id)!]:""}</small><strong>{c.name}</strong><p>{c.affiliation} · {c.position} · {c.throws}投{c.bats}打</p><small>{c.context} · 志望届未確認</small></div></article>)}
+    <label className="search-field"><span className="sr-only">名前・学校・所属・守備位置</span><input type="search" maxLength={80} value={q} onChange={e=>onSearch(e.target.value)} placeholder="選手・学校・チームから探す"/></label><p className="inline-note">{rows.length}人 · 一部収録</p>
+    {rows.map(c=><article className="player-row" key={c.id}><div className="player-row__body"><small>{groups.has(c.id)?draftGroupLabels[groups.get(c.id)!]:""}</small><strong>{c.name}</strong><p>{c.affiliation} · {c.position} · {c.throws==="未確認"&&c.bats==="未確認"?"投打未確認":`${c.throws}投${c.bats}打`}</p><small>{c.context} · 志望届未確認</small></div></article>)}
     {!rows.length&&<p role="status">この条件の選手は未収録です。</p>}
   </>;
 }
