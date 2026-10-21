@@ -8,7 +8,7 @@ import sources from "../src/data/npb-draft-2026-sources.json";
 import forecast from "../src/data/npb-draft-2026-forecast.json";
 import pin from "../src/data/npb-draft-2026-release.json";
 import retained from "../src/data/npb-draft-retained-releases.json";
-import {assertImmutableReleaseTag} from "../src/data/immutable-release-tag";
+import {assertImmutableReleaseTag,assertReleasePredecessor} from "../src/data/immutable-release-tag";
 import {draftUpdateReport} from "../src/application/npb-draft-update-report";
 
 const arg=(name:string)=>process.argv.find(a=>a.startsWith(`--${name}=`))?.slice(name.length+3);
@@ -27,7 +27,7 @@ if(previous){const bytes=await readFile(previous);if(draftHash(bytes)!==pin.body
 const body=JSON.stringify(data),bytes=Buffer.from(body),gzip=gzipSync(bytes);
 const tag=arg("tag");if(tag&&!/^npb-draft-2026-[a-z0-9-]+$/.test(tag))throw Error("New immutable release tag required");
 if(tag)assertImmutableReleaseTag(tag,draftHash(body),draftHash(gzip),[...retained,pin]);
-if(tag&&draftHash(body)!==pin.bodySha256&&!previous)throw Error("New publication proposal requires pinned previous snapshot");
+assertReleasePredecessor(tag,draftHash(body),pin.bodySha256,!!previous);
 await mkdir(output,{recursive:true});await writeFile(join(output,"draft-2026.json"),bytes);await writeFile(join(output,"draft-2026.json.gz"),gzip);
 if(report)await writeFile(join(output,"review-report.json"),JSON.stringify(report,null,2));
 if(tag)await writeFile(join(output,"pin.json"),JSON.stringify({tag,assetUrl:`https://github.com/tomoya41/baseball-notes/releases/download/${tag}/draft-2026.json.gz`,sha256:draftHash(gzip),bodySha256:draftHash(body),bytes:bytes.length,forecastSha256:draftHash(JSON.stringify(data.forecast))},null,2));
