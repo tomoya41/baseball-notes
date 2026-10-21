@@ -21,9 +21,17 @@ if(Date.parse(a.observedAt)>Date.now())throw Error("Cannot publish a future obse
 const roster=a.pages.find(p=>p.source.pageId===5209342),event=a.pages.find(p=>p.source.pageId===5282993);
 if(!roster||!event||!event.content.includes("開催日 = 2026年10月22日"))throw Error("Missing draft/roster source");
 let data=draftEventSchema.parse({schemaVersion:1,league:"NPB",season:2026,scheduledAt:"2026-10-22T16:50:00+09:00",observedAt:a.observedAt,eventState:Date.parse(a.observedAt)<Date.parse("2026-10-22T16:50:00+09:00")?"scheduled":"checking",coverage:"unavailable",license:"CC-BY-SA-4.0",sources:a.pages.map(p=>p.source),candidates:draftRosterCandidates(roster.content),forecast,selections:[],lotteries:[]});
+let old:ReturnType<typeof draftEventSchema.parse>|undefined;
+if(previous){const bytes=await readFile(previous);if(draftHash(bytes)!==pin.bodySha256)throw Error("Unpinned previous Draft snapshot");old=draftEventSchema.parse(JSON.parse(bytes.toString()));
+  if(old.expandedForecast){
+    for(const c of data.candidates){const prior=old.candidates.find(p=>p.id===c.id);if(prior&&JSON.stringify(prior)!==JSON.stringify(c))throw Error("Candidate correction requires separate review");}
+    data={...data,candidates:[...old.candidates,...data.candidates.filter(c=>!old!.candidates.some(p=>p.id===c.id))],sources:[...data.sources,...old.sources.filter(s=>!data.sources.some(p=>p.pageId===s.pageId))],expandedForecast:old.expandedForecast,candidateGroups:old.candidateGroups,review:old.review};
+  }
+}
 if(review){if(!previous||!process.argv.includes("--review-confirmed"))throw Error("Reviewed update needs prior immutable dataset and explicit review confirmation");data=applyReviewedDraftResults(data,event.content,JSON.parse(await readFile(review,"utf8")),a.observedAt);}
 let report:ReturnType<typeof draftUpdateReport>|undefined;
-if(previous){const bytes=await readFile(previous);if(draftHash(bytes)!==pin.bodySha256)throw Error("Unpinned previous Draft snapshot");const old=draftEventSchema.parse(JSON.parse(bytes.toString()));assertDraftSnapshotAdvance(old,data);report=draftUpdateReport(old,data);}
+data=draftEventSchema.parse(data);
+if(old){assertDraftSnapshotAdvance(old,data);report=draftUpdateReport(old,data);}
 const body=JSON.stringify(data),bytes=Buffer.from(body),gzip=gzipSync(bytes);
 const tag=arg("tag");if(tag&&!/^npb-draft-2026-[a-z0-9-]+$/.test(tag))throw Error("New immutable release tag required");
 if(tag)assertImmutableReleaseTag(tag,draftHash(body),draftHash(gzip),[...retained,pin]);
