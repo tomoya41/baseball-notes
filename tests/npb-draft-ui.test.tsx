@@ -42,6 +42,7 @@ it("shows the new three-round edition and preserves the original saved forecast"
 it("filters amateur categories and teams and preserves the new conditions in shared/native URLs",async()=>{
   const f=await mount("?view=candidates&group=independent",false,d=>Object.assign(d,expandedDraftFixture()));try{expect(f.host.querySelectorAll("article")).toHaveLength(9);expect((f.host.querySelector("select") as HTMLSelectElement).value).toBe("independent");}finally{await f.close();}
   const g=await mount("?team=npb:team:giants",false,d=>Object.assign(d,expandedDraftFixture()));try{expect(g.host.querySelectorAll("article")).toHaveLength(3);}finally{await g.close();}
+  const h=await mount("?team=npb:team:giants&forecast=original",false,d=>Object.assign(d,expandedDraftFixture()));try{expect(h.host.querySelectorAll("article")).toHaveLength(1);}finally{await h.close();}
   const route="/NPB/talent/2026?view=candidates&group=high_school&forecast=original";expect(portableRoute("/NPB/talent/2026",route.split("?")[1])).toBe(route);expect(canonicalDeepLink("baseballnotes:/"+route)).toBe(route);
   expect(draftEventQuery(new URLSearchParams("group=pro" )).valid).toBe(false);expect(draftEventQuery(new URLSearchParams("forecast=edited")).valid).toBe(false);
 });
