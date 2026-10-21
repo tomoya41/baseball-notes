@@ -21,9 +21,23 @@ export const npbJapanSeriesSchema = z.strictObject({
     if(!d.venues[g.gameId]||invalidResult)
       c.addIssue({code:"custom",message:"Japan Series result requires independent innings and completion evidence"});
   }
+  if(s.games.some((g,i)=>g.status==="suspended"||i>0&&g.date<=s.games[i-1]!.date))
+    c.addIssue({code:"custom",message:"Japan Series requires ordered observed dates and does not use suspended games"});
+  for(const g of s.games.filter(g=>g.gameNumber>=8)){
+    const previous=s.games.filter(p=>p.gameNumber<g.gameNumber);
+    if(previous.some(p=>p.status!=="final")||!previous.some(p=>p.winnerId===null)||s.teams.some(t=>previous.filter(p=>p.winnerId===t.teamId).length>=4))
+      c.addIssue({code:"custom",message:"Additional Japan Series Game requires seven or more reviewed finals, a tie and no prior clinch"});
+    if(g.status==="final"&&g.winnerId===null)
+      c.addIssue({code:"custom",message:"Japan Series Game eight onward cannot finish as an innings-limit tie"});
+  }
   if(d.results.some(r=>!s.games.some(g=>g.gameId===r.gameId&&g.status==="final")))c.addIssue({code:"custom",message:"Orphan Japan Series evidence"});
   if(d.results.length&&(!d.review||Date.parse(d.review.reviewedAt)<Date.parse(d.observedAt)))c.addIssue({code:"custom",message:"Results require review after acquisition"});
   for(const r of d.results){const g=s.games.find(g=>g.gameId===r.gameId);
+    let away=0,home=0;
+    for(let i=0;i<r.awayInnings.length-1;i++){
+      away+=r.awayInnings[i]!;home+=r.homeInnings[i]!;
+      if(i>=8&&away!==home)c.addIssue({code:"custom",message:"Extra inning cannot follow an already decided completed inning"});
+    }
     if(r.sourcePageId!==5306035||!d.sources.some(p=>p.pageId===r.sourcePageId)||!r.evidenceSha256||!r.homeLastInning||r.homeLastInning!=="completed"&&(!g||g.homeRuns!<=g.awayRuns!||r.homeLastInning==="not_played"&&r.homeInnings.at(-1)!==0)||g&&g.gameNumber<=7&&(r.awayInnings.length>12||g.homeRuns===g.awayRuns&&r.awayInnings.length!==12))c.addIssue({code:"custom",message:"Invalid final half-inning or source evidence"});
     if(r.homeLastInning==="walk_off"&&(!r.homeInnings.at(-1)||g&&g.homeRuns!-r.homeInnings.at(-1)!>g.awayRuns!))c.addIssue({code:"custom",message:"Invalid walk-off inning"});
     if(g&&g.homeRuns!>g.awayRuns!&&r.homeLastInning==="completed")c.addIssue({code:"custom",message:"Home win requires explicit X or walk-off evidence"});
