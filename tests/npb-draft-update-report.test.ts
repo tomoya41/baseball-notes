@@ -3,9 +3,9 @@ import {draftFixture} from "./fixtures/npb-draft";
 import {draftEventSchema,draftPredictionComparison} from "../src/domain/npb-draft-event";
 import {draftUpdateReport} from "../src/application/npb-draft-update-report";
 const update=()=>{const d=draftFixture();d.observedAt="2026-10-22T10:00:00Z";d.review={reviewedBy:"fixture",reviewedAt:"2026-10-22T10:01:00Z"};d.eventState="ended";d.coverage="partial";d.selections=[{teamId:"npb:team:tigers",type:"regular",round:1,status:"confirmed",candidateId:d.candidates[0]!.id,sourcePageId:5209342,evidenceSha256:"c".repeat(64)}];return d;};
-it("rehearses selection deltas and all twelve comparisons without editing frozen forecasts or publishing",()=>{
+it("rehearses selection deltas while withholding unreviewed comparisons, without editing frozen forecasts or publishing",()=>{
   const previous=draftFixture(),next=draftEventSchema.parse(update()),r=draftUpdateReport(previous,next);
-  expect(r.addedSelections).toHaveLength(1);expect(r.comparisons).toHaveLength(12);expect(r.comparisons.find(p=>p.teamId==="npb:team:tigers")?.outcome).toBe("match");expect(r.comparisons.filter(p=>p.outcome==="unavailable")).toHaveLength(11);
+  expect(r.addedSelections).toHaveLength(1);expect(r.comparisons).toHaveLength(12);expect(r.comparisons.every(p=>p.outcome==="withheld")).toBe(true);
   expect(next.forecast).toEqual(previous.forecast);expect(previous.selections).toHaveLength(0);expect(draftUpdateReport(next,next).addedSelections).toHaveLength(0);
   const changed=structuredClone(next);changed.forecast.predictions[0]!.reason="後から書き換え";expect(()=>draftUpdateReport(previous,changed)).toThrow("immutable");
 });

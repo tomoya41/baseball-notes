@@ -7,6 +7,7 @@ import { draftForecastAdmission, draftEligibilityReview, draftEligibilityReviewS
 import { researchedDraftFixture } from "./fixtures/npb-draft";
 import { NpbDraftEventScreen } from "../src/ui/npb-draft-event";
 import { readNpbDraftEvent } from "../src/application/npb-draft-event-reader";
+import { draftUpdateReport } from "../src/application/npb-draft-update-report";
 vi.mock("../src/application/npb-draft-event-reader",()=>({readNpbDraftEvent:vi.fn()}));
 afterEach(()=>{vi.clearAllMocks();vi.unstubAllGlobals();});
 
@@ -27,6 +28,12 @@ it("does not resolve 前田侑仁 vs 前田侑大 or nonstudents by guessing, no
   const {c,group}=candidate("前田侑仁");expect(draftForecastAdmission(c,group)).toMatchObject({status:"identity_mismatch",admitted:false});
   for(const group of [undefined,"corporate","independent"])expect(draftForecastAdmission({...c,id:"unreviewed"},group)).toMatchObject({status:"unverified",admitted:false});
   expect(draftEligibilityReviewSchema.safeParse({...draftEligibilityReview,records:[...draftEligibilityReview.records,draftEligibilityReview.records[0]]}).success).toBe(false);
+});
+it("also withholds all three editions in the offline result-update report",()=>{
+  const d=researchedDraftFixture(),{c,group}=candidate("山田凜虎"),oldId=d.candidates[0]!.id;d.candidates[0]=c;d.candidateGroups![0]={candidateId:c.id,group};
+  for(const p of d.forecast.predictions)if(p.candidateId===oldId)p.candidateId=c.id;
+  for(const f of [d.expandedForecast!,d.researchedForecast!])for(const p of f.predictions)if(p.candidateId===oldId)p.candidateId=c.id;
+  const r=draftUpdateReport(d,structuredClone(d));expect(r.comparisons[0]!.outcome).toBe("withheld");expect(r.expandedComparisons[0]!.outcome).toBe("withheld");expect(r.researchedComparisons[0]!.outcome).toBe("withheld");expect(r.addedSelections).toHaveLength(0);
 });
 it("masks invalid picks in latest AND both archived editions, excludes their scoring and keeps frozen data unchanged",async()=>{
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);
