@@ -11,7 +11,7 @@ import { Monogram } from "./design-system";
 
 export function LifecycleLinks({ teamId, active }: {teamId?:string;active?:string}) {
   const suffix = teamId ? `&team=${encodeURIComponent(teamId)}` : "";
-  return <nav className="explorer-links" aria-label="選手経歴を探す"><Link aria-current={active === "draft" ? "page" : undefined} to={`/NPB/talent?view=draft${suffix}`}>ドラフト</Link><Link aria-current={active === "young" ? "page" : undefined} to={`/NPB/talent?view=young${suffix}`}>若手選手</Link><Link aria-current={active === "school" ? "page" : undefined} to={`/NPB/talent?view=school${suffix}`}>出身校</Link></nav>;
+  return <nav className="explorer-links" aria-label="選手経歴を探す"><Link aria-current={active === "draft" ? "page" : undefined} to={`/NPB/talent?view=draft${suffix}`}>ドラフト</Link><Link aria-current={active === "young" ? "page" : undefined} to={`/NPB/talent?view=young${suffix}`}>若手選手</Link><Link aria-current={active === "school" ? "page" : undefined} to={`/NPB/talent?view=school${suffix}`}>出身校</Link><Link to="/NPB/talent/2026">2026特集</Link></nav>;
 }
 export function ProfileCredits({ player }: {player:LifecyclePlayer}) {
   return <details className="advanced-disclosure"><summary>プロフィールの出典・利用条件</summary><p>公開masterに採用済みの情報だけを使用しています。未確認・競合中の候補は補完しません。</p>{player.profile.credits?.map((c,i) => <p key={i}><a href={c.url} target="_blank" rel="noreferrer">{c.name}</a> · <a href={c.licenseUrl} target="_blank" rel="noreferrer">利用条件</a><small> · {c.fields.join(" / ")} · 構造化・加工済み</small></p>)}<Link to="/MLB/sources">Data Sources / Attribution →</Link></details>;
