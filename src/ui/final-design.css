@@ -1574,6 +1574,11 @@
   color: var(--brand);
 }
 
+.draft-comparison { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,220px),1fr)); gap: 16px; }
+.draft-comparison dt { color: var(--color-muted); font-size: .875rem; }
+.draft-comparison dd { margin: 4px 0 0; font-size: 1rem; line-height: 1.6; overflow-wrap: anywhere; }
+.draft-comparison strong,.draft-comparison span { display: block; }
+
 .series-innings {
   width: 100%;
   table-layout: fixed;
