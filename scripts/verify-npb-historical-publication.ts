@@ -20,6 +20,9 @@ import seriesPin from "../src/data/npb-series-release.json";
 import { assertCsSeriesSnapshot, npbPostseasonSeriesSchema } from "../src/domain/npb-postseason-series";
 import japanPin from "../src/data/npb-japan-series-release.json";
 import { npbJapanSeriesSchema, assertJapanSeriesAdvancement } from "../src/domain/npb-japan-series";
+import draftPin from "../src/data/npb-draft-2026-release.json";
+import retainedDrafts from "../src/data/npb-draft-retained-releases.json";
+import { draftEventSchema } from "../src/domain/npb-draft-event";
 
 export async function verifyRetainedFiles(read:(path:string)=>Promise<Uint8Array>,files:Record<string,{bytes:number;sha256:string}>) {
   for(const [file,expected] of Object.entries(files)) {
@@ -71,6 +74,10 @@ assertCsSeriesSnapshot(series,cs);
 const japanBytes=await load(`../competitions/${japanPin.sha256}/japan-series-2026.json`);
 if(japanBytes.length!==japanPin.bytes||createHash("sha256").update(japanBytes).digest("hex")!==japanPin.bodySha256)throw Error("Japan Series publication mismatch");
 const japan=npbJapanSeriesSchema.parse(JSON.parse(japanBytes.toString()));
+for(const pin of [...retainedDrafts,draftPin] as (typeof draftPin)[]){
+  const bytes=await load(`../draft/${pin.sha256}/draft-2026.json`),data=draftEventSchema.parse(JSON.parse(bytes.toString()));
+  if(bytes.length!==pin.bytes||createHash("sha256").update(bytes).digest("hex")!==pin.bodySha256||createHash("sha256").update(JSON.stringify(data.forecast)).digest("hex")!==pin.forecastSha256)throw Error("Draft publication mismatch");
+}
 if(japan.csSeriesBodySha256!==japanPin.csSeriesBodySha256||japan.csSeriesBodySha256!==seriesPin.bodySha256||japan.series.id!==japanPin.seriesId||JSON.stringify(japan.series.games.map(g=>g.gameId))!==JSON.stringify(japanPin.gameIds))throw Error("Japan Series publication identity mismatch");
 assertJapanSeriesAdvancement(japan,series);
 if(cs.inputSha256!==csPin.inputSha256||cs.games.length!==csPin.games||cs.rows.length!==csPin.rows||cs.players.length!==csPin.players)throw Error("CS publication generation mismatch");
