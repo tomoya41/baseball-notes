@@ -14,7 +14,8 @@ it("keeps install identity, hash route and icons inside both root and Pages scop
     expect(start.hash).toBe("#/NPB/home");
     for (const icon of manifest.icons) expect(new URL(icon.src, base).pathname.startsWith(scope.pathname)).toBe(true);
   }
-  expect(manifest.icons.map((icon: {sizes:string}) => icon.sizes)).toEqual(["192x192", "512x512"]);
+  expect(manifest.icons.map((icon: {sizes:string}) => icon.sizes)).toEqual(["192x192", "512x512", "512x512"]);
+  expect(manifest.icons.at(-1).purpose).toBe("maskable");
   for (const icon of manifest.icons) {
     const png = readFileSync(resolve("public", icon.src));
     expect(png.subarray(0, 8).toString("hex")).toBe("89504e470d0a1a0a");
