@@ -44,6 +44,8 @@ export function assertCarriedDraftEvidence(previous:DraftEvent,pages:ReturnType<
   for(const page of pages){
     const prior=previous.sources.find(s=>s.pageId===page.source.pageId);
     if(!prior||JSON.stringify(prior)===JSON.stringify(page.source))continue;
+    // Row-only hashes do not prove enclosing role/section/roster membership. Such revisions need a dedicated migration.
+    if(page.source.pageId!==5282993&&previous.candidates.some(c=>c.sourcePageId===page.source.pageId))throw Error("Candidate roster revision/context is frozen; separate reviewed migration required");
     const lines=page.content.split("\n"),proofs=new Map<string,number>();
     for(let i=0;i<lines.length;i++)for(const text of [lines[i]!,i?lines[i-1]+"\n"+lines[i]:null])if(text){const h=draftHash(text);proofs.set(h,(proofs.get(h)??0)+1);}
     const rows=[...previous.candidates,...previous.selections,...previous.lotteries].filter(c=>c.sourcePageId===page.source.pageId);

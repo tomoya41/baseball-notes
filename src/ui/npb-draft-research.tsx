@@ -20,7 +20,7 @@ export function NpbResearchedDraftPreview({data,team}:{data:DraftEvent;team:stri
         const c=candidates.get(p.candidateId)!,g=groups.get(c.id),outcome=draftResearchedPredictionOutcome(data,club.teamId,p.round);
         return <article key={p.round}>
           <Link className="player-row" to={`/NPB/talent/2026?view=candidates&q=${encodeURIComponent(c.name)}`}><span className="player-row__body"><small>{p.round===1?"1位・初回入札予想":`${p.round}位・残っている場合`} · {g?groupLabels[g]:"区分未確認"}</small><strong>{c.name}</strong><span>{c.affiliation} · {c.position}</span></span><span aria-hidden="true">→</span></Link>
-          <details><summary>{p.round}位の選択理由・答え合わせ</summary><p>{p.reason}</p><p>{outcome==="unavailable"?(p.round===1?"初回入札の直接証拠は未収録です。最終的な1位指名からは判定しません。":"この順位の支配下指名は未収録です。未収録を不的中にはしません。"):outcome==="match"?"収録済みの結果と一致しています。":outcome==="unverified"?"記事・所属の照合を確認中です。名前だけでは判定しません。":"収録済みの結果はこの案と異なります。"}</p>{p.round>1&&<p>当該候補が先に指名されていれば、この条件付き案は成立しません。</p>}<p>{c.context}</p></details>
+          <details><summary>{p.round}位の選択理由・答え合わせ</summary><p>{p.reason}</p><p>{outcome==="unavailable"?(p.round===1?"初回入札の直接証拠は未収録です。最終的な1位指名からは判定しません。":"この順位の支配下指名は未収録です。未収録を不的中にはしません。"):outcome==="not_applicable"?"その選手は前の順位ですでに指名され、この条件付き案は対象外です。":outcome==="match"?"収録済みの結果と一致しています。":outcome==="unverified"?"記事・所属の照合を確認中です。名前だけでは判定しません。":"収録済みの結果はこの案と異なります。"}</p>{p.round>1&&<p>当該候補が先に指名されていれば、この条件付き案は成立しません。</p>}<p>{c.context}</p></details>
         </article>;
       })}
     </section>)}

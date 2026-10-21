@@ -47,10 +47,22 @@ it("preserves explicitly unlinked tournament observations without inventing indi
 });
 
 it("revalidates carried evidence on source revision changes, including non-university rows and multiline result evidence",()=>{
-  const d=researchedDraftFixture();d.candidates=d.candidates.slice(0,1);const row="|11||[[架空選手]]||架空所属",source={...d.sources[0]!,revision:2};d.candidates[0]!.evidenceSha256=draftHash(row);
+  const d=researchedDraftFixture();d.candidates=d.candidates.slice(0,1);d.candidates[0]!.sourcePageId=5282993;d.sources[0]!.pageId=5282993;const row="|11||[[架空選手]]||架空所属",source={...d.sources[0]!,revision:2};d.candidates[0]!.evidenceSha256=draftHash(row);
   const incoming=[{source,content:row}];expect(()=>assertCarriedDraftEvidence(d,incoming)).not.toThrow();
   for(const content of ["|11||[[訂正後]]||架空所属",row+"\n"+row])expect(()=>assertCarriedDraftEvidence(d,[{source,content}])).toThrow(/Carried Draft evidence/);
   d.candidates=d.candidates.slice(0,1);d.candidates[0]!.evidenceSha256=draftHash("!1位\n"+row);expect(()=>assertCarriedDraftEvidence(d,[{source,content:"!1位\n"+row}])).not.toThrow();
+});
+it("holds changed roster revisions even when the same row moves to another role/section, retaining the proven predecessor",()=>{
+  const d=researchedDraftFixture(),source={...d.sources[0]!,revision:2},row="|11||[[架空選手]]||架空所属";d.candidates[0]!.evidenceSha256=draftHash(row);
+  for(const content of [row,"=== 社会人 ===\n|rowspan=\"1\"|捕手\n"+row,"=== U-18 ===\n|rowspan=\"1\"|投手\n"+row])expect(()=>assertCarriedDraftEvidence(d,[{source,content}])).toThrow(/revision\/context is frozen/);
+  expect(d.sources[0]!.revision).toBe(1);
+});
+it("marks an already-selected conditional target inapplicable, never a missed prediction",()=>{
+  const d=researchedDraftFixture(),target=d.researchedForecast!.predictions[1]!.candidateId;
+  d.selections=[{teamId:"npb:team:tigers",candidateId:target,type:"regular",round:1,status:"confirmed",sourcePageId:5209342,evidenceSha256:"e".repeat(64)}];
+  expect(draftResearchedPredictionOutcome(d,"npb:team:giants",2)).toBe("not_applicable");
+  d.selections[0]!.type="developmental";expect(draftResearchedPredictionOutcome(d,"npb:team:giants",2)).toBe("unavailable");
+  d.selections[0]!.type="regular";d.selections[0]!.round=2;expect(draftResearchedPredictionOutcome(d,"npb:team:giants",2)).toBe("unavailable");
 });
 it("recognizes an immutable retained predecessor after the active pin changes",()=>{
   const d=researchedDraftFixture(),bytes=new TextEncoder().encode(JSON.stringify(d)),old={bodySha256:draftHash(bytes),forecastSha256:draftHash(JSON.stringify(d.forecast))},current={...old,bodySha256:"c".repeat(64)};

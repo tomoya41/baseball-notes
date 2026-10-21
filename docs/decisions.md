@@ -422,3 +422,8 @@ The first sourced-event adapter admits only explicitly linked, cited, dated Wiki
 ## 2026-10-20: recovery diagnostics default to a minimal probe
 
 Manual NPB period verification defaults to connection-only and always probes before an explicitly selected full diagnostic. A separate bounded read-only projection check requires recent owner-console Free quota headroom. Readability, returned rows and local benchmarks are not scanned-row billing, Scheduled/Backup evidence, full integrity or Gate readiness. This prevents accidental heavy diagnostic retries while retaining the existing explicit complete validation path.
+
+
+## 2026-10-22 — Draft forecast editions and comparison scope
+
+Keep each premeeting forecast immutable. An initial-bid prediction is compared only with direct first-bid evidence, separately from final first-round selection and lottery success. Later-round conditional targets become inapplicable if a confirmed earlier regular selection already took the exact candidate; missing results and ambiguous identity remain distinct. Media research contributes bibliographic references and independent editorial reasoning, without redistributing article bodies or forecast tables. Roster-source revisions carrying candidate context require a separately reviewed migration rather than row-only proof reuse. This protects reproducibility, source attribution and fair before/after comparison.

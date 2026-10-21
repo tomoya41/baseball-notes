@@ -53,3 +53,7 @@ it("prioritizes researched club forecasts with attributed opinion links, preserv
   }finally{await f.close();}
   const g=await mount("?forecast=expanded",false,d=>Object.assign(d,researchedDraftFixture()));try{expect(g.host.querySelectorAll("article")).toHaveLength(36);expect(g.host.textContent).toContain("12球団の1〜3位予想");expect(g.host.textContent).not.toContain("球団事情から考える1〜3位予想");}finally{await g.close();}
 });
+it("explains that a conditional later-round target already selected earlier is outside the comparison",async()=>{
+  const f=await mount("?team=npb:team:giants",false,d=>{Object.assign(d,researchedDraftFixture());d.observedAt="2026-10-22T10:00:00Z";d.review!.reviewedAt="2026-10-22T10:01:00Z";d.eventState="in_progress";d.coverage="partial";d.selections=[{teamId:"npb:team:tigers",candidateId:d.researchedForecast!.predictions[1]!.candidateId,round:1,type:"regular",status:"confirmed",sourcePageId:5209342,evidenceSha256:"f".repeat(64)}];});
+  try{expect(f.host.textContent).toContain("前の順位ですでに指名され、この条件付き案は対象外");}finally{await f.close();}
+});

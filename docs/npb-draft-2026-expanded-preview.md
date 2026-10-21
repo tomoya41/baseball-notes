@@ -1,5 +1,7 @@
 # ドラフト2026：高校・大学・社会人・独立リーグと3位までの独自予想
 
+第2版の保存記録。現在の根拠付き第3版は [npb-draft-2026-researched-preview.md](npb-draft-2026-researched-preview.md) を参照。
+
 2026-10-21作成。従来の大学代表4年生18人・12球団の1位候補案は、その候補行・予想・作成時刻・hashを保存したまま、新しい開催前版 `2026-premeeting-v2` を追加する。結果・抽選は開催前なので0件。canonical DB / Current / Facts / Gateへの要求・writeは0。追加費用¥0。
 
 ## 出典と利用条件

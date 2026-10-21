@@ -48,7 +48,7 @@ UIは同じroute。既定で根拠付き版を開き、球団・保存版の切�
 
 ## 外部レビューの修正
 
-- P1：新しい記事revisionへ更新する際、前版から保持する高校・社会人・独立候補や結果の証拠が、その本文に一意に残るか再検証する。行が変わった・消えた・重複した場合は別reviewへ停止し、古い証拠hashを新revisionに付け替えない。既存revisionのまま保持するSourceはその出典を維持する。
+- P1：候補を持つ名簿Sourceのrevision/contextは固定する。行が同じでもrole・所属区分が移動する可能性があるため、revision変更は別のreview済みmigrationへ停止する。結果記事については保持する証拠行が一意に残るか検証し、実結果adapterでも対応を検証する。元のrevisionのまま保持するSourceはその出典を維持する。
 - P2：オフライン予想builderはactive pinだけでなくretained predecessorをhashで照合する。公開版切り替え後も同じ入力から再現できる。
 - P2：正式archive CLIに `--scope=preview`（既存5記事）と `--scope=research`（既存6記事）を追加。coreは従来2記事のまま。各scopeは1回の正規API、500KB上限、retry0、未知page/title拒否。新revisionを自動admitせずprivate候補として保存する。今回の実データは既存cacheだけで構築し、このコマンドによる新取得は0。
 - P2：初版保存版もURLの球団filterを適用する。
@@ -57,11 +57,12 @@ UIは同じroute。既定で根拠付き版を開き、球団・保存版の切�
 
 ## 検証記録
 
-- 全161テストファイル：1,719 PASS / WindowsでLinux専用1件skip。lint、strict typecheck、Web build PASS。最終版のVercel build PASS。
+- 全161テストファイル：1,723 PASS / WindowsでLinux専用1件skip。lint、strict typecheck、Web build PASS。最終版のVercel build PASS。
 - v2のretained predecessorからの再生成、v3の再生成、結果更新CLIのoffline replayは各body hashが固定版と一致。初版予想hash `25a1bb0d7a2c00e231b3e5510519ab13096fbdea06eb14f614fe22c81c5adbb9` 不変。Source要求0、canonical write0。
 - 実Chrome画面：360 Light/Dark、390 Light/Dark、768、1280。球団filter、初版切替、URL、Back、reload、4所属区分、独立リーグの長い球団名、検索empty、結果未収録を確認。横はみ出しなし。360pxで最初の候補がy818付近まで下がったため、重複説明を詳細へ整理しy593付近に改善。検索labelと入力文字が並んで狭くなる問題も修正。
 - 私有Before/After：`.data/draft-2026/expanded-visual/`。実表示の画像だけを採用し、loading/modalが写った途中画像はQA済みの根拠にしない。
 - Pixelホーム画面追加・起動はユーザー確認済み。新版ネイティブAPKのPixel更新、TalkBack、通信断cold startなどは未実施。既存ネイティブ保存データの削除・署名変更は0。
-外部Codex ReviewはP1/P2計6件を確認し修正。再レビューは依頼済みだが、一度は利用上限により失敗した。自己レビュー、Source証拠・immutable再現・UI実画面・独立fixtureで補完し、未完了の外部再レビューをPASSとは扱わない。追加課金0。
+外部Codex ReviewはP1/P2計9件を確認し修正。再レビューは依頼済みだが、一度は利用上限により失敗した。自己レビュー、Source証拠・immutable再現・UI実画面・独立fixtureで補完し、未完了の外部再レビューをPASSとは扱わない。追加課金0。
 
 最終archive再現で、監督の単独role行（`|監督`）を明示的に扱うfixtureも追加した。監督・コーチは採用せず、roleのrowspanを実際の行数だけ消費し、使い切ったroleの流用・欠けたspanを拒否する。実archiveからのv2再生成hashは固定版と一致。Androidの既存ドラフト試験も旧12人案の見出し・件数から、実際の根拠付き版36枠へ更新する。
+追加再レビューの3件も修正。名簿Sourceは行hashだけで新revisionへ付け替えず停止、v2/v3両builderも同じ保全検証を呼ぶ。2・3位候補が確認済み支配下の前順位ですでに指名されていた場合は `not_applicable` と表示し、育成指名や同順位内の先後は推定しない。名前・記事だけ一致する曖昧な候補は照合確認中。最終ローカル回帰は1,723 PASS / 1 Windows skip、lint/typecheck/Web/Vercel PASS。公開datasetのbody hashは不変。

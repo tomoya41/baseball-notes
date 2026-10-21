@@ -32,6 +32,10 @@ export function draftResearchedPredictionOutcome(data:DraftEvent,teamId:string,r
     if(first.length!==1)return "unavailable";
     return compare(first[0]!.candidateId);
   }
+  const earlier=data.selections.filter(s=>s.type==="regular"&&s.round<round);
+  if(earlier.some(s=>s.candidateId===prediction.candidateId))return "not_applicable";
+  const target=data.candidates.find(c=>c.id===prediction.candidateId);
+  if(earlier.some(s=>{const c=data.candidates.find(c=>c.id===s.candidateId);return target?.article&&target.article===c?.article||target?.name===c?.name;}))return "unverified";
   const result=data.selections.find(p=>p.teamId===teamId&&p.type==="regular"&&p.round===round);
   return result?compare(result.candidateId):"unavailable";
   function compare(actualId:string){
