@@ -573,6 +573,11 @@ public class ReleaseQualityTest {
         waitText("収録 122件");waitText("支配下 74 / 育成 48");waitText("当選は未確認");
         assertEquals("Bounded twenty result rows and three independent lottery groups","23",js("String(document.querySelectorAll('main article').length)"));
         assertEquals("Result list at 200 percent has no overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));screenshot("draft-2026-results-font-20-dark");
+        js("Array.from(document.querySelectorAll('main button')).find(b=>b.textContent==='次の20件').click()");waitText("2 / 7ページ");
+        assertEquals("Result page turns move focus to the visible result heading","true",js("document.activeElement.id==='draft-results-heading' && document.getElementById('draft-results-heading').getBoundingClientRect().top>=0 && document.getElementById('draft-results-heading').getBoundingClientRect().top<innerHeight"));
+        js("Array.from(document.querySelectorAll('main button')).find(b=>b.textContent==='前の20件').click()");waitText("1 / 7ページ");
+        // The two page changes are separate URL history entries; return to the archived forecast explicitly.
+        shell("input keyevent KEYCODE_BACK");waitText("2 / 7ページ");shell("input keyevent KEYCODE_BACK");waitText("1 / 7ページ");
         shell("input keyevent KEYCODE_BACK");waitText("会議前の固定予想（アーカイブ）");assertEquals("Draft Back restores archived forecast",route,js("location.hash"));
     }
     @Test public void japanSeriesIdOnlyColdGameBackStaysInPostseason() throws Exception {
