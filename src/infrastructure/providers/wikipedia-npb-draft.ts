@@ -47,7 +47,10 @@ export function assertCarriedDraftEvidence(previous:DraftEvent,pages:ReturnType<
     // Row-only hashes do not prove enclosing role/section/roster membership. Such revisions need a dedicated migration.
     if(page.source.pageId!==5282993&&previous.candidates.some(c=>c.sourcePageId===page.source.pageId))throw Error("Candidate roster revision/context is frozen; separate reviewed migration required");
     const lines=page.content.split("\n"),proofs=new Map<string,number>();
-    for(let i=0;i<lines.length;i++)for(const text of [lines[i]!,i?lines[i-1]+"\n"+lines[i]:null])if(text){const h=draftHash(text);proofs.set(h,(proofs.get(h)??0)+1);}
+    // The 2026 adapter admits 2/5-line team rows and 13-line matrix rows. Context is rechecked by that adapter and snapshot advancement.
+    for(let i=0;i<lines.length;i++)for(let n=1;n<=13&&i+n<=lines.length;n++){
+      const text=lines.slice(i,i+n).join("\n"),h=draftHash(text);proofs.set(h,(proofs.get(h)??0)+1);
+    }
     const rows=[...previous.candidates,...previous.selections,...previous.lotteries].filter(c=>c.sourcePageId===page.source.pageId);
     if(rows.some(c=>proofs.get(c.evidenceSha256)!==1))throw Error("Carried Draft evidence changed or removed; separate source/candidate review required");
   }
@@ -87,13 +90,13 @@ const proof=z.strictObject({pageId:z.literal(5282993),row:z.string().min(1).max(
 const reviewedSelection=z.strictObject({teamId:z.string(),type:z.enum(["regular","developmental"]),round:z.number().int().positive(),name:z.string(),article:z.string(),affiliation:z.string(),proof});
 const reviewedLottery=z.strictObject({attempt:z.number().int().positive(),candidateId:z.string(),teamIds:z.array(z.string()),winnerId:z.string().nullable(),proof});
 const reviewSchema=z.strictObject({reviewedBy:z.string().min(1).max(80),reviewedAt:z.iso.datetime(),eventState:z.enum(["in_progress","ended"]),eventProof:proof,selections:z.array(reviewedSelection),lotteries:z.array(reviewedLottery)});
-const teamNames:Record<string,string>={giants:"読売ジャイアンツ",tigers:"阪神タイガース",dragons:"中日ドラゴンズ",carp:"広島東洋カープ",swallows:"東京ヤクルトスワローズ",baystars:"横浜DeNAベイスターズ",hawks:"福岡ソフトバンクホークス",fighters:"北海道日本ハムファイターズ",lions:"埼玉西武ライオンズ",marines:"千葉ロッテマリーンズ",eagles:"東北楽天ゴールデンイーグルス",buffaloes:"オリックス・バファローズ"};
-const teamName=(id:string)=>{const value=teamNames[id.replace(/^npb:team:/,"")];if(!value)throw Error("Unknown team");return value;};
+export const draftTeamFullNames:Record<string,string>={giants:"読売ジャイアンツ",tigers:"阪神タイガース",dragons:"中日ドラゴンズ",carp:"広島東洋カープ",swallows:"東京ヤクルトスワローズ",baystars:"横浜DeNAベイスターズ",hawks:"福岡ソフトバンクホークス",fighters:"北海道日本ハムファイターズ",lions:"埼玉西武ライオンズ",marines:"千葉ロッテマリーンズ",eagles:"東北楽天ゴールデンイーグルス",buffaloes:"オリックス・バファローズ"};
+const teamName=(id:string)=>{const value=draftTeamFullNames[id.replace(/^npb:team:/,"")];if(!value)throw Error("Unknown team");return value;};
 /** Reviewed 2025-style team tables. Selection is not evidence of signing or roster membership. */
 export function draftTeamTableRows(content:string){
   const section=content.split("== 球団別指名選手一覧 ==\n")[1];if(!section)return [];
   const result:{teamId:string;type:"regular"|"developmental";round:number;name:string;article:string;affiliation:string;row:string}[]=[];
-  for(const [key,team] of Object.entries(teamNames)){
+  for(const [key,team] of Object.entries(draftTeamFullNames)){
     const marker=`=== ${team} ===\n`,parts=section.split(marker);if(parts.length===1)continue;if(parts.length!==2)throw Error("Duplicate team section");
     const table=parts[1]!.split(/\n==+ /)[0]!;let type:"regular"|"developmental"|null=null,header=false;
     for(const raw of table.split("|-\n")){

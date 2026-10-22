@@ -10,6 +10,7 @@ import pin from "../src/data/npb-draft-2026-release.json";
 import retained from "../src/data/npb-draft-retained-releases.json";
 import {assertImmutableReleaseTag,assertReleasePredecessor} from "../src/data/immutable-release-tag";
 import {draftUpdateReport} from "../src/application/npb-draft-update-report";
+import {applyReviewedDraft2026Results} from "../src/infrastructure/providers/wikipedia-npb-draft-results";
 
 const arg=(name:string)=>process.argv.find(a=>a.startsWith(`--${name}=`))?.slice(name.length+3);
 const archive=arg("archive"),output=arg("output"),review=arg("review"),previous=arg("previous");
@@ -25,7 +26,11 @@ let old:ReturnType<typeof draftEventSchema.parse>|undefined;
 if(previous){const bytes=await readFile(previous);if(draftHash(bytes)!==pin.bodySha256)throw Error("Unpinned previous Draft snapshot");old=draftEventSchema.parse(JSON.parse(bytes.toString()));
   if(old.expandedForecast)data=carryDraftPreview(old,data,a.pages);
 }
-if(review){if(!previous||!process.argv.includes("--review-confirmed"))throw Error("Reviewed update needs prior immutable dataset and explicit review confirmation");data=applyReviewedDraftResults(data,event.content,JSON.parse(await readFile(review,"utf8")),a.observedAt);}
+if(review){
+  if(!previous||!process.argv.includes("--review-confirmed"))throw Error("Reviewed update needs prior immutable dataset and explicit review confirmation");
+  const reviewed=JSON.parse(await readFile(review,"utf8"));
+  data=reviewed.format==="2026_tables"?applyReviewedDraft2026Results(data,event.content,reviewed,a.observedAt):applyReviewedDraftResults(data,event.content,reviewed,a.observedAt);
+}
 let report:ReturnType<typeof draftUpdateReport>|undefined;
 data=draftEventSchema.parse(data);
 if(old){assertDraftSnapshotAdvance(old,data);report=draftUpdateReport(old,data);}
