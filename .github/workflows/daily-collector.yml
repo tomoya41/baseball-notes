@@ -208,9 +208,6 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Publish complete artifact to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
@@ -219,6 +216,11 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      - name: Enforce final draft first-publication deadline
+        run: npx tsx scripts/verify-npb-draft-final-window.ts
+      - name: Publish complete artifact to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
       - name: Verify coordinated public projection family
         env:
           EXPECTED_GENERATED_AT: ${{ needs.collect.outputs.generated_at }}

@@ -102,6 +102,7 @@ export const finalResultBridgesSchema = z.array(z.strictObject({
   resultEvidenceSha256: z.string().regex(/^[a-f0-9]{64}$/), identityEvidenceUrls: z.array(url).min(2).max(4), reviewedAt: z.iso.datetime(),
 })).max(36).superRefine((bs, ctx) => {
   if (new Set(bs.map(b => b.forecastCandidateId)).size !== bs.length || new Set(bs.map(b => b.resultCandidateId)).size !== bs.length) ctx.addIssue({ code: "custom", message: "Ambiguous final result identity bridge" });
+  if (bs.some(b => new Set(b.identityEvidenceUrls).size < 2)) ctx.addIssue({ code: "custom", message: "Independent result bridge evidence required" });
 });
 export type FinalResultBridge = z.infer<typeof finalResultBridgesSchema>[number];
 export function finalDraftOutcome(f: FinalDraftForecast, base: DraftEvent, teamId: string, round: number, bridges: FinalResultBridge[] = []) {
@@ -114,7 +115,18 @@ export function finalDraftOutcome(f: FinalDraftForecast, base: DraftEvent, teamI
   const reviewed = bridges.filter(b => b.forecastCandidateId === expected.id);
   if (reviewed.length > 1) return "unverified";
   const bridge = reviewed[0];
-  const bridged = bridge && Date.parse(bridge.reviewedAt) >= Date.parse(base.observedAt) && bridge.identityEvidenceUrls.some(u => expected.identityUrls.includes(u)) && base.candidates.find(c => c.id === bridge.resultCandidateId && c.name === bridge.name && c.affiliation === bridge.affiliation && c.article === bridge.article && c.evidenceSha256 === bridge.resultEvidenceSha256);
+  // A shared applicant-list or team-roster URL cannot establish a personal identity relation.
+  // Require an individually admitted source not shared by another forecast candidate, and exact reviewed names/schools.
+  // Abbreviations/changed names stay unverified rather than being silently normalized.
+  const individualUrls = expected.identityUrls.filter(u =>
+    !f.candidates.some(c => c.eligibility.rule === "student_list" && c.eligibility.urls.includes(u)))
+    .filter(u => !f.candidates.some(c => c.id !== expected.id && c.identityUrls.includes(u)));
+  const resultSource = base.sources.find(s => s.pageId === actualCandidate.sourcePageId);
+  const resultUrl = resultSource && `https://ja.wikipedia.org/w/index.php?curid=${resultSource.pageId}&oldid=${resultSource.revision}`;
+  const bridged = bridge && bridge.name === expected.name && bridge.affiliation === expected.affiliation &&
+    Date.parse(bridge.reviewedAt) >= Date.parse(base.observedAt) && bridge.identityEvidenceUrls.some(u => individualUrls.includes(u)) &&
+    resultUrl && bridge.identityEvidenceUrls.includes(resultUrl) &&
+    base.candidates.find(c => c.id === bridge.resultCandidateId && c.name === bridge.name && c.affiliation === bridge.affiliation && c.article === bridge.article && c.evidenceSha256 === bridge.resultEvidenceSha256);
   const identity = legacy || bridged;
   if (!identity) return "unverified";
   if (identity.id === actualCandidate.id) return "match";

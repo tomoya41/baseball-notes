@@ -280,6 +280,8 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      - name: Enforce final draft first-publication deadline
+        run: npx tsx scripts/verify-npb-draft-final-window.ts
       - uses: actions/deploy-pages@v4
         id: deployment
       - name: Verify preserved NPB public projection family

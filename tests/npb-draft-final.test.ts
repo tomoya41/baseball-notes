@@ -69,10 +69,14 @@ it("cannot join new candidates to actual results by name or treat developmental 
   expect(finalDraftOutcome(data, base, p.teamId, p.round)).toBe("unavailable");
   base.selections[0]!.type = "regular";
   expect(finalDraftOutcome(data, base, p.teamId, p.round)).toBe("unverified");
-  const bridge = { forecastCandidateId: expected.id, resultCandidateId: actual.id, name: actual.name, affiliation: actual.affiliation, article: actual.article, resultEvidenceSha256: actual.evidenceSha256, identityEvidenceUrls: [expected.identityUrls[0]!, "https://ja.wikipedia.org/"], reviewedAt: base.observedAt };
+  const resultSource = base.sources.find(s => s.pageId === actual.sourcePageId)!;
+  const bridge = { forecastCandidateId: expected.id, resultCandidateId: actual.id, name: actual.name, affiliation: actual.affiliation, article: actual.article, resultEvidenceSha256: actual.evidenceSha256, identityEvidenceUrls: [expected.identityUrls[0]!, `https://ja.wikipedia.org/w/index.php?curid=${resultSource.pageId}&oldid=${resultSource.revision}`], reviewedAt: base.observedAt };
   expect(finalDraftOutcome(data, base, p.teamId, p.round, [bridge])).toBe("match");
+  expect(finalDraftOutcome(data, base, p.teamId, p.round, [{ ...bridge, identityEvidenceUrls: [expected.eligibility.urls[0]!, "https://example.com/"] }])).toBe("unverified");
   expect(finalDraftOutcome(data, base, p.teamId, p.round, [{ ...bridge, article: "別人" }])).toBe("unverified");
   expect(finalDraftOutcome(data, base, p.teamId, p.round, [bridge, bridge])).toBe("unverified");
+  actual.name = "別人";
+  expect(finalDraftOutcome(data, base, p.teamId, p.round, [{ ...bridge, name: actual.name }])).toBe("unverified");
 });
 it("requires the exact unchanged legacy observation; preserving names alone is insufficient", () => {
   const data = parsed(), base = draftFixture();

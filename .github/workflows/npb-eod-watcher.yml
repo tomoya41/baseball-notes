@@ -143,8 +143,6 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/deploy-pages@v4
-        id: deployment
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
@@ -153,6 +151,10 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      - name: Enforce final draft first-publication deadline
+        run: npx tsx scripts/verify-npb-draft-final-window.ts
+      - uses: actions/deploy-pages@v4
+        id: deployment
       - name: Verify coordinated public projection family
         env:
           EXPECTED_GENERATED_AT: ${{ needs.watch.outputs.generated_at }}
