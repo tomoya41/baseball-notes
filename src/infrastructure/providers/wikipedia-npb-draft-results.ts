@@ -104,7 +104,7 @@ export function applyReviewedDraft2026Results(base: DraftEvent, content: string,
   const d = applyReviewedDraftResults(base, content, { reviewedBy: review.reviewedBy, reviewedAt: review.reviewedAt, eventState: "in_progress", eventProof: review.eventProof, selections: [], lotteries: [] }, observedAt, buildTime);
   if (review.eventState === "ended") {
     const row = review.completionRow;
-    if (!row || content.split("\n").filter(l => l === row).length !== 1 || row.replace(/<ref\b[^>]*>[\s\S]*?<\/ref>|<ref\b[^>]*\/>/g, "") !== "なお、今回は育成選手選択会議が終了した後にスペシャルトークショーを開催した。") throw Error("Missing explicit retrospective completion evidence");
+    if (!row || content.split("\n").filter(l => l === row).length !== 1 || !row.replace(/<ref\b[^>]*>[\s\S]*?<\/ref>|<ref\b[^>]*\/>/g, "").startsWith("なお、今回は育成選手選択会議が終了した後にスペシャルトークショーを開催した。")) throw Error("Missing explicit retrospective completion evidence");
     d.eventState = "ended";
   }
   for (const entry of review.selections) {

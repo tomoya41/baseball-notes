@@ -11,6 +11,7 @@ import retained from "../src/data/npb-draft-retained-releases.json";
 import {assertImmutableReleaseTag,assertReleasePredecessor} from "../src/data/immutable-release-tag";
 import {draftUpdateReport} from "../src/application/npb-draft-update-report";
 import {applyReviewedDraft2026Results} from "../src/infrastructure/providers/wikipedia-npb-draft-results";
+import resultReview from "../src/data/npb-draft-2026-result-review.json";
 
 const arg=(name:string)=>process.argv.find(a=>a.startsWith(`--${name}=`))?.slice(name.length+3);
 const archive=arg("archive"),output=arg("output"),review=arg("review"),previous=arg("previous");
@@ -30,6 +31,9 @@ if(review){
   if(!previous||!process.argv.includes("--review-confirmed"))throw Error("Reviewed update needs prior immutable dataset and explicit review confirmation");
   const reviewed=JSON.parse(await readFile(review,"utf8"));
   data=reviewed.format==="2026_tables"?applyReviewedDraft2026Results(data,event.content,reviewed,a.observedAt):applyReviewedDraftResults(data,event.content,reviewed,a.observedAt);
+  if(reviewed.format==="2026_tables"){
+    if(event.source.pageId!==resultReview.pageId||event.source.revision!==resultReview.revision||event.source.contentSha256!==resultReview.contentSha256||data.selections.length!==resultReview.accepted||data.selections.filter(s=>s.type==="regular").length!==resultReview.regular||data.selections.filter(s=>s.type==="developmental").length!==resultReview.developmental||data.selections.some(s=>resultReview.held.some(h=>h.teamId===s.teamId&&h.type===s.type&&h.round===s.round)))throw Error("Result release differs from reviewed public admission/holds");
+  }
 }
 let report:ReturnType<typeof draftUpdateReport>|undefined;
 data=draftEventSchema.parse(data);

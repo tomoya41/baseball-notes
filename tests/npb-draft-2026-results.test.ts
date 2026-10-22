@@ -27,7 +27,7 @@ it("supports only explicit display wrappers and provisional links, without inven
   for (const [row, matrix, school] of [
     ["架空三", "<small>[[架空三|架空<br/>三]]</small>", "[[架空大学]]"],
     ["{{仮リンク|架空三|ko|가상}}", "{{仮リンク|架空三|ko|가상}}", "{{仮リンク|架空校|label=架空大学|en|Example College}}"],
-  ]) { const a = auditDraft2026ResultTables(fixture(row, matrix, school)); expect(a.rows).toHaveLength(3); expect(a.quarantine).toEqual([]); const c = a.rows.find(r => r.type === "developmental")!; expect(c.name).toBe("架空三"); expect(c.affiliation).toBe("架空大学"); if (row.startsWith("{{")) expect(c.article).toBeNull(); }
+  ] as const) { const a = auditDraft2026ResultTables(fixture(row, matrix, school)); expect(a.rows).toHaveLength(3); expect(a.quarantine).toEqual([]); const c = a.rows.find(r => r.type === "developmental")!; expect(c.name).toBe("架空三"); expect(c.affiliation).toBe("架空大学"); if (row.startsWith("{{")) expect(c.article).toBeNull(); }
 });
 it("holds conflicting or unsupported rows rather than normalizing names or filling missing cells", () => {
   const conflict = auditDraft2026ResultTables(fixture("架空邊", "[[架空辺]]")); expect(conflict.rows).toHaveLength(2); expect(conflict.quarantine[0]!.reason).toBe("matrix_team_table_conflict");
@@ -57,4 +57,9 @@ it("retains multiline evidence across an append-only revision but rejects change
   const nextSource = { ...source, revision: 3, contentSha256: draftHash(text + "\n追記") };
   expect(() => assertCarriedDraftEvidence(d, [{ source: nextSource, content: text + "\n追記" }])).not.toThrow();
   expect(() => assertCarriedDraftEvidence(d, [{ source: nextSource, content: text.replace("|架空三\n|外野手", "|別の架空人物\n|外野手") }])).toThrow(/evidence changed/);
+});
+
+it("accepts a reviewed retrospective completion sentence followed by source details", () => {
+  const text = fixture().replace(completion, completion + "出演者の説明が続く。"), r = { ...review(text), completionRow: completion + "出演者の説明が続く。" };
+  expect(apply(text, r).eventState).toBe("ended");
 });

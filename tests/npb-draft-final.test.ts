@@ -16,7 +16,7 @@ it("pins all 36 reviewed, unique final selections without changing the three old
   expect(data.candidates.filter(c => c.group === "university")).toHaveLength(23);
   expect(data.candidates.filter(c => c.group === "corporate")).toHaveLength(5);
   expect(data.candidates.filter(c => c.group === "independent")).toHaveLength(1);
-  expect(readFileSync("src/data/npb-draft-2026-release.json", "utf8")).toContain(data.baseBodySha256);
+  expect(readFileSync("src/data/npb-draft-2026-release.json", "utf8") + readFileSync("src/data/npb-draft-retained-releases.json", "utf8")).toContain(data.baseBodySha256);
   expect(data.candidates.some(c => ["山田凜虎", "石田雄星", "福島陽奈汰", "前田侑仁"].includes(c.name))).toBe(false);
 });
 it("requires exact 12 by 3 scope and the first-bid lottery allocation", () => {
