@@ -431,3 +431,7 @@ Keep each premeeting forecast immutable. An initial-bid prediction is compared o
 ## 2026-10-22 — Candidate admission precedes forecast display
 
 Representative/team roster observations do not establish draft eligibility. Apply a separate, explicitly reviewed name-and-school application check before displaying student predictions. Retain immutable older editions with visible corrections, withhold unsupported slots and their scoring, and default new/changed identities or evidence to unverified. Nonstudents use different eligibility rules and must not be labeled non-applicants merely because student lists do not contain them. See [the correction](npb-draft-2026-eligibility-correction.md).
+
+## 2026-10-23 — Premeeting Release and postmeeting app archive are distinct publications
+
+An unchanged forecast publicly released before the meeting may be shown later as an explicitly postmeeting archive after owner authorization. Preserve its exact source/pin/digests; independently verify the original public Release and asset identities/timestamps. Never call this premeeting app publication or authorize a newly created late forecast. Keep the original first-Pages deadline rule for premeeting mode, and keep actual results in a separate immutable dataset. See [archive and results delivery](npb-draft-results-2026.md).
