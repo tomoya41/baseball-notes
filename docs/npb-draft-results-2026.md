@@ -13,7 +13,7 @@
 
 明示的な`postmeeting_archive` modeだけを追加。通常の事前公開modeは従来どおり、期限後に未公開のPages assetを新規配信できない。全6 Pages経路のdeploy直前検証は残す。
 
-アーカイブmodeは会議開始後のみ使用でき、公開GitHub APIへ1 bounded request、64KB上限・15秒・retry 0でReleaseを照合する。ID・tag・公開時刻・公開状態・asset ID/size/digest/URL・会議前の作成/更新時刻が固定値と一致する場合だけ採用する。ローカル本文のSHAとlevel-9 gzipのSHAも公開assetのdigestと一致させる。メタデータ時刻だけで過去公開を認定せず、API失敗・変更・期限後のasset差し替えは停止する。
+アーカイブmodeは会議開始後のみ使用でき、公開GitHub APIへ1 bounded request、64KB上限・15秒・retry 0でReleaseを照合する。ID・tag・公開時刻・公開状態・asset ID/size/digest/URL・会議前の作成/更新時刻が固定値と一致する場合だけ採用する。ローカル本文のSHAに加え、公開済みgzipを取得して圧縮SHA・展開後SHA・ローカル本文の完全一致を確認する（gzip再圧縮はOS/zlib差があるため証拠にしない）。メタデータ時刻だけで過去公開を認定せず、API失敗・変更・期限後のasset差し替えは停止する。
 
 この証拠は会議前の**Release**公開を示すもので、会議前の**アプリ／Pages**公開証拠には転用しない。新しい結果は別のimmutable datasetへ保存し、予想を書き換えない。canonical DBへのwrite、Current roster認定、HOT/Ranking Gateの変更は行わない。
 
