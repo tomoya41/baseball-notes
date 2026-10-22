@@ -47,7 +47,7 @@ it("provides explicit retry and never silently uses a held old forecast after fi
   const f = await mount("preview", "all", "", true); try { expect(f.host.textContent).toContain("直前最終予想を取得できません"); expect(f.host.querySelectorAll("article")).toHaveLength(0); expect(f.host.querySelector("button")!.textContent).toBe("再試行"); } finally { await f.close(); }
 });
 it("preserves archived URL meanings and final forecast deep links", () => {
-  expect(draftEventQuery(new URLSearchParams()).forecast).toBe("final");
+  expect(draftEventQuery(new URLSearchParams()).forecast).toBe("latest");
   for (const edition of ["final", "latest", "expanded", "original"]) {
     const q = `view=preview&team=npb%3Ateam%3Agiants&forecast=${edition}`;
     expect(draftEventQuery(new URLSearchParams(q)).valid).toBe(true);

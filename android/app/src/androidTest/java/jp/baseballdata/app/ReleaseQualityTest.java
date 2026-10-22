@@ -557,7 +557,7 @@ public class ReleaseQualityTest {
         shell("input keyevent KEYCODE_BACK");waitText("日程・試合詳細");assertEquals("System Back returns to exact series",route,js("location.hash"));
     }
     @Test public void draftPreviewRemainsSeparateFromResultsAtLargeFont() throws Exception {
-        Intent link=new Intent(Intent.ACTION_VIEW,Uri.parse("baseballnotes://NPB/talent/2026?view=preview"));
+        Intent link=new Intent(Intent.ACTION_VIEW,Uri.parse("baseballnotes://NPB/talent/2026?view=preview&forecast=final"));
         link.setClassName("com.tomoya41.baseballnotes","jp.baseballdata.app.MainActivity");
         scenario=ActivityScenario.launch(link);waitText("2026ドラフト直前最終予想");waitText("保留0枠");
         String route=js("location.hash");setTheme("light","ライト");js("location.hash='"+route+"'");waitText("2026ドラフト直前最終予想");

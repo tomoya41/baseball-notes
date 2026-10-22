@@ -1,0 +1,6 @@
+import { it, expect, vi } from "vitest";
+import { verifyFinalDraftWindow } from "../scripts/npb-draft-final-window";
+import data from "../src/data/npb-draft-2026-final-forecast.json";
+it("normal builds before the guarded window make no remote calls", async () => { const request = vi.fn<typeof fetch>(); expect(await verifyFinalDraftWindow(request, Date.parse("2026-10-22T07:34:59Z"))).toEqual({ alreadyPublished: false, httpReads: 0 }); expect(request).not.toHaveBeenCalled(); });
+it("a delayed normal build cannot stage a first forecast, even with earlier frozen metadata", async () => { const request = vi.fn(async () => new Response("", { status: 404 })); await expect(verifyFinalDraftWindow(request, Date.parse("2026-10-22T07:50:00Z"))).rejects.toThrow(/prior publication not verified/); expect(request).toHaveBeenCalledTimes(1); });
+it("postmeeting maintenance requires an exact public immutable body", async () => { const request = vi.fn(async () => new Response(JSON.stringify(data) + "\n")); expect(await verifyFinalDraftWindow(request, Date.parse("2026-10-23T00:00:00Z"))).toEqual({ alreadyPublished: true, httpReads: 1 }); await expect(verifyFinalDraftWindow(async () => new Response("{}"), Date.parse("2026-10-23T00:00:00Z"))).rejects.toThrow(/immutable pin/); });

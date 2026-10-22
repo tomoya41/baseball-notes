@@ -3,8 +3,10 @@ import { join } from "node:path";
 import { createHash } from "node:crypto";
 import pin from "../src/data/npb-draft-final-release.json";
 import { finalDraftForecastSchema } from "../src/domain/npb-draft-final";
+import { verifyFinalDraftWindow } from "./npb-draft-final-window";
 
 export async function stageNpbFinalDraft(root: string) {
+  await verifyFinalDraftWindow();
   // Reviewed editorial source, not a provider dump. Its exact immutable projection is pinned independently of result facts.
   const f = finalDraftForecastSchema.parse(JSON.parse(await readFile("src/data/npb-draft-2026-final-forecast.json", "utf8")));
   const body = Buffer.from(JSON.stringify(f) + "\n");

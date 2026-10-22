@@ -63,7 +63,7 @@ PR #62の資格確認・訂正を維持する。旧第1〜3版、Wikipediaの観
 
 1位は**最終的な支配下指名**との比較で、初回入札の的中率と混ぜない。2・3位も当該球団・支配下・順位で比較。旧27候補は凍結したID・学校・氏名・行hash一致を確認。新9候補は結果収録後に独立したID橋渡しを別reviewするまで照合確認中。氏名・所属だけで一致判定せず、未収録を不的中・育成指名を支配下としない。結果更新のoffline reportに本版の36比較を追加するが、予想自体は書き換えない。
 
-新しい既定表示は最終版、`forecast=latest`は第3版、`expanded`は第2版、`original`は第1版を保持。候補リンクも保存版の文脈を維持。Back／Reload／share／Android deep linkの条件を検証。最終版のロード失敗を未確認の旧版へ黙ってフォールバックさせない。
+新しいHome／特集入口は明示的な`forecast=final`で最終版へ。既存の無指定URLと`forecast=latest`は第3版、`expanded`は第2版、`original`は第1版を保持。候補リンクも保存版の文脈を維持。Back／Reload／share／Android deep linkの条件を検証。最終版のロード失敗を未確認の旧版へ黙ってフォールバックさせない。
 
 65,249 bytes JSON / 11,334 bytes gzip、1ファイルを追加。特集を開いた時だけ従来の結果snapshot1要求＋最終版1要求。Home追加fetch 0、canonical DB要求0、write 0。36行上限、候補検索も36人内。初期JSへ全予想データを含めない。旧3版・Current/Historical・CS/日本シリーズ・MLB・Coverage/Gate・個人保存形式は変更しない。最新Turso readbackを行っていないのでremote canonical integrity PASSとはしない。
 

@@ -1,9 +1,16 @@
 import { publicAssetBase } from "../app/platform";
 import { publicDataFetch, rememberPublicResponse } from "../infrastructure/public-response-cache";
-import { finalDraftForecastSchema } from "../domain/npb-draft-final";
+import { finalDraftForecastSchema, type FinalDraftForecast } from "../domain/npb-draft-final";
 import pin from "../data/npb-draft-final-release.json";
 
-export async function readNpbFinalDraft(request: typeof fetch = publicDataFetch) {
+let admitted: Promise<FinalDraftForecast> | null = null;
+export function readNpbFinalDraft(request: typeof fetch = publicDataFetch) {
+  if (request !== publicDataFetch) return loadFinalDraft(request);
+  // The content-addressed edition never changes. Keep one validated request across preview/candidate navigation.
+  admitted ??= loadFinalDraft(request).catch(error => { admitted = null; throw error; });
+  return admitted;
+}
+async function loadFinalDraft(request: typeof fetch) {
   const response = await request(`${publicAssetBase()}data/npb/draft/${pin.sha256}/final-2026.json`);
   if (!response.ok) throw Error(`Final forecast HTTP ${response.status}`);
   const text = await response.text(), bytes = new TextEncoder().encode(text);
