@@ -24,6 +24,8 @@ import { npbJapanSeriesSchema, assertJapanSeriesAdvancement } from "../src/domai
 import draftPin from "../src/data/npb-draft-2026-release.json";
 import retainedDrafts from "../src/data/npb-draft-retained-releases.json";
 import { draftEventSchema } from "../src/domain/npb-draft-event";
+import finalDraftPin from "../src/data/npb-draft-final-release.json";
+import { finalDraftForecastSchema, assertFinalDraftBase } from "../src/domain/npb-draft-final";
 
 export async function verifyRetainedFiles(read:(path:string)=>Promise<Uint8Array>,files:Record<string,{bytes:number;sha256:string}>) {
   for(const [file,expected] of Object.entries(files)) {
@@ -80,6 +82,11 @@ for(const pin of [...retainedDrafts,draftPin] as (typeof draftPin)[]){
   const bytes=await load(`../draft/${pin.sha256}/draft-2026.json`),data=draftEventSchema.parse(JSON.parse(bytes.toString()));
   if(bytes.length!==pin.bytes||createHash("sha256").update(bytes).digest("hex")!==pin.bodySha256||createHash("sha256").update(JSON.stringify(data.forecast)).digest("hex")!==pin.forecastSha256)throw Error("Draft publication mismatch");
 }
+const finalDraftBytes=await load(`../draft/${finalDraftPin.sha256}/final-2026.json`);
+if(finalDraftBytes.length!==finalDraftPin.bytes||createHash("sha256").update(finalDraftBytes).digest("hex")!==finalDraftPin.bodySha256)throw Error("Final draft publication mismatch");
+const finalDraft=finalDraftForecastSchema.parse(JSON.parse(finalDraftBytes.toString()));
+const draftBase=draftEventSchema.parse(JSON.parse((await load(`../draft/${draftPin.sha256}/draft-2026.json`)).toString()));
+assertFinalDraftBase(finalDraft,draftBase);
 if(japan.csSeriesBodySha256!==japanPin.csSeriesBodySha256||japan.csSeriesBodySha256!==seriesPin.bodySha256||japan.series.id!==japanPin.seriesId||JSON.stringify(japan.series.games.map(g=>g.gameId))!==JSON.stringify(japanPin.gameIds))throw Error("Japan Series publication identity mismatch");
 assertJapanSeriesAdvancement(japan,series);
 if(cs.inputSha256!==csPin.inputSha256||cs.games.length!==csPin.games||cs.rows.length!==csPin.rows||cs.players.length!==csPin.players)throw Error("CS publication generation mismatch");

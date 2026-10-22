@@ -1,0 +1,92 @@
+# 2026ドラフト直前最終予想 — 固定版 v4
+
+## 範囲と固定
+
+会議開始予定は **2026-10-22 16:50 JST**。予想の情報確認・最終固定時点 **13:04:06.801 JST**。結果は0件の既存snapshotを使用し、会議後の実結果は使用していない。実際の初公開・Pages時刻は末尾のdelivery記録を参照する。開始時刻以降の新しい事前予想の初公開は禁止する。通常の後日のビルド・結果表示の更新と、予想自体の新規公開を区別する。
+
+PR #62の資格確認・訂正を維持する。旧第1〜3版、Wikipediaの観測行、旧pin・Release assetは変更しない。本版は独立した編集データ・pin・immutable asset。旧版の保留16枠を解除するものではない。山田凜虎・石田雄星・福島陽奈汰などの未確認候補は本版へ入れていない。「前田侑仁」を「前田侑大」へ名前だけで直す処理も追加していない。
+
+36人・36枠：高校7、大学23、社会人5、独立リーグ1。保留0。候補全体の網羅性・公式評価順位・指名確率は主張しない。資格の編集審査と指名の独自予想を分離し、NPBが予想を承認したとは表示しない。
+
+## 資格とidentity
+
+- 学生30人は[日本高野連の2026年NPB対象者欄](https://www.jhbf.or.jp/pro-aspiring/2026.html)または[全日本大学野球連盟の2026年NPB対象者欄](https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026)の**氏名と学校**を個別に照合。同じページのNPB対象外欄は使わない。既存22人はPR #62の学校・原記事・行hash一致を保持。新規学生8人は学校自身の個別ページ・志望届提出発表・所属学年・試合報告等を追加照合する。牟禮翔は高野連の2025年公式国際親善試合の氏名・学校・当時の学年・外野手と、2026年の対象者欄を照合。すべての根拠URLと照合内容は本版の各candidateに保持する。
+- 社会人5人は学生の志望届を要求しない。[選手会公開の新人選手選択会議規約2010年版・第3条](https://jpbpa.net/wp-content/uploads/2021/12/rp2010.pdf)を画像で確認し、[2026-10-21の会議前ルール解説](https://www.nikkansports.com/baseball/news/202610210000116.html)と照合。2010年版を2026年の改訂版と偽らない。大卒は2シーズン、高卒等は3シーズンの扱い、大学中退・元NPB・外国プロ経歴等を区別する。本版の5人は大学卒業後の国内社会人経歴を確認した範囲だけ。
+- 樋口新：王子公式個別紹介（2002-06-28、愛知工業大学）＋[王子自身の2025年新人記事](https://note.ojiholdings.co.jp/n/n5461dafe84ab)＋[愛知県の2026年本人取材](https://aichi-sports.jp/pickup/6858/)。2025年入社、2026年は大卒2シーズン目。
+- 柴﨑聖人：王子公式（2002-04-04、岐阜第一／大阪経済大学）＋同じ王子・愛知県記事。[関西六大学野球連盟の2024-10-01個別発表](https://www.kan6bb.jp/wp_kan6/wp-content/uploads/2024/10/a54b4fbc591e88b7ae03cd961b16a279.pdf)を画像でも確認し、氏名・大阪経済大学4回生・2002年生・岐阜第一高校を照合。2025年入社、2シーズン目。旧Wikipediaの「柴崎」IDと名前だけで自動接続せず、本版に個別審査した特集IDを作る。既存canonical IDの再採番ではない。
+- 谷脇弘起：[日本生命公式の所属・立命館大学経歴](https://www.nissay.co.jp/enjoy/sports/baseball/member.html)＋[2024-04-11新加入発表](https://www.nissay.co.jp/enjoy/sports/baseball/news/20240411.html)。大卒3シーズン目。
+- 熊田任洋：[トヨタ公式個別ページ](https://sports.gazoo.com/baseball/player/post-82.html)（2001-04-15、早稲田大学）＋[2024-11-05の入社1年目一次報道](https://www.sponichi.co.jp/baseball/news/2024/11/05/kiji/20241105s00001003051000c.html?page=1)。大卒3シーズン目。20MBを超える年鑑の再取得・公開は行わない。
+- 藤澤涼介：[東京ガス公式個別ページ](https://www.tg-baseballclub.com/locker_room/24.html)（2002-06-04、横浜国立大学、在籍2年目）＋[JABAの2025-07-15新人記事](https://www.jaba.or.jp/topics/detail/?id=22270)。ページのROOKIEタグだけから在籍年数を決めない。
+- 三浦遼大：[2026年茨城公式個別ページ](https://www.ibaraki-planets.jp/team/ryodai_miura/index.html)の氏名・2006-01-02・青森山田高校・BCL3年目・大学等なし、[BCリーグ2025年本人コメント付き告知](https://bc-l.jp/news.php?keyno=1570)の球団・背番号19・氏名を確認。高校卒業後の独立リーグ経歴を学生・社会人と分ける。大学中退直後の候補へこの条件を一般化しない。
+
+新規学生：有馬伽久／立命館（大学提出発表id=1031）、川尻啓人／亜細亜（個別ページkeito_kawajiri、生年月日2004-10-23・4年）、福原聖矢／明治（大学10月5日発表・六大学公式記録20233004）、田代旭／筑波（個別ページasahi-tashiro・9月27日公式試合報告、体育4／花巻東／捕手）、伊藤櫂人／中央（大学10月15日会見案内、文学部4年／大阪桐蔭／内野手）、仲井慎／駒澤（大学10月15日報告、法4／投手・出身高校公式パンフレット）、牟禮翔／九州国際大付（2025年公式代表表の外野手・当時2年と2026年対象者欄を照合）、内藤蒼／浦和学院（学校自身の7月3日取材、3年／捕手）。リンクはdataset内に保持する。
+
+## 独自の36枠と抽選シナリオ
+
+| 球団 | 初回入札予想 | 1位獲得予想 | 2位 | 3位 | 狙い |
+|---|---|---|---|---|---|
+| 巨人 | 榊原七斗 | 榊原七斗 | 池田聖摩 | 内藤蒼 | 外野・内野・捕手の世代更新 |
+| 阪神 | 渡部海 | 渡部海 | 谷脇弘起 | 伊藤櫂人 | 捕手優先、投手と内野を補完 |
+| 中日 | 渡部海 | 川尻啓人 | 杉本真滉 | 星野世那 | 抽選敗退後は年代を分けた投手補強 |
+| 広島 | 宮原廉 | 宮原廉 | 田代旭 | 山里宝 | 投手・捕手・内野の分散 |
+| ヤクルト | 鈴木泰成 | 鈴木泰成 | 柴﨑聖人 | 猪俣駿太 | 投手層と外野の更新 |
+| DeNA | 有馬伽久 | 有馬伽久 | 鈴木悠悟 | 西野啓也 | 大学・高校の投手と捕手 |
+| ソフトバンク | 菰田陽生 | 菰田陽生 | 前嶋藍 | 三浦遼大 | 長期素材、大学捕手、独立投手 |
+| 日本ハム | 菰田陽生 | 末吉良丞 | 馬場拓海 | 岡田啓吾 | 高校左腕の成長と大学投手・内野 |
+| 西武 | 鈴木泰成 | 渡辺和大 | 春山陽登 | 角田楓斗 | 投手中心、外野も確保 |
+| ロッテ | 宮原廉 | 仲井慎 | 熊田任洋 | 福原聖矢 | 投手・内野・捕手の厚み |
+| 楽天 | 渡部海 | 藤澤涼介 | 樋口新 | 赤堀颯 | 抽選後は打線と左投手、捕手は課題 |
+| オリックス | 米沢友翔 | 米沢友翔 | 牟禮翔 | 黒田義信 | 左投手と年代を分けた外野育成 |
+
+本線の抽選仮定：渡部→阪神、宮原→広島、鈴木泰成→ヤクルト、菰田→ソフトバンク。敗退5球団の再入札先はすべて別人。初回で獲得する仮定7人（単独3人＋抽選4人）＋再入札5人で1位獲得12人。2位・3位も含め36人全員が一意。2位は2026年会議前報道の楽天→中日→ロッテ→ヤクルト→オリックス→広島→日本ハム→DeNA→西武→巨人→ソフトバンク→阪神、3位は逆順。[公式2025年の一般手順](https://draft.npb.jp/draft/2025/schedule.html)のリーグ優先順は転用しない。
+
+他球団当選の5ケースも、当初の当選球団と新当選球団の1位獲得枠を交換した別シナリオとして表示し、2・3位を固定した36人の重複なしを検証する。これは起き得る分岐を楽しむための仮説で、実際の再入札や他球団の変更を保証しない。球団ごとの理由・3人の構成・捕手を上位で確保できない楽天の弱点も明示する。特定選手のFA成立・退団・来季起用は前提にしない。
+
+## 権利・出典の操作別判断（確認 2026-10-22）
+
+**B：このバッチの最小限の事実確認記録・独自文章・参照リンクに限る**。公開ページ全体の転載許可を取得したという判断ではない。[文化庁の「著作物に当たるか」](https://www.bunka.go.jp/seisaku/chosakuken/seidokaisetsu/chosakukensha_fumei/)を基に、個々の客観的な氏名・学校・卒業／所属年度と、原文・名簿全体の構成・写真・データベースを区別する。契約・取得方法・第三者権利は別に確認する。著作権対象外だから全サイトの条件が消えるとは解釈しない。
+
+| 出典 | 今回の行為・採用範囲 | 採用しないもの |
+|---|---|---|
+| 高野連・大学連盟 | 通常の公開ページ参照。選定した学生個々の氏名・学校の照合結果と根拠URLを独自に記録 | 公式名簿の全件取得・HTML／配置の再配布、画像、無制限の自動収集 |
+| 大学・球団・企業の公式ページ、愛知県本人取材 | 個別の人物・学校・卒業／所属年度の確認、独自の説明文、リンク | 記事本文、選手紹介文の再編集転載、写真・ロゴ、raw profile dump |
+| NPB・選手会 | 選択手順・資格の規定を通常閲覧して編集審査、条項へのリンク。2010年資料と2026年報道を区別 | PDFや公式結果表の公開JSON化、2026年規約でない資料の偽装 |
+| Sportivaほか旧15参照先 | 第3版で確認済みの論評・報道へのbibliographic metadataと参照リンク、独自の編成判断 | 外部の予想表・本文・評価点・確率の転載。Sportivaの[利用条件](https://sportiva.shueisha.co.jp/about/)を維持 |
+| 高校野球ドットコム | C／今回のデータ根拠には不採用。公開前監査で第3条の個人情報収集・蓄積目的と商用利用の制限を確認し、牟禮の根拠は独立した高野連の公式記録へ変更 | 本文・画像・候補データベースの複製・収集、一般的な情報再利用許諾の推定。[利用規約](https://www.hb-nippon.com/terms) |
+| Wikipediaの既存6記事 | 既に許可された固定revisionの必要項目のみ継承、執筆者revisionリンク・変更表示・CC BY-SA 4.0を保持 | 最新記事の無審査差し替え、他providerの情報をWikipedia由来とする偽装 |
+
+新しいcollector・scraper・APIキー・問い合わせ・契約・支払いは0。手作業のbounded editorial reviewであり、公式名簿や企業プロフィールの自動再配布を許可するSource Contract拡張ではない。本版のデータ・独自案はCC BY-SA 4.0（アプリコードとは別）。出典リンク先の本文・画像まで再許諾するものではない。
+
+公開前候補の修正記録：12:16の提案（body SHA `2c08327fdd1097b7342476ee469f4da357ec4c245a375ffe08a19769bff674ff`）はRelease未作成（GitHub API 404）・公開時刻nullを確認して保管。牟禮の根拠URL・確認文だけを高野連公式記録へ差し替え、情報確認／最終固定時刻を12:45へ進めた。36予想・初回入札・抽選仮定・球団理由・指名順はdeep comparisonで変更0を検証。既存の公開asset上書きは0。12:45提案のbody SHA `e7a11c7572fe695a89679789eb7636ef6279c577036554b2dd7d6729b90be555`、gzip SHA `8bb6a0009724fe378ea454a166058f346c3a6ec44278f9962f412abdf5347577`。これは実結果を受けた予想改変ではなく、初公開前の根拠監査による候補修正である。
+
+追加レビュー後の13:04の公開前修正：柴﨑の2つの既存URLは樋口と共通だったため、将来の個別ID橋渡し根拠が不足していた。Release未作成・公開時刻nullを再確認し、関西六大学の本人だけを対象とする公式発表の参照URL・確認文を追加。9人すべての新規候補について、共通名簿以外の個別照合根拠が存在することをschemaと将来結果fixtureで検証する。予想・球団理由・抽選分岐は変更0。最終body SHA `65749456035c4d5620597ab188065efc43459a36df8719d7d240badf74ce6860`、gzip SHA `fbc32d0ed90dc24410b5005da53950ec64f6c0bd95050f3c482e0e22c99af7f4`。連盟PDFは私的な閲覧・人物照合だけで、PDF本文・表・画像・成績の転載は行わない。
+
+## 実装・答え合わせ・保全
+
+`npb-draft-final.ts`が36一意の獲得枠、12球団、4組の初回競合と当選仮定、学生のNPB対象者欄、社会人・独立の別審査、情報確認≤固定<開始、旧候補fingerprint、PR #62除外継承を検証する。新規9人は独立した特集ID。NPB canonical UUIDへ統合せず、現在所属・入団を作らない。
+
+1位は**最終的な支配下指名**との比較で、初回入札の的中率と混ぜない。2・3位も当該球団・支配下・順位で比較。旧27候補は凍結したID・学校・氏名・行hash一致を確認。新9候補は結果収録後に独立したID橋渡しを別reviewするまで照合確認中。氏名・所属だけで一致判定せず、未収録を不的中・育成指名を支配下としない。結果更新のoffline reportに本版の36比較を追加するが、予想自体は書き換えない。
+
+新しいHome／特集入口は明示的な`forecast=final`で最終版へ。既存の無指定URLと`forecast=latest`は第3版、`expanded`は第2版、`original`は第1版を保持。候補リンクも保存版の文脈を維持。Back／Reload／share／Android deep linkの条件を検証。最終版のロード失敗を未確認の旧版へ黙ってフォールバックさせない。
+
+65,710 bytes JSON / 11,505 bytes gzip、1ファイルを追加。特集を開いた時だけ従来の結果snapshot1要求＋最終版1要求。Home追加fetch 0、canonical DB要求0、write 0。36行上限、候補検索も36人内。初期JSへ全予想データを含めない。旧3版・Current/Historical・CS/日本シリーズ・MLB・Coverage/Gate・個人保存形式は変更しない。最新Turso readbackを行っていないのでremote canonical integrity PASSとはしない。
+
+## 初公開と運用手順
+
+1. `npx tsx scripts/build-npb-draft-final.ts --base=.data/draft-2026/researched-build/draft-2026.json --first-publication`。期限・旧base body SHA・schema・PR62個別審査を確認。pinの既存body SHAが変われば停止する。
+2. full tests、lint/typecheck、Web/Vercel、UI、独立reviewの確認後、immutable Release `npb-draft-final-20261022-v4`を作る。既存tag/assetへclobberしない。公開直前に再度期限を確認。
+3. GitHubから返る実際のRelease公開時刻を`npb-draft-final-publication.json`へ記録し、assetを読み戻してhashを比較。固定版の内容や予想は変更しない。
+4. main merge後、`preserve_published_only=true`のPagesを実行。DB/source refreshなし。旧第3版も含む既存25 protected payloadのhash、最終版SHA、0結果、旧3版と訂正状態、360px Light/Dark、Reload/BackをHTTP・画面で確認する。
+5. Android debug APK／unsigned AABとAPI36 emulatorを確認する。新assetがPagesへ出る前の実機HTTP失敗を、fixtureやread bypassでPASSへ変えない。Pixel／TalkBackは実施していなければNOT RUN。
+
+Pages deploy直前にも自サイトの当該immutable assetを1回確認し、未公開の場合は16:35 JST（開始15分前）以降の初公開を停止する。障害・異なるhashも停止する。すでに同じ固定版がPages公開済みの場合は、後日の保全ビルドを許す。開始時刻を過ぎて未公開なら初公開は中止する。すでに固定・公開したassetは後で書き換えない。rollbackは表示のpin/UI revert、旧版とimmutable assetは保持する。
+
+## Delivery evidence
+
+- PR: https://github.com/tomoya41/baseball-notes/pull/63
+- 固定版Releaseの実際の公開時刻：**2026-10-22 13:19:59 JST**（GitHub API `published_at`、Release ID 420303524）。返されたassetを独立にdownloadし、gzip/本文SHA・11,505/65,710 bytes・全36枠を照合PASS。予想本文・pinは変更なし。
+- Codex ReviewのP1/P2計7件を修正・回帰検証し、コードhead `20cb161`の再レビューは指摘0。
+- Foundation CI https://github.com/tomoya41/baseball-notes/actions/runs/39721122594 ：166ファイル・**1,755 tests PASS**、lint/typecheck/Web build PASS。Windowsローカルは1,754 PASS / 既存のWindows限定skip 1。Vercel build PASS。
+- Android debug APK / unsigned release AAB build https://github.com/tomoya41/baseball-notes/actions/runs/39721122619 PASS。API36 emulatorはPages反映後に実行する。Pixel/TalkBackはNOT RUN。
+- 360/390px Light/Dark、旧URLの20枠＋保留16枠、新URLの36枠＋保留0、候補個別根拠・除外候補のempty・結果0・Back/Reloadを実画面で確認。デスクトップ1280pxもoverflowなし。
+- main merge・Pages run・公開HTTP readback・Android emulatorの後続証拠は、同PRのdeliveryコメントに記録する。この時点でそれらをPASSとは扱わない。

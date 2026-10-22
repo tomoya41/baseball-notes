@@ -74,7 +74,7 @@ it("adds the proven university group when a reviewed university roster acquires 
   const result=carryDraftPreview(old,incoming,[]);expect(result.candidates).toHaveLength(old.candidates.length+1);expect(result.candidateGroups).toEqual([...old.candidateGroups!,{candidateId:added.id,group:"university"}]);expect(result.researchedForecast).toEqual(old.researchedForecast);expect(draftEventSchema.safeParse(result).success).toBe(true);
 });
 it.each(["core","preview","research"] as const)("retrieves only the documented %s page set in one bounded request",async scope=>{
-  let count=0;const pages=sources.filter(s=>scope==="research"||scope==="preview"&&s.pageId!==5110570||[5282993,5209342].includes(s.pageId));
+  let count=0;const pages=[...new Map(sources.filter(s=>scope==="research"||scope==="preview"&&s.pageId!==5110570||[5282993,5209342].includes(s.pageId)).map(s=>[s.pageId,s])).values()];
   const request:typeof fetch=async input=>{count++;const url=new URL(String(input));expect(new Set(url.searchParams.get("pageids")!.split("|").map(Number))).toEqual(new Set(pages.map(s=>s.pageId)));return new Response(JSON.stringify({query:{pages:pages.map(s=>({pageid:s.pageId,title:s.title,revisions:[{revid:s.revision,timestamp:s.revisionAt,slots:{main:{content:"架空内容"}}}]}))}}));};
   const archive=await fetchDraftCandidateArchive(request,scope);expect(archive.response.query.pages).toHaveLength(pages.length);expect(count).toBe(1);
 });

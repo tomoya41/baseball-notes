@@ -1,0 +1,80 @@
+[
+  {
+    "forecastCandidateId": "npb:draft:2026:c8f261367e835b0488eceaae",
+    "resultCandidateId": "npb:draft:2026:e19a1ea0e5dc6150990a652d",
+    "name": "有馬伽久",
+    "affiliation": "立命館大学",
+    "article": "有馬伽久",
+    "resultEvidenceSha256": "112522b8f41dff5c8576b163482adf7f8c14aadf9c86fce5a27fc07bd91c8ff7",
+    "identityEvidenceUrls": [
+      "https://www.ritsumei.ac.jp/sports-culture/sports/topics/detail/?id=1031",
+      "https://ja.wikipedia.org/w/index.php?curid=5282993&oldid=111478113"
+    ],
+    "reviewedAt": "2026-10-22T21:42:06.941Z"
+  },
+  {
+    "forecastCandidateId": "npb:draft:2026:b7924371225d07a61ad67f59",
+    "resultCandidateId": "npb:draft:2026:897685ba34c1c606aff77490",
+    "name": "川尻啓人",
+    "affiliation": "亜細亜大学",
+    "article": "川尻啓人",
+    "resultEvidenceSha256": "f519b004434a39a36e4f7cd4f805c69ba415161ccf419408c28c83bce5dca06a",
+    "identityEvidenceUrls": [
+      "https://www.asia-u-bbc.com/member/keito_kawajiri",
+      "https://ja.wikipedia.org/w/index.php?curid=5282993&oldid=111478113"
+    ],
+    "reviewedAt": "2026-10-22T21:42:06.943Z"
+  },
+  {
+    "forecastCandidateId": "npb:draft:2026:9d30fadb9f03105270424285",
+    "resultCandidateId": "npb:draft:2026:b54791994af86f30e1415ccf",
+    "name": "福原聖矢",
+    "affiliation": "明治大学",
+    "article": "福原聖矢",
+    "resultEvidenceSha256": "df24d1f0d12b006889e2b3101d8c0fb3dc55d0fd6f59c8b3f9222d0ddb861773",
+    "identityEvidenceUrls": [
+      "https://www.meiji.ac.jp/koho/press/2026/lpcfhr0000019asm.html",
+      "https://ja.wikipedia.org/w/index.php?curid=5282993&oldid=111478113"
+    ],
+    "reviewedAt": "2026-10-22T21:42:06.943Z"
+  },
+  {
+    "forecastCandidateId": "npb:draft:2026:dc44cd1efb3d4d1352aa2964",
+    "resultCandidateId": "npb:draft:2026:4e4c3919607e146b6b808b9b",
+    "name": "田代旭",
+    "affiliation": "筑波大学",
+    "article": "田代旭",
+    "resultEvidenceSha256": "0b6af2d76d4c9b906872beeaefcd3d44bc7eadce632cc982b746ad9ecd06c1fd",
+    "identityEvidenceUrls": [
+      "https://www.tsukubaowls.com/member/baseball/asahi-tashiro",
+      "https://ja.wikipedia.org/w/index.php?curid=5282993&oldid=111478113"
+    ],
+    "reviewedAt": "2026-10-22T21:42:06.943Z"
+  },
+  {
+    "forecastCandidateId": "npb:draft:2026:d88ee433f64492cb972f8683",
+    "resultCandidateId": "npb:draft:2026:3f2ba0cfa62d5ff549e68849",
+    "name": "伊藤櫂人",
+    "affiliation": "中央大学",
+    "article": "伊藤櫂人",
+    "resultEvidenceSha256": "161d68ed1217434dfc53bb35b5282f914008c56b594b0401671bd700fd79ab0e",
+    "identityEvidenceUrls": [
+      "https://www.chuo-u.ac.jp/aboutus/communication/press/2026/10/88700/",
+      "https://ja.wikipedia.org/w/index.php?curid=5282993&oldid=111478113"
+    ],
+    "reviewedAt": "2026-10-22T21:42:06.943Z"
+  },
+  {
+    "forecastCandidateId": "npb:draft:2026:460149aa08cf85577245ede1",
+    "resultCandidateId": "npb:draft:2026:9a81e89391fec0a436355b1a",
+    "name": "仲井慎",
+    "affiliation": "駒澤大学",
+    "article": "仲井慎",
+    "resultEvidenceSha256": "2ca0f7880a5ae6a8887921870dd1eed91d6f29d96a27566904d98b4f657fb38e",
+    "identityEvidenceUrls": [
+      "https://www.komazawa-u.ac.jp/komaspo/baseball/19395.html",
+      "https://ja.wikipedia.org/w/index.php?curid=5282993&oldid=111478113"
+    ],
+    "reviewedAt": "2026-10-22T21:42:06.943Z"
+  }
+]

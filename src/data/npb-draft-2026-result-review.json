@@ -1,0 +1,45 @@
+{
+  "pageId": 5282993,
+  "revision": 111478113,
+  "contentSha256": "2604545385b0300428716a180d942f4f59cdfd66f79bb366f4b652cb31a80563",
+  "accepted": 122,
+  "regular": 74,
+  "developmental": 48,
+  "held": [
+    {
+      "teamId": "npb:team:dragons",
+      "type": "developmental",
+      "round": 1,
+      "evidenceSha256": "43aa7562101172a29ea80878f3c75b83a74b7ee8bee7c398692662032eb94270",
+      "reason": "matrix_team_table_conflict"
+    },
+    {
+      "teamId": "npb:team:eagles",
+      "type": "regular",
+      "round": 6,
+      "evidenceSha256": "18bb41bac8d68c40e1f542186d0dcefa55668f1e81eb9775e4a8dababbe62841",
+      "reason": "matrix_team_table_conflict"
+    },
+    {
+      "teamId": "npb:team:giants",
+      "type": "regular",
+      "round": 2,
+      "reason": "affiliation_link_label_conflict",
+      "evidenceSha256": "7b6ea6a6231ca21c6a9d651d7d8b9927fe4bc7815df864fe33cc7bc70a63cf61"
+    },
+    {
+      "teamId": "npb:team:giants",
+      "type": "developmental",
+      "round": 5,
+      "reason": "school_eligibility_unverified",
+      "evidenceSha256": "7a7732bfeec2617e3938a3a71c12aaa70aaec19fa16a57bd3d1a4aed04b37acf"
+    },
+    {
+      "teamId": "npb:team:hawks",
+      "type": "developmental",
+      "round": 9,
+      "reason": "affiliation_link_label_conflict",
+      "evidenceSha256": "47a43214adb35720174e829d136e36fa61303f6d6459afa378fc83d0dfa11515"
+    }
+  ]
+}

@@ -51,7 +51,7 @@ it("keeps withheld observations out of candidate rows, while retaining an explic
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);
   const d=researchedDraftFixture(),{c,group}=candidate("山田凜虎");d.candidates=[c];d.candidateGroups=[{candidateId:c.id,group}];vi.mocked(readNpbDraftEvent).mockResolvedValue(d);
   const host=document.createElement("div"),root=createRoot(host);document.body.append(host);
-  try{await act(async()=>root.render(<MemoryRouter initialEntries={["/NPB/talent/2026?view=candidates&q=山田"]}><NpbDraftEventScreen/></MemoryRouter>));expect(host.querySelectorAll("article")).toHaveLength(0);expect(host.textContent).toContain("以前の収録記録（1人）");expect(host.textContent).toContain("現在の注目候補・予想には含めません");}finally{await act(async()=>root.unmount());host.remove();}
+  try{await act(async()=>root.render(<MemoryRouter initialEntries={["/NPB/talent/2026?view=candidates&forecast=latest&q=山田"]}><NpbDraftEventScreen/></MemoryRouter>));expect(host.querySelectorAll("article")).toHaveLength(0);expect(host.textContent).toContain("以前の収録記録（1人）");expect(host.textContent).toContain("現在の注目候補・予想には含めません");}finally{await act(async()=>root.unmount());host.remove();}
 });
 it("does not suppress separately verified result facts even when a prediction was withheld",async()=>{
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);

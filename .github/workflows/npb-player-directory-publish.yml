@@ -112,6 +112,8 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      - name: Enforce final draft first-publication deadline
+        run: npx tsx scripts/verify-npb-draft-final-window.ts
       - name: Publish complete artifact to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

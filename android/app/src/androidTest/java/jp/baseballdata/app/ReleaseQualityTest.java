@@ -557,22 +557,23 @@ public class ReleaseQualityTest {
         shell("input keyevent KEYCODE_BACK");waitText("日程・試合詳細");assertEquals("System Back returns to exact series",route,js("location.hash"));
     }
     @Test public void draftPreviewRemainsSeparateFromResultsAtLargeFont() throws Exception {
-        Intent link=new Intent(Intent.ACTION_VIEW,Uri.parse("baseballnotes://NPB/talent/2026?view=preview"));
+        Intent link=new Intent(Intent.ACTION_VIEW,Uri.parse("baseballnotes://NPB/talent/2026?view=preview&forecast=final"));
         link.setClassName("com.tomoya41.baseballnotes","jp.baseballdata.app.MainActivity");
-        scenario=ActivityScenario.launch(link);waitText("球団事情から考える1〜3位予想");waitText("1位は初回入札");
-        String route=js("location.hash");setTheme("light","ライト");js("location.hash='"+route+"'");waitText("球団事情から考える1〜3位予想");
-        fontScaleAndRecreate(2.0f);waitText("球団事情から考える1〜3位予想");waitViewport(360);
-        assertEquals("Thirty-six slots, including withheld forecasts","36",js("String(document.querySelectorAll('main article').length)"));
-        assertEquals("Only reviewed student targets are active","20",js("String(document.querySelectorAll('main article > a.player-row').length)"));
-        assertEquals("Sixteen unsafe targets are withheld","16",js("String(Array.from(document.querySelectorAll('main article')).filter(e=>e.textContent.includes('予想を保留')).length)"));
+        scenario=ActivityScenario.launch(link);waitText("2026ドラフト直前最終予想");waitText("保留0枠");
+        String route=js("location.hash");setTheme("light","ライト");js("location.hash='"+route+"'");waitText("2026ドラフト直前最終予想");
+        fontScaleAndRecreate(2.0f);waitText("2026ドラフト直前最終予想");waitViewport(360);
+        assertEquals("Thirty-six unique reviewed winning selections","36",js("String(document.querySelectorAll('main article').length)"));
+        assertEquals("Every final forecast has reviewed eligibility","36",js("String(document.querySelectorAll('main article > a.player-row').length)"));
+        assertEquals("Final forecast holds no unsafe targets","0",js("String(Array.from(document.querySelectorAll('main article')).filter(e=>e.textContent.includes('予想を保留')).length)"));
         assertEquals("Yamada has no active forecast link","false",js("Array.from(document.querySelectorAll('main article > a.player-row')).some(e=>e.textContent.includes('山田凜虎'))"));
         assertEquals("Draft preview no large-font overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));screenshot("draft-2026-font-20-light");
-        setTheme("dark","ダーク");js("location.hash='"+route+"'");waitText("球団事情から考える1〜3位予想");
+        setTheme("dark","ダーク");js("location.hash='"+route+"'");waitText("2026ドラフト直前最終予想");
         assertEquals("Dark draft preview no overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));screenshot("draft-2026-font-20-dark");
         js("Array.from(document.querySelectorAll('nav[aria-label=\"ドラフト特集の表示\"] a')).find(a=>a.textContent==='指名結果').click()");
-        waitText("この条件の指名結果は未収録");waitText("未収録は未指名・指名終了を意味しません");
-        assertEquals("No future selection rows","0",js("String(document.querySelectorAll('main article').length)"));
-        shell("input keyevent KEYCODE_BACK");waitText("球団事情から考える1〜3位予想");assertEquals("Draft Back restores premeeting view",route,js("location.hash"));
+        waitText("収録 122件");waitText("支配下 74 / 育成 48");waitText("当選は未確認");
+        assertEquals("Bounded twenty result rows and three independent lottery groups","23",js("String(document.querySelectorAll('main article').length)"));
+        assertEquals("Result list at 200 percent has no overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));screenshot("draft-2026-results-font-20-dark");
+        shell("input keyevent KEYCODE_BACK");waitText("会議前の固定予想（アーカイブ）");assertEquals("Draft Back restores archived forecast",route,js("location.hash"));
     }
     @Test public void japanSeriesIdOnlyColdGameBackStaysInPostseason() throws Exception {
         Intent link=new Intent(Intent.ACTION_VIEW,Uri.parse("baseballnotes://NPB/games/npb%3Agame%3A9f6c547e7852f6c5a928"));
