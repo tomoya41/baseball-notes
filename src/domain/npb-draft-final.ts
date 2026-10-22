@@ -128,7 +128,7 @@ export function finalDraftOutcome(f: FinalDraftForecast, base: DraftEvent, teamI
   const resultSource = mappedCandidate && base.sources.find(s => s.pageId === mappedCandidate.sourcePageId);
   const resultUrl = resultSource && `https://ja.wikipedia.org/w/index.php?curid=${resultSource.pageId}&oldid=${resultSource.revision}`;
   const bridged = bridge && bridge.name === expected.name && bridge.affiliation === expected.affiliation &&
-    Date.parse(bridge.reviewedAt) >= Date.parse(base.observedAt) && bridge.identityEvidenceUrls.some(u => individualUrls.includes(u)) &&
+    resultSource && Date.parse(bridge.reviewedAt) >= Date.parse(resultSource.revisionAt) && bridge.identityEvidenceUrls.some(u => individualUrls.includes(u)) &&
     resultUrl && bridge.identityEvidenceUrls.includes(resultUrl) &&
     mappedCandidate;
   const identity = legacy || bridged;

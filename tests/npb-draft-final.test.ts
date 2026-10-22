@@ -96,6 +96,12 @@ it("requires usable individual evidence for all nine new identities, including t
     base.sources.push({ ...source, pageId: other.sourcePageId, revision: 2 }); base.candidates.push(other);
     base.selections[0] = { ...base.selections[0]!, candidateId: other.id, sourcePageId: other.sourcePageId };
     expect(finalDraftOutcome(data, base, p.teamId, p.round, [bridge]), expected.name + " at another slot/source").toBe("different");
+    base.observedAt = "2026-10-21T01:00:00Z";
+    expect(finalDraftOutcome(data, base, p.teamId, p.round, [bridge]), expected.name + " after an append-only snapshot").toBe("different");
+    expect(finalDraftOutcome(data, base, p.teamId, p.round, [{ ...bridge, reviewedAt: "2026-10-19T00:00:00Z" }])).toBe("unverified");
+    source.revision++;
+    expect(finalDraftOutcome(data, base, p.teamId, p.round, [bridge]), expected.name + " changed source revision").toBe("unverified");
+    source.revision--;
     expect(finalDraftOutcome(data, base, p.teamId, p.round, [{ ...bridge, identityEvidenceUrls: [...expected.identityUrls, `https://ja.wikipedia.org/w/index.php?curid=${other.sourcePageId}&oldid=2`] }])).toBe("unverified");
   }
   const missing = f(), corporate = missing.candidates.find(c => c.name === "柴﨑聖人")!;
