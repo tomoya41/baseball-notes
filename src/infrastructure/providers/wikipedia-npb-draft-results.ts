@@ -10,9 +10,9 @@ const nameCell = (raw: string): PersonCell | null => {
   // Explicit display-only wrappers and a line break inside a displayed name do not create an identity.
   const value = raw.trim().replace(/^'''(.*)'''$/, "$1").replace(/^<small>(.*)<\/small>$/, "$1").replace(/<br\s*\/?>/g, "");
   const provisional = value.match(/^\{\{仮リンク\|([^|{}<>]+)\|(?:label=([^|{}<>]+)\|)?(?:en|ko)\|[^|{}<>]+\}\}$/);
-  const linked = value.match(/^\[\[([^\[\]|<>#]+)(?:\|([^\[\]<>]+))?\]\]$/);
+  const linked = value.match(/^\[\[([^[\]|<>#]+)(?:\|([^[\]<>]+))?\]\]$/);
   const name = provisional ? provisional[2] ?? provisional[1]! : linked ? linked[2] ?? linked[1]! : value;
-  if (!/^[\p{L}\p{M}\s々ー・.\-]{2,80}$/u.test(name)) return null;
+  if (!/^[\p{L}\p{M}\s々ー・.-]{2,80}$/u.test(name)) return null;
   return { name, article: linked?.[1] ?? null };
 };
 const key = (r: { teamId: string; type: Kind; round: number }) => `${r.teamId}:${r.type}:${r.round}`;
