@@ -2,7 +2,7 @@
 
 ## 範囲と固定
 
-会議開始予定は **2026-10-22 16:50 JST**。予想の情報確認時点 **12:45:15 JST**、固定 **12:45:15.319 JST**。結果は0件の既存snapshotを使用し、会議後の実結果は使用していない。実際の初公開・Pages時刻は末尾のdelivery記録を参照する。開始時刻以降の新しい事前予想の初公開は禁止する。通常の後日のビルド・結果表示の更新と、予想自体の新規公開を区別する。
+会議開始予定は **2026-10-22 16:50 JST**。予想の情報確認・最終固定時点 **13:04:06.801 JST**。結果は0件の既存snapshotを使用し、会議後の実結果は使用していない。実際の初公開・Pages時刻は末尾のdelivery記録を参照する。開始時刻以降の新しい事前予想の初公開は禁止する。通常の後日のビルド・結果表示の更新と、予想自体の新規公開を区別する。
 
 PR #62の資格確認・訂正を維持する。旧第1〜3版、Wikipediaの観測行、旧pin・Release assetは変更しない。本版は独立した編集データ・pin・immutable asset。旧版の保留16枠を解除するものではない。山田凜虎・石田雄星・福島陽奈汰などの未確認候補は本版へ入れていない。「前田侑仁」を「前田侑大」へ名前だけで直す処理も追加していない。
 
@@ -13,7 +13,7 @@ PR #62の資格確認・訂正を維持する。旧第1〜3版、Wikipediaの観
 - 学生30人は[日本高野連の2026年NPB対象者欄](https://www.jhbf.or.jp/pro-aspiring/2026.html)または[全日本大学野球連盟の2026年NPB対象者欄](https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026)の**氏名と学校**を個別に照合。同じページのNPB対象外欄は使わない。既存22人はPR #62の学校・原記事・行hash一致を保持。新規学生8人は学校自身の個別ページ・志望届提出発表・所属学年・試合報告等を追加照合する。牟禮翔は高野連の2025年公式国際親善試合の氏名・学校・当時の学年・外野手と、2026年の対象者欄を照合。すべての根拠URLと照合内容は本版の各candidateに保持する。
 - 社会人5人は学生の志望届を要求しない。[選手会公開の新人選手選択会議規約2010年版・第3条](https://jpbpa.net/wp-content/uploads/2021/12/rp2010.pdf)を画像で確認し、[2026-10-21の会議前ルール解説](https://www.nikkansports.com/baseball/news/202610210000116.html)と照合。2010年版を2026年の改訂版と偽らない。大卒は2シーズン、高卒等は3シーズンの扱い、大学中退・元NPB・外国プロ経歴等を区別する。本版の5人は大学卒業後の国内社会人経歴を確認した範囲だけ。
 - 樋口新：王子公式個別紹介（2002-06-28、愛知工業大学）＋[王子自身の2025年新人記事](https://note.ojiholdings.co.jp/n/n5461dafe84ab)＋[愛知県の2026年本人取材](https://aichi-sports.jp/pickup/6858/)。2025年入社、2026年は大卒2シーズン目。
-- 柴﨑聖人：王子公式（2002-04-04、岐阜第一／大阪経済大学）＋同じ王子・愛知県記事。2025年入社、2シーズン目。旧Wikipediaの「柴崎」IDと名前だけで自動接続せず、本版に個別審査した特集IDを作る。既存canonical IDの再採番ではない。
+- 柴﨑聖人：王子公式（2002-04-04、岐阜第一／大阪経済大学）＋同じ王子・愛知県記事。[関西六大学野球連盟の2024-10-01個別発表](https://www.kan6bb.jp/wp_kan6/wp-content/uploads/2024/10/a54b4fbc591e88b7ae03cd961b16a279.pdf)を画像でも確認し、氏名・大阪経済大学4回生・2002年生・岐阜第一高校を照合。2025年入社、2シーズン目。旧Wikipediaの「柴崎」IDと名前だけで自動接続せず、本版に個別審査した特集IDを作る。既存canonical IDの再採番ではない。
 - 谷脇弘起：[日本生命公式の所属・立命館大学経歴](https://www.nissay.co.jp/enjoy/sports/baseball/member.html)＋[2024-04-11新加入発表](https://www.nissay.co.jp/enjoy/sports/baseball/news/20240411.html)。大卒3シーズン目。
 - 熊田任洋：[トヨタ公式個別ページ](https://sports.gazoo.com/baseball/player/post-82.html)（2001-04-15、早稲田大学）＋[2024-11-05の入社1年目一次報道](https://www.sponichi.co.jp/baseball/news/2024/11/05/kiji/20241105s00001003051000c.html?page=1)。大卒3シーズン目。20MBを超える年鑑の再取得・公開は行わない。
 - 藤澤涼介：[東京ガス公式個別ページ](https://www.tg-baseballclub.com/locker_room/24.html)（2002-06-04、横浜国立大学、在籍2年目）＋[JABAの2025-07-15新人記事](https://www.jaba.or.jp/topics/detail/?id=22270)。ページのROOKIEタグだけから在籍年数を決めない。
@@ -57,7 +57,9 @@ PR #62の資格確認・訂正を維持する。旧第1〜3版、Wikipediaの観
 
 新しいcollector・scraper・APIキー・問い合わせ・契約・支払いは0。手作業のbounded editorial reviewであり、公式名簿や企業プロフィールの自動再配布を許可するSource Contract拡張ではない。本版のデータ・独自案はCC BY-SA 4.0（アプリコードとは別）。出典リンク先の本文・画像まで再許諾するものではない。
 
-公開前候補の修正記録：12:16の提案（body SHA `2c08327fdd1097b7342476ee469f4da357ec4c245a375ffe08a19769bff674ff`）はRelease未作成（GitHub API 404）・公開時刻nullを確認して保管。牟禮の根拠URL・確認文だけを高野連公式記録へ差し替え、情報確認／最終固定時刻を12:45へ進めた。36予想・初回入札・抽選仮定・球団理由・指名順はdeep comparisonで変更0を検証。既存の公開asset上書きは0。最終body SHA `e7a11c7572fe695a89679789eb7636ef6279c577036554b2dd7d6729b90be555`、gzip SHA `8bb6a0009724fe378ea454a166058f346c3a6ec44278f9962f412abdf5347577`。これは実結果を受けた予想改変ではなく、初公開前の根拠監査による候補修正である。
+公開前候補の修正記録：12:16の提案（body SHA `2c08327fdd1097b7342476ee469f4da357ec4c245a375ffe08a19769bff674ff`）はRelease未作成（GitHub API 404）・公開時刻nullを確認して保管。牟禮の根拠URL・確認文だけを高野連公式記録へ差し替え、情報確認／最終固定時刻を12:45へ進めた。36予想・初回入札・抽選仮定・球団理由・指名順はdeep comparisonで変更0を検証。既存の公開asset上書きは0。12:45提案のbody SHA `e7a11c7572fe695a89679789eb7636ef6279c577036554b2dd7d6729b90be555`、gzip SHA `8bb6a0009724fe378ea454a166058f346c3a6ec44278f9962f412abdf5347577`。これは実結果を受けた予想改変ではなく、初公開前の根拠監査による候補修正である。
+
+追加レビュー後の13:04の公開前修正：柴﨑の2つの既存URLは樋口と共通だったため、将来の個別ID橋渡し根拠が不足していた。Release未作成・公開時刻nullを再確認し、関西六大学の本人だけを対象とする公式発表の参照URL・確認文を追加。9人すべての新規候補について、共通名簿以外の個別照合根拠が存在することをschemaと将来結果fixtureで検証する。予想・球団理由・抽選分岐は変更0。最終body SHA `65749456035c4d5620597ab188065efc43459a36df8719d7d240badf74ce6860`、gzip SHA `fbc32d0ed90dc24410b5005da53950ec64f6c0bd95050f3c482e0e22c99af7f4`。連盟PDFは私的な閲覧・人物照合だけで、PDF本文・表・画像・成績の転載は行わない。
 
 ## 実装・答え合わせ・保全
 
@@ -67,14 +69,14 @@ PR #62の資格確認・訂正を維持する。旧第1〜3版、Wikipediaの観
 
 新しいHome／特集入口は明示的な`forecast=final`で最終版へ。既存の無指定URLと`forecast=latest`は第3版、`expanded`は第2版、`original`は第1版を保持。候補リンクも保存版の文脈を維持。Back／Reload／share／Android deep linkの条件を検証。最終版のロード失敗を未確認の旧版へ黙ってフォールバックさせない。
 
-65,448 bytes JSON / 11,395 bytes gzip、1ファイルを追加。特集を開いた時だけ従来の結果snapshot1要求＋最終版1要求。Home追加fetch 0、canonical DB要求0、write 0。36行上限、候補検索も36人内。初期JSへ全予想データを含めない。旧3版・Current/Historical・CS/日本シリーズ・MLB・Coverage/Gate・個人保存形式は変更しない。最新Turso readbackを行っていないのでremote canonical integrity PASSとはしない。
+65,710 bytes JSON / 11,505 bytes gzip、1ファイルを追加。特集を開いた時だけ従来の結果snapshot1要求＋最終版1要求。Home追加fetch 0、canonical DB要求0、write 0。36行上限、候補検索も36人内。初期JSへ全予想データを含めない。旧3版・Current/Historical・CS/日本シリーズ・MLB・Coverage/Gate・個人保存形式は変更しない。最新Turso readbackを行っていないのでremote canonical integrity PASSとはしない。
 
 ## 初公開と運用手順
 
 1. `npx tsx scripts/build-npb-draft-final.ts --base=.data/draft-2026/researched-build/draft-2026.json --first-publication`。期限・旧base body SHA・schema・PR62個別審査を確認。pinの既存body SHAが変われば停止する。
 2. full tests、lint/typecheck、Web/Vercel、UI、独立reviewの確認後、immutable Release `npb-draft-final-20261022-v4`を作る。既存tag/assetへclobberしない。公開直前に再度期限を確認。
 3. GitHubから返る実際のRelease公開時刻を`npb-draft-final-publication.json`へ記録し、assetを読み戻してhashを比較。固定版の内容や予想は変更しない。
-4. main merge後、`preserve_published_only=true`のPagesを実行。DB/source refreshなし。既存24 protected payloadのhash、最終版SHA、0結果、旧3版と訂正状態、360px Light/Dark、Reload/BackをHTTP・画面で確認する。
+4. main merge後、`preserve_published_only=true`のPagesを実行。DB/source refreshなし。旧第3版も含む既存25 protected payloadのhash、最終版SHA、0結果、旧3版と訂正状態、360px Light/Dark、Reload/BackをHTTP・画面で確認する。
 5. Android debug APK／unsigned AABとAPI36 emulatorを確認する。新assetがPagesへ出る前の実機HTTP失敗を、fixtureやread bypassでPASSへ変えない。Pixel／TalkBackは実施していなければNOT RUN。
 
 Pages deploy直前にも自サイトの当該immutable assetを1回確認し、未公開の場合は16:35 JST（開始15分前）以降の初公開を停止する。障害・異なるhashも停止する。すでに同じ固定版がPages公開済みの場合は、後日の保全ビルドを許す。開始時刻を過ぎて未公開なら初公開は中止する。すでに固定・公開したassetは後で書き換えない。rollbackは表示のpin/UI revert、旧版とimmutable assetは保持する。
@@ -82,3 +84,4 @@ Pages deploy直前にも自サイトの当該immutable assetを1回確認し、�
 ## Delivery evidence
 
 実行後にPR・CI・公開・HTTP readbackの実測を追記する。
+

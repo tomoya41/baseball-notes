@@ -1,8 +1,8 @@
 {
   "tag": "npb-draft-final-20261022-v4",
   "assetUrl": "https://github.com/tomoya41/baseball-notes/releases/download/npb-draft-final-20261022-v4/final-2026.json.gz",
-  "sha256": "8bb6a0009724fe378ea454a166058f346c3a6ec44278f9962f412abdf5347577",
-  "bodySha256": "e7a11c7572fe695a89679789eb7636ef6279c577036554b2dd7d6729b90be555",
-  "bytes": 65448,
-  "frozenAt": "2026-10-22T03:45:15.319Z"
+  "sha256": "fbc32d0ed90dc24410b5005da53950ec64f6c0bd95050f3c482e0e22c99af7f4",
+  "bodySha256": "65749456035c4d5620597ab188065efc43459a36df8719d7d240badf74ce6860",
+  "bytes": 65710,
+  "frozenAt": "2026-10-22T04:04:06.801Z"
 }

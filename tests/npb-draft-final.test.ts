@@ -82,3 +82,18 @@ it("requires the exact unchanged legacy observation; preserving names alone is i
   const data = parsed(), base = draftFixture();
   expect(() => assertFinalDraftBase(data, base)).toThrow(/identity mismatch/);
 });
+it("requires usable individual evidence for all nine new identities, including the corporate candidate", () => {
+  const data = parsed(), newCandidates = data.candidates.filter(c => !c.legacyCandidateId);
+  expect(newCandidates).toHaveLength(9);
+  for (const expected of newCandidates) {
+    const p = data.predictions.find(p => p.candidateId === expected.id)!, base = draftFixture();
+    const actual = { ...base.candidates[0]!, name: expected.name, affiliation: expected.affiliation };
+    base.candidates = [actual]; base.selections = [{ teamId: p.teamId, candidateId: actual.id, round: p.round, type: "regular", status: "confirmed", sourcePageId: actual.sourcePageId, evidenceSha256: actual.evidenceSha256 }];
+    const source = base.sources.find(s => s.pageId === actual.sourcePageId)!;
+    const bridge = { forecastCandidateId: expected.id, resultCandidateId: actual.id, name: actual.name, affiliation: actual.affiliation, article: actual.article, resultEvidenceSha256: actual.evidenceSha256, identityEvidenceUrls: [...expected.identityUrls, `https://ja.wikipedia.org/w/index.php?curid=${source.pageId}&oldid=${source.revision}`], reviewedAt: base.observedAt };
+    expect(finalDraftOutcome(data, base, p.teamId, p.round, [bridge]), expected.name).toBe("match");
+  }
+  const missing = f(), corporate = missing.candidates.find(c => c.name === "柴﨑聖人")!;
+  corporate.identityUrls = corporate.identityUrls.filter(u => !u.includes("kan6bb.jp"));
+  expect(() => finalDraftForecastSchema.parse(missing)).toThrow(/individually bridgeable/);
+});

@@ -3,8 +3,8 @@
   "id": "2026-premeeting-final-v4",
   "title": "2026ドラフト直前最終予想",
   "author": "Baseball Notes（独自予想）",
-  "informationCutoff": "2026-10-22T03:45:15.318Z",
-  "frozenAt": "2026-10-22T03:45:15.319Z",
+  "informationCutoff": "2026-10-22T04:04:06.801Z",
+  "frozenAt": "2026-10-22T04:04:06.801Z",
   "baseBodySha256": "854dea71d32d0d819908d2ae47810b6370917eec558c7f85af4c23e2867063e8",
   "license": "CC-BY-SA-4.0",
   "candidates": [
@@ -1160,10 +1160,11 @@
       "position": "外野手",
       "legacyCandidateId": null,
       "legacyEvidenceSha256": null,
-      "identityNote": "王子個別紹介の2002年4月4日・岐阜第一／大阪経済大学と、愛知県本人取材の2025年入社を照合。旧版の柴崎表記を名前だけで再結合せず、独立した特集IDを使用。",
+      "identityNote": "王子個別紹介の2002年4月4日・岐阜第一／大阪経済大学と、愛知県本人取材の2025年入社を照合。旧版の柴崎表記を名前だけで再結合せず、独立した特集IDを使用。 関西六大学野球連盟の2024年10月1日個別発表（氏名・大阪経済大学4回生・2002年生・岐阜第一高校）も公式所属経歴と照合。",
       "identityUrls": [
         "https://www.ojiholdings.co.jp/baseball/member/",
-        "https://aichi-sports.jp/pickup/6858/"
+        "https://aichi-sports.jp/pickup/6858/",
+        "https://www.kan6bb.jp/wp_kan6/wp-content/uploads/2024/10/a54b4fbc591e88b7ae03cd961b16a279.pdf"
       ],
       "eligibility": {
         "status": "reviewed_eligible",
@@ -1175,7 +1176,7 @@
           "https://www.ojiholdings.co.jp/baseball/member/",
           "https://aichi-sports.jp/pickup/6858/"
         ],
-        "checkedAt": "2026-10-22T03:16:12.315Z",
+        "checkedAt": "2026-10-22T04:04:06.801Z",
         "studentList": null,
         "collegeGraduated": true,
         "firstCorporateSeason": 2025,

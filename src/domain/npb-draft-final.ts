@@ -28,6 +28,10 @@ const candidate = z.strictObject({
     highSchoolGraduated: z.boolean().nullable(), independentSeasons: z.number().int().positive().nullable(),
   }),
 });
+function individualIdentityUrls(c: z.infer<typeof candidate>, candidates: z.infer<typeof candidate>[]) {
+  return c.identityUrls.filter(u => !candidates.some(other => other.eligibility.rule === "student_list" && other.eligibility.urls.includes(u)))
+    .filter(u => !candidates.some(other => other.id !== c.id && other.identityUrls.includes(u)));
+}
 const pick = z.strictObject({ teamId: team, round: z.number().int().min(1).max(3), candidateId: z.string(), reason: z.string().min(1).max(260) });
 export const finalDraftForecastSchema = z.strictObject({
   schemaVersion: z.literal(1), id: z.literal("2026-premeeting-final-v4"), title: z.literal("2026ドラフト直前最終予想"),
@@ -53,6 +57,7 @@ export const finalDraftForecastSchema = z.strictObject({
     const e = c.eligibility;
     if (!beforeStart(e.checkedAt) || Date.parse(e.checkedAt) > Date.parse(f.informationCutoff)) fail("Eligibility evidence after cutoff");
     if ((c.legacyCandidateId === null) !== (c.legacyEvidenceSha256 === null)) fail("Incomplete legacy identity");
+    if (!c.legacyCandidateId && individualIdentityUrls(c, f.candidates).length === 0) fail("New candidate needs individually bridgeable identity evidence");
     if (["high_school", "university"].includes(c.group)) {
       if (e.rule !== "student_list" || !e.studentList || e.studentList.name !== c.name || e.studentList.acceptedOn && e.studentList.acceptedOn > "2026-10-08") fail("Student needs individual NPB-target list evidence");
       const host = c.group === "high_school" ? "www.jhbf.or.jp" : "www.jubf.net";
@@ -118,9 +123,7 @@ export function finalDraftOutcome(f: FinalDraftForecast, base: DraftEvent, teamI
   // A shared applicant-list or team-roster URL cannot establish a personal identity relation.
   // Require an individually admitted source not shared by another forecast candidate, and exact reviewed names/schools.
   // Abbreviations/changed names stay unverified rather than being silently normalized.
-  const individualUrls = expected.identityUrls.filter(u =>
-    !f.candidates.some(c => c.eligibility.rule === "student_list" && c.eligibility.urls.includes(u)))
-    .filter(u => !f.candidates.some(c => c.id !== expected.id && c.identityUrls.includes(u)));
+  const individualUrls = individualIdentityUrls(expected, f.candidates);
   const resultSource = base.sources.find(s => s.pageId === actualCandidate.sourcePageId);
   const resultUrl = resultSource && `https://ja.wikipedia.org/w/index.php?curid=${resultSource.pageId}&oldid=${resultSource.revision}`;
   const bridged = bridge && bridge.name === expected.name && bridge.affiliation === expected.affiliation &&
