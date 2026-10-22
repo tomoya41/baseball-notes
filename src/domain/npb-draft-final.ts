@@ -6,6 +6,10 @@ export const draft2026Start = "2026-10-22T07:50:00Z";
 export function assertFirstFinalPublication(now = Date.now()) {
   if (now >= Date.parse(draft2026Start)) throw Error("Meeting started: new premeeting publication prohibited");
 }
+export function assertFinalAppPublicationWindow(alreadyPublished: boolean, now = Date.now()) {
+  // Reserve 15 minutes for the Pages deployment itself. Later maintenance may retain an already published immutable edition.
+  if (!alreadyPublished && now >= Date.parse(draft2026Start) - 15 * 60000) throw Error("Too late for first premeeting Pages publication");
+}
 const beforeStart = (s: string) => Date.parse(s) < Date.parse(draft2026Start);
 const url = z.url().refine(s => { const u = new URL(s); return u.protocol === "https:" && !u.username && !u.password; });
 const team = z.enum(draftTeams as [string, ...string[]]);
@@ -41,7 +45,7 @@ export const finalDraftForecastSchema = z.strictObject({
   const fail = (message: string) => ctx.addIssue({ code: "custom", message });
   if (!beforeStart(f.frozenAt) || Date.parse(f.informationCutoff) > Date.parse(f.frozenAt)) fail("Forecast must freeze before meeting, after information cutoff");
   const cs = new Map(f.candidates.map(c => [c.id, c]));
-  for (const r of f.researchReferences) if (Date.parse(r.checkedAt) > Date.parse(f.informationCutoff) || r.publishedOn > r.updatedOn || r.updatedOn > "2026-10-22") fail("Research must precede information cutoff");
+  for (const r of f.researchReferences) if (Date.parse(r.checkedAt) > Date.parse(f.informationCutoff) || r.publishedOn > r.updatedOn || Date.parse(r.updatedOn + "T00:00:00+09:00") > Date.parse(r.checkedAt)) fail("Research must precede information cutoff");
   if (f.clubs.some(c => c.referenceUrls.some(u => !f.researchReferences.some(r => r.url === u)))) fail("Missing bibliographic reference");
   if (cs.size !== 36 || new Set(f.candidates.map(c => c.name + "|" + c.affiliation)).size !== 36) fail("Duplicate candidate identity");
   for (const c of f.candidates) {
@@ -53,6 +57,7 @@ export const finalDraftForecastSchema = z.strictObject({
       if (e.rule !== "student_list" || !e.studentList || e.studentList.name !== c.name || e.studentList.acceptedOn && e.studentList.acceptedOn > "2026-10-08") fail("Student needs individual NPB-target list evidence");
       const host = c.group === "high_school" ? "www.jhbf.or.jp" : "www.jubf.net";
       if (!e.urls.some(u => new URL(u).hostname === host)) fail("Missing official student list");
+      if (!c.legacyCandidateId && e.studentList?.school !== c.affiliation) fail("New student identity must use its individually reviewed official school");
     } else if (c.group === "corporate") {
       if (e.rule !== "corporate_graduate" || e.collegeGraduated !== true || e.firstCorporateSeason === null || 2026 - e.firstCorporateSeason + 1 < 2 || e.studentList !== null) fail("Corporate eligibility is not a student application");
     } else if (e.rule !== "independent_graduate" || e.highSchoolGraduated !== true || e.independentSeasons === null || e.independentSeasons < 1 || e.studentList !== null) fail("Independent eligibility needs graduation and individual history");

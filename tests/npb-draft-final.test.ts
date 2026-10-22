@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import json from "../src/data/npb-draft-2026-final-forecast.json";
 import pin from "../src/data/npb-draft-final-release.json";
-import { alternativeFinalDraw, assertFirstFinalPublication, assertFinalDraftBase, finalDraftForecastSchema, finalDraftOutcome } from "../src/domain/npb-draft-final";
+import { alternativeFinalDraw, assertFirstFinalPublication, assertFinalAppPublicationWindow, assertFinalDraftBase, finalDraftForecastSchema, finalDraftOutcome } from "../src/domain/npb-draft-final";
 import { draftFixture } from "./fixtures/npb-draft";
 
 const f = () => structuredClone(json), parsed = () => finalDraftForecastSchema.parse(f());
@@ -54,6 +54,12 @@ it("rejects after-start freeze, future evidence and exact deadline first publica
   const future = f(); future.candidates[0]!.eligibility.checkedAt = "2026-10-22T07:50:00Z"; expect(() => finalDraftForecastSchema.parse(future)).toThrow();
   expect(() => assertFirstFinalPublication(Date.parse("2026-10-22T07:49:59Z"))).not.toThrow();
   expect(() => assertFirstFinalPublication(Date.parse("2026-10-22T07:50:00Z"))).toThrow();
+});
+it("stops first Pages promotion before the deadline while allowing retention of an already published edition", () => {
+  expect(() => assertFinalAppPublicationWindow(false, Date.parse("2026-10-22T07:34:59Z"))).not.toThrow();
+  expect(() => assertFinalAppPublicationWindow(false, Date.parse("2026-10-22T07:35:00Z"))).toThrow();
+  expect(() => assertFinalAppPublicationWindow(false, Date.parse("2026-10-22T08:00:00Z"))).toThrow();
+  expect(() => assertFinalAppPublicationWindow(true, Date.parse("2026-10-23T08:00:00Z"))).not.toThrow();
 });
 it("cannot join new candidates to actual results by name or treat developmental picks as regular results", () => {
   const data = parsed(), base = draftFixture(), p = data.predictions.find(p => !data.candidates.find(c => c.id === p.candidateId)!.legacyCandidateId)!;

@@ -75,7 +75,7 @@ PR #62の資格確認・訂正を維持する。旧第1〜3版、Wikipediaの観
 4. main merge後、`preserve_published_only=true`のPagesを実行。DB/source refreshなし。既存24 protected payloadのhash、最終版SHA、0結果、旧3版と訂正状態、360px Light/Dark、Reload/BackをHTTP・画面で確認する。
 5. Android debug APK／unsigned AABとAPI36 emulatorを確認する。新assetがPagesへ出る前の実機HTTP失敗を、fixtureやread bypassでPASSへ変えない。Pixel／TalkBackは実施していなければNOT RUN。
 
-開始時刻を過ぎて未公開なら初公開は中止する。すでに固定・公開したassetは後で書き換えない。rollbackは表示のpin/UI revert、旧版とimmutable assetは保持する。
+Pages deploy直前にも自サイトの当該immutable assetを1回確認し、未公開の場合は16:35 JST（開始15分前）以降の初公開を停止する。障害・異なるhashも停止する。すでに同じ固定版がPages公開済みの場合は、後日の保全ビルドを許す。開始時刻を過ぎて未公開なら初公開は中止する。すでに固定・公開したassetは後で書き換えない。rollbackは表示のpin/UI revert、旧版とimmutable assetは保持する。
 
 ## Delivery evidence
 
