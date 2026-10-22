@@ -124,12 +124,13 @@ export function finalDraftOutcome(f: FinalDraftForecast, base: DraftEvent, teamI
   // Require an individually admitted source not shared by another forecast candidate, and exact reviewed names/schools.
   // Abbreviations/changed names stay unverified rather than being silently normalized.
   const individualUrls = individualIdentityUrls(expected, f.candidates);
-  const resultSource = base.sources.find(s => s.pageId === actualCandidate.sourcePageId);
+  const mappedCandidate = bridge && base.candidates.find(c => c.id === bridge.resultCandidateId && c.name === bridge.name && c.affiliation === bridge.affiliation && c.article === bridge.article && c.evidenceSha256 === bridge.resultEvidenceSha256);
+  const resultSource = mappedCandidate && base.sources.find(s => s.pageId === mappedCandidate.sourcePageId);
   const resultUrl = resultSource && `https://ja.wikipedia.org/w/index.php?curid=${resultSource.pageId}&oldid=${resultSource.revision}`;
   const bridged = bridge && bridge.name === expected.name && bridge.affiliation === expected.affiliation &&
     Date.parse(bridge.reviewedAt) >= Date.parse(base.observedAt) && bridge.identityEvidenceUrls.some(u => individualUrls.includes(u)) &&
     resultUrl && bridge.identityEvidenceUrls.includes(resultUrl) &&
-    base.candidates.find(c => c.id === bridge.resultCandidateId && c.name === bridge.name && c.affiliation === bridge.affiliation && c.article === bridge.article && c.evidenceSha256 === bridge.resultEvidenceSha256);
+    mappedCandidate;
   const identity = legacy || bridged;
   if (!identity) return "unverified";
   if (identity.id === actualCandidate.id) return "match";

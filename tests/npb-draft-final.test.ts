@@ -92,6 +92,11 @@ it("requires usable individual evidence for all nine new identities, including t
     const source = base.sources.find(s => s.pageId === actual.sourcePageId)!;
     const bridge = { forecastCandidateId: expected.id, resultCandidateId: actual.id, name: actual.name, affiliation: actual.affiliation, article: actual.article, resultEvidenceSha256: actual.evidenceSha256, identityEvidenceUrls: [...expected.identityUrls, `https://ja.wikipedia.org/w/index.php?curid=${source.pageId}&oldid=${source.revision}`], reviewedAt: base.observedAt };
     expect(finalDraftOutcome(data, base, p.teamId, p.round, [bridge]), expected.name).toBe("match");
+    const other = { ...actual, id: "npb:draft:2026:" + "c".repeat(24), name: "別の架空結果選手", article: "別の架空記事", sourcePageId: 5209343 };
+    base.sources.push({ ...source, pageId: other.sourcePageId, revision: 2 }); base.candidates.push(other);
+    base.selections[0] = { ...base.selections[0]!, candidateId: other.id, sourcePageId: other.sourcePageId };
+    expect(finalDraftOutcome(data, base, p.teamId, p.round, [bridge]), expected.name + " at another slot/source").toBe("different");
+    expect(finalDraftOutcome(data, base, p.teamId, p.round, [{ ...bridge, identityEvidenceUrls: [...expected.identityUrls, `https://ja.wikipedia.org/w/index.php?curid=${other.sourcePageId}&oldid=2`] }])).toBe("unverified");
   }
   const missing = f(), corporate = missing.candidates.find(c => c.name === "柴﨑聖人")!;
   corporate.identityUrls = corporate.identityUrls.filter(u => !u.includes("kan6bb.jp"));
