@@ -1,0 +1,1785 @@
+{
+  "schemaVersion": 1,
+  "id": "2026-premeeting-final-v4",
+  "title": "2026ドラフト直前最終予想",
+  "author": "Baseball Notes（独自予想）",
+  "informationCutoff": "2026-10-22T03:16:12.315Z",
+  "frozenAt": "2026-10-22T03:16:12.317Z",
+  "baseBodySha256": "854dea71d32d0d819908d2ae47810b6370917eec558c7f85af4c23e2867063e8",
+  "license": "CC-BY-SA-4.0",
+  "candidates": [
+    {
+      "id": "npb:draft:2026:0f5d26ee680133c325ed4542",
+      "name": "鈴木泰成",
+      "affiliation": "青山学院大",
+      "group": "university",
+      "position": "投手",
+      "legacyCandidateId": "npb:draft:2026:0f5d26ee680133c325ed4542",
+      "legacyEvidenceSha256": "cf91948fc2e6e2603e237edf367cf023a01c28a6c3bd2032b6a5d581f204d0f0",
+      "identityNote": "PR #62の氏名・学校・原記事行ハッシュの照合を保持し、公式のNPBドラフト対象者欄を再確認。代表選出だけを資格根拠にしない。",
+      "identityUrls": [
+        "https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026",
+        "https://ja.wikipedia.org/w/index.php?curid=5209342&oldid=111304047"
+      ],
+      "eligibility": {
+        "status": "reviewed_eligible",
+        "rule": "student_list",
+        "basis": "PR #62の氏名・学校・原記事行ハッシュの照合を保持し、公式のNPBドラフト対象者欄を再確認。代表選出だけを資格根拠にしない。",
+        "urls": [
+          "https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026"
+        ],
+        "checkedAt": "2026-10-22T03:16:12.315Z",
+        "studentList": {
+          "name": "鈴木泰成",
+          "school": "青山学院大学",
+          "acceptedOn": null,
+          "section": "NPBドラフト対象者"
+        },
+        "collegeGraduated": null,
+        "firstCorporateSeason": null,
+        "highSchoolGraduated": null,
+        "independentSeasons": null
+      }
+    },
+    {
+      "id": "npb:draft:2026:051f107add87484d599780d0",
+      "name": "馬場拓海",
+      "affiliation": "日本体育大",
+      "group": "university",
+      "position": "投手",
+      "legacyCandidateId": "npb:draft:2026:051f107add87484d599780d0",
+      "legacyEvidenceSha256": "fd57ce6127667637cc088654ea56cf10d9bfc46f12b658fad143a069672345d1",
+      "identityNote": "PR #62の氏名・学校・原記事行ハッシュの照合を保持し、公式のNPBドラフト対象者欄を再確認。代表選出だけを資格根拠にしない。",
+      "identityUrls": [
+        "https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026",
+        "https://ja.wikipedia.org/w/index.php?curid=5209342&oldid=111304047"
+      ],
+      "eligibility": {
+        "status": "reviewed_eligible",
+        "rule": "student_list",
+        "basis": "PR #62の氏名・学校・原記事行ハッシュの照合を保持し、公式のNPBドラフト対象者欄を再確認。代表選出だけを資格根拠にしない。",
+        "urls": [
+          "https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026"
+        ],
+        "checkedAt": "2026-10-22T03:16:12.315Z",
+        "studentList": {
+          "name": "馬場拓海",
+          "school": "日本体育大学",
+          "acceptedOn": null,
+          "section": "NPBドラフト対象者"
+        },
+        "collegeGraduated": null,
+        "firstCorporateSeason": null,
+        "highSchoolGraduated": null,
+        "independentSeasons": null
+      }
+    },
+    {
+      "id": "npb:draft:2026:ca6169aff349fb15bd077ae1",
+      "name": "宮原廉",
+      "affiliation": "近畿大",
+      "group": "university",
+      "position": "投手",
+      "legacyCandidateId": "npb:draft:2026:ca6169aff349fb15bd077ae1",
+      "legacyEvidenceSha256": "bb77b97aa9489ac2f7bca43e1f14a496714775c63633dd7b2e926551efe25a17",
+      "identityNote": "PR #62の氏名・学校・原記事行ハッシュの照合を保持し、公式のNPBドラフト対象者欄を再確認。代表選出だけを資格根拠にしない。",
+      "identityUrls": [
+        "https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026",
+        "https://ja.wikipedia.org/w/index.php?curid=5209342&oldid=111304047"
+      ],
+      "eligibility": {
+        "status": "reviewed_eligible",
+        "rule": "student_list",
+        "basis": "PR #62の氏名・学校・原記事行ハッシュの照合を保持し、公式のNPBドラフト対象者欄を再確認。代表選出だけを資格根拠にしない。",
+        "urls": [
+          "https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026"
+        ],
+        "checkedAt": "2026-10-22T03:16:12.315Z",
+        "studentList": {
+          "name": "宮原廉",
+          "school": "近畿大学",
+          "acceptedOn": null,
+          "section": "NPBドラフト対象者"
+        },
+        "collegeGraduated": null,
+        "firstCorporateSeason": null,
+        "highSchoolGraduated": null,
+        "independentSeasons": null
+      }
+    },
+    {
+      "id": "npb:draft:2026:a95b5a04557c73667a1c919f",
+      "name": "角田楓斗",
+      "affiliation": "富士大",
+      "group": "university",
+      "position": "投手",
+      "legacyCandidateId": "npb:draft:2026:a95b5a04557c73667a1c919f",
+      "legacyEvidenceSha256": "74ef273c56217ff9cd7ce9400b877f479096df57abb842a83546263d1d5894df",
+      "identityNote": "PR #62の氏名・学校・原記事行ハッシュの照合を保持し、公式のNPBドラフト対象者欄を再確認。代表選出だけを資格根拠にしない。",
+      "identityUrls": [
+        "https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026",
+        "https://ja.wikipedia.org/w/index.php?curid=5209342&oldid=111304047"
+      ],
+      "eligibility": {
+        "status": "reviewed_eligible",
+        "rule": "student_list",
+        "basis": "PR #62の氏名・学校・原記事行ハッシュの照合を保持し、公式のNPBドラフト対象者欄を再確認。代表選出だけを資格根拠にしない。",
+        "urls": [
+          "https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026"
+        ],
+        "checkedAt": "2026-10-22T03:16:12.315Z",
+        "studentList": {
+          "name": "角田楓斗",
+          "school": "富士大学",
+          "acceptedOn": null,
+          "section": "NPBドラフト対象者"
+        },
+        "collegeGraduated": null,
+        "firstCorporateSeason": null,
+        "highSchoolGraduated": null,
+        "independentSeasons": null
+      }
+    },
+    {
+      "id": "npb:draft:2026:cb24d52bd283a9968211d878",
+      "name": "星野世那",
+      "affiliation": "大阪商業大",
+      "group": "university",
+      "position": "投手",
+      "legacyCandidateId": "npb:draft:2026:cb24d52bd283a9968211d878",
+      "legacyEvidenceSha256": "da7040943111b1fac8aef6bdfb42ba85754853b90ae413fbe5f2c148f55057a9",
+      "identityNote": "PR #62の氏名・学校・原記事行ハッシュの照合を保持し、公式のNPBドラフト対象者欄を再確認。代表選出だけを資格根拠にしない。",
+      "identityUrls": [
+        "https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026",
+        "https://ja.wikipedia.org/w/index.php?curid=5209342&oldid=111304047"
+      ],
+      "eligibility": {
+        "status": "reviewed_eligible",
+        "rule": "student_list",
+        "basis": "PR #62の氏名・学校・原記事行ハッシュの照合を保持し、公式のNPBドラフト対象者欄を再確認。代表選出だけを資格根拠にしない。",
+        "urls": [
+          "https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026"
+        ],
+        "checkedAt": "2026-10-22T03:16:12.315Z",
+        "studentList": {
+          "name": "星野世那",
+          "school": "大阪商業大学",
+          "acceptedOn": null,
+          "section": "NPBドラフト対象者"
+        },
+        "collegeGraduated": null,
+        "firstCorporateSeason": null,
+        "highSchoolGraduated": null,
+        "independentSeasons": null
+      }
+    },
+    {
+      "id": "npb:draft:2026:852ee8d07c42ddf95d3521ef",
+      "name": "渡辺和大",
+      "affiliation": "慶應義塾大",
+      "group": "university",
+      "position": "投手",
+      "legacyCandidateId": "npb:draft:2026:852ee8d07c42ddf95d3521ef",
+      "legacyEvidenceSha256": "ab58b0ba26ecad63d62fd60b740640f9d479c1d3754bf3617910e73f91ca2127",
+      "identityNote": "PR #62の氏名・学校・原記事行ハッシュの照合を保持し、公式のNPBドラフト対象者欄を再確認。代表選出だけを資格根拠にしない。",
+      "identityUrls": [
+        "https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026",
+        "https://ja.wikipedia.org/w/index.php?curid=5209342&oldid=111304047"
+      ],
+      "eligibility": {
+        "status": "reviewed_eligible",
+        "rule": "student_list",
+        "basis": "PR #62の氏名・学校・原記事行ハッシュの照合を保持し、公式のNPBドラフト対象者欄を再確認。代表選出だけを資格根拠にしない。",
+        "urls": [
+          "https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026"
+        ],
+        "checkedAt": "2026-10-22T03:16:12.315Z",
+        "studentList": {
+          "name": "渡辺和大",
+          "school": "慶應義塾大学",
+          "acceptedOn": null,
+          "section": "NPBドラフト対象者"
+        },
+        "collegeGraduated": null,
+        "firstCorporateSeason": null,
+        "highSchoolGraduated": null,
+        "independentSeasons": null
+      }
+    },
+    {
+      "id": "npb:draft:2026:f2bad191341a3c6b68e3e67d",
+      "name": "猪俣駿太",
+      "affiliation": "東北福祉大",
+      "group": "university",
+      "position": "投手",
+      "legacyCandidateId": "npb:draft:2026:f2bad191341a3c6b68e3e67d",
+      "legacyEvidenceSha256": "6c216be8d7e335fffce6b910abd37dbe6772d2a4d722aba8f990507aec27e4e3",
+      "identityNote": "PR #62の氏名・学校・原記事行ハッシュの照合を保持し、公式のNPBドラフト対象者欄を再確認。代表選出だけを資格根拠にしない。",
+      "identityUrls": [
+        "https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026",
+        "https://ja.wikipedia.org/w/index.php?curid=5209342&oldid=111304047"
+      ],
+      "eligibility": {
+        "status": "reviewed_eligible",
+        "rule": "student_list",
+        "basis": "PR #62の氏名・学校・原記事行ハッシュの照合を保持し、公式のNPBドラフト対象者欄を再確認。代表選出だけを資格根拠にしない。",
+        "urls": [
+          "https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026"
+        ],
+        "checkedAt": "2026-10-22T03:16:12.315Z",
+        "studentList": {
+          "name": "猪俣駿太",
+          "school": "東北福祉大学",
+          "acceptedOn": null,
+          "section": "NPBドラフト対象者"
+        },
+        "collegeGraduated": null,
+        "firstCorporateSeason": null,
+        "highSchoolGraduated": null,
+        "independentSeasons": null
+      }
+    },
+    {
+      "id": "npb:draft:2026:4671e2754a20c964147efb46",
+      "name": "米沢友翔",
+      "affiliation": "関西大",
+      "group": "university",
+      "position": "投手",
+      "legacyCandidateId": "npb:draft:2026:4671e2754a20c964147efb46",
+      "legacyEvidenceSha256": "feb6fa43986abeeac2112491eac5fc6a8e96fb53f565aa5bfe2bc32adb7d5e25",
+      "identityNote": "PR #62の氏名・学校・原記事行ハッシュの照合を保持し、公式のNPBドラフト対象者欄を再確認。代表選出だけを資格根拠にしない。",
+      "identityUrls": [
+        "https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026",
+        "https://ja.wikipedia.org/w/index.php?curid=5209342&oldid=111304047"
+      ],
+      "eligibility": {
+        "status": "reviewed_eligible",
+        "rule": "student_list",
+        "basis": "PR #62の氏名・学校・原記事行ハッシュの照合を保持し、公式のNPBドラフト対象者欄を再確認。代表選出だけを資格根拠にしない。",
+        "urls": [
+          "https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026"
+        ],
+        "checkedAt": "2026-10-22T03:16:12.315Z",
+        "studentList": {
+          "name": "米沢友翔",
+          "school": "関西大学",
+          "acceptedOn": null,
+          "section": "NPBドラフト対象者"
+        },
+        "collegeGraduated": null,
+        "firstCorporateSeason": null,
+        "highSchoolGraduated": null,
+        "independentSeasons": null
+      }
+    },
+    {
+      "id": "npb:draft:2026:5ddbeb04bbb237bee3649822",
+      "name": "渡部海",
+      "affiliation": "青山学院大",
+      "group": "university",
+      "position": "捕手",
+      "legacyCandidateId": "npb:draft:2026:5ddbeb04bbb237bee3649822",
+      "legacyEvidenceSha256": "381588da8d853cfb4fe769180fcabd4cb5176009f3e91020cff7e942b8ae86c3",
+      "identityNote": "PR #62の氏名・学校・原記事行ハッシュの照合を保持し、公式のNPBドラフト対象者欄を再確認。代表選出だけを資格根拠にしない。",
+      "identityUrls": [
+        "https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026",
+        "https://ja.wikipedia.org/w/index.php?curid=5209342&oldid=111304047"
+      ],
+      "eligibility": {
+        "status": "reviewed_eligible",
+        "rule": "student_list",
+        "basis": "PR #62の氏名・学校・原記事行ハッシュの照合を保持し、公式のNPBドラフト対象者欄を再確認。代表選出だけを資格根拠にしない。",
+        "urls": [
+          "https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026"
+        ],
+        "checkedAt": "2026-10-22T03:16:12.315Z",
+        "studentList": {
+          "name": "渡部海",
+          "school": "青山学院大学",
+          "acceptedOn": null,
+          "section": "NPBドラフト対象者"
+        },
+        "collegeGraduated": null,
+        "firstCorporateSeason": null,
+        "highSchoolGraduated": null,
+        "independentSeasons": null
+      }
+    },
+    {
+      "id": "npb:draft:2026:a2558a96835c4458bf34dac6",
+      "name": "前嶋藍",
+      "affiliation": "亜細亜大",
+      "group": "university",
+      "position": "捕手",
+      "legacyCandidateId": "npb:draft:2026:a2558a96835c4458bf34dac6",
+      "legacyEvidenceSha256": "85aae5989a70dbb1ca812fc1be62d07da696e36f6fea6a2ea02ebb2452e46183",
+      "identityNote": "PR #62の氏名・学校・原記事行ハッシュの照合を保持し、公式のNPBドラフト対象者欄を再確認。代表選出だけを資格根拠にしない。",
+      "identityUrls": [
+        "https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026",
+        "https://ja.wikipedia.org/w/index.php?curid=5209342&oldid=111304047"
+      ],
+      "eligibility": {
+        "status": "reviewed_eligible",
+        "rule": "student_list",
+        "basis": "PR #62の氏名・学校・原記事行ハッシュの照合を保持し、公式のNPBドラフト対象者欄を再確認。代表選出だけを資格根拠にしない。",
+        "urls": [
+          "https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026"
+        ],
+        "checkedAt": "2026-10-22T03:16:12.315Z",
+        "studentList": {
+          "name": "前嶋藍",
+          "school": "亜細亜大学",
+          "acceptedOn": null,
+          "section": "NPBドラフト対象者"
+        },
+        "collegeGraduated": null,
+        "firstCorporateSeason": null,
+        "highSchoolGraduated": null,
+        "independentSeasons": null
+      }
+    },
+    {
+      "id": "npb:draft:2026:ec006778ad5b6a2e6037ca68",
+      "name": "西野啓也",
+      "affiliation": "立命館大",
+      "group": "university",
+      "position": "捕手",
+      "legacyCandidateId": "npb:draft:2026:ec006778ad5b6a2e6037ca68",
+      "legacyEvidenceSha256": "c28c05f2facdd0e23d6d09145418e205ff16724dbabedd76ef12d54aeac78164",
+      "identityNote": "PR #62の氏名・学校・原記事行ハッシュの照合を保持し、公式のNPBドラフト対象者欄を再確認。代表選出だけを資格根拠にしない。",
+      "identityUrls": [
+        "https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026",
+        "https://ja.wikipedia.org/w/index.php?curid=5209342&oldid=111304047"
+      ],
+      "eligibility": {
+        "status": "reviewed_eligible",
+        "rule": "student_list",
+        "basis": "PR #62の氏名・学校・原記事行ハッシュの照合を保持し、公式のNPBドラフト対象者欄を再確認。代表選出だけを資格根拠にしない。",
+        "urls": [
+          "https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026"
+        ],
+        "checkedAt": "2026-10-22T03:16:12.315Z",
+        "studentList": {
+          "name": "西野啓也",
+          "school": "立命館大学",
+          "acceptedOn": null,
+          "section": "NPBドラフト対象者"
+        },
+        "collegeGraduated": null,
+        "firstCorporateSeason": null,
+        "highSchoolGraduated": null,
+        "independentSeasons": null
+      }
+    },
+    {
+      "id": "npb:draft:2026:40d3417004affe2d49adbda6",
+      "name": "赤堀颯",
+      "affiliation": "國學院大",
+      "group": "university",
+      "position": "内野手",
+      "legacyCandidateId": "npb:draft:2026:40d3417004affe2d49adbda6",
+      "legacyEvidenceSha256": "dc053a80ca16a2d7a4fceee28bdfddb4b5ff602d4d37187dd1f78245642822b0",
+      "identityNote": "PR #62の氏名・学校・原記事行ハッシュの照合を保持し、公式のNPBドラフト対象者欄を再確認。代表選出だけを資格根拠にしない。",
+      "identityUrls": [
+        "https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026",
+        "https://ja.wikipedia.org/w/index.php?curid=5209342&oldid=111304047"
+      ],
+      "eligibility": {
+        "status": "reviewed_eligible",
+        "rule": "student_list",
+        "basis": "PR #62の氏名・学校・原記事行ハッシュの照合を保持し、公式のNPBドラフト対象者欄を再確認。代表選出だけを資格根拠にしない。",
+        "urls": [
+          "https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026"
+        ],
+        "checkedAt": "2026-10-22T03:16:12.315Z",
+        "studentList": {
+          "name": "赤堀颯",
+          "school": "國學院大学",
+          "acceptedOn": null,
+          "section": "NPBドラフト対象者"
+        },
+        "collegeGraduated": null,
+        "firstCorporateSeason": null,
+        "highSchoolGraduated": null,
+        "independentSeasons": null
+      }
+    },
+    {
+      "id": "npb:draft:2026:7f0ffc2601be5157f2181181",
+      "name": "岡田啓吾",
+      "affiliation": "明治大",
+      "group": "university",
+      "position": "内野手",
+      "legacyCandidateId": "npb:draft:2026:7f0ffc2601be5157f2181181",
+      "legacyEvidenceSha256": "4d44551090d08adb72a2b2a3ee4b7472fd8e7ab6539c6d29e12352e10f0919bd",
+      "identityNote": "PR #62の氏名・学校・原記事行ハッシュの照合を保持し、公式のNPBドラフト対象者欄を再確認。代表選出だけを資格根拠にしない。",
+      "identityUrls": [
+        "https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026",
+        "https://ja.wikipedia.org/w/index.php?curid=5209342&oldid=111304047"
+      ],
+      "eligibility": {
+        "status": "reviewed_eligible",
+        "rule": "student_list",
+        "basis": "PR #62の氏名・学校・原記事行ハッシュの照合を保持し、公式のNPBドラフト対象者欄を再確認。代表選出だけを資格根拠にしない。",
+        "urls": [
+          "https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026"
+        ],
+        "checkedAt": "2026-10-22T03:16:12.315Z",
+        "studentList": {
+          "name": "岡田啓吾",
+          "school": "明治大学",
+          "acceptedOn": null,
+          "section": "NPBドラフト対象者"
+        },
+        "collegeGraduated": null,
+        "firstCorporateSeason": null,
+        "highSchoolGraduated": null,
+        "independentSeasons": null
+      }
+    },
+    {
+      "id": "npb:draft:2026:78734d6764f069089e2bb2fb",
+      "name": "山里宝",
+      "affiliation": "亜細亜大",
+      "group": "university",
+      "position": "内野手",
+      "legacyCandidateId": "npb:draft:2026:78734d6764f069089e2bb2fb",
+      "legacyEvidenceSha256": "0fbb1b1e1253ebcc1e8d201cd2764b0b5a065605a4a921f01375fad99f74471f",
+      "identityNote": "PR #62の氏名・学校・原記事行ハッシュの照合を保持し、公式のNPBドラフト対象者欄を再確認。代表選出だけを資格根拠にしない。",
+      "identityUrls": [
+        "https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026",
+        "https://ja.wikipedia.org/w/index.php?curid=5209342&oldid=111304047"
+      ],
+      "eligibility": {
+        "status": "reviewed_eligible",
+        "rule": "student_list",
+        "basis": "PR #62の氏名・学校・原記事行ハッシュの照合を保持し、公式のNPBドラフト対象者欄を再確認。代表選出だけを資格根拠にしない。",
+        "urls": [
+          "https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026"
+        ],
+        "checkedAt": "2026-10-22T03:16:12.315Z",
+        "studentList": {
+          "name": "山里宝",
+          "school": "亜細亜大学",
+          "acceptedOn": null,
+          "section": "NPBドラフト対象者"
+        },
+        "collegeGraduated": null,
+        "firstCorporateSeason": null,
+        "highSchoolGraduated": null,
+        "independentSeasons": null
+      }
+    },
+    {
+      "id": "npb:draft:2026:1dc09f3414fba269aa9a81b6",
+      "name": "榊原七斗",
+      "affiliation": "明治大",
+      "group": "university",
+      "position": "外野手",
+      "legacyCandidateId": "npb:draft:2026:1dc09f3414fba269aa9a81b6",
+      "legacyEvidenceSha256": "57cd6fc1a59e032533d04490987ff22199c326c29dd508533f755fff8e0ef154",
+      "identityNote": "PR #62の氏名・学校・原記事行ハッシュの照合を保持し、公式のNPBドラフト対象者欄を再確認。代表選出だけを資格根拠にしない。",
+      "identityUrls": [
+        "https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026",
+        "https://ja.wikipedia.org/w/index.php?curid=5209342&oldid=111304047"
+      ],
+      "eligibility": {
+        "status": "reviewed_eligible",
+        "rule": "student_list",
+        "basis": "PR #62の氏名・学校・原記事行ハッシュの照合を保持し、公式のNPBドラフト対象者欄を再確認。代表選出だけを資格根拠にしない。",
+        "urls": [
+          "https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026"
+        ],
+        "checkedAt": "2026-10-22T03:16:12.315Z",
+        "studentList": {
+          "name": "榊原七斗",
+          "school": "明治大学",
+          "acceptedOn": null,
+          "section": "NPBドラフト対象者"
+        },
+        "collegeGraduated": null,
+        "firstCorporateSeason": null,
+        "highSchoolGraduated": null,
+        "independentSeasons": null
+      }
+    },
+    {
+      "id": "npb:draft:2026:ec95ea09687ac53752efdaf3",
+      "name": "春山陽登",
+      "affiliation": "大阪商業大",
+      "group": "university",
+      "position": "外野手",
+      "legacyCandidateId": "npb:draft:2026:ec95ea09687ac53752efdaf3",
+      "legacyEvidenceSha256": "a591e55b470d47b5fb0ff8a27575335ce5abb97221731c7ef4f18b7a1612dfeb",
+      "identityNote": "PR #62の氏名・学校・原記事行ハッシュの照合を保持し、公式のNPBドラフト対象者欄を再確認。代表選出だけを資格根拠にしない。",
+      "identityUrls": [
+        "https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026",
+        "https://ja.wikipedia.org/w/index.php?curid=5209342&oldid=111304047"
+      ],
+      "eligibility": {
+        "status": "reviewed_eligible",
+        "rule": "student_list",
+        "basis": "PR #62の氏名・学校・原記事行ハッシュの照合を保持し、公式のNPBドラフト対象者欄を再確認。代表選出だけを資格根拠にしない。",
+        "urls": [
+          "https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026"
+        ],
+        "checkedAt": "2026-10-22T03:16:12.315Z",
+        "studentList": {
+          "name": "春山陽登",
+          "school": "大阪商業大学",
+          "acceptedOn": null,
+          "section": "NPBドラフト対象者"
+        },
+        "collegeGraduated": null,
+        "firstCorporateSeason": null,
+        "highSchoolGraduated": null,
+        "independentSeasons": null
+      }
+    },
+    {
+      "id": "npb:draft:2026:104a779c213c32e08a4db17b",
+      "name": "黒田義信",
+      "affiliation": "東日本国際大学",
+      "group": "university",
+      "position": "外野手",
+      "legacyCandidateId": "npb:draft:2026:104a779c213c32e08a4db17b",
+      "legacyEvidenceSha256": "931a7fc6732a6cbc9a5469e6a97c96fc241774f9c4d203062cb8eb0c81811a73",
+      "identityNote": "PR #62の氏名・学校・原記事行ハッシュの照合を保持し、公式のNPBドラフト対象者欄を再確認。代表選出だけを資格根拠にしない。",
+      "identityUrls": [
+        "https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026",
+        "https://ja.wikipedia.org/w/index.php?curid=5209342&oldid=111304047"
+      ],
+      "eligibility": {
+        "status": "reviewed_eligible",
+        "rule": "student_list",
+        "basis": "PR #62の氏名・学校・原記事行ハッシュの照合を保持し、公式のNPBドラフト対象者欄を再確認。代表選出だけを資格根拠にしない。",
+        "urls": [
+          "https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026"
+        ],
+        "checkedAt": "2026-10-22T03:16:12.315Z",
+        "studentList": {
+          "name": "黒田義信",
+          "school": "東日本国際大学",
+          "acceptedOn": null,
+          "section": "NPBドラフト対象者"
+        },
+        "collegeGraduated": null,
+        "firstCorporateSeason": null,
+        "highSchoolGraduated": null,
+        "independentSeasons": null
+      }
+    },
+    {
+      "id": "npb:draft:2026:d1ed5520537d0b46214ae81f",
+      "name": "樋口新",
+      "affiliation": "王子",
+      "group": "corporate",
+      "position": "投手",
+      "legacyCandidateId": "npb:draft:2026:d1ed5520537d0b46214ae81f",
+      "legacyEvidenceSha256": "add97591a4d66a0a981b8fcc6923365e825d00c5eb4d7336ddbe988ede74c9af",
+      "identityNote": "王子の選手紹介の氏名・愛知工業大学出身・2002年6月28日と、愛知県の本人取材の2025年入社を照合。大学卒業後2シーズン目。",
+      "identityUrls": [
+        "https://www.ojiholdings.co.jp/baseball/member/",
+        "https://aichi-sports.jp/pickup/6858/"
+      ],
+      "eligibility": {
+        "status": "reviewed_eligible",
+        "rule": "corporate_graduate",
+        "basis": "王子の選手紹介の氏名・愛知工業大学出身・2002年6月28日と、愛知県の本人取材の2025年入社を照合。大学卒業後2シーズン目。",
+        "urls": [
+          "https://jpbpa.net/wp-content/uploads/2021/12/rp2010.pdf",
+          "https://www.nikkansports.com/baseball/news/202610210000116.html",
+          "https://www.ojiholdings.co.jp/baseball/member/",
+          "https://aichi-sports.jp/pickup/6858/"
+        ],
+        "checkedAt": "2026-10-22T03:16:12.315Z",
+        "studentList": null,
+        "collegeGraduated": true,
+        "firstCorporateSeason": 2025,
+        "highSchoolGraduated": null,
+        "independentSeasons": null
+      }
+    },
+    {
+      "id": "npb:draft:2026:3721cb6fb28b28580fb4d16d",
+      "name": "谷脇弘起",
+      "affiliation": "日本生命",
+      "group": "corporate",
+      "position": "投手",
+      "legacyCandidateId": "npb:draft:2026:3721cb6fb28b28580fb4d16d",
+      "legacyEvidenceSha256": "b8ba2d712f98536ce58cdae2e948abf48ea551fa8fcbe454660678f4d2537bc8",
+      "identityNote": "日本生命の公式選手紹介の立命館大学出身と、2024年4月11日の新加入発表の氏名・投手を照合。大学卒業後3シーズン目。",
+      "identityUrls": [
+        "https://www.nissay.co.jp/enjoy/sports/baseball/member.html",
+        "https://www.nissay.co.jp/enjoy/sports/baseball/news/20240411.html"
+      ],
+      "eligibility": {
+        "status": "reviewed_eligible",
+        "rule": "corporate_graduate",
+        "basis": "日本生命の公式選手紹介の立命館大学出身と、2024年4月11日の新加入発表の氏名・投手を照合。大学卒業後3シーズン目。",
+        "urls": [
+          "https://jpbpa.net/wp-content/uploads/2021/12/rp2010.pdf",
+          "https://www.nikkansports.com/baseball/news/202610210000116.html",
+          "https://www.nissay.co.jp/enjoy/sports/baseball/member.html",
+          "https://www.nissay.co.jp/enjoy/sports/baseball/news/20240411.html"
+        ],
+        "checkedAt": "2026-10-22T03:16:12.315Z",
+        "studentList": null,
+        "collegeGraduated": true,
+        "firstCorporateSeason": 2024,
+        "highSchoolGraduated": null,
+        "independentSeasons": null
+      }
+    },
+    {
+      "id": "npb:draft:2026:df24cf591b64e77f80d1e1ab",
+      "name": "熊田任洋",
+      "affiliation": "トヨタ",
+      "group": "corporate",
+      "position": "内野手",
+      "legacyCandidateId": "npb:draft:2026:df24cf591b64e77f80d1e1ab",
+      "legacyEvidenceSha256": "af62c0bf32544a80fe5365e83710d18f0bbc35bc4468cf9c100bd8fe027431ea",
+      "identityNote": "トヨタの選手個別ページの早稲田大学出身・2001年4月15日と、2024年の新人報道を照合。大学卒業後3シーズン目。",
+      "identityUrls": [
+        "https://sports.gazoo.com/baseball/player/post-82.html",
+        "https://www.sponichi.co.jp/baseball/news/2024/11/05/kiji/20241105s00001003051000c.html?page=1"
+      ],
+      "eligibility": {
+        "status": "reviewed_eligible",
+        "rule": "corporate_graduate",
+        "basis": "トヨタの選手個別ページの早稲田大学出身・2001年4月15日と、2024年の新人報道を照合。大学卒業後3シーズン目。",
+        "urls": [
+          "https://jpbpa.net/wp-content/uploads/2021/12/rp2010.pdf",
+          "https://www.nikkansports.com/baseball/news/202610210000116.html",
+          "https://sports.gazoo.com/baseball/player/post-82.html",
+          "https://www.sponichi.co.jp/baseball/news/2024/11/05/kiji/20241105s00001003051000c.html?page=1"
+        ],
+        "checkedAt": "2026-10-22T03:16:12.315Z",
+        "studentList": null,
+        "collegeGraduated": true,
+        "firstCorporateSeason": 2024,
+        "highSchoolGraduated": null,
+        "independentSeasons": null
+      }
+    },
+    {
+      "id": "npb:draft:2026:39a5e94eeb1b955a80fdd95d",
+      "name": "藤澤涼介",
+      "affiliation": "東京ガス",
+      "group": "corporate",
+      "position": "外野手",
+      "legacyCandidateId": "npb:draft:2026:39a5e94eeb1b955a80fdd95d",
+      "legacyEvidenceSha256": "c2323aa88c0214322237150a24f83f1a6957efb8d607b25974206eaa140fc575",
+      "identityNote": "東京ガスの個別ページの横浜国立大学出身・2002年6月4日・在籍2年目と、JABAの2025年新人記事を照合。大学卒業後2シーズン目。",
+      "identityUrls": [
+        "https://www.tg-baseballclub.com/locker_room/24.html",
+        "https://www.jaba.or.jp/topics/detail/?id=22270"
+      ],
+      "eligibility": {
+        "status": "reviewed_eligible",
+        "rule": "corporate_graduate",
+        "basis": "東京ガスの個別ページの横浜国立大学出身・2002年6月4日・在籍2年目と、JABAの2025年新人記事を照合。大学卒業後2シーズン目。",
+        "urls": [
+          "https://jpbpa.net/wp-content/uploads/2021/12/rp2010.pdf",
+          "https://www.nikkansports.com/baseball/news/202610210000116.html",
+          "https://www.tg-baseballclub.com/locker_room/24.html",
+          "https://www.jaba.or.jp/topics/detail/?id=22270"
+        ],
+        "checkedAt": "2026-10-22T03:16:12.315Z",
+        "studentList": null,
+        "collegeGraduated": true,
+        "firstCorporateSeason": 2025,
+        "highSchoolGraduated": null,
+        "independentSeasons": null
+      }
+    },
+    {
+      "id": "npb:draft:2026:93ba2b4b0c3dfdf968147d7a",
+      "name": "鈴木悠悟",
+      "affiliation": "中京",
+      "group": "high_school",
+      "position": "投手",
+      "legacyCandidateId": "npb:draft:2026:93ba2b4b0c3dfdf968147d7a",
+      "legacyEvidenceSha256": "28bfb20d3b3ef1e27570f08914b2243fb68afcebbbaab82fe99dce18c1ef5b82",
+      "identityNote": "PR #62の氏名・学校・原記事行ハッシュの照合を保持し、公式のNPBドラフト対象者欄を再確認。代表選出だけを資格根拠にしない。",
+      "identityUrls": [
+        "https://www.jhbf.or.jp/pro-aspiring/2026.html",
+        "https://ja.wikipedia.org/w/index.php?curid=5209342&oldid=111304047"
+      ],
+      "eligibility": {
+        "status": "reviewed_eligible",
+        "rule": "student_list",
+        "basis": "PR #62の氏名・学校・原記事行ハッシュの照合を保持し、公式のNPBドラフト対象者欄を再確認。代表選出だけを資格根拠にしない。",
+        "urls": [
+          "https://www.jhbf.or.jp/pro-aspiring/2026.html"
+        ],
+        "checkedAt": "2026-10-22T03:16:12.315Z",
+        "studentList": {
+          "name": "鈴木悠悟",
+          "school": "中京",
+          "acceptedOn": null,
+          "section": "NPBドラフト対象者"
+        },
+        "collegeGraduated": null,
+        "firstCorporateSeason": null,
+        "highSchoolGraduated": null,
+        "independentSeasons": null
+      }
+    },
+    {
+      "id": "npb:draft:2026:e5e33a7e260146db9f9ef81f",
+      "name": "末吉良丞",
+      "affiliation": "沖縄尚学",
+      "group": "high_school",
+      "position": "投手",
+      "legacyCandidateId": "npb:draft:2026:e5e33a7e260146db9f9ef81f",
+      "legacyEvidenceSha256": "2de1e8ed1d52b64535846f5d0681e612c38fd00308da9f7545bd800b6508ffa9",
+      "identityNote": "PR #62の氏名・学校・原記事行ハッシュの照合を保持し、公式のNPBドラフト対象者欄を再確認。代表選出だけを資格根拠にしない。",
+      "identityUrls": [
+        "https://www.jhbf.or.jp/pro-aspiring/2026.html",
+        "https://ja.wikipedia.org/w/index.php?curid=5209342&oldid=111304047"
+      ],
+      "eligibility": {
+        "status": "reviewed_eligible",
+        "rule": "student_list",
+        "basis": "PR #62の氏名・学校・原記事行ハッシュの照合を保持し、公式のNPBドラフト対象者欄を再確認。代表選出だけを資格根拠にしない。",
+        "urls": [
+          "https://www.jhbf.or.jp/pro-aspiring/2026.html"
+        ],
+        "checkedAt": "2026-10-22T03:16:12.315Z",
+        "studentList": {
+          "name": "末吉良丞",
+          "school": "沖縄尚学",
+          "acceptedOn": null,
+          "section": "NPBドラフト対象者"
+        },
+        "collegeGraduated": null,
+        "firstCorporateSeason": null,
+        "highSchoolGraduated": null,
+        "independentSeasons": null
+      }
+    },
+    {
+      "id": "npb:draft:2026:5fc472c5d8496778cb51574e",
+      "name": "杉本真滉",
+      "affiliation": "智弁学園",
+      "group": "high_school",
+      "position": "投手",
+      "legacyCandidateId": "npb:draft:2026:5fc472c5d8496778cb51574e",
+      "legacyEvidenceSha256": "a44fa7f4af77f80e053d5f093f8242dd497858dc013e4f808b73751c17607829",
+      "identityNote": "PR #62の氏名・学校・原記事行ハッシュの照合を保持し、公式のNPBドラフト対象者欄を再確認。代表選出だけを資格根拠にしない。",
+      "identityUrls": [
+        "https://www.jhbf.or.jp/pro-aspiring/2026.html",
+        "https://ja.wikipedia.org/w/index.php?curid=5209342&oldid=111304047"
+      ],
+      "eligibility": {
+        "status": "reviewed_eligible",
+        "rule": "student_list",
+        "basis": "PR #62の氏名・学校・原記事行ハッシュの照合を保持し、公式のNPBドラフト対象者欄を再確認。代表選出だけを資格根拠にしない。",
+        "urls": [
+          "https://www.jhbf.or.jp/pro-aspiring/2026.html"
+        ],
+        "checkedAt": "2026-10-22T03:16:12.315Z",
+        "studentList": {
+          "name": "杉本真滉",
+          "school": "智辯学園",
+          "acceptedOn": null,
+          "section": "NPBドラフト対象者"
+        },
+        "collegeGraduated": null,
+        "firstCorporateSeason": null,
+        "highSchoolGraduated": null,
+        "independentSeasons": null
+      }
+    },
+    {
+      "id": "npb:draft:2026:8b85a97b31a8b97e601a33b9",
+      "name": "池田聖摩",
+      "affiliation": "横浜",
+      "group": "high_school",
+      "position": "内野手",
+      "legacyCandidateId": "npb:draft:2026:8b85a97b31a8b97e601a33b9",
+      "legacyEvidenceSha256": "2f56e627820b42307fa8e5c5908febded0ee3a1fa85a75342c6c0cbb29a814bd",
+      "identityNote": "PR #62の氏名・学校・原記事行ハッシュの照合を保持し、公式のNPBドラフト対象者欄を再確認。代表選出だけを資格根拠にしない。",
+      "identityUrls": [
+        "https://www.jhbf.or.jp/pro-aspiring/2026.html",
+        "https://ja.wikipedia.org/w/index.php?curid=5209342&oldid=111304047"
+      ],
+      "eligibility": {
+        "status": "reviewed_eligible",
+        "rule": "student_list",
+        "basis": "PR #62の氏名・学校・原記事行ハッシュの照合を保持し、公式のNPBドラフト対象者欄を再確認。代表選出だけを資格根拠にしない。",
+        "urls": [
+          "https://www.jhbf.or.jp/pro-aspiring/2026.html"
+        ],
+        "checkedAt": "2026-10-22T03:16:12.315Z",
+        "studentList": {
+          "name": "池田聖摩",
+          "school": "横浜",
+          "acceptedOn": null,
+          "section": "NPBドラフト対象者"
+        },
+        "collegeGraduated": null,
+        "firstCorporateSeason": null,
+        "highSchoolGraduated": null,
+        "independentSeasons": null
+      }
+    },
+    {
+      "id": "npb:draft:2026:7830bed6d0be5be20bfa03ce",
+      "name": "三浦遼大",
+      "affiliation": "茨城アストロプラネッツ",
+      "group": "independent",
+      "position": "投手",
+      "legacyCandidateId": "npb:draft:2026:7830bed6d0be5be20bfa03ce",
+      "legacyEvidenceSha256": "2946424fd49deae9f7f37bbf21d5ca6edc558d64011a7068ab5695c6a42257f2",
+      "identityNote": "茨城の2026年個別ページで氏名・2006年1月2日・青森山田高校卒・大学等なし・BCL3年目を照合。BCリーグの2025年告知も同じ球団・背番号19・氏名を確認。学生の志望届・JABAの大卒2年規則は流用しない。",
+      "identityUrls": [
+        "https://www.ibaraki-planets.jp/team/ryodai_miura/index.html",
+        "https://bc-l.jp/news.php?keyno=1570"
+      ],
+      "eligibility": {
+        "status": "reviewed_eligible",
+        "rule": "independent_graduate",
+        "basis": "茨城の2026年個別ページで氏名・2006年1月2日・青森山田高校卒・大学等なし・BCL3年目を照合。BCリーグの2025年告知も同じ球団・背番号19・氏名を確認。学生の志望届・JABAの大卒2年規則は流用しない。",
+        "urls": [
+          "https://www.nikkansports.com/baseball/news/202610210000116.html",
+          "https://www.ibaraki-planets.jp/team/ryodai_miura/index.html",
+          "https://bc-l.jp/news.php?keyno=1570"
+        ],
+        "checkedAt": "2026-10-22T03:16:12.315Z",
+        "studentList": null,
+        "collegeGraduated": null,
+        "firstCorporateSeason": null,
+        "highSchoolGraduated": true,
+        "independentSeasons": 3
+      }
+    },
+    {
+      "id": "npb:draft:2026:5a072b9b853a73de618277b3",
+      "name": "菰田陽生",
+      "affiliation": "山梨学院",
+      "group": "high_school",
+      "position": "未確認",
+      "legacyCandidateId": "npb:draft:2026:5a072b9b853a73de618277b3",
+      "legacyEvidenceSha256": "db91ac7ff38d8749dce06658baf97d86d36cbd066f5b8070d5d522fa373e8967",
+      "identityNote": "PR #62の氏名・学校・原記事行ハッシュの照合を保持し、公式のNPBドラフト対象者欄を再確認。代表選出だけを資格根拠にしない。",
+      "identityUrls": [
+        "https://www.jhbf.or.jp/pro-aspiring/2026.html",
+        "https://ja.wikipedia.org/w/index.php?curid=5110570&oldid=111181266"
+      ],
+      "eligibility": {
+        "status": "reviewed_eligible",
+        "rule": "student_list",
+        "basis": "PR #62の氏名・学校・原記事行ハッシュの照合を保持し、公式のNPBドラフト対象者欄を再確認。代表選出だけを資格根拠にしない。",
+        "urls": [
+          "https://www.jhbf.or.jp/pro-aspiring/2026.html"
+        ],
+        "checkedAt": "2026-10-22T03:16:12.315Z",
+        "studentList": {
+          "name": "菰田陽生",
+          "school": "山梨学院",
+          "acceptedOn": null,
+          "section": "NPBドラフト対象者"
+        },
+        "collegeGraduated": null,
+        "firstCorporateSeason": null,
+        "highSchoolGraduated": null,
+        "independentSeasons": null
+      }
+    },
+    {
+      "id": "npb:draft:2026:c8f261367e835b0488eceaae",
+      "name": "有馬伽久",
+      "affiliation": "立命館大学",
+      "group": "university",
+      "position": "投手",
+      "legacyCandidateId": null,
+      "legacyEvidenceSha256": null,
+      "identityNote": "大学公式の4回生・左投手・愛工大名電出身・9月12日提出と、連盟の氏名・学校を照合。",
+      "identityUrls": [
+        "https://www.ritsumei.ac.jp/sports-culture/sports/topics/detail/?id=1031",
+        "https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026"
+      ],
+      "eligibility": {
+        "status": "reviewed_eligible",
+        "rule": "student_list",
+        "basis": "大学公式の4回生・左投手・愛工大名電出身・9月12日提出と、連盟の氏名・学校を照合。",
+        "urls": [
+          "https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026"
+        ],
+        "checkedAt": "2026-10-22T03:16:12.315Z",
+        "studentList": {
+          "name": "有馬伽久",
+          "school": "立命館大学",
+          "acceptedOn": "2026-09-12",
+          "section": "NPBドラフト対象者"
+        },
+        "collegeGraduated": null,
+        "firstCorporateSeason": null,
+        "highSchoolGraduated": null,
+        "independentSeasons": null
+      }
+    },
+    {
+      "id": "npb:draft:2026:b7924371225d07a61ad67f59",
+      "name": "川尻啓人",
+      "affiliation": "亜細亜大学",
+      "group": "university",
+      "position": "投手",
+      "legacyCandidateId": null,
+      "legacyEvidenceSha256": null,
+      "identityNote": "大学の個別ページ（2004年10月23日、高岡商業、4年生、投手）と、連盟の氏名・学校を照合。",
+      "identityUrls": [
+        "https://www.asia-u-bbc.com/member/keito_kawajiri",
+        "https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026"
+      ],
+      "eligibility": {
+        "status": "reviewed_eligible",
+        "rule": "student_list",
+        "basis": "大学の個別ページ（2004年10月23日、高岡商業、4年生、投手）と、連盟の氏名・学校を照合。",
+        "urls": [
+          "https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026"
+        ],
+        "checkedAt": "2026-10-22T03:16:12.315Z",
+        "studentList": {
+          "name": "川尻啓人",
+          "school": "亜細亜大学",
+          "acceptedOn": "2026-09-04",
+          "section": "NPBドラフト対象者"
+        },
+        "collegeGraduated": null,
+        "firstCorporateSeason": null,
+        "highSchoolGraduated": null,
+        "independentSeasons": null
+      }
+    },
+    {
+      "id": "npb:draft:2026:9d30fadb9f03105270424285",
+      "name": "福原聖矢",
+      "affiliation": "明治大学",
+      "group": "university",
+      "position": "捕手",
+      "legacyCandidateId": null,
+      "legacyEvidenceSha256": null,
+      "identityNote": "大学10月5日発表の国際日本学部4年・志望届提出者と連盟を照合。捕手は東京六大学の公式選手記録20233004でも確認。",
+      "identityUrls": [
+        "https://www.meiji.ac.jp/koho/press/2026/lpcfhr0000019asm.html",
+        "https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026"
+      ],
+      "eligibility": {
+        "status": "reviewed_eligible",
+        "rule": "student_list",
+        "basis": "大学10月5日発表の国際日本学部4年・志望届提出者と連盟を照合。捕手は東京六大学の公式選手記録20233004でも確認。",
+        "urls": [
+          "https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026"
+        ],
+        "checkedAt": "2026-10-22T03:16:12.315Z",
+        "studentList": {
+          "name": "福原聖矢",
+          "school": "明治大学",
+          "acceptedOn": "2026-10-02",
+          "section": "NPBドラフト対象者"
+        },
+        "collegeGraduated": null,
+        "firstCorporateSeason": null,
+        "highSchoolGraduated": null,
+        "independentSeasons": null
+      }
+    },
+    {
+      "id": "npb:draft:2026:dc44cd1efb3d4d1352aa2964",
+      "name": "田代旭",
+      "affiliation": "筑波大学",
+      "group": "university",
+      "position": "捕手",
+      "legacyCandidateId": null,
+      "legacyEvidenceSha256": null,
+      "identityNote": "大学の個別ページと9月27日の公式試合報告（体育4年、花巻東、捕手2）を連盟の氏名・学校と照合。",
+      "identityUrls": [
+        "https://www.tsukubaowls.com/member/baseball/asahi-tashiro",
+        "https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026"
+      ],
+      "eligibility": {
+        "status": "reviewed_eligible",
+        "rule": "student_list",
+        "basis": "大学の個別ページと9月27日の公式試合報告（体育4年、花巻東、捕手2）を連盟の氏名・学校と照合。",
+        "urls": [
+          "https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026"
+        ],
+        "checkedAt": "2026-10-22T03:16:12.315Z",
+        "studentList": {
+          "name": "田代旭",
+          "school": "筑波大学",
+          "acceptedOn": "2026-09-06",
+          "section": "NPBドラフト対象者"
+        },
+        "collegeGraduated": null,
+        "firstCorporateSeason": null,
+        "highSchoolGraduated": null,
+        "independentSeasons": null
+      }
+    },
+    {
+      "id": "npb:draft:2026:d88ee433f64492cb972f8683",
+      "name": "伊藤櫂人",
+      "affiliation": "中央大学",
+      "group": "university",
+      "position": "内野手",
+      "legacyCandidateId": null,
+      "legacyEvidenceSha256": null,
+      "identityNote": "大学10月15日発表の文学部4年・大阪桐蔭・内野手・志望届提出と連盟を照合。",
+      "identityUrls": [
+        "https://www.chuo-u.ac.jp/aboutus/communication/press/2026/10/88700/",
+        "https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026"
+      ],
+      "eligibility": {
+        "status": "reviewed_eligible",
+        "rule": "student_list",
+        "basis": "大学10月15日発表の文学部4年・大阪桐蔭・内野手・志望届提出と連盟を照合。",
+        "urls": [
+          "https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026"
+        ],
+        "checkedAt": "2026-10-22T03:16:12.315Z",
+        "studentList": {
+          "name": "伊藤櫂人",
+          "school": "中央大学",
+          "acceptedOn": "2026-09-26",
+          "section": "NPBドラフト対象者"
+        },
+        "collegeGraduated": null,
+        "firstCorporateSeason": null,
+        "highSchoolGraduated": null,
+        "independentSeasons": null
+      }
+    },
+    {
+      "id": "npb:draft:2026:460149aa08cf85577245ede1",
+      "name": "仲井慎",
+      "affiliation": "駒澤大学",
+      "group": "university",
+      "position": "投手",
+      "legacyCandidateId": null,
+      "legacyEvidenceSha256": null,
+      "identityNote": "大学10月15日試合報告の法学部4年・投手と連盟を照合。高校公式パンフレットでも下関国際卒から駒澤大学法学部への経歴を確認。",
+      "identityUrls": [
+        "https://www.komazawa-u.ac.jp/komaspo/baseball/19395.html",
+        "https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026"
+      ],
+      "eligibility": {
+        "status": "reviewed_eligible",
+        "rule": "student_list",
+        "basis": "大学10月15日試合報告の法学部4年・投手と連盟を照合。高校公式パンフレットでも下関国際卒から駒澤大学法学部への経歴を確認。",
+        "urls": [
+          "https://www.jubf.net/system/prog/procandidate.php?kind=all&year=2026"
+        ],
+        "checkedAt": "2026-10-22T03:16:12.315Z",
+        "studentList": {
+          "name": "仲井慎",
+          "school": "駒澤大学",
+          "acceptedOn": "2026-09-15",
+          "section": "NPBドラフト対象者"
+        },
+        "collegeGraduated": null,
+        "firstCorporateSeason": null,
+        "highSchoolGraduated": null,
+        "independentSeasons": null
+      }
+    },
+    {
+      "id": "npb:draft:2026:48213c2cfc358dc0e3f2199d",
+      "name": "牟禮翔",
+      "affiliation": "九州国際大付",
+      "group": "high_school",
+      "position": "外野手",
+      "legacyCandidateId": null,
+      "legacyEvidenceSha256": null,
+      "identityNote": "7月17日の現地試合報告の氏名・学校・3年・外野手を、高野連NPB対象者欄の氏名・学校と照合。登録名の別選手への統合はしない。",
+      "identityUrls": [
+        "https://www.hb-nippon.com/articles/15040?page=1",
+        "https://www.jhbf.or.jp/pro-aspiring/2026.html"
+      ],
+      "eligibility": {
+        "status": "reviewed_eligible",
+        "rule": "student_list",
+        "basis": "7月17日の現地試合報告の氏名・学校・3年・外野手を、高野連NPB対象者欄の氏名・学校と照合。登録名の別選手への統合はしない。",
+        "urls": [
+          "https://www.jhbf.or.jp/pro-aspiring/2026.html"
+        ],
+        "checkedAt": "2026-10-22T03:16:12.315Z",
+        "studentList": {
+          "name": "牟禮翔",
+          "school": "九州国際大付",
+          "acceptedOn": "2026-09-01",
+          "section": "NPBドラフト対象者"
+        },
+        "collegeGraduated": null,
+        "firstCorporateSeason": null,
+        "highSchoolGraduated": null,
+        "independentSeasons": null
+      }
+    },
+    {
+      "id": "npb:draft:2026:8ffa048533d8debdb347c74c",
+      "name": "内藤蒼",
+      "affiliation": "浦和学院",
+      "group": "high_school",
+      "position": "捕手",
+      "legacyCandidateId": null,
+      "legacyEvidenceSha256": null,
+      "identityNote": "学校自身の7月3日記事の3年・捕手と、高野連NPB対象者欄の氏名・学校を照合。",
+      "identityUrls": [
+        "https://sports.yahoo.co.jp/official/detail/2026070300059-spnaviow",
+        "https://www.jhbf.or.jp/pro-aspiring/2026.html"
+      ],
+      "eligibility": {
+        "status": "reviewed_eligible",
+        "rule": "student_list",
+        "basis": "学校自身の7月3日記事の3年・捕手と、高野連NPB対象者欄の氏名・学校を照合。",
+        "urls": [
+          "https://www.jhbf.or.jp/pro-aspiring/2026.html"
+        ],
+        "checkedAt": "2026-10-22T03:16:12.315Z",
+        "studentList": {
+          "name": "内藤蒼",
+          "school": "浦和学院",
+          "acceptedOn": "2026-09-15",
+          "section": "NPBドラフト対象者"
+        },
+        "collegeGraduated": null,
+        "firstCorporateSeason": null,
+        "highSchoolGraduated": null,
+        "independentSeasons": null
+      }
+    },
+    {
+      "id": "npb:draft:2026:086f6afa7ae8f6c1596c3e37",
+      "name": "柴﨑聖人",
+      "affiliation": "王子",
+      "group": "corporate",
+      "position": "外野手",
+      "legacyCandidateId": null,
+      "legacyEvidenceSha256": null,
+      "identityNote": "王子個別紹介の2002年4月4日・岐阜第一／大阪経済大学と、愛知県本人取材の2025年入社を照合。旧版の柴崎表記を名前だけで再結合せず、独立した特集IDを使用。",
+      "identityUrls": [
+        "https://www.ojiholdings.co.jp/baseball/member/",
+        "https://aichi-sports.jp/pickup/6858/"
+      ],
+      "eligibility": {
+        "status": "reviewed_eligible",
+        "rule": "corporate_graduate",
+        "basis": "大学卒業後2025年入社、2026年は2シーズン目。学生の志望届とは別に、本人取材と公式所属表から個別審査。",
+        "urls": [
+          "https://jpbpa.net/wp-content/uploads/2021/12/rp2010.pdf",
+          "https://www.nikkansports.com/baseball/news/202610210000116.html",
+          "https://www.ojiholdings.co.jp/baseball/member/",
+          "https://aichi-sports.jp/pickup/6858/"
+        ],
+        "checkedAt": "2026-10-22T03:16:12.315Z",
+        "studentList": null,
+        "collegeGraduated": true,
+        "firstCorporateSeason": 2025,
+        "highSchoolGraduated": null,
+        "independentSeasons": null
+      }
+    }
+  ],
+  "clubs": [
+    {
+      "teamId": "npb:team:giants",
+      "context": "野手の世代更新を優先。外野を先に確保し、次に内野、最後に育成時間の長い捕手を置く。既存主力の退団を前提にせず、3つの育成時計をずらす。",
+      "referenceUrls": [
+        "https://sportiva.shueisha.co.jp/clm/baseball/npb/2026/10/20/2026dh/?page=2",
+        "https://thedigestweb.com/baseball/detail/id=121697",
+        "https://www.nikkan-gendai.com/articles/view/sports/394202"
+      ]
+    },
+    {
+      "teamId": "npb:team:tigers",
+      "context": "捕手の継承と内野の厚みを課題に置く。捕手競合には参加し、当選する本線では2位を社会人投手、3位を大学内野手へ。投打の補強を一度に進める。",
+      "referenceUrls": [
+        "https://sportiva.shueisha.co.jp/clm/baseball/npb/2026/10/20/2026dh/"
+      ]
+    },
+    {
+      "teamId": "npb:team:dragons",
+      "context": "捕手優先の外部の見方もあるが、渡部の抽選を外した本線では投手へ転換。大学・高校・大学と育成期間を分け、上位3人を投手に振る大胆な独自案。",
+      "referenceUrls": [
+        "https://sportiva.shueisha.co.jp/clm/baseball/npb/2026/10/20/2026_27/?page=3"
+      ]
+    },
+    {
+      "teamId": "npb:team:carp",
+      "context": "投手の厚みを先に作り、捕手の継承と内野を続ける。捕手1位案とは異なり、大学投手を入口に3つの役割を分散させる。",
+      "referenceUrls": [
+        "https://sportiva.shueisha.co.jp/clm/baseball/npb/2026/10/20/2026_27/",
+        "https://thedigestweb.com/baseball/detail/id=121695"
+      ]
+    },
+    {
+      "teamId": "npb:team:swallows",
+      "context": "投手層の補強が第一。最初に大学投手、2位に社会人外野手、3位にもう一人大学投手を置き、投手偏重と野手の更新を両立させる。",
+      "referenceUrls": [
+        "https://sportiva.shueisha.co.jp/clm/baseball/npb/2026/10/20/2026_27/?page=2"
+      ]
+    },
+    {
+      "teamId": "npb:team:baystars",
+      "context": "投手層と捕手の次世代を補う。大学左腕を先に押さえ、高校投手と大学捕手を続ける。既存捕手の退団や将来の背番号は予想に使わない。",
+      "referenceUrls": [
+        "https://sportiva.shueisha.co.jp/clm/baseball/npb/2026/10/20/2026dh/?page=3"
+      ]
+    },
+    {
+      "teamId": "npb:team:hawks",
+      "context": "長期育成へ投資しながら、捕手と投手の選択肢も確保する。選手層に余裕があるという見方を、現在の登録状態の断定には使わない。",
+      "referenceUrls": [
+        "https://sportiva.shueisha.co.jp/clm/baseball/npb/2026/10/21/_2026dh/"
+      ]
+    },
+    {
+      "teamId": "npb:team:fighters",
+      "context": "上位では将来の主力を狙い、大学投手と内野手で補完する。菰田の抽選敗退後にも高校投手の成長へ投資する軸を残す。",
+      "referenceUrls": [
+        "https://sportiva.shueisha.co.jp/clm/baseball/npb/2026/10/21/_2026dh/?page=3"
+      ]
+    },
+    {
+      "teamId": "npb:team:lions",
+      "context": "投手の補強を優先しつつ、外野の次世代も外さない。大学投手、大学外野手、大学投手の順で、特定のFA・退団を前提にしない。",
+      "referenceUrls": [
+        "https://sportiva.shueisha.co.jp/clm/baseball/npb/2026/10/21/_2026dh/?page=2"
+      ]
+    },
+    {
+      "teamId": "npb:team:marines",
+      "context": "投手・内野・捕手を分散補強。宮原の抽選を外した場合も投手優先を保ち、社会人内野手と大学捕手で選手層を補う。",
+      "referenceUrls": [
+        "https://sportiva.shueisha.co.jp/clm/baseball/npb/2026/10/21/_2026/?page=2"
+      ]
+    },
+    {
+      "teamId": "npb:team:eagles",
+      "context": "捕手補強を狙うが、抽選敗退時は社会人の野手へ転換。2位先頭で左投手を確保し、3位に大学内野手を置く。捕手の補充は4位以降も課題として残る。",
+      "referenceUrls": [
+        "https://sportiva.shueisha.co.jp/clm/baseball/npb/2026/10/21/_2026/?page=3"
+      ]
+    },
+    {
+      "teamId": "npb:team:buffaloes",
+      "context": "投手層を先に補い、高校と大学の外野手を続ける。育成期間を分けた2人を選び、打線の次世代にも比重を置く。",
+      "referenceUrls": [
+        "https://sportiva.shueisha.co.jp/clm/baseball/npb/2026/10/21/_2026/"
+      ]
+    }
+  ],
+  "researchReferences": [
+    {
+      "url": "https://sportiva.shueisha.co.jp/clm/baseball/npb/2026/10/20/2026dh/",
+      "publisher": "web Sportiva（集英社）",
+      "author": "高木豊（見解）／浜田哲男（取材・文）",
+      "publishedOn": "2026-10-20",
+      "updatedOn": "2026-10-20",
+      "checkedAt": "2026-10-21T15:25:10.116Z",
+      "kind": "commentary",
+      "topic": "阪神の捕手・内野手補強について"
+    },
+    {
+      "url": "https://sportiva.shueisha.co.jp/clm/baseball/npb/2026/10/20/2026dh/?page=2",
+      "publisher": "web Sportiva（集英社）",
+      "author": "高木豊（見解）／浜田哲男（取材・文）",
+      "publishedOn": "2026-10-20",
+      "updatedOn": "2026-10-20",
+      "checkedAt": "2026-10-21T15:25:10.116Z",
+      "kind": "commentary",
+      "topic": "巨人の野手補強について"
+    },
+    {
+      "url": "https://sportiva.shueisha.co.jp/clm/baseball/npb/2026/10/20/2026dh/?page=3",
+      "publisher": "web Sportiva（集英社）",
+      "author": "高木豊（見解）／浜田哲男（取材・文）",
+      "publishedOn": "2026-10-20",
+      "updatedOn": "2026-10-20",
+      "checkedAt": "2026-10-21T15:25:10.116Z",
+      "kind": "commentary",
+      "topic": "DeNAの投手・捕手補強について"
+    },
+    {
+      "url": "https://sportiva.shueisha.co.jp/clm/baseball/npb/2026/10/20/2026_27/",
+      "publisher": "web Sportiva（集英社）",
+      "author": "高木豊（見解）／浜田哲男（取材・文）",
+      "publishedOn": "2026-10-20",
+      "updatedOn": "2026-10-21",
+      "checkedAt": "2026-10-21T15:25:10.116Z",
+      "kind": "commentary",
+      "topic": "広島の投手・内野手補強について"
+    },
+    {
+      "url": "https://sportiva.shueisha.co.jp/clm/baseball/npb/2026/10/20/2026_27/?page=2",
+      "publisher": "web Sportiva（集英社）",
+      "author": "高木豊（見解）／浜田哲男（取材・文）",
+      "publishedOn": "2026-10-20",
+      "updatedOn": "2026-10-21",
+      "checkedAt": "2026-10-21T15:25:10.116Z",
+      "kind": "commentary",
+      "topic": "ヤクルトの投手・外野手補強について"
+    },
+    {
+      "url": "https://sportiva.shueisha.co.jp/clm/baseball/npb/2026/10/20/2026_27/?page=3",
+      "publisher": "web Sportiva（集英社）",
+      "author": "高木豊（見解）／浜田哲男（取材・文）",
+      "publishedOn": "2026-10-20",
+      "updatedOn": "2026-10-21",
+      "checkedAt": "2026-10-21T15:25:10.116Z",
+      "kind": "commentary",
+      "topic": "中日の捕手・投手補強について"
+    },
+    {
+      "url": "https://sportiva.shueisha.co.jp/clm/baseball/npb/2026/10/21/_2026dh/",
+      "publisher": "web Sportiva（集英社）",
+      "author": "高木豊（見解）／浜田哲男（取材・文）",
+      "publishedOn": "2026-10-21",
+      "updatedOn": "2026-10-21",
+      "checkedAt": "2026-10-21T15:25:10.116Z",
+      "kind": "commentary",
+      "topic": "ソフトバンクの育成・外野手補強について"
+    },
+    {
+      "url": "https://sportiva.shueisha.co.jp/clm/baseball/npb/2026/10/21/_2026dh/?page=2",
+      "publisher": "web Sportiva（集英社）",
+      "author": "高木豊（見解）／浜田哲男（取材・文）",
+      "publishedOn": "2026-10-21",
+      "updatedOn": "2026-10-21",
+      "checkedAt": "2026-10-21T15:25:10.116Z",
+      "kind": "commentary",
+      "topic": "西武の投手補強について"
+    },
+    {
+      "url": "https://sportiva.shueisha.co.jp/clm/baseball/npb/2026/10/21/_2026dh/?page=3",
+      "publisher": "web Sportiva（集英社）",
+      "author": "高木豊（見解）／浜田哲男（取材・文）",
+      "publishedOn": "2026-10-21",
+      "updatedOn": "2026-10-21",
+      "checkedAt": "2026-10-21T15:25:10.116Z",
+      "kind": "commentary",
+      "topic": "日本ハムの長期育成について"
+    },
+    {
+      "url": "https://sportiva.shueisha.co.jp/clm/baseball/npb/2026/10/21/_2026/",
+      "publisher": "web Sportiva（集英社）",
+      "author": "高木豊（見解）／浜田哲男（取材・文）",
+      "publishedOn": "2026-10-21",
+      "updatedOn": "2026-10-21",
+      "checkedAt": "2026-10-21T15:25:10.116Z",
+      "kind": "commentary",
+      "topic": "オリックスの投手層について"
+    },
+    {
+      "url": "https://sportiva.shueisha.co.jp/clm/baseball/npb/2026/10/21/_2026/?page=2",
+      "publisher": "web Sportiva（集英社）",
+      "author": "高木豊（見解）／浜田哲男（取材・文）",
+      "publishedOn": "2026-10-21",
+      "updatedOn": "2026-10-21",
+      "checkedAt": "2026-10-21T15:25:10.116Z",
+      "kind": "commentary",
+      "topic": "ロッテの投手・内野手補強について"
+    },
+    {
+      "url": "https://sportiva.shueisha.co.jp/clm/baseball/npb/2026/10/21/_2026/?page=3",
+      "publisher": "web Sportiva（集英社）",
+      "author": "高木豊（見解）／浜田哲男（取材・文）",
+      "publishedOn": "2026-10-21",
+      "updatedOn": "2026-10-21",
+      "checkedAt": "2026-10-21T15:25:10.116Z",
+      "kind": "commentary",
+      "topic": "楽天の捕手・投手補強について"
+    },
+    {
+      "url": "https://thedigestweb.com/baseball/detail/id=121697",
+      "publisher": "THE DIGEST／SLUGGER",
+      "author": "西尾典文",
+      "publishedOn": "2026-10-19",
+      "updatedOn": "2026-10-19",
+      "checkedAt": "2026-10-21T15:25:10.116Z",
+      "kind": "commentary",
+      "topic": "巨人の長期的な指名戦略について"
+    },
+    {
+      "url": "https://thedigestweb.com/baseball/detail/id=121695",
+      "publisher": "THE DIGEST／SLUGGER",
+      "author": "西尾典文",
+      "publishedOn": "2026-10-19",
+      "updatedOn": "2026-10-19",
+      "checkedAt": "2026-10-21T15:25:10.116Z",
+      "kind": "commentary",
+      "topic": "広島の捕手補強について"
+    },
+    {
+      "url": "https://www.nikkan-gendai.com/articles/view/sports/394202",
+      "publisher": "日刊ゲンダイDIGITAL",
+      "author": "編集部（個人署名の記載なし）",
+      "publishedOn": "2026-10-15",
+      "updatedOn": "2026-10-15",
+      "checkedAt": "2026-10-21T15:25:10.116Z",
+      "kind": "report",
+      "topic": "巨人の野手候補に関する報道"
+    }
+  ],
+  "roundTwoOrder": [
+    "npb:team:eagles",
+    "npb:team:dragons",
+    "npb:team:marines",
+    "npb:team:swallows",
+    "npb:team:buffaloes",
+    "npb:team:carp",
+    "npb:team:fighters",
+    "npb:team:baystars",
+    "npb:team:lions",
+    "npb:team:giants",
+    "npb:team:hawks",
+    "npb:team:tigers"
+  ],
+  "orderSourceUrls": [
+    "https://www.nikkansports.com/baseball/news/202610210000116.html",
+    "https://draft.npb.jp/draft/2025/schedule.html"
+  ],
+  "firstBids": [
+    {
+      "teamId": "npb:team:giants",
+      "candidateId": "npb:draft:2026:1dc09f3414fba269aa9a81b6"
+    },
+    {
+      "teamId": "npb:team:tigers",
+      "candidateId": "npb:draft:2026:5ddbeb04bbb237bee3649822"
+    },
+    {
+      "teamId": "npb:team:dragons",
+      "candidateId": "npb:draft:2026:5ddbeb04bbb237bee3649822"
+    },
+    {
+      "teamId": "npb:team:carp",
+      "candidateId": "npb:draft:2026:ca6169aff349fb15bd077ae1"
+    },
+    {
+      "teamId": "npb:team:swallows",
+      "candidateId": "npb:draft:2026:0f5d26ee680133c325ed4542"
+    },
+    {
+      "teamId": "npb:team:baystars",
+      "candidateId": "npb:draft:2026:c8f261367e835b0488eceaae"
+    },
+    {
+      "teamId": "npb:team:hawks",
+      "candidateId": "npb:draft:2026:5a072b9b853a73de618277b3"
+    },
+    {
+      "teamId": "npb:team:fighters",
+      "candidateId": "npb:draft:2026:5a072b9b853a73de618277b3"
+    },
+    {
+      "teamId": "npb:team:lions",
+      "candidateId": "npb:draft:2026:0f5d26ee680133c325ed4542"
+    },
+    {
+      "teamId": "npb:team:marines",
+      "candidateId": "npb:draft:2026:ca6169aff349fb15bd077ae1"
+    },
+    {
+      "teamId": "npb:team:eagles",
+      "candidateId": "npb:draft:2026:5ddbeb04bbb237bee3649822"
+    },
+    {
+      "teamId": "npb:team:buffaloes",
+      "candidateId": "npb:draft:2026:4671e2754a20c964147efb46"
+    }
+  ],
+  "lotteryAssumptions": [
+    {
+      "candidateId": "npb:draft:2026:5ddbeb04bbb237bee3649822",
+      "teamIds": [
+        "npb:team:tigers",
+        "npb:team:dragons",
+        "npb:team:eagles"
+      ],
+      "assumedWinner": "npb:team:tigers",
+      "branchNote": "別の球団が当選する例では、本線の当選球団とその球団の1位獲得候補を交換する。2・3位は固定した別シナリオとして重複を検証。実際の再入札や他球団の変更を保証しない。"
+    },
+    {
+      "candidateId": "npb:draft:2026:ca6169aff349fb15bd077ae1",
+      "teamIds": [
+        "npb:team:carp",
+        "npb:team:marines"
+      ],
+      "assumedWinner": "npb:team:carp",
+      "branchNote": "別の球団が当選する例では、本線の当選球団とその球団の1位獲得候補を交換する。2・3位は固定した別シナリオとして重複を検証。実際の再入札や他球団の変更を保証しない。"
+    },
+    {
+      "candidateId": "npb:draft:2026:0f5d26ee680133c325ed4542",
+      "teamIds": [
+        "npb:team:swallows",
+        "npb:team:lions"
+      ],
+      "assumedWinner": "npb:team:swallows",
+      "branchNote": "別の球団が当選する例では、本線の当選球団とその球団の1位獲得候補を交換する。2・3位は固定した別シナリオとして重複を検証。実際の再入札や他球団の変更を保証しない。"
+    },
+    {
+      "candidateId": "npb:draft:2026:5a072b9b853a73de618277b3",
+      "teamIds": [
+        "npb:team:hawks",
+        "npb:team:fighters"
+      ],
+      "assumedWinner": "npb:team:hawks",
+      "branchNote": "別の球団が当選する例では、本線の当選球団とその球団の1位獲得候補を交換する。2・3位は固定した別シナリオとして重複を検証。実際の再入札や他球団の変更を保証しない。"
+    }
+  ],
+  "predictions": [
+    {
+      "teamId": "npb:team:giants",
+      "round": 1,
+      "candidateId": "npb:draft:2026:1dc09f3414fba269aa9a81b6",
+      "reason": "外野の将来の軸を最初に確保。長期素材だけに振る案より、大学外野手を打線の更新に結びつける方を選ぶ。"
+    },
+    {
+      "teamId": "npb:team:giants",
+      "round": 2,
+      "candidateId": "npb:draft:2026:8b85a97b31a8b97e601a33b9",
+      "reason": "初回で外野手を取る想定なので、2位は横浜の内野手。すぐに特定の守備位置を奪うと断定せず、内野の次世代を厚くする。"
+    },
+    {
+      "teamId": "npb:team:giants",
+      "round": 3,
+      "candidateId": "npb:draft:2026:8ffa048533d8debdb347c74c",
+      "reason": "捕手は大学生が先に消える想定で高校生を3位に置く。上位2人とは育成期間を分け、捕手の層を長く維持したい。"
+    },
+    {
+      "teamId": "npb:team:tigers",
+      "round": 1,
+      "candidateId": "npb:draft:2026:5ddbeb04bbb237bee3649822",
+      "reason": "捕手を後回しにすると候補が減るため、競合を受け入れて最優先。楽天・中日との抽選で阪神が当選する仮定で表を作る。"
+    },
+    {
+      "teamId": "npb:team:tigers",
+      "round": 2,
+      "candidateId": "npb:draft:2026:3721cb6fb28b28580fb4d16d",
+      "reason": "捕手を取れた後は、日本生命の投手を加える。大学卒3シーズン目の経験を評価する独自判断で、一軍即戦力を保証するものではない。"
+    },
+    {
+      "teamId": "npb:team:tigers",
+      "round": 3,
+      "candidateId": "npb:draft:2026:d88ee433f64492cb972f8683",
+      "reason": "中央大学の内野手を選び、捕手と投手だけの指名にしない。右の内野手を加え、打線と守備の次世代を一緒に用意する。"
+    },
+    {
+      "teamId": "npb:team:dragons",
+      "round": 1,
+      "candidateId": "npb:draft:2026:b7924371225d07a61ad67f59",
+      "reason": "渡部海の抽選敗退後に大学右腕へ再入札する仮定。捕手を取れなかったからと同型へ固執せず、先発候補の上積みに切り替える。"
+    },
+    {
+      "teamId": "npb:team:dragons",
+      "round": 2,
+      "candidateId": "npb:draft:2026:5fc472c5d8496778cb51574e",
+      "reason": "2位の早い指名順を使い、高校左腕を押さえる。1位の大学投手と育成時間・左右を分ける狙い。"
+    },
+    {
+      "teamId": "npb:team:dragons",
+      "round": 3,
+      "candidateId": "npb:draft:2026:cb24d52bd283a9968211d878",
+      "reason": "3位の遅い順番では大学の投手を追加。上位2人だけに頼らず投手の選択肢を増やす案で、特定の成績到達を予言しない。"
+    },
+    {
+      "teamId": "npb:team:carp",
+      "round": 1,
+      "candidateId": "npb:draft:2026:ca6169aff349fb15bd077ae1",
+      "reason": "大学投手の補強を優先し、ロッテとの競合でも入札。本線は広島当選と仮定し、2位以降は野手へ配分する。"
+    },
+    {
+      "teamId": "npb:team:carp",
+      "round": 2,
+      "candidateId": "npb:draft:2026:dc44cd1efb3d4d1352aa2964",
+      "reason": "捕手を2位まで待つリスクを取り、筑波の捕手を確保。1位を投手に使った分、ここでは扇の要を育てる枠にする。"
+    },
+    {
+      "teamId": "npb:team:carp",
+      "round": 3,
+      "candidateId": "npb:draft:2026:78734d6764f069089e2bb2fb",
+      "reason": "大学内野手を加え、投手・捕手・内野の3方向を補完。特定の現役選手の移籍や守備変更を前提にしない。"
+    },
+    {
+      "teamId": "npb:team:swallows",
+      "round": 1,
+      "candidateId": "npb:draft:2026:0f5d26ee680133c325ed4542",
+      "reason": "大学投手を最優先し、西武との競合を想定。本線はヤクルトの当選と仮定するが、実際の球団意向や抽選結果ではない。"
+    },
+    {
+      "teamId": "npb:team:swallows",
+      "round": 2,
+      "candidateId": "npb:draft:2026:086f6afa7ae8f6c1596c3e37",
+      "reason": "投手を先に確保したので、次は社会人外野手。王子の大卒2年目選手を打線の厚みに結び付ける独自判断。"
+    },
+    {
+      "teamId": "npb:team:swallows",
+      "round": 3,
+      "candidateId": "npb:draft:2026:f2bad191341a3c6b68e3e67d",
+      "reason": "3位で大学投手をもう一人。先発・救援の将来起用は断定せず、投手陣の選択肢を増やす。"
+    },
+    {
+      "teamId": "npb:team:baystars",
+      "round": 1,
+      "candidateId": "npb:draft:2026:c8f261367e835b0488eceaae",
+      "reason": "立命館大学の左投手を単独入札と予想。大学での登板経験を持つ投手を先に確保する構成で、無競合を保証しない。"
+    },
+    {
+      "teamId": "npb:team:baystars",
+      "round": 2,
+      "candidateId": "npb:draft:2026:93ba2b4b0c3dfdf968147d7a",
+      "reason": "1位が大学投手なら、2位は高校投手に育成時間を振り分ける。投打の可能性はあっても、NPBでの二刀流認定を行うものではない。"
+    },
+    {
+      "teamId": "npb:team:baystars",
+      "round": 3,
+      "candidateId": "npb:draft:2026:ec006778ad5b6a2e6037ca68",
+      "reason": "大学捕手で構成を整える。上位の捕手が先に指名された想定で、残る候補から育成の継承を図る。"
+    },
+    {
+      "teamId": "npb:team:hawks",
+      "round": 1,
+      "candidateId": "npb:draft:2026:5a072b9b853a73de618277b3",
+      "reason": "山梨学院の高校生を長期育成枠として初回入札。日本ハムとの競合を想定し、本線ではソフトバンク当選と仮定する。"
+    },
+    {
+      "teamId": "npb:team:hawks",
+      "round": 2,
+      "candidateId": "npb:draft:2026:a2558a96835c4458bf34dac6",
+      "reason": "1位を長期素材に使うため、2位は大学捕手。高校生だけに偏らず、年代の異なる捕手候補を加える。"
+    },
+    {
+      "teamId": "npb:team:hawks",
+      "round": 3,
+      "candidateId": "npb:draft:2026:7830bed6d0be5be20bfa03ce",
+      "reason": "独立リーグ3年目の投手を選ぶ。学生の志望届とは別に卒業歴・所属年数を確認した上で、違う育成経路から投手層を補う。"
+    },
+    {
+      "teamId": "npb:team:fighters",
+      "round": 1,
+      "candidateId": "npb:draft:2026:e5e33a7e260146db9f9ef81f",
+      "reason": "菰田陽生の抽選を外した後、高校左腕へ再入札する仮定。育成の長期枠を維持し、次の順位で大学投手を補う。"
+    },
+    {
+      "teamId": "npb:team:fighters",
+      "round": 2,
+      "candidateId": "npb:draft:2026:051f107add87484d599780d0",
+      "reason": "1位で高校生を選ぶので、2位は大学投手。育成の時間軸をずらして投手層を作る。"
+    },
+    {
+      "teamId": "npb:team:fighters",
+      "round": 3,
+      "candidateId": "npb:draft:2026:7f0ffc2601be5157f2181181",
+      "reason": "投手を2人取った後に大学内野手。3人とも投手にせず、内野の将来候補を加える。"
+    },
+    {
+      "teamId": "npb:team:lions",
+      "round": 1,
+      "candidateId": "npb:draft:2026:852ee8d07c42ddf95d3521ef",
+      "reason": "鈴木泰成の抽選敗退後、慶應義塾の左投手へ転換する仮定。大学投手を上位に置く補強軸は変えない。"
+    },
+    {
+      "teamId": "npb:team:lions",
+      "round": 2,
+      "candidateId": "npb:draft:2026:ec95ea09687ac53752efdaf3",
+      "reason": "1位が投手なら次は大学外野手。投手の層だけでなく、打線を更新する候補を一人入れる。"
+    },
+    {
+      "teamId": "npb:team:lions",
+      "round": 3,
+      "candidateId": "npb:draft:2026:a95b5a04557c73667a1c919f",
+      "reason": "富士大学の投手を加える。1位と異なる育成環境の投手を組み合わせ、将来の起用先は決めつけない。"
+    },
+    {
+      "teamId": "npb:team:marines",
+      "round": 1,
+      "candidateId": "npb:draft:2026:460149aa08cf85577245ede1",
+      "reason": "宮原廉の抽選敗退後、駒澤大学の投手へ再入札する仮定。大学の先発・救援経験を評価し、プロでの役割は未確定とする。"
+    },
+    {
+      "teamId": "npb:team:marines",
+      "round": 2,
+      "candidateId": "npb:draft:2026:df24cf591b64e77f80d1e1ab",
+      "reason": "投手を先に押さえたので社会人の内野手へ。大卒3年目の経歴を確認し、学生の志望届では判定しない。"
+    },
+    {
+      "teamId": "npb:team:marines",
+      "round": 3,
+      "candidateId": "npb:draft:2026:9d30fadb9f03105270424285",
+      "reason": "捕手の育成枠を大学生で確保。1位投手・2位内野手と役割を分け、下位まで捕手を待つリスクを避ける。"
+    },
+    {
+      "teamId": "npb:team:eagles",
+      "round": 1,
+      "candidateId": "npb:draft:2026:39a5e94eeb1b955a80fdd95d",
+      "reason": "渡部海の抽選敗退後、東京ガスの外野手へ再入札する仮定。捕手だけに固執せず、打線の厚みを優先する大胆な転換。"
+    },
+    {
+      "teamId": "npb:team:eagles",
+      "round": 2,
+      "candidateId": "npb:draft:2026:d1ed5520537d0b46214ae81f",
+      "reason": "2位の先頭で社会人左投手を確保。1位の野手転換で空いた投手枠を、ここで補う。"
+    },
+    {
+      "teamId": "npb:team:eagles",
+      "round": 3,
+      "candidateId": "npb:draft:2026:40d3417004affe2d49adbda6",
+      "reason": "内野手を加え、社会人の投打と大学野手を組み合わせる。捕手を上位で確保できない弱点も隠さない。"
+    },
+    {
+      "teamId": "npb:team:buffaloes",
+      "round": 1,
+      "candidateId": "npb:draft:2026:4671e2754a20c964147efb46",
+      "reason": "関西大学の左投手を単独入札と予想。先に投手を確保し、2・3位で野手を補う組み立て。"
+    },
+    {
+      "teamId": "npb:team:buffaloes",
+      "round": 2,
+      "candidateId": "npb:draft:2026:48213c2cfc358dc0e3f2199d",
+      "reason": "高校外野手を2位に置き、成長余地に投資。大学生中心の指名にせず、長期の野手育成を一枠作る。"
+    },
+    {
+      "teamId": "npb:team:buffaloes",
+      "round": 3,
+      "candidateId": "npb:draft:2026:104a779c213c32e08a4db17b",
+      "reason": "3位も外野手だが大学生を選び、2位の高校生とは育成期間を分ける。2人の将来の守備位置や一軍起用は確定しない。"
+    }
+  ],
+  "wikipediaAttribution": [
+    {
+      "title": "2026年度新人選手選択会議 (日本プロ野球)",
+      "pageId": 5282993,
+      "revision": 111388948
+    },
+    {
+      "title": "2026年の野球日本代表",
+      "pageId": 5209342,
+      "revision": 111304047
+    },
+    {
+      "title": "徳島インディゴソックスの選手一覧",
+      "pageId": 528913,
+      "revision": 110981980
+    },
+    {
+      "title": "高知ファイティングドッグスの選手一覧",
+      "pageId": 565473,
+      "revision": 110876339
+    },
+    {
+      "title": "茨城アストロプラネッツの選手一覧",
+      "pageId": 3859496,
+      "revision": 111393625
+    },
+    {
+      "title": "第98回選抜高等学校野球大会",
+      "pageId": 5110570,
+      "revision": 111181266
+    }
+  ]
+}
