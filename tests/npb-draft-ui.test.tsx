@@ -19,7 +19,7 @@ afterEach(()=>{vi.clearAllMocks();vi.unstubAllGlobals();});
 async function mount(query="",fail=false,modify?:(data:ReturnType<typeof draftFixture>)=>void){
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);const data=draftFixture();modify?.(data);vi.mocked(readNpbDraftEvent).mockImplementation(async()=>{if(fail)throw Error("offline");return data;});
   const host=document.createElement("div"),root=createRoot(host);document.body.append(host);
-  await act(async()=>root.render(<MemoryRouter initialEntries={["/NPB/talent/2026"+query]}><NpbDraftEventScreen/></MemoryRouter>));
+  await act(async()=>root.render(<MemoryRouter initialEntries={["/NPB/talent/2026"+(query.includes("forecast=")?query:query+(query?"&":"?")+"forecast=latest")]}><NpbDraftEventScreen/></MemoryRouter>));
   return {host,data,close:async()=>{await act(async()=>root.unmount());host.remove();}};
 }
 it("shows 12 hypotheses, source/time and no fabricated results",async()=>{const f=await mount();try{expect(f.host.querySelectorAll("article")).toHaveLength(12);expect(f.host.textContent).toContain("志望届・指名資格は未確認");expect(f.host.textContent).toContain("AIで作成");expect(f.host.textContent).toContain("答え合わせ待ち");expect(f.host.querySelectorAll('a[href*="oldid="]')).toHaveLength(1);expect(readNpbDraftEvent).toHaveBeenCalledTimes(1);}finally{await f.close();}});
