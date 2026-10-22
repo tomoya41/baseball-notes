@@ -15,21 +15,31 @@ vi.mock("../src/application/npb-draft-final-reader", () => ({ readNpbFinalDraft:
 // Exact legacy identity check is exercised against the archived base during build and domain tests. Synthetic UI never invents provider observations.
 vi.mock("../src/domain/npb-draft-final", async original => ({ ...await original<typeof import("../src/domain/npb-draft-final")>(), assertFinalDraftBase: vi.fn() }));
 afterEach(() => { vi.clearAllMocks(); vi.unstubAllGlobals(); });
-async function mount(view = "preview", team = "all", q = "", fail = false) {
+async function mount(view = "preview", team = "all", q = "", fail = false, base = draftFixture()) {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.mocked(readNpbFinalDraft).mockImplementation(async () => { if (fail) throw Error("offline"); return finalDraftForecastSchema.parse(json); });
   const host = document.createElement("div"), root = createRoot(host); document.body.append(host);
-  await act(async () => root.render(<MemoryRouter><NpbFinalDraft base={draftFixture()} team={team} view={view} q={q} group="all" onSearch={vi.fn()} onGroup={vi.fn()} /></MemoryRouter>));
+  await act(async () => root.render(<MemoryRouter><NpbFinalDraft base={base} team={team} view={view} q={q} group="all" onSearch={vi.fn()} onGroup={vi.fn()} /></MemoryRouter>));
   return { host, close: async () => { await act(async () => root.unmount()); host.remove(); } };
 }
 it("shows all 36 active choices, distinct first bids, qualification and frozen information times", async () => {
   const f = await mount(); try {
     expect(f.host.querySelectorAll("article > a.player-row")).toHaveLength(36);
     expect(f.host.textContent).toContain("保留0枠"); expect(f.host.textContent).toContain("初回入札予想");
+    expect(f.host.textContent).toContain("会議前の固定予想（アーカイブ）"); expect(f.host.textContent).toContain("このアプリには会議終了後に掲載");
     expect(f.host.textContent).toContain("抽選敗退後"); expect(f.host.textContent).toContain("学生30人");
     expect(f.host.textContent).toContain("社会人5人"); expect(f.host.textContent).toContain("NPBドラフト対象者欄");
     expect(f.host.textContent).toContain("別シナリオ"); expect(f.host.querySelectorAll('a[href*="oldid="]')).toHaveLength(28);
     expect(readNpbFinalDraft).toHaveBeenCalledTimes(1);
+  } finally { await f.close(); }
+});
+it("shows actual regular selection names beside unchanged forecasts while keeping unknown identity outside accuracy", async () => {
+  const base = draftFixture(), c = base.candidates[0]!; c.name = "架空の指名結果選手";
+  base.selections = [{ teamId: "npb:team:giants", candidateId: c.id, round: 1, type: "regular", status: "confirmed", sourcePageId: c.sourcePageId, evidenceSha256: c.evidenceSha256 }];
+  const f = await mount("preview", "npb:team:giants", "", false, base); try {
+    expect(f.host.textContent).toContain("記事の支配下1位：架空の指名結果選手");
+    expect(f.host.textContent).toContain("人物照合待ち 1枠"); expect(f.host.textContent).toContain("結果未収録 35枠");
+    expect(f.host.textContent).toContain("榊原七斗");
   } finally { await f.close(); }
 });
 it("filters one club to three selections without losing source and candidate navigation", async () => {

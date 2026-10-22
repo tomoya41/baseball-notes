@@ -22,10 +22,14 @@ export function NpbFinalDraft({ base, team, view, q, group, onSearch, onGroup }:
   if (!data) return <LoadingSkeleton />;
   const candidates = new Map(data.candidates.map(c => [c.id, c]));
   return <>
-    <h2>{data.title}</h2>
+    <h2>会議前の固定予想（アーカイブ）</h2>
+    <p className="inline-note">保存名：{data.title}。このアプリには会議終了後に掲載しています。</p>
     <p className="inline-note">{data.author} · 支配下1〜3位36枠 · 資格審査済み · 保留0枠</p>
     <p className="inline-note">情報確認 {time(data.informationCutoff)} / 固定 {time(data.frozenAt)}（日本時間）{publication.firstPublishedAt && <> / 固定版Release公開 {time(publication.firstPublishedAt)}</>}</p>
-    <p>初回入札と抽選後の獲得を予想。抽選の当選球団も独自の仮定で、実結果・球団発表ではありません。</p>
+    <p>会議前にGitHub Releaseへ公開した36枠を、そのまま収録。結果に合わせた変更はしていません。会議前のアプリ公開を示すものではありません。</p>
+    <p><a href="https://github.com/tomoya41/baseball-notes/releases/tag/npb-draft-final-20261022-v4">会議前の固定版を確認 ↗</a> · <Link to="/NPB/talent/2026?view=results&forecast=final">指名結果へ →</Link></p>
+    <p className="inline-note">初回入札・抽選後の獲得は独自予想です。当選球団の仮定と、実際の指名結果は別に表示します。</p>
+    {view !== "candidates" && <p className="inline-note">36枠の比較：{(["match", "different", "unverified", "unavailable"] as const).map(state => `${({ match: "一致", different: "相違", unverified: "人物照合待ち", unavailable: "結果未収録" })[state]} ${data.predictions.filter(p => finalDraftOutcome(data, base, p.teamId, p.round, bridges) === state).length}枠`).join(" / ")}。照合待ち・未収録を不的中に含めません。</p>}
     {view === "candidates" ? <>
       <label>選手名・所属で検索<input value={q} onChange={e => onSearch(e.target.value)} placeholder="選手名・学校・チーム" /></label>
       <label>所属区分<select value={group} onChange={e => onGroup(e.target.value)}><option value="all">すべて</option>{Object.entries(groups).map(([v, label]) => <option key={v} value={v}>{label}</option>)}</select></label>
@@ -39,8 +43,11 @@ export function NpbFinalDraft({ base, team, view, q, group, onSearch, onGroup }:
           <details><summary>補強の狙い・外部情報</summary><p>{club.context}</p><p>以下は参照した外部の論評・報道です。本表の36枠と抽選シナリオはBaseball Notesの独自判断で、記事の予想表の転載ではありません。</p>{club.referenceUrls.map(u => { const r = data.researchReferences.find(r => r.url === u)!; return <p key={u}><a href={u} target="_blank" rel="noreferrer">{r.publisher} · {r.topic} ↗</a><br /><small>{r.author} · {r.kind === "report" ? "報道（球団発表とは別）" : "論評・提案"}<br />公開 {r.publishedOn} · 更新 {r.updatedOn}</small></p>; })}</details>
           {data.predictions.filter(p => p.teamId === club.teamId).sort((a, b) => a.round - b.round).map(p => {
             const c = candidates.get(p.candidateId)!, outcome = finalDraftOutcome(data, base, p.teamId, p.round, bridges);
+            const selection = base.selections.find(s => s.teamId === p.teamId && s.round === p.round && s.type === "regular");
+            const actual = selection && base.candidates.find(c => c.id === selection.candidateId);
             return <article key={p.round}>
               <Link className="player-row" to={`/NPB/talent/2026?view=candidates&forecast=final&q=${encodeURIComponent(c.name)}`}><span className="player-row__body"><small>{p.round}位・獲得予想 · {groups[c.group]}</small><strong>{c.name}</strong><span>{c.affiliation} · {c.position}</span></span><span aria-hidden="true">→</span></Link>
+              {actual && <p><strong>記事の支配下{p.round}位：{actual.name}</strong><br /><span className="inline-note">{actual.affiliation} · 指名時の所属</span></p>}
               <p>{p.reason}</p><details><summary>{p.round}位の資格根拠・答え合わせ</summary><Evidence c={c} /><p>{({ unavailable: "この順位の確認済み支配下指名は未収録です。未収録を不的中とは判定しません。", unverified: "実結果との選手ID照合を確認中です。名前だけでは答え合わせしません。", match: "確認済みの支配下指名と獲得予想が一致しています。", different: "確認済みの支配下指名は獲得予想と異なります。" })[outcome]}</p><p>答え合わせは抽選後の支配下指名に対して行います。初回入札・抽選の仮定は別で、育成指名を混ぜません。</p></details>
             </article>;
           })}

@@ -570,9 +570,10 @@ public class ReleaseQualityTest {
         setTheme("dark","ダーク");js("location.hash='"+route+"'");waitText("2026ドラフト直前最終予想");
         assertEquals("Dark draft preview no overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));screenshot("draft-2026-font-20-dark");
         js("Array.from(document.querySelectorAll('nav[aria-label=\"ドラフト特集の表示\"] a')).find(a=>a.textContent==='指名結果').click()");
-        waitText("この条件の指名結果は未収録");waitText("未収録は未指名・指名終了を意味しません");
-        assertEquals("No future selection rows","0",js("String(document.querySelectorAll('main article').length)"));
-        shell("input keyevent KEYCODE_BACK");waitText("2026ドラフト直前最終予想");assertEquals("Draft Back restores premeeting view",route,js("location.hash"));
+        waitText("収録 122件");waitText("支配下 74 / 育成 48");waitText("当選は未確認");
+        assertEquals("Bounded twenty result rows and three independent lottery groups","23",js("String(document.querySelectorAll('main article').length)"));
+        assertEquals("Result list at 200 percent has no overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));screenshot("draft-2026-results-font-20-dark");
+        shell("input keyevent KEYCODE_BACK");waitText("会議前の固定予想（アーカイブ）");assertEquals("Draft Back restores archived forecast",route,js("location.hash"));
     }
     @Test public void japanSeriesIdOnlyColdGameBackStaysInPostseason() throws Exception {
         Intent link=new Intent(Intent.ACTION_VIEW,Uri.parse("baseballnotes://NPB/games/npb%3Agame%3A9f6c547e7852f6c5a928"));
