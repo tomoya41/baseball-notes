@@ -3,8 +3,8 @@
   "id": "2026-premeeting-final-v4",
   "title": "2026ドラフト直前最終予想",
   "author": "Baseball Notes（独自予想）",
-  "informationCutoff": "2026-10-22T03:16:12.315Z",
-  "frozenAt": "2026-10-22T03:16:12.317Z",
+  "informationCutoff": "2026-10-22T03:45:15.318Z",
+  "frozenAt": "2026-10-22T03:45:15.319Z",
   "baseBodySha256": "854dea71d32d0d819908d2ae47810b6370917eec558c7f85af4c23e2867063e8",
   "license": "CC-BY-SA-4.0",
   "candidates": [
@@ -1094,19 +1094,19 @@
       "position": "外野手",
       "legacyCandidateId": null,
       "legacyEvidenceSha256": null,
-      "identityNote": "7月17日の現地試合報告の氏名・学校・3年・外野手を、高野連NPB対象者欄の氏名・学校と照合。登録名の別選手への統合はしない。",
+      "identityNote": "高野連の2025年日台高校野球国際親善試合・九州選抜の公式発表（氏名・九州国際大付・当時2年・外野手）と、2026年NPBドラフト対象者欄の氏名・学校を個別照合。代表選出そのものを指名資格とはしない。",
       "identityUrls": [
-        "https://www.hb-nippon.com/articles/15040?page=1",
+        "https://jhbf.or.jp/topics/info/251106_1.html",
         "https://www.jhbf.or.jp/pro-aspiring/2026.html"
       ],
       "eligibility": {
         "status": "reviewed_eligible",
         "rule": "student_list",
-        "basis": "7月17日の現地試合報告の氏名・学校・3年・外野手を、高野連NPB対象者欄の氏名・学校と照合。登録名の別選手への統合はしない。",
+        "basis": "高野連の2025年日台高校野球国際親善試合・九州選抜の公式発表（氏名・九州国際大付・当時2年・外野手）と、2026年NPBドラフト対象者欄の氏名・学校を個別照合。代表選出そのものを指名資格とはしない。",
         "urls": [
           "https://www.jhbf.or.jp/pro-aspiring/2026.html"
         ],
-        "checkedAt": "2026-10-22T03:16:12.315Z",
+        "checkedAt": "2026-10-22T03:45:15.318Z",
         "studentList": {
           "name": "牟禮翔",
           "school": "九州国際大付",
