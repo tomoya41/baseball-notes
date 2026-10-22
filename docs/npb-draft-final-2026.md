@@ -83,5 +83,10 @@ Pages deploy直前にも自サイトの当該immutable assetを1回確認し、�
 
 ## Delivery evidence
 
-実行後にPR・CI・公開・HTTP readbackの実測を追記する。
-
+- PR: https://github.com/tomoya41/baseball-notes/pull/63
+- 固定版Releaseの実際の公開時刻：**2026-10-22 13:19:59 JST**（GitHub API `published_at`、Release ID 420303524）。返されたassetを独立にdownloadし、gzip/本文SHA・11,505/65,710 bytes・全36枠を照合PASS。予想本文・pinは変更なし。
+- Codex ReviewのP1/P2計7件を修正・回帰検証し、コードhead `20cb161`の再レビューは指摘0。
+- Foundation CI https://github.com/tomoya41/baseball-notes/actions/runs/39721122594 ：166ファイル・**1,755 tests PASS**、lint/typecheck/Web build PASS。Windowsローカルは1,754 PASS / 既存のWindows限定skip 1。Vercel build PASS。
+- Android debug APK / unsigned release AAB build https://github.com/tomoya41/baseball-notes/actions/runs/39721122619 PASS。API36 emulatorはPages反映後に実行する。Pixel/TalkBackはNOT RUN。
+- 360/390px Light/Dark、旧URLの20枠＋保留16枠、新URLの36枠＋保留0、候補個別根拠・除外候補のempty・結果0・Back/Reloadを実画面で確認。デスクトップ1280pxもoverflowなし。
+- main merge・Pages run・公開HTTP readback・Android emulatorの後続証拠は、同PRのdeliveryコメントに記録する。この時点でそれらをPASSとは扱わない。
