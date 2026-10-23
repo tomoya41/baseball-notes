@@ -344,6 +344,7 @@ public class ReleaseQualityTest {
         js("location.hash='#/MLB/form?season=2024&asOfDate=2024-08-20&period=7'");
         waitCondition("200% font HOT results", "document.querySelectorAll('.form-entry').length>0 && !document.querySelector('.skeleton-page')");
         assertEquals("HOT large text stays within the viewport", "true", js("document.documentElement.scrollWidth<=innerWidth"));
+        assertEquals("Compact stat guides retain full touch targets", "true", js("Array.from(document.querySelectorAll('.form-entry .metric-help-label')).every(e=>{const r=e.getBoundingClientRect();return r.width>=44&&r.height>=44;})"));
         waitCondition("HOT metric glyphs fit without overlapping adjacent values", "Array.from(document.querySelectorAll('.form-entry .explorer-values dd')).every(e=>{const r=document.createRange();r.selectNodeContents(e);const text=r.getBoundingClientRect(),cell=e.parentElement.getBoundingClientRect();return text.left>=cell.left-1&&text.right<=cell.right+1;})");
         screenshot("hot-font-200");
         fontScaleAndRecreate(1.0f); waitText("BASEBALL"); waitViewport(360);
