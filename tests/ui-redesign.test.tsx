@@ -21,9 +21,9 @@ describe("new navigation and future surfaces", () => {
     expect(html).toMatch(/<a[^>]*aria-current="page"[^>]*href="[^"]+\/analysis\?season=2020"/);
     for (const label of ["概要", "成績", "分析", "試合別", "選手情報"]) expect(html).toContain(label);
   });
-  it.each(Object.keys(futureSections) as (keyof typeof futureSections)[])("%s is explicitly planned, with no fabricated data", feature => {
+  it.each(Object.keys(futureSections) as (keyof typeof futureSections)[])("%s states unavailability without development promises or fabricated data", feature => {
     const html = wrap(<FutureFeatureScreen feature={feature} league="NPB" />);
-    expect(html).toContain("COMING SOON"); expect(html).toContain("現在、この機能のデータは表示していません");
+    expect(html).toContain("この条件のデータは未収録です"); expect(html).not.toMatch(/COMING SOON|準備中|提供予定|今後の機能/);
     expect(html).not.toMatch(/<table|metric-tile|profile-photo|順位.*1位/);
   });
   it("groups future destinations away from current Home while preserving game and records access", () => {

@@ -37,15 +37,15 @@ export function NotificationSettings({ favorites, ready, visible }: { favorites:
   if (!visible) return null;
   return <section className="notification-settings" aria-labelledby="notifications-title">
     <h2 id="notifications-title">成績更新通知</h2>
-    <p>Androidの成績更新通知は外部設定・配信検証が必要です。MLB過去記録は対象外です。アプリ内の確認差分はWatch Centerで確認できます。</p>
-    {isAndroid() ? <><p role="status">{!checked ? "通知設定を確認中…" : configured ? "通知の接続設定あり。配信確認は別途必要です。" : "外部通知は未設定・利用準備中です。"}</p><button className="button" type="button" role="switch" aria-checked={enabled} disabled={busy || !checked || (!configured && !enabled)} onClick={() => void toggle()}>
-      {busy ? "設定中…" : enabled ? "通知 ON" : "通知 OFF"}</button></> : <p>外部通知はAndroid向けの準備機能です。Webからは配信しません。</p>}
+    <p>成績更新通知はAndroid向けです。MLBの過去記録は対象外です。アプリ内の変化は「フォローの変化」で確認できます。</p>
+    {isAndroid() ? <><p role="status">{!checked ? "通知設定を確認中…" : configured ? "この端末で通知を設定できます。通知の配信状況は未確認です。" : "このアプリでは現在、成績更新通知を利用できません。"}</p><button className="button" type="button" role="switch" aria-checked={enabled} disabled={busy || !checked || (!configured && !enabled)} onClick={() => void toggle()}>
+      {busy ? "設定中…" : enabled ? "通知 ON" : "通知 OFF"}</button></> : <p>Webからは配信しません。</p>}
     {message && <p role="status">{message}</p>}
     <a href="#/privacy">プライバシー・データについて</a>
   </section>;
 }
 export function PrivacyScreen() { return <section className="screen"><h1>プライバシー・データ</h1>
-  <h2>端末に保存するデータ</h2><p>お気に入り、通知設定、最近読み込んだ公開成績を端末に保存します。Watchは追跡対象のcanonical ID・確認した数値・データの日付・既読状態を端末に保存します。検索語の分析や外部送信は行いません。アカウント、クラウド同期、アクセス解析は使用しません。</p>
+  <h2>端末に保存するデータ</h2><p>お気に入り、通知設定、最近読み込んだ公開成績を端末に保存します。Watchは追跡する選手・球団の識別情報・確認した数値・データの日付・既読状態を端末に保存します。検索語の分析や外部送信は行いません。アカウント、クラウド同期、アクセス解析は使用しません。</p>
   <h2>通信先</h2><p>公開データをGitHub Pagesおよび選手APIから読み込みます。通信先には通常の接続情報が伝わります。</p>
   <h2>Androidの通知</h2><p>通知をONにすると、Firebase Cloud Messagingがインストール識別情報・通知用トークン・お気に入りNPB選手の購読先を扱います。当アプリのDBにトークンは保存しません。通知はいつでもOFFにできます。</p>
   <p>WebとAndroidの保存領域は別です。アプリのデータ消去・アンインストールで保存情報は消えます。</p>

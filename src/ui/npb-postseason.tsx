@@ -53,7 +53,7 @@ function NpbCsPostseasonScreen() {
         <JapanSeriesEntry cs={data}/>
       </>}
       <div className="hub-links"><Link to={`/NPB/cs?season=2026${stage === "all" ? "" : `&stage=${stage}`}`}>CSの全収録試合・選手から探す →</Link>{seriesId && <Link to="/NPB/postseason?season=2026">全体の勝ち上がり →</Link>}<Link to="/NPB/schedule">公式戦の日程・結果 →</Link></div>
-      <details><summary>収録範囲・出典</summary><p>Wikipediaの記事記載を正規化した情報です。シリーズの決着と、全選手成績の完全収録は別です。RegularのFacts・Coverage・HOT／ランキングGateは変更しません。</p>{data.sources.map(s => <p key={s.pageId}><a href={`https://ja.wikipedia.org/w/index.php?curid=${s.pageId}&oldid=${s.revision}`}>Wikipedia「{s.title}」の執筆者</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a> · 勝敗・順位別成績を抽出、既存試合と照合</p>)}</details>
+      <details><summary>収録範囲・出典</summary><p>Wikipediaに記載された情報です。選手成績は一部収録で、公式戦とは別集計です。</p>{data.sources.map(s => <p key={s.pageId}><a href={`https://ja.wikipedia.org/w/index.php?curid=${s.pageId}&oldid=${s.revision}`}>Wikipedia「{s.title}」の執筆者</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a> · 原記事からの変更：勝敗・成績表の抜粋・表記整理</p>)}</details>
     </>}
   </div>;
 }

@@ -11,7 +11,7 @@ const names: Record<string, string> = { giants: "巨人", tigers: "阪神", drag
 const clubName = (id: string) => names[id.split(":").at(-1)!] ?? "球団未確認";
 function EventEvidence({ event: e, dataset }: { event: PlayerEvent; dataset: NpbPlayerEvents }) {
   const p = dataset.players.find(p => p.playerId === e.playerId)!;
-  return <details><summary>記載内容・出典</summary><p>{e.excerpt}</p><p className="inline-note">記事の先頭文を抽出・分類し、リンク・脚注を除去しています。連名の通告はIDを確認できた選手だけに関連付けています。実施日・契約期間・現在の状態は推定していません。</p>
+  return <details><summary>記載内容・出典</summary><p>{e.excerpt}</p><p className="inline-note">原記事からの変更：該当文の抜粋・分類とリンク・脚注の省略。実施日・契約期間・現在の状態を示すものではありません。</p>
     <a href={`https://ja.wikipedia.org/w/index.php?curid=${dataset.source.pageId}&oldid=${e.sourceRevision}`} target="_blank" rel="noreferrer">元記事のこの版・執筆者</a><span> · </span><a href={`https://ja.wikipedia.org/w/index.php?title=${encodeURIComponent(p.article)}&oldid=${p.identityRevision}`} target="_blank" rel="noreferrer">選手ID照合の記事</a>
     <p className="inline-note"><a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a> · 記載文・分類データにも同じ条件が適用されます。</p></details>;
 }
@@ -52,7 +52,7 @@ export function NpbPlayerEventsScreen({ favorites = [] }: { favorites?: Favorite
         <EventEvidence event={e} dataset={dataset} />
         <div className="hub-links"><Link to={`/NPB/players/${e.playerId}`}>選手ページ →</Link>{e.relatedTeamIds.map(t => <Link key={t} to={`/NPB/teams/${t}`}>{clubName(t)} →</Link>)}</div>
       </article>; })}</div><nav className="explorer-pagination" aria-label="選手の動きのページ"><button disabled={page <= 1} onClick={() => change("page", String(page - 1))}>前へ</button><span>{page} / {Math.ceil(matching.length / 15)}</span><button disabled={page * 15 >= matching.length} onClick={() => change("page", String(page + 1))}>次へ</button></nav></>}
-      <details className="source-note"><summary>収録範囲・更新について</summary><p>原記事の版：{new Date(dataset.source.revisionAt).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}／取得：{new Date(dataset.observedAt).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}（日本時間）。日付は記事の年表に記載された出来事の日で、発表日・実施日を独立に確認したものではありません。</p><p>日付・選手記事リンク・出来事の意味を確認できた文だけを収録しています。連名の戦力外通告は、列挙人数と通知内容を確認できた文から、ID照合済みの選手だけを抽出しています。戦力外通告を自由契約・引退とみなすことはありません。複数の出来事を含む曖昧な文、リンクのない氏名、未対応形式は除外しています。FA・ポスティング・今年のドラフト指名結果は未収録です。退団・登録・契約の全件一覧、速報、公式のIN／OUT一覧ではありません。</p><p>AIによる事実補完は行っていません。定期チェックと公開済みの版は別で、確認中の変更を自動で確定扱いにはしません。</p></details>
+      <details className="source-note"><summary>収録範囲・更新について</summary><p>原記事の版：{new Date(dataset.source.revisionAt).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}／取得：{new Date(dataset.observedAt).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}（日本時間）。日付は記事の年表に記載された出来事の日で、発表日・実施日を独立に確認したものではありません。</p><p>一部の選手・出来事のみ収録しています。戦力外通告・自由契約・引退はそれぞれ異なる出来事です。FA・ポスティング・今年のドラフト指名結果は未収録です。退団・登録・契約の全件一覧、速報、公式のIN／OUT一覧ではありません。</p></details>
     </>}
   </div>;
 }

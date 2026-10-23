@@ -22,7 +22,7 @@ export function PostseasonUnavailable({ league }: { league: League }) {
 export function PostseasonPublicationState() {
   const availability = usePostseasonAvailability();
   return <div className="screen"><PageHeading eyebrow="MLB · HISTORICAL" title="ポストシーズン" />
-    {availability.status === "loading" ? <LoadingSkeleton /> : <DataState kind="unsupported" title={availability.status === "error" ? "利用状況を確認できません" : "Postseasonは公開準備中です"} />}
+    {availability.status === "loading" ? <LoadingSkeleton /> : <DataState kind="unsupported" title={availability.status === "error" ? "利用状況を確認できません" : "ポストシーズンのデータは未収録です"} />}
     {availability.status === "error" && <button className="text-button" onClick={availability.retry}>再読み込み</button>}
     <Link className="text-link" to="/MLB/home">Regular Seasonへ</Link></div>;
 }

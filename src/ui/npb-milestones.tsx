@@ -53,7 +53,7 @@ export function NpbMilestonesScreen({ repository }: { repository: NpbSeasonMiles
     <p><Link to="/NPB/history?cohort=ageSeason&age=26&ageMode=collected">年齢ごとの収録分合計・記録への歩みを見る →</Link></p>
     {state === "loading" && <LoadingSkeleton />}
     {state === "error" && <DataState kind="source-unavailable" title="保存済み成績を読み込めません" />}
-    {state === "unavailable" && <DataState kind="not-implemented" title="シーズンの節目は準備中です" />}
+    {state === "unavailable" && <DataState kind="not-implemented" title="シーズンの節目は現在表示できません" />}
     {state === "ready" && payload && <NpbMilestonesView payload={payload} query={query} onQuery={q => {
       const next = new URLSearchParams(params); if (q) next.set("q", q); else next.delete("q"); setParams(next, { replace: true });
     }} />}

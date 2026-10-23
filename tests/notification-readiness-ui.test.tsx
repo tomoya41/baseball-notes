@@ -18,7 +18,7 @@ afterEach(async () => { await act(async () => root.unmount()); container.remove(
 const mount = async () => act(async () => root.render(<NotificationSettings favorites={[]} ready visible />));
 describe("external delivery readiness is separate from in-app Watch", () => {
   it("does not invite opt-in to unconfigured push", async () => {
-    await mount(); expect(container.textContent).toContain("未設定・利用準備中");
+    await mount(); expect(container.textContent).toContain("成績更新通知を利用できません");
     expect((container.querySelector('[role="switch"]') as HTMLButtonElement).disabled).toBe(true);
     expect(notifications.setEnabled).not.toHaveBeenCalled();
   });
@@ -42,6 +42,7 @@ describe("external delivery readiness is separate from in-app Watch", () => {
     notifications.readiness.mockResolvedValue({ configured: true, granted: false });
     notifications.enabled.mockResolvedValueOnce(false).mockRejectedValue(Error("storage"));
     notifications.setEnabled.mockRejectedValue(Error("保存できません")); await mount();
+    expect(container.textContent).toContain("通知の配信状況は未確認");
     const button = container.querySelector('[role="switch"]') as HTMLButtonElement;
     await act(async () => button.click()); expect(container.textContent).toContain("保存できません"); expect(button.disabled).toBe(false);
     expect(button.getAttribute("aria-checked")).toBe("false");

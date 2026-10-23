@@ -119,7 +119,7 @@ export function DataState({ kind, title, detail, action, to }: {
     "no-data": "データがありません",
     unsupported: "このデータは提供されていません",
     "source-unavailable": "データを取得できませんでした",
-    "not-implemented": "この機能は準備中です",
+    "not-implemented": "現在この機能は利用できません",
     "small-sample": "サンプルが少ないため参考値です",
   };
   return <div className={`data-state data-state--${kind}`} role={kind === "source-unavailable" ? "alert" : "status"}>

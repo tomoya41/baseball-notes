@@ -13,7 +13,7 @@ const context: Record<string, Pick<MetricHelp, "formula" | "data" | "sample" | "
   BB9: { formula: "与四球 × 27 ÷ 投球アウト数", data: "MLB Historical／NPB過去成績の独立した与四球（敬遠を含み、死球を除く）。NPB Currentの四死球合算からは算出しません。", sample: "少ない投球回では変動。低いほど与四球の頻度が低い傾向です。" },
   "K%": { formula: "三振 ÷ 打席（打者）／対戦打者（投手） × 100", data: "MLB HistoricalのSO・PA/BF。打者と投手で分母が異なります。", sample: "打席・対戦打者が少ないと変動。打者は低いほど、投手は高いほど三振の頻度を表します。" },
   "BB%": { formula: "四球 ÷ 打席（打者）／対戦打者（投手） × 100", data: "MLB Historicalの独立したBB（敬遠を含む）・PA/BF。死球は分子に含みません。", sample: "打者は高いほど四球を選び、投手は低いほど四球を抑える傾向。小サンプルは慎重に読みます。" },
-  IP: { formula: "アウト数 ÷ 3（余りを1/3回単位で表示）", data: "canonicalの投手アウト数", sample: "6.1は6回と1アウト。6.1という小数の投球回ではありません。" },
+  IP: { formula: "アウト数 ÷ 3（余りを1/3回単位で表示）", data: "記録された投手アウト数", sample: "6.1は6回と1アウト。6.1という小数の投球回ではありません。" },
 };
 export const glossaryKeys = ["G", "GS", "PA", "AB", "H", "2B", "3B", "HR", "R", "RBI", "BB", "HBP", "SH", "SF", "SO", "SB", "CS", "AVG", "OBP", "SLG", "OPS", "IP", "BF", "ER", "ERA", "K9", "W", "L", "SV", "HLD", "RISP", "WHIP", "BB9", "K%", "BB%"] as const;
 const help: Record<string, MetricHelp> = {

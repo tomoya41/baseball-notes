@@ -42,10 +42,10 @@ describe("Season milestone connection without changing the finished UI", () => {
   });
   it("keeps Career Coming Soon with zero data requests", async () => {
     const fetcher = vi.fn(request()); await mount(fetcher, "/NPB/milestones?tab=1");
-    expect(container.textContent).toContain("COMING SOON"); expect(fetcher).not.toHaveBeenCalled();
+    expect(container.textContent).toContain("この条件のデータは未収録です"); expect(fetcher).not.toHaveBeenCalled();
   });
   it("shows an explicit unavailable state for legacy capability payloads", async () => {
-    await mount(request({ disabled: true })); expect(container.textContent).toContain("シーズンの節目は準備中");
+    await mount(request({ disabled: true })); expect(container.textContent).toContain("シーズンの節目は現在表示できません");
     expect(container.textContent).not.toContain("保存済み選手");
   });
   it.each([{ failure: true }, { stale: true }, { staleGeneration: true }])("handles HTTP/stale data safely: %s", async override => {
