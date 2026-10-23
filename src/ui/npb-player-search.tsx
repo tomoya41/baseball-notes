@@ -8,7 +8,7 @@ import { positionDefinitions } from "../domain/baseball-terms";
 import type { Favorite } from "../domain/models";
 import { DataState, FavoriteButton, LoadingSkeleton, PageHeading } from "./components";
 import { DiscoveryNavigation } from "./discovery";
-import { Monogram } from "./design-system";
+import { PlayerListTools } from "./signature";
 import { CollectionButton } from "./personal-library";
 import { LifecycleLinks } from "./npb-lifecycle";
 
@@ -32,10 +32,7 @@ export function NpbPlayerSearchView({ directory, state, query, onQueryChange, te
   return <div className="screen npb-player-search">
     <PageHeading eyebrow="NPB" title="選手" />
     <DiscoveryNavigation league="NPB" />
-    <LifecycleLinks />
-    <Link className="text-link" to={`/NPB/history?season=2025&q=${encodeURIComponent(query)}`}>過去の選手・OBを探す →</Link>
-    <Link className="text-link" to="/NPB/compare">選手比較 →</Link>
-    <Link className="text-link" to="/NPB/cs?season=2026">CSの収録試合・選手 →</Link>
+
     {state === "loading" && <LoadingSkeleton />}
     {state === "error" && <DataState kind="source-unavailable" title="選手一覧を取得できませんでした" />}
     {state === "ready" && directory && <>
@@ -44,7 +41,7 @@ export function NpbPlayerSearchView({ directory, state, query, onQueryChange, te
         <input type="search" placeholder="選手名を入力" value={query}
           onChange={(event) => onQueryChange(event.target.value)} />
       </label>
-      <div className="npb-directory-filter">
+      <details className="search-filters"><summary><span>{teamId ? teams.get(teamId) ?? "球団未確認" : "すべての球団"} · {role === "all" ? "全選手" : role === "batter" ? "打撃" : "投球"}{role === "batter" && battingView(displayParams) !== "standard" && ` · ${battingView(displayParams) === "pitchers" ? "投手の打撃" : "全選手の打撃"}`}</span><strong>絞り込み</strong></summary><div className="npb-directory-filter">
         <label htmlFor="npb-directory-team">球団</label>
         <select id="npb-directory-team" value={teamId} onChange={(event) => onTeamChange(event.target.value)}>
           <option value="">すべての球団</option>
@@ -57,12 +54,11 @@ export function NpbPlayerSearchView({ directory, state, query, onQueryChange, te
           <button key={item.id} type="button" className="filter-chip" aria-pressed={role === item.id}
             onClick={() => onRoleChange(item.id)}>{item.label}</button>)}
       </div>
-      {role==="batter"&&<BattingViewControl />}
+      {role==="batter"&&<BattingViewControl />}</details>
       <div className="list-heading"><strong>{query || teamId || role !== "all" ? "検索結果" : "選手一覧"}</strong><span>{players.length}人</span></div>
       {players.length ? <div className="row-list">{players.slice(0, visibleLimit).map((player) =>
-        <div className="surface-favorite" key={player.playerId}><Link className="player-row npb-directory-row"
+        <div className="surface-favorite search-player-row" key={player.playerId}><Link className="player-row npb-directory-row"
           to={`/NPB/players/${encodeURIComponent(player.playerId)}`}>
-          <Monogram name={player.displayName} />
           <span className="player-row__body"><strong>{player.displayName}</strong>
             <small>{player.teamId ? teams.get(player.teamId) : "所属球団未登録"}
               {player.position ? ` · ${positionDefinitions[player.position]}` : ""}
@@ -70,11 +66,15 @@ export function NpbPlayerSearchView({ directory, state, query, onQueryChange, te
                 ` · ${[player.battingAvailable && "打撃", player.pitchingAvailable && "投球"].filter(Boolean).join("・")}データあり` :
                 " · 最近の成績なし"}</small>
           </span><ChevronRight className="row-chevron" size={19} aria-hidden="true" />
-        </Link><Link className="compare-add" aria-label={`${player.displayName}を比較に追加`} to={`/NPB/compare?players=${encodeURIComponent(player.playerId)}&role=${player.pitchingAvailable && !player.battingAvailable ? "pitching" : "batting"}`}>比較</Link><CollectionButton league="NPB" playerId={player.playerId} name={player.displayName} />{toggle&&<FavoriteButton active={favorites.some(f=>f.league==="NPB"&&f.kind==="player"&&f.entityId===player.playerId)}
+        </Link><PlayerListTools name={player.displayName}><Link className="compare-add" aria-label={`${player.displayName}を比較に追加`} to={`/NPB/compare?players=${encodeURIComponent(player.playerId)}&role=${player.pitchingAvailable && !player.battingAvailable ? "pitching" : "batting"}`}>比較</Link><CollectionButton league="NPB" playerId={player.playerId} name={player.displayName} /></PlayerListTools>{toggle&&<FavoriteButton active={favorites.some(f=>f.league==="NPB"&&f.kind==="player"&&f.entityId===player.playerId)}
           saving={saving} label={player.displayName} onClick={()=>toggle({kind:"player",league:"NPB",entityId:player.playerId})}/>}</div>)}</div> : <DataState kind="no-data" title="該当する選手が見つかりません" />}
       {players.length > visibleLimit && <button className="button button--secondary" onClick={() => { setExpandedKey(filterKey); setLimit(visibleLimit + 80); }}>さらに80人を表示</button>}
       <p className="npb-directory-note">保存済み選手情報から表示しています。守備位置が未登録の選手は表示を省略します。</p>
     </>}
+    <details className="search-related"><summary>同期・過去の選手・大会から探す</summary><LifecycleLinks />
+    <Link className="text-link" to={`/NPB/history?season=2025&q=${encodeURIComponent(query)}`}>過去の選手・OBを探す →</Link>
+    <Link className="text-link" to="/NPB/compare">選手比較 →</Link>
+    <Link className="text-link" to="/NPB/cs?season=2026">CSの収録試合・選手 →</Link></details>
   </div>;
 }
 

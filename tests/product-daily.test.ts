@@ -11,6 +11,22 @@ import type { PostseasonSeries } from "../src/domain/competition";
 const row = (id: string, date: string, status: GameIndexRow["status"] = "final", number = 1): GameIndexRow => ({ gameId: `npb:game:${id}`, date, status, gameNumber: number, scheduledTime: null, home: { id: "npb:team:tigers", name: "阪神", score: null }, away: { id: "npb:team:baystars", name: "DeNA", score: null }, completeness: null, battingAvailable: false, pitchingAvailable: false, detailAvailable: false });
 const page = (date: string, games: GameIndexRow[] = [], coverage: GameDateIndex["coverage"] = "unknown"): GameDateIndex => ({ schemaVersion: 1, league: "NPB", date, games, coverage, generatedAt: "2026-10-03T00:00:00Z" });
 describe("current daily semantics", () => {
+  it("loads only one bounded saved-results feed after the window, without manufacturing Today or Day evidence", async () => {
+    const date = vi.fn(), recent = vi.fn(async()=>({effectiveDate:"2026-10-08",games:[row("old","2026-10-08"),row("future","2026-10-09"),row("scheduled","2026-10-07","scheduled")]}));
+    const result = await readDailyDashboard({manifest:async()=>({schemaVersion:1,league:"NPB",from:"2026-03-27",to:"2026-10-08",effectiveDate:"2026-10-08",generatedAt:"2026-10-09T00:00:00Z"}),date,recent,records:vi.fn()},"2026-10-23");
+    expect(date).not.toHaveBeenCalled(); expect(recent).toHaveBeenCalledTimes(1);
+    expect(result.savedRecent.map(g=>g.gameId)).toEqual(["npb:game:old"]);
+    expect(result.todayState).toBe("unavailable");expect(result.today).toEqual([]);expect(result.pages).toEqual([]);expect(result.savedRecentUnavailable).toBe(false);
+  });
+  it.each(["stale","failed"])("fails closed on a %s saved-results feed instead of promoting it to current evidence", async state => {
+    const result = await readDailyDashboard({manifest:async()=>({schemaVersion:1,league:"NPB",from:"2026-03-27",to:"2026-10-08",effectiveDate:"2026-10-08",generatedAt:"2026-10-09T00:00:00Z"}),date:vi.fn(),recent:async()=>{if(state==="failed")throw Error("offline");return {effectiveDate:"2026-10-07",games:[row("old","2026-10-07")]};},records:vi.fn()},"2026-10-23");
+    expect(result.savedRecent).toEqual([]);expect(result.savedRecentUnavailable).toBe(true);expect(result.todayState).toBe("unavailable");
+  });
+  it("does not fetch a future saved-results feed before the first season date", async()=>{
+    const recent=vi.fn(),date=vi.fn();
+    const result=await readDailyDashboard({manifest:async()=>({schemaVersion:1,league:"NPB",from:"2026-03-27",to:"2026-10-08",effectiveDate:"2026-10-08",generatedAt:"2026-10-09T00:00:00Z"}),date,recent,records:vi.fn()},"2026-01-01");
+    expect(recent).not.toHaveBeenCalled();expect(date).not.toHaveBeenCalled();expect(result.savedRecent).toEqual([]);
+  });
   it.each(["partial", "failed", "unknown", "complete", "no_games"] as const)("retains fulfilled %s coverage independently of HTTP failures", async coverage => {
     const result = await readDailyDashboard({ manifest: async () => ({ schemaVersion: 1, league: "NPB", from: "2026-10-03", to: "2026-10-03", effectiveDate: "2026-10-02", generatedAt: "2026-10-03T00:00:00Z" }), date: async d => page(d, coverage === "no_games" ? [] : [row("one", d)], coverage), recent: vi.fn(), records: vi.fn() }, "2026-10-03");
     expect(result.failedDates).toEqual([]);

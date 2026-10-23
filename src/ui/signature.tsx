@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { ChevronLeft, MoreHorizontal } from "lucide-react";
+import { ChevronLeft, ChevronRight, MoreHorizontal, Search } from "lucide-react";
 import { Link } from "react-router-dom";
 import { MetricLabel } from "./components";
 import { AppDialog } from "./app-dialog";
@@ -18,12 +18,29 @@ export function GameHeading({ title, date, context, backTo }: { title: string; d
   return <header className="game-context-bar"><a className="icon-button" href={`#${backTo}`} aria-label="日程・結果に戻る"><ChevronLeft size={20} aria-hidden="true" /></a><div><span>{date}</span><small>{context}</small></div><h1 className="sr-only">{title}</h1></header>;
 }
 
+export function PlayerQuickActions({ compareTo, historyTo }: { compareTo: string; historyTo: string }) {
+  return <nav className="player-quick-actions" aria-label="選手をもっと知る">
+    <Link to={historyTo}>年度の変化を見る<ChevronRight size={16} aria-hidden="true" /></Link>
+    <Link to={compareTo}>ほかの選手と比較<ChevronRight size={16} aria-hidden="true" /></Link>
+  </nav>;
+}
+
+export function HomeSearchEntry({ league, year }: { league: "NPB" | "MLB"; year?: number }) {
+  return <Link className="home-search-entry" to={`/${league}/search${year ? `?season=${year}` : ""}`}><Search size={20} aria-hidden="true" /><span>気になる選手を探す</span><ChevronRight size={18} aria-hidden="true" /></Link>;
+}
+
+export function PlayerListTools({ name, children }: { name: string; children: ReactNode }) {
+  const [open,setOpen] = useState(false);
+  return <><button className="icon-button" aria-label={`${name}の比較・保存`} aria-haspopup="dialog" onClick={()=>setOpen(true)}><MoreHorizontal size={20} aria-hidden="true" /></button>{open && <AppDialog label={`${name}の比較・保存`} onClose={()=>setOpen(false)}><h2>{name}</h2><nav className="player-action-menu" aria-label="比較・保存" onClick={e=>{if(e.target instanceof Element && e.target.closest("a"))setOpen(false);}}>{children}</nav></AppDialog>}</>;
+}
+
 export type HeadlineStat = { metric: string; label?: string; value: string };
 export function TeamRecord({ wins, losses, ties }: { wins: number | null; losses: number | null; ties?: number | null }) {
   return <dl className="team-record"><div><dt>勝</dt><dd>{wins ?? "—"}</dd></div><div><dt>敗</dt><dd>{losses ?? "—"}</dd></div>{ties !== undefined && <div><dt>引分</dt><dd>{ties ?? "—"}</dd></div>}</dl>;
 }
 export function HeadlineStats({ title, stats, partial = false }: { title: string; stats: HeadlineStat[]; partial?: boolean }) {
-  return <section className="headline-stats" aria-label={title}><div className="headline-stats-context"><span>{title}</span>{partial && <span className="headline-partial">一部未収集</span>}</div><dl>{stats.map(stat => <div key={stat.metric}><dt><MetricLabel metric={stat.metric} {...stat.label ? { label: stat.label } : {}} /></dt><dd>{stat.value}</dd></div>)}</dl></section>;
+  const labels: Record<string,string> = { AVG:"打率", HR:"本塁打", ERA:"防御率" };
+  return <section className="headline-stats" aria-label={title}><div className="headline-stats-context"><span>{title}</span>{partial && <span className="headline-partial">一部未収集</span>}</div><dl>{stats.map(stat => <div key={stat.metric}><dt><MetricLabel metric={stat.metric} label={stat.label ?? labels[stat.metric] ?? stat.metric} /></dt><dd>{stat.value}</dd></div>)}</dl></section>;
 }
 
 export function PlayerIdentity({ name, context, detail, visual, favorite, children }: {
@@ -35,5 +52,8 @@ export function PlayerIdentity({ name, context, detail, visual, favorite, childr
 export function HomeDiscover({ league, year, date, showHot = true }: { league: "NPB" | "MLB"; year?: number; date?: string; showHot?: boolean }) {
   const scope = year ? `?season=${year}` : "";
   const form = `${scope}${date ? `&asOfDate=${date}` : ""}`;
-  return <section className="home-discover" aria-label="野球データを楽しむ"><h2>{league === "MLB" ? "このシーズンを掘る" : "選手と数字をもっと"}</h2>{league === "MLB" && showHot && <Link className="discovery-feature" to={`/MLB/form${form}`}><span className="feature-kicker">HOT</span><span><strong>活躍した選手を探す</strong><small>{year}年{date ? ` · ${date}時点` : ""}の過去記録</small></span><span aria-hidden="true">↗</span></Link>}<div className="discovery-paths"><Link to={`/${league}/data${scope}`}><strong>成績を探す</strong><span>条件・期間で絞り込む ↗</span></Link><Link to={`/${league}/compare${scope}`}><strong>選手を比較</strong><span>2〜4人の違いを見る ↗</span></Link><Link to={`/${league}/teams${scope}`}><strong>球団を見る</strong><span>試合・成績・選手 ↗</span></Link><Link to={`/${league}/${league === "NPB" ? "talent" : "history"}${scope}`}><strong>{league === "NPB" ? "ドラフト・若手" : "シーズン履歴"}</strong><span>{league === "NPB" ? "同期・出身校から探す" : "収録年度をたどる"} ↗</span></Link></div></section>;
+  return <section className="home-discover" aria-label="野球データを楽しむ"><h2>数字を楽しむ</h2>{league === "MLB" && showHot && <Link className="discovery-feature" to={`/MLB/form${form}`}><span className="feature-kicker">HOT</span><span><strong>活躍した選手</strong><small>{year}年{date ? ` · ${date}時点` : ""}の過去記録</small></span><ChevronRight size={18} aria-hidden="true" /></Link>}<div className="discovery-paths">{[
+    ["data", "成績を探す"], ["compare", "選手を比べる"], ["teams", "球団を見る"], ["history", "年度をたどる"],
+    ...(league === "NPB" ? [["talent", "ドラフト・若手"]] : []),
+  ].map(([route,label])=><Link key={route} to={`/${league}/${route}${scope}`}><strong>{label}</strong><ChevronRight size={16} aria-hidden="true" /></Link>)}</div></section>;
 }

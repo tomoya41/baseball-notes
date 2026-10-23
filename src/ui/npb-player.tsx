@@ -18,7 +18,7 @@ import { NpbPlayerProfileFacts } from "./npb-player-profile";
 import { PlayerRecentView } from "./player-recent";
 import { PlayerSeasonView } from "./player-season";
 import { PublishedPlayerFallback } from "./npb-published-player";
-import { HeadlineStats, PlayerContextBar, PlayerIdentity } from "./signature";
+import { HeadlineStats, PlayerContextBar, PlayerIdentity, PlayerQuickActions } from "./signature";
 import { formatRecentMetric } from "../presentation/recent-formatter";
 import { positionDefinitions } from "../domain/baseball-terms";
 import { PlayerGameLogView } from "./player-game-log";
@@ -116,6 +116,7 @@ export function NpbPlayer({ services, favorites, toggle, saving }: { services: S
     <PlayerIdentity name={player.name} context={`NPB · ${directoryTeam?.shortName ?? identity?.teamName ?? "所属未確認"}`} detail={`${directoryPlayer?.position ? positionDefinitions[directoryPlayer.position] : "役割未確認"} · 所属は保存済み情報${product?.membership.uniformNumber != null ? ` · #${product.membership.uniformNumber}` : ""}`} visual={product?.visual.photo.usage === "allowed" ? <img className="profile-photo" src={product.visual.photo.url!} alt={player.name} /> : undefined} favorite={<FavoriteButton active={isFavorite} saving={saving} label={player.name} onClick={() => toggle({ league: "NPB", kind: "player", entityId: player.id })} />}>
       {!section && seasonState === "ready" && [season?.batting, season?.pitching].map((stats, i) => stats && (i === 1 || directoryPlayer?.position !== "P") ? <HeadlineStats key={i} title={`2026 ${i === 0 ? "打撃" : "投球"} · ${stats.to}まで`} partial={stats.coverage.status !== "complete"} stats={(i === 0 ? ["OPS", "HR", "AVG"] : ["ERA", "outsRecorded", "SO"]).map(metric => ({ metric, label: metric === "outsRecorded" ? "投球回" : metric === "SO" ? "奪三振" : metric, value: formatRecentMetric(metric, stats.metrics[metric]) }))} /> : null)}
     </PlayerIdentity>
+    {!section && <PlayerQuickActions compareTo={`/NPB/compare?players=${encodeURIComponent(player.id)}`} historyTo={`${base}/seasons`} />}
     <PlayerTabs base={base} section={section} />
     {section === "trends" && <NpbPlayerTrends services={services} playerId={player.id} />}
     {!section && <div className="profile-content">{(seasonState !== "ready" || !season?.batting && !season?.pitching) && seasonView}<PlayerRecentView period={period} onPeriodChange={next => { if (next === period) return; setRecentState("loading"); setPeriod(next); }} payload={recent} state={recentState} fallback={<PublishedPlayerFallback key={`${player.id}:${period}`} playerId={player.id} period={period} repository={services.directory} pitcherBatting={directoryPlayer?.position === "P"} />} noFactKnown={directoryPlayer?.recentAvailable === false} pitcherBatting={directoryPlayer?.position==="P"} />{seasonState !== "error" && <details className="profile-season-details"><summary>シーズン成績・収録状態</summary>{seasonView}</details>}

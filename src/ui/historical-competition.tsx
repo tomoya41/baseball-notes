@@ -12,7 +12,7 @@ export function CompetitionSelect({ season }: { season: number }) {
   const location = useLocation(), navigate = useNavigate(), competition = useHistoricalCompetition();
   const availability = usePostseasonAvailability();
   const change = (scope: CompetitionType) => { const p=new URLSearchParams(location.search);p.set("season",String(season));navigate(competitionTarget(location.pathname,p.toString(),scope)); };
-  return <label><span className="sr-only">集計対象</span><select aria-label="集計対象" value={competition} onChange={e => change(e.target.value === "postseason" ? "postseason" : "regular")}><option value="regular">Regular</option>{(competition === "postseason" || hasHistoricalPostseason(availability, season)) && <option value="postseason">Postseason</option>}</select></label>;
+  return <label><span className="sr-only">集計対象</span><select aria-label="集計対象" value={competition} onChange={e => change(e.target.value === "postseason" ? "postseason" : "regular")}><option value="regular">公式戦</option>{(competition === "postseason" || hasHistoricalPostseason(availability, season)) && <option value="postseason">ポストシーズン</option>}</select></label>;
 }
 export function CompetitionTabs() {
   const location = useLocation(), competition = useHistoricalCompetition();

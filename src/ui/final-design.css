@@ -41,9 +41,9 @@
 
 .home-mode-nav {
   display: flex;
-  gap: 0;
+  gap: 4px;
   border-bottom: 1px solid var(--color-border);
-  margin: 0 0 24px;
+  margin-bottom: 16px;
 }
 
 .home-mode-nav button {
@@ -75,10 +75,200 @@
   min-width: 0;
 }
 
-.home-discover {
-  padding: 24px 0;
+.home-search-entry {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 10px 14px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  margin: 0 0 16px;
+  color: var(--color-muted);
+}
+
+.home-search-entry>span {
+  flex: 1;
+  font-weight: 600;
+}
+
+.search-player-row {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) 44px 44px;
+  gap: 4px;
+  min-height: 76px;
+}
+
+.search-player-row>a:first-child {
+  min-width: 0;
+}
+
+.search-player-row>.icon-button {
+  grid-column: 2;
+}
+
+.search-player-row>.favorite-button {
+  grid-column: 3;
+}
+
+.search-related {
+  border-top: 1px solid var(--color-border);
+  margin-top: 20px;
+}
+
+.search-related .text-link {
+  display: flex;
+}
+
+.search-filters {
+  border-bottom: 1px solid var(--color-border);
+  margin: 0 0 8px;
+}
+
+.search-filters>summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.search-filters>summary span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.search-filters>summary strong {
+  flex-shrink: 0;
+  font-size: .8125rem;
+  color: var(--brand);
+}
+
+.seasonal-feature {
+  margin: 0 0 20px;
   border-top: 2px solid var(--color-text);
-  margin-top: 24px;
+}
+
+.seasonal-feature-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0 0;
+  font-size: .8125rem;
+  color: var(--color-muted);
+}
+
+.seasonal-feature-heading .eyebrow {
+  margin: 0;
+}
+
+.seasonal-stories {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  column-gap: 20px;
+}
+
+.seasonal-stories>a {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 0;
+  min-height: 56px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.seasonal-stories>a>span {
+  min-width: 0;
+}
+
+.seasonal-stories strong {
+  overflow-wrap: anywhere;
+}
+
+.seasonal-stories svg {
+  flex-shrink: 0;
+  color: var(--brand);
+}
+
+.seasonal-story--lead {
+  grid-column: 1/-1;
+}
+
+.seasonal-story--lead strong {
+  display: block;
+  font-size: clamp(1.5rem,3vw,2rem);
+  line-height: 1.3;
+  letter-spacing: -.035em;
+}
+
+.seasonal-stories small {
+  display: block;
+  color: var(--color-muted);
+  margin-top: 6px;
+  font-size: .8125rem;
+}
+
+.seasonal-feature .source-note {
+  margin: 0;
+}
+
+.player-quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 20px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.player-quick-actions>a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  flex: 1 1 130px;
+  min-height: 44px;
+  padding: 8px 0;
+  color: var(--brand);
+  font-size: .875rem;
+  font-weight: 650;
+}
+
+.player-period-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.player-period-heading h2 {
+  margin: 0;
+}
+
+.period-date-control {
+  min-width: 0;
+  position: relative;
+}
+
+.period-date-control>summary {
+  color: var(--brand);
+  font-size: .875rem;
+}
+
+.period-date-control[open] {
+  flex-basis: 100%;
+}
+
+.player-screen .player-period-section {
+  padding-top: 16px;
+}
+
+
+
+.home-discover {
+  padding: 20px 0 8px;
+  margin-top: 16px;
+  border-top: 1px solid var(--color-border);
 }
 
 .home-discover h2 {
@@ -130,9 +320,14 @@
 }
 
 .discovery-paths a {
-  padding: 16px 0;
-  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   min-width: 0;
+  min-height: 52px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .discovery-paths strong,.discovery-paths span {
@@ -202,6 +397,7 @@
 .follow-player-identity strong {
   display: block;
   font-size: 1.125rem;
+  line-height: 1.3;
   overflow-wrap: anywhere;
 }
 
@@ -249,13 +445,12 @@
 }
 
 .follow-player--featured {
-  padding: 16px;
+  padding: 18px 20px;
   background: var(--hero);
   color: var(--hero-text);
-  border-radius: 0;
+  border-radius: 4px;
   border: 0;
-  border-top: 3px solid var(--sport-accent);
-  margin: 6px 0 10px;
+  margin: 0 0 6px;
 }
 
 .follow-player--featured .monogram {
@@ -263,8 +458,8 @@
 }
 
 .follow-player--featured .follow-player-identity strong {
-  font-size: 1.875rem;
-  line-height: 1.2;
+  font-size: clamp(1.875rem,5vw,2.75rem);
+  line-height: 1.15;
   letter-spacing: -.045em;
 }
 
@@ -505,14 +700,12 @@
 }
 
 .player-identity {
+  --hero-muted: var(--color-muted);
+  --hero-text: var(--color-text);
   position: relative;
-  isolation: isolate;
-  padding: 18px 18px 0;
-  background: var(--hero);
-  color: var(--hero-text);
-  border-radius: 0;
-  border-top: 3px solid var(--sport-accent);
-  overflow: hidden;
+  padding: 8px 0 0;
+  color: var(--color-text);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .player-identity-top {
@@ -520,7 +713,7 @@
   gap: 12px;
   align-items: flex-start;
   min-width: 0;
-  padding-bottom: 12px;
+  padding-bottom: 8px;
 }
 
 .player-identity-top>div {
@@ -529,9 +722,9 @@
 }
 
 .player-identity h1 {
-  font-size: clamp(1.875rem,5vw,3rem);
-  line-height: 1.15;
-  margin: 6px 0;
+  font-size: clamp(2.25rem,5vw,3.75rem);
+  line-height: 1.1;
+  margin: 8px 0;
   letter-spacing: -.045em;
 }
 
@@ -550,25 +743,24 @@
 }
 
 .player-identity .favorite-button[aria-pressed=true] {
-  background: #ffffff18;
-  color: var(--sport-accent);
+  background: var(--brand-soft);
+  color: var(--brand);
 }
 
 .headline-stats {
-  padding: 10px 0 16px;
-  border-top: 1px solid #ffffff2c;
+  padding: 4px 0 16px;
 }
 
 .headline-stats-context {
   display: flex;
   flex-wrap: wrap;
   gap: 4px 12px;
-  color: var(--hero-muted);
+  color: var(--color-muted);
   font-size: .8125rem;
 }
 
 .headline-partial {
-  color: var(--sport-accent);
+  color: var(--color-warning);
 }
 
 .headline-stats dl {
@@ -589,16 +781,16 @@
 }
 
 .headline-stats dd {
-  font-size: clamp(1.75rem,5vw,2.6rem);
+  font-size: clamp(2rem,5vw,3rem);
   line-height: 1.1;
   font-weight: 800;
-  letter-spacing: -.035em;
+  letter-spacing: -.04em;
   margin: 0;
   white-space: nowrap;
 }
 
 .headline-stats dl>div:first-child dd {
-  color: var(--sport-accent);
+  color: var(--brand);
 }
 
 .headline-stats .metric-info-button {
@@ -913,14 +1105,17 @@
 }
 
 .form-heading {
-  padding: 0 0 10px;
+  padding: 0 0 6px;
   color: var(--color-text);
-  border-bottom: 0;
   margin-bottom: 0;
 }
 
 .form-heading h1 {
-  font-size: 2.25rem;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  font-size: clamp(2.5rem,6vw,3.75rem);
   line-height: 1.1;
   margin: 4px 0;
   letter-spacing: -.06em;
@@ -935,6 +1130,8 @@
 .form-heading small {
   color: var(--brand);
   font-size: .75rem;
+  font-weight: 600;
+  letter-spacing: 0;
 }
 
 .form-kicker {
@@ -1000,6 +1197,16 @@
   margin: 8px 0;
 }
 
+.form-change {
+  margin: 4px 0;
+  font-size: .875rem;
+  font-weight: 650;
+  color: var(--color-muted);
+}
+
+.form-change--rising { color: var(--color-positive); }
+.form-change--cooling { color: var(--color-negative); }
+
 .historical-form>.list-heading {
   padding: 8px 0;
   font-size: .8125rem;
@@ -1010,7 +1217,7 @@
 }
 
 .form-entry {
-  padding: 14px 0;
+  padding: 12px 0 6px;
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -1048,18 +1255,18 @@
 .form-entry .explorer-values {
   grid-template-columns: repeat(4,minmax(0,1fr));
   gap: 4px;
-  margin: 10px 0;
+  margin: 2px 0;
 }
 
 .form-entry .explorer-values dd {
-  font-size: 1.5rem;
+  font-size: 1.375rem;
   line-height: 1.15;
   letter-spacing: -.03em;
 }
 
 .form-entry-tools>summary {
   font-size: .8125rem;
-  color: var(--brand);
+  color: var(--color-muted);
   padding: 8px 0;
   min-height: 44px;
 }
@@ -1074,20 +1281,19 @@
 }
 
 .form-entry--lead {
-  background: var(--brand-soft);
-  padding: 16px 14px;
+  background: var(--color-surface);
+  padding: 16px;
   margin-bottom: 8px;
-  border-radius: 0;
-  border: 0;
+  border-left: 4px solid var(--brand);
 }
 
 .form-entry--lead .form-entry-title strong {
-  font-size: 1.5rem;
+  font-size: 1.625rem;
 }
 
 .form-entry--lead .rank-number {
   color: var(--brand);
-  font-size: 3rem;
+  font-size: 3.5rem;
   line-height: 1;
 }
 
@@ -1107,7 +1313,7 @@
 }
 
 .form-entry--lead .explorer-values>div:first-child dd {
-  font-size: 2.5rem;
+  font-size: 2.75rem;
 }
 
 .form-entry--lead .explorer-values>div {

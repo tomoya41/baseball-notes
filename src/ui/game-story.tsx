@@ -15,14 +15,19 @@ import { useHistoricalStatic } from "./use-mlb-historical";
 
 const n = (v: number | null) => v ?? "—";
 export function GameRecap({ league, batting, pitching, complete, scope = "", favorites = [] }: { league: League; batting: RecapBatter[]; pitching: RecapPitcher[]; complete: boolean; scope?: string; favorites?: FavoriteActions["favorites"] }) {
+  const [expanded, setExpanded] = useState(false);
   const highlighted = recapNumbers(batting, pitching);
   const ids = new Set(favorites.filter(f => f.kind === "player" && f.league === league).map(f => f.entityId));
   const batters = [...new Map([...highlighted.batting.slice(0, 4), ...batting.filter(p => ids.has(p.playerId))].map(p => [p.playerId, p])).values()];
   const pitchers = [...new Map([...highlighted.pitching.slice(0, 3), ...pitching.filter(p => ids.has(p.playerId))].map(p => [p.playerId, p])).values()];
+  const visibleBatters = expanded ? batters : batters.filter((p,i)=>i<2 || ids.has(p.playerId));
+  const visiblePitchers = expanded ? pitchers : pitchers.filter((p,i)=>i<1 || ids.has(p.playerId));
+  const more = batters.length > visibleBatters.length || pitchers.length > visiblePitchers.length;
   return <section className="home-section game-recap"><SectionHeader title="この試合の主な数字" />{!complete && <p className="inline-note">一部データ確認中 · 保存済みの成績のみ</p>}
-    {batters.length > 0 && <><h3>打撃</h3><div className="row-list">{batters.map(p => <div className="daily-recap-item" key={`${p.playerId}:${p.teamId}`}><Link className="daily-recap-row" to={`/${league}/players/${encodeURIComponent(p.playerId)}${scope}`}><span className="recap-player-line"><strong>{ids.has(p.playerId) && "★ "}{p.name}</strong><b>{p.homeRuns != null && p.homeRuns > 0 ? `${p.homeRuns} HR` : p.hits != null ? `${p.hits} 安打` : "—"}</b></span></Link><div className="recap-metric-line"><span><MetricLabel metric="PA" /> {n(p.pa)}</span><span>安打 {n(p.hits)}</span><span>本塁打 {n(p.homeRuns)}</span><span><MetricLabel metric="RBI" label="打点" /> {n(p.rbi)}</span></div></div>)}</div></>}
-    {pitchers.length > 0 && <><h3>投球</h3><div className="row-list">{pitchers.map(p => <div className="daily-recap-item" key={`${p.playerId}:${p.teamId}`}><Link className="daily-recap-row" to={`/${league}/players/${encodeURIComponent(p.playerId)}${scope}`}><strong>{ids.has(p.playerId) && "★ "}{p.name}</strong></Link><div className="recap-metric-line"><span><MetricLabel metric="IP" /> {p.outs === null ? "—" : `${Math.floor(p.outs / 3)}.${p.outs % 3}`}</span><span>失点 {n(p.runs)}</span><span>奪三振 {n(p.so)}</span></div></div>)}</div></>}
+    {batters.length > 0 && <><h3>打撃</h3><div className="row-list">{visibleBatters.map(p => <div className="daily-recap-item" key={`${p.playerId}:${p.teamId}`}><Link className="daily-recap-row" to={`/${league}/players/${encodeURIComponent(p.playerId)}${scope}`}><span className="recap-player-line"><strong>{ids.has(p.playerId) && "★ "}{p.name}</strong><b>{p.homeRuns != null && p.homeRuns > 0 ? `${p.homeRuns} HR` : p.hits != null ? `${p.hits} 安打` : "—"}</b></span></Link><div className="recap-metric-line"><span><MetricLabel metric="PA" /> {n(p.pa)}</span><span>安打 {n(p.hits)}</span><span>本塁打 {n(p.homeRuns)}</span><span><MetricLabel metric="RBI" label="打点" /> {n(p.rbi)}</span></div></div>)}</div></>}
+    {pitchers.length > 0 && <><h3>投球</h3><div className="row-list">{visiblePitchers.map(p => <div className="daily-recap-item" key={`${p.playerId}:${p.teamId}`}><Link className="daily-recap-row" to={`/${league}/players/${encodeURIComponent(p.playerId)}${scope}`}><strong>{ids.has(p.playerId) && "★ "}{p.name}</strong></Link><div className="recap-metric-line"><span><MetricLabel metric="IP" /> {p.outs === null ? "—" : `${Math.floor(p.outs / 3)}.${p.outs % 3}`}</span><span>失点 {n(p.runs)}</span><span>奪三振 {n(p.so)}</span></div></div>)}</div></>}
     {!batters.length && !pitchers.length && <p className="inline-note">この条件で表示できる成績はありません。確認済みの項目はボックススコアへ。</p>}
+    {(more || expanded) && <button className="text-button" aria-expanded={expanded} onClick={()=>setExpanded(v=>!v)}>{expanded ? "コンパクトに表示" : "活躍選手をすべて見る"}</button>}
     <details><summary>選出の根拠</summary><p>打撃は2安打以上または本塁打。投球は6回以上・失点1以下、または1回以上・失点0。お気に入り選手は条件によらず表示。打撃は本塁打・安打数、投球は投球回数の順に表示します。勝因・敗因の判定ではありません。</p></details>
   </section>;
 }
