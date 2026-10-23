@@ -19,7 +19,7 @@ function useCs(enabled = true) {
   return { data, failed, retry: () => { setFailed(false); setAttempt(a => a + 1); } };
 }
 function CsCredits({ data, pageIds }: { data: NpbCsDataset; pageIds?: number[] }) {
-  return <aside aria-label="CS成績の出典">{data.sources.filter(s => !pageIds || pageIds.includes(s.pageId)).map(s => <p className="inline-note" key={s.pageId}><a href={`https://ja.wikipedia.org/w/index.php?curid=${s.pageId}&oldid=${s.revision}`} target="_blank" rel="noreferrer">Wikipedia「{s.title}」の執筆者</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a> · 試合表から抽出・正規化</p>)}</aside>;
+  return <aside aria-label="CS成績の出典">{data.sources.filter(s => !pageIds || pageIds.includes(s.pageId)).map(s => <p className="inline-note" key={s.pageId}><a href={`https://ja.wikipedia.org/w/index.php?curid=${s.pageId}&oldid=${s.revision}`} target="_blank" rel="noreferrer">Wikipedia「{s.title}」の執筆者</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a> · 原記事からの変更：試合表の抜粋・表記整理</p>)}</aside>;
 }
 export function NpbCsPlayerStats({ playerId, stage, role, repository }: { playerId: string; stage: string; role: "batting" | "pitching"; repository: { findLatestNpb(): Promise<NpbPlayerDirectory> } }) {
   const { data, failed, retry } = useCs(), [compare, setCompare] = useState(false);
@@ -49,7 +49,7 @@ export function NpbCsScreen() {
     <Link className="section-action" to="/NPB/postseason?season=2026">シリーズ勝敗・勝ち上がりを見る →</Link>
     <p className="data-notice">一部試合・一部選手の収録です。速報・公式ランキング・シリーズ全体の完全収録ではありません。未開催・終了未確認のテンプレートは掲載しません。</p>
     {!valid ? <DataState kind="unsupported" title="指定した年度・大会条件は未対応です" /> : failed ? <><DataState kind="source-unavailable" title="CSの収録データを取得できません" /><button onClick={retry}>再試行</button></> : !data ? <LoadingSkeleton /> : <>
-      <p className="inline-note">原本取得 {data.observedAt.slice(0, 16).replace("T", " ")} UTC · {data.games.length}試合のスコア、{data.players.length}選手の該当表を収録。RegularのFacts・Coverage・HOT／ランキングとは別です。</p>
+      <p className="inline-note">原本取得 {data.observedAt.slice(0, 16).replace("T", " ")} UTC · {data.games.length}試合のスコア、{data.players.length}選手の該当表を収録。公式戦とは別集計です。</p>
       <label>ステージ<select value={stage} onChange={e => change("stage", e.target.value)}><option value="all">収録ステージすべて</option><option value="npb_cs_first">CS ファースト</option><option value="npb_cs_final">CS ファイナル</option></select></label>
       <h2>収録試合</h2><div className="row-list">{data.games.filter(g => stage === "all" || g.stage === stage).map(g => <article className="explorer-result" key={g.id}><p className="inline-note">{g.date} · {npbCompetitionLabels[g.stage]} · 終了</p><h3><Link to={`/NPB/games/${encodeURIComponent(g.id)}?competition=postseason&stage=${g.stage}`}>{name(g.awayTeamId)} <strong>{g.awayScore}–{g.homeScore}</strong> {name(g.homeTeamId)}</Link></h3><Link to={`/NPB/games/${encodeURIComponent(g.id)}?competition=postseason&stage=${g.stage}`}>試合詳細・選手成績 →</Link></article>)}</div>
       <h2>成績が収録されている選手</h2><div className="explorer-filter-grid"><label>成績<select value={role} onChange={e => change("role", e.target.value)}><option value="batting">打撃</option><option value="pitching">投球</option></select></label><label>選手名<input type="search" value={query} onChange={e => change("q", e.target.value)} /></label></div>
@@ -80,7 +80,7 @@ export function NpbCsGameDetail(){
       {(["batting","pitching"] as const).map(role=>{const rows=observations.filter(o=>o.aggregate.teamId===teamId&&o.aggregate.role===role),keys=role==="batting"?["AB","H","HR","RBI"]:["outsRecorded","SO","R","ER"];
         return <section key={role}><h3>{role==="batting"?"打撃":"投球"} · この試合の収録分</h3>{!rows.length?<p>この球団・役割の試合別成績は未収録です。</p>:<><div className="mlb-stat-scroll box-primary" tabIndex={0} role="region" aria-label={`${name(teamId)}の${role==="batting"?"打撃":"投球"}成績`}><StatTable><thead><tr><th>選手</th>{keys.map(k=><th key={k}><MetricLabel metric={k} label={k==="outsRecorded"?"投球回":k} /></th>)}</tr></thead><tbody>{rows.map(({aggregate:a})=><tr key={a.playerId}><th scope="row"><Link to={`/NPB/players/${a.playerId}/seasons?season=2026&competition=postseason&stage=${game.stage}&role=${role}`}>{data.players.find(p=>p.playerId===a.playerId)!.name}</Link></th>{keys.map(k=><td key={k}>{comparisonValue(k,a.metrics[k]??null)}</td>)}</tr>)}</tbody></StatTable></div><details><summary>詳しい{role==="batting"?"打撃":"投球"}成績・出典</summary>{rows.map(({aggregate:a})=><section key={a.playerId}><h4>{data.players.find(p=>p.playerId===a.playerId)!.name}</h4><dl className="explorer-values">{Object.entries(a.metrics).filter(([k])=>k!=="G").map(([k,v])=><div key={k}><dt><MetricLabel metric={k} label={k==="outsRecorded"?"投球回":k} /></dt><dd>{comparisonValue(k,v)}</dd></div>)}</dl></section>)}</details></>}</section>;
       })}<p className="game-detail__minor">表示順から打順・登板順・交代経過は判断できません。</p></details>)}
-    {!observations.length&&<p>この保存世代には試合別の選手成績がありません。大会合計から試合成績は生成しません。</p>}
+    {!observations.length&&<p>この試合の選手成績は未収録です。</p>}
     <details><summary>収録範囲・更新・出典</summary><p>原本取得 {data.observedAt}。空欄は未収録です。四死球から四球・死球を分離せず、PA・OBP・OPS・WHIPは推定していません。一球速報・完全なイニング経過・交代情報は未収録です。</p><CsCredits data={data} pageIds={[game.sourcePageId]} /></details>
     <Link to={`/NPB/cs?season=2026&stage=${game.stage}`}>同じステージの試合・選手へ →</Link>
   </div>;

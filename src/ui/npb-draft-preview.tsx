@@ -25,7 +25,7 @@ export function NpbExpandedDraftPreview({data,team}:{data:DraftEvent;team:string
     <h2>12球団の1〜3位予想</h2>
     <p className="inline-note">Baseball Notes独自予想 · {time(forecast.createdAt)}保存（日本時間）</p>
     <p>会議前の保存案です。志望届照合後、対象外・未確認の案は保留しています。</p>
-    <details><summary>予想の前提</summary><p>球団公表・報道予想ではありません。確認できた所属・守備位置を使い、投手・捕手・野手の組み合わせを考えたAIの編集案です。能力の順位表、球団の補強意向、抽選やウェーバー順のシミュレーションではありません。全候補を網羅せず、進路・資格の確認で対象が変わる可能性があります。1〜3位は最終的な支配下指名との参考比較で、初回入札・抽選とは区別します。</p></details>
+    <details><summary>予想の前提</summary><p>球団公表・報道予想ではありません。ポジションの構成を重視した独自予想です。能力の順位表、球団の補強意向、抽選やウェーバー順のシミュレーションではありません。全候補を網羅せず、進路・資格の確認で対象が変わる可能性があります。1〜3位は最終的な支配下指名との参考比較で、初回入札・抽選とは区別します。</p></details>
     {draftTeams.filter(id=>team==="all"||id===team).map(teamId=><section key={teamId} aria-label={`${getTeamName(teamId)}の1〜3位予想`}>
       <h3>{getTeamName(teamId)}</h3>
       {forecast.predictions.filter(p=>p.teamId===teamId).sort((a,b)=>a.round-b.round).map(p=>{

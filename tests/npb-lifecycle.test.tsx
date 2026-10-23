@@ -191,7 +191,7 @@ describe("Draft discovery integration and recovery",()=>{
   });
   it("preserves the legacy Prospects tab as unavailable, without fetching a Draft database",async()=>{
     await act(async()=>root.render(<MemoryRouter initialEntries={["/NPB/talent?tab=1"]}><Routes><Route path="/NPB/*" element={<NpbRoutes services={services} favorites={[]} toggle={()=>{}} saving={false}/>}/></Routes></MemoryRouter>));
-    expect(element.textContent).toContain("COMING SOON");expect(element.querySelector('a[aria-current="page"]')?.textContent).toBe("プロスペクト");
+    expect(element.textContent).toContain("この条件のデータは未収録です");expect(element.querySelector('a[aria-current="page"]')?.textContent).toBe("プロスペクト");
     expect(readers.season).not.toHaveBeenCalled();expect(readers.recent).not.toHaveBeenCalled();
   });
 });

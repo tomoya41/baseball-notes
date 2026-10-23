@@ -56,17 +56,17 @@ function view(payload: NpbHotPayload | null, state: "loading" | "ready" | "error
 describe("NPB HOT static Home delivery", () => {
   it("shows a calm preparing state for a closed Production Gate with no sample fallback", () => {
     const html = view(notReady, "ready");
-    expect(html).toContain("HOTランキング準備中");
+    expect(html).toContain("HOTランキングは現在表示できません");
     expect(html).toContain("9月25日");
     expect(html).not.toContain("打者A");
     expect(html).not.toContain("coverage_not_complete");
     expect(html).not.toContain("WHIP");
-    expect(html).toContain("選手表示情報・定期運用");
+    expect(html).toContain("対象期間の成績・出場数");
   });
 
-  it("explains scheduled and metadata gates even when seven-day coverage is complete",()=>{
+  it("keeps HOT closed when update or player information is unverified despite complete seven-day coverage",()=>{
     const payload:NpbHotPayload={...notReady,coverage:{...ready.coverage},readiness:{...notReady.readiness,reasons:["scheduled_production_evidence_pending","display_metadata_unavailable"]}};
-    const html=view(payload,"ready");expect(html).toContain("定期実行の運用証拠を確認中");expect(html).toContain("表示情報を確認中");expect(html).not.toContain("揃うと表示");expect(html).not.toContain("打者A");
+    const html=view(payload,"ready");expect(html).toContain("更新状況を確認できません");expect(html).toContain("表示情報を確認中");expect(html).not.toContain("揃うと表示");expect(html).not.toContain("打者A");
   });
 
   it("renders three compact ranked categories and canonical Player links when ready", () => {

@@ -14,7 +14,7 @@ it("shows dated saved metrics and unavailable fields without declaring the API h
   try {
     await act(async () => root.render(<PublishedPlayerFallback playerId="id" period="season" repository={{ findLatestNpb: async () => ({} as NpbPlayerDirectory) }} />));
     expect(div.textContent).toContain("成績の更新を確認できない"); expect(div.textContent).toContain("2026-10-08");
-    expect(div.textContent).toContain("一部未収集"); expect(div.textContent).toContain("日別の詳細証拠");
+    expect(div.textContent).toContain("一部未収集"); expect(div.textContent).toContain("未収録を出場なしとは判定しません");
     expect(div.querySelectorAll(".metric-tile__value")[3]?.textContent).toBe("—");
     expect(div.textContent).not.toContain("API復旧済み");
   } finally { await act(async () => root.unmount()); }

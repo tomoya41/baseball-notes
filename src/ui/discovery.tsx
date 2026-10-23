@@ -80,7 +80,7 @@ function NpbPostseasonDiscovery({ kind }: { kind: "series" | "game" }) {
         games={[...(useCs?cs?.games.map(g=>({id:g.id,stage:g.stage,date:g.date,home:npbTeamShortName(g.homeTeamId),away:npbTeamShortName(g.awayTeamId),homeScore:g.homeScore,awayScore:g.awayScore,state:`${g.date} · 終了`}))??[]:[]),...(useJapan?japan?.series.games.map(g=>({id:g.gameId,stage:"japan_series",date:g.date,home:npbTeamShortName(g.homeTeamId),away:npbTeamShortName(g.awayTeamId),homeScore:g.homeRuns,awayScore:g.awayRuns,state:`${g.date} · 日本シリーズ · 予定・結果未収録`}))??[]:[])].filter(g=>(!stage||stage==="all"||g.stage===stage)&&(!date||g.date===date))}/>
       {japanFailed&&stage!=="japan_series"&&<p className="data-notice">日本シリーズの追加情報を取得できません。CSの収録範囲のみ表示しています。<button onClick={retry}>再試行</button></p>}
       {failed&&wantsJapan&&<p className="data-notice">CSの追加情報を取得できません。日本シリーズの収録範囲のみ表示しています。<button onClick={retry}>再試行</button></p>}
-      <details><summary>出典・収録範囲</summary><p>選手成績は一部収録。日本シリーズは予定のみ収録し、公式戦とは別に表示します。</p>{sources.map(s=><p key={s.pageId}><a href={`https://ja.wikipedia.org/w/index.php?curid=${s.pageId}&oldid=${s.revision}`}>Wikipedia「{s.title}」の執筆者</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a> · 勝敗・試合表を正規化</p>)}</details>
+      <details><summary>出典・収録範囲</summary><p>選手成績は一部収録。日本シリーズは予定のみ収録し、公式戦とは別に表示します。</p>{sources.map(s=><p key={s.pageId}><a href={`https://ja.wikipedia.org/w/index.php?curid=${s.pageId}&oldid=${s.revision}`}>Wikipedia「{s.title}」の執筆者</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a> · 原記事からの変更：勝敗・試合表の抜粋・表記整理</p>)}</details>
     </>}
     <Link className="section-action" to="/NPB/postseason?season=2026">シリーズ勝敗・勝ち上がり →</Link>
   </div>;

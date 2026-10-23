@@ -66,11 +66,11 @@ export async function readWatchObservations(league: League, favorites: readonly 
     for (const days of windows) { const p = await read(() => sources.recent(days, directory)); if (p) { recentRows.set(days, p); if (p.coverage.status !== "complete") notes.push(`${days}日RecentはCoverage未確認部分があるため数値変化・条件一致を検出しません。`); } }
     const totals = preferences.milestones && targets.players.length ? await read(() => sources.checkpoints(season, directory)) : null;
     const seasonAligned = totals?.effectiveDate === directory.effectiveDate && totals?.generatedAt === directory.generatedAt;
-    if (totals && (!seasonAligned || totals.coverage.status !== "complete")) notes.push("節目の取得世代またはCoverageを確認できないため、節目を判定しません。");
+    if (totals && (!seasonAligned || totals.coverage.status !== "complete")) notes.push("成績の基準日や収録範囲を確認できないため、記録の節目は判定できません。");
     const results = await boundedExplorerRead(targets.players.filter(p=>preferences.players || p.collectionMember).map(p => p.id), async id => { fetches++; return { id, log: await sources.gameLog.find(id, 10, 0) }; });
     if (results.failed.length) notes.push(`${results.failed.length}選手の試合記録を取得できません。`);
     for (const target of targets.players) {
-      const player = directory.players.find(p => p.playerId === target.id); if (!player) { notes.push("Directoryで確認できない選手は判定しません。"); continue; }
+      const player = directory.players.find(p => p.playerId === target.id); if (!player) { notes.push("選手情報を確認できない場合は、変化を判定できません。"); continue; }
       const b = { ...base("player", target.id, player.displayName, season, directory.effectiveDate, "partial", directory.generatedAt, target.collectionOnly), collectionMember: target.collectionMember };
       const log = results.values.find(r => r.id === target.id)?.log;
       const games = log ? [...log.batting.map(r => ({ game: r, values: { H: r.hits, HR: r.homeRuns, PA: r.pa } })), ...log.pitching.map(r => ({ game: r, values: { outsRecorded: r.outsRecorded, ER: r.earnedRuns, SO: r.strikeouts } }))].filter(r => r.game.status === "final" && r.game.date <= directory.effectiveDate && r.game.date.startsWith(String(season))).sort((a, c) => c.game.date.localeCompare(a.game.date) || c.game.gameNumber - a.game.gameNumber) : [];
@@ -104,7 +104,7 @@ export async function readWatchObservations(league: League, favorites: readonly 
           if (next) add({...base("team",id,name,season,manifest.effectiveDate,"partial",manifest.generatedAt),eventDate:next.date},"next","予定",{gameId:next.gameId,date:next.date,scheduledTime:next.scheduledTime,opponent:next.home.id===id?next.away.name:next.home.name});
         }
         if (!planned.some(g=>g.status==="scheduled")) notes.push("現在の予定日程に次戦を確認できません。予定が公開されている場合だけ次戦を判定します。");
-      } else if (manifest) notes.push("GameとDirectoryのeffectiveDateが異なるため球団の試合は判定しません。");
+      } else if (manifest) notes.push("試合と選手情報の基準日が異なるため、球団の試合の変化は判定できません。");
     }
     for (const v of targets.views) {
       const params = new URLSearchParams(v.conditions), days = Number(params.get("period")), p = recentRows.get(days);

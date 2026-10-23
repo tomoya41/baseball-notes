@@ -61,7 +61,7 @@ export function NpbProfileDetails({ player }: { player: NpbCatalog["players"][nu
   return <section className="surface-card"><h2>プロフィール</h2>{facts.length ? <dl className="profile-definition">{facts.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl> : <p className="muted">詳しいプロフィールはまだ登録されていません。</p>}
     <p className="inline-note">確認できた項目のみ表示しています。所属は保存済み情報です。</p>
     {!!p.affiliations?.length && <details className="source-note"><summary>確認済みの球歴・所属情報（一部）</summary><ul>{p.affiliations.map((a, i) => <li key={i}>{a.name}{a.from || a.to ? `（${a.from ?? "開始未確認"}〜${a.to ?? "終了未確認"}）` : "（期間未確認）"}{a.uniformNumber !== null && ` · 背番号 ${a.uniformNumber}`}</li>)}</ul><p className="inline-note">全所属歴・現在の登録状況を示すものではありません。</p></details>}
-    {!!p.credits?.length && <details className="source-note"><summary>プロフィールの出典・利用条件</summary>{p.credits.map(c => <p key={c.url}><a href={c.url}>{c.name}</a> · <a href={c.licenseUrl}>{c.licenseUrl.includes("opendatacommons") ? "ODC-BY 1.0" : c.licenseUrl.includes("by-sa") ? "CC BY-SA 4.0" : "CC BY 4.0"}</a> · 項目を抽出・整形しています。</p>)}</details>}
+    {!!p.credits?.length && <details className="source-note"><summary>プロフィールの出典・利用条件</summary>{p.credits.map(c => <p key={c.url}><a href={c.url}>{c.name}</a> · <a href={c.licenseUrl}>{c.licenseUrl.includes("opendatacommons") ? "ODC-BY 1.0" : c.licenseUrl.includes("by-sa") ? "CC BY-SA 4.0" : "CC BY 4.0"}</a> · 原記事からの変更：項目の抜粋・表記整理。</p>)}</details>}
     {player.visual.photo.usage === "allowed" && <p className="inline-note">写真: <a href={player.visual.photo.licenseUrl!}>{player.visual.photo.attribution}</a></p>}
   </section>;
 }

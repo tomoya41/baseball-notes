@@ -37,7 +37,7 @@ const postseasonRequests=()=>fetchData.mock.calls.map(([url])=>String(url)).filt
 
 describe("published Postseason UI capability admission",()=>{
   it.each(["/MLB/postseason?season=2025","/MLB/search?competition=postseason&season=2025","/MLB/players/id?competition=postseason&season=2025"])("shows explicit preparation and never requests missing historical payloads at %s",async path=>{
-    await mount(path);expect(container.textContent).toContain("Postseasonは公開準備中");expect(postseasonRequests()).toEqual([]);
+    await mount(path);expect(container.textContent).toContain("ポストシーズンのデータは未収録");expect(postseasonRequests()).toEqual([]);
   });
   it.each(["/MLB/home","/MLB/explore"])("hides the unreleased historical entry at %s",async path=>{
     await mount(path);expect(container.querySelector('a[href*="/postseason"]')).toBeNull();expect(postseasonRequests()).toEqual([]);

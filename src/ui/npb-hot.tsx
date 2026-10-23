@@ -35,8 +35,8 @@ export function NpbHotView({ payload, state, now = new Date() }: {
     {state === "ready" && payload && <>
       <p className="standings-asof">{formatDate(payload.effectiveDate, true)}終了時点 · 直近7日</p>
       {payload.readiness.status === "not_ready" ?
-        <DataState kind="no-data" title="HOTランキング準備中"
-          detail={`公開には期間の完全性・出場母数・選手表示情報・定期運用の確認が必要です。${payload.readiness.reasons.map(reason => ({ coverage_not_complete:"期間データの完全性を確認中", no_production_eligible_players:"必要な出場母数を満たす選手を確認中", category_not_ready:"各カテゴリーの準備を確認中", scheduled_production_evidence_pending:"定期実行の運用証拠を確認中", display_metadata_unavailable:"選手名・球団等の表示情報を確認中" })[reason]).join("。")}`} /> : stale ?
+        <DataState kind="no-data" title="HOTランキングは現在表示できません"
+          detail={`対象期間の成績・出場数などを十分に確認できていません。${payload.readiness.reasons.map(reason => ({ coverage_not_complete:"期間データの完全性を確認中", no_production_eligible_players:"必要な出場母数を満たす選手を確認中", category_not_ready:"対象の成績を確認中", scheduled_production_evidence_pending:"更新状況を確認できません", display_metadata_unavailable:"選手名・球団等の表示情報を確認中" })[reason]).join("。")}`} /> : stale ?
         <DataState kind="no-data" title="HOTデータを更新中です"
           detail="新しい集計が公開されるまでお待ちください" /> :
         <div className="npb-hot-groups">{([

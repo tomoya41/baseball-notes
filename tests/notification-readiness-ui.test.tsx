@@ -18,7 +18,7 @@ afterEach(async () => { await act(async () => root.unmount()); container.remove(
 const mount = async () => act(async () => root.render(<NotificationSettings favorites={[]} ready visible />));
 describe("external delivery readiness is separate from in-app Watch", () => {
   it("does not invite opt-in to unconfigured push", async () => {
-    await mount(); expect(container.textContent).toContain("未設定・利用準備中");
+    await mount(); expect(container.textContent).toContain("成績更新通知を利用できません");
     expect((container.querySelector('[role="switch"]') as HTMLButtonElement).disabled).toBe(true);
     expect(notifications.setEnabled).not.toHaveBeenCalled();
   });

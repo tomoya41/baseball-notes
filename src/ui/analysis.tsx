@@ -343,7 +343,7 @@ export function AnalysisScreen({ catalog, player, provider }: {
       {category === "recent" ? <RecentChange provider={provider} query={query} manifest={manifest}
         subject={subject} /> : !gate.enabled
         ? <DataState kind={gate.status === "not-implemented" ? "not-implemented" : "unsupported"}
-          title={gate.status === "not-implemented" ? "この分析は準備中です" : "この条件の分析データはありません"}
+          title={gate.status === "not-implemented" ? "この分析は現在利用できません" : "この条件の分析データはありません"}
           detail={gate.reason} />
         : data.error ? <DataState kind="source-unavailable" detail={data.error} />
           : !result ? <LoadingSkeleton /> : result.status === "empty" ? <DataState kind="no-data" detail={result.reason} />
