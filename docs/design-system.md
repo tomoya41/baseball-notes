@@ -1,6 +1,6 @@
 # Design System — Baseball Notes
 
-Updated 2026-10-12 for the final presentation reconstruction. This document supersedes the early preview's sample-data and icon policy. `SPEC.md` and the current capability/contracts remain the functional source of truth.
+Updated 2026-10-23 for the result-first presentation refinement. This document supersedes the early preview's sample-data and icon policy. `SPEC.md` and the current capability/contracts remain the functional source of truth.
 
 ## Concept and data boundary
 
@@ -27,7 +27,7 @@ Import order is explicit in `src/main.tsx`. Avoid adding competing global reset/
 | Muted | `#59697c` | `#a4b3c6` |
 | Brand | `#204fcf` | `#9db8ff` |
 
-Hero identity surfaces have their own readable light text and restrained amber key figures. These accents are app colours, not official team colours. Body is 15px; ordinary controls 14px and utility labels generally 13px. Names/scores/headline statistics are larger according to hierarchy. Navigation remains compact but has 44px-or-larger targets. Numbers use tabular figures. System fonts avoid extra network/font dependencies.
+Game and featured-Home surfaces retain their own readable light text. Player uses an editorial name/major-stat heading on the page surface; HOT uses one lead entry with a brand rule, then dense rows. These accents are app colours, not official team colours. Body is 15px; ordinary controls 14px and utility labels generally 13px. Names/scores/headline statistics are larger according to hierarchy. Navigation remains compact but has 44px-or-larger targets. Numbers use tabular figures. System fonts avoid extra network/font dependencies.
 
 ## Icons and asset rights
 
@@ -46,7 +46,7 @@ The PR #26 refinement uses a single Player context row above identity: year, com
 - Comparison chart: `comparison-bars.tsx`, using existing comparison formatters and unavailable/partial semantics.
 - Full data/detail engines stay in their existing domain/application/readers; presentation does not recalculate eligibility or recreate Watch logic.
 
-Home gives actual game/player context before discovery. Player retains all Stats, Analysis, Trends, Game Log and saved history through accessible tabs/disclosures. Explorer shows result scope and compact primary controls; detailed criteria, methodology and secondary routes are disclosed. My starts with followed/saved entities, then organized collections/conditions/history. フォローの変化 means observed data changes, not Push.
+Home gives seasonal/game/player context before discovery. Player retains all Stats, Analysis, Trends, Game Log and saved history through accessible tabs/disclosures; year history and comparison are direct links below its major statistics. Search prioritizes input/results and keeps active secondary filters visible in a closed disclosure. Row comparison/collection actions share a labelled dialog, while Favorites stays direct. Metric labels are dotted-underlined buttons opening the existing full explanation, instead of repeating a separate info icon at every number. Explorer shows result scope and compact primary controls; detailed criteria, methodology and secondary routes are disclosed. My starts with followed/saved entities, then organized collections/conditions/history. フォローの変化 means observed data changes, not Push. See [intuitive-ui.md](intuitive-ui.md).
 
 ## States, accessibility and performance
 
