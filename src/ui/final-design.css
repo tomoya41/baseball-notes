@@ -453,10 +453,6 @@
   margin: 0 0 6px;
 }
 
-.follow-player--featured .monogram {
-  display: none;
-}
-
 .follow-player--featured .follow-player-identity strong {
   font-size: clamp(1.875rem,5vw,2.75rem);
   line-height: 1.15;
@@ -800,6 +796,12 @@
 .profile-season-details {
   padding: 0 0 16px;
   border-bottom: 1px solid var(--color-border);
+}
+
+.published-fallback-status {
+  color: var(--color-warning);
+  font-size: .8125rem;
+  margin: 4px 0 8px;
 }
 
 .scoreboard-list {
@@ -1269,11 +1271,6 @@
   color: var(--color-muted);
   padding: 8px 0;
   min-height: 44px;
-}
-
-.form-entry>.inline-note {
-  margin-bottom: 6px;
-  line-height: 1.5;
 }
 
 .form-entry-tools .hub-links {
