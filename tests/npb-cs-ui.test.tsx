@@ -18,7 +18,7 @@ async function mount(query = "") {
   return { div, close: async () => { await act(async () => root.unmount()); } };
 }
 it("shows saved scores, partial coverage and per-revision credits without Current ranking claims", async () => {
-  const { div, close } = await mount(); try { expect(div.textContent).toContain("2–3"); expect(div.textContent).toContain("一部試合・一部選手"); expect(div.textContent).toContain("完全収録ではありません"); expect(div.querySelector('a[href*="oldid=123"]')).not.toBeNull(); expect(div.querySelectorAll("a.player-row")).toHaveLength(30); } finally { await close(); }
+  const { div, close } = await mount(); try { expect([...div.querySelectorAll('.scoreboard-side>strong')].map(e=>e.textContent)).toEqual(["2","3"]); expect(div.textContent).toContain("一部試合・一部選手"); expect(div.textContent).toContain("完全収録ではありません"); expect(div.querySelector('a[href*="oldid=123"]')).not.toBeNull(); expect(div.querySelectorAll("a.player-row")).toHaveLength(30); } finally { await close(); }
 });
 it("pages and filters through URL state without rendering an unbounded list", async () => {
   const { div, close } = await mount(); try {

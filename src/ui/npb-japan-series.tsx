@@ -1,10 +1,11 @@
+import { EditorialCover } from "./editorial-cover";
 import { useEffect,useState } from "react";
 import { Link,useParams,useSearchParams } from "react-router-dom";
 import { readNpbJapanSeries } from "../application/npb-japan-series-reader";
 import { assertJapanSeriesAdvancement,type NpbJapanSeries } from "../domain/npb-japan-series";
 import type { NpbPostseasonSeries } from "../domain/npb-postseason-series";
 import pin from "../data/npb-japan-series-release.json";
-import { DataState,LoadingSkeleton,PageHeading } from "./components";
+import { DataState, LoadingSkeleton } from "./components";
 import { ScoreboardRow,ScoreHero } from "./design-system";
 import { GameHeading } from "./signature";
 import { npbTeamShortName as name } from "./npb-team-names";
@@ -35,7 +36,7 @@ export function NpbJapanSeriesScreen({gameDetail=false}:{gameDetail?:boolean}){
   const [params]=useSearchParams(),{gameId}=useParams();
   const valid=(!params.has("season")||params.get("season")==="2026")&&(!params.has("competition")||params.get("competition")==="postseason")&&(!params.has("stage")||["all","japan_series"].includes(params.get("stage")!));
   const state=useJapan(valid),d=state.data,s=d?.series,g=s?.games.find(row=>row.gameId===gameId),played=!!s?.games.some(row=>row.status==="final"),beforeOpening=!!d&&observedDate(d)<d.series.games[0]!.date;
-  return <div className="screen postseason-screen">{(!gameDetail||!g)&&<PageHeading eyebrow="NPB · 2026 · ポストシーズン" title="日本シリーズ"/>}
+  return <div className="screen postseason-screen">{(!gameDetail||!g)&&<EditorialCover kind="postseason" eyebrow="NPB · 2026 POSTSEASON" title="日本シリーズ"/>}
     {!valid?<DataState kind="unsupported" title="指定の年度・大会条件は未対応です"/>:!d?<Unavailable {...state}/>:gameDetail&&!g?<DataState kind="no-data" title="この試合は未収録です"/>:<>
       <p className="inline-note">記事取得 {observedTime(d.observedAt)}（日本時間）{d.review&&` · 最終確認 ${observedTime(d.review.reviewedAt)} · ${d.review.reviewedBy}`} · 予定と収録結果を表示。リアルタイム更新ではありません。</p>
       {gameDetail&&g?<><GameHeading title={`第${g.gameNumber}戦 · ${name(g.awayTeamId)}対${name(g.homeTeamId)}`} date={g.date} context={`NPB · 日本シリーズ · 第${g.gameNumber}戦`} backTo={japanSeriesUrl}/><ScoreHero away={name(g.awayTeamId)} home={name(g.homeTeamId)} awayScore={g.awayRuns} homeScore={g.homeRuns} status={statusLabel(g.status)}/><p>{d.venues[g.gameId]} · {g.scheduledAt?new Intl.DateTimeFormat("ja-JP",{hour:"2-digit",minute:"2-digit",timeZone:"Asia/Tokyo"}).format(new Date(g.scheduledAt)):"開始時刻は未収録"}</p>{g.gameNumber>=5&&<p className="inline-note">4勝先取で大会終了。開催条件を満たす場合の日程です。</p>}

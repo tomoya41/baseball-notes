@@ -439,3 +439,7 @@ An unchanged forecast publicly released before the meeting may be shown later as
 ## 2026-10-23 — Separate offline Web shell from validated baseball data
 
 Build a bounded, byte/hash-verified application-file cache at the app's own URL scope. Never cache API/data/raw responses in that worker: existing reader validation, IndexedDB fallback, missing/stale notices and Watch suppression remain authoritative. Install each version completely before activation; explicit update consent preserves active-page work and a retained previous shell supports old hashed imports. Register after page load, exclude Capacitor Android, preserve all personal stores, and ship a scope-specific retirement worker before removing the feature. See [behavior, validation and rollback](web-offline-shell.md).
+
+## 2026-10-23 — Editorial imagery complements factual UI
+
+Use original fictional scene imagery only for event/history atmosphere, with live HTML text and decorative empty-alt semantics. Never simulate real portraits, marks, results or missing capabilities. Keep compact everyday score/table layouts and large-font labelled fallbacks. Add hashed WebP application assets to the same bounded verified offline shell; baseball JSON remains excluded. Game team selection is optional URL state and reveals already loaded facts. No data or personal-store migration. See [design and rollback](editorial-ui-redesign.md).

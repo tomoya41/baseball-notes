@@ -1,3 +1,4 @@
+import { EditorialCover } from "./editorial-cover";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import type { League } from "../domain/models";
 import { roundLabels, type PostseasonHub, type PostseasonSeries } from "../domain/competition";
@@ -50,7 +51,7 @@ export function MlbPostseasonScreen() {
   if (!historical) return <PostseasonUnavailable league="MLB" />;
   if (!supported) return <PostseasonPublicationState />;
   const hub = state.value, series = hub?.series.find(s => s.id === seriesId);
-  return <div className="screen postseason-screen"><PageHeading eyebrow="MLB · HISTORICAL" title={seriesId ? series?.name ?? "シリーズ" : "ポストシーズン"} />
+  return <div className="screen postseason-screen"><EditorialCover kind="postseason" eyebrow={`${season} MLB · 過去の記録`} title={seriesId ? series?.name ?? "シリーズ" : "ポストシーズン"} />
     <div className="schedule-season"><label>シーズン<select value={season} onChange={e => navigate(`/MLB/postseason?season=${e.target.value}`)}>{availability.value.leagues.MLB.historicalSeasons.map(y => <option key={y}>{y}</option>)}</select></label>
       <Link to="/MLB/postseason?season=2026">2026 Current</Link></div>
     {state.status === "loading" ? <LoadingSkeleton /> : state.status !== "ready" ? <><DataState kind={state.status === "error" ? "source-unavailable" : "no-data"} title="Postseasonを読み込めません" />

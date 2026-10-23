@@ -1,3 +1,4 @@
+import { GameBoxScore } from "./game-box-score";
 import { useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { readNpbCs } from "../application/npb-cs-reader";
@@ -9,7 +10,7 @@ import { DataState, LoadingSkeleton, MetricLabel, PageHeading } from "./componen
 import { PublishedPlayerFallback } from "./npb-published-player";
 import { normalizePlayerSearch } from "../domain/npb-player-directory";
 import { GameHeading } from "./signature";
-import { ScoreHero } from "./design-system";
+import { ScoreboardRow, ScoreHero } from "./design-system";
 import { StatTable } from "./stat-table";
 import { npbTeamShortName as name } from "./npb-team-names";
 
@@ -47,23 +48,22 @@ export function NpbCsScreen() {
   const page = Math.max(1, Math.min(Math.ceil(matching.length / 30) || 1, Number(params.get("page")) || 1)), visible = matching.slice((page - 1) * 30, page * 30);
   return <div className="screen"><PageHeading eyebrow="NPB · 保存済みの大会記録" title="2026 クライマックスシリーズ" />
     <Link className="section-action" to="/NPB/postseason?season=2026">シリーズ勝敗・勝ち上がりを見る →</Link>
-    <p className="data-notice">一部試合・一部選手の収録です。速報・公式ランキング・シリーズ全体の完全収録ではありません。未開催・終了未確認のテンプレートは掲載しません。</p>
     {!valid ? <DataState kind="unsupported" title="指定した年度・大会条件は未対応です" /> : failed ? <><DataState kind="source-unavailable" title="CSの収録データを取得できません" /><button onClick={retry}>再試行</button></> : !data ? <LoadingSkeleton /> : <>
-      <p className="inline-note">原本取得 {data.observedAt.slice(0, 16).replace("T", " ")} UTC · {data.games.length}試合のスコア、{data.players.length}選手の該当表を収録。公式戦とは別集計です。</p>
+      <p className="inline-note">{data.games.length}試合 · {data.players.length}選手の一部成績 · 公式戦とは別集計</p>
       <label>ステージ<select value={stage} onChange={e => change("stage", e.target.value)}><option value="all">収録ステージすべて</option><option value="npb_cs_first">CS ファースト</option><option value="npb_cs_final">CS ファイナル</option></select></label>
-      <h2>収録試合</h2><div className="row-list">{data.games.filter(g => stage === "all" || g.stage === stage).map(g => <article className="explorer-result" key={g.id}><p className="inline-note">{g.date} · {npbCompetitionLabels[g.stage]} · 終了</p><h3><Link to={`/NPB/games/${encodeURIComponent(g.id)}?competition=postseason&stage=${g.stage}`}>{name(g.awayTeamId)} <strong>{g.awayScore}–{g.homeScore}</strong> {name(g.homeTeamId)}</Link></h3><Link to={`/NPB/games/${encodeURIComponent(g.id)}?competition=postseason&stage=${g.stage}`}>試合詳細・選手成績 →</Link></article>)}</div>
+      <h2>収録試合</h2><div className="scoreboard-list">{data.games.filter(g => stage === "all" || g.stage === stage).map(g => <ScoreboardRow key={g.id} to={`/NPB/games/${encodeURIComponent(g.id)}?competition=postseason&stage=${g.stage}`} away={name(g.awayTeamId)} home={name(g.homeTeamId)} awayScore={g.awayScore} homeScore={g.homeScore} date={g.date.slice(5)} status={`終了 · ${npbCompetitionLabels[g.stage]}`} partial />)}</div>
       <h2>成績が収録されている選手</h2><div className="explorer-filter-grid"><label>成績<select value={role} onChange={e => change("role", e.target.value)}><option value="batting">打撃</option><option value="pitching">投球</option></select></label><label>選手名<input type="search" value={query} onChange={e => change("q", e.target.value)} /></label></div>
       {!matching.length && <DataState kind="no-data" title="条件に一致する収録選手はいません" />}
       <div className="row-list">{visible.map(r => { const a = r.aggregate; return <Link className="player-row" key={`${a.playerId}:${a.scope.stage}:${a.teamId}`} to={`/NPB/players/${a.playerId}/seasons?season=2026&competition=postseason&stage=${a.scope.stage}&role=${role}`}><strong>{data.players.find(p => p.playerId === a.playerId)!.name}</strong><span>{name(a.teamId)} · {npbCompetitionLabels[a.scope.stage as "npb_cs_first" | "npb_cs_final"]} · 該当表 {r.gameIds.length}試合 →</span></Link>; })}</div>
       <nav aria-label="CS収録選手のページ"><button disabled={page <= 1} onClick={() => change("page", String(page - 1))}>前へ</button><span>{page}ページ</span><button disabled={page * 30 >= matching.length} onClick={() => change("page", String(page + 1))}>次へ</button></nav>
-      <CsCredits data={data} />
+      <details><summary>収録範囲・更新・出典</summary><p>原本取得 {data.observedAt.slice(0, 16).replace("T", " ")} UTC。一部試合・一部選手の収録です。速報・公式ランキング・シリーズ全体の完全収録ではありません。未開催・終了未確認のテンプレートは掲載しません。</p><CsCredits data={data} /></details>
     </>}
   </div>;
 }
 
 /** Actual per-game observations only. Never spread a Series aggregate into individual games. */
 export function NpbCsGameDetail(){
-  const {gameId}=useParams(),[params]=useSearchParams();
+  const {gameId}=useParams(),[params,setParams]=useSearchParams();
   const valid=!!gameId&&/^npb:game:[a-f0-9]{20}$/.test(gameId)&&(!params.has("competition")||params.get("competition")==="postseason")&&(!params.has("season")||params.get("season")==="2026")&&(!params.has("stage")||["npb_cs_first","npb_cs_final"].includes(params.get("stage")!));
   const {data,failed,retry}=useCs(valid);
   if(!valid)return <DataState kind="unsupported" title="試合の年度・大会条件を確認してください" />;
@@ -73,13 +73,14 @@ export function NpbCsGameDetail(){
   if(!game)return <DataState kind="no-data" title="このポストシーズンの試合は未収録です" action="収録試合へ" to="/NPB/cs" />;
   if(params.has("stage")&&params.get("stage")!==game.stage)return <DataState kind="unsupported" title="指定したステージと試合が一致しません" />;
   const observations=data.observations?.filter(o=>o.gameId===game.id)??[];
+  const renderTeam=(teamId:string,index:number)=><section className="game-detail__team" key={teamId}><h3 className="box-team-name">{index===0?"ビジター":"ホーム"} · {name(teamId)}</h3><p className="game-detail__totals">{index===0?game.awayScore:game.homeScore}得点 · 安打 {index===0?game.awayHits??"—":game.homeHits??"—"}</p>
+      {(["batting","pitching"] as const).map(role=>{const rows=observations.filter(o=>o.aggregate.teamId===teamId&&o.aggregate.role===role),keys=role==="batting"?["AB","H","HR","RBI"]:["outsRecorded","SO","R","ER"];
+        return <section key={role}><h3>{role==="batting"?"打撃":"投球"} · この試合の収録分</h3>{!rows.length?<p>この球団・役割の試合別成績は未収録です。</p>:<><div className="mlb-stat-scroll box-primary" tabIndex={0} role="region" aria-label={`${name(teamId)}の${role==="batting"?"打撃":"投球"}成績`}><StatTable><thead><tr><th>選手</th>{keys.map(k=><th key={k}><MetricLabel metric={k} label={k==="outsRecorded"?"投球回":k} /></th>)}</tr></thead><tbody>{rows.map(({aggregate:a})=><tr key={a.playerId}><th scope="row"><Link to={`/NPB/players/${a.playerId}/seasons?season=2026&competition=postseason&stage=${game.stage}&role=${role}`}>{data.players.find(p=>p.playerId===a.playerId)!.name}</Link></th>{keys.map(k=><td key={k}>{comparisonValue(k,a.metrics[k]??null)}</td>)}</tr>)}</tbody></StatTable></div><details><summary>詳しい{role==="batting"?"打撃":"投球"}成績・出典</summary>{rows.map(({aggregate:a})=><section key={a.playerId}><h4>{data.players.find(p=>p.playerId===a.playerId)!.name}</h4><dl className="explorer-values">{Object.entries(a.metrics).filter(([k])=>k!=="G").map(([k,v])=><div key={k}><dt><MetricLabel metric={k} label={k==="outsRecorded"?"投球回":k} /></dt><dd>{comparisonValue(k,v)}</dd></div>)}</dl></section>)}</details></>}</section>;
+      })}<p className="game-detail__minor">表示順から打順・登板順・交代経過は判断できません。</p></section>;
   return <div className="screen game-detail"><GameHeading title={`${game.date} ${name(game.awayTeamId)}対${name(game.homeTeamId)}`} date={game.date} context={`NPB · ポストシーズン · ${npbCompetitionLabels[game.stage]}`} backTo={`/NPB/cs?season=2026&stage=${game.stage}`} />
     <ScoreHero away={name(game.awayTeamId)} home={name(game.homeTeamId)} awayScore={game.awayScore} homeScore={game.homeScore} status="試合終了" />
     <p role="status" className="game-detail__note">この試合の選手成績は一部収録です。未収録の選手・項目は出場なし・0成績とは扱いません。公式戦とは別集計です。</p>
-    {([game.awayTeamId,game.homeTeamId]).map((teamId,index)=><details className="game-detail__team" key={teamId} open><summary>{index===0?"ビジター":"ホーム"} · {name(teamId)}<span>ボックススコア</span></summary><p className="game-detail__totals">{index===0?game.awayScore:game.homeScore}得点 · 安打 {index===0?game.awayHits??"—":game.homeHits??"—"}</p>
-      {(["batting","pitching"] as const).map(role=>{const rows=observations.filter(o=>o.aggregate.teamId===teamId&&o.aggregate.role===role),keys=role==="batting"?["AB","H","HR","RBI"]:["outsRecorded","SO","R","ER"];
-        return <section key={role}><h3>{role==="batting"?"打撃":"投球"} · この試合の収録分</h3>{!rows.length?<p>この球団・役割の試合別成績は未収録です。</p>:<><div className="mlb-stat-scroll box-primary" tabIndex={0} role="region" aria-label={`${name(teamId)}の${role==="batting"?"打撃":"投球"}成績`}><StatTable><thead><tr><th>選手</th>{keys.map(k=><th key={k}><MetricLabel metric={k} label={k==="outsRecorded"?"投球回":k} /></th>)}</tr></thead><tbody>{rows.map(({aggregate:a})=><tr key={a.playerId}><th scope="row"><Link to={`/NPB/players/${a.playerId}/seasons?season=2026&competition=postseason&stage=${game.stage}&role=${role}`}>{data.players.find(p=>p.playerId===a.playerId)!.name}</Link></th>{keys.map(k=><td key={k}>{comparisonValue(k,a.metrics[k]??null)}</td>)}</tr>)}</tbody></StatTable></div><details><summary>詳しい{role==="batting"?"打撃":"投球"}成績・出典</summary>{rows.map(({aggregate:a})=><section key={a.playerId}><h4>{data.players.find(p=>p.playerId===a.playerId)!.name}</h4><dl className="explorer-values">{Object.entries(a.metrics).filter(([k])=>k!=="G").map(([k,v])=><div key={k}><dt><MetricLabel metric={k} label={k==="outsRecorded"?"投球回":k} /></dt><dd>{comparisonValue(k,v)}</dd></div>)}</dl></section>)}</details></>}</section>;
-      })}<p className="game-detail__minor">表示順から打順・登板順・交代経過は判断できません。</p></details>)}
+    <GameBoxScore away={{name:name(game.awayTeamId),content:renderTeam(game.awayTeamId,0)}} home={{name:name(game.homeTeamId),content:renderTeam(game.homeTeamId,1)}} selectedSide={params.get("boxSide")==="home"?"home":"away"} onSideChange={side=>{const next=new URLSearchParams(params);next.set("boxSide",side);setParams(next,{preventScrollReset:true});}} />
     {!observations.length&&<p>この試合の選手成績は未収録です。</p>}
     <details><summary>収録範囲・更新・出典</summary><p>原本取得 {data.observedAt}。空欄は未収録です。四死球から四球・死球を分離せず、PA・OBP・OPS・WHIPは推定していません。一球速報・完全なイニング経過・交代情報は未収録です。</p><CsCredits data={data} pageIds={[game.sourcePageId]} /></details>
     <Link to={`/NPB/cs?season=2026&stage=${game.stage}`}>同じステージの試合・選手へ →</Link>

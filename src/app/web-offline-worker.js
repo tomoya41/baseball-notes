@@ -51,7 +51,7 @@ self.addEventListener("fetch", event => {
   const key = navigation ? indexUrl : url.href;
   const entry = entries.get(key);
   // Leave all JSON, API, raw, external and unknown requests to the existing validated readers.
-  const oldAsset = !url.search && /^assets\/[\w-]+\.(js|css)$/.test(url.pathname.slice(base.pathname.length));
+  const oldAsset = !url.search && /^assets\/[\w-]+\.(js|css|webp)$/.test(url.pathname.slice(base.pathname.length));
   if (!entry && !oldAsset) return;
   event.respondWith((async () => {
     const cache = await caches.open(cacheName), saved = await cache.match(key);

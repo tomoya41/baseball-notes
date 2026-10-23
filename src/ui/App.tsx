@@ -27,6 +27,7 @@ export function App({ services }: { services: Services }) {
   const location = useLocation();
   const league: League = location.pathname.split("/")[1] === "MLB" ? "MLB" : "NPB";
   const section = location.pathname.split("/")[2] ?? "home";
+  const experience = ["postseason", "cs", "talent", "draft", "history"].includes(section) ? "editorial" : ["games", "schedule"].includes(section) ? "game" : ["my", "favorites", "library", "watch-center"].includes(section) ? "personal" : ["players", "search", "teams"].includes(section) ? "player" : ["analysis", "compare", "matchup", "team-compare", "season-compare", "data", "records", "ranking", "form", "milestones"].includes(section) ? "data" : "reference";
   const currentNav = ["games", "schedule", "postseason", "cs"].includes(section) ? "schedule" : ["ranking", "milestones"].includes(section) ? "records" : ["players", "teams", "analysis", "compare", "team-compare", "season-compare", "data", "history", "glossary"].includes(section) || league === "NPB" && section === "talent" ? "search" : ["favorites", "library", "watch-center"].includes(section) ? "my" : section;
   const [favorites, setFavorites] = useState<Favorite[]>([]);
   const [favoritesReady, setFavoritesReady] = useState(false);
@@ -68,7 +69,7 @@ export function App({ services }: { services: Services }) {
       role={favoriteError ? "alert" : "status"}>{favoriteMessage}</p>}
     <RuntimeStatus />
     <WebAppUpdateNotice />
-    <main id="main-content" tabIndex={-1}>
+    <main id="main-content" data-experience={experience} tabIndex={-1}>
     <RouteFocus />
     <RouteErrorBoundary key={`screen:${location.pathname}`}>
     <Suspense fallback={<LoadingSkeleton />}><Routes key={refreshVersion}>

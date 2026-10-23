@@ -6,7 +6,7 @@ import { pathToFileURL } from "node:url";
 export async function buildWebOffline(root = "dist") {
   const source = await readFile(new URL("../src/app/web-offline-worker.js", import.meta.url), "utf8");
   const paths = ["index.html", "manifest.webmanifest", "icons/baseball-notes-192.png", "icons/baseball-notes-512.png", "icons/baseball-notes-maskable-512.png",
-    ...(await readdir(join(root, "assets"))).filter(name => /^[\w-]+\.(js|css)$/.test(name)).map(name => `assets/${name}`)].sort();
+    ...(await readdir(join(root, "assets"))).filter(name => /^[\w-]+\.(js|css|webp)$/.test(name)).map(name => `assets/${name}`)].sort();
   const hash = (bytes: string | Uint8Array) => createHash("sha256").update(bytes).digest("hex");
   const files = await Promise.all(paths.map(async path => { const body = await readFile(join(root, path)); return { path, bytes: body.length, sha256: hash(body) }; }));
   const bytes = files.reduce((sum, file) => sum + file.bytes, 0);
