@@ -296,6 +296,7 @@ public class ReleaseQualityTest {
         js("document.querySelectorAll('.game-box-switch button')[1].click()");
         waitCondition("Home box selected without losing game", "location.hash.includes('boxSide=home') && document.querySelectorAll('[role=tabpanel]:not([hidden])').length===1 && document.querySelectorAll('.game-box-switch button')[1].getAttribute('aria-selected')==='true'");
         assertEquals("Standard phone uses comparable table", "table", js("getComputedStyle(document.querySelector('[role=tabpanel]:not([hidden]) .box-primary table')).display"));
+        assertEquals("Box metric targets are 44px and do not overlap adjacent metrics", "true", js("Array.from(document.querySelectorAll('[role=tabpanel]:not([hidden]) .box-primary thead tr')).every(row=>{const buttons=Array.from(row.querySelectorAll('.metric-help-label')).map(e=>e.getBoundingClientRect());return buttons.every((r,i)=>r.width>=44&&r.height>=44&&(!buttons[i+1]||r.right<=buttons[i+1].left+0.5));})"));
         screenshot("mlb-box-score-360");
         for (String scale : new String[]{"1.5","2.0"}) {
             fontScaleAndRecreate(Float.parseFloat(scale));waitText("選手成績");waitViewport(360);
