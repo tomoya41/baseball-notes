@@ -377,7 +377,10 @@ public class ReleaseQualityTest {
         scenario = ActivityScenario.launch(link);
         waitText("2023 / 2024 / 2025年の収録行合計");
         waitText("0.924");
-        assertTrue("Historical scope remains partial", js("document.body.innerText").contains("全選手の成績・ランキングではありません"));
+        assertTrue("Historical scope is visible before disclosure", js("document.body.innerText").contains("一部収録"));
+        js("Array.from(document.querySelectorAll('summary')).find(s=>s.textContent==='収録範囲・出典について').click()");
+        waitText("全選手の成績・ランキングではありません");
+        js("Array.from(document.querySelectorAll('summary')).find(s=>s.textContent==='収録範囲・出典について').click()");
         assertEquals("Canonical player preserved by native deep link", "true", js("location.hash.includes('a1ca7cac-f9be-4993-a78c-bcd1e1ae3399') && location.hash.includes('season=2025')"));
         waitCondition("Comparison attribution", "!!document.querySelector('[aria-label=\"年度比較・合計データの出典\"] a[href*=\"oldid=\"]')");
         String historicalHash=js("location.hash");
@@ -534,8 +537,12 @@ public class ReleaseQualityTest {
     @Test public void postseasonGameDetailUsesExactGameScopeAndScalesText() throws Exception {
         Intent link=new Intent(Intent.ACTION_VIEW,Uri.parse("baseballnotes://NPB/games/npb%3Agame%3Ac0e3700f483b5a5239d5?competition=postseason&stage=npb_cs_final"));
         link.setClassName("com.tomoya41.baseballnotes","jp.baseballdata.app.MainActivity");
-        scenario=ActivityScenario.launch(link);waitText("ポストシーズン · CS ファイナル");waitText("森下翔太");
-        assertEquals("CS game shows source's single-game HR, not stage total","true",js("Array.from(document.querySelectorAll('th.stat-table-identity')).some(th=>th.textContent.includes('森下翔太') && th.parentElement.querySelectorAll('td')[2]?.textContent==='HR2')"));
+        scenario=ActivityScenario.launch(link);waitText("ポストシーズン · CS ファイナル");waitText("選手成績");
+        assertFalse("Unselected team's name is not shown as the active box",js("document.body.innerText").contains("森下翔太"));
+        js("document.querySelectorAll('.game-box-switch [role=tab]')[1].click()");waitText("森下翔太");
+        assertEquals("CS game shows source's single-game HR, not stage total","true",js("Array.from(document.querySelectorAll('[role=tabpanel]:not([hidden]) th.stat-table-identity')).some(th=>th.textContent.includes('森下翔太') && th.parentElement.querySelectorAll('td')[2]?.textContent==='HR2')"));
+        assertEquals("Exactly one team is visible","1",js("String(document.querySelectorAll('[role=tabpanel]:not([hidden])').length)"));
+        assertTrue("Selected team is restorable from URL",js("location.hash").contains("boxSide=home"));
         assertEquals("Per-game source is reachable","true",js("!!document.querySelector('a[href*=\"oldid=111424439\"]')"));
         screenshot("npb-cs-game-detail-360");
         fontScaleAndRecreate(2.0f);waitText("森下翔太");waitViewport(360);
@@ -555,7 +562,8 @@ public class ReleaseQualityTest {
         setTheme("dark","ダーク");js("location.hash='"+seriesHash+"'");waitText("試合3勝 ＋ アドバンテージ2勝");
         assertEquals("Dark series has no 200-percent overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));
         screenshot("npb-series-font-20-dark");
-        js("document.querySelector('a.scoreboard-row').click()");waitText("ポストシーズン · CS ファイナル");waitText("ボックススコア");
+        js("document.querySelector('a.scoreboard-row').click()");waitText("ポストシーズン · CS ファイナル");waitText("選手成績");
+        assertEquals("Game exposes accessible box score teams","2",js("String(document.querySelectorAll('.game-box-switch [role=tab]').length)"));
         assertTrue("Game retains exact competition",js("location.hash").contains("competition=postseason&stage=npb_cs_final"));
         shell("input keyevent KEYCODE_BACK");waitText("試合3勝 ＋ アドバンテージ2勝");
         assertEquals("Real system Back returns to exact series",seriesHash,js("location.hash"));
