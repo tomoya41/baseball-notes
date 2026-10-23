@@ -38,7 +38,7 @@ export function NotificationSettings({ favorites, ready, visible }: { favorites:
   return <section className="notification-settings" aria-labelledby="notifications-title">
     <h2 id="notifications-title">成績更新通知</h2>
     <p>成績更新通知はAndroid向けです。MLBの過去記録は対象外です。アプリ内の変化は「フォローの変化」で確認できます。</p>
-    {isAndroid() ? <><p role="status">{!checked ? "通知設定を確認中…" : configured ? "通知の受信は端末の設定と通信状態によります。" : "このアプリでは現在、成績更新通知を利用できません。"}</p><button className="button" type="button" role="switch" aria-checked={enabled} disabled={busy || !checked || (!configured && !enabled)} onClick={() => void toggle()}>
+    {isAndroid() ? <><p role="status">{!checked ? "通知設定を確認中…" : configured ? "この端末で通知を設定できます。通知の配信状況は未確認です。" : "このアプリでは現在、成績更新通知を利用できません。"}</p><button className="button" type="button" role="switch" aria-checked={enabled} disabled={busy || !checked || (!configured && !enabled)} onClick={() => void toggle()}>
       {busy ? "設定中…" : enabled ? "通知 ON" : "通知 OFF"}</button></> : <p>Webからは配信しません。</p>}
     {message && <p role="status">{message}</p>}
     <a href="#/privacy">プライバシー・データについて</a>

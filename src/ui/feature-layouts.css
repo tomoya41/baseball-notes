@@ -55,15 +55,6 @@
   max-width: 580px;
 }
 
-.coming-label {
-  display: inline-block;
-  color: var(--brand);
-  font-size: .8125rem;
-  letter-spacing: .16em;
-  font-weight: 850;
-  margin-bottom: 18px;
-}
-
 .coming-soon h2 {
   font-size: 1.45rem;
 }
