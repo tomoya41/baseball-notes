@@ -26,7 +26,7 @@ describe("NPB player year/competition entry",()=>{
   it("keeps independent saved Current data usable when the historical manifest fails",async()=>{
     vi.mocked(readNpbHistoricalManifest).mockRejectedValue(Error("Historical unavailable"));
     const {div,close}=await mount("?season=2026&role=pitching");
-    try {expect(div.textContent).toContain("2026年の保存済みシーズン成績");expect(div.textContent).toContain("過去年度の一覧は取得できません");expect(readNpbHistoricalSeason).not.toHaveBeenCalled();}
+    try {expect(div.textContent).toContain("2026年の成績");expect(div.textContent).toContain("保存済み · 更新未確認");expect(div.textContent).toContain("過去年度の一覧は取得できません");expect(readNpbHistoricalSeason).not.toHaveBeenCalled();}
     finally {await close();}
   });
   it("keeps independent 2026 CS data usable when the historical manifest fails",async()=>{

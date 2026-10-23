@@ -11,11 +11,11 @@ import { CompetitionHeader, HomeModeNav, Monogram } from "./design-system";
 import { NpbSavedPlayers } from "./npb-my";
 import { NpbHotSection } from "./npb-hot";
 import { NpbTeamActivity, TeamMetrics } from "./team-hub";
-import { NpbToday, NpbPersonalDashboard } from "./daily-dashboard";
+import { NpbToday, NpbSavedGames, NpbPersonalDashboard } from "./daily-dashboard";
 import { TeamFavorite } from "./team-favorite";
 import { ExplorerLinks } from "./data-explorer";
 import { LifecycleLinks } from "./npb-lifecycle";
-import { HomeDiscover, TeamRecord } from "./signature";
+import { HomeDiscover, HomeSearchEntry, TeamRecord } from "./signature";
 import { NpbSeasonalHome } from "./npb-seasonal-home";
 
 type Target = Pick<Favorite, "kind" | "entityId" | "league">;
@@ -44,10 +44,9 @@ export function NpbHome({ services, favorites, toggle, saving }: { services: Ser
   };
   return <div className="screen home-screen home-hub"><CompetitionHeader league="NPB" context={effectiveDate ? `${effectiveDate.slice(0, 4)}年 · 公式戦` : "公式戦"} />
     <HomeModeNav active={view} onChange={changeView} modes={[{id:"scores",label:"スコア"},{id:"standings",label:"順位表"},{id:"follow",label:"フォロー"}]} />
-    {view === "scores" && <div className="home-main"><NpbToday services={services} favorites={favorites} toggle={toggle} saving={saving} onEffectiveDate={setEffectiveDate} /><div className="home-follow"><NpbPersonalDashboard services={services} favorites={favorites} toggle={toggle} saving={saving} compact /></div></div>}
+    {view === "scores" && <><NpbSeasonalHome /><HomeSearchEntry league="NPB" /><div className="home-main"><NpbSavedGames services={services} onEffectiveDate={setEffectiveDate} />{favorites.some(f=>f.league==="NPB"&&f.kind==="player")&&<div className="home-follow"><NpbPersonalDashboard services={services} favorites={favorites} toggle={toggle} saving={saving} compact /></div>}</div></>}
     {view === "standings" && <NpbStandings services={services} onEffectiveDate={setEffectiveDate} />}
     {view === "follow" && <><NpbToday services={services} favorites={favorites} toggle={toggle} saving={saving} personal /><NpbPersonalDashboard services={services} favorites={favorites} toggle={toggle} saving={saving} compact /><section className="home-section"><SectionHeader title="お気に入り選手" action="My" to="/NPB/my" /><NpbSavedPlayers repository={services.directory} favorites={favorites} toggle={toggle} saving={saving} compact /></section></>}
-    <NpbSeasonalHome />
     <HomeDiscover league="NPB" />
     <details className="home-availability"><summary>HOT · 公開状況を確認</summary><NpbHotSection repository={services.hot} /></details>
     <details className="home-tools"><summary>記録・ポストシーズン・その他の機能</summary><div className="hub-links"><Link to="/NPB/records">個人成績 →</Link><Link to="/NPB/postseason">ポストシーズン →</Link></div><ExplorerLinks league="NPB" /></details>

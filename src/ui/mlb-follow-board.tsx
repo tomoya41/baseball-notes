@@ -2,7 +2,6 @@ import { Link } from "react-router-dom";
 import type { Favorite } from "../domain/models";
 import type { HistoricalPlayer } from "../data/mlb-historical";
 import { FavoriteButton, MetricLabel } from "./components";
-import { Monogram } from "./design-system";
 import { useHistoricalStatic } from "./use-mlb-historical";
 type Values = Record<string, { value: number | null }>;
 
@@ -27,7 +26,6 @@ export function MlbFollowPlayer({ player, season, favorites, toggle, saving, fea
   const year = player.seasons.includes(season) ? season : player.seasons.at(-1)!;
   return <article className={`follow-player${featured ? " follow-player--featured" : ""}`}>
     <Link className="follow-player-identity" to={`/MLB/players/${encodeURIComponent(player.id)}?season=${year}${player.postseasonOnly ? "&competition=postseason" : ""}`}>
-      <Monogram name={player.name} />
       <span><strong>{player.name}</strong><small>{season}年{totals ? ` · ${[hasBatting && "打撃", totals.pitching && "投球"].filter(Boolean).join("・") || "成績未収録"}` : "の記録"}{player.postseasonOnly && " · Postseason"}</small></span>
     </Link>
     <FavoriteButton active={favorites.some(f => f.league === "MLB" && f.entityId === player.id)} saving={saving}

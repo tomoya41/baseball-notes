@@ -32,7 +32,7 @@ const season = npbTeamSeasonSchema.parse({ schemaVersion: 1, league: "NPB", seas
 const recent = (effectiveDate = date) => ({ schemaVersion: 1, league: "NPB", effectiveDate, generatedAt: at, games: [] });
 const unavailable: typeof fetch = async () => new Response(null, { status: 503 });
 const homeServices = (request: typeof fetch) => ({ ...defaults,
-  gameSurface: new StaticGameSurfaceRepository("https://example.test/", async (...args) => { const r=await request(...args); if (!r.ok) return r; const v=await r.json(); return Response.json({ schemaVersion: 1, league: "NPB", from: v.effectiveDate, to: v.effectiveDate, effectiveDate: v.effectiveDate, generatedAt: v.generatedAt }); }),
+  gameSurface: new StaticGameSurfaceRepository("https://example.test/", async (...args) => { const r=await request(...args); if (!r.ok) return r; const v=await r.clone().json(); return Response.json(String(args[0]).endsWith("recent.json") ? v : { schemaVersion: 1, league: "NPB", from: v.effectiveDate, to: v.effectiveDate, effectiveDate: v.effectiveDate, generatedAt: v.generatedAt }); }),
   product: new StaticNpbProductRepository("https://example.test/", unavailable),
   directory: new StaticPlayerDirectoryRepository("https://example.test/", unavailable),
   hot: new StaticHotRepository("https://example.test/", unavailable) });
@@ -70,6 +70,7 @@ describe("NPB Home saved Season context", () => {
     await act(async () => { response.resolve(Response.json(recent())); });
     expect(context()).toBe("2026年 · 公式戦");
     expect(request).toHaveBeenCalledTimes(1);
+    expect(request.mock.calls.map(([url])=>String(url).split("/").at(-1))).toEqual(["recent.json"]);
   });
   it("uses effectiveDate even for an empty saved recent payload", async () => {
     await mount(<NpbHome services={homeServices(async () => Response.json(recent("2025-12-31")))} favorites={[]} toggle={() => {}} saving={false} />);

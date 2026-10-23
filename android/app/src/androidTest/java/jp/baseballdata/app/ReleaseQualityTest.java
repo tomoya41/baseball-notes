@@ -341,6 +341,12 @@ public class ReleaseQualityTest {
         waitCondition("Large metric glyphs fit their cells without overlap", "Array.from(document.querySelectorAll('.headline-stats dd')).every(e=>{const r=document.createRange();r.selectNodeContents(e);const text=r.getBoundingClientRect(),cell=e.parentElement.getBoundingClientRect();return text.left>=cell.left-1&&text.right<=cell.right+1;})");
         assertEquals("Header actions stay inside the viewport", "true", js("Array.from(document.querySelectorAll('.app-header a,.app-header button')).every(e=>{const r=e.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth;})"));
         screenshot("player-font-200");
+        js("location.hash='#/MLB/form?season=2024&asOfDate=2024-08-20&period=7'");
+        waitCondition("200% font HOT results", "document.querySelectorAll('.form-entry').length>0 && !document.querySelector('.skeleton-page')");
+        assertEquals("HOT large text stays within the viewport", "true", js("document.documentElement.scrollWidth<=innerWidth"));
+        assertEquals("Compact stat guides retain full touch targets", "true", js("Array.from(document.querySelectorAll('.form-entry .metric-help-label')).every(e=>{const r=e.getBoundingClientRect();return r.width>=44&&r.height>=44;})"));
+        waitCondition("HOT metric glyphs fit without overlapping adjacent values", "Array.from(document.querySelectorAll('.form-entry .explorer-values dd')).every(e=>{const r=document.createRange();r.selectNodeContents(e);const text=r.getBoundingClientRect(),cell=e.parentElement.getBoundingClientRect();return text.left>=cell.left-1&&text.right<=cell.right+1;})");
+        screenshot("hot-font-200");
         fontScaleAndRecreate(1.0f); waitText("BASEBALL"); waitViewport(360);
         js("location.hash='#/MLB/search?season=2024'");
         waitCondition("Actual Player Search", "location.hash.includes('/MLB/search') && !!document.querySelector('main input[type=search]') && !document.querySelector('.skeleton-page')");
@@ -590,7 +596,12 @@ public class ReleaseQualityTest {
     }
     @Test public void seasonalHomeAndCollectedAgeTotalsKeepScopeAndExplicitLoading() throws Exception {
         scenario=ActivityScenario.launch(MainActivity.class);waitText("BASEBALL");
-        js("location.hash='#/NPB/home?homeSeason=autumn'");waitText("CSとドラフトから、選手を深掘り");
+        js("location.hash='#/NPB/home?homeSeason=autumn'");waitText("クライマックスシリーズ");
+        assertEquals("Seasonal destinations stay directly reachable", "3", js("String(document.querySelectorAll('.seasonal-stories>a').length)"));
+        assertEquals("Seasonal sources keep their collected year", "2026", js("document.querySelector('.seasonal-feature-heading>span:last-child').textContent"));
+        js("document.querySelector('.seasonal-feature .source-note>summary').click()");waitText("楽しみ方");
+        assertEquals("Short seasonal labels retain partial-source context", "true", js("document.querySelector('.seasonal-feature').textContent.includes('CSは一部収録')"));
+        screenshot("npb-seasonal-home-360");
         js("location.hash='#/NPB/history?cohort=ageSeason&age=26&ageMode=collected&role=batting&recentPlayers=92a02594-a4f7-498c-bb83-8a41855b4645'");
         waitText("収録分の合計を読み込む");
         assertEquals("Age totals wait for the user before annual loading","false",js("!!document.querySelector('[aria-label=\"収録分の記録ウォッチ\"]')"));

@@ -71,7 +71,7 @@ export function FavoriteButton({ active, saving, onClick, label }: {
   </button>;
 }
 
-export function MetricInfo({ definition }: { definition: MetricHelp }) {
+export function MetricInfo({ definition, label }: { definition: MetricHelp; label?: string }) {
   const [open, setOpen] = useState(false);
   const titleId = useId();
   const content = <>
@@ -85,15 +85,15 @@ export function MetricInfo({ definition }: { definition: MetricHelp }) {
     {definition.scope && <p className="muted">{definition.scope}</p>}
   </>;
   return <>
-    <button className="metric-info-button" type="button" aria-label={`${definition.name}の説明`} aria-haspopup="dialog"
-      onClick={() => setOpen(true)}><Info size={17} aria-hidden="true" /></button>
+    <button className={label ? "metric-help-label" : "metric-info-button"} type="button" aria-label={`${definition.name}の説明`} aria-haspopup="dialog"
+      onClick={() => setOpen(true)}>{label ?? <Info size={17} aria-hidden="true" />}</button>
     {open && <AppDialog labelledBy={titleId} onClose={() => setOpen(false)}>{content}</AppDialog>}
   </>;
 }
 
 export function MetricLabel({ metric, label }: { metric: string; label?: string }) {
   const definition = metricHelp(metric);
-  return <span className="metric-label"><span>{label ?? metric}</span>{definition && <MetricInfo definition={definition} />}</span>;
+  return <span className="metric-label">{definition ? <MetricInfo definition={definition} label={label ?? metric} /> : <span>{label ?? metric}</span>}</span>;
 }
 
 export function MetricGrid({ stats, advanced = false }: { stats: Statistics; advanced?: boolean }) {

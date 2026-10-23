@@ -37,7 +37,7 @@ export function NpbGameDetailView({ payload, state, services, actions }: { paylo
   if (state === "missing") return <div className="screen game-detail"><h1>試合詳細</h1>
     <DataState kind="no-data" title="試合が見つかりません" /></div>;
   if (state === "error" || !payload) return <div className="screen game-detail"><h1>試合詳細</h1>
-    <DataState kind="source-unavailable" title="試合データを取得できませんでした" /></div>;
+    <DataState kind="source-unavailable" title="試合データを取得できませんでした" /><a className="text-link" href="#/NPB/schedule">日程・結果へ戻る</a></div>;
   const hasBox = payload.status === "final";
   return <div className="screen game-detail">
     <GameHeading title={`${formatDate(payload.date, true)}の試合`} date={payload.date} context={`NPB · 公式戦${payload.gameNumber > 1 ? ` · 第${payload.gameNumber}試合` : ""}`} backTo={`/NPB/schedule?date=${payload.date}`} />

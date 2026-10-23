@@ -19,6 +19,22 @@ function useTokyoDate() {
   useEffect(() => { const timer = window.setInterval(() => setDate(tokyoToday()), 60_000); return () => window.clearInterval(timer); }, []);
   return date;
 }
+
+/** Home's single bounded feed replaces its manifest/lookaround request; no extra
+ * Home request or provider/API call. Today/next-game browsing stays in Schedule. */
+export function NpbSavedGames({ services, onEffectiveDate }: { services: Services; onEffectiveDate?: (date:string)=>void }) {
+  const today=useTokyoDate();
+  const [data,setData]=useState<Awaited<ReturnType<Services["gameSurface"]["recent"]>>|null>(null),[error,setError]=useState(false);
+  useEffect(()=>{let active=true;void services.gameSurface.recent().then(value=>{if(active){setData(value);onEffectiveDate?.(value.effectiveDate);}}).catch(()=>{if(active)setError(true);});return()=>{active=false;};},[services,onEffectiveDate]);
+  const games=data?.games.filter(g=>g.status==="final"&&g.date<=data.effectiveDate&&g.date<=today).slice(0,2)??[];
+  return <section className="home-section today-board"><SectionHeader title="保存済みの試合" action="日程・結果" to="/NPB/schedule" />
+    {error?<DataState kind="source-unavailable" title="試合情報を読み込めません" action="日程・結果へ" to="/NPB/schedule" />:!data?<LoadingSkeleton />:<>
+      <p className="inline-note">{data.effectiveDate}までの保存済み結果</p>
+      {games.length?<GameLinks games={games}/>:<p className="inline-note">表示できる保存済みの終了結果はありません。</p>}
+      <details className="source-note"><summary>データの時点</summary><p>各試合の日付は結果に表示しています。今日の予定・現在の開催状況や、全試合の収録を示すものではありません。</p></details>
+    </>}
+  </section>;
+}
 export function NpbToday({ services, favorites, toggle, saving, personal = false, onEffectiveDate }: FavoriteActions & { services: Services; personal?: boolean; onEffectiveDate?: (date: string) => void }) {
   const today = useTokyoDate();
   const [data, setData] = useState<{ today: string; value: Awaited<ReturnType<typeof readDailyDashboard>> } | null>(null), [error, setError] = useState("");
