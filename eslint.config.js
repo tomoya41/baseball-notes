@@ -8,6 +8,7 @@ export default ts.config(
   { ignores: [".data/**", "dist/**", "node_modules/**", "android/**", "coverage/**", "api/npb/*.js"] },
   js.configs.recommended,
   ...ts.configs.recommended,
+  { files: ["src/app/web-offline-worker.js"], languageOptions: { globals: globals.serviceworker } },
   {
     files: ["**/*.{ts,tsx}"],
     languageOptions: { globals: { ...globals.browser, ...globals.node } },

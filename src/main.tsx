@@ -10,6 +10,7 @@ import "./ui/feature-layouts.css";
 import "./ui/final-design.css";
 import { restoreAppearance } from "./app/appearance";
 import { NativeRouteState } from "./app/native-route-state";
+import { startWebOffline } from "./app/web-offline";
 
 void installAndroidBackHandler();
 const root = document.getElementById("root");
@@ -28,3 +29,4 @@ async function mount() {
 );
 }
 void mount();
+startWebOffline();
