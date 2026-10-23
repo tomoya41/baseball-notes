@@ -9,7 +9,7 @@ export function NpbSeasonalHome(){
   const context=npbSeasonalHome(now,params.get("homeSeason"));
   const labels: Record<string,string> = {
     "/NPB/cs?season=2026":"クライマックスシリーズ",
-    "/NPB/talent/2026?view=results&forecast=final":"2026 ドラフト結果",
+    "/NPB/talent/2026?view=results&forecast=final":"ドラフト結果",
     "/NPB/postseason?stage=japan_series&season=2026":"日本シリーズ",
   };
   return <section className={`seasonal-feature seasonal-feature--${context.mode}`} aria-label="季節に合わせた野球の楽しみ方"><div className="seasonal-feature-heading"><span className="eyebrow">今の見どころ</span><span>{context.mode==="autumn" ? "2026" : context.date.slice(0,4)}</span></div>

@@ -69,8 +69,8 @@ describe("NPB Home saved Season context", () => {
     expect(context()).toBe("公式戦");
     await act(async () => { response.resolve(Response.json(recent())); });
     expect(context()).toBe("2026年 · 公式戦");
-    expect(request).toHaveBeenCalledTimes(2);
-    expect(request.mock.calls.map(([url])=>String(url).split("/").at(-1))).toEqual(["manifest.json","recent.json"]);
+    expect(request).toHaveBeenCalledTimes(1);
+    expect(request.mock.calls.map(([url])=>String(url).split("/").at(-1))).toEqual(["recent.json"]);
   });
   it("uses effectiveDate even for an empty saved recent payload", async () => {
     await mount(<NpbHome services={homeServices(async () => Response.json(recent("2025-12-31")))} favorites={[]} toggle={() => {}} saving={false} />);

@@ -590,7 +590,12 @@ public class ReleaseQualityTest {
     }
     @Test public void seasonalHomeAndCollectedAgeTotalsKeepScopeAndExplicitLoading() throws Exception {
         scenario=ActivityScenario.launch(MainActivity.class);waitText("BASEBALL");
-        js("location.hash='#/NPB/home?homeSeason=autumn'");waitText("CSとドラフトから、選手を深掘り");
+        js("location.hash='#/NPB/home?homeSeason=autumn'");waitText("クライマックスシリーズ");
+        assertEquals("Seasonal destinations stay directly reachable", "3", js("String(document.querySelectorAll('.seasonal-stories>a').length)"));
+        assertEquals("Seasonal sources keep their collected year", "2026", js("document.querySelector('.seasonal-feature-heading>span:last-child').textContent"));
+        js("document.querySelector('.seasonal-feature .source-note>summary').click()");waitText("楽しみ方");
+        assertEquals("Short seasonal labels retain partial-source context", "true", js("document.querySelector('.seasonal-feature').textContent.includes('CSは一部収録')"));
+        screenshot("npb-seasonal-home-360");
         js("location.hash='#/NPB/history?cohort=ageSeason&age=26&ageMode=collected&role=batting&recentPlayers=92a02594-a4f7-498c-bb83-8a41855b4645'");
         waitText("収録分の合計を読み込む");
         assertEquals("Age totals wait for the user before annual loading","false",js("!!document.querySelector('[aria-label=\"収録分の記録ウォッチ\"]')"));

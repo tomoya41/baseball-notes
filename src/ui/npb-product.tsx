@@ -11,7 +11,7 @@ import { CompetitionHeader, HomeModeNav, Monogram } from "./design-system";
 import { NpbSavedPlayers } from "./npb-my";
 import { NpbHotSection } from "./npb-hot";
 import { NpbTeamActivity, TeamMetrics } from "./team-hub";
-import { NpbToday, NpbPersonalDashboard } from "./daily-dashboard";
+import { NpbToday, NpbSavedGames, NpbPersonalDashboard } from "./daily-dashboard";
 import { TeamFavorite } from "./team-favorite";
 import { ExplorerLinks } from "./data-explorer";
 import { LifecycleLinks } from "./npb-lifecycle";
@@ -44,7 +44,7 @@ export function NpbHome({ services, favorites, toggle, saving }: { services: Ser
   };
   return <div className="screen home-screen home-hub"><CompetitionHeader league="NPB" context={effectiveDate ? `${effectiveDate.slice(0, 4)}年 · 公式戦` : "公式戦"} />
     <HomeModeNav active={view} onChange={changeView} modes={[{id:"scores",label:"スコア"},{id:"standings",label:"順位表"},{id:"follow",label:"フォロー"}]} />
-    {view === "scores" && <><NpbSeasonalHome /><HomeSearchEntry league="NPB" /><div className="home-main"><NpbToday services={services} favorites={favorites} toggle={toggle} saving={saving} onEffectiveDate={setEffectiveDate} />{favorites.some(f=>f.league==="NPB"&&f.kind==="player")&&<div className="home-follow"><NpbPersonalDashboard services={services} favorites={favorites} toggle={toggle} saving={saving} compact /></div>}</div></>}
+    {view === "scores" && <><NpbSeasonalHome /><HomeSearchEntry league="NPB" /><div className="home-main"><NpbSavedGames services={services} onEffectiveDate={setEffectiveDate} />{favorites.some(f=>f.league==="NPB"&&f.kind==="player")&&<div className="home-follow"><NpbPersonalDashboard services={services} favorites={favorites} toggle={toggle} saving={saving} compact /></div>}</div></>}
     {view === "standings" && <NpbStandings services={services} onEffectiveDate={setEffectiveDate} />}
     {view === "follow" && <><NpbToday services={services} favorites={favorites} toggle={toggle} saving={saving} personal /><NpbPersonalDashboard services={services} favorites={favorites} toggle={toggle} saving={saving} compact /><section className="home-section"><SectionHeader title="お気に入り選手" action="My" to="/NPB/my" /><NpbSavedPlayers repository={services.directory} favorites={favorites} toggle={toggle} saving={saving} compact /></section></>}
     <HomeDiscover league="NPB" />

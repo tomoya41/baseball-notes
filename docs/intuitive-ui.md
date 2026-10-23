@@ -1,6 +1,6 @@
 # Result-first baseball experience
 
-Baseline: main `ba07237` (PR #66). Scope: presentation and one bounded, existing public saved-results reader. No collector, source, canonical write, historical release or Gate changes.
+Baseline: main `ba07237` (PR #66). Scope: presentation and the existing bounded public saved-results reader. No collector, source, canonical write, historical release or Gate changes.
 
 ## Design decisions
 
@@ -16,7 +16,7 @@ The initial viewport should answer a baseball question, rather than explain the 
 
 ## Data and performance boundaries
 
-After the saved calendar window, Home reads the existing `games/recent.json` (maximum six games) once, after reading the manifest. Only a matching effective date and final games inside the saved bounds are admitted. This feed does not create Day/Coverage evidence or turn an unavailable Today page into no-games. Failures and mismatched snapshots remain unavailable. In-season lookaround and its request bound are unchanged. No database queries are introduced.
+The scores Home reads the existing `games/recent.json` (maximum six games) once, in place of its previous manifest/lookaround request. It does not add a Home request. Only final games at or before the feed cutoff and device date are displayed, with each game date and the feed cutoff visible. This feed does not create Day/Coverage evidence or claim anything about Today/no-games. The follow view retains the original Today reader and its existing request bound. Schedule remains the destination for date/next-game browsing. A failed feed shows an actionable unavailable state. No database queries are introduced.
 
 This change preserves the five primary destinations, route validation, Current/Historical and Regular/Postseason separation, NPB HOT/Ranking closure, personal stores, Android platform handling and the offline application update mechanism. No external font, image, library or recurring service is added.
 
@@ -24,4 +24,4 @@ Rollback: revert this presentation commit and rebuild the app with the existing 
 
 ## Verification record
 
-Local browser checks and release evidence are recorded in `.data/intuitive-ui/` (ignored). Before/After screenshots use the same 2024 MLB player and the same 2024-08-20 HOT cutoff. Unavailable device checks must remain NOT RUN. Final QA and delivery results are added below after execution.
+Local browser checks and release evidence are recorded in `.data/intuitive-ui/` (ignored). Before/After screenshots use the same 2024 MLB player and the same 2024-08-20 HOT cutoff. Unavailable device checks must remain NOT RUN. Final QA and delivery results follow below.

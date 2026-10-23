@@ -19,6 +19,22 @@ function useTokyoDate() {
   useEffect(() => { const timer = window.setInterval(() => setDate(tokyoToday()), 60_000); return () => window.clearInterval(timer); }, []);
   return date;
 }
+
+/** Home's single bounded feed replaces its manifest/lookaround request; no extra
+ * Home request or provider/API call. Today/next-game browsing stays in Schedule. */
+export function NpbSavedGames({ services, onEffectiveDate }: { services: Services; onEffectiveDate?: (date:string)=>void }) {
+  const today=useTokyoDate();
+  const [data,setData]=useState<Awaited<ReturnType<Services["gameSurface"]["recent"]>>|null>(null),[error,setError]=useState(false);
+  useEffect(()=>{let active=true;void services.gameSurface.recent().then(value=>{if(active){setData(value);onEffectiveDate?.(value.effectiveDate);}}).catch(()=>{if(active)setError(true);});return()=>{active=false;};},[services,onEffectiveDate]);
+  const games=data?.games.filter(g=>g.status==="final"&&g.date<=data.effectiveDate&&g.date<=today).slice(0,2)??[];
+  return <section className="home-section today-board"><SectionHeader title="保存済みの試合" action="日程・結果" to="/NPB/schedule" />
+    {error?<DataState kind="source-unavailable" title="試合情報を読み込めません" action="日程・結果へ" to="/NPB/schedule" />:!data?<LoadingSkeleton />:<>
+      <p className="inline-note">{data.effectiveDate}までの保存済み結果</p>
+      {games.length?<GameLinks games={games}/>:<p className="inline-note">表示できる保存済みの終了結果はありません。</p>}
+      <details className="source-note"><summary>データの時点</summary><p>各試合の日付は結果に表示しています。今日の予定・現在の開催状況や、全試合の収録を示すものではありません。</p></details>
+    </>}
+  </section>;
+}
 export function NpbToday({ services, favorites, toggle, saving, personal = false, onEffectiveDate }: FavoriteActions & { services: Services; personal?: boolean; onEffectiveDate?: (date: string) => void }) {
   const today = useTokyoDate();
   const [data, setData] = useState<{ today: string; value: Awaited<ReturnType<typeof readDailyDashboard>> } | null>(null), [error, setError] = useState("");
@@ -26,19 +42,16 @@ export function NpbToday({ services, favorites, toggle, saving, personal = false
   const value = data?.today === today ? data.value : null;
   const teams = new Set(favorites.filter(f => f.kind === "team" && f.league === "NPB").map(f => f.entityId));
   const filter = (games: NonNullable<typeof value>["today"]) => personal ? games.filter(g => teams.has(g.home.id) || teams.has(g.away.id)) : games;
-  const games = value ? filter(value.today) : [], next = value ? filter(value.next) : [], recent = value ? filter(value.savedRecent.length ? value.savedRecent : value.recent) : [];
+  const games = value ? filter(value.today) : [], next = value ? filter(value.next) : [], recent = value ? filter(value.recent) : [];
   const scheduleDate = value ? today < value.manifest.from ? value.manifest.from : today > value.manifest.to ? value.manifest.to : today : null;
-  const savedOnly = !!value && today > value.manifest.to;
-  return <section className="home-section today-board"><SectionHeader title={personal ? "フォロー球団の試合" : savedOnly ? "保存済みの試合" : "今日の試合"} action="日程・結果" to={scheduleDate ? `/NPB/schedule?date=${scheduleDate}` : "/NPB/schedule"} /><p className="inline-note">{savedOnly ? `${value.manifest.effectiveDate}までの保存済み結果` : `${today} · 日本時間${value ? ` · 結果更新 ${value.manifest.effectiveDate}` : ""}`}</p>
+  return <section className="home-section today-board"><SectionHeader title={personal ? "フォロー球団の試合" : "今日の試合"} action="日程・結果" to={scheduleDate ? `/NPB/schedule?date=${scheduleDate}` : "/NPB/schedule"} /><p className="inline-note">{today} · 日本時間{value && ` · 結果更新 ${value.manifest.effectiveDate}`}</p>
     {error === today ? <DataState kind="source-unavailable" title="試合情報を読み込めません" /> : !value ? <LoadingSkeleton /> : <>
-      {games.length ? <GameLinks games={games} /> : savedOnly && recent.length ? null : <p className="inline-note">{personal && !teams.size ? "球団をお気に入りに追加すると、試合がここに表示されます。" : personal && value.todayState === "games" ? "保存済みの今日の試合にフォロー球団はありません。" : value.todayState === "no_games" ? "今日は試合なし" : "今日の予定は未確認です。"}</p>}
+      {games.length ? <GameLinks games={games} /> : <p className="inline-note">{personal && !teams.size ? "球団をお気に入りに追加すると、試合がここに表示されます。" : personal && value.todayState === "games" ? "保存済みの今日の試合にフォロー球団はありません。" : value.todayState === "no_games" ? "今日は試合なし" : "今日の予定は未確認です。"}</p>}
       {value.failedDates.length > 0 && <p className="inline-note">一部の日程を読み込めません。次戦・結果は読み込めた範囲です。</p>}
       {value.incompleteDates.length > 0 && <p className="inline-note">一部の試合情報は未確定です。日程・結果は保存済みの範囲を表示しています。</p>}
       {next.length > 0 && <><h3>次の試合</h3><GameLinks games={next.slice(0, personal ? 3 : 2)} /></>}
-      {recent.length > 0 && <>{!savedOnly && <h3>最近終了した試合</h3>}<GameLinks games={recent.slice(0, personal ? 3 : 2)} /></>}
-      {value.savedRecentUnavailable && <p className="inline-note" role="status">保存済みの結果を読み込めません。日程・結果から確認してください。</p>}
-      {savedOnly && <details className="source-note"><summary>データの時点</summary><p>{today}（日本時間）の予定は未確認です。保存済みの結果を表示しています。今日の試合なしやシーズン完了を意味しません。</p></details>}
-      {[...games, ...next, ...recent].length > 0 && <details className="daily-team-actions"><summary>球団をフォロー</summary><div className="row-list">{[...new Map([...games, ...next, ...recent].flatMap(g => [g.away, g.home]).map(t => [t.id, t])).values()].map(t => <div className="surface-favorite" key={t.id}><Link className="player-row" to={`/NPB/teams/${encodeURIComponent(t.id)}`}>{t.name}</Link><TeamFavorite league="NPB" teamId={t.id} name={t.name} favorites={favorites} toggle={toggle} saving={saving} /></div>)}</div></details>}
+      {recent.length > 0 && <><h3>最近終了した試合</h3><GameLinks games={recent.slice(0, personal ? 3 : 2)} /></>}
+      <details className="daily-team-actions"><summary>この期間の球団をフォロー</summary><div className="row-list">{[...new Map([...games, ...next, ...recent].flatMap(g => [g.away, g.home]).map(t => [t.id, t])).values()].map(t => <div className="surface-favorite" key={t.id}><Link className="player-row" to={`/NPB/teams/${encodeURIComponent(t.id)}`}>{t.name}</Link><TeamFavorite league="NPB" teamId={t.id} name={t.name} favorites={favorites} toggle={toggle} saving={saving} /></div>)}</div></details>
     </>}
   </section>;
 }

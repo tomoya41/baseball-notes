@@ -6,17 +6,29 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PlayerListTools, PlayerQuickActions, HomeSearchEntry } from "../src/ui/signature";
 import { MetricLabel } from "../src/ui/components";
 import { GameRecap } from "../src/ui/game-story";
+import { NpbSavedGames } from "../src/ui/daily-dashboard";
+import { services } from "../src/app/services";
+import type { GameIndexRow } from "../src/domain/npb-game-index";
 
 let root: Root, host: HTMLDivElement;
 beforeEach(()=>{
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);
+  vi.useFakeTimers({toFake:["Date"]});vi.setSystemTime(new Date("2026-10-23T00:00:00Z"));
   HTMLDialogElement.prototype.showModal=function(){this.setAttribute("open","");};
   host=document.createElement("div");document.body.append(host);root=createRoot(host);
 });
-afterEach(async()=>{await act(async()=>root.unmount());host.remove();vi.unstubAllGlobals();});
+afterEach(async()=>{await act(async()=>root.unmount());host.remove();vi.useRealTimers();vi.unstubAllGlobals();});
 async function render(content: React.ReactNode){await act(async()=>root.render(<MemoryRouter>{content}</MemoryRouter>));}
 
 describe("result-first navigation",()=>{
+  it("replaces the Home manifest request with one bounded feed and never invents Today or Day evidence",async()=>{
+    const game:GameIndexRow={gameId:"npb:game:one",date:"2026-10-08",gameNumber:1,status:"final",scheduledTime:null,home:{id:"npb:team:tigers",name:"阪神",score:0},away:{id:"npb:team:swallows",name:"ヤクルト",score:4},completeness:"partial",battingAvailable:false,pitchingAvailable:false,detailAvailable:true};
+    const reader={manifest:vi.fn(),date:vi.fn(),recent:vi.fn(async()=>({effectiveDate:"2026-10-12",games:[game,{...game,gameId:"npb:game:future",date:"2026-10-13"},{...game,gameId:"npb:game:scheduled",status:"scheduled" as const}]})),records:vi.fn()};
+    await render(<NpbSavedGames services={{...services,gameSurface:reader as unknown as typeof services.gameSurface}} />);
+    expect(reader.recent).toHaveBeenCalledTimes(1);expect(reader.manifest).not.toHaveBeenCalled();expect(reader.date).not.toHaveBeenCalled();expect(reader.records).not.toHaveBeenCalled();
+    expect(host.querySelectorAll('.scoreboard-row')).toHaveLength(1);expect(host.querySelector('.scoreboard-row')?.textContent).toContain('0');
+    expect(host.textContent).toContain('2026-10-12までの保存済み結果');expect(host.textContent).toContain('一部データ確認中');expect(host.textContent).not.toContain('今日は試合なし');
+  });
   it("keeps scoped comparison/history and search directly reachable without a menu",async()=>{
     await render(<><PlayerQuickActions compareTo="/MLB/compare?season=2024&competition=postseason&players=one" historyTo="/MLB/history?season=2024&competition=postseason&player=one" /><HomeSearchEntry league="MLB" year={2024} /></>);
     expect([...host.querySelectorAll("a")].map(a=>a.getAttribute("href"))).toEqual(["/MLB/history?season=2024&competition=postseason&player=one","/MLB/compare?season=2024&competition=postseason&players=one","/MLB/search?season=2024"]);
