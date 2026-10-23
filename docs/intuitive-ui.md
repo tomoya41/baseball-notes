@@ -48,4 +48,3 @@ Local browser checks and release evidence are recorded in `.data/intuitive-ui/` 
 NPB Current API availability remains an independent operational limitation: a game API failure was observed locally, and Player used the existing published saved-response fallback. This release does not establish database recovery, repair Facts or open HOT/Ranking. Static publication checks cannot establish live canonical DB integrity. Pixel and TalkBack are NOT RUN because no physical ADB device was available. Native emulation is not physical QA.
 
 Release procedure: merge the reviewed tree after required checks; use the existing `app-only` Pages workflow to preserve the coordinated data snapshot; verify public app hashes and protected data, then inspect the served UI. The existing service-worker update action activates the new app without deleting local Favorites/Collections/Watch.
-
