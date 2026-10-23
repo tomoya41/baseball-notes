@@ -4,17 +4,17 @@
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", "Yu Gothic", sans-serif;
   font-synthesis: none;
   color-scheme: light;
-  --color-bg: #f3f6fa;
+  --color-bg: #f5f5f0;
   --color-surface: #ffffff;
   --color-elevated: #ffffff;
-  --color-text: #12253b;
-  --color-muted: #59697c;
-  --color-border: #d8e1ea;
-  --brand: #204fcf;
-  --brand-strong: #204fcf;
-  --brand-soft: #e9efff;
+  --color-text: #14283d;
+  --color-muted: #586b7e;
+  --color-border: #d8e1df;
+  --brand: #2162d6;
+  --brand-strong: #2162d6;
+  --brand-soft: #e8effb;
   --on-brand: #ffffff;
-  --hero: #10253d;
+  --hero: #102a45;
   --hero-text: #f5f8ff;
   --hero-muted: #c0d0e4;
   --color-positive: #24664c;
@@ -23,10 +23,10 @@
   --color-warning-soft: #fff4df;
   --color-error-soft: #fff0ee;
   --color-neutral: #64748b;
-  --chart-primary: #204fcf;
+  --chart-primary: #2162d6;
   --chart-secondary: #287563;
-  --chart-grid: #d8e1ea;
-  --sport-accent: #ffb17d;
+  --chart-grid: #d8e1df;
+  --sport-accent: #d3ad72;
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -34,30 +34,30 @@
   --space-6: 24px;
   --space-8: 32px;
   --radius-sm: 6px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
   --touch: 44px;
   --type-caption: .75rem;
   --type-body: .875rem;
   --type-title: clamp(1.25rem,2.5vw,1.625rem);
-  --shadow-elevated: 0 8px 28px #12253b12;
+  --shadow-elevated: 0 8px 28px #14283d12;
   background: var(--color-bg);
   color: var(--color-text);
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --color-bg: #0b1320;
-  --color-surface: #111f30;
-  --color-elevated: #182a40;
-  --color-text: #ecf2f9;
-  --color-muted: #a4b3c6;
-  --color-border: #2b3b50;
-  --brand: #9db8ff;
-  --brand-strong: #204fcf;
-  --brand-soft: #1e3151;
-  --on-brand: #102039;
-  --hero: #142b44;
+  --color-bg: #081521;
+  --color-surface: #102437;
+  --color-elevated: #18334a;
+  --color-text: #edf3fa;
+  --color-muted: #a7b9cb;
+  --color-border: #2b4359;
+  --brand: #a1c4ff;
+  --brand-strong: #2162d6;
+  --brand-soft: #17385b;
+  --on-brand: #112b43;
+  --hero: #102d48;
   --hero-text: #f5f8ff;
   --hero-muted: #c0d0e4;
   --color-positive: #8ed6b5;
@@ -65,25 +65,25 @@
   --color-warning: #f4cb83;
   --color-warning-soft: #322b1e;
   --color-error-soft: #352326;
-  --chart-primary: #9db8ff;
+  --chart-primary: #a1c4ff;
   --chart-secondary: #8ed6b5;
-  --chart-grid: #2b3b50;
+  --chart-grid: #2b4359;
 }
 
 @media (prefers-color-scheme:dark) {
   :root:not([data-theme="light"]):not([data-theme="dark"]) {
     color-scheme: dark;
-    --color-bg: #0b1320;
-    --color-surface: #111f30;
-    --color-elevated: #182a40;
-    --color-text: #ecf2f9;
-    --color-muted: #a4b3c6;
-    --color-border: #2b3b50;
-    --brand: #9db8ff;
-    --brand-strong: #204fcf;
-    --brand-soft: #1e3151;
-    --on-brand: #102039;
-    --hero: #142b44;
+    --color-bg: #081521;
+    --color-surface: #102437;
+    --color-elevated: #18334a;
+    --color-text: #edf3fa;
+    --color-muted: #a7b9cb;
+    --color-border: #2b4359;
+    --brand: #a1c4ff;
+    --brand-strong: #2162d6;
+    --brand-soft: #17385b;
+    --on-brand: #112b43;
+    --hero: #102d48;
     --hero-text: #f5f8ff;
     --hero-muted: #c0d0e4;
     --color-positive: #8ed6b5;
@@ -91,9 +91,9 @@
     --color-warning: #f4cb83;
     --color-warning-soft: #322b1e;
     --color-error-soft: #352326;
-    --chart-primary: #9db8ff;
+    --chart-primary: #a1c4ff;
     --chart-secondary: #8ed6b5;
-    --chart-grid: #2b3b50;
+    --chart-grid: #2b4359;
   }
 }
 
@@ -295,7 +295,7 @@ details[open]>summary {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  min-height: calc(56px + env(safe-area-inset-top));
+  min-height: calc(60px + env(safe-area-inset-top));
   padding-top: env(safe-area-inset-top);
   border-bottom: 1px solid var(--color-border);
   margin-bottom: 8px;
@@ -421,12 +421,13 @@ details[open]>summary {
   font-size: .75rem;
   font-weight: 650;
   color: var(--color-muted);
-  border-radius: 8px;
+  border-radius: 0;
 }
 
 .bottom-nav a[aria-current] {
   color: var(--brand);
-  background: var(--brand-soft);
+  background: transparent;
+  box-shadow: inset 0 2px var(--brand);
 }
 
 :root[data-large-font] .bottom-nav a {
@@ -449,7 +450,9 @@ details[open]>summary {
 }
 
 .page-heading {
-  padding: 4px 0 12px;
+  padding: 12px 0 16px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .page-heading .muted {

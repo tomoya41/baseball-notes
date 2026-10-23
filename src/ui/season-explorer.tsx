@@ -1,3 +1,4 @@
+import { EditorialCover } from "./editorial-cover";
 import type { FavoriteActions } from "./team-favorite";
 import { NpbHistoricalHistory } from "./npb-historical";
 import type { CohortRepository } from "./npb-historical-cohort";
@@ -9,7 +10,7 @@ import type { HistoricalDirectoryPlayer } from "../domain/historical-directory";
 import { matchesMlbPlayerName } from "../domain/mlb-japanese-display";
 import { normalizePlayerSearch } from "../domain/npb-player-directory";
 import { readableMetric } from "../domain/data-explorer";
-import { DataState, LoadingSkeleton, MetricLabel, PageHeading } from "./components";
+import { DataState, LoadingSkeleton, MetricLabel } from "./components";
 import { ExplorerLinks, type ExplorerManifest, type ExplorerProfile } from "./data-explorer";
 import { useHistoricalStatic } from "./use-mlb-historical";
 import { SaveViewButton } from "./personal-library";
@@ -25,7 +26,7 @@ export function MlbSeasonExplorer({ manifest }: { manifest: ExplorerManifest }) 
   const candidates = name.trim() ? directory.value?.players.filter(p => matchesMlbPlayerName(p.id, p.name, name)).slice(0, 20) ?? [] : [];
   const keys = role === "batting" ? ["PA", "HR", "AVG", "OPS"] : ["outsRecorded", "SO", "ERA", "K9"];
   const format = (key: string, value: number | null) => value === null ? "—" : key === "outsRecorded" ? `${Math.floor(value / 3)}.${value % 3}` : ["AVG", "OPS"].includes(key) ? value.toFixed(3) : ["ERA", "K9"].includes(key) ? value.toFixed(2) : String(value);
-  return <div className="screen"><PageHeading eyebrow={`MLB · ${competition === "postseason" ? "POSTSEASON" : "REGULAR SEASON"}`} title="シーズン履歴" /><SaveViewButton league="MLB" kind="history" params={params} /><details className="explorer-tools"><summary>ほかの探し方</summary><ExplorerLinks league="MLB" scope={`?season=${year}${scope}&role=${role}`} /></details><p className="inline-note">収録年の実データです。MLB通算・現在の成績ではありません。</p>
+  return <div className="screen"><EditorialCover kind="archive" eyebrow={`MLB · ${competition === "postseason" ? "ポストシーズン" : "公式戦"}の記録`} title="シーズン履歴" /><SaveViewButton league="MLB" kind="history" params={params} /><details className="explorer-tools"><summary>ほかの探し方</summary><ExplorerLinks league="MLB" scope={`?season=${year}${scope}&role=${role}`} /></details><p className="inline-note">収録年の実データです。MLB通算・現在の成績ではありません。</p>
     <label className="competition-season">シーズン<select value={year} onChange={e => update("season", e.target.value)}>{!manifest.seasons.some(s => s.season === year) && <option value={year}>未収録</option>}{manifest.seasons.map(s => <option key={s.season}>{s.season}</option>)}</select></label>
     {manifest.seasons.some(s => s.season === year) ? <div className="hub-links"><Link to={`/MLB/data?season=${year}${scope}`}>年度の成績を探索 →</Link><Link to={`/MLB/teams?season=${year}${scope}`}>球団別Season →</Link><Link to={`/MLB/schedule?season=${year}${scope}`}>日程・Game →</Link>{competition === "postseason" && <Link to={`/MLB/postseason?season=${year}`}>Series・勝ち上がり →</Link>}</div> : <DataState kind="unsupported" title="指定したシーズンは未収録です" />}
     <h2>同じ選手を年度で見る</h2><label className="search-field"><span className="sr-only">履歴を調べる選手</span><input type="search" value={name} placeholder="日本語・英語・既存表記で検索" onChange={e => update("q", e.target.value)} /></label>

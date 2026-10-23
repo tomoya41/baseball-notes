@@ -95,7 +95,7 @@ describe("compact scoreboards and contextual metric help", () => {
   it("keeps opposed team scores' real zero and unavailable value distinct", () => {
     const html = wrap(<ScoreHero home="阪神" away="DeNA" homeScore={0} awayScore={null} status="中断" />);
     expect(html).toContain('role="group"'); expect(html).toContain("得点未確認");
-    expect(html).toContain("<span>—</span>"); expect(html).toContain("<span>0</span>"); expect(html).toContain("中断");
+    expect(html).toContain("<b>—</b>"); expect(html).toContain("<b>0</b>"); expect(html).toContain("中断");
     expect(html).not.toContain("試合終了");
   });
   it("bounds the quick calendar to the imported season, across month boundaries", () => {

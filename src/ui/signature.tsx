@@ -18,10 +18,11 @@ export function GameHeading({ title, date, context, backTo }: { title: string; d
   return <header className="game-context-bar"><a className="icon-button" href={`#${backTo}`} aria-label="日程・結果に戻る"><ChevronLeft size={20} aria-hidden="true" /></a><div><span>{date}</span><small>{context}</small></div><h1 className="sr-only">{title}</h1></header>;
 }
 
-export function PlayerQuickActions({ compareTo, historyTo }: { compareTo: string; historyTo: string }) {
+export function PlayerQuickActions({ compareTo, historyTo, trendsTo }: { compareTo: string; historyTo: string; trendsTo?: string }) {
   return <nav className="player-quick-actions" aria-label="選手をもっと知る">
-    <Link to={historyTo}>年度の変化を見る<ChevronRight size={16} aria-hidden="true" /></Link>
-    <Link to={compareTo}>ほかの選手と比較<ChevronRight size={16} aria-hidden="true" /></Link>
+    <Link to={historyTo} aria-label="年度の変化を見る">年度別<ChevronRight size={16} aria-hidden="true" /></Link>
+    {trendsTo && <Link to={trendsTo} aria-label="成績の推移と連続記録を見る">推移<ChevronRight size={16} aria-hidden="true" /></Link>}
+    <Link to={compareTo} aria-label="ほかの選手と比較">比較<ChevronRight size={16} aria-hidden="true" /></Link>
   </nav>;
 }
 

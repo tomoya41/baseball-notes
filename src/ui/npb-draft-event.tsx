@@ -1,3 +1,4 @@
+import { EditorialCover } from "./editorial-cover";
 import { NpbFinalDraft } from "./npb-draft-final";
 import { NpbResearchedDraftPreview } from "./npb-draft-research";
 import { NpbExpandedDraftPreview,NpbDraftCandidates } from "./npb-draft-preview";
@@ -6,7 +7,7 @@ import { Link,useSearchParams } from "react-router-dom";
 import { readNpbDraftEvent } from "../application/npb-draft-event-reader";
 import { type DraftEvent,draftTeams,draftPredictionOutcome,draftPredictionComparison } from "../domain/npb-draft-event";
 import { draftEventQuery } from "../domain/npb-draft-query";
-import { DataState,LoadingSkeleton,PageHeading } from "./components";
+import { DataState, LoadingSkeleton } from "./components";
 import { npbTeamShortName as teamName } from "./npb-team-names";
 import { draftForecastAdmission } from "../domain/npb-draft-eligibility";
 import resultReview from "../data/npb-draft-2026-result-review.json";
@@ -26,7 +27,7 @@ export function NpbDraftEventScreen(){
   const rows=data?.selections.filter(s=>(query.team==="all"||s.teamId===query.team)&&(query.type==="all"||s.type===query.type))??[];
   const lotteries=query.type==="developmental"?[]:data?.lotteries.filter(l=>query.team==="all"||l.teamIds.includes(query.team))??[];
   const resultPage=Math.min(query.page,Math.max(1,Math.ceil(rows.length/20)));
-  return <div className="screen"><PageHeading eyebrow="NPB · DRAFT 2026" title="ドラフト2026"/><p>2026年10月22日 · NPBドラフト会議</p>
+  return <div className="screen draft-screen"><EditorialCover kind="draft" eyebrow="NPB · DRAFT 2026" title="ドラフト2026"/><p>2026年10月22日 · NPBドラフト会議</p>
     {!query.valid?<DataState kind="unsupported" title="指定の条件は未対応です"/>:error?<><DataState kind="source-unavailable" title="ドラフト情報を取得できません"/><button onClick={()=>{setError(false);setAttempt(n=>n+1);}}>再試行</button></>:!data?<LoadingSkeleton/>:<>
       <p className="inline-note">{({scheduled:"取得時点で開催前",checking:"開催状況を確認中",in_progress:"記事で開催を確認（終了未確認）",ended:"記事記載で終了を確認"})[data.eventState]} · {time(data.review?.reviewedAt??data.observedAt)}確認（日本時間）</p>
       <nav className="explorer-links" aria-label="ドラフト特集の表示">{[["preview","12球団の予想"],["candidates","注目候補"],["results","指名結果"]].map(([view,label])=><Link key={view} to={link(view!)} aria-current={query.view===view?"page":undefined}>{label}</Link>)}</nav>

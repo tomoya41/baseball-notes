@@ -15,7 +15,7 @@ const scope = "https://example.test/baseball-notes/";
 async function fixture(label = "first") {
   const root = await mkdtemp(join(tmpdir(), "baseball-shell-")); directories.push(root);
   await mkdir(join(root, "assets")); await mkdir(join(root, "icons")); await mkdir(join(root, "data"));
-  for (const [name, body] of Object.entries({ "index.html": `<html>${label}</html>`, "manifest.webmanifest": "{}", "assets/index-abc.js": `entry:${label}`, "assets/lazy-def.js": `lazy:${label}`, "assets/app-abc.css": "body{}", "icons/baseball-notes-192.png": "icon1", "icons/baseball-notes-512.png": "icon2", "icons/baseball-notes-maskable-512.png": "icon3", "data/private.json": "DO NOT CACHE", "assets/private.json": "DO NOT CACHE" })) await writeFile(join(root, name), body);
+  for (const [name, body] of Object.entries({ "index.html": `<html>${label}</html>`, "manifest.webmanifest": "{}", "assets/index-abc.js": `entry:${label}`, "assets/lazy-def.js": `lazy:${label}`, "assets/cover-abc.webp": `cover:${label}`, "assets/app-abc.css": "body{}", "icons/baseball-notes-192.png": "icon1", "icons/baseball-notes-512.png": "icon2", "icons/baseball-notes-maskable-512.png": "icon3", "data/private.json": "DO NOT CACHE", "assets/private.json": "DO NOT CACHE" })) await writeFile(join(root, name), body);
   const build = await buildWebOffline(root);
   return { root, build, worker: await readFile(join(root, "sw.js"), "utf8") };
 }
@@ -44,6 +44,7 @@ describe("bounded versioned Web offline app", () => {
     h.request.mockClear().mockRejectedValue(Error("Offline"));
     expect(await (await h.get("", "navigate"))!.text()).toContain("first");
     expect(await (await h.get("assets/lazy-def.js"))!.text()).toBe("lazy:first");
+    expect(await (await h.get("assets/cover-abc.webp"))!.text()).toBe("cover:first");
     for (const path of ["data/private.json", "api/recent", "assets/private.json", "sw.js", "https://other.test/assets/index-abc.js", "../another-app/", "unknown", "assets/index-abc.js?different=1"]) expect(await h.get(path)).toBeUndefined();
     expect(await h.get("assets/index-abc.js", "cors", "POST")).toBeUndefined(); expect(h.request).not.toHaveBeenCalled();
     expect([...h.shared.values()].flatMap(c => [...c.keys()]).every(p => !p.includes("/data/") && !p.includes("/api/"))).toBe(true);

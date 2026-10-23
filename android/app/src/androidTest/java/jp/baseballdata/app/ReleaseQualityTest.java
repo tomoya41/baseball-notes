@@ -285,6 +285,20 @@ public class ReleaseQualityTest {
         waitCondition("Transient favorite confirmation dismissed", "!document.querySelector('.toast')");
         assertEquals("true", js("document.documentElement.scrollWidth <= window.innerWidth"));
         screenshot("mlb-game-360");
+        js("Array.from(document.querySelectorAll('.game-jump-nav button')).find(b=>b.textContent==='選手成績').click()");
+        waitCondition("Box jump transfers focus", "document.activeElement?.getAttribute('data-game-section')==='box'");
+        js("document.querySelectorAll('.game-box-switch button')[1].click()");
+        waitCondition("Home box selected without losing game", "location.hash.includes('boxSide=home') && document.querySelectorAll('[role=tabpanel]:not([hidden])').length===1 && document.querySelectorAll('.game-box-switch button')[1].getAttribute('aria-selected')==='true'");
+        assertEquals("Standard phone uses comparable table", "table", js("getComputedStyle(document.querySelector('[role=tabpanel]:not([hidden]) .box-primary table')).display"));
+        screenshot("mlb-box-score-360");
+        for (String scale : new String[]{"1.5","2.0"}) {
+            fontScaleAndRecreate(Float.parseFloat(scale));waitText("選手成績");waitViewport(360);
+            waitCondition("Box scope survives recreation", "location.hash.includes('boxSide=home') && !!document.querySelector('[role=tabpanel]:not([hidden]) .box-primary table')");
+            assertEquals("Large text retains labelled table layout", "block", js("getComputedStyle(document.querySelector('[role=tabpanel]:not([hidden]) .box-primary table')).display"));
+            assertEquals("Large box has no horizontal overflow", "true", js("document.documentElement.scrollWidth<=innerWidth"));
+            screenshot("mlb-box-score-font-"+scale.replace(".",""));
+        }
+        fontScaleAndRecreate(1.0f);waitText("選手成績");
         js("new Promise(resolve=>{const q=indexedDB.open('baseball-public-responses-v1');q.onsuccess=()=>{const db=q.result;if(!db.objectStoreNames.length){resolve(0);return;}const r=db.transaction(db.objectStoreNames[0]).objectStore(db.objectStoreNames[0]).openCursor();let max=0;r.onsuccess=()=>{const c=r.result;if(c){max=Math.max(max,c.value.bytes||0);c.continue();}else resolve(max);};};}).then(n=>document.documentElement.dataset.cachemax=String(n))");
         for (int i=0; i<100 && js("document.documentElement.dataset.cachemax || 'pending'").equals("pending"); i++) Thread.sleep(50);
         assertTrue("Persistent public response cache measured", Long.parseLong(js("document.documentElement.dataset.cachemax")) > 0);

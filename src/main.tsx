@@ -8,6 +8,7 @@ import { installPlatformRuntime } from "./app/platform";
 import "./ui/styles.css";
 import "./ui/feature-layouts.css";
 import "./ui/final-design.css";
+import "./ui/editorial.css";
 import { restoreAppearance } from "./app/appearance";
 import { NativeRouteState } from "./app/native-route-state";
 import { startWebOffline } from "./app/web-offline";

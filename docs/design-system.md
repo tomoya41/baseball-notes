@@ -1,6 +1,6 @@
 # Design System — Baseball Notes
 
-Updated 2026-10-23 for the result-first presentation refinement. This document supersedes the early preview's sample-data and icon policy. `SPEC.md` and the current capability/contracts remain the functional source of truth.
+Updated 2026-10-23 for the full-screen editorial redesign. See [design, assets and verification](editorial-ui-redesign.md). This document supersedes the early preview's sample-data and icon policy. `SPEC.md` and the current capability/contracts remain the functional source of truth.
 
 ## Concept and data boundary
 
@@ -20,14 +20,14 @@ Import order is explicit in `src/main.tsx`. Avoid adding competing global reset/
 
 | Token purpose | Light | Dark |
 |---|---|---|
-| Background | `#f3f6fa` | `#0b1320` |
-| Surface | `#ffffff` | `#111f30` |
-| Elevated | `#ffffff` | `#182a40` |
-| Text | `#12253b` | `#ecf2f9` |
-| Muted | `#59697c` | `#a4b3c6` |
-| Brand | `#204fcf` | `#9db8ff` |
+| Background | `#f5f5f0` | `#081521` |
+| Surface | `#ffffff` | `#102437` |
+| Elevated | `#ffffff` | `#18334a` |
+| Text | `#14283d` | `#edf3fa` |
+| Muted | `#586b7e` | `#a7b9cb` |
+| Brand | `#2162d6` | `#a1c4ff` |
 
-Game and featured-Home surfaces retain their own readable light text. Player uses an editorial name/major-stat heading on the page surface; HOT uses one lead entry with a brand rule, then dense rows. These accents are app colours, not official team colours. On a 360–390px viewport at standard text size, body is 14px with 1.5 line height, controls 13–14px and stat captions 12px. Page titles, player names and headline stats are 20px, HOT lead names 17px and subsequent names 15px; ordinary stat values are 16–17px. Game scores remain distinct at 32px. Avoid promotional typography on phone screens. Desktop headings grow moderately with available width. These are rem-based scales, not a restriction on Android text enlargement. Navigation and help controls retain 44px-or-larger targets. A stat guide's button stretches over its own cell so the visible label and value can sit together without a separate 44px label row; no adjacent cell is covered. HOT metric columns wrap with Android font scale instead of squeezing values. Numbers use tabular figures. System fonts avoid extra network/font dependencies.
+Game and featured-Home surfaces retain their own readable light text. Player uses a navy identity heading, immediately followed by tabs and quiet major-stat surfaces; HOT uses one lead entry with a brand rule, then dense rows. These accents are app colours, not official team colours. On a 360–390px viewport at standard text size, body is 14px with 1.5 line height, controls 13–14px and stat captions 12px. Page titles, player names and headline stats are 20px, HOT lead names 17px and subsequent names 15px; ordinary stat values are 16–17px. Game scores remain distinct at 36px. Avoid promotional typography on phone screens. Desktop headings grow moderately with available width. These are rem-based scales, not a restriction on Android text enlargement. Navigation and help controls retain 44px-or-larger targets. A stat guide's button stretches over its own cell so the visible label and value can sit together without a separate 44px label row; no adjacent cell is covered. HOT metric columns wrap with Android font scale instead of squeezing values. Numbers use tabular figures. System fonts avoid extra network/font dependencies.
 
 ## Icons and asset rights
 
@@ -39,7 +39,7 @@ Use only the existing visual availability/usage contracts. No new player photo, 
 
 Five primary destinations: **ホーム / 試合 / 選手 / 記録 / My**. Existing HashRouter paths, public deep links, validated queries and native Back translation retain their meaning. One natural document scroll is used. Native dialogs temporarily lock the document and retain a visible close action.
 
-The PR #26 refinement uses a single Player context row above identity: year, competition, compact Back and a labelled action dialog. HOT keeps visible mode tabs and a category/window summary, with secondary criteria inside an expandable row. Game separates opposed team labels from its full-width numeric score row. Nested dialogs share a document scroll lock so a route exit cannot leave scrolling disabled. See [visual-refinement.md](visual-refinement.md) for same-condition captures and measured hierarchy changes.
+The PR #26 refinement uses a single Player context row above identity: year, competition, compact Back and a labelled action dialog. HOT keeps visible mode tabs and a category/window summary, with secondary criteria inside an expandable row. Game keeps each score directly with its team, then offers a direct box-score jump and URL-backed team selection. Standard mobile box scores use aligned tables; enlarged native fonts retain labelled rows. Nested dialogs share a document scroll lock so a route exit cannot leave scrolling disabled. See [visual-refinement.md](visual-refinement.md) for same-condition captures and measured hierarchy changes.
 
 - Shared controls/statuses: `components.tsx`, `design-system.tsx`, `app-dialog.tsx`.
 - Signature identity/headline/record/discovery: `signature.tsx`.
@@ -55,3 +55,7 @@ Loading, network failure/retry, empty result, unsupported capability, partial co
 Keep semantic headings/tables/labels, keyboard focus, local metric help, native dialog Escape/focus return, 44px action targets and reduced motion. Check 360px first, then 390/768/1280 widths and both themes. Browser/build evidence does not prove Android device/TalkBack behaviour.
 
 Retain lazy route readers, bounded Historical reads and rendering limits. Home does not add form-projection fetching. Do not fetch all profiles/PA for a visual feature or reset local Favorites/Collections/Saved Views/Activity/Watch state.
+
+## Original editorial imagery
+
+Three dedicated generated photographic assets are used for Draft, Postseason and historical discovery, never as actual event evidence. HTML retains all text, results and interactions. The optimized WebP files total 145,898 bytes, lazy-load with reserved dimensions and participate in the bounded verified offline shell. No player portraits or official marks are generated or added. `editorial.css` owns cover, box-switch and route-family compositions. See `editorial-ui-redesign.md` for prompts and provenance.
