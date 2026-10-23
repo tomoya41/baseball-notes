@@ -14,3 +14,12 @@ it("switches at Japan midnight, keeps user selection explicit, and never present
  expect(npbSeasonalHome(date).links.some(l=>l.label.includes("前年"))).toBe(false);
  for(const mode of ["spring","regular","autumn","winter"])expect(npbSeasonalHome(date,mode).links.some(l=>/ranking|\/form/.test(l.to))).toBe(false);
 });
+it("leads with Japan Series only in its editorial window without changing availability claims",()=>{
+ const before=npbSeasonalHome(Date.parse("2026-10-23T14:59:59Z"));
+ const opening=npbSeasonalHome(Date.parse("2026-10-23T15:00:00Z"));
+ expect(before.links[0]!.to).toContain("/cs?");
+ expect(opening.links[0]!.to).toContain("stage=japan_series");
+ expect(opening.unavailable).toBe(before.unavailable);
+ expect(new Set(opening.links.map(l=>l.to))).toEqual(new Set(before.links.map(l=>l.to)));
+ expect(npbSeasonalHome(Date.parse("2027-10-24T03:00:00Z")).links[0]!.to).toContain("/cs?");
+});

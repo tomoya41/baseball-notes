@@ -8,11 +8,13 @@ import { readFileSync } from "node:fs";
 import { LicensedPlayerPhoto, PlayerPhotoCredits } from "../src/ui/licensed-player-photo";
 
 describe("reviewed informational player portraits", () => {
-  it("uses exact canonical ID and photo year, never a name or current-roster inference", () => {
+  it("uses exact canonical ID and a dated historical portrait, never a name or current-roster inference", () => {
     const photo = licensedPlayerPhotos[0];
     const render = (id: string, season: number) => renderToStaticMarkup(<MemoryRouter><LicensedPlayerPhoto playerId={id} season={season} /></MemoryRouter>);
     expect(render(photo.playerId, 2024)).toContain("2024年撮影");
-    expect(render(photo.playerId, 2025)).toBe("");
+    expect(render(photo.playerId, 2025)).toContain("2024年撮影");
+    expect(render(photo.playerId, 2023)).toBe("");
+    expect(render(photo.playerId, 2026)).toBe("");
     expect(render("大谷翔平", 2024)).toBe("");
     expect(render(photo.playerId, 2024)).toContain("/MLB/sources");
   });

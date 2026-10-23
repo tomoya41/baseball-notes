@@ -216,6 +216,20 @@ public class ReleaseQualityTest {
         assertEquals("true", js("document.documentElement.scrollWidth <= window.innerWidth"));
         setTheme("light", "ライト"); waitViewport(360); screenshot("mlb-home-360-light");
         setTheme("dark", "ダーク"); waitViewport(360); screenshot("mlb-home-360-dark");
+        waitCondition("Dated Home portrait loaded", "document.querySelector('.home-player-lead .licensed-player-photo img')?.naturalWidth>0");
+        assertEquals("Photo year remains explicit next to 2025 stats", "true", js("document.querySelector('.home-player-lead .licensed-player-photo')?.textContent.includes('2024年撮影')"));
+        assertEquals("Lead counting/rate values do not overlap", "true", js("Array.from(document.querySelectorAll('.home-player-lead .follow-statline')).every(line=>{const values=line.querySelectorAll('strong');return values.length===2 && values[0].getBoundingClientRect().right<=values[1].getBoundingClientRect().left;})"));
+        for (float scale : new float[]{1.5f,2.0f}) {
+            fontScaleAndRecreate(scale); waitHomeStatistics(); waitViewport(360);
+            assertEquals("Home photo/metrics retain enlarged text without overflow", "true", js("document.documentElement.scrollWidth<=innerWidth && document.querySelectorAll('.bottom-nav a').length===5"));
+            screenshot("mlb-home-font-" + scale + "-dark");
+            setTheme("light", "ライト"); waitViewport(360); screenshot("mlb-home-font-" + scale + "-light");
+            setTheme("dark", "ダーク");
+        }
+        fontScaleAndRecreate(1.0f); waitHomeStatistics(); waitViewport(360);
+        js("location.hash='#/NPB/home?homeSeason=autumn'");
+        waitCondition("NPB seasonal links and saved games", "document.querySelectorAll('.seasonal-stories>a').length===3 && document.querySelectorAll('.today-board .scoreboard-row').length===2");
+        assertEquals("Seasonal Home has no horizontal overflow", "true", js("document.documentElement.scrollWidth<=innerWidth")); screenshot("npb-home-360-dark");
         setTheme("light", "ライト"); shell("wm size 600x1000");
         // A recreated Surface prevents the emulator compositor retaining the old 360px buffer.
         scenario.recreate(); waitText("BASEBALL"); js("location.hash='#/MLB/home'"); waitViewport(600); waitHomeStatistics();

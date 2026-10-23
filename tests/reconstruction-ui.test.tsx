@@ -22,6 +22,13 @@ describe("reconstructed sports presentation boundaries", () => {
     const html = render(<TeamRecord wins={0} losses={null} />);
     expect(html).toContain("<dd>0</dd>"); expect(html).toContain("<dd>—</dd>"); expect(html).not.toContain("引分");
   });
+  it("keeps a saved zero jersey number separate from unknown, without a current-roster claim", () => {
+    const known=render(<PlayerIdentity name="確認済みの選手" context="NPB · 保存済み所属" uniformNumber="0" favorite={<button>保存</button>} />);
+    const missing=render(<PlayerIdentity name="確認済みの選手" context="NPB · 保存済み所属" uniformNumber={null} favorite={<button>保存</button>} />);
+    expect(known).toContain('aria-label="保存済みの背番号 0"');
+    expect(missing).not.toContain("player-uniform-number");
+    expect(known).not.toContain("現在の背番号");
+  });
   it("keeps the Historical discovery scope and exact as-of in portable routes", () => {
     const html = render(<HomeDiscover league="MLB" year={2014} date="2014-09-28" />);
     expect(html).toContain("/MLB/form?season=2014&amp;asOfDate=2014-09-28");
