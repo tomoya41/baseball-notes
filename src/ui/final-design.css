@@ -712,11 +712,11 @@
 }
 
 .player-identity {
-  --hero-muted: var(--color-muted);
-  --hero-text: var(--color-text);
   position: relative;
-  padding: 16px 0 0;
-  color: var(--color-text);
+  padding: 16px 16px 0;
+  background: var(--hero);
+  border-radius: 4px 4px 0 0;
+  color: var(--hero-text);
   border-top: 3px solid var(--brand);
 }
 
@@ -725,7 +725,7 @@
   gap: 12px;
   align-items: flex-start;
   min-width: 0;
-  padding-bottom: 8px;
+  padding-bottom: 16px;
 }
 
 .player-identity-top>div {
@@ -968,7 +968,7 @@
   align-items: stretch;
   position: relative;
   padding: 24px 16px 16px;
-  background: var(--hero);
+  background: linear-gradient(#071b30d9,#071b30f0),url("../assets/editorial/postseason-v1.webp") center 65% / cover,var(--hero);
   color: var(--hero-text);
   border-radius: 4px;
   margin: 8px 0 12px;
@@ -1312,7 +1312,8 @@
 }
 
 .form-entry--lead {
-  background: var(--color-surface);
+  background: var(--hero);
+  color: var(--hero-text);
   padding: 12px;
   margin-bottom: 8px;
   border-left: 4px solid var(--brand);
@@ -1323,7 +1324,7 @@
 }
 
 .form-entry--lead .rank-number {
-  color: var(--brand);
+  color: var(--sport-accent);
   font-size: 1.5rem;
   line-height: 1;
 }
@@ -1654,7 +1655,7 @@
 
 .personal-destinations strong {
   display: block;
-  font-size: 1rem;
+  font-size: .875rem;
 }
 
 .personal-destinations small {
@@ -1664,7 +1665,7 @@
 }
 
 .personal-destinations b {
-  font-size: 1.75rem;
+  font-size: 1.125rem;
   color: var(--brand);
 }
 

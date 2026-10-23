@@ -34,7 +34,7 @@
 .editorial-cover-copy small { display: block; color: #e1eaf2; margin: 8px 0 0; font-size: .75rem; }
 .seasonal-stories>.seasonal-story--lead { display: block; padding: 0; margin-top: 12px; border: 0; }
 .seasonal-story--lead .editorial-cover { min-height: 148px; margin: 0; width: 100%; }
-.seasonal-feature { margin-top: 28px; }
+.seasonal-feature { margin-top: 16px; }
 .game-jump-nav { display: flex; border-bottom: 1px solid var(--color-border); margin-bottom: 20px; }
 .game-jump-nav>button { flex: 1; background: transparent; font-weight: 650; border-radius: 0; color: var(--brand); }
 .game-jump-nav>button:hover { background: var(--brand-soft); }
@@ -49,10 +49,8 @@
 .box-team-name { color: var(--color-muted); font-size: .8125rem; }
 .scoreboard-center>svg { display: none; }
 .scoreboard-row:focus-visible { outline-offset: -3px; }
-.player-identity { background: var(--hero); color: var(--hero-text); padding-inline: 16px; border-radius: 4px 4px 0 0; }
 .player-identity :is(.eyebrow,.player-identity-detail,.favorite-button) { color: var(--hero-muted); }
 .player-screen>.headline-stats { background: var(--color-surface); padding: 12px; }
-.player-identity-top { padding-bottom: 16px; }
 .player-screen>.profile-tabs { margin: 0; background: var(--color-surface); }
 .player-quick-actions>a+a { border-left: 1px solid var(--color-border); }
 .headline-stats dt { color: var(--color-muted); }
@@ -74,6 +72,15 @@
 .comparison-bars--duel .comparison-bar__track { order: 3; }
 .comparison-bar>strong { overflow-wrap: anywhere; }
 .home-score-sample { margin-bottom: 8px; }
+.home-main>:only-child { grid-column: 1/-1; }
+.history-paths { display: flex; flex-wrap: wrap; gap: 0 16px; border-bottom: 1px solid var(--color-border); margin: 8px 0; }
+.history-paths>a { display: inline-flex; align-items: center; min-height: 44px; font-size: .8125rem; color: var(--brand); }
+.historical-scope { color: var(--color-muted); font-size: .8125rem; margin: 10px 0 0; }
+.historical-team-filter { grid-column: 1/-1; grid-row: 2; }
+.historical-team-filter>summary { color: var(--brand); }
+.historical-team-filter[open]>label { max-width: 360px; }
+.form-entry--lead :is(.form-entry-title small,.explorer-values dt,.metric-help-label,.form-entry-tools>summary,.form-entry-tools>.inline-note) { color: var(--hero-muted); }
+.form-entry--lead .explorer-values>div:first-child dd { color: var(--sport-accent); }
 /* Box scores stay one comparable table at standard text size. Enlarged native
    fonts keep the existing labelled-row layout, with no font-scale reduction. */
 @media (min-width:340px) and (max-width:719px) {
@@ -97,3 +104,10 @@
   .home-hub .seasonal-stories>a:not(.seasonal-story--lead) { grid-column: 2; }
 }
 @media (prefers-reduced-motion:reduce) { .editorial-cover { scroll-behavior: auto; } }
+
+.licensed-player-photo { flex: 0 0 72px; width: 72px; margin: 0; order: 2; }
+.licensed-player-photo img { display: block; width: 72px; height: 96px; object-fit: contain; background: #091b2b; border-radius: 2px; }
+.licensed-player-photo figcaption { font-size: .75rem; line-height: 1.4; margin-top: 4px; }
+.licensed-player-photo a { color: var(--hero-muted); text-decoration: underline; }
+.player-identity-top>.favorite-button { order: 3; }
+:root[data-large-font] .player-identity-top { flex-wrap: wrap; }
