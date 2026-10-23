@@ -220,6 +220,12 @@ public class ReleaseQualityTest {
         // A recreated Surface prevents the emulator compositor retaining the old 360px buffer.
         scenario.recreate(); waitText("BASEBALL"); js("location.hash='#/MLB/home'"); waitViewport(600); waitHomeStatistics();
         assertEquals("true", js("document.documentElement.scrollWidth <= window.innerWidth")); screenshot("mlb-home-600");
+        for (int width : new int[]{390,768,1280}) {
+            shell("wm size " + width + "x1000"); scenario.recreate(); waitText("BASEBALL");
+            js("location.hash='#/MLB/home'"); waitViewport(width); waitHomeStatistics();
+            assertEquals("Home has no overflow at " + width,"true",js("document.documentElement.scrollWidth<=innerWidth"));
+            screenshot("mlb-home-" + width);
+        }
         shell("wm size 360x800"); scenario.recreate(); waitText("BASEBALL"); waitViewport(360);
         js("location.hash='#/MLB/schedule?season=2025&date=2025-09-28'");
         waitCondition("Historical schedule rendered", "location.hash.includes('/MLB/schedule') && !!document.querySelector('.date-ribbon') && document.querySelectorAll('.scoreboard-row').length===15 && !document.querySelector('.skeleton-page')");
