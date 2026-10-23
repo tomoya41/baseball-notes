@@ -639,9 +639,10 @@ public class ReleaseQualityTest {
     }
     @Test public void seasonalHomeAndCollectedAgeTotalsKeepScopeAndExplicitLoading() throws Exception {
         scenario=ActivityScenario.launch(MainActivity.class);waitText("BASEBALL");
-        js("location.hash='#/NPB/home?homeSeason=autumn'");waitText("クライマックスシリーズ");
+        js("location.hash='#/NPB/home?homeSeason=autumn'");
+        waitCondition("Seasonal CS remains directly reachable", "!!document.querySelector('.seasonal-stories>a[href*=\"/NPB/cs?season=2026\"] .editorial-cover')");
         assertEquals("Seasonal destinations stay directly reachable", "3", js("String(document.querySelectorAll('.seasonal-stories>a').length)"));
-        assertEquals("Seasonal sources keep their collected year", "2026", js("document.querySelector('.seasonal-feature-heading>span:last-child').textContent"));
+        assertEquals("Every seasonal card keeps the collected 2026 context", "true", js("Array.from(document.querySelectorAll('.seasonal-stories>a')).every(a=>a.querySelector('.editorial-cover-copy>p')?.textContent.includes('2026') && a.getAttribute('aria-label')?.length>0)"));
         js("document.querySelector('.seasonal-feature .source-note>summary').click()");waitText("楽しみ方");
         assertEquals("Short seasonal labels retain partial-source context", "true", js("document.querySelector('.seasonal-feature').textContent.includes('CSは一部収録')"));
         screenshot("npb-seasonal-home-360");
