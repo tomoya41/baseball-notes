@@ -341,6 +341,11 @@ public class ReleaseQualityTest {
         waitCondition("Large metric glyphs fit their cells without overlap", "Array.from(document.querySelectorAll('.headline-stats dd')).every(e=>{const r=document.createRange();r.selectNodeContents(e);const text=r.getBoundingClientRect(),cell=e.parentElement.getBoundingClientRect();return text.left>=cell.left-1&&text.right<=cell.right+1;})");
         assertEquals("Header actions stay inside the viewport", "true", js("Array.from(document.querySelectorAll('.app-header a,.app-header button')).every(e=>{const r=e.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth;})"));
         screenshot("player-font-200");
+        js("location.hash='#/MLB/form?season=2024&asOfDate=2024-08-20&period=7'");
+        waitCondition("200% font HOT results", "document.querySelectorAll('.form-entry').length>0 && !document.querySelector('.skeleton-page')");
+        assertEquals("HOT large text stays within the viewport", "true", js("document.documentElement.scrollWidth<=innerWidth"));
+        waitCondition("HOT metric glyphs fit without overlapping adjacent values", "Array.from(document.querySelectorAll('.form-entry .explorer-values dd')).every(e=>{const r=document.createRange();r.selectNodeContents(e);const text=r.getBoundingClientRect(),cell=e.parentElement.getBoundingClientRect();return text.left>=cell.left-1&&text.right<=cell.right+1;})");
+        screenshot("hot-font-200");
         fontScaleAndRecreate(1.0f); waitText("BASEBALL"); waitViewport(360);
         js("location.hash='#/MLB/search?season=2024'");
         waitCondition("Actual Player Search", "location.hash.includes('/MLB/search') && !!document.querySelector('main input[type=search]') && !document.querySelector('.skeleton-page')");
