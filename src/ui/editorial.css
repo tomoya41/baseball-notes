@@ -144,3 +144,10 @@
 :root[data-large-font] .follow-player--featured:has(.licensed-player-photo) { grid-template-columns: minmax(0,1fr) 108px; }
 :root[data-large-font] .follow-player--featured:has(.licensed-player-photo) .follow-player-stats { grid-column: 1/-1; grid-row: 3; }
 :root[data-large-font] .follow-player--featured>.licensed-player-photo { grid-row: 2; grid-column: 1/-1; }
+@media (min-width:1080px) {
+  .home-hub:has(.home-player-lead) { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); column-gap: 24px; }
+  .home-hub:has(.home-player-lead)>* { grid-column: 1/-1; min-width: 0; }
+  .home-hub:has(.home-player-lead)>.home-player-lead { grid-column: 1; grid-row: 3; }
+  .home-hub:has(.home-player-lead)>.home-score-sample { grid-column: 2; grid-row: 3; margin-top: 0; }
+  .home-hub:has(.home-player-lead)>.home-score-sample .scoreboard-list { grid-template-columns: minmax(0,1fr); }
+}

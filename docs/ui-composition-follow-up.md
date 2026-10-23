@@ -18,10 +18,22 @@ Local full check: 173 test files, 1,790 passed + one Windows platform skip; lint
 
 Android native regression adds real 360px Home portrait loading, non-overlapping primary numbers and 150%/200% Home screenshots in both themes, plus an NPB seasonal/saved-score screenshot. Existing Player, Games, CS, Draft, keyboard, Back, deep links, persistence and offline tests remain. These are emulator tests, not physical Pixel or TalkBack. ADB returned no connected device in this session.
 
-Browser QA uses actual DOM/UI and screenshots at 390 CSS px (the browser capture output is 375×812 pixels), with the same dimensions for Before and After. NPB Home and MLB Home/Player were inspected in Light; NPB Home Dark was inspected. Additional mobile/desktop/theme/navigation results and final native/PR/Pages evidence are appended after execution. Raw captures and logs stay in ignored `.data/ui-refinement/`; only curated comparison proof is committed.
+Browser QA uses actual DOM/UI and screenshots at 390 CSS px (the browser capture output is 375×812 pixels), with the same dimensions for Before and After. NPB Home and MLB Home/Player were inspected in Light; NPB Home and MLB Home at 360px Dark, and MLB Home at 768/1280px Dark were inspected. No root overflow; four existing Home player summaries remain. Desktop originally spread four values across one oversized stage; the final wide layout places the lead and results in separate adjacent columns. The Home → Japan Series route shows the retained seven schedules and explicitly absent results; Back retains the Home route. Additional native/PR/Pages evidence is recorded after execution. Raw captures and logs stay in ignored `.data/ui-refinement/`; only curated comparison proof is committed.
 
 Protected boundaries: no data pins, immutable releases, canonical identities, provider acquisition, statistics, gates, store keys, Android signing or production DB changes. The staged verifier retains 86 assets, 600 NPB Historical players / 3,524 rows, partial coverage, 12 CS games / 179 rows and Japan Series 7 scheduled games / 0 results. These are preserved release counts, not new data or live canonical integrity. Turso read restrictions remain independent; no diagnostics or retries were added.
 
 ## Acceptance still open
 
 This focused batch is not a declaration that all supplied visual requirements are now fulfilled. Broad NPB portrait coverage, individual independently licensed club-logo files, current-data success views behind the DB restriction, physical Pixel/TalkBack and the remaining page-by-page visual acceptance remain separate work. Do not count existing generated atmospheres as new images or equate emulator success with physical-device acceptance. Additional monthly cost stays ¥0.
+
+## Actual Before / After
+
+Same 390×844 CSS viewport, Light, full viewport captures; left is public main `0687a62`, right is the local final presentation. Both images are identically 375×812 output pixels before adding the labelled comparison strip. The UI itself was not retouched or reconstructed.
+
+![NPB Home: seasonal lead and visual links](assets/ui-refinement/npb-home-390-light.webp)
+
+![MLB Home: player before results, same 2025 season](assets/ui-refinement/mlb-home-390-light.webp)
+
+![Ohtani Player: same 2025 statistics, dated 2024 photograph](assets/ui-refinement/player-390-light.webp)
+
+MLB data: The information used here was obtained free of charge from and is copyrighted by Retrosheet. Interested parties may contact Retrosheet at www.retrosheet.org. Photo: All-Pro Reels, crop by UCinternational, [source/revision](https://commons.wikimedia.org/w/index.php?curid=152950633&oldid=1253972097), [CC BY-SA 2.0](https://creativecommons.org/licenses/by-sa/2.0/). Photo-containing comparison sheets are shared under CC BY-SA 2.0, without relicensing app source code. Source bytes and photo processing are unchanged from PR #68.

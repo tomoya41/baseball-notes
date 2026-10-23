@@ -165,17 +165,9 @@
   border-bottom: 1px solid var(--color-border);
 }
 
-
-
-
-
-
-
 .seasonal-story--lead {
   grid-column: 1/-1;
 }
-
-
 
 .seasonal-stories small {
   display: block;
@@ -237,8 +229,6 @@
 .player-screen .player-period-section {
   padding-top: 16px;
 }
-
-
 
 .home-discover {
   padding: 20px 0 8px;
@@ -847,8 +837,6 @@
   align-items: center;
   min-width: 0;
 }
-
-
 
 .scoreboard-side>strong {
   font-size: 1.25rem;
