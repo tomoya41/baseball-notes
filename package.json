@@ -12,7 +12,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "build": "tsc --noEmit && vite build && tsx scripts/generate-mlb-availability.ts && tsx scripts/stage-npb-historical.ts && tsx scripts/verify-npb-historical-publication.ts",
+    "build": "tsc --noEmit && vite build && tsx scripts/build-web-offline.ts && tsx scripts/generate-mlb-availability.ts && tsx scripts/stage-npb-historical.ts && tsx scripts/verify-npb-historical-publication.ts",
     "vercel-build": "npm run build && node scripts/build-recent-api.mjs",
     "preview": "vite preview --host 127.0.0.1",
     "check": "npm run lint && npm run typecheck && npm test && npm run build",

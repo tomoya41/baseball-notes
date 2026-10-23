@@ -11,6 +11,7 @@ import { NotificationSettings, PrivacyScreen, RuntimeStatus } from "./runtime-st
 import { PersonalLibraryProvider } from "./library-provider";
 import { ShareLink } from "./product-sharing";
 import { PersonalWatchProvider, WatchSummary } from "./watch-shell";
+import { WebAppUpdateNotice, WebOfflineInfo } from "./web-offline";
 type FavoriteTarget = Pick<Favorite, "kind" | "entityId" | "league">;
 const MlbLeagueView = lazy(() => import("./mlb-foundation").then(module => ({ default: module.MlbLeagueView })));
 const NpbRoutes = lazy(() => import("./npb-routes").then(module => ({ default: module.NpbRoutes })));
@@ -66,6 +67,7 @@ export function App({ services }: { services: Services }) {
     {favoriteMessage && <p className={`toast${favoriteError ? " toast--error" : ""}`}
       role={favoriteError ? "alert" : "status"}>{favoriteMessage}</p>}
     <RuntimeStatus />
+    <WebAppUpdateNotice />
     <main id="main-content" tabIndex={-1}>
     <RouteFocus />
     <RouteErrorBoundary key={`screen:${location.pathname}`}>
@@ -86,7 +88,7 @@ export function App({ services }: { services: Services }) {
     </Routes></Suspense>
     </RouteErrorBoundary>
     {section === "home" && <WatchSummary league={league} />}
-    {section === "my" && <details className="my-settings-disclosure"><summary>表示・通知・アプリについて</summary><MySettings /><NotificationSettings favorites={favorites} ready={favoritesReady} visible /></details>}
+    {section === "my" && <details className="my-settings-disclosure"><summary>表示・通知・アプリについて</summary><MySettings /><WebOfflineInfo /><NotificationSettings favorites={favorites} ready={favoritesReady} visible /></details>}
     <footer className="app-footer"><Link to="/MLB/sources">データ提供元</Link><Link to={`/${league}/explore`}>機能一覧 ↗</Link></footer></main>
     <nav className="bottom-nav" aria-label="基本ナビゲーション">{navItems.map(({ label, segment, icon: Icon }) =>
       <Link key={segment} to={`/${league}/${segment}`} aria-current={currentNav === segment ? "page" : undefined}>

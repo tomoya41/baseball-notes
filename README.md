@@ -105,7 +105,7 @@ npm run collector:import -- --date 2025-06-01 --zip .data/raw/2025csvs.zip
 
 - お気に入り：Android Preferences / Web localStorage。アプリ削除やサイトデータ削除で消えます。同期機能なし。
 - キャッシュ：IndexedDB、正規化済みcatalogをリーグ・Provider別に保存。期限切れ/通信失敗を表示し、取得時刻と元データ更新時刻を分離。
-- AndroidはWeb assetsを同梱。ブラウザの完全オフライン起動はService Worker未導入のため保証しません。
+- AndroidはWeb assetsを同梱。Web／ホーム画面版は一度オンラインでアプリ本体を保存した後、オフラインで再起動できます。成績は検証済みキャッシュがあるものだけ表示します。ブラウザーの保存領域消去・初回オフライン起動は対象外です。[更新と制限](docs/web-offline-shell.md)。
 - `public/data/*.json`は実装とテストが使う架空データで、不要mockではありません。
 - 実ProviderやDBのAPI keyを `VITE_*` やAndroidバンドルへ入れないでください。これらは秘密を保持できません。現在 `.env` は不要です。
 

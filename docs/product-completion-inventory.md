@@ -642,3 +642,8 @@ After separately staging the immutable asset, v4 promotes 28 partial chronology 
 
 PR #53のCS基盤を維持し、日本シリーズの専用日程・試合予定・Search導線を追加。Wikipediaの独立固定revisionから7予定試合・球場を収録し、結果0件・選手成績unavailable・Coverage partialを明示する。開始時刻・試合終了・完全な個人成績や大会全体の完成は認定しない。
 Tursoは復旧準備（軽いprobe、quota確認、時間・query上限）を追加した段階で、read-blocked解消・最新Canonical integrity・Scheduled/Backup・HOT/Rankingの達成とは別。詳細は[日本シリーズ・無料DB復旧準備](japan-series-release-readiness.md)。以前の棚卸し総数は再集計していない。
+## 2026-10-23 — Webオフライン起動
+
+Web／ホーム画面版のアプリ本体を、版ごとの完全な検証後に保存する機能を追加。保存済み成績は既存の検証済みレスポンスキャッシュから表示し、未取得年度・未収録は補完しない。更新は利用者の明示操作で切り替え、URL・個人保存を保持する。
+ローカルのHTTPキャッシュを無効化した配信サーバーを停止し、実データの2025年画面を完全再読み込みして、成績・保存済み表示・Favorite保持を確認。未取得2000年は取得エラー。版A→Bでは更新ボタンを押すまでAを維持し、更新後にB・同じURL・Favorite保持を確認。
+これは一度オンラインで保存した後のWeb起動対応であり、初回オフライン・全成績の無通信利用・Storage eviction後・Pixel／TalkBackの検証を完成扱いにしない。NPB Current・Historical・MLB・Source・Facts・Coverage・Production Gateは変更しない。実装・制限・rollbackは[Web offline shell](web-offline-shell.md)を参照。公開後の証拠はDelivery PRに記録する。

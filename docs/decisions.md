@@ -435,3 +435,7 @@ Representative/team roster observations do not establish draft eligibility. Appl
 ## 2026-10-23 — Premeeting Release and postmeeting app archive are distinct publications
 
 An unchanged forecast publicly released before the meeting may be shown later as an explicitly postmeeting archive after owner authorization. Preserve its exact source/pin/digests; independently verify the original public Release and asset identities/timestamps. Never call this premeeting app publication or authorize a newly created late forecast. Keep the original first-Pages deadline rule for premeeting mode, and keep actual results in a separate immutable dataset. See [archive and results delivery](npb-draft-results-2026.md).
+
+## 2026-10-23 — Separate offline Web shell from validated baseball data
+
+Build a bounded, byte/hash-verified application-file cache at the app's own URL scope. Never cache API/data/raw responses in that worker: existing reader validation, IndexedDB fallback, missing/stale notices and Watch suppression remain authoritative. Install each version completely before activation; explicit update consent preserves active-page work and a retained previous shell supports old hashed imports. Register after page load, exclude Capacitor Android, preserve all personal stores, and ship a scope-specific retirement worker before removing the feature. See [behavior, validation and rollback](web-offline-shell.md).
