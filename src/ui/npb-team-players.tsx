@@ -39,7 +39,7 @@ export function NpbTeamPlayers({ services, favorites = [] }: { services: Service
   }, [year, supported, catalog, historicalManifest, teamId, attempt]);
   const update = (key: string, value: string) => setParams(previous => { const p = new URLSearchParams(previous); p.set(key, value);
     if (key === "role") { if (value === "all") p.delete("sort"); else p.set("sort", value === "pitching" ? "innings" : "games"); }
-    if (key === "season") { if (value === "2026") p.delete("sort"); else p.set("sort", role === "pitching" ? "innings" : "games"); } return p; }, { replace: key === "q" });
+    if (key === "season") { if (value === "2026" && role === "all") p.delete("sort"); else p.set("sort", role === "pitching" ? "innings" : "games"); } return p; }, { replace: key === "q" });
   if (!catalog) return catalogError ? <DataState kind="source-unavailable" title="球団の選手情報を取得できません" /> : <LoadingSkeleton />;
   const team = catalog.teams.find(t => t.teamId === teamId);
   if (!team) return <DataState kind="no-data" title="球団が見つかりません" to="/NPB/teams" action="球団を探す" />;
@@ -47,7 +47,7 @@ export function NpbTeamPlayers({ services, favorites = [] }: { services: Service
   const visible = result?.year === year ? result : null;
   const source = year === "2026" ? currentTeamPlayers(catalog, visible?.season ?? null, teamId) : visible?.history ? historicalTeamPlayers(visible.history, teamId, Number(year)) : [];
   const showNumbers = year === "2026" && source.some(p => p.number !== null);
-  const sort: TeamPlayerSort = requestedSort ?? (showNumbers ? "number" : role === "pitching" ? "innings" : "games");
+  const sort: TeamPlayerSort = requestedSort ?? (role === "pitching" ? "innings" : role === "batting" ? "games" : showNumbers ? "number" : "games");
   const players = sortTeamPlayers(source.filter(p => normalizePlayerSearch(p.name).includes(normalizePlayerSearch(query))), role, sort);
   return <div className="screen team-players"><Link className="back-link" to={`/NPB/teams/${encodeURIComponent(teamId)}`}>← 球団ページ</Link>
     <header className="compact-page-heading"><div><p className="eyebrow">NPB · {year}年 · 公式戦</p><h1><ClubIdentity teamId={teamId}>{team.shortName}の選手</ClubIdentity></h1></div></header>

@@ -42,6 +42,18 @@ it("shows selected past-team stats with original credits, never current numbers,
   expect(readHistory).toHaveBeenCalledTimes(1);expect(readSeason).toHaveBeenCalledTimes(1);
 });
 
+it("retains role-specific ordering when switching past years back to Current despite available numbers",async()=>{
+  readHistory.mockResolvedValue({players:[],rows:[]});
+  await mount('?season=2025&role=pitching');
+  await select('年度','2026');
+  expect([...host.querySelectorAll('select')][1]?.value).toBe('innings');
+  expect(host.querySelector('.team-player-list li')?.textContent).toContain('架空選手3');
+  await act(async()=>host.querySelectorAll('.segmented button')[1]!.dispatchEvent(new MouseEvent('click',{bubbles:true})));
+  await select('年度','2025');await select('年度','2026');
+  expect([...host.querySelectorAll('select')][1]?.value).toBe('games');
+  expect(host.querySelector('.team-player-list li')?.textContent).toContain('架空選手3');
+});
+
 it("keeps known affiliation on a failed or mismatched Current season, and does not claim past fetch failure is zero players",async()=>{
   readSeason.mockResolvedValue({...rosterSeason,effectiveDate:'2026-10-11'});await mount();
   expect(host.textContent).toContain('年度成績を取得できません');expect(host.querySelectorAll('.team-player-list li')).toHaveLength(3);
