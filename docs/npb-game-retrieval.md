@@ -39,6 +39,12 @@ Regular Box Scoreの打者・投手プロフィール導線も同じ履歴管理
 実装不具合として修正し、エミュレーターの期待値・検証条件は緩和しない。
 date付きcold deep linkからのAndroid Backも、元の日付の日程へ戻す。
 
+再実行40136737881は、最後の「元の日付の日程へ戻る」で1件失敗した。
+調査で、既存のnative deep-link parserが `/NPB/schedule?date=...` を未対応として
+捨てていたことを確認。Homeにも同じ対戦があったため、最初の対戦名の待機だけでは
+日程リンクが成功したか判別できなかった。日程のstrictな日付・Regular条件を追加し、
+開始直後にも正確なURLと日付操作UIを検証する。未知のpath・不正日付・Postseason混入は拒否する。
+
 ## 古いURL・配信量・出典
 
 新しい一覧リンクにはdate hintを付ける。dateなしの既存URLには、公開済み899 Gameの

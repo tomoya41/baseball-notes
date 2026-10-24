@@ -22,6 +22,11 @@ it("retains the schedule date on a cold Android deep link without changing Posts
   expect(parentNativeRoute(route)).toBe(`/NPB/schedule?date=${game.date}`);
   expect(parentNativeRoute(`/NPB/games/${gameId}?date=2026-02-30`)).toBe("/NPB/schedule");
   expect(parentNativeRoute(`/NPB/games/${gameId}?date=${game.date}&competition=postseason&stage=npb_cs_final`)).toBe("/NPB/cs?season=2026&stage=npb_cs_final");
+  expect(canonicalDeepLink("baseballnotes://NPB/schedule?date=2026-10-08&private=drop")).toBe("/NPB/schedule?date=2026-10-08");
+  expect(canonicalDeepLink("https://tomoya41.github.io/baseball-notes/#/NPB/schedule?date=2026-10-08")).toBe("/NPB/schedule?date=2026-10-08");
+  expect(canonicalDeepLink("baseballnotes://NPB/schedule?date=2026-02-30")).toBeNull();
+  expect(canonicalDeepLink("baseballnotes://NPB/schedule?date=2026-10-08&competition=postseason")).toBeNull();
+  expect(canonicalDeepLink("baseballnotes://NPB/schedule/unknown?date=2026-10-08")).toBeNull();
 });
 
 it("keeps router-owned history through Game → team players → player → Back twice", async () => {

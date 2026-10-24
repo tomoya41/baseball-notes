@@ -10,6 +10,13 @@ export function canonicalDeepLink(input: string): string | null {
     const route = uri.protocol === "baseballnotes:" ? `/${uri.hostname}${uri.pathname}` :
       uri.hash.startsWith("#/") ? uri.hash.slice(1) : uri.pathname.replace(/^\/baseball-notes/, "");
     const [portablePath, portableSearch] = route.split("?");
+    if(portablePath === "/NPB/schedule") {
+      const source = new URLSearchParams(portableSearch ?? uri.search);
+      if(source.has("stage")||source.has("competition")&&source.get("competition")!=="regular")return null;
+      const date=source.get("date");
+      if(date!==null&&!z.iso.date().safeParse(date).success)return null;
+      return `/NPB/schedule${date ? `?date=${date}` : ""}`;
+    }
     const expanded = ["data", "history", "compare", "team-compare", "season-compare", "postseason", "matchup", "milestones", "form", "cs", "moves"].includes(portablePath?.split("/")[2] ?? "");
     if (expanded || portablePath === "/NPB/talent/2026") return portableRoute(portablePath!, portableSearch ?? uri.search);
     const [leagueRaw, resource, encoded, child, ...extra] = route.split("?")[0]!.replace(/^\//, "").split("/");

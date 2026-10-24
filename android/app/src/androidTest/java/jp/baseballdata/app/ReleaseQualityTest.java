@@ -806,7 +806,9 @@ public class ReleaseQualityTest {
     @Test public void npbRegularGameRemainsUsableWhenDetailApiIsUnavailable() throws Exception {
         Intent link = new Intent(Intent.ACTION_VIEW, Uri.parse("baseballnotes://NPB/schedule?date=2026-10-08"));
         link.setClass(InstrumentationRegistry.getInstrumentation().getTargetContext(), MainActivity.class);
-        scenario = ActivityScenario.launch(link); waitText("ヤクルト");
+        scenario = ActivityScenario.launch(link);
+        waitCondition("Cold schedule link retains its exact date", "location.hash==='#/NPB/schedule?date=2026-10-08' && !!document.querySelector('.date-ribbon')");
+        waitText("ヤクルト");
         js("document.querySelector('main a[href*=\"49a69ad2efd3bf67d3e5\"]').click()");
         waitCondition("Requested regular Game is rendered", "location.hash.includes('49a69ad2efd3bf67d3e5') && !!document.querySelector('.score-hero')");
         waitText("阪神"); waitText("ヤクルト");
