@@ -1,3 +1,4 @@
+import { clubStyle } from "../presentation/club-style";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import type { Services } from "../app/services";
@@ -82,8 +83,8 @@ export function NpbTeam({ services, hub = false, favorites = [], toggle, saving 
   if (!catalog) return error ? <DataState kind="source-unavailable" title="球団情報を読み込めません" /> : <LoadingSkeleton />;
   const team = catalog.teams.find(t => t.teamId === teamId), stats = season?.teams.find(t => t.teamId === teamId);
   if (!team) return <DataState kind="no-data" title="球団が見つかりません" />;
-  return <div className="screen team-hub"><Link className="back-link" to="/NPB/teams">← 球団一覧</Link><header className="profile-header"><div><p className="eyebrow">NPB · {team.division === "Central" ? "セ・リーグ" : "パ・リーグ"}</p><h1>{team.name}</h1></div></header>
-    <div className="hub-links"><Link to={`/NPB/team-compare?teams=${encodeURIComponent(team.teamId)}`}>球団比較へ追加 →</Link><Link to={`/NPB/season-compare?kind=team&entity=${encodeURIComponent(team.teamId)}`}>保存済み年度を比較 →</Link></div>{toggle && <div className="team-follow-action"><TeamFavorite league="NPB" teamId={team.teamId} name={team.name} favorites={favorites} toggle={toggle} saving={saving} /><span>球団をフォロー</span></div>}
+  return <div className="screen team-hub"><Link className="back-link" to="/NPB/teams">← 球団一覧</Link><header className="profile-header club-profile" style={clubStyle(team.teamId)}><div><p className="eyebrow">NPB · {team.division === "Central" ? "セ・リーグ" : "パ・リーグ"}</p><h1>{team.name}</h1></div></header>
+
     <section className="surface-card"><h2>{season ? `${season.season}シーズン` : "シーズン成績"}</h2>
       {seasonState === "loading" ? <LoadingSkeleton /> : seasonState === "error" ?
         <DataState kind="source-unavailable" title="シーズン成績を読み込めません" /> : season && stats ? <>
@@ -91,6 +92,7 @@ export function NpbTeam({ services, hub = false, favorites = [], toggle, saving 
         <TeamRecord wins={stats.W} losses={stats.L} ties={stats.T} /><div className="metric-grid team-secondary-stats">{[["試合", stats.G], ["得点", stats.runsFor], ["失点", stats.runsAgainst]].map(([label, value]) => <div className="metric-tile" key={label}><span className="metric-tile__label">{label}</span><strong className="metric-tile__value">{value ?? "—"}</strong></div>)}</div>
       </> : <DataState kind="no-data" title="保存済みのシーズン成績はありません" />}
     </section>
+    <div className="hub-links"><Link to={`/NPB/team-compare?teams=${encodeURIComponent(team.teamId)}`}>球団比較へ追加 →</Link><Link to={`/NPB/season-compare?kind=team&entity=${encodeURIComponent(team.teamId)}`}>保存済み年度を比較 →</Link></div>{toggle && <div className="team-follow-action"><TeamFavorite league="NPB" teamId={team.teamId} name={team.name} favorites={favorites} toggle={toggle} saving={saving} /><span>球団をフォロー</span></div>}
     {hub && <>{stats && <details className="team-stat-details"><summary>チーム打撃・投球成績</summary><TeamMetrics batting={stats.batting} pitching={stats.pitching} /></details>}<NpbTeamActivity key={team.teamId} services={services} teamId={team.teamId} /><div className="hub-links"><Link to="/NPB/compare">選手比較 →</Link><Link to="/NPB/my">お気に入り →</Link></div></>}
     <LifecycleLinks teamId={team.teamId} />
     <Link className="section-action" to={`/NPB/moves?team=${encodeURIComponent(team.teamId)}`}>この球団に関する選手の動き →</Link>

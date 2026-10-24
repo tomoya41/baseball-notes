@@ -31,7 +31,7 @@ describe("canonical dated Game surface",()=>{
     }finally{client.close();}
   });
   it("lists partial Game headers with safe canonical detail links",()=>{const text=html(<GameDateView payload={date([row()])}/>);
-    expect(text).toContain("一部データ確認中");expect(text).toContain("npb%3Agame%3Aone");expect(text).toContain("<small>ホーム</small><span>阪神</span>");expect(text).toContain("<small>ビジター</small><span>DeNA</span>");});
+    expect(text).toContain("一部データ確認中");expect(text).toContain("npb%3Agame%3Aone");expect(text).toContain("ビジター DeNA 2、ホーム 阪神 1、試合終了");});
   it("distinguishes confirmed no-games from unavailable schedule",()=>{
     expect(html(<GameDateView payload={date([],"no_games")}/>)).toContain("試合なし");
     expect(html(<GameDateView payload={date([],"unknown")}/>)).toContain("確認できていません");});

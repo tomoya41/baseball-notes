@@ -20,6 +20,15 @@ beforeEach(() => { vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true); container = 
 afterEach(async () => { await act(async () => root.unmount()); container.remove(); vi.unstubAllGlobals(); });
 const render = async (path = `/NPB/compare?players=${id(1)},${id(2)}`, read: Loader = loader) => { await act(async () => root.render(<MemoryRouter initialEntries={[path]}><CompareWorkspace league="NPB" players={players} teams={[]} seasons={[2026]} loader={read} /></MemoryRouter>)); };
 describe("comparison workspace", () => {
+  it("puts the one semantic results table before secondary search/conditions without repeating a summary chart", async () => {
+    await render();
+    const results=container.querySelector('.compare-results')!,options=container.querySelector('.compare-options')!;
+    expect(results.compareDocumentPosition(options)&Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(container.querySelectorAll('table')).toHaveLength(1);
+    expect(container.querySelector('.compare-table--duel')).not.toBeNull();
+    expect(container.querySelector('.comparison-bars')).toBeNull();
+    expect(container.querySelector('th[scope="row"] button')).not.toBeNull();
+  });
   it("passes archive coverage to CSV even when all displayed metrics are complete", async () => {
     const pid = "mlb:player:00000000-0000-4000-8000-000000000001";
     await act(async () => root.render(<MemoryRouter initialEntries={[`/MLB/compare?season=2025&players=${pid}`]}><CompareWorkspace league="MLB" players={[{ id: pid, name: "保存選手", batting: true, pitching: false }]} teams={[]} seasons={[2025]} loader={async selected => ({ id: selected, date: "2025-09-28", coverage: "partial", notice: "一部データ確認中", metrics: Object.fromEntries(compareBattingKeys.map(k => [k, { value: 1, status: "complete" }])) })} /></MemoryRouter>));

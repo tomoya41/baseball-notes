@@ -32,6 +32,7 @@
 .editorial-cover-copy>p { font-size: .6875rem; letter-spacing: .12em; font-weight: 700; margin: 0 0 8px; color: #d3dfe9; }
 .editorial-cover h1,.editorial-cover h2 { font-size: clamp(1.25rem,3vw,2rem); margin: 0; line-height: 1.3; color: #fff; }
 .editorial-cover-copy small { display: block; color: #e1eaf2; margin: 8px 0 0; font-size: .75rem; }
+.history-directory>.editorial-cover { min-height: 112px; padding: 16px; margin-bottom: 12px; }
 .seasonal-stories>a { display: block; padding: 0; border: 0; }
 .seasonal-story--lead .editorial-cover { min-height: 176px; margin: 0; width: 100%; }
 .seasonal-stories .editorial-cover--compact { min-height: 100px; margin: 0; padding: 12px; }
@@ -63,6 +64,14 @@
 .box-team-name { color: var(--color-muted); font-size: .8125rem; }
 .scoreboard-center>svg { display: none; }
 .scoreboard-row:focus-visible { outline-offset: -3px; }
+.club-identity { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.club-identity--known::before { content: ""; flex: 0 0 4px; width: 4px; height: 24px; background: var(--club-accent); border-radius: 1px; }
+.score-hero .club-identity { flex-direction: column; gap: 8px; }
+.score-hero .club-identity--known::before { width: 36px; height: 4px; flex-basis: 4px; }
+.club-profile { position: relative; padding: 20px 16px; background: var(--hero); color: var(--hero-text); border-top: 4px solid var(--club-accent,var(--sport-accent)); overflow: hidden; }
+.club-profile h1 { color: var(--hero-text); max-width: 28ch; }
+.club-profile .eyebrow { color: var(--hero-muted); }
+.club-profile::after { content: ""; position: absolute; pointer-events: none; width: 80px; inset: 0 0 0 auto; background: linear-gradient(120deg,transparent 30%,var(--club-accent) 31%,var(--club-accent) 37%,transparent 38%,transparent 53%,var(--club-accent) 54%,var(--club-accent) 60%,transparent 61%); opacity: .18; }
 .player-identity :is(.eyebrow,.player-identity-detail,.favorite-button) { color: var(--hero-muted); }
 .player-uniform-number { display: block; font-size: 1.75rem; line-height: 1.2; font-weight: 750; font-variant-numeric: tabular-nums; color: var(--sport-accent); margin: 8px 0; }
 .player-uniform-number>span { font-size: .8125rem; margin-right: 4px; }
@@ -85,11 +94,79 @@
 .comparison-bars--duel .comparison-bar>span { font-size: 1.25rem; font-weight: 750; }
 .comparison-bars--duel .comparison-bar__track { order: 3; }
 .comparison-bar>strong { overflow-wrap: anywhere; }
+.compare-heading { display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--color-border); margin-bottom: 12px; }
+.compare-heading .page-heading { border: 0; padding: 8px 0; margin: 0; }
+.compare-heading .page-heading h1 { font-size: 1.125rem; }
+.compare-heading .back-link { margin: 0; white-space: nowrap; }
+.compare-screen .compare-selection { margin: 12px 0 0; gap: 8px; }
+.compare-screen .compare-selection>div { border-radius: 2px; border-top: 3px solid var(--brand); padding: 4px 8px; }
+.compare-screen .compare-selection>div:nth-child(even) { border-top-color: var(--chart-secondary); }
+.compare-screen .compare-selection a { font-size: .875rem; padding-block: 8px; }
+.compare-screen .compare-selection button { min-width: 44px; min-height: 44px; }
+.compare-scope { margin: 12px 0 0; font-size: .8125rem; color: var(--color-muted); }
+.compare-results>.inline-note { margin-block: 4px 8px; }
+.compare-explanation { margin-top: 8px; }
+.compare-screen>details { border-bottom: 1px solid var(--color-border); }
+@media (min-width:340px) {
+  :root:not([data-large-font]) .compare-table--duel .stat-table { display: table; width: 100%; table-layout: fixed; border-collapse: collapse; }
+  :root:not([data-large-font]) .compare-table--duel .stat-table thead { display: table-header-group; }
+  :root:not([data-large-font]) .compare-table--duel .stat-table tbody { display: table-row-group; }
+  :root:not([data-large-font]) .compare-table--duel .stat-table tr { display: table-row; padding: 0; }
+  :root:not([data-large-font]) .compare-table--duel .stat-table :is(th,td) { display: table-cell; text-align: right; padding: 4px 8px; border-bottom: 1px solid var(--color-border); vertical-align: middle; font-size: .875rem; overflow-wrap: anywhere; }
+  :root:not([data-large-font]) .compare-table--duel .stat-table th:first-child { width: 68px; text-align: left; }
+  :root:not([data-large-font]) .compare-table--duel .stat-table .stat-table-label { display: none; }
+  :root:not([data-large-font]) .compare-table--duel .stat-table thead th { font-size: .75rem; }
+  :root:not([data-large-font]) .compare-table--duel .stat-table td:nth-child(2) { background: var(--brand-soft); }
+  :root:not([data-large-font]) .compare-table--duel .stat-table td:nth-child(3) { border-left: 1px solid var(--color-border); }
+  :root:not([data-large-font]) .compare-table--duel .stat-table td small { display: block; font-size: .75rem; }
+}
+.historical-player-list>.explorer-result { background: transparent; border: 0; border-bottom: 1px solid var(--color-border); border-radius: 0; padding: 12px 0; }
+.historical-player-list .historical-player-title { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin: 0; }
+.historical-player-title h3 { margin: 0; font-size: .9375rem; }
+.historical-player-title small { font-size: .75rem; color: var(--color-muted); }
+.historical-row-summary { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,2fr); gap: 8px; align-items: center; }
+.historical-row-summary>span { font-size: .8125rem; color: var(--color-muted); }
+.historical-row-summary .explorer-values { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 4px; margin: 0; }
+.historical-row-summary .explorer-values>div { background: transparent; border: 0; padding: 4px 0; }
+.historical-row-summary .explorer-values dt { font-size: .75rem; }
+.historical-row-summary .explorer-values dd { font-size: 1rem; }
+.historical-player-details>summary { font-size: .75rem; min-height: 44px; }
+.historical-player-details .explorer-links { flex-wrap: wrap; }
+.history-year-picker { border-block: 1px solid var(--color-border); margin-block: 12px; }
+.history-year-picker>summary { color: var(--brand); }
+.progression-heading { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; }
+.progression-heading h3 { margin: 0; }
+.progression-heading label { display: flex; align-items: center; gap: 8px; font-size: .8125rem; }
+.progression-heading select { min-height: 44px; }
+.progression-scope { display: flex; align-items: center; flex-wrap: wrap; font-size: .8125rem; color: var(--color-muted); margin-block: 4px; }
+.progression-chart { margin: 8px 0 12px; background: var(--color-surface); border-block: 1px solid var(--color-border); padding: 8px 0; }
+.progression-chart svg { display: block; width: 100%; max-width: 640px; height: auto; margin-inline: auto; overflow: visible; }
+.progression-axis line { stroke: var(--color-border); stroke-width: 1; }
+.progression-axis text,.progression-year { fill: var(--color-muted); font-size: 12px; }
+.progression-value { fill: var(--color-text); font-size: 12px; font-weight: 650; }
+.progression-segment { stroke: var(--brand); stroke-width: 2.5; }
+.progression-area { fill: var(--brand); opacity: .07; }
+.progression-point { fill: var(--brand); stroke: var(--color-surface); stroke-width: 2; }
+.progression-bar { fill: var(--brand); }
+.progression-chart figcaption { padding: 4px 12px; font-size: .75rem; color: var(--color-muted); }
+.progression-year-values.explorer-values { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 0; }
+.progression-year-values.explorer-values>div { padding: 4px 8px; background: transparent; border: 0; border-left: 1px solid var(--color-border); }
+.progression-year-values dt { font-size: .8125rem; }
+.progression-year-values dt small { display: block; color: var(--color-muted); font-size: .75rem; }
+.progression-year-values dd { font-size: 1.125rem; }
+.progression-year-values dd small { display: block; font-size: .75rem; font-weight: 400; color: var(--color-muted); }
+.progression-best { padding: 12px; border-left: 3px solid var(--brand); background: var(--brand-soft); font-size: .8125rem; }
+.progression-best span { display: block; margin-top: 4px; font-size: 1rem; font-weight: 750; }
+:root[data-large-font] .progression-year-values.explorer-values { grid-template-columns: repeat(auto-fit,minmax(min(100%,145px),1fr)); }
+.historical-player-screen>.explorer-filter-grid { margin-block: 12px; }
+.historical-player-screen>.explorer-filter-grid>label { min-width: 0; }
+.historical-player-screen>.explorer-filter-grid select { min-width: 0; width: 100%; }
+:root[data-large-font] .historical-row-summary { grid-template-columns: minmax(0,1fr); }
+:root[data-large-font] .historical-row-summary .explorer-values { grid-template-columns: repeat(auto-fit,minmax(min(100%,110px),1fr)); }
 .home-score-sample { margin-bottom: 8px; }
 .home-main>:only-child { grid-column: 1/-1; }
 .history-paths { display: flex; flex-wrap: wrap; gap: 0 16px; border-bottom: 1px solid var(--color-border); margin: 8px 0; }
 .history-paths>a { display: inline-flex; align-items: center; min-height: 44px; font-size: .8125rem; color: var(--brand); }
-.historical-scope { color: var(--color-muted); font-size: .8125rem; margin: 10px 0 0; }
 .historical-team-filter { grid-column: 1/-1; grid-row: 2; }
 .historical-team-filter>summary { color: var(--brand); }
 .historical-team-filter[open]>label { max-width: 360px; }
@@ -123,6 +200,8 @@
 
 .licensed-player-photo { flex: 0 0 108px; width: 108px; margin: 0; order: 2; }
 .licensed-player-photo img { display: block; width: 108px; height: 144px; object-fit: contain; background: #091b2b; border-radius: 2px; }
+.licensed-photo-frame { display: block; width: 108px; height: 144px; overflow: hidden; }
+.licensed-photo-frame img { width: 165px; height: 265px; max-width: none; transform: translateX(-25px); }
 .licensed-player-photo figcaption { font-size: .75rem; line-height: 1.4; margin-top: 0; }
 .licensed-player-photo figcaption a { display: flex; align-items: center; min-height: 44px; }
 .licensed-player-photo a { color: var(--hero-muted); text-decoration: underline; }

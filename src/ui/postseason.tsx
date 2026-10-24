@@ -60,7 +60,7 @@ export function MlbPostseasonScreen() {
         {series.winnerId && <h2 className="series-result">{team(series.winnerId)} · {series.round === "world_series" ? "優勝" : "勝ち上がり"}</h2>}
         {series.advancesToSeriesId && <Link className="text-link" to={`/MLB/postseason/series/${encodeURIComponent(series.advancesToSeriesId)}?season=${season}`}>次のラウンド →</Link>}
         <h2>試合結果</h2><div className="scoreboard-list">{series.games.map(g => <ScoreboardRow key={g.gameId} to={`/MLB/games/${encodeURIComponent(g.gameId)}?season=${season}&competition=postseason`}
-          away={team(g.awayTeamId)} home={team(g.homeTeamId)} awayScore={g.awayRuns} homeScore={g.homeRuns} date={g.date.slice(5)} status={`終了 · Game ${g.gameNumber}`} />)}</div>
+          away={team(g.awayTeamId)} home={team(g.homeTeamId)} awayId={g.awayTeamId} homeId={g.homeTeamId} awayScore={g.awayRuns} homeScore={g.homeRuns} date={g.date.slice(5)} status={`終了 · Game ${g.gameNumber}`} />)}</div>
         <Link className="text-link" to={`/MLB/postseason?season=${season}`}>全体の勝ち上がり</Link>
       </> : <><PostseasonBracket hub={hub!} /><p className="inline-note">全{hub!.games}試合 · {hub!.effectiveDate}終了時点 · Retrosheet</p></>}
     <div className="hub-links"><Link to={`/MLB/records?season=${season}&competition=postseason`}>Postseason Leaders →</Link><Link to={`/MLB/schedule?season=${season}&competition=postseason`}>日程・結果 →</Link></div>

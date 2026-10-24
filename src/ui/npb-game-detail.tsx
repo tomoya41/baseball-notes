@@ -60,7 +60,7 @@ export function NpbGameDetailView({ payload, state, services, actions, selectedS
   };
   return <div className="screen game-detail">
     <GameHeading title={`${formatDate(payload.date, true)}の試合`} date={payload.date} context={`NPB · 公式戦${payload.gameNumber > 1 ? ` · 第${payload.gameNumber}試合` : ""}`} backTo={`/NPB/schedule?date=${payload.date}`} />
-    <ScoreHero away={payload.away.shortName} home={payload.home.shortName} awayScore={payload.away.score} homeScore={payload.home.score} status={statusName[payload.status]} />
+    <ScoreHero away={payload.away.shortName} home={payload.home.shortName} awayId={payload.away.id} homeId={payload.home.id} awayScore={payload.away.score} homeScore={payload.home.score} status={statusName[payload.status]} />
     {hasBox && <GameJumpNav />}
     {payload.status === "scheduled" && services && <NpbGamePreview game={payload} services={services} favorites={actions?.favorites ?? []} />}
     {hasBox && <GameRecap league="NPB" complete={payload.completeness === "complete"} favorites={actions?.favorites ?? []} batting={[...payload.batting.away, ...payload.batting.home]} pitching={[...payload.pitching.away, ...payload.pitching.home].map(p => ({ ...p, outs: p.outsRecorded, so: p.strikeouts }))} />}

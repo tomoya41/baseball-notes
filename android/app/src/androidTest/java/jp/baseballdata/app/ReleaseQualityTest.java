@@ -369,6 +369,9 @@ public class ReleaseQualityTest {
         }
         waitCondition("Two real comparison columns", "document.querySelector('.compare-table tbody tr td') && document.querySelector('.compare-table tbody tr').querySelectorAll('td').length===2 && !document.querySelector('.skeleton-page')");
         assertEquals("Comparison is not all unavailable", "true", js("Array.from(document.querySelectorAll('.compare-table td')).some(e=>e.textContent.trim()!=='—')"));
+        assertEquals("Two-player matrix stays a semantic table at standard font", "table", js("getComputedStyle(document.querySelector('.compare-table table')).display"));
+        assertEquals("Results precede secondary conditions", "true", js("document.querySelector('.compare-results').compareDocumentPosition(document.querySelector('.compare-options')) & Node.DOCUMENT_POSITION_FOLLOWING ? true:false"));
+        assertEquals("Each real metric has two independent columns", "true", js("Array.from(document.querySelectorAll('.compare-table tbody tr')).every(row=>row.querySelectorAll('td').length===2)"));
         screenshot("compare-actual-360");
         fontScaleAndRecreate(2.0f); waitText("BASEBALL"); waitViewport(360);
         js("location.hash='#/MLB/players/mlb%3Aplayer%3Ae70b8d12-aa41-50c0-9c1b-d468d451355f?season=2024'");
@@ -394,16 +397,50 @@ public class ReleaseQualityTest {
         assertTrue("First system Back dismisses IME without leaving Search", js("location.hash").contains("/MLB/search"));
         screenshot("search-keyboard-back");
     }
+    @Test public void compactHistoricalDirectoryPreservesDetailsAndSources() throws Exception {
+        scenario = ActivityScenario.launch(MainActivity.class); waitText("BASEBALL"); setNetwork(true);
+        js("location.hash='#/NPB/history?season=2025'");
+        waitCondition("Real historical directory", "document.querySelectorAll('.historical-player-list article').length>0 && !document.querySelector('.skeleton-page')");
+        assertEquals("Three primary statistics per team-season row", "true", js("Array.from(document.querySelectorAll('.historical-row-summary')).every(e=>e.querySelectorAll('dd').length===3)"));
+        js("document.querySelector('.historical-player-list').scrollIntoView({block:'start'})");
+        screenshot("npb-history-directory-360-light");
+        js("document.querySelector('.historical-player-details').open=true");
+        waitCondition("Details retain revision, license and comparison control", "document.querySelector('.historical-player-details[open] a[href*=oldid]') && document.querySelector('.historical-player-details[open] a[href*=creativecommons]') && document.querySelector('.historical-player-details[open] input[type=checkbox]')");
+        screenshot("npb-history-directory-details-360");
+        fontScaleAndRecreate(2.0f); waitText("BASEBALL"); waitViewport(360);
+        waitCondition("Directory renders at system 200%", "document.querySelectorAll('.historical-row-summary').length>0");
+        assertEquals("200% historical directory has no root overflow", "true", js("document.documentElement.scrollWidth<=innerWidth"));
+        js("document.querySelector('.historical-player-list').scrollIntoView({block:'start'})");
+        screenshot("npb-history-directory-200-light");
+        setTheme("dark", "ダーク"); js("location.hash='#/NPB/history?season=2025'"); waitText("シーズン履歴");
+        js("document.querySelector('.historical-player-list').scrollIntoView({block:'start'})");
+        screenshot("npb-history-directory-200-dark");
+        fontScaleAndRecreate(1.0f); waitText("BASEBALL");
+    }
+    @Test public void datedNpbPortraitKeepsIdentityAndCaptureYearAtLargeFont() throws Exception {
+        scenario = ActivityScenario.launch(MainActivity.class); waitText("BASEBALL"); setNetwork(true);
+        js("location.hash='#/NPB/players/54f9b289-4717-4fb8-b1c3-7c8cf37e2e42'");
+        waitCondition("Exact reviewed NPB portrait loads", "document.querySelector('.player-identity h1')?.textContent==='近藤健介' && document.querySelector('.licensed-player-photo img')?.complete && document.querySelector('.licensed-player-photo img')?.naturalWidth>0");
+        assertTrue("Visible caption dates the portrait independently of the stats",js("document.querySelector('.licensed-player-photo').innerText").contains("2023年撮影"));
+        waitViewport(360); screenshot("npb-kondo-photo-360");
+        fontScaleAndRecreate(2.0f); waitText("BASEBALL"); waitViewport(360);
+        waitCondition("Portrait remains on exact canonical profile", "location.hash.includes('54f9b289') && document.querySelector('.licensed-player-photo img')?.naturalWidth>0");
+        assertEquals("Dated NPB portrait does not overflow at 200%", "true", js("document.documentElement.scrollWidth<=innerWidth"));
+        screenshot("npb-kondo-photo-200-light");
+        setTheme("dark", "ダーク"); js("location.hash='#/NPB/players/54f9b289-4717-4fb8-b1c3-7c8cf37e2e42'"); waitText("2023年撮影"); screenshot("npb-kondo-photo-200-dark");
+        fontScaleAndRecreate(1.0f); waitText("BASEBALL");
+    }
     @Test public void npbHistoricalYearsAndLargeFont() throws Exception {
         Intent link = new Intent(Intent.ACTION_VIEW, Uri.parse("baseballnotes://NPB/history?season=2025&player=a1ca7cac-f9be-4993-a78c-bcd1e1ae3399&years=2023,2024,2025&q=%E4%BD%90%E8%97%A4%E8%BC%9D%E6%98%8E"));
         link.setClassName("com.tomoya41.baseballnotes", "jp.baseballdata.app.MainActivity");
         scenario = ActivityScenario.launch(link);
         waitText("2023 / 2024 / 2025年の収録行合計");
         waitText("0.924");
+        waitCondition("Actual trend values and axis", "document.querySelectorAll('.progression-axis').length===3 && Array.from(document.querySelectorAll('.progression-value')).map(n=>n.textContent).join(',')==='0.837,0.766,0.924'");
         assertTrue("Historical scope is visible before disclosure", js("document.body.innerText").contains("一部収録"));
-        js("Array.from(document.querySelectorAll('summary')).find(s=>s.textContent==='収録範囲・出典について').click()");
+        js("document.querySelector('.historical-coverage>summary').click()");
         waitText("全選手の成績・ランキングではありません");
-        js("Array.from(document.querySelectorAll('summary')).find(s=>s.textContent==='収録範囲・出典について').click()");
+        js("document.querySelector('.historical-coverage>summary').click()");
         assertEquals("Canonical player preserved by native deep link", "true", js("location.hash.includes('a1ca7cac-f9be-4993-a78c-bcd1e1ae3399') && location.hash.includes('season=2025')"));
         waitCondition("Comparison attribution", "!!document.querySelector('[aria-label=\"年度比較・合計データの出典\"] a[href*=\"oldid=\"]')");
         String historicalHash=js("location.hash");
@@ -413,10 +450,12 @@ public class ReleaseQualityTest {
             waitCondition("OS font scale reaches Historical view", "Number(getComputedStyle(document.documentElement).getPropertyValue('--android-font-scale')) >= " + scale);
             assertEquals("Historical view has no horizontal overflow at " + scale, "true", js("document.documentElement.scrollWidth <= window.innerWidth"));
             assertEquals("All five large-text navigation labels fit on one line", "true", js("Array.from(document.querySelectorAll('.bottom-nav a')).length===5 && Array.from(document.querySelectorAll('.bottom-nav a')).every(a=>{const s=a.querySelector('span'),r=document.createRange();r.selectNodeContents(s);const t=r.getBoundingClientRect(),b=a.getBoundingClientRect();return r.getClientRects().length===1 && t.left>=b.left-1 && t.right<=b.right+1 && t.top>=b.top-1 && t.bottom<=b.bottom+1 && b.bottom<=innerHeight;})"));
+            js("document.querySelector('.progression-chart').scrollIntoView({block:'center'})");
             screenshot("npb-history-font-" + scale.replace(".", "") + "-light");
             setTheme("dark", "ダーク"); js("location.hash='" + historicalHash + "'");
             waitText("2023 / 2024 / 2025年の収録行合計"); waitViewport(360);
             assertEquals("Dark large-text navigation is fully visible", "true", js("Array.from(document.querySelectorAll('.bottom-nav a')).every(a=>{const r=document.createRange();r.selectNodeContents(a.querySelector('span'));const t=r.getBoundingClientRect(),b=a.getBoundingClientRect();return r.getClientRects().length===1 && t.left>=b.left-1 && t.right<=b.right+1 && t.bottom<=b.bottom+1;})"));
+            js("document.querySelector('.progression-chart').scrollIntoView({block:'center'})");
             screenshot("npb-history-font-" + scale.replace(".", "") + "-dark");
             setTheme("light", "ライト"); js("location.hash='" + historicalHash + "'");
             waitText("2023 / 2024 / 2025年の収録行合計");
