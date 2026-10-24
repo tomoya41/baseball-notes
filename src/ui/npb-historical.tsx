@@ -1,8 +1,10 @@
+import { useRosterSearchParams } from "./use-roster-search-params";
+import { RosterContextLink as Link } from "./roster-navigation";
 import { EditorialCover } from "./editorial-cover";
 import { LicensedPlayerPhoto } from "./licensed-player-photo";
 import { PlayerIdentity } from "./signature";
 import { useEffect, useMemo, useState } from "react";
-import { Link, useLocation, useParams, useSearchParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import { teamPlayerReturnPath } from "../presentation/team-player-list";
 import { readNpbHistoricalManifest, readNpbHistoricalSeason } from "../application/npb-historical-reader";
 import { sumHistoricalRows, historicalBattingKeys, historicalPitchingKeys, type NpbHistoricalDataset, type NpbHistoricalManifest, type NpbHistoricalRow } from "../domain/npb-historical";
@@ -38,7 +40,7 @@ function AggregateDetails({row}:{row:NpbHistoricalRow}) {
 }
 /** Explicit navigation only: no extra requests on Home or the Current player overview. */
 export function NpbPlayerSeasons({repository,profileRepository}:{repository:{findLatestNpb():Promise<NpbPlayerDirectory>};profileRepository?:CohortRepository}) {
-  const {playerId}=useParams(),[params,setParams]=useSearchParams();
+  const {playerId}=useParams(),[params,setParams]=useRosterSearchParams();
   const location=useLocation(),rosterBack=teamPlayerReturnPath(location.state);
   const [pastOpen,setPastOpen]=useState(false);
   const [manifest,setManifest]=useState<NpbHistoricalManifest|null>(null),[failed,setFailed]=useState(false),[attempt,setAttempt]=useState(0);
@@ -90,7 +92,7 @@ function PlayerSeasonHistory({manifest,playerId,season,role}:{manifest:NpbHistor
   return <><p className="data-notice">{season}年 · 公式戦 · 球団別成績の一部収録</p>{rows.length?<section><h2>{season}年の{role==="batting"?"打撃":"投球"}成績</h2>{rows.map(r=><div key={r.teamId}><h3>{teamName(r.teamId)}</h3><Numbers rows={[r]} role={role} /><AggregateDetails row={r} /></div>)}<Credits data={data} playerId={playerId} /></section>:<DataState kind="no-data" title="この役割の指定年度成績は未収録です" />}<PlayerHistory manifest={manifest} playerId={playerId} role={role} current={data} activeSeason={season} closeable={false} /></>;
 }
 export function NpbHistoricalHistory({current,cohortRepository,...favorites}:{current:React.ReactNode;cohortRepository?:CohortRepository}&Partial<FavoriteActions>) {
-  const [params,setParams]=useSearchParams(),[manifest,setManifest]=useState<NpbHistoricalManifest|null>(null),[failed,setFailed]=useState(false),[attempt,setAttempt]=useState(0);
+  const [params,setParams]=useRosterSearchParams(),[manifest,setManifest]=useState<NpbHistoricalManifest|null>(null),[failed,setFailed]=useState(false),[attempt,setAttempt]=useState(0);
   const season=params.get("season")??"2026",role=params.get("role")==="pitching"?"pitching":"batting";
   useEffect(()=>{let active=true;void readNpbHistoricalManifest().then(m=>{if(active){setManifest(m);setFailed(false);}}).catch(()=>{if(active)setFailed(true);});return()=>{active=false;};},[attempt]);
   const retry=()=>{setManifest(null);setFailed(false);setAttempt(a=>a+1);};
@@ -132,7 +134,7 @@ function HistoricalSeason({manifest,season,role,params,update,retry,favorites=[]
 }
 function PlayerHistory({manifest,playerId,role,current,activeSeason,closeable=true,initialSingle=false}:{manifest:NpbHistoricalManifest;playerId:string;role:"batting"|"pitching";current:NpbHistoricalDataset;activeSeason:number;closeable?:boolean;initialSingle?:boolean}) {
   const [attempt,setAttempt]=useState(0);
-  const [params,setParams]=useSearchParams(),player=manifest.players.find(p=>p.playerId===playerId)!;
+  const [params,setParams]=useRosterSearchParams(),player=manifest.players.find(p=>p.playerId===playerId)!;
   const raw=params.get("years"),years=useMemo(()=>{
     if(raw!==null) return [...new Set(raw.split(",").filter(y=>/^\d{4}$/.test(y)).map(Number).filter(y=>player.seasons.includes(y)))].slice(0,4);
     if(initialSingle)return player.seasons.includes(activeSeason)?[activeSeason]:[];

@@ -1,6 +1,7 @@
+import { RosterContextLink as Link } from "./roster-navigation";
 import { useEffect, useState } from "react";
 import { LicensedPlayerPhoto } from "./licensed-player-photo";
-import { Link, Navigate, useLocation, useParams } from "react-router-dom";
+import { Navigate, useLocation, useParams } from "react-router-dom";
 import { teamPlayerReturnPath } from "../presentation/team-player-list";
 import type { Services } from "../app/services";
 import type { Favorite } from "../domain/models";

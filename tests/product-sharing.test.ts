@@ -10,7 +10,7 @@ it("shares and opens only a valid NPB team-player list with bounded public selec
   expect(canonicalDeepLink(`baseballnotes://${path.slice(1)}?${query}`)).toBe(expected);
   expect(canonicalDeepLink(`https://tomoya41.github.io/baseball-notes/#${expected}`)).toBe(expected);
   expect(parentNativeRoute(expected)).toBe('/NPB/teams/npb%3Ateam%3Atigers');
-  for(const invalid of ["season=no", "role=invalid", "sort=OPS", "competition=postseason"]){expect(portableRoute(path,invalid)).toBeNull();expect(canonicalDeepLink(`baseballnotes://${path.slice(1)}?${invalid}`)).toBeNull();}
+  for(const invalid of ["season=no", "role=invalid", "sort=OPS", "competition=postseason", "competition=regular&stage=npb_cs_final"]){expect(portableRoute(path,invalid)).toBeNull();expect(canonicalDeepLink(`baseballnotes://${path.slice(1)}?${invalid}`)).toBeNull();}
   expect(portableRoute('/NPB/teams/unverified/players',query)).toBeNull();
 });
 const id = "00000000-0000-4000-8000-000000000001", team = `mlb:team:${id}`;

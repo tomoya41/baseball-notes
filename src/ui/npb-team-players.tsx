@@ -20,13 +20,14 @@ export function NpbTeamPlayers({ services, favorites = [] }: { services: Service
   const year = params.get("season") ?? "2026", role: TeamPlayerRole = params.get("role") === "pitching" ? "pitching" : params.get("role") === "batting" ? "batting" : "all";
   const requestedSort: TeamPlayerSort | null = ["number", "games", "innings", "name"].includes(params.get("sort") ?? "") ? params.get("sort") as TeamPlayerSort : null;
   const query = params.get("q") ?? "";
+  const regularScope = (!params.has("competition") || params.get("competition") === "regular") && !params.has("stage");
   const [catalog, setCatalog] = useState<NpbCatalog | null>(null), [catalogError, setCatalogError] = useState(false);
   const [manifest, setManifest] = useState<NpbHistoricalManifest | null>(null), [manifestError, setManifestError] = useState(false);
   const [result, setResult] = useState<{ year: string; season: NpbSeasonPayload | null; history: NpbHistoricalDataset | null; failed: boolean } | null>(null);
   const [attempt, setAttempt] = useState(0);
   useEffect(() => { let active = true; void services.product.catalog().then(c => { if (active) setCatalog(c); }).catch(() => { if (active) setCatalogError(true); }); return () => { active = false; }; }, [services]);
   useEffect(() => { let active = true; void readNpbHistoricalManifest().then(m => { if (active) setManifest(m); }).catch(() => { if (active) setManifestError(true); }); return () => { active = false; }; }, []);
-  const supported = year === "2026" || !!manifest?.seasons.some(s => String(s.season) === year);
+  const supported = regularScope && (year === "2026" || !!manifest?.seasons.some(s => String(s.season) === year));
   const historicalManifest = year === "2026" ? null : manifest;
   useEffect(() => {
     if (!supported || !catalog) return;
@@ -42,6 +43,7 @@ export function NpbTeamPlayers({ services, favorites = [] }: { services: Service
   if (!catalog) return catalogError ? <DataState kind="source-unavailable" title="球団の選手情報を取得できません" /> : <LoadingSkeleton />;
   const team = catalog.teams.find(t => t.teamId === teamId);
   if (!team) return <DataState kind="no-data" title="球団が見つかりません" to="/NPB/teams" action="球団を探す" />;
+  if (!regularScope) return <DataState kind="unsupported" title="この選手一覧は公式戦が対象です" to="/NPB/postseason" action="ポストシーズンへ" />;
   const visible = result?.year === year ? result : null;
   const source = year === "2026" ? currentTeamPlayers(catalog, visible?.season ?? null, teamId) : visible?.history ? historicalTeamPlayers(visible.history, teamId, Number(year)) : [];
   const showNumbers = year === "2026" && source.some(p => p.number !== null);

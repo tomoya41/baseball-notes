@@ -476,6 +476,8 @@ public class ReleaseQualityTest {
         assertTrue("System Back restores innings sort", js("location.hash").contains("sort=innings"));
         js("document.querySelector('.team-player-list .player-row').click()");
         waitCondition("Profile opened before UI Back", "location.hash.includes('/seasons?season=2025&role=pitching') && document.querySelector('h1')?.textContent==='村上頌樹'");
+        js("const year=document.querySelector('[aria-label=\"選手成績の年度\"]');year.value='2024';year.dispatchEvent(new Event('change',{bubbles:true}))");
+        waitCondition("Changing profile year retains original roster return", "location.hash.includes('season=2024') && document.querySelector('main .back-link')?.getAttribute('href').includes('season=2025&role=pitching&sort=innings')");
         js("document.querySelector('main .back-link').click()"); waitText("阪神の選手"); waitText("175.1");
         assertTrue("UI Back preserves year and innings sort", js("location.hash").contains("season=2025&role=pitching&sort=innings"));
         String rosterHash=js("location.hash");

@@ -1,4 +1,5 @@
-import { Link, useSearchParams } from "react-router-dom";
+import { useRosterSearchParams } from "./use-roster-search-params";
+import { RosterContextLink as Link } from "./roster-navigation";
 import { bestObservedSeasons, historicalProgression, observedClubChanges, progressionMetrics, type ProgressionMetric } from "../domain/npb-player-progression";
 import type { NpbHistoricalRow } from "../domain/npb-historical";
 import { comparisonValue } from "../domain/product-comparison";
@@ -7,7 +8,7 @@ import { NpbClubComparison } from "./npb-club-comparison";
 import { CollectedRecordWatch } from "./npb-collected-records";
 
 export function NpbPlayerProgression({ rows, years, teamName }: { rows: NpbHistoricalRow[]; years: number[]; teamName: (id: string) => string }) {
-  const [params, setParams] = useSearchParams();
+  const [params, setParams] = useRosterSearchParams();
   const role = rows[0]?.role ?? "batting";
   const options: ProgressionMetric[] = role === "batting" ? ["OPS", "AVG", "HR", "H", "RBI", "PA", "G"] : ["ERA", "SO", "outsRecorded", "G", "WHIP", "K9", "BB9"];
   const raw = params.get("trendMetric"), metric = options.includes(raw as ProgressionMetric) ? raw as ProgressionMetric : options[0]!;

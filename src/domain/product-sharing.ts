@@ -22,7 +22,7 @@ export function portableRoute(path: string, search = ""): string | null {
       source.has("season") && !/^20\d{2}$/.test(source.get("season")!) ||
       source.has("role") && !["all", "batting", "pitching"].includes(source.get("role")!) ||
       source.has("sort") && !["number", "games", "innings", "name"].includes(source.get("sort")!) ||
-      source.has("competition") && source.get("competition") !== "regular") return null;
+      source.has("competition") && source.get("competition") !== "regular" || source.has("stage")) return null;
     for (const key of ["season", "role", "sort"]) if (source.has(key)) clean.set(key, source.get(key)!);
     if (source.has("q")) clean.set("q", source.get("q")!.slice(0, 100));
     return `${path}${clean.size ? `?${clean}` : ""}`;

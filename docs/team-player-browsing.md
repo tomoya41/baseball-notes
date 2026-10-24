@@ -14,7 +14,7 @@
 
 ## Validation and limits
 
-Seven new model/UI tests cover numeric number order, `0`/unknown, integer-outs order, date mismatch, club/year isolation, old-number exclusion, failed load, exact canonical links, source preservation and return state. Full local lint / strict TypeScript / tests / Web / Vercel builds are required before merge. A new Android test adds the real Tigers 2025 pitching list, canonical/year/role navigation, system and on-screen Back, and 150%/200% Light/Dark captures to the existing 20-test suite.
+Ten new model/UI/share/navigation tests cover numeric number order, `0`/unknown, integer-outs order, date mismatch, club/year isolation, old-number exclusion, failed load, exact canonical links, source preservation, return state and fail-closed Competition/deep-link boundaries. Full local lint / strict TypeScript / tests / Web / Vercel builds are required before merge. A new Android test adds the real Tigers 2025 pitching list, canonical/year/role navigation, system and on-screen Back, and 150%/200% Light/Dark captures to the existing 20-test suite.
 
 Actual browser inspection: Current Tigers at 390px Light, selected 2025 pitching at 360px Dark, source expansion and the actual 村上頌樹 profile/return state. No root horizontal overflow in these views. Further run/evidence links are recorded in the PR after execution; this paragraph is not a claim that pending native QA has passed.
 
@@ -23,3 +23,7 @@ PR #70's completed Android build/emulator evidence: [run 40073326720](https://gi
 Pixel/physical TalkBack remain NOT RUN while no device is attached. NPB Current gates/freshness, six pending games, five partial dates, MLB 2014–2025 and MLB 2026 rights gates are unchanged; live canonical integrity is not asserted. Extra monthly cost **¥0**.
 
 Rollback: revert only this follow-up's UI/read-model/tests. Existing team/player/history URLs and immutable data assets remain intact.
+
+## Review correction
+
+Codex review identified that profile tabs and year/filter changes dropped the list return context (P2, comment 4366407517). Profile links now carry only a validated ephemeral roster context, and their query updates preserve it. This includes tabs, quick actions, year/competition/role, graph metric/year selection, career-season links and club/year detail links. Public shared URLs still omit that private navigation state. Regression uses the actual tabs and quick actions, while native QA changes the historical profile year before returning. In the actual 360px browser, Tigers 2026 pitching → Murakami → Stats → Player Information → 2024 season → original 2026 innings-sorted list was verified without overflow. No state-store migration.

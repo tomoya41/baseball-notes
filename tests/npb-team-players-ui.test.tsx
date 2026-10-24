@@ -49,3 +49,10 @@ it("keeps known affiliation on a failed or mismatched Current season, and does n
   readHistory.mockRejectedValue(Error('offline'));await select('年度','2025');
   expect(host.textContent).toContain('収録人数を確認できません');expect(host.querySelector('.list-heading')?.textContent).not.toContain('0人');
 });
+
+it("never reads or displays Regular stats for a requested Postseason or stage",async()=>{
+  await mount('?competition=postseason&stage=npb_cs_final');
+  expect(host.textContent).toContain('この選手一覧は公式戦が対象です');
+  expect(readSeason).not.toHaveBeenCalled();expect(readHistory).not.toHaveBeenCalled();
+  expect(host.querySelector('.team-player-list')).toBeNull();
+});
