@@ -17,6 +17,16 @@ export function portableRoute(path: string, search = ""): string | null {
   const parts = path.split("/").filter(Boolean), league = parts[0];
   if (league !== "NPB" && league !== "MLB") return null;
   const resource = parts[1], source = new URLSearchParams(search), clean = new URLSearchParams();
+  if (league === "NPB" && resource === "teams" && parts.length === 4 && parts[3] === "players") {
+    if (!canonicalEntityRefSchema.safeParse({ league, kind: "team", id: decodeSafe(parts[2]!) }).success ||
+      source.has("season") && !/^20\d{2}$/.test(source.get("season")!) ||
+      source.has("role") && !["all", "batting", "pitching"].includes(source.get("role")!) ||
+      source.has("sort") && !["number", "games", "innings", "name"].includes(source.get("sort")!) ||
+      source.has("competition") && source.get("competition") !== "regular") return null;
+    for (const key of ["season", "role", "sort"]) if (source.has(key)) clean.set(key, source.get(key)!);
+    if (source.has("q")) clean.set("q", source.get("q")!.slice(0, 100));
+    return `${path}${clean.size ? `?${clean}` : ""}`;
+  }
   if(league==="NPB"&&resource==="talent"&&parts.length===3&&parts[2]==="2026"){
     if(!draftEventQuery(source).valid)return null;
     for(const key of ["view","team","type","q","page","group","forecast"]){const value=source.get(key);if(value)clean.set(key,value);}
