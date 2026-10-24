@@ -27,3 +27,7 @@ Rollback: revert only this follow-up's UI/read-model/tests. Existing team/player
 ## Review correction
 
 Codex review identified that profile tabs and year/filter changes dropped the list return context (P2, comment 4366407517). Profile links now carry only a validated ephemeral roster context, and their query updates preserve it. This includes tabs, quick actions, year/competition/role, graph metric/year selection, career-season links and club/year detail links. Public shared URLs still omit that private navigation state. Regression uses the actual tabs and quick actions, while native QA changes the historical profile year before returning. In the actual 360px browser, Tigers 2026 pitching → Murakami → Stats → Player Information → 2024 season → original 2026 innings-sorted list was verified without overflow. No state-store migration.
+
+## Concise default UI
+
+At the user's request, the normal roster now shows one dated affiliation/scope line. The longer Current transfer scope, unknown-number rules, qualification limits and individual credits are retained in one **出典・収録範囲** disclosure. Progression charts retain values/year/sample/partial state, while interpolation and minimum-sample explanations move to **集計条件**. Collected Record Watch uses a short selected-years scope; its full-Career limitation remains in its disclosure. Combined-year sums similarly group their scope and source details. No data, metric help or source credit was removed.
