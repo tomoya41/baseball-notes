@@ -6,6 +6,7 @@ import { expect, it, vi } from "vitest";
 import { PublishedNpbGameSummaryRepository } from "../src/infrastructure/providers/published-npb-game-summary-repository";
 import { NpbGameDetailScreen } from "../src/ui/npb-game-detail";
 import index from "../src/data/npb-game-date-index.json";
+import { canonicalDeepLink, parentNativeRoute } from "../src/domain/native-navigation";
 
 const gameId = "npb:game:49a69ad2efd3bf67d3e5";
 const game = { gameId, date: "2026-10-08", gameNumber: 1, scheduledTime: "18:00", status: "final" as const,
@@ -13,6 +14,14 @@ const game = { gameId, date: "2026-10-08", gameNumber: 1, scheduledTime: "18:00"
   completeness: "complete" as const, battingAvailable: true, pitchingAvailable: true, detailAvailable: true };
 const day = { schemaVersion: 1 as const, league: "NPB" as const, date: game.date, generatedAt: index.generatedAt,
   coverage: "complete" as const, games: [game] };
+
+it("retains the schedule date on a cold Android deep link without changing Postseason parents", () => {
+  const route = `/NPB/games/${gameId}?date=${game.date}`;
+  expect(canonicalDeepLink(`baseballnotes:/${route}`)).toContain(`date=${game.date}`);
+  expect(parentNativeRoute(route)).toBe(`/NPB/schedule?date=${game.date}`);
+  expect(parentNativeRoute(`/NPB/games/${gameId}?date=2026-02-30`)).toBe("/NPB/schedule");
+  expect(parentNativeRoute(`/NPB/games/${gameId}?date=${game.date}&competition=postseason&stage=npb_cs_final`)).toBe("/NPB/cs?season=2026&stage=npb_cs_final");
+});
 
 it("locates a legacy cold URL with one dated public payload, without scanning dates or using the DB", async () => {
   const date = vi.fn(async () => day);
