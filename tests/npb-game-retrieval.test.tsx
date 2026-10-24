@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
 import { act } from "react";
 import { createRoot } from "react-dom/client";
-import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { MemoryRouter, Route, Routes, Link, useNavigate } from "react-router-dom";
 import { expect, it, vi } from "vitest";
 import { PublishedNpbGameSummaryRepository } from "../src/infrastructure/providers/published-npb-game-summary-repository";
 import { NpbGameDetailScreen } from "../src/ui/npb-game-detail";
+import { PublishedGameSummaryView } from "../src/ui/npb-game-detail";
 import index from "../src/data/npb-game-date-index.json";
 import { canonicalDeepLink, parentNativeRoute } from "../src/domain/native-navigation";
 
@@ -21,6 +22,27 @@ it("retains the schedule date on a cold Android deep link without changing Posts
   expect(parentNativeRoute(route)).toBe(`/NPB/schedule?date=${game.date}`);
   expect(parentNativeRoute(`/NPB/games/${gameId}?date=2026-02-30`)).toBe("/NPB/schedule");
   expect(parentNativeRoute(`/NPB/games/${gameId}?date=${game.date}&competition=postseason&stage=npb_cs_final`)).toBe("/NPB/cs?season=2026&stage=npb_cs_final");
+});
+
+it("keeps router-owned history through Game → team players → player → Back twice", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const host = document.createElement("div"), root = createRoot(host);
+  function Back() { const navigate = useNavigate(); return <button onClick={() => navigate(-1)}>Android Back</button>; }
+  try {
+    await act(async () => root.render(<MemoryRouter initialEntries={["/game"]}><Back /><Routes>
+      <Route path="/game" element={<PublishedGameSummaryView summary={{ game, generatedAt: day.generatedAt, coverage: day.coverage }} retry={() => undefined} />} />
+      <Route path="/NPB/teams/:teamId/players" element={<><h1>球団の選手</h1><Link to="/NPB/players/canonical">選手を開く</Link></>} />
+      <Route path="/NPB/players/:id" element={<h1>選手プロフィール</h1>} />
+    </Routes></MemoryRouter>));
+    await act(async () => [...host.querySelectorAll<HTMLAnchorElement>("a")].find(a => a.textContent?.includes("阪神"))!.click());
+    expect(host.textContent).toContain("球団の選手");
+    await act(async () => [...host.querySelectorAll<HTMLAnchorElement>("a")].find(a => a.textContent === "選手を開く")!.click());
+    expect(host.textContent).toContain("選手プロフィール");
+    await act(async () => host.querySelector<HTMLButtonElement>("button")!.click());
+    expect(host.textContent).toContain("球団の選手");
+    await act(async () => host.querySelector<HTMLButtonElement>("button")!.click());
+    expect(host.textContent).toContain("保存済みの結果 · 更新未確認");
+  } finally { await act(async () => root.unmount()); vi.unstubAllGlobals(); }
 });
 
 it("locates a legacy cold URL with one dated public payload, without scanning dates or using the DB", async () => {

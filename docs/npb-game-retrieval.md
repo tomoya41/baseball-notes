@@ -32,6 +32,13 @@ API例外時だけ、同じcanonical Game IDの公開済み日別結果を照合
 不正な日付、異なるID、重複Game、異なる日別payloadは拒否する。
 CS・日本シリーズの独立したadapter/Competition条件は変更しない。
 
+Android回帰の初回Run 40100343655は22項目中1件失敗。
+新しい結果画面の通常hashリンクでRouterの履歴indexが失われ、試合→球団選手→選手から
+Backを2回押すと試合ではなく球団ページへ移った。リンクを既存RouterのLinkへ変更し、
+Regular Box Scoreの打者・投手プロフィール導線も同じ履歴管理へそろえた。
+実装不具合として修正し、エミュレーターの期待値・検証条件は緩和しない。
+date付きcold deep linkからのAndroid Backも、元の日付の日程へ戻す。
+
 ## 古いURL・配信量・出典
 
 新しい一覧リンクにはdate hintを付ける。dateなしの既存URLには、公開済み899 Gameの
