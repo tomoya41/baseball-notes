@@ -9,7 +9,8 @@ export function RuntimeStatus() {
     for (const event of ["online", "offline", "baseball:saved-data", "baseball:refresh-data"]) window.addEventListener(event, update);
     return () => { for (const event of ["online", "offline", "baseball:saved-data", "baseball:refresh-data"]) window.removeEventListener(event, update); };
   }, []);
-  return !online || saved ? <p className="runtime-status" role="status">{saved ? "保存済みデータを表示しています" : "オフラインです。保存済みデータのある画面をご覧いただけます。"}</p> : null;
+  const message = !online ? saved ? "オフライン · 保存済みデータを表示しています" : "オフライン" : "保存済みデータを表示しています";
+  return !online || saved ? <p className="runtime-status" role="status" aria-label={message} aria-atomic="true">{message}</p> : null;
 }
 export function NotificationSettings({ favorites, ready, visible }: { favorites: Favorite[]; ready: boolean; visible: boolean }) {
   const [enabled, setEnabled] = useState(false), [busy, setBusy] = useState(false), [message, setMessage] = useState("");

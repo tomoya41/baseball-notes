@@ -31,7 +31,7 @@ export function NpbFinalDraft({ base, team, view, q, group, onSearch, onGroup }:
       {data.candidates.filter(c => (group === "all" || c.group === group) && (!q || `${c.name} ${c.affiliation}`.includes(q))).map(c => <article key={c.id} className="draft-final-candidate"><h3>{c.name}</h3><p>{c.affiliation} · {groups[c.group]} · {c.position}</p><details><summary>資格・選手の確認根拠</summary><Evidence c={c} /></details></article>)}
       {!data.candidates.some(c => (group === "all" || c.group === group) && (!q || `${c.name} ${c.affiliation}`.includes(q))) && <DataState kind="no-data" title="この条件の選手は最終予想に含まれていません" detail="公式の全対象者名簿ではありません。掲載なしを指名資格なし・未指名とは判定しません。" />}
     </> : <>
-      {data.clubs.filter(c => team === "all" || c.teamId === team).map(club => {
+      <div className="draft-clubs">{data.clubs.filter(c => team === "all" || c.teamId === team).map(club => {
         const bid = candidates.get(data.firstBids.find(b => b.teamId === club.teamId)!.candidateId)!;
         return <section key={club.teamId} aria-label={`${teamName(club.teamId)}の直前最終予想`}>
           <h3>{teamName(club.teamId)}</h3>
@@ -47,7 +47,7 @@ export function NpbFinalDraft({ base, team, view, q, group, onSearch, onGroup }:
           })}
           <details><summary>補強の狙い・初回入札・外部情報</summary><p><strong>初回入札予想：{bid.name}</strong> <span className="inline-note">{bid.affiliation}</span></p><p>{club.context}</p><p>以下は参照した外部の論評・報道です。本表の36枠と抽選シナリオはBaseball Notesの独自判断で、記事の予想表の転載ではありません。</p>{club.referenceUrls.map(u => { const r = data.researchReferences.find(r => r.url === u)!; return <p key={u}><a href={u} target="_blank" rel="noreferrer">{r.publisher} · {r.topic} ↗</a><br /><small>{r.author} · {r.kind === "report" ? "報道（球団発表とは別）" : "論評・提案"}<br />公開 {r.publishedOn} · 更新 {r.updatedOn}</small></p>; })}</details>
         </section>;
-      })}
+      })}</div>
       <details><summary>競合・抽選が逆になった場合</summary><p>本線の仮定と、別球団が当選する例です。別の球団が当選した場合は、1位候補を入れ替え、2・3位は本表と同じとする仮定です。実際には他球団の再入札・方針も変わり得ます。抽選の確率や結果を示すものではありません。</p>{data.lotteryAssumptions.map(a => <section key={a.candidateId}><h3>{candidates.get(a.candidateId)!.name}</h3><p>初回入札予想：{a.teamIds.map(teamName).join("・")} / 本線の当選仮定：{teamName(a.assumedWinner)}</p>{a.teamIds.filter(t => t !== a.assumedWinner).map(t => { const alt = alternativeFinalDraw(data, a.candidateId, t); return <p key={t}>{teamName(t)}が当選なら、{teamName(a.assumedWinner)}の再入札案は{candidates.get(alt.find(p => p.teamId === a.assumedWinner && p.round === 1)!.candidateId)!.name}。2・3位は本表を維持する別シナリオ。</p>; })}</section>)}</details>
       <details><summary>2・3位の指名順とシナリオの範囲</summary><p>2位：{data.roundTwoOrder.map(teamName).join(" → ")}</p><p>3位はこの逆順です。同一選手を複数球団・順位へ配分していません。全候補の網羅的な評価ではなく、個別に資格と人物を確認できた36人による独自シナリオです。未採用の選手が指名対象外という意味ではありません。</p>{data.orderSourceUrls.map(u => <p key={u}><a href={u} target="_blank" rel="noreferrer">指名手順の参照 · {new URL(u).hostname} ↗</a></p>)}<p>2026年の順番は会議前報道、一般的な入札・逆順の手順は公式の2025年説明も参照しています。2025年のリーグ優先順を2026年へ転用していません。</p></details>
     </>}

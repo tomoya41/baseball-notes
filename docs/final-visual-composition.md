@@ -19,7 +19,7 @@
 | MLB Historical | Archive art, selected-year context and lead/secondary player hierarchy exist. | Preserve admitted 2014–2025 scopes, on-demand fetching and dated player photos; no 2026 rights expansion. |
 | My / Favorites / Watch / Settings / Reference | Navigation and storage work; data and reference screens need quieter surfaces. | Shared Light palette uses a clean cool neutral and consistent borders; retain controls, source text, privacy and store keys. Dark colours and user font scaling remain intact. |
 
-The applied Light background is `#f5f7fa`; ordinary body, captions and names retain their existing sizes. Original generated stadium/draft/archive assets are reused; **no new image was generated in this follow-up**. No additional official logo or player photograph was admitted.
+The applied Light background is `#f5f7fa`; ordinary body, captions and names retain their existing sizes. At desktop width, the twelve draft club groups use two columns rather than a wide empty list; phones and a single selected club remain one column. Original generated stadium/draft/archive assets are reused; **no new image was generated in this follow-up**. No additional official logo or player photograph was admitted.
 
 ## Same-condition actual Before / After
 
@@ -48,6 +48,8 @@ Photo attribution: Kondo photograph by **Orixbaseballclub** (the Commons contrib
 ## Acceptance, limits and rollback
 
 The PR records executed lint, strict TypeScript, full tests, Web/Vercel, Android packaging/emulator, mobile Light/Dark, tablet/desktop and public smoke results after they finish. Representative-route inspection is not a claim to have tested every possible filter, transition or data state. Tests verify that the shortened CS note still leads to the full limits, and fixed-edition proof, candidate eligibility, real results and credits remain available.
+
+The initial native preflight exposed an accessibility issue before instrumentation: the offline banner was visible in the actual screenshot, while its text was absent from the Android accessibility dump. The banner now has an explicit accessible name matching its visible status. Offline state also remains stated when saved-data fallback is active. The same strict offline/accessibility preflight is rerun; it was not removed or replaced by a weaker check. The initial failed run is not counted as a 21-test pass or as physical TalkBack evidence.
 
 NPB Current game retrieval still has errors; its live DB integrity, freshness and HOT/Ranking are not declared healthy. Physical Pixel/TalkBack remain NOT RUN without a connected device. Official club logos remain unadmitted; separate rights review is required for additional assets. The mock's complete lineup photos, real-time play and uncollected analytics cannot be reproduced as real data.
 

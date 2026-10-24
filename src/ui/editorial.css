@@ -240,6 +240,9 @@
 :root[data-large-font] .follow-player--featured:has(.licensed-player-photo) .follow-player-stats { grid-column: 1/-1; grid-row: 2; }
 :root[data-large-font] .follow-player--featured>.licensed-player-photo { grid-row: 3; grid-column: 1/-1; }
 @media (min-width:1080px) {
+  .draft-clubs { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px 32px; align-items: start; }
+  .draft-clubs>section { min-width: 0; border-top: 1px solid var(--color-border); }
+  .draft-clubs:has(>section:only-child) { grid-template-columns: minmax(0,1fr); }
   .home-hub:has(.home-player-lead) { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); column-gap: 24px; }
   .home-hub:has(.home-player-lead)>* { grid-column: 1/-1; min-width: 0; }
   .home-hub:has(.home-player-lead)>.home-player-lead { grid-column: 1; grid-row: 3; }
