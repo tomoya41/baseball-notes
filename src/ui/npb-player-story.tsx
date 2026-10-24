@@ -1,5 +1,6 @@
+import { RosterContextLink as Link } from "./roster-navigation";
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+
 import type { NpbHistoricalManifest } from "../domain/npb-historical";
 import type { NpbCatalog } from "../domain/npb-product-contract";
 import { DataState, LoadingSkeleton } from "./components";

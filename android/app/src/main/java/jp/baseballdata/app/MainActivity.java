@@ -1,6 +1,7 @@
 package jp.baseballdata.app;
 
 import com.getcapacitor.BridgeActivity;
+import com.getcapacitor.BridgeWebViewClient;
 import com.getcapacitor.WebViewListener;
 import android.os.Bundle;
 import androidx.activity.EdgeToEdge;
@@ -16,6 +17,8 @@ public class MainActivity extends BridgeActivity {
     private String restoredRoute;
     private volatile String currentRoute;
     private volatile boolean routerObserved;
+    private String visitedRoute;
+    private boolean visitedRouteObserved;
     private boolean initialIntentPending = true;
     private static boolean isSavedRoute(String route) {
         if (route == null || route.length() > MAX_ROUTE_LENGTH) return false;
@@ -35,6 +38,13 @@ public class MainActivity extends BridgeActivity {
         currentRoute = isSavedRoute(route) ? route : null;
         routerObserved = true;
     }
+    void observeVisitedRoute(String url) {
+        // The initial loading URL has no fragment; retain a pending restore.
+        // Invalid/oversized app fragments explicitly clear the previous route.
+        if (url == null || Uri.parse(url).getEncodedFragment() == null) return;
+        visitedRoute = savedRoute(url);
+        visitedRouteObserved = true;
+    }
     @Override public void onCreate(Bundle savedInstanceState) {
         String route = savedInstanceState == null ? null : savedInstanceState.getString(WEB_ROUTE);
         restoredRoute = isSavedRoute(route) ? route : null;
@@ -46,6 +56,12 @@ public class MainActivity extends BridgeActivity {
         EdgeToEdge.enable(this);
         setTheme(R.style.AppTheme_NoActionBar);
         super.onCreate(savedInstanceState);
+        getBridge().setWebViewClient(new BridgeWebViewClient(getBridge()) {
+            @Override public void doUpdateVisitedHistory(WebView view, String url, boolean isReload) {
+                super.doUpdateVisitedHistory(view, url, isReload);
+                observeVisitedRoute(url);
+            }
+        });
         getBridge().addWebViewListener(new WebViewListener() {
             @Override public void onPageLoaded(WebView webView) { applyFontLayout(webView); }
         });
@@ -55,10 +71,10 @@ public class MainActivity extends BridgeActivity {
         super.onSaveInstanceState(outState);
         if (getBridge() != null) {
             String url = getBridge().getWebView().getUrl();
-            // React Router pushState need not update WebView.getUrl. The
-            // router's acknowledged route also survives a second recreation
-            // while the new WebView is still on its pre-router loading page.
-            String route = routerObserved ? currentRoute : savedRoute(url);
+            // History callbacks run on the Activity thread before recreation;
+            // the asynchronous JS acknowledgement can still describe the prior
+            // screen. Keep that acknowledgement only as a pre-router fallback.
+            String route = visitedRouteObserved ? visitedRoute : routerObserved ? currentRoute : savedRoute(url);
             // A pre-router loading page must not consume a pending cold link.
             outState.remove(WEB_ROUTE);
             if (route == null) return;

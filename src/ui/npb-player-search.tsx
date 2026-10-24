@@ -41,13 +41,15 @@ export function NpbPlayerSearchView({ directory, state, query, onQueryChange, te
         <input type="search" placeholder="選手名を入力" value={query}
           onChange={(event) => onQueryChange(event.target.value)} />
       </label>
-      <details className="search-filters"><summary><span>{teamId ? teams.get(teamId) ?? "球団未確認" : "すべての球団"} · {role === "all" ? "全選手" : role === "batter" ? "打撃" : "投球"}{role === "batter" && battingView(displayParams) !== "standard" && ` · ${battingView(displayParams) === "pitchers" ? "投手の打撃" : "全選手の打撃"}`}</span><strong>絞り込み</strong></summary><div className="npb-directory-filter">
-        <label htmlFor="npb-directory-team">球団</label>
+      <div className="npb-directory-filter">
+        <label htmlFor="npb-directory-team">球団から探す</label>
         <select id="npb-directory-team" value={teamId} onChange={(event) => onTeamChange(event.target.value)}>
           <option value="">すべての球団</option>
           {directory.teams.map((team) => <option key={team.id} value={team.id}>{team.shortName}</option>)}
         </select>
       </div>
+      {teamId && teams.has(teamId) && <Link className="text-link" to={`/NPB/teams/${encodeURIComponent(teamId)}/players`}>{teams.get(teamId)}の選手を背番号・年度で探す →</Link>}
+      <details className="search-filters"><summary><span>{role === "all" ? "全選手" : role === "batter" ? "打撃" : "投球"}{role === "batter" && battingView(displayParams) !== "standard" && ` · ${battingView(displayParams) === "pitchers" ? "投手の打撃" : "全選手の打撃"}`}</span><strong>成績で絞り込み</strong></summary>
       <div className="chip-list npb-directory-roles" role="group" aria-label="記録の種類">
         {([{ id: "all", label: "すべて" }, { id: "batter", label: "打撃データあり" },
           { id: "pitcher", label: "投球データあり" }] as const).map((item) =>

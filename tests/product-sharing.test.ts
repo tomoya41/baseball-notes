@@ -2,6 +2,17 @@ import { describe, expect, it } from "vitest";
 import { comparisonDisplayExport, displayCsv, portableRoute, portableUrl, RETROSHEET_EXPORT_CREDIT, type DisplayExport } from "../src/domain/product-sharing";
 import { collectionSeasonCheckpoint, comparisonValue, metricNumber, previousYearDelta, selectedTeams, selectedYears, type ComparisonRow } from "../src/domain/product-comparison";
 import { canonicalDeepLink, parentNativeRoute } from "../src/domain/native-navigation";
+
+it("shares and opens only a valid NPB team-player list with bounded public selection state",()=>{
+  const path="/NPB/teams/npb%3Ateam%3Atigers/players",query="season=2025&role=pitching&sort=innings&q=%E6%9D%91&localSecret=never";
+  const expected=`${path}?season=2025&role=pitching&sort=innings&q=%E6%9D%91`;
+  expect(portableRoute(path,query)).toBe(expected);
+  expect(canonicalDeepLink(`baseballnotes://${path.slice(1)}?${query}`)).toBe(expected);
+  expect(canonicalDeepLink(`https://tomoya41.github.io/baseball-notes/#${expected}`)).toBe(expected);
+  expect(parentNativeRoute(expected)).toBe('/NPB/teams/npb%3Ateam%3Atigers');
+  for(const invalid of ["season=no", "role=invalid", "sort=OPS", "competition=postseason", "competition=regular&stage=npb_cs_final"]){expect(portableRoute(path,invalid)).toBeNull();expect(canonicalDeepLink(`baseballnotes://${path.slice(1)}?${invalid}`)).toBeNull();}
+  expect(portableRoute('/NPB/teams/unverified/players',query)).toBeNull();
+});
 const id = "00000000-0000-4000-8000-000000000001", team = `mlb:team:${id}`;
 describe("portable comparison state", () => {
   it("keeps an explicitly empty Recent selection in selected mode after sharing", () => {

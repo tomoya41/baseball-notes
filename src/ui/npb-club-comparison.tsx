@@ -1,4 +1,5 @@
-import { Link } from "react-router-dom";
+import { RosterContextLink as Link } from "./roster-navigation";
+
 import type { NpbHistoricalRow } from "../domain/npb-historical";
 import { historicalClubComparison, type ProgressionMetric } from "../domain/npb-player-progression";
 import { comparisonValue, type ComparisonRow } from "../domain/product-comparison";

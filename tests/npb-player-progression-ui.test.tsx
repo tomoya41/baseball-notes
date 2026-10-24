@@ -22,7 +22,7 @@ it("shows each year's sample, preserves a missing-year gap and excludes sub-thre
     expect(div.querySelectorAll('.progression-axis')).toHaveLength(3);
     expect(div.querySelectorAll('.progression-segment')).toHaveLength(0); // Grid lines never fabricate a missing year's trend.
     expect(div.querySelectorAll('.progression-value')[1]?.textContent).toBe('—');
-    expect([...div.querySelectorAll("p")].find(p => p.textContent?.includes("この収録範囲の最小値"))?.textContent).toContain("2025年 0.30");
+    expect(div.querySelector('.progression-best')?.textContent).toContain("収録内最小値2025年 0.30");
   } finally { await act(async () => root.unmount()); vi.unstubAllGlobals(); }
 });
 
@@ -42,6 +42,6 @@ it("uses proportional count bars and baseball innings labels while preserving ze
     expect([...div.querySelectorAll('.progression-value')].map(n => n.textContent)).toEqual(['0.0', '—', '10.1']);
     expect([...div.querySelectorAll('.progression-axis text')].map(n => n.textContent)).toEqual(['0.0', '6.0', '11.2']);
     expect(div.querySelectorAll('.progression-segment')).toHaveLength(0);
-    expect(div.querySelector('figcaption')?.textContent).toContain('高さはアウト数に比例');
+    expect(div.querySelector('.progression-method')?.textContent).toContain('高さはアウト数に比例');
   } finally { await act(async () => root.unmount()); vi.unstubAllGlobals(); }
 });

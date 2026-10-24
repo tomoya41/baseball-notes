@@ -232,3 +232,16 @@
   .home-hub:has(.home-player-lead)>.home-score-sample { grid-column: 2; grid-row: 3; margin-top: 0; }
   .home-hub:has(.home-player-lead)>.home-score-sample .scoreboard-list { grid-template-columns: minmax(0,1fr); }
 }
+.team-player-list { list-style: none; padding: 0; margin: 0; }
+.team-player-list>li { border-bottom: 1px solid var(--color-border); }
+.team-player-list .player-row { border-bottom: 0; gap: 10px; }
+.roster-number { flex: 0 0 38px; font-size: 1rem; font-variant-numeric: tabular-nums; font-weight: 750; text-align: center; color: var(--color-muted); }
+.roster-record { display: flex; flex-direction: column; align-items: flex-end; font-size: .75rem; font-variant-numeric: tabular-nums; }
+.roster-record strong { font-size: 1rem; }
+.roster-record strong small { margin-left: 3px; font-size: .75rem; font-weight: 400; }
+.roster-source>summary { min-height: 44px; font-size: .75rem; }
+.roster-source { padding-inline: 12px; }
+.roster-search { display: block; margin-block: 8px; }
+.roster-search input { width: 100%; }
+:root[data-large-font] .team-player-list .player-row { flex-wrap: wrap; }
+:root[data-large-font] .team-player-list .player-row__body { min-width: min(160px,100%); }

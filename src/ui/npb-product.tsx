@@ -1,4 +1,5 @@
 import { clubStyle } from "../presentation/club-style";
+import { currentTeamPlayers, sortTeamPlayers } from "../presentation/team-player-list";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import type { Services } from "../app/services";
@@ -8,7 +9,7 @@ import type { NpbLatestStandings } from "../domain/standings";
 import { positionDefinitions } from "../domain/baseball-terms";
 import { formatDate, formatGamesBehind, formatWinningPercentage } from "../presentation/formatters";
 import { DataState, LoadingSkeleton, SectionHeader } from "./components";
-import { CompetitionHeader, HomeModeNav, Monogram } from "./design-system";
+import { CompetitionHeader, HomeModeNav } from "./design-system";
 import { NpbSavedPlayers } from "./npb-my";
 import { NpbHotSection } from "./npb-hot";
 import { NpbTeamActivity, TeamMetrics } from "./team-hub";
@@ -85,7 +86,7 @@ export function NpbTeam({ services, hub = false, favorites = [], toggle, saving 
   if (!team) return <DataState kind="no-data" title="球団が見つかりません" />;
   return <div className="screen team-hub"><Link className="back-link" to="/NPB/teams">← 球団一覧</Link><header className="profile-header club-profile" style={clubStyle(team.teamId)}><div><p className="eyebrow">NPB · {team.division === "Central" ? "セ・リーグ" : "パ・リーグ"}</p><h1>{team.name}</h1></div></header>
 
-    <section className="surface-card"><h2>{season ? `${season.season}シーズン` : "シーズン成績"}</h2>
+    <Link className="button button--secondary" to={`/NPB/teams/${encodeURIComponent(team.teamId)}/players`}>選手一覧 · 背番号・年度で探す →</Link><section className="surface-card"><h2>{season ? `${season.season}シーズン` : "シーズン成績"}</h2>
       {seasonState === "loading" ? <LoadingSkeleton /> : seasonState === "error" ?
         <DataState kind="source-unavailable" title="シーズン成績を読み込めません" /> : season && stats ? <>
         <p className="inline-note">{season.period.to}までの保存済み試合 · {season.coverage.status === "complete" ? "確認済み" : "一部データ確認中"}</p>
@@ -96,6 +97,6 @@ export function NpbTeam({ services, hub = false, favorites = [], toggle, saving 
     {hub && <>{stats && <details className="team-stat-details"><summary>チーム打撃・投球成績</summary><TeamMetrics batting={stats.batting} pitching={stats.pitching} /></details>}<NpbTeamActivity key={team.teamId} services={services} teamId={team.teamId} /><div className="hub-links"><Link to="/NPB/compare">選手比較 →</Link><Link to="/NPB/my">お気に入り →</Link></div></>}
     <LifecycleLinks teamId={team.teamId} />
     <Link className="section-action" to={`/NPB/moves?team=${encodeURIComponent(team.teamId)}`}>この球団に関する選手の動き →</Link>
-    <details className="team-roster"><summary>所属選手</summary><p className="inline-note">保存済みの所属情報。現在の登録公示を示すものではありません。</p><div className="row-list">{catalog.players.filter(p => p.membership.teamId === teamId).map(p => <Link className="player-row" key={p.playerId} to={`/NPB/players/${p.playerId}`}><Monogram name={p.displayName} /><span className="player-row__body"><strong>{favorites.some(f => f.league === "NPB" && f.kind === "player" && f.entityId === p.playerId) && "★ "}{p.displayName}</strong>{p.profile.position && <small>{positionDefinitions[p.profile.position]}</small>}</span><span aria-hidden="true">↗</span></Link>)}</div></details>
+    <details className="team-roster"><summary>保存済み所属のみ表示</summary><p className="inline-note">保存済みの所属情報。現在の登録公示を示すものではありません。</p><div className="row-list">{sortTeamPlayers(currentTeamPlayers(catalog,null,team.teamId),"all","number").map(p=><Link className="player-row" key={p.id} to={`/NPB/players/${p.id}`}><span className="player-row__body"><strong>{favorites.some(f=>f.league==="NPB"&&f.kind==="player"&&f.entityId===p.id)&&"★ "}{p.name}</strong>{p.position&&<small>{positionDefinitions[p.position as keyof typeof positionDefinitions]}</small>}</span><span aria-hidden="true">›</span></Link>)}</div></details>
   </div>;
 }

@@ -1,3 +1,4 @@
+import { RosterContextLink } from "./roster-navigation";
 import { useState, type ReactNode } from "react";
 import { ChevronLeft, ChevronRight, MoreHorizontal, Search } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -20,9 +21,9 @@ export function GameHeading({ title, date, context, backTo }: { title: string; d
 
 export function PlayerQuickActions({ compareTo, historyTo, trendsTo }: { compareTo: string; historyTo: string; trendsTo?: string }) {
   return <nav className="player-quick-actions" aria-label="選手をもっと知る">
-    <Link to={historyTo} aria-label="年度の変化を見る">年度別<ChevronRight size={16} aria-hidden="true" /></Link>
-    {trendsTo && <Link to={trendsTo} aria-label="成績の推移と連続記録を見る">推移<ChevronRight size={16} aria-hidden="true" /></Link>}
-    <Link to={compareTo} aria-label="ほかの選手と比較">比較<ChevronRight size={16} aria-hidden="true" /></Link>
+    <RosterContextLink to={historyTo} aria-label="年度の変化を見る">年度別<ChevronRight size={16} aria-hidden="true" /></RosterContextLink>
+    {trendsTo && <RosterContextLink to={trendsTo} aria-label="成績の推移と連続記録を見る">推移<ChevronRight size={16} aria-hidden="true" /></RosterContextLink>}
+    <RosterContextLink to={compareTo} aria-label="ほかの選手と比較">比較<ChevronRight size={16} aria-hidden="true" /></RosterContextLink>
   </nav>;
 }
 

@@ -463,6 +463,35 @@ public class ReleaseQualityTest {
         fontScaleAndRecreate(1.0f); waitText("0.924");
         screenshot("npb-history-360");
     }
+    @Test public void npbTeamPlayerBrowseSortAndBackAtLargeFont() throws Exception {
+        Intent link = new Intent(Intent.ACTION_VIEW, Uri.parse("baseballnotes://NPB/teams/npb:team:tigers/players?season=2025&role=pitching&sort=innings"));
+        link.setClassName("com.tomoya41.baseballnotes", "jp.baseballdata.app.MainActivity");
+        scenario = ActivityScenario.launch(link);
+        waitText("阪神の選手"); waitText("175.1"); waitViewport(360);
+        assertEquals("Historical pitching leader and no borrowed number", "true", js("document.querySelector('.team-player-list .player-row')?.textContent.includes('村上頌樹') && !document.querySelector('.roster-number')"));
+        js("document.querySelector('.team-player-list .player-row').click()");
+        waitCondition("Exact historical player year/role", "location.hash.includes('/seasons?season=2025&role=pitching') && document.querySelector('h1')?.textContent==='村上頌樹'");
+        waitCondition("Historical source remains reachable", "!!document.querySelector('a[href*=\"oldid=\"]')");
+        shell("input keyevent KEYCODE_BACK"); waitText("阪神の選手"); waitText("175.1");
+        assertTrue("System Back restores innings sort", js("location.hash").contains("sort=innings"));
+        js("document.querySelector('.team-player-list .player-row').click()");
+        waitCondition("Profile opened before UI Back", "location.hash.includes('/seasons?season=2025&role=pitching') && document.querySelector('h1')?.textContent==='村上頌樹'");
+        js("const year=document.querySelector('[aria-label=\"選手成績の年度\"]');year.value='2024';year.dispatchEvent(new Event('change',{bubbles:true}))");
+        waitCondition("Changing profile year retains original roster return", "location.hash.includes('season=2024') && document.querySelector('main .back-link')?.getAttribute('href').includes('season=2025&role=pitching&sort=innings')");
+        js("document.querySelector('main .back-link').click()"); waitText("阪神の選手"); waitText("175.1");
+        assertTrue("UI Back preserves year and innings sort", js("location.hash").contains("season=2025&role=pitching&sort=innings"));
+        String rosterHash=js("location.hash");
+        for(String scale:new String[]{"1.5","2.0"}) {
+            fontScaleAndRecreate(Float.parseFloat(scale)); waitText("175.1"); waitViewport(360);
+            assertEquals("Roster large-font has no overflow", "true", js("document.documentElement.scrollWidth<=innerWidth"));
+            screenshot("team-players-"+scale.replace(".","")+"-light");
+            setTheme("dark","ダーク"); js("location.hash='"+rosterHash+"'"); waitText("175.1"); waitViewport(360);
+            assertEquals("Roster dark large-font has no overflow", "true", js("document.documentElement.scrollWidth<=innerWidth"));
+            screenshot("team-players-"+scale.replace(".","")+"-dark");
+            setTheme("light","ライト"); js("location.hash='"+rosterHash+"'"); waitText("175.1");
+        }
+        fontScaleAndRecreate(1.0f); waitText("175.1");
+    }
     @Test public void npbPlayerCompetitionDeepLinkAndLargeFont() throws Exception {
         Intent link = new Intent(Intent.ACTION_VIEW, Uri.parse("baseballnotes://NPB/players/21a327b4-3924-422a-a1fc-d853e236a201/seasons?season=2025&role=pitching&competition=postseason&stage=npb_cs_final"));
         link.setClassName("com.tomoya41.baseballnotes", "jp.baseballdata.app.MainActivity");
@@ -752,6 +781,14 @@ public class ReleaseQualityTest {
         waitCondition("Encoded search rendered", "document.querySelector('main input[type=search]')?.value==='A&B=C%'");
         scenario.recreate();
         waitCondition("Encoded search survives recreation", "document.querySelector('main input[type=search]')?.value==='A&B=C%'");
+        scenario.onActivity(activity -> {
+            // A delayed acknowledgement of the prior screen must not win over
+            // the WebView's actual visited route when rotation saves state.
+            activity.rememberRoute("/NPB/cs?season=2026&stage=npb_cs_final&role=pitching");
+            Bundle saved = new Bundle(); activity.onSaveInstanceState(saved);
+            assertEquals("Visited encoded route wins over delayed bridge acknowledgement",
+                "/NPB/cs?season=2026&q=A%26B%3DC%25", saved.getString("baseball.webRoute"));
+        });
         js("location.hash='#/privacy'"); waitText("プライバシー・データ");
         scenario.recreate(); waitText("プライバシー・データ");
         assertEquals("Top-level privacy is a resumable app screen", "#/privacy", js("location.hash"));

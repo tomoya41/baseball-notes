@@ -1,3 +1,4 @@
+import { RosterContextLink } from "./roster-navigation";
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { ArrowUpRight, ChevronLeft, ChevronRight, Moon, Sun, Monitor } from "lucide-react";
@@ -40,7 +41,7 @@ export function Monogram({ name, large = false }: { name: string; large?: boolea
 export function PlayerTabs({ base, section, search = "" }: { base: string; section: string | undefined; search?: string }) {
   return <nav className="profile-tabs player-section-tabs" aria-label="選手ページ">
     {[{ label: "概要", part: "" }, { label: "成績", part: "stats" }, { label: "分析", part: "analysis" }, { label: "試合別", part: "game-log" }, { label: "選手情報", part: "more" }].map(tab =>
-      <Link key={tab.part} to={`${base}${tab.part ? `/${tab.part}` : ""}${search}`} aria-current={(section ?? "") === tab.part ? "page" : undefined}>{tab.label}</Link>)}
+      <RosterContextLink key={tab.part} to={`${base}${tab.part ? `/${tab.part}` : ""}${search}`} aria-current={(section ?? "") === tab.part ? "page" : undefined}>{tab.label}</RosterContextLink>)}
   </nav>;
 }
 export function CompetitionHeader({ league, context, children }: { league: string; context: string; children?: ReactNode }) {
