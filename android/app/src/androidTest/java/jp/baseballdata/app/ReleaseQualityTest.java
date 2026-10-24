@@ -781,6 +781,14 @@ public class ReleaseQualityTest {
         waitCondition("Encoded search rendered", "document.querySelector('main input[type=search]')?.value==='A&B=C%'");
         scenario.recreate();
         waitCondition("Encoded search survives recreation", "document.querySelector('main input[type=search]')?.value==='A&B=C%'");
+        scenario.onActivity(activity -> {
+            // A delayed acknowledgement of the prior screen must not win over
+            // the WebView's actual visited route when rotation saves state.
+            activity.rememberRoute("/NPB/cs?season=2026&stage=npb_cs_final&role=pitching");
+            Bundle saved = new Bundle(); activity.onSaveInstanceState(saved);
+            assertEquals("Visited encoded route wins over delayed bridge acknowledgement",
+                "/NPB/cs?season=2026&q=A%26B%3DC%25", saved.getString("baseball.webRoute"));
+        });
         js("location.hash='#/privacy'"); waitText("プライバシー・データ");
         scenario.recreate(); waitText("プライバシー・データ");
         assertEquals("Top-level privacy is a resumable app screen", "#/privacy", js("location.hash"));
