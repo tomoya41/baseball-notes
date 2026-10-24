@@ -41,10 +41,15 @@
 .seasonal-feature { margin: 0 0 12px; border: 0; }
 .seasonal-stories { gap: 8px; }
 .seasonal-options>summary { min-height: 44px; font-size: .75rem; font-weight: 400; }
-.home-screen>.competition-header { margin-bottom: 4px; min-height: 40px; }
-.home-screen>.competition-header>div { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; min-width: 0; }
-.home-screen>.competition-header h1 { font-size: .875rem; letter-spacing: .04em; }
-.home-screen>.competition-header p { margin: 0; font-size: .75rem; color: var(--color-muted); }
+:is(.home-screen,.home-controls)>.competition-header { margin-bottom: 4px; min-height: 40px; }
+:is(.home-screen,.home-controls)>.competition-header>div { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; min-width: 0; }
+:is(.home-screen,.home-controls)>.competition-header h1 { font-size: .875rem; letter-spacing: .04em; }
+:is(.home-screen,.home-controls)>.competition-header p { margin: 0; font-size: .75rem; color: var(--color-muted); }
+.home-controls { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.home-controls>.competition-header { flex: 0 1 100px; margin: 0; }
+.home-controls>.competition-header>div { display: block; }
+.home-controls>.home-mode-nav { flex: 1; margin: 0; min-width: 0; }
+.home-controls .home-mode-nav button { padding-inline: 4px; font-size: .75rem; }
 .home-screen>.competition-header select { min-height: 44px; padding-block: 6px; font-size: .8125rem; }
 .home-screen>.home-mode-nav { margin-bottom: 12px; }
 .home-player-lead { margin-bottom: 16px; }
@@ -86,6 +91,7 @@
 [data-experience=reference] .screen { max-width: 880px; }
 .postseason-bracket .series-entry { border-radius: 4px; border-left: 3px solid var(--brand); }
 .draft-screen .draft-comparison { background: var(--color-surface); padding: 12px; }
+.draft-screen>.editorial-cover { min-height: 144px; margin-bottom: 12px; padding: 16px; }
 .draft-screen .explorer-links { border-block: 1px solid var(--color-border); }
 .comparison-bars--duel .comparison-contenders { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; }
 .comparison-bars--duel .comparison-bar { display: flex; flex-direction: column; align-items: stretch; gap: 8px; margin: 12px 0; padding: 12px 0; border-top: 2px solid var(--brand); }
@@ -211,6 +217,11 @@
 .player-identity-top:has(.licensed-player-photo)>.favorite-button { position: absolute; right: -8px; top: -8px; }
 .player-identity-top:has(.licensed-player-photo)>.licensed-player-photo { align-self: flex-end; }
 .player-identity-top:has(.licensed-player-photo) h1 { color: var(--hero-text); }
+.player-identity .licensed-player-photo { position: relative; flex-basis: 120px; width: 120px; }
+.player-identity .licensed-player-photo :is(img,.licensed-photo-frame) { width: 120px; height: 164px; }
+.player-identity .licensed-player-photo .licensed-photo-frame img { width: 183px; height: 294px; transform: translateX(-28px); }
+.player-identity .licensed-player-photo figcaption { position: absolute; bottom: 0; inset-inline: 0; padding: 0 6px; background: #071b30ed; }
+.player-identity .licensed-player-photo figcaption a { color: #edf3fa; }
 .follow-player--featured:has(.licensed-player-photo) { grid-template-columns: minmax(0,1fr) 108px; column-gap: 12px; padding-bottom: 0; }
 .follow-player--featured>.favorite-button { justify-self: end; }
 .follow-player--featured>.licensed-player-photo { grid-column: 2; grid-row: 2; align-self: end; }
@@ -220,6 +231,9 @@
 .follow-player--featured:has(.licensed-player-photo) .follow-statline>div:first-child,.follow-player--featured:has(.licensed-player-photo) .follow-statline>div { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
 .follow-player--featured .follow-player-identity strong { color: var(--hero-text); }
 :root[data-large-font] .player-identity-top { flex-wrap: wrap; }
+:root[data-large-font] .home-controls { display: block; }
+:root[data-large-font] .home-controls>.competition-header>div { display: flex; }
+:root[data-large-font] .player-identity .licensed-player-photo figcaption { position: static; }
 :root[data-large-font] .home-mode-nav { flex-wrap: wrap; }
 :root[data-large-font] .home-mode-nav>button { flex: 1 1 max-content; min-width: max-content; white-space: nowrap; }
 :root[data-large-font] .follow-player--featured:has(.licensed-player-photo) { grid-template-columns: minmax(0,1fr) 108px; }

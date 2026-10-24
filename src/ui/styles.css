@@ -4,12 +4,12 @@
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", "Yu Gothic", sans-serif;
   font-synthesis: none;
   color-scheme: light;
-  --color-bg: #f5f5f0;
+  --color-bg: #f5f7fa;
   --color-surface: #ffffff;
   --color-elevated: #ffffff;
   --color-text: #14283d;
   --color-muted: #586b7e;
-  --color-border: #d8e1df;
+  --color-border: #dce3ec;
   --brand: #2162d6;
   --brand-strong: #2162d6;
   --brand-soft: #e8effb;
@@ -25,7 +25,7 @@
   --color-neutral: #64748b;
   --chart-primary: #2162d6;
   --chart-secondary: #287563;
-  --chart-grid: #d8e1df;
+  --chart-grid: #dce3ec;
   --sport-accent: #d3ad72;
   --space-1: 4px;
   --space-2: 8px;

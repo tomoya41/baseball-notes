@@ -27,6 +27,9 @@ it("shows all 36 active choices, distinct first bids, qualification and frozen i
     expect(f.host.querySelectorAll("article > a.player-row")).toHaveLength(36);
     expect(f.host.textContent).toContain("保留0枠"); expect(f.host.textContent).toContain("初回入札予想");
     expect(f.host.textContent).toContain("会議前の固定予想（アーカイブ）"); expect(f.host.textContent).toContain("このアプリには会議終了後に掲載");
+    const edition = f.host.querySelector<HTMLDetailsElement>('.draft-edition')!;
+    expect(edition.open).toBe(false); expect(edition.textContent).toContain('結果に合わせた変更はしていません');
+    expect(f.host.querySelector('article > details')?.textContent).toContain('資格・人物の確認');
     expect(f.host.textContent).toContain("抽選敗退後"); expect(f.host.textContent).toContain("学生30人");
     expect(f.host.textContent).toContain("社会人5人"); expect(f.host.textContent).toContain("NPBドラフト対象者欄");
     expect(f.host.textContent).toContain("別シナリオ"); expect(f.host.querySelectorAll('a[href*="oldid="]')).toHaveLength(28);

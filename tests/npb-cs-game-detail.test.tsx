@@ -20,6 +20,8 @@ async function mount(query="?competition=postseason&stage=npb_cs_final",id=csGam
 it("uses shared scoreboard styling, explicit postseason scope and exact single-game batting/pitching, not stage totals",async()=>{
  const f=await mount();try{
   expect(f.host.textContent).toContain("ポストシーズン · CS ファイナル");expect(f.host.textContent).toContain("一部収録");
+  expect(f.host.querySelector('[role="status"].game-detail__note')?.textContent).toBe('選手成績 · 一部収録');
+  expect([...f.host.querySelectorAll('details')].find(d=>d.querySelector('summary')?.textContent==='収録範囲・更新・出典')?.textContent).toContain('出場なし・0成績とは扱いません');
   expect(f.host.querySelector('[aria-label="DeNAの投球成績"]')?.textContent).toContain("0.1");
   const row=f.host.querySelector('[aria-label="DeNAの投球成績"] tbody tr');expect(Array.from(row!.querySelectorAll("td")).map(td=>td.textContent)).toEqual(["投球回0.1","SO2","R0","ER0"]);
   expect(f.host.querySelector('a[href*="oldid=200"]')).not.toBeNull();expect(Array.from(f.host.querySelectorAll("a")).map(a=>a.getAttribute("href"))).toEqual(expect.arrayContaining([expect.stringContaining("role=pitching")]));
