@@ -222,6 +222,8 @@ public class ReleaseQualityTest {
         for (float scale : new float[]{1.5f,2.0f}) {
             fontScaleAndRecreate(scale); waitHomeStatistics(); waitViewport(360);
             assertEquals("Home photo/metrics retain enlarged text without overflow", "true", js("document.documentElement.scrollWidth<=innerWidth && document.querySelectorAll('.bottom-nav a').length===5"));
+            assertEquals("Large Home tab labels stay on one line", "true", js("Array.from(document.querySelectorAll('.home-mode-nav>button')).every(b=>{const r=document.createRange();r.selectNodeContents(b);return r.getClientRects().length===1;})"));
+            assertEquals("Large Home text puts statistics before the supplementary portrait", "true", js("document.querySelector('.home-player-lead .follow-player-stats').getBoundingClientRect().top<document.querySelector('.home-player-lead .licensed-player-photo').getBoundingClientRect().top"));
             screenshot("mlb-home-font-" + scale + "-dark");
             setTheme("light", "ライト"); waitViewport(360); screenshot("mlb-home-font-" + scale + "-light");
             setTheme("dark", "ダーク");
