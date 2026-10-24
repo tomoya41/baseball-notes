@@ -134,6 +134,30 @@
 .historical-player-details .explorer-links { flex-wrap: wrap; }
 .history-year-picker { border-block: 1px solid var(--color-border); margin-block: 12px; }
 .history-year-picker>summary { color: var(--brand); }
+.progression-heading { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; }
+.progression-heading h3 { margin: 0; }
+.progression-heading label { display: flex; align-items: center; gap: 8px; font-size: .8125rem; }
+.progression-heading select { min-height: 44px; }
+.progression-scope { display: flex; align-items: center; flex-wrap: wrap; font-size: .8125rem; color: var(--color-muted); margin-block: 4px; }
+.progression-chart { margin: 8px 0 12px; background: var(--color-surface); border-block: 1px solid var(--color-border); padding: 8px 0; }
+.progression-chart svg { display: block; width: 100%; max-width: 640px; height: auto; margin-inline: auto; overflow: visible; }
+.progression-axis line { stroke: var(--color-border); stroke-width: 1; }
+.progression-axis text,.progression-year { fill: var(--color-muted); font-size: 12px; }
+.progression-value { fill: var(--color-text); font-size: 12px; font-weight: 650; }
+.progression-segment { stroke: var(--brand); stroke-width: 2.5; }
+.progression-area { fill: var(--brand); opacity: .07; }
+.progression-point { fill: var(--brand); stroke: var(--color-surface); stroke-width: 2; }
+.progression-bar { fill: var(--brand); }
+.progression-chart figcaption { padding: 4px 12px; font-size: .75rem; color: var(--color-muted); }
+.progression-year-values.explorer-values { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 0; }
+.progression-year-values.explorer-values>div { padding: 4px 8px; background: transparent; border: 0; border-left: 1px solid var(--color-border); }
+.progression-year-values dt { font-size: .8125rem; }
+.progression-year-values dt small { display: block; color: var(--color-muted); font-size: .75rem; }
+.progression-year-values dd { font-size: 1.125rem; }
+.progression-year-values dd small { display: block; font-size: .75rem; font-weight: 400; color: var(--color-muted); }
+.progression-best { padding: 12px; border-left: 3px solid var(--brand); background: var(--brand-soft); font-size: .8125rem; }
+.progression-best span { display: block; margin-top: 4px; font-size: 1rem; font-weight: 750; }
+:root[data-large-font] .progression-year-values.explorer-values { grid-template-columns: repeat(auto-fit,minmax(min(100%,145px),1fr)); }
 .historical-player-screen>.explorer-filter-grid { margin-block: 12px; }
 .historical-player-screen>.explorer-filter-grid>label { min-width: 0; }
 .historical-player-screen>.explorer-filter-grid select { min-width: 0; width: 100%; }

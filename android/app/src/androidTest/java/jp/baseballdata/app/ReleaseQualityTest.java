@@ -412,7 +412,7 @@ public class ReleaseQualityTest {
         assertEquals("200% historical directory has no root overflow", "true", js("document.documentElement.scrollWidth<=innerWidth"));
         js("document.querySelector('.historical-player-list').scrollIntoView({block:'start'})");
         screenshot("npb-history-directory-200-light");
-        setTheme("dark", "ダーク"); waitText("シーズン履歴");
+        setTheme("dark", "ダーク"); js("location.hash='#/NPB/history?season=2025'"); waitText("シーズン履歴");
         js("document.querySelector('.historical-player-list').scrollIntoView({block:'start'})");
         screenshot("npb-history-directory-200-dark");
         fontScaleAndRecreate(1.0f); waitText("BASEBALL");
@@ -427,7 +427,7 @@ public class ReleaseQualityTest {
         waitCondition("Portrait remains on exact canonical profile", "location.hash.includes('54f9b289') && document.querySelector('.licensed-player-photo img')?.naturalWidth>0");
         assertEquals("Dated NPB portrait does not overflow at 200%", "true", js("document.documentElement.scrollWidth<=innerWidth"));
         screenshot("npb-kondo-photo-200-light");
-        setTheme("dark", "ダーク"); waitText("2023年撮影"); screenshot("npb-kondo-photo-200-dark");
+        setTheme("dark", "ダーク"); js("location.hash='#/NPB/players/54f9b289-4717-4fb8-b1c3-7c8cf37e2e42'"); waitText("2023年撮影"); screenshot("npb-kondo-photo-200-dark");
         fontScaleAndRecreate(1.0f); waitText("BASEBALL");
     }
     @Test public void npbHistoricalYearsAndLargeFont() throws Exception {
@@ -436,10 +436,11 @@ public class ReleaseQualityTest {
         scenario = ActivityScenario.launch(link);
         waitText("2023 / 2024 / 2025年の収録行合計");
         waitText("0.924");
+        waitCondition("Actual trend values and axis", "document.querySelectorAll('.progression-axis').length===3 && Array.from(document.querySelectorAll('.progression-value')).map(n=>n.textContent).join(',')==='0.837,0.766,0.924'");
         assertTrue("Historical scope is visible before disclosure", js("document.body.innerText").contains("一部収録"));
-        js("Array.from(document.querySelectorAll('summary')).find(s=>s.textContent==='収録範囲・出典について').click()");
+        js("document.querySelector('.historical-coverage>summary').click()");
         waitText("全選手の成績・ランキングではありません");
-        js("Array.from(document.querySelectorAll('summary')).find(s=>s.textContent==='収録範囲・出典について').click()");
+        js("document.querySelector('.historical-coverage>summary').click()");
         assertEquals("Canonical player preserved by native deep link", "true", js("location.hash.includes('a1ca7cac-f9be-4993-a78c-bcd1e1ae3399') && location.hash.includes('season=2025')"));
         waitCondition("Comparison attribution", "!!document.querySelector('[aria-label=\"年度比較・合計データの出典\"] a[href*=\"oldid=\"]')");
         String historicalHash=js("location.hash");
@@ -449,10 +450,12 @@ public class ReleaseQualityTest {
             waitCondition("OS font scale reaches Historical view", "Number(getComputedStyle(document.documentElement).getPropertyValue('--android-font-scale')) >= " + scale);
             assertEquals("Historical view has no horizontal overflow at " + scale, "true", js("document.documentElement.scrollWidth <= window.innerWidth"));
             assertEquals("All five large-text navigation labels fit on one line", "true", js("Array.from(document.querySelectorAll('.bottom-nav a')).length===5 && Array.from(document.querySelectorAll('.bottom-nav a')).every(a=>{const s=a.querySelector('span'),r=document.createRange();r.selectNodeContents(s);const t=r.getBoundingClientRect(),b=a.getBoundingClientRect();return r.getClientRects().length===1 && t.left>=b.left-1 && t.right<=b.right+1 && t.top>=b.top-1 && t.bottom<=b.bottom+1 && b.bottom<=innerHeight;})"));
+            js("document.querySelector('.progression-chart').scrollIntoView({block:'center'})");
             screenshot("npb-history-font-" + scale.replace(".", "") + "-light");
             setTheme("dark", "ダーク"); js("location.hash='" + historicalHash + "'");
             waitText("2023 / 2024 / 2025年の収録行合計"); waitViewport(360);
             assertEquals("Dark large-text navigation is fully visible", "true", js("Array.from(document.querySelectorAll('.bottom-nav a')).every(a=>{const r=document.createRange();r.selectNodeContents(a.querySelector('span'));const t=r.getBoundingClientRect(),b=a.getBoundingClientRect();return r.getClientRects().length===1 && t.left>=b.left-1 && t.right<=b.right+1 && t.bottom<=b.bottom+1;})"));
+            js("document.querySelector('.progression-chart').scrollIntoView({block:'center'})");
             screenshot("npb-history-font-" + scale.replace(".", "") + "-dark");
             setTheme("light", "ライト"); js("location.hash='" + historicalHash + "'");
             waitText("2023 / 2024 / 2025年の収録行合計");
