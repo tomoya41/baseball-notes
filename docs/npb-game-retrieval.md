@@ -43,7 +43,8 @@ date付きcold deep linkからのAndroid Backも、元の日付の日程へ戻�
 
 新しい一覧リンクにはdate hintを付ける。dateなしの既存URLには、公開済み899 Gameの
 ID→日付索引を遅延読み込みする。毎回200日分を探索せず、対象日1ファイルのみ取得する。
-Homeの追加fetchは0。索引は40,593 bytes（改行を除く）、fallback時だけ取得。
+Homeの追加データfetchは0。索引は40,593 bytes（改行を除く）で、画面ではfallback時に
+遅延importする。PWA初回の本体キャッシュにはこの約40.6KBのJSも含まれる。
 既存の公開アプリJSONを再利用し、新しいSource取得・権利拡張はない。
 新規の選手成績、未完了6試合のFacts、Coverage/Gateの更新は0。
 
