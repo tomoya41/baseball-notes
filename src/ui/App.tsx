@@ -80,7 +80,7 @@ export function App({ services }: { services: Services }) {
       <Route path="/NPB/library/collections/:collectionId" element={<CollectionDashboard league="NPB" services={services} favorites={favorites} />} />
       <Route path="/MLB/library/collections/:collectionId" element={<CollectionDashboard league="MLB" services={services} favorites={favorites} />} />
       <Route path="/privacy" element={<PrivacyScreen />} />
-      <Route path="/NPB/games/:gameId" element={<NpbGameDetailScreen key={location.pathname} repository={services.gameDetail} services={services} favorites={favorites} toggle={toggle} saving={saving} />} />
+      <Route path="/NPB/games/:gameId" element={<NpbGameDetailScreen key={location.pathname} repository={services.gameDetail} summaryRepository={services.gameSummary} services={services} favorites={favorites} toggle={toggle} saving={saving} />} />
       <Route path="/NPB/*" element={<NpbRoutes services={services}
         favorites={favorites} toggle={toggle} saving={saving} />} />
       <Route path="/MLB/*" element={<Suspense fallback={<LoadingSkeleton />}><MlbLeagueView key="MLB"
