@@ -134,7 +134,6 @@
 .historical-player-details .explorer-links { flex-wrap: wrap; }
 .history-year-picker { border-block: 1px solid var(--color-border); margin-block: 12px; }
 .history-year-picker>summary { color: var(--brand); }
-.historical-player-screen>.page-heading { margin-bottom: 8px; padding-bottom: 8px; }
 .historical-player-screen>.explorer-filter-grid { margin-block: 12px; }
 .historical-player-screen>.explorer-filter-grid>label { min-width: 0; }
 .historical-player-screen>.explorer-filter-grid select { min-width: 0; width: 100%; }
@@ -144,7 +143,6 @@
 .home-main>:only-child { grid-column: 1/-1; }
 .history-paths { display: flex; flex-wrap: wrap; gap: 0 16px; border-bottom: 1px solid var(--color-border); margin: 8px 0; }
 .history-paths>a { display: inline-flex; align-items: center; min-height: 44px; font-size: .8125rem; color: var(--brand); }
-.historical-scope { color: var(--color-muted); font-size: .8125rem; margin: 10px 0 0; }
 .historical-team-filter { grid-column: 1/-1; grid-row: 2; }
 .historical-team-filter>summary { color: var(--brand); }
 .historical-team-filter[open]>label { max-width: 360px; }
