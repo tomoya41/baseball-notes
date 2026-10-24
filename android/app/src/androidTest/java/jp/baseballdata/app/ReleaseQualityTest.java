@@ -216,6 +216,22 @@ public class ReleaseQualityTest {
         assertEquals("true", js("document.documentElement.scrollWidth <= window.innerWidth"));
         setTheme("light", "ライト"); waitViewport(360); screenshot("mlb-home-360-light");
         setTheme("dark", "ダーク"); waitViewport(360); screenshot("mlb-home-360-dark");
+        waitCondition("Dated Home portrait loaded", "document.querySelector('.home-player-lead .licensed-player-photo img')?.naturalWidth>0");
+        assertEquals("Photo year remains explicit next to 2025 stats", "true", js("document.querySelector('.home-player-lead .licensed-player-photo')?.textContent.includes('2024年撮影')"));
+        assertEquals("Lead counting/rate values do not overlap", "true", js("Array.from(document.querySelectorAll('.home-player-lead .follow-statline')).every(line=>{const values=line.querySelectorAll('strong');return values.length===2 && values[0].getBoundingClientRect().right<=values[1].getBoundingClientRect().left;})"));
+        for (float scale : new float[]{1.5f,2.0f}) {
+            fontScaleAndRecreate(scale); waitHomeStatistics(); waitViewport(360);
+            assertEquals("Home photo/metrics retain enlarged text without overflow", "true", js("document.documentElement.scrollWidth<=innerWidth && document.querySelectorAll('.bottom-nav a').length===5"));
+            assertEquals("Large Home tab labels stay on one line", "true", js("Array.from(document.querySelectorAll('.home-mode-nav>button')).every(b=>{const r=document.createRange();r.selectNodeContents(b);return r.getClientRects().length===1;})"));
+            assertEquals("Large Home text puts statistics before the supplementary portrait", "true", js("document.querySelector('.home-player-lead .follow-player-stats').getBoundingClientRect().top<document.querySelector('.home-player-lead .licensed-player-photo').getBoundingClientRect().top"));
+            screenshot("mlb-home-font-" + scale + "-dark");
+            setTheme("light", "ライト"); waitViewport(360); screenshot("mlb-home-font-" + scale + "-light");
+            setTheme("dark", "ダーク");
+        }
+        fontScaleAndRecreate(1.0f); waitHomeStatistics(); waitViewport(360);
+        js("location.hash='#/NPB/home?homeSeason=autumn'");
+        waitCondition("NPB seasonal links and saved games", "document.querySelectorAll('.seasonal-stories>a').length===3 && document.querySelectorAll('.today-board .scoreboard-row').length===2");
+        assertEquals("Seasonal Home has no horizontal overflow", "true", js("document.documentElement.scrollWidth<=innerWidth")); screenshot("npb-home-360-dark");
         setTheme("light", "ライト"); shell("wm size 600x1000");
         // A recreated Surface prevents the emulator compositor retaining the old 360px buffer.
         scenario.recreate(); waitText("BASEBALL"); js("location.hash='#/MLB/home'"); waitViewport(600); waitHomeStatistics();
@@ -625,9 +641,10 @@ public class ReleaseQualityTest {
     }
     @Test public void seasonalHomeAndCollectedAgeTotalsKeepScopeAndExplicitLoading() throws Exception {
         scenario=ActivityScenario.launch(MainActivity.class);waitText("BASEBALL");
-        js("location.hash='#/NPB/home?homeSeason=autumn'");waitText("クライマックスシリーズ");
+        js("location.hash='#/NPB/home?homeSeason=autumn'");
+        waitCondition("Seasonal CS remains directly reachable", "!!document.querySelector('.seasonal-stories>a[href*=\"/NPB/cs?season=2026\"] .editorial-cover')");
         assertEquals("Seasonal destinations stay directly reachable", "3", js("String(document.querySelectorAll('.seasonal-stories>a').length)"));
-        assertEquals("Seasonal sources keep their collected year", "2026", js("document.querySelector('.seasonal-feature-heading>span:last-child').textContent"));
+        assertEquals("Every seasonal card keeps the collected 2026 context", "true", js("Array.from(document.querySelectorAll('.seasonal-stories>a')).every(a=>a.querySelector('.editorial-cover-copy>p')?.textContent.includes('2026') && a.getAttribute('aria-label')?.length>0)"));
         js("document.querySelector('.seasonal-feature .source-note>summary').click()");waitText("楽しみ方");
         assertEquals("Short seasonal labels retain partial-source context", "true", js("document.querySelector('.seasonal-feature').textContent.includes('CSは一部収録')"));
         screenshot("npb-seasonal-home-360");

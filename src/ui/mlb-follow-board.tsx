@@ -3,6 +3,7 @@ import type { Favorite } from "../domain/models";
 import type { HistoricalPlayer } from "../data/mlb-historical";
 import { FavoriteButton, MetricLabel } from "./components";
 import { useHistoricalStatic } from "./use-mlb-historical";
+import { LicensedPlayerPhoto } from "./licensed-player-photo";
 type Values = Record<string, { value: number | null }>;
 
 function FollowStatLine({ values, pitching }: { values: Values; pitching: boolean }) {
@@ -30,6 +31,7 @@ export function MlbFollowPlayer({ player, season, favorites, toggle, saving, fea
     </Link>
     <FavoriteButton active={favorites.some(f => f.league === "MLB" && f.entityId === player.id)} saving={saving}
       label={player.name} onClick={() => toggle({ league: "MLB", kind: "player", entityId: player.id })} />
+    {featured && <LicensedPlayerPhoto playerId={player.id} season={season} />}
     <div className={`follow-player-stats${hasBatting && totals?.pitching ? " follow-player-stats--dual" : ""}`}>{profile.status === "ready" ? <>
       {hasBatting && totals?.batting && <FollowStatLine values={totals.batting} pitching={false} />}
       {totals?.pitching && <FollowStatLine values={totals.pitching} pitching />}

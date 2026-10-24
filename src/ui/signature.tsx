@@ -44,10 +44,10 @@ export function HeadlineStats({ title, stats, partial = false }: { title: string
   return <section className="headline-stats" aria-label={title}><div className="headline-stats-context"><span>{title}</span>{partial && <span className="headline-partial">一部未収集</span>}</div><dl>{stats.map(stat => <div key={stat.metric}><dt><MetricLabel metric={stat.metric} label={stat.label ?? labels[stat.metric] ?? stat.metric} /></dt><dd>{stat.value}</dd></div>)}</dl></section>;
 }
 
-export function PlayerIdentity({ name, context, detail, visual, favorite, children }: {
-  name: string; context: string; detail?: string; visual?: ReactNode; favorite: ReactNode; children?: ReactNode;
+export function PlayerIdentity({ name, context, detail, visual, favorite, children, uniformNumber }: {
+  name: string; context: string; detail?: string; visual?: ReactNode; favorite: ReactNode; children?: ReactNode; uniformNumber?: string | number | null;
 }) {
-  return <header className="player-identity"><div className="player-identity-top"><div><p className="eyebrow">{context}</p><h1>{name}</h1>{detail && <p className="player-identity-detail">{detail}</p>}</div>{favorite}{visual}</div>{children}</header>;
+  return <header className="player-identity"><div className="player-identity-top"><div><p className="eyebrow">{context}</p>{uniformNumber!=null&&uniformNumber!==""&&<span className="player-uniform-number" aria-label={`保存済みの背番号 ${uniformNumber}`}><span aria-hidden="true">#</span>{uniformNumber}</span>}<h1>{name}</h1>{detail && <p className="player-identity-detail">{detail}</p>}</div>{favorite}{visual}</div>{children}</header>;
 }
 
 export function HomeDiscover({ league, year, date, showHot = true }: { league: "NPB" | "MLB"; year?: number; date?: string; showHot?: boolean }) {

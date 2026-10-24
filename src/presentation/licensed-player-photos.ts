@@ -16,3 +16,10 @@ export const licensedPlayerPhotos = [
     sourceSha1: "508f5cd2866902f8b1c095d7c7fa8093476180d6", sha256: "2a74bbd3cfa0b0ef41478157dcb332a1a032c61e6648f5fda74403acbd4cf10d" },
 ] as const;
 
+/** A dated portrait identifies its subject, not the season's uniform or roster.
+ * Only the reviewed 2024–25 historical presentation is admitted. */
+export function findLicensedPlayerPhoto(playerId: string, season: number) {
+  if (season !== 2024 && season !== 2025) return undefined;
+  return licensedPlayerPhotos.find(photo => photo.playerId === playerId);
+}
+
