@@ -128,6 +128,8 @@ NPB / MLB filters should be available globally where appropriate.
 
 Home combines personalized and timely information.
 
+During the 2026 Japan Series editorial period, the admitted static series snapshot appears before Regular controls: collected latest result, scoped series wins, next recorded schedule, and probable-starter availability/link. Missing results and starters are never inferred. This feature may add one bounded static JSON fetch, without querying Current APIs or changing production gates. See `docs/japan-series-home.md`.
+
 Core sections:
 
 ### 6.1 My

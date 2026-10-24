@@ -24,7 +24,7 @@ describe("reviewed informational player portraits", () => {
       if(p.playerId.startsWith('mlb:'))expect(JSON.stringify(cohort)).toContain(`"${p.playerId}":"https://www.wikidata.org/entity/${p.qid}"`);
       else {
         const identities=JSON.parse(readFileSync('src/data/npb-free-profile-identities.json','utf8'));
-        expect(identities.find((i:{playerId:string})=>i.playerId===p.playerId)).toMatchObject({wikidataId:p.qid,npbId:'41745135',verificationStatus:'source_verified'});
+        expect(identities.find((i:{playerId:string})=>i.playerId===p.playerId)).toMatchObject({wikidataId:p.qid,npbId:'npbId' in p?p.npbId:undefined,verificationStatus:'source_verified'});
       }
       expect(createHash("sha256").update(readFileSync(`src/assets/players/${p.assetName}-v1.webp`)).digest("hex")).toBe(p.sha256);
       expect(p.sourceSha1).toMatch(/^[a-f0-9]{40}$/);

@@ -1,4 +1,16 @@
 [
-  {"pageId":5306035,"title":"2026年の日本シリーズ","revision":111450971,"revisionAt":"2026-10-20T09:54:31Z","contentSha256":"9f8b1c68ad66c575d05767558ad3272b196d567e4941cbc3114aca46ec8ece85"},
-  {"pageId":5307595,"title":"Template:2026年の日本シリーズ","revision":111415411,"revisionAt":"2026-10-17T09:06:54Z","contentSha256":"63ffaa714cf251ef7a892e6e2404b8069f8f18353b420d6d4a70601c137f71a7"}
+  {
+    "pageId": 5306035,
+    "title": "2026年の日本シリーズ",
+    "revision": 111502352,
+    "revisionAt": "2026-10-24T14:42:32Z",
+    "contentSha256": "101e9a7bf9bd2341ef6a9641b1157146978591419f5e0e558a0c2452522684f1"
+  },
+  {
+    "pageId": 5307595,
+    "title": "Template:2026年の日本シリーズ",
+    "revision": 111501854,
+    "revisionAt": "2026-10-24T13:59:31Z",
+    "contentSha256": "fcf651e9fd6cf0ee98e563d9e5a256e4230ff1659331e29580ed55e0ebe7c167"
+  }
 ]

@@ -662,18 +662,40 @@ public class ReleaseQualityTest {
     @Test public void japanSeriesScheduledGameKeepsNullResultsAndNativeBackAtLargeFont() throws Exception {
         Intent link=new Intent(Intent.ACTION_VIEW,Uri.parse("baseballnotes://NPB/postseason/series/npb%3Aseries%3Afae89d8d-b1f8-5675-82e8-d9136be4f7c1?season=2026"));
         link.setClassName("com.tomoya41.baseballnotes","jp.baseballdata.app.MainActivity");
-        scenario=ActivityScenario.launch(link);waitText("日程・試合詳細");waitText("取得時点で開幕前");
+        scenario=ActivityScenario.launch(link);waitText("日程・試合詳細");waitText("4勝先取");
         String route=js("location.hash");setTheme("light","ライト");js("location.hash='"+route+"'");waitText("日程・試合詳細");
         fontScaleAndRecreate(2.0f);waitText("日程・試合詳細");waitViewport(360);
         assertEquals("Japan Series route survives recreation",route,js("location.hash"));
-        assertEquals("Seven admitted scheduled Games","7",js("String(document.querySelectorAll('a.scoreboard-row').length)"));
+        assertEquals("Seven admitted Games","7",js("String(document.querySelectorAll('a.scoreboard-row').length)"));
         assertEquals("No 200-percent overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));screenshot("japan-series-font-20-light");
         setTheme("dark","ダーク");js("location.hash='"+route+"'");waitText("日程・試合詳細");
         assertEquals("Dark Japan Series has no 200-percent overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));screenshot("japan-series-font-20-dark");
-        js("document.querySelector('a.scoreboard-row').click()");waitText("第1戦 · ソフトバンク対DeNA");waitText("結果・打撃・投球成績はまだ収録していません");
+        js("document.querySelector('a.scoreboard-row[href*=\"8aabfefe82d76006b9a9\"]').click()");waitText("第2戦 · ソフトバンク対DeNA");waitText("結果・打撃・投球成績はまだ収録していません");
         assertTrue("Scheduled Game retains Japan Series scope",js("location.hash").contains("stage=japan_series"));
         assertEquals("No fabricated box score","0",js("String(document.querySelectorAll('main table').length)"));
         shell("input keyevent KEYCODE_BACK");waitText("日程・試合詳細");assertEquals("System Back returns to exact series",route,js("location.hash"));
+    }
+    @Test public void japanSeriesHomeKeepsResultsFirstAndPortraitNavigationAtLargeFont() throws Exception {
+        Intent link=new Intent(Intent.ACTION_VIEW,Uri.parse("baseballnotes://NPB/home"));
+        link.setClassName("com.tomoya41.baseballnotes","jp.baseballdata.app.MainActivity");
+        scenario=ActivityScenario.launch(link);waitText("BASEBALL");
+        org.junit.Assume.assumeTrue("Japan Series editorial period only",Boolean.parseBoolean(js("(()=>{const d=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Tokyo'}).format(new Date());return d>='2026-10-24'&&d<='2026-11-08';})()")));
+        waitCondition("Validated static Japan Series Home","!!document.querySelector('.japan-home-result')");
+        assertEquals("Japan Series precedes regular controls","true",js("document.querySelector('.home-hub').firstElementChild.classList.contains('japan-home')"));
+        waitCondition("Three independently identified portraits load","Array.from(document.querySelectorAll('.japan-home-players img')).filter(i=>i.complete&&i.naturalWidth>0).length===3");
+        assertEquals("Photo links retain capture dates","3",js("String(document.querySelectorAll('.japan-home-players figcaption').length)"));
+        setTheme("light","ライト");js("location.hash='#/NPB/home'");waitCondition("Japan Series Home","!!document.querySelector('.japan-home-result')");
+        fontScaleAndRecreate(2.0f);waitCondition("Japan Series survives font recreation","!!document.querySelector('.japan-home-result')");waitViewport(360);
+        assertEquals("Light Home 200 percent has no overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));screenshot("japan-home-font-20-light");
+        setTheme("dark","ダーク");js("location.hash='#/NPB/home'");waitCondition("Dark Japan Series Home","!!document.querySelector('.japan-home-result')");
+        assertEquals("Dark Home 200 percent has no overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));screenshot("japan-home-font-20-dark");
+        js("document.querySelector('.japan-home-result').click()");waitText("イニング別得点");
+        assertTrue("Home result keeps Japan Series scope",js("location.hash").contains("stage=japan_series"));
+        assertEquals("First admitted final has eleven innings","11",js("String(document.querySelectorAll('.series-innings tbody tr').length)"));
+        shell("input keyevent KEYCODE_BACK");waitCondition("Back to Home","!!document.querySelector('.japan-home-result')");
+        js("document.querySelector('.japan-home-player-link').click()");waitText("牧秀悟");
+        waitCondition("Exact canonical portrait on Player","!!document.querySelector('.player-identity img[alt*=\"牧秀悟\"]')");
+        shell("input keyevent KEYCODE_BACK");waitCondition("Player Back returns to Japan Series Home","!!document.querySelector('.japan-home-result')");
     }
     @Test public void draftPreviewRemainsSeparateFromResultsAtLargeFont() throws Exception {
         Intent link=new Intent(Intent.ACTION_VIEW,Uri.parse("baseballnotes://NPB/talent/2026?view=preview&forecast=final"));
