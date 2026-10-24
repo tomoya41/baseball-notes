@@ -15,6 +15,20 @@ beforeEach(()=>{vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);vi.mocked(readNpb
 afterEach(()=>{vi.unstubAllGlobals();vi.clearAllMocks();});
 async function mount(search:string){const div=document.createElement("div");document.body.append(div);const root=createRoot(div);await act(async()=>{root.render(<MemoryRouter initialEntries={[`/NPB/history${search}`]}><Location/><NpbHistoricalHistory current={<p>2026 Current</p>}/></MemoryRouter>);});return{div,close:async()=>{await act(async()=>root.unmount());div.remove();}};}
 describe("NPB Historical integrated UI",()=>{
+  it("keeps team-season rows, nullable headline metrics and full attribution reachable in a compact directory",async()=>{
+    vi.mocked(readNpbHistoricalSeason).mockResolvedValue({...dataset,rows:[dataset.rows[0]!,{...dataset.rows[0]!,teamId:"npb:team:giants"}]});
+    const {div,close}=await mount("?season=2025");try{
+      const article=div.querySelector('.historical-player-list article')!;
+      expect(article.querySelectorAll('.historical-row-summary')).toHaveLength(2);
+      expect(article.querySelectorAll('.historical-row-summary dd')).toHaveLength(6);
+      expect([...article.querySelectorAll('.historical-row-summary dd')].every(d=>d.textContent==="—")).toBe(true);
+      const detail=article.querySelector<HTMLDetailsElement>('.historical-player-details')!;
+      expect(detail.open).toBe(false);
+      await act(async()=>{detail.open=true;detail.dispatchEvent(new Event('toggle'));});
+      expect(detail.textContent).toContain('年度推移・収録年合計');
+      expect(detail.querySelector('a[href*="oldid=123"]')).not.toBeNull();
+    }finally{await close();}
+  });
   it("finds a retired player's admitted years from the index without fetching every season",async()=>{
     vi.mocked(readNpbHistoricalManifest).mockResolvedValue({...manifest,seasons:[...manifest.seasons,{...manifest.seasons[0]!,season:2015}],players:[{...manifest.players[0]!,identityScope:"historical_only",seasons:[2015]}]});
     vi.mocked(readNpbHistoricalSeason).mockResolvedValue({...dataset,players:[],rows:[]});

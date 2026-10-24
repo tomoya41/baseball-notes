@@ -8,7 +8,7 @@ import { DateRibbon, ScoreboardRow } from "./design-system";
 import { TeamFavorite, type FavoriteActions } from "./team-favorite";
 const statusLabel={final:"試合終了",scheduled:"開始前",postponed:"延期",canceled:"中止",suspended:"中断",unknown:"状態未確認"};
 export function GameLinks({games}:{games:readonly GameIndexRow[]}){return <div className="scoreboard-list">{games.map(g=><ScoreboardRow key={g.gameId}
-  to={`/NPB/games/${encodeURIComponent(g.gameId)}`} away={g.away.name} home={g.home.name} awayScore={g.away.score} homeScore={g.home.score}
+  to={`/NPB/games/${encodeURIComponent(g.gameId)}`} away={g.away.name} home={g.home.name} awayId={g.away.id} homeId={g.home.id} awayScore={g.away.score} homeScore={g.home.score}
   date={g.date.slice(5).replace("-","/")} status={g.status === "scheduled" && g.scheduledTime ? `${g.scheduledTime} JST` : statusLabel[g.status]}
   gameNumber={g.gameNumber > 1 ? g.gameNumber : undefined} partial={g.status === "final" && g.completeness !== "complete"} />)}</div>;}
 export function GameDateView({payload}:{payload:GameDateIndex}){return <>

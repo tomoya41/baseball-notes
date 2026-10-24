@@ -369,6 +369,9 @@ public class ReleaseQualityTest {
         }
         waitCondition("Two real comparison columns", "document.querySelector('.compare-table tbody tr td') && document.querySelector('.compare-table tbody tr').querySelectorAll('td').length===2 && !document.querySelector('.skeleton-page')");
         assertEquals("Comparison is not all unavailable", "true", js("Array.from(document.querySelectorAll('.compare-table td')).some(e=>e.textContent.trim()!=='—')"));
+        assertEquals("Two-player matrix stays a semantic table at standard font", "table", js("getComputedStyle(document.querySelector('.compare-table table')).display"));
+        assertEquals("Results precede secondary conditions", "true", js("document.querySelector('.compare-results').compareDocumentPosition(document.querySelector('.compare-options')) & Node.DOCUMENT_POSITION_FOLLOWING ? true:false"));
+        assertEquals("Each real metric has two independent columns", "true", js("Array.from(document.querySelectorAll('.compare-table tbody tr')).every(row=>row.querySelectorAll('td').length===2)"));
         screenshot("compare-actual-360");
         fontScaleAndRecreate(2.0f); waitText("BASEBALL"); waitViewport(360);
         js("location.hash='#/MLB/players/mlb%3Aplayer%3Ae70b8d12-aa41-50c0-9c1b-d468d451355f?season=2024'");
@@ -393,6 +396,26 @@ public class ReleaseQualityTest {
         shell("input keyevent KEYCODE_BACK"); waitIme(false);
         assertTrue("First system Back dismisses IME without leaving Search", js("location.hash").contains("/MLB/search"));
         screenshot("search-keyboard-back");
+    }
+    @Test public void compactHistoricalDirectoryPreservesDetailsAndSources() throws Exception {
+        scenario = ActivityScenario.launch(MainActivity.class); waitText("BASEBALL"); setNetwork(true);
+        js("location.hash='#/NPB/history?season=2025'");
+        waitCondition("Real historical directory", "document.querySelectorAll('.historical-player-list article').length>0 && !document.querySelector('.skeleton-page')");
+        assertEquals("Three primary statistics per team-season row", "true", js("Array.from(document.querySelectorAll('.historical-row-summary')).every(e=>e.querySelectorAll('dd').length===3)"));
+        js("document.querySelector('.historical-player-list').scrollIntoView({block:'start'})");
+        screenshot("npb-history-directory-360-light");
+        js("document.querySelector('.historical-player-details').open=true");
+        waitCondition("Details retain revision, license and comparison control", "document.querySelector('.historical-player-details[open] a[href*=oldid]') && document.querySelector('.historical-player-details[open] a[href*=creativecommons]') && document.querySelector('.historical-player-details[open] input[type=checkbox]')");
+        screenshot("npb-history-directory-details-360");
+        fontScaleAndRecreate(2.0f); waitText("BASEBALL"); waitViewport(360);
+        waitCondition("Directory renders at system 200%", "document.querySelectorAll('.historical-row-summary').length>0");
+        assertEquals("200% historical directory has no root overflow", "true", js("document.documentElement.scrollWidth<=innerWidth"));
+        js("document.querySelector('.historical-player-list').scrollIntoView({block:'start'})");
+        screenshot("npb-history-directory-200-light");
+        setTheme("dark", "ダーク"); waitText("シーズン履歴");
+        js("document.querySelector('.historical-player-list').scrollIntoView({block:'start'})");
+        screenshot("npb-history-directory-200-dark");
+        fontScaleAndRecreate(1.0f); waitText("BASEBALL");
     }
     @Test public void npbHistoricalYearsAndLargeFont() throws Exception {
         Intent link = new Intent(Intent.ACTION_VIEW, Uri.parse("baseballnotes://NPB/history?season=2025&player=a1ca7cac-f9be-4993-a78c-bcd1e1ae3399&years=2023,2024,2025&q=%E4%BD%90%E8%97%A4%E8%BC%9D%E6%98%8E"));
