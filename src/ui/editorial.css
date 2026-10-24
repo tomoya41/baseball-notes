@@ -178,6 +178,8 @@
 
 .licensed-player-photo { flex: 0 0 108px; width: 108px; margin: 0; order: 2; }
 .licensed-player-photo img { display: block; width: 108px; height: 144px; object-fit: contain; background: #091b2b; border-radius: 2px; }
+.licensed-photo-frame { display: block; width: 108px; height: 144px; overflow: hidden; }
+.licensed-photo-frame img { width: 165px; height: 265px; max-width: none; transform: translateX(-25px); }
 .licensed-player-photo figcaption { font-size: .75rem; line-height: 1.4; margin-top: 0; }
 .licensed-player-photo figcaption a { display: flex; align-items: center; min-height: 44px; }
 .licensed-player-photo a { color: var(--hero-muted); text-decoration: underline; }

@@ -417,6 +417,19 @@ public class ReleaseQualityTest {
         screenshot("npb-history-directory-200-dark");
         fontScaleAndRecreate(1.0f); waitText("BASEBALL");
     }
+    @Test public void datedNpbPortraitKeepsIdentityAndCaptureYearAtLargeFont() throws Exception {
+        scenario = ActivityScenario.launch(MainActivity.class); waitText("BASEBALL"); setNetwork(true);
+        js("location.hash='#/NPB/players/54f9b289-4717-4fb8-b1c3-7c8cf37e2e42'");
+        waitCondition("Exact reviewed NPB portrait loads", "document.querySelector('.player-identity h1')?.textContent==='近藤健介' && document.querySelector('.licensed-player-photo img')?.complete && document.querySelector('.licensed-player-photo img')?.naturalWidth>0");
+        assertTrue("Visible caption dates the portrait independently of the stats",js("document.querySelector('.licensed-player-photo').innerText").contains("2023年撮影"));
+        waitViewport(360); screenshot("npb-kondo-photo-360");
+        fontScaleAndRecreate(2.0f); waitText("BASEBALL"); waitViewport(360);
+        waitCondition("Portrait remains on exact canonical profile", "location.hash.includes('54f9b289') && document.querySelector('.licensed-player-photo img')?.naturalWidth>0");
+        assertEquals("Dated NPB portrait does not overflow at 200%", "true", js("document.documentElement.scrollWidth<=innerWidth"));
+        screenshot("npb-kondo-photo-200-light");
+        setTheme("dark", "ダーク"); waitText("2023年撮影"); screenshot("npb-kondo-photo-200-dark");
+        fontScaleAndRecreate(1.0f); waitText("BASEBALL");
+    }
     @Test public void npbHistoricalYearsAndLargeFont() throws Exception {
         Intent link = new Intent(Intent.ACTION_VIEW, Uri.parse("baseballnotes://NPB/history?season=2025&player=a1ca7cac-f9be-4993-a78c-bcd1e1ae3399&years=2023,2024,2025&q=%E4%BD%90%E8%97%A4%E8%BC%9D%E6%98%8E"));
         link.setClassName("com.tomoya41.baseballnotes", "jp.baseballdata.app.MainActivity");
