@@ -79,10 +79,10 @@ export function NpbCsGameDetail(){
       })}<p className="game-detail__minor">表示順から打順・登板順・交代経過は判断できません。</p></section>;
   return <div className="screen game-detail"><GameHeading title={`${game.date} ${name(game.awayTeamId)}対${name(game.homeTeamId)}`} date={game.date} context={`NPB · ポストシーズン · ${npbCompetitionLabels[game.stage]}`} backTo={`/NPB/cs?season=2026&stage=${game.stage}`} />
     <ScoreHero away={name(game.awayTeamId)} home={name(game.homeTeamId)} awayId={game.awayTeamId} homeId={game.homeTeamId} awayScore={game.awayScore} homeScore={game.homeScore} status="試合終了" />
-    <p role="status" className="game-detail__note">この試合の選手成績は一部収録です。未収録の選手・項目は出場なし・0成績とは扱いません。公式戦とは別集計です。</p>
+    <p role="status" className="game-detail__note">選手成績 · 一部収録</p>
     <GameBoxScore away={{name:name(game.awayTeamId),content:renderTeam(game.awayTeamId,0)}} home={{name:name(game.homeTeamId),content:renderTeam(game.homeTeamId,1)}} selectedSide={params.get("boxSide")==="home"?"home":"away"} onSideChange={side=>{const next=new URLSearchParams(params);next.set("boxSide",side);setParams(next,{preventScrollReset:true});}} />
     {!observations.length&&<p>この試合の選手成績は未収録です。</p>}
-    <details><summary>収録範囲・更新・出典</summary><p>原本取得 {data.observedAt}。空欄は未収録です。四死球から四球・死球を分離せず、PA・OBP・OPS・WHIPは推定していません。一球速報・完全なイニング経過・交代情報は未収録です。</p><CsCredits data={data} pageIds={[game.sourcePageId]} /></details>
+    <details><summary>収録範囲・更新・出典</summary><p>この試合の選手成績は一部収録です。未収録の選手・項目は出場なし・0成績とは扱いません。公式戦とは別集計です。</p><p>原本取得 {data.observedAt}。空欄は未収録です。四死球から四球・死球を分離せず、PA・OBP・OPS・WHIPは推定していません。一球速報・完全なイニング経過・交代情報は未収録です。</p><CsCredits data={data} pageIds={[game.sourcePageId]} /></details>
     <Link to={`/NPB/cs?season=2026&stage=${game.stage}`}>同じステージの試合・選手へ →</Link>
   </div>;
 }
