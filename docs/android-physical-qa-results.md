@@ -1,5 +1,32 @@
 # Android実機QA：インストール手順と結果票
 
+## 2026-10-24：試合詳細修正の実機確認準備
+
+今回の `adb devices -l` は0台。物理Pixel・TalkBackは **NOT RUN**。
+過去のPixel初回起動成功と、新版APKの検証を混同しない。
+ADBは `.data/tools/platform-tools/adb.exe` を再利用できる。
+
+最新版の成功したAndroid Run（今回のdelivery PRに記録）→ `android-beta-unsigned` →
+`apk/debug/app-debug.apk` を取得する。Run/commitと `Get-FileHash -Algorithm SHA256` を記録。
+物理Pixelのdevice状態・機種・Android versionを確認し、既存パッケージとの署名一致を
+確認できた場合だけ `adb -s <Pixelのserial> install -r <確認済みAPK>` で更新する。
+署名不一致の場合は停止。アンインストール・`pm clear`・鍵生成で回避しない。
+
+最短の今回追加QA（他の項目は下の結果票を継続使用）：
+
+| 操作 | PASS条件 | 物理結果 |
+|---|---|---|
+| NPB Home → 10/8 ヤクルト–阪神 → 戻る | 保存済み4–0、10/8、公式戦が一致。API制限中は個人成績取得不能と表示し、空の成績を0にしない | NOT RUN |
+| 試合 → 阪神の選手一覧 → 選手 → Backを2回 | 同じcanonical選手のプロフィールへ進み、球団一覧→試合へ戻る。球団一覧を出場選手と誤表示しない | NOT RUN |
+| CS → 収録済み試合 → 成績 → 選手 | 大会・stage・年度を維持し、Regularへ混入しない | NOT RUN |
+| 150%/200%、Light/Dark、縦横 | スコア・取得状態・再読み込み・戻るが読みやすく操作できる | NOT RUN |
+| TalkBackでスコア→取得状態→球団リンク→戻る | チーム名・値・状態・リンク名を読み上げ、意味のある順で移動する | NOT RUN |
+| 通信OFFで再起動→通信復帰→再読み込み | キャッシュの有無を正しく示し、保存状態を維持。API自体の制限継続を通信復帰と混同しない | NOT RUN |
+
+記録：Device __ / Android __ / WebView __ / APK commit __ / SHA256 __ / Run __ /
+操作・Expected・Observed __ / PASS・FAIL・NOT RUN __ / Screenshot __。
+スクリーンショットに個人情報を含めない。Play署名・公開のOwner Gateは別管理のまま。
+
 **Physical status: NOT RUN.** No physical handset/TalkBack is available to the agent. This sheet is for the owner to record actual results; emulator PASS does not fill these rows.
 
 2026-10-14：ローカルのADBと標準Android SDKパスが利用できず、物理端末の操作は未実施。エミュレーターの成功を実機PASSへ転記しない。[全項目の手順・合格条件](android-device-qa.md)と併用する。

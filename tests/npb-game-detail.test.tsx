@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { renderToStaticMarkup } from "react-dom/server";
+import { renderToStaticMarkup as staticMarkup } from "react-dom/server";
+import { MemoryRouter } from "react-router-dom";
+import type { ReactNode } from "react";
 import { migrateData, openDataClient, type DataClient } from "../src/data/database";
 import { NpbGameDetailRepository } from "../src/data/npb-game-detail-repository";
 import { NpbRepository } from "../src/data/npb-repository";
@@ -12,6 +14,7 @@ const gameId = "npb:game:32c76ee9e92f7408892c";
 const players = ["06a3e027-7a73-4792-9c91-8ecc3c1da36a", "2d760a27-b58a-47a5-80df-6b0aa3571ef5",
   "6bf4b271-e16c-43f9-9142-8c7ca7de9887", "18f28f0f-a0b1-4970-aa9a-cce98530eac8"];
 const clients: DataClient[] = [];
+const renderToStaticMarkup = (node: ReactNode) => staticMarkup(<MemoryRouter>{node}</MemoryRouter>);
 afterEach(() => { for (const client of clients.splice(0)) client.close(); });
 
 async function fixture(status: "final" | "scheduled" | "postponed" = "final") {
@@ -101,7 +104,7 @@ describe("NPB Game Detail", () => {
     expect(html).toContain("5.2回");
     expect(html).toContain("0.0回");
     expect(html).toContain("四死");
-    expect(html).toContain(`#/NPB/players/${players[1]}`);
+    expect(html).toContain(`href="/NPB/players/${players[1]}"`);
     expect(html).toContain("詳しい打撃成績");
     expect(html).not.toContain("WHIP");
   });

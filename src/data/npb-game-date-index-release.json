@@ -1,0 +1,10 @@
+{
+  "assetUrl": "https://github.com/tomoya41/baseball-notes/releases/download/npb-game-date-index-2026-v1/game-dates-2026-v1.json",
+  "sha256": "faddca2361dfdfa690980b671da2f25352d86c1480255fee3a0e6cf3639d6c1e",
+  "bytes": 40594,
+  "games": 899,
+  "from": "2026-03-27",
+  "to": "2026-10-12",
+  "effectiveDate": "2026-10-12",
+  "generatedAt": "2026-10-14T15:05:03.165Z"
+}
