@@ -49,8 +49,9 @@ date付きcold deep linkからのAndroid Backも、元の日付の日程へ戻�
 
 新しい一覧リンクにはdate hintを付ける。dateなしの既存URLには、公開済み899 Gameの
 ID→日付索引を遅延読み込みする。毎回200日分を探索せず、対象日1ファイルのみ取得する。
-Homeの追加データfetchは0。索引は40,593 bytes（改行を除く）で、画面ではfallback時に
-遅延importする。PWA初回の本体キャッシュにはこの約40.6KBのJSも含まれる。
+Homeの追加データfetchは0。索引JSONは40,594 bytesで、dateのない旧URLのfallback時にだけ
+固定hashの公開JSONを取得する。通常のリンクはdate hintから対象日を直接取得する。
+索引は初期JavaScriptやPWA本体の事前キャッシュには含めない。
 既存の公開アプリJSONを再利用し、新しいSource取得・権利拡張はない。
 新規の選手成績、未完了6試合のFacts、Coverage/Gateの更新は0。
 
@@ -59,7 +60,11 @@ Homeの追加データfetchは0。索引は40,593 bytes（改行を除く）で�
 generatedAt 2026-10-14T15:05:03.165Z。日時を現在へ書き換えない。
 `scripts/generate-npb-game-date-index.ts`は自分の公開JSONだけを読み、同一snapshot・重複・
 取得前後manifestの一致を検証。DB query 0。日別body hashはprivate captureへ記録する。
-索引はGitの独立変更としてレビューでき、既存の公開immutableデータを上書きしない。
+生成物はAGENTS.mdに従いGitへ含めず、`.data/npb-game-retrieval/`へ出力する。
+[固定Release](https://github.com/tomoya41/baseball-notes/releases/tag/npb-game-date-index-2026-v1)の
+assetと、レビュー可能なpin/retained asset方式で配信する。
+build/stagingと実行時にbyte数・SHA256・schema・899 ID・snapshotを検証し、旧assetは保持する。
+既存の公開immutableデータを上書きしない。
 新しいGameはdate hintから開け、必要なら同じ検証手順で索引を更新する。
 
 ## 復旧・Rollback

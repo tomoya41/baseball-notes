@@ -17,6 +17,15 @@ export const recentGamesSchema=z.strictObject({schemaVersion:z.literal(1),league
 export type GameIndexRow=z.infer<typeof gameIndexRowSchema>;
 export type GameDateIndex=z.infer<typeof gameDateIndexSchema>;
 export type GameManifest=z.infer<typeof gameManifestSchema>;
+export const gameDateLookupSchema=z.strictObject({schemaVersion:z.literal(1),league:z.literal("NPB"),
+  competition:z.literal("regular"),effectiveDate:z.iso.date(),generatedAt:z.iso.datetime(),
+  dates:z.record(z.string().regex(/^npb:game:[0-9a-f]{20}$/),z.iso.date())});
+export function validateGameDateLookup(raw:unknown,pin:{games:number;from:string;to:string;effectiveDate:string;generatedAt:string}) {
+  const data=gameDateLookupSchema.parse(raw);
+  if(Object.keys(data.dates).length!==pin.games||data.effectiveDate!==pin.effectiveDate||data.generatedAt!==pin.generatedAt||
+    Object.values(data.dates).some(date=>date<pin.from||date>pin.to))throw Error("Unadmitted Game date index");
+  return data;
+}
 export function orderGames(rows:readonly GameIndexRow[]):GameIndexRow[]{
   return [...rows].sort((a,b)=>(a.scheduledTime??"99:99").localeCompare(b.scheduledTime??"99:99")||
     a.gameNumber-b.gameNumber||a.gameId.localeCompare(b.gameId));

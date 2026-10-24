@@ -6,15 +6,37 @@ import { expect, it, vi } from "vitest";
 import { PublishedNpbGameSummaryRepository } from "../src/infrastructure/providers/published-npb-game-summary-repository";
 import { NpbGameDetailScreen } from "../src/ui/npb-game-detail";
 import { PublishedGameSummaryView } from "../src/ui/npb-game-detail";
-import index from "../src/data/npb-game-date-index.json";
 import { canonicalDeepLink, parentNativeRoute } from "../src/domain/native-navigation";
+import { readNpbGameDateIndex } from "../src/application/npb-game-date-index-reader";
+import pin from "../src/data/npb-game-date-index-release.json";
+import { createHash, webcrypto } from "node:crypto";
+import { createPublicFetch } from "../src/infrastructure/public-response-cache";
 
 const gameId = "npb:game:49a69ad2efd3bf67d3e5";
+const index = {schemaVersion:1,league:"NPB",competition:"regular",effectiveDate:"2026-10-12",generatedAt:"2026-10-14T15:05:03.165Z",dates:{[gameId]:"2026-10-08"}};
 const game = { gameId, date: "2026-10-08", gameNumber: 1, scheduledTime: "18:00", status: "final" as const,
   home: { id: "npb:team:tigers", name: "阪神", score: 0 }, away: { id: "npb:team:swallows", name: "ヤクルト", score: 4 },
   completeness: "complete" as const, battingAvailable: true, pitchingAvailable: true, detailAvailable: true };
 const day = { schemaVersion: 1 as const, league: "NPB" as const, date: game.date, generatedAt: index.generatedAt,
   coverage: "complete" as const, games: [game] };
+
+it("admits only the pinned immutable date lookup and caches only after hash/schema/snapshot checks", async () => {
+  vi.stubGlobal("crypto", webcrypto);
+  const text=JSON.stringify(index), release={...pin,games:1,bytes:Buffer.byteLength(text),sha256:createHash("sha256").update(text).digest("hex")};
+  const put=vi.fn(), store={get:vi.fn(async()=>undefined),put,remove:vi.fn(async()=>undefined)};
+  try {
+    const request=vi.fn<typeof fetch>(async()=>new Response(text));
+    expect(await readNpbGameDateIndex("https://example.test/",createPublicFetch(store,request,()=>true),release)).toEqual(index);
+    expect(put).toHaveBeenCalledTimes(1);
+    expect(String(request.mock.calls[0]![0])).toContain(`games/index/${release.sha256}/dates.json`);
+    put.mockClear();
+    const changed=text.replace("2026-10-08","2026-10-09");
+    await expect(readNpbGameDateIndex("https://example.test/",createPublicFetch(store,async()=>new Response(changed),()=>true),release)).rejects.toThrow("hash mismatch");
+    expect(put).not.toHaveBeenCalled();
+    await expect(readNpbGameDateIndex("https://example.test/",async()=>new Response(text),{...release,games:2})).rejects.toThrow("Unadmitted");
+    await expect(readNpbGameDateIndex("https://example.test/",async()=>new Response("{}"),release)).rejects.toThrow("size mismatch");
+  } finally { vi.unstubAllGlobals(); }
+});
 
 it("retains the schedule date on a cold Android deep link without changing Postseason parents", () => {
   const route = `/NPB/games/${gameId}?date=${game.date}`;
@@ -52,12 +74,10 @@ it("keeps router-owned history through Game → team players → player → Back
 
 it("locates a legacy cold URL with one dated public payload, without scanning dates or using the DB", async () => {
   const date = vi.fn(async () => day);
-  const repository = new PublishedNpbGameSummaryRepository({ date });
+  const repository = new PublishedNpbGameSummaryRepository({ date }, async () => index);
   expect(await repository.find(gameId)).toEqual({ game, generatedAt: day.generatedAt, coverage: "complete" });
   expect(date.mock.calls).toHaveLength(1);
   expect(date).toHaveBeenCalledWith(game.date);
-  expect(Object.keys(index.dates)).toHaveLength(899);
-  expect(new Set(Object.values(index.dates)).size).toBeLessThanOrEqual(200);
 });
 
 it("checks ID/date independently and never substitutes another game's score", async () => {
@@ -67,8 +87,8 @@ it("checks ID/date independently and never substitutes another game's score", as
   expect(date).not.toHaveBeenCalled();
   await expect(repository.find(gameId, "2026-02-30")).rejects.toThrow();
   await expect(repository.find(gameId, "2026-10-07")).rejects.toThrow("date mismatch");
-  await expect(new PublishedNpbGameSummaryRepository({ date: async () => ({ ...day, games: [] }) }).find(gameId)).resolves.toBeNull();
-  await expect(new PublishedNpbGameSummaryRepository({ date: async () => ({ ...day, games: [game, game] }) }).find(gameId)).rejects.toThrow();
+  await expect(new PublishedNpbGameSummaryRepository({ date: async () => ({ ...day, games: [] }) }, async () => index).find(gameId)).resolves.toBeNull();
+  await expect(new PublishedNpbGameSummaryRepository({ date: async () => ({ ...day, games: [game, game] }) }, async () => index).find(gameId)).rejects.toThrow();
   await expect(repository.find("npb:series:123")).rejects.toThrow();
 });
 
@@ -77,7 +97,7 @@ it("renders real saved results on API failure, preserves nulls and offers recove
   const host = document.createElement("div"), root = createRoot(host);
   const find = vi.fn().mockRejectedValueOnce(Error("HTTP 503")).mockResolvedValue(null);
   const date = vi.fn(async () => ({ ...day, games: [{ ...game, home: { ...game.home, score: null } }] }));
-  const summaryRepository = new PublishedNpbGameSummaryRepository({ date });
+  const summaryRepository = new PublishedNpbGameSummaryRepository({ date }, async () => index);
   try {
     await act(async () => root.render(<MemoryRouter initialEntries={[`/NPB/games/${gameId}?date=${game.date}`]}>
       <Routes><Route path="/NPB/games/:gameId" element={<NpbGameDetailScreen repository={{ find }} summaryRepository={summaryRepository} />} /></Routes>

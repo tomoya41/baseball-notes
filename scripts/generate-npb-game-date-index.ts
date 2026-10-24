@@ -33,7 +33,7 @@ const finalManifest = gameManifestSchema.parse((await read("manifest.json")).val
 if (JSON.stringify(finalManifest) !== JSON.stringify(manifest)) throw Error("Publication changed during capture");
 const payload = { schemaVersion: 1, league: "NPB", competition: "regular", effectiveDate: manifest.effectiveDate,
   generatedAt: manifest.generatedAt, dates: Object.fromEntries(entries.sort(([a], [b]) => a.localeCompare(b))) };
-await writeFile("src/data/npb-game-date-index.json", JSON.stringify(payload) + "\n");
 await mkdir(".data/npb-game-retrieval", { recursive: true });
+await writeFile(".data/npb-game-retrieval/game-dates-2026-v1.json", JSON.stringify(payload) + "\n");
 await writeFile(".data/npb-game-retrieval/index-capture.json", JSON.stringify({ ...manifest, hashes, games: entries.length }, null, 2));
 console.log(JSON.stringify({ dates: dates.length, games: entries.length, bytes: Buffer.byteLength(JSON.stringify(payload)), dbQueries: 0 }));

@@ -26,6 +26,9 @@ import retainedDrafts from "../src/data/npb-draft-retained-releases.json";
 import { draftEventSchema } from "../src/domain/npb-draft-event";
 import finalDraftPin from "../src/data/npb-draft-final-release.json";
 import { finalDraftForecastSchema, assertFinalDraftBase } from "../src/domain/npb-draft-final";
+import gameDatesPin from "../src/data/npb-game-date-index-release.json";
+import retainedGameDates from "../src/data/npb-game-date-index-retained-releases.json";
+import { validateGameDateLookup } from "../src/domain/npb-game-index";
 
 export async function verifyRetainedFiles(read:(path:string)=>Promise<Uint8Array>,files:Record<string,{bytes:number;sha256:string}>) {
   for(const [file,expected] of Object.entries(files)) {
@@ -97,6 +100,11 @@ if(eventBytes.length!==eventsPin.bytes||createHash("sha256").update(eventBytes).
 const events=npbPlayerEventsSchema.parse(JSON.parse(eventBytes.toString()));
 if(events.events.length!==eventsPin.events||events.players.length!==eventsPin.players||events.source.revision!==eventsPin.sourceRevision||events.identityInputSha256!==eventsPin.identityInputSha256)throw Error("Event publication generation mismatch");
 for(const p of events.players)assertHistoricalBridge(p);
-console.log(JSON.stringify({status:"PASS",retainedFiles,retainedCsFiles,retainedEventFiles,retainedJapanFiles,seasons:manifest.seasons.map(s=>s.season),players:players.size,rows,competitionRows:competition.rows.length,csGames:cs.games.length,csRows:cs.rows.length,playerEvents:events.events.length,coverage:manifest.coverage,canonicalWrites:0,httpFetches:fetches}));
+for(const pin of [...retainedGameDates as (typeof gameDatesPin)[],gameDatesPin]) {
+  const body=await load(`../games/index/${pin.sha256}/dates.json`);
+  if(body.length!==pin.bytes||createHash("sha256").update(body).digest("hex")!==pin.sha256)throw Error("Game date index publication mismatch");
+  validateGameDateLookup(JSON.parse(body.toString()),pin);
+}
+console.log(JSON.stringify({status:"PASS",retainedFiles,retainedCsFiles,retainedEventFiles,retainedJapanFiles,gameDateIndexFiles:retainedGameDates.length+1,seasons:manifest.seasons.map(s=>s.season),players:players.size,rows,competitionRows:competition.rows.length,csGames:cs.games.length,csRows:cs.rows.length,playerEvents:events.events.length,coverage:manifest.coverage,canonicalWrites:0,httpFetches:fetches}));
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url))await main();
