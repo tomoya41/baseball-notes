@@ -803,6 +803,31 @@ public class ReleaseQualityTest {
             assertNull("Oversized current route clears the old privacy/CS snapshot", saved.getString("baseball.webRoute"));
         });
     }
+    @Test public void npbRegularGameRemainsUsableWhenDetailApiIsUnavailable() throws Exception {
+        Intent link = new Intent(Intent.ACTION_VIEW, Uri.parse("baseballnotes://NPB/schedule?date=2026-10-08"));
+        link.setClass(InstrumentationRegistry.getInstrumentation().getTargetContext(), MainActivity.class);
+        scenario = ActivityScenario.launch(link); waitText("ヤクルト");
+        js("document.querySelector('main a[href*=\"49a69ad2efd3bf67d3e5\"]').click()");
+        waitCondition("Requested regular Game is rendered", "location.hash.includes('49a69ad2efd3bf67d3e5') && !!document.querySelector('.score-hero')");
+        waitText("阪神"); waitText("ヤクルト");
+        assertFalse("Saved result is not replaced by a whole-page API failure", js("document.querySelector('main').innerText").contains("試合データを取得できませんでした"));
+        boolean summary = js("Boolean(document.querySelector('[aria-label=\"球団の選手を探す\"]'))").equals("true");
+        if (summary) {
+            waitText("保存済みの結果 · 更新未確認"); waitText("個人成績は現在取得できません");
+            assertEquals("Score-only fallback does not fabricate player rows", "0", js("document.querySelectorAll('main table').length"));
+            screenshot("npb-regular-saved-result");
+            js("document.querySelector('[aria-label=\"球団の選手を探す\"] a[href*=\"tigers\"]').click()");
+            waitText("阪神の選手");
+            waitCondition("Saved team players are available", "!!document.querySelector('main .team-player-list .player-row')");
+            js("document.querySelector('main .team-player-list .player-row').click()");
+            waitCondition("Canonical player profile opened", "/#\\/NPB\\/players\\/[0-9a-f-]{36}/.test(location.hash) && !!document.querySelector('main h1')");
+            shell("input keyevent KEYCODE_BACK"); waitText("阪神の選手");
+            shell("input keyevent KEYCODE_BACK"); waitText("個人成績は現在取得できません");
+        }
+        assertEquals("Game result fits mobile viewport", "true", js("document.documentElement.scrollWidth<=innerWidth"));
+        shell("input keyevent KEYCODE_BACK"); waitText("日程・結果");
+        assertTrue("Back retains the selected schedule date", js("location.hash").contains("date=2026-10-08"));
+    }
     @Test public void nativePreferencesSurviveRestartAndFirebaseDisabled() throws Exception {
         String fixture = "{\"items\":[{\"league\":\"NPB\",\"kind\":\"player\",\"entityId\":\"canonical-player\"}]}";
         assertTrue(EodMessagingService.isFavoritePlayer(fixture, "canonical-player"));

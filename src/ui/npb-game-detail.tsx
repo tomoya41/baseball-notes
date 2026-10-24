@@ -13,6 +13,7 @@ import type { Services } from "../app/services";
 import { GameRecap, GameTeamLinks, NpbGamePreview } from "./game-story";
 import type { FavoriteActions } from "./team-favorite";
 import { admittedCsGameIds } from "../application/npb-cs-reader";
+import type { GameSummaryReader, PublishedGameSummary } from "../application/game-surface";
 const CsGame=lazy(()=>import("./npb-cs").then(m=>({default:m.NpbCsGameDetail})));
 const JapanGame=lazy(()=>import("./npb-japan-series").then(m=>({default:m.NpbJapanSeriesScreen})));
 
@@ -73,7 +74,7 @@ export function NpbGameDetailView({ payload, state, services, actions, selectedS
   </div>;
 }
 
-type GameScreenProps={ repository: { find(gameId: string): Promise<NpbGameDetail | null> }; services?: Services; favorites?: FavoriteActions["favorites"]; toggle?: FavoriteActions["toggle"]; saving?: boolean };
+type GameScreenProps={ repository: { find(gameId: string): Promise<NpbGameDetail | null> }; summaryRepository?: GameSummaryReader; services?: Services; favorites?: FavoriteActions["favorites"]; toggle?: FavoriteActions["toggle"]; saving?: boolean };
 export function NpbGameDetailScreen(props:GameScreenProps){
   const {gameId}=useParams(),[params]=useSearchParams();
   if(gameId&&japanPin.gameIds.includes(gameId)||params.get("competition")==="postseason"&&params.get("stage")==="japan_series")return <Suspense fallback={<LoadingSkeleton/>}><JapanGame key={gameId} gameDetail/></Suspense>;
@@ -81,18 +82,43 @@ export function NpbGameDetailScreen(props:GameScreenProps){
   if(params.has("competition")&&params.get("competition")!=="regular"||params.has("stage"))return <DataState kind="unsupported" title="試合の大会条件を確認してください" />;
   return <NpbRegularGameDetailScreen {...props} />;
 }
-function NpbRegularGameDetailScreen({ repository, services, favorites = [], toggle, saving = false }:GameScreenProps) {
+export function PublishedGameSummaryView({ summary, retry }: { summary: PublishedGameSummary; retry: () => void }) {
+  const { game } = summary;
+  return <div className="screen game-detail">
+    <GameHeading title={`${formatDate(game.date, true)}の試合`} date={game.date} context={`NPB · 公式戦${game.gameNumber > 1 ? ` · 第${game.gameNumber}試合` : ""}`} backTo={`/NPB/schedule?date=${game.date}`} />
+    <ScoreHero away={game.away.name} home={game.home.name} awayId={game.away.id} homeId={game.home.id} awayScore={game.away.score} homeScore={game.home.score} status={statusName[game.status]} />
+    <p className="game-detail__note" role="status">保存済みの結果 · 更新未確認</p>
+    <section className="home-section"><h2>選手成績</h2>
+      <p>{game.status === "final" ? "この試合の個人成績は現在取得できません。" : "個人成績の取得状況を確認できません。"}</p>
+      <button className="text-button" onClick={retry}>試合詳細を再読み込み</button>
+    </section>
+    <nav className="row-list" aria-label="球団の選手を探す">{[game.away, game.home].map(team =>
+      <a className="player-row" key={team.id} href={`#/NPB/teams/${encodeURIComponent(team.id)}/players?season=${game.date.slice(0, 4)}`}><strong>{team.name}</strong><span>球団の選手一覧 →</span></a>)}</nav>
+    <details><summary>結果の保存時点</summary><p>{summary.generatedAt} · 日別の結果収録：{{complete:"収録済み",partial:"一部収録",failed:"取得失敗",no_games:"試合なし",unknown:"未確認"}[summary.coverage]}</p>
+      <p>個人成績・出場選手・イニング別得点はこの結果データに含まれていません。</p></details>
+  </div>;
+}
+function NpbRegularGameDetailScreen({ repository, summaryRepository, services, favorites = [], toggle, saving = false }:GameScreenProps) {
   const { gameId } = useParams();
   const [params,setParams] = useSearchParams();
   const [payload, setPayload] = useState<NpbGameDetail | null>(null);
   const [state, setState] = useState<DetailState>("loading");
+  const [summary, setSummary] = useState<PublishedGameSummary | null>(null);
+  const [attempt, setAttempt] = useState(0);
+  const dateHint = params.get("date") ?? undefined;
   useEffect(() => {
     if (!gameId) return;
     let active = true;
     void repository.find(gameId).then((value) => {
       if (active) { setPayload(value); setState(value ? "ready" : "missing"); }
-    }).catch(() => { if (active) setState("error"); });
+    }).catch(async () => {
+      const saved = await summaryRepository?.find(gameId, dateHint).catch(() => null);
+      if (active) { setSummary(saved ?? null); setState("error"); }
+    });
     return () => { active = false; };
-  }, [gameId, repository]);
+  }, [gameId, repository, summaryRepository, dateHint, attempt]);
+  const retry = () => { setSummary(null); setPayload(null); setState("loading"); setAttempt(a => a + 1); };
+  if (state === "error" && summary && summary.game.gameId === gameId) return <PublishedGameSummaryView summary={summary} retry={retry} />;
+  if (state === "error") return <><NpbGameDetailView payload={null} state="error" /><button className="text-button" onClick={retry}>試合詳細を再読み込み</button></>;
   return <NpbGameDetailView payload={payload} state={state} selectedSide={params.get("boxSide") === "home" ? "home" : "away"} onSideChange={side => { const next=new URLSearchParams(params); next.set("boxSide",side); setParams(next,{preventScrollReset:true}); }} {...services ? { services } : {}} {...toggle ? { actions: { favorites, toggle, saving } } : {}} />;
 }

@@ -8,6 +8,7 @@ import { StaticPlayerDirectoryRepository } from "../infrastructure/providers/sta
 import { HttpPlayerRecentRepository } from "../infrastructure/providers/http-player-recent-repository";
 import { HttpPlayerGameLogRepository } from "../infrastructure/providers/http-player-game-log-repository";
 import { HttpNpbGameDetailRepository } from "../infrastructure/providers/http-npb-game-detail-repository";
+import { PublishedNpbGameSummaryRepository } from "../infrastructure/providers/published-npb-game-summary-repository";
 import { HttpPlayerPeriodComparisonRepository } from "../infrastructure/providers/http-player-period-comparison-repository";
 import { HttpPlayerHomeAwayRepository } from "../infrastructure/providers/http-player-home-away-repository";
 import { HttpPlayerOpponentRepository } from "../infrastructure/providers/http-player-opponent-repository";
@@ -30,6 +31,7 @@ export const services = {
   directory: new StaticPlayerDirectoryRepository(npbDataBaseUrl),
   product: new StaticNpbProductRepository(npbDataBaseUrl),
   gameSurface: new StaticGameSurfaceRepository(npbDataBaseUrl),
+  gameSummary: new PublishedNpbGameSummaryRepository(new StaticGameSurfaceRepository(npbDataBaseUrl)),
   recent: new HttpPlayerRecentRepository(import.meta.env.VITE_NPB_PLAYER_API_BASE_URL?.trim() || "https://baseball-notes-recent.vercel.app/"),
   gameLog: new HttpPlayerGameLogRepository(import.meta.env.VITE_NPB_PLAYER_API_BASE_URL?.trim() || "https://baseball-notes-recent.vercel.app/"),
   gameDetail: new HttpNpbGameDetailRepository(import.meta.env.VITE_NPB_PLAYER_API_BASE_URL?.trim() || "https://baseball-notes-recent.vercel.app/"),
