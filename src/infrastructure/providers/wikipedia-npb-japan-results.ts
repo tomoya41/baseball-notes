@@ -5,7 +5,7 @@ import {npbJapanSeriesSchema,type NpbJapanSeries} from "../../domain/npb-japan-s
 import {splitWikipediaCells} from "./wikipedia-cells";
 
 const reviewSchema=z.strictObject({reviewedBy:z.string().min(1).max(80),reviewedAt:z.iso.datetime(),games:z.array(z.strictObject({gameId:z.string(),linescore:z.string().min(20).max(20000)})).min(1).max(15)});
-const plain=(s:string)=>s.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g,(_,a:string,b?:string)=>b??a).trim();
+const plain=(s:string)=>s.replace(/'''([^']+)'''/g,"$1").replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g,(_,a:string,b?:string)=>b??a).trim();
 const clubs:Record<string,string>={ソフトバンク:"npb:team:hawks",福岡ソフトバンクホークス:"npb:team:hawks",DeNA:"npb:team:baystars",横浜DeNAベイスターズ:"npb:team:baystars"};
 
 /** Review exact licensed source blocks; no scheduled placeholder or score alone proves a final. */

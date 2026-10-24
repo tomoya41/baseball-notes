@@ -443,3 +443,7 @@ Build a bounded, byte/hash-verified application-file cache at the app's own URL 
 ## 2026-10-23 — Editorial imagery complements factual UI
 
 Use original fictional scene imagery only for event/history atmosphere, with live HTML text and decorative empty-alt semantics. Never simulate real portraits, marks, results or missing capabilities. Keep compact everyday score/table layouts and large-font labelled fallbacks. Add hashed WebP application assets to the same bounded verified offline shell; baseball JSON remains excluded. Game team selection is optional URL state and reveals already loaded facts. No data or personal-store migration. See [design and rollback](editorial-ui-redesign.md).
+
+## 2026-10-25 — Home prioritizes the admitted Japan Series snapshot
+
+During the explicit 2026 Japan Series editorial window, one small static competition snapshot may precede Regular navigation. This is a scoped exception to prior zero-additional-Home-fetch work, never a Current DB probe or production evidence. Latest collected result, series wins and next scheduled Game remain distinct; missing starters link to official information rather than inferred names. Retain immutable previous releases for old clients. See [source review, presentation scope and rollback](japan-series-home.md).

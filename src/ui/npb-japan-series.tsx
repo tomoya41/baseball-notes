@@ -25,7 +25,7 @@ function useJapan(valid:boolean){
   useEffect(()=>{if(!valid)return;let active=true;void readNpbJapanSeries().then(d=>{if(active){setData(d);setFailed(false);}}).catch(()=>{if(active)setFailed(true);});return()=>{active=false;};},[valid,attempt]);
   return {data,failed,retry:()=>{setFailed(false);setAttempt(n=>n+1);}};
 }
-function Sources({data}:{data:NpbJapanSeries}){return <details><summary>収録範囲・出典</summary><p>Wikipediaの記事に記載された日程です。実際の開催・開始時刻・選手の出場を保証するものではありません。公式戦・CSとは別集計です。CSの勝数・アドバンテージは日本シリーズへ持ち越しません。</p>{data.sources.map(s=><p key={s.pageId}><a href={`https://ja.wikipedia.org/w/index.php?curid=${s.pageId}&oldid=${s.revision}`}>Wikipedia「{s.title}」の執筆者</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a> · 原記事からの変更：日程・球場の抜粋・表記整理</p>)}<a href="https://npb.jp/nippons/2026/">最新の開催情報を公式サイトで確認</a></details>;}
+function Sources({data}:{data:NpbJapanSeries}){return <details><summary>収録範囲・出典</summary><p>Wikipediaの記事に記載された日程です。実際の開催・開始時刻・選手の出場を保証するものではありません。公式戦・CSとは別集計です。CSの勝数・アドバンテージは日本シリーズへ持ち越しません。</p>{data.sources.map(s=><p key={s.pageId}><a href={`https://ja.wikipedia.org/w/index.php?curid=${s.pageId}&oldid=${s.revision}`}>Wikipedia「{s.title}」の執筆者</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a> · 原記事からの変更：日程・結果・球場の抜粋・表記整理</p>)}<a href="https://npb.jp/nippons/2026/">最新の開催情報を公式サイトで確認</a></details>;}
 function Unavailable({failed,retry}:{failed:boolean;retry:()=>void}){return failed?<><DataState kind="source-unavailable" title="日本シリーズ情報を取得できません"/><button onClick={retry}>再試行</button><Link to="/NPB/cs?season=2026">収録済みのCSへ →</Link></>:<LoadingSkeleton/>;}
 export function JapanSeriesEntry({cs}:{cs:NpbPostseasonSeries}){
   const state=useJapan(true);let consistent=false;

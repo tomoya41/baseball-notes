@@ -75,12 +75,12 @@ function NpbPostseasonDiscovery({ kind }: { kind: "series" | "game" }) {
   return <div className="screen"><PageHeading eyebrow="NPB · 2026 · ポストシーズン" title="探す"/><DiscoveryNavigation league="NPB"/>
     {!valid?<DataState kind="unsupported" title="指定の年度・大会条件は未対応です"/>:fatal?<><DataState kind="source-unavailable" title="保存済みの大会記録を取得できません"/><button onClick={retry}>再試行</button></>:!ready?<LoadingSkeleton/>:<>
       <DiscoveryList league="NPB" teams={teams} scope="?season=2026&competition=postseason"
-        message="2026年の収録予定・結果。CS勝数はアドバンテージを含みます。日本シリーズの結果・選手成績は未収録。検索結果なしを試合なしとは判定しません。"
+        message="2026年の収録予定・結果。CS勝数はアドバンテージを含みます。日本シリーズの個人成績は未収録。検索結果なしを試合なしとは判定しません。"
         series={allSeries.filter(s=>!stage||stage==="all"||s.round===stage)}
-        games={[...(useCs?cs?.games.map(g=>({id:g.id,stage:g.stage,date:g.date,home:npbTeamShortName(g.homeTeamId),away:npbTeamShortName(g.awayTeamId),homeScore:g.homeScore,awayScore:g.awayScore,state:`${g.date} · 終了`}))??[]:[]),...(useJapan?japan?.series.games.map(g=>({id:g.gameId,stage:"japan_series",date:g.date,home:npbTeamShortName(g.homeTeamId),away:npbTeamShortName(g.awayTeamId),homeScore:g.homeRuns,awayScore:g.awayRuns,state:`${g.date} · 日本シリーズ · 予定・結果未収録`}))??[]:[])].filter(g=>(!stage||stage==="all"||g.stage===stage)&&(!date||g.date===date))}/>
+        games={[...(useCs?cs?.games.map(g=>({id:g.id,stage:g.stage,date:g.date,home:npbTeamShortName(g.homeTeamId),away:npbTeamShortName(g.awayTeamId),homeScore:g.homeScore,awayScore:g.awayScore,state:`${g.date} · 終了`}))??[]:[]),...(useJapan?japan?.series.games.map(g=>({id:g.gameId,stage:"japan_series",date:g.date,home:npbTeamShortName(g.homeTeamId),away:npbTeamShortName(g.awayTeamId),homeScore:g.homeRuns,awayScore:g.awayRuns,state:`${g.date} · 日本シリーズ · ${g.status==="final"?"終了":g.status==="postponed"?"延期":g.status==="cancelled"?"中止":"予定・結果未収録"}`}))??[]:[])].filter(g=>(!stage||stage==="all"||g.stage===stage)&&(!date||g.date===date))}/>
       {japanFailed&&stage!=="japan_series"&&<p className="data-notice">日本シリーズの追加情報を取得できません。CSの収録範囲のみ表示しています。<button onClick={retry}>再試行</button></p>}
       {failed&&wantsJapan&&<p className="data-notice">CSの追加情報を取得できません。日本シリーズの収録範囲のみ表示しています。<button onClick={retry}>再試行</button></p>}
-      <details><summary>出典・収録範囲</summary><p>選手成績は一部収録。日本シリーズは予定のみ収録し、公式戦とは別に表示します。</p>{sources.map(s=><p key={s.pageId}><a href={`https://ja.wikipedia.org/w/index.php?curid=${s.pageId}&oldid=${s.revision}`}>Wikipedia「{s.title}」の執筆者</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a> · 原記事からの変更：勝敗・試合表の抜粋・表記整理</p>)}</details>
+      <details><summary>出典・収録範囲</summary><p>選手成績は一部収録。日本シリーズは日程と確認済みの結果を、公式戦とは別に表示します。</p>{sources.map(s=><p key={s.pageId}><a href={`https://ja.wikipedia.org/w/index.php?curid=${s.pageId}&oldid=${s.revision}`}>Wikipedia「{s.title}」の執筆者</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a> · 原記事からの変更：勝敗・試合表の抜粋・表記整理</p>)}</details>
     </>}
     <Link className="section-action" to="/NPB/postseason?season=2026">シリーズ勝敗・勝ち上がり →</Link>
   </div>;

@@ -19,6 +19,8 @@ import { ExplorerLinks } from "./data-explorer";
 import { LifecycleLinks } from "./npb-lifecycle";
 import { HomeDiscover, HomeSearchEntry, TeamRecord } from "./signature";
 import { NpbSeasonalHome } from "./npb-seasonal-home";
+import { NpbJapanSeriesHome } from "./npb-japan-series-home";
+import { japanSeriesHomePeriod } from "../presentation/japan-series-home";
 
 type Target = Pick<Favorite, "kind" | "entityId" | "league">;
 export function NpbStandings({ services, onEffectiveDate }: { services: Services; onEffectiveDate?: (date: string) => void }) {
@@ -38,15 +40,18 @@ export function NpbStandings({ services, onEffectiveDate }: { services: Services
   </section>;
 }
 export function NpbHome({ services, favorites, toggle, saving }: { services: Services; favorites: Favorite[]; toggle: (target: Target) => void; saving: boolean }) {
+  const [now,setNow] = useState(Date.now);
+  useEffect(()=>{const tick=()=>setNow(Date.now());window.addEventListener("focus",tick);const timer=window.setInterval(tick,60000);return()=>{window.removeEventListener("focus",tick);window.clearInterval(timer);};},[]);
+  const seriesFeatured = japanSeriesHomePeriod(now);
   const [view,setView] = useState("scores");
   const [effectiveDate, setEffectiveDate] = useState<string | null>(null);
   const changeView = (next: string) => {
     if (next !== view) setEffectiveDate(null);
     setView(next);
   };
-  return <div className="screen home-screen home-hub"><div className="home-controls"><CompetitionHeader league="NPB" context={effectiveDate ? `${effectiveDate.slice(0, 4)}年 · 公式戦` : "公式戦"} />
+  return <div className="screen home-screen home-hub">{seriesFeatured&&<NpbJapanSeriesHome now={now}/>}<div className="home-controls">{seriesFeatured?<div className="competition-header"><div><h2>公式戦</h2><p>{effectiveDate?.slice(0,4)??"2026"}年</p></div></div>:<CompetitionHeader league="NPB" context={effectiveDate ? `${effectiveDate.slice(0, 4)}年 · 公式戦` : "公式戦"} />}
     <HomeModeNav active={view} onChange={changeView} modes={[{id:"scores",label:"スコア"},{id:"standings",label:"順位表"},{id:"follow",label:"フォロー"}]} /></div>
-    {view === "scores" && <><NpbSeasonalHome /><div className="home-main"><NpbSavedGames services={services} onEffectiveDate={setEffectiveDate} />{favorites.some(f=>f.league==="NPB"&&f.kind==="player")&&<div className="home-follow"><NpbPersonalDashboard services={services} favorites={favorites} toggle={toggle} saving={saving} compact /></div>}</div><HomeSearchEntry league="NPB" /></>}
+    {view === "scores" && <><NpbSeasonalHome supporting={seriesFeatured}/><div className="home-main"><NpbSavedGames services={services} onEffectiveDate={setEffectiveDate} />{favorites.some(f=>f.league==="NPB"&&f.kind==="player")&&<div className="home-follow"><NpbPersonalDashboard services={services} favorites={favorites} toggle={toggle} saving={saving} compact /></div>}</div><HomeSearchEntry league="NPB" /></>}
     {view === "standings" && <NpbStandings services={services} onEffectiveDate={setEffectiveDate} />}
     {view === "follow" && <><NpbToday services={services} favorites={favorites} toggle={toggle} saving={saving} personal /><NpbPersonalDashboard services={services} favorites={favorites} toggle={toggle} saving={saving} compact /><section className="home-section"><SectionHeader title="お気に入り選手" action="My" to="/NPB/my" /><NpbSavedPlayers repository={services.directory} favorites={favorites} toggle={toggle} saving={saving} compact /></section></>}
     <HomeDiscover league="NPB" />

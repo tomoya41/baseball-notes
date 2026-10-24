@@ -11,7 +11,8 @@ import { applyReviewedJapanResults } from "./wikipedia-npb-japan-results";
 const page=z.object({pageid:z.number().int(),title:z.string(),revisions:z.array(z.object({revid:z.number().int().positive(),timestamp:z.iso.datetime(),slots:z.object({main:z.object({content:z.string().max(100000)})})})).length(1)});
 const archiveSchema=z.object({observedAt:z.iso.datetime(),response:z.object({query:z.object({pages:z.array(page).length(2)})})});
 const team:Record<string,string>={福岡ソフトバンクホークス:"npb:team:hawks",横浜DeNAベイスターズ:"npb:team:baystars"};
-const plain=(s:string)=>s.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g,(_,a:string,b?:string)=>b??a).trim();
+// Presentation markup only; unknown attributes/templates remain unaccepted text.
+const plain=(s:string)=>s.replace(/^style="background:#[A-Fa-f0-9]{6}; color:#[A-Fa-f0-9]{6};"\|\s*/,"").replace(/'''([^']+)'''/g,"$1").replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g,(_,a:string,b?:string)=>b??a).trim();
 const digest=(s:string)=>createHash("sha256").update(s).digest("hex");
 export function japanGameId(gameNumber:number){return `npb:game:${digest(`baseball-notes:npb:japan-series:v1:2026:5306035:${gameNumber}`).slice(0,20)}`;}
 
