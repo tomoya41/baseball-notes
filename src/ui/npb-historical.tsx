@@ -2,7 +2,8 @@ import { EditorialCover } from "./editorial-cover";
 import { LicensedPlayerPhoto } from "./licensed-player-photo";
 import { PlayerIdentity } from "./signature";
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useParams, useSearchParams } from "react-router-dom";
+import { teamPlayerReturnPath } from "../presentation/team-player-list";
 import { readNpbHistoricalManifest, readNpbHistoricalSeason } from "../application/npb-historical-reader";
 import { sumHistoricalRows, historicalBattingKeys, historicalPitchingKeys, type NpbHistoricalDataset, type NpbHistoricalManifest, type NpbHistoricalRow } from "../domain/npb-historical";
 import { normalizePlayerSearch } from "../domain/npb-player-directory";
@@ -38,6 +39,7 @@ function AggregateDetails({row}:{row:NpbHistoricalRow}) {
 /** Explicit navigation only: no extra requests on Home or the Current player overview. */
 export function NpbPlayerSeasons({repository,profileRepository}:{repository:{findLatestNpb():Promise<NpbPlayerDirectory>};profileRepository?:CohortRepository}) {
   const {playerId}=useParams(),[params,setParams]=useSearchParams();
+  const location=useLocation(),rosterBack=teamPlayerReturnPath(location.state);
   const [pastOpen,setPastOpen]=useState(false);
   const [manifest,setManifest]=useState<NpbHistoricalManifest|null>(null),[failed,setFailed]=useState(false),[attempt,setAttempt]=useState(0);
   const [directoryPlayer,setDirectoryPlayer]=useState<NpbDirectoryPlayer|null>(null),[directoryState,setDirectoryState]=useState<"loading"|"ready"|"error">("loading");
@@ -56,7 +58,7 @@ export function NpbPlayerSeasons({repository,profileRepository}:{repository:{fin
   const currentLink=!!directoryPlayer;
   if(!canonical)return <DataState kind="no-data" title="選手IDを確認できません" action="選手を探す" to="/NPB/search" />;
   if(manifest&&!player&&directoryState==="ready"&&!directoryPlayer)return <DataState kind="no-data" title="収録されていない選手IDです" action="選手を探す" to="/NPB/search" />;
-  return <div className="screen historical-player-screen"><PlayerIdentity context="NPB · 年度・大会" name={player?.name??directoryPlayer?.displayName??"選手の年度別成績"} favorite={null} visual={<LicensedPlayerPhoto playerId={playerId!} season={Number(season)} />} />
+  return <div className="screen historical-player-screen">{rosterBack&&<Link className="back-link" to={rosterBack}>← 球団の選手一覧</Link>}<PlayerIdentity context="NPB · 年度・大会" name={player?.name??directoryPlayer?.displayName??"選手の年度別成績"} favorite={null} visual={<LicensedPlayerPhoto playerId={playerId!} season={Number(season)} />} />
     {currentLink&&<Link to={`/NPB/players/${playerId}`}>2026年の選手ページへ</Link>}
     <div className="explorer-filter-grid"><label>年度<select value={season} aria-label="選手成績の年度" onChange={e=>update("season",e.target.value)}>{currentLink&&<option value="2026">2026年 · 保存済み</option>}{player?.seasons.slice().reverse().map(y=><option key={y} value={y}>{y}年 · 一部収録</option>)}{!supported&&<option value={season}>{!player?.identityScope&&directoryState==="loading"?"情報を確認中":"未収録の年度"}</option>}</select></label>
       <label>大会<select value={validScope?(regular?"regular":stage!):"unavailable"} aria-label="選手成績の大会" onChange={e=>setParams(previous=>{const p=new URLSearchParams(previous);if(e.target.value==="regular"){p.set("competition","regular");p.delete("stage");}else{p.set("competition","postseason");p.set("stage",e.target.value);}p.delete("years");return p;})}><option value="regular">公式戦</option>{!validScope&&<option value="unavailable">指定の大会は未収録</option>}{(["preseason","npb_cs_first","npb_cs_final","japan_series"] as const).map(key=>{const available=admitted.some(s=>s.stage===key);return <option key={key} value={key} disabled={!available}>{npbCompetitionLabels[key]}{!available&&" · 未収録"}</option>;})}</select></label>

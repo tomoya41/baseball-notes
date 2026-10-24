@@ -25,6 +25,7 @@ const NpbPostseasonScreen = lazy(()=>import("./npb-postseason").then(m=>({defaul
 const NpbPlayerEventsScreen = lazy(()=>import("./npb-player-events").then(m=>({default:m.NpbPlayerEventsScreen})));
 const NpbDraftEventScreen = lazy(()=>import("./npb-draft-event").then(m=>({default:m.NpbDraftEventScreen})));
 const NpbPlayerSeasons = lazy(()=>import("./npb-historical").then(m=>({default:m.NpbPlayerSeasons})));
+const NpbTeamPlayers = lazy(()=>import("./npb-team-players").then(m=>({default:m.NpbTeamPlayers})));
 type FavoriteTarget = Pick<Favorite, "kind" | "entityId" | "league">;
 function NpbSearchEntry(props: Parameters<typeof NpbRoutes>[0]) {
   const [params] = useSearchParams();
@@ -60,6 +61,7 @@ export function NpbRoutes({ services, favorites, toggle, saving }: { services: S
     <Route path="players/:playerId/seasons" element={<Suspense fallback={<p role="status">年度別成績を読み込み中…</p>}><NpbPlayerSeasons key={location.pathname} repository={services.directory} profileRepository={services.product} /></Suspense>} />
     <Route path="players/:playerId/:section?" element={<NpbPlayer key={location.pathname.split("/")[3]} services={services} favorites={favorites} toggle={toggle} saving={saving} />} />
     <Route path="teams/:teamId" element={<NpbTeam services={services} hub favorites={favorites} toggle={toggle} saving={saving} />} />
+    <Route path="teams/:teamId/players" element={<Suspense fallback={<p role="status">選手一覧を読み込み中…</p>}><NpbTeamPlayers services={services} favorites={favorites} /></Suspense>} />
     <Route path="teams" element={<NpbTeams services={services} />} />
     <Route path="compare" element={<NpbPlayerCompare services={services} />} />
     <Route path="records" element={<NpbRecordsScreen repository={services.gameSurface} />} />

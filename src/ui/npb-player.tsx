@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { LicensedPlayerPhoto } from "./licensed-player-photo";
-import { Link, Navigate, useParams } from "react-router-dom";
+import { Link, Navigate, useLocation, useParams } from "react-router-dom";
+import { teamPlayerReturnPath } from "../presentation/team-player-list";
 import type { Services } from "../app/services";
 import type { Favorite } from "../domain/models";
 import type { PlayerRecentResponse, RecentPeriod } from "../domain/player-recent";
@@ -27,6 +28,7 @@ import { NpbPlayerTrends } from "./player-trends";
 import { NpbPlayerAnalysisScreen, NpbPlayerHomeAwaySection, NpbPlayerOpponentSection, NpbPlayerBattingOrderSection, NpbPlayerPitcherRoleSection, NpbPlayerBatterRoleSection } from "./npb-player-analysis";
 export function NpbPlayer({ services, favorites, toggle, saving }: { services: Services; favorites: Favorite[]; toggle: (target: Pick<Favorite, "kind" | "entityId" | "league">) => void; saving: boolean }) {
   const { playerId, section } = useParams();
+  const location = useLocation(), rosterBack = teamPlayerReturnPath(location.state);
   const canonical = !!playerId && /^[0-9a-f-]{36}$/i.test(playerId);
   const [product, setProduct] = useState<NpbCatalog["players"][number] | null>(null);
   useEffect(() => { if (!canonical || !playerId) return; let active = true; void services.product.player(playerId).then(p => { if (active) setProduct(p); }).catch(() => {}); return () => { active = false; }; }, [canonical, playerId, services]);
@@ -113,7 +115,7 @@ export function NpbPlayer({ services, favorites, toggle, saving }: { services: S
   const gameLogTeams = new Map(directoryTeams.map(t => [t.id, t.shortName]));
   const seasonView = seasonState === "error" ? <PublishedPlayerFallback key={`${player.id}:season`} playerId={player.id} period="season" repository={services.directory} pitcherBatting={directoryPlayer?.position === "P"} /> : <PlayerSeasonView payload={season} state={seasonState} pitcherBatting={directoryPlayer?.position === "P"} />;
   const isFavorite = favorites.some(f => f.league === "NPB" && f.kind === "player" && f.entityId === player.id);
-  return <div className="screen player-screen"><PlayerContextBar backTo="/NPB/search" tools={<><Link to={`/NPB/compare?players=${encodeURIComponent(player.id)}`}>比較に追加</Link><Link to={`${base}/trends`} aria-current={section === "trends" ? "page" : undefined}>推移・連続記録</Link><Link to={`${base}/seasons`}>年度・大会別の成績</Link><Link to={`/NPB/season-compare?kind=player&entity=${encodeURIComponent(player.id)}`}>2026年の年度比較</Link>{directoryTeam && <Link to={`/NPB/teams/${encodeURIComponent(directoryTeam.id)}`}>球団を見る</Link>}<CollectionButton league="NPB" playerId={player.id} name={player.name} /></>}><Link className="player-fixed-scope" to={`${base}/seasons`}>2026年 · 公式戦 ▾</Link></PlayerContextBar>
+  return <div className="screen player-screen"><PlayerContextBar backTo={rosterBack ?? "/NPB/search"} tools={<><Link to={`/NPB/compare?players=${encodeURIComponent(player.id)}`}>比較に追加</Link><Link to={`${base}/trends`} aria-current={section === "trends" ? "page" : undefined}>推移・連続記録</Link><Link to={`${base}/seasons`}>年度・大会別の成績</Link><Link to={`/NPB/season-compare?kind=player&entity=${encodeURIComponent(player.id)}`}>2026年の年度比較</Link>{directoryTeam && <Link to={`/NPB/teams/${encodeURIComponent(directoryTeam.id)}`}>球団を見る</Link>}<CollectionButton league="NPB" playerId={player.id} name={player.name} /></>}><Link className="player-fixed-scope" to={`${base}/seasons`}>2026年 · 公式戦 ▾</Link></PlayerContextBar>
     <PlayerIdentity uniformNumber={product?.membership.uniformNumber ?? null} name={player.name} context={`NPB · ${directoryTeam?.shortName ?? identity?.teamName ?? "所属未確認"}`} detail={`${directoryPlayer?.position ? positionDefinitions[directoryPlayer.position] : "役割未確認"} · 所属は保存済み情報`} visual={product?.visual.photo.usage === "allowed" ? <img className="profile-photo" src={product.visual.photo.url!} alt={player.name} /> : <LicensedPlayerPhoto playerId={player.id} season={2026} />} favorite={<FavoriteButton active={isFavorite} saving={saving} label={player.name} onClick={() => toggle({ league: "NPB", kind: "player", entityId: player.id })} />} />
     <PlayerTabs base={base} section={section} />
     {!section && seasonState === "ready" && [season?.batting, season?.pitching].map((stats, i) => stats && (i === 1 || directoryPlayer?.position !== "P") ? <HeadlineStats key={i} title={`2026 ${i === 0 ? "打撃" : "投球"} · ${stats.to}まで`} partial={stats.coverage.status !== "complete"} stats={(i === 0 ? ["OPS", "HR", "AVG"] : ["ERA", "outsRecorded", "SO"]).map(metric => ({ metric, label: metric === "outsRecorded" ? "投球回" : metric === "SO" ? "奪三振" : metric, value: formatRecentMetric(metric, stats.metrics[metric]) }))} /> : null)}
