@@ -17,7 +17,7 @@ export function NpbAgeSeason({ manifest, repository }: { manifest: NpbHistorical
   const [params, setParams] = useSearchParams(), query = ageSeasonQuery(params);
   const [catalog, setCatalog] = useState<NpbCatalog | null>(null), [catalogFailed, setCatalogFailed] = useState(false), [attempt, setAttempt] = useState(0);
   useEffect(() => { if (!query.valid) return; let active = true; void repository.catalog().then(c => { if (active) { setCatalog(c); setCatalogFailed(false); } }).catch(() => { if (active) setCatalogFailed(true); }); return () => { active = false; }; }, [repository, query.valid, attempt]);
-  if (!query.valid) return <><DataState kind="unsupported" title="年齢・成績・比較選手の条件を確認してください" detail="公式戦の過去年度、0〜99歳、最大4人を指定できます。Currentや他大会は混ぜません。" /><button onClick={() => setParams({ cohort: "ageSeason", age: "26", role: "batting" })}>条件を初期化</button></>;
+  if (!query.valid) return <><DataState kind="unsupported" title="年齢・成績・比較選手の条件を確認してください" detail="公式戦の過去年度、0〜99歳、最大4人を指定できます。2026年の公式戦やCS・日本シリーズは含みません。" /><button onClick={() => setParams({ cohort: "ageSeason", age: "26", role: "batting" })}>条件を初期化</button></>;
   if (catalogFailed) return <><DataState kind="source-unavailable" title="生年月日の情報を取得できません" /><button onClick={() => { setCatalogFailed(false); setAttempt(n => n + 1); }}>再試行</button></>;
   if (!catalog) return <LoadingSkeleton />;
   return <AgeWorkspace key={manifest.inputSha256} manifest={manifest} catalog={catalog} params={params} update={(key, value) => setParams(previous => { const next = new URLSearchParams(previous); next.set(key, value); return next; })} />;

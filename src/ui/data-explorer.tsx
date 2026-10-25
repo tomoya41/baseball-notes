@@ -105,7 +105,7 @@ export function DataExplorerView({ league, rows, teams, season, years, effective
     {days && !allRecent && <details className="explorer-filters" open><summary>直近を調べる選手 {ids.length}/{MAX_RECENT_PLAYERS}</summary><p className="inline-note">{effectiveDate}を基準に同じ期間で比較。球団・名前で候補を絞り、最大12選手を選択します。全選手の順位ではありません。</p><div className="explorer-candidates">{candidates.slice(0, 40).map(row => <label key={row.playerId}><input type="checkbox" checked={ids.includes(row.playerId)} disabled={!ids.includes(row.playerId) && ids.length >= MAX_RECENT_PLAYERS} onChange={() => toggleId("recentPlayers", row.playerId)} />{row.name}</label>)}</div>{candidates.length > 40 && <p>候補を40人まで表示。球団・名前で絞り込んでください。</p>}</details>}
     {days && (allRecent || ids.length > 0) && recent?.key !== key && errorKey !== key && <LoadingSkeleton />}
     {days && (errorKey === key || (recent?.key === key && recent.failed.length > 0)) && <><DataState kind="source-unavailable" title={allRecent ? "全選手の直近成績を読み込めません" : "一部の選択選手を読み込めません"} detail="取得できた選手だけを表示しています。未取得を0として扱いません。" /><button className="text-button" onClick={() => setAttempt(v => v + 1)}>未取得を再読み込み</button></>}
-    {days && recent?.key === key && (recent.coverage && recent.coverage !== "complete" || recent.values.some(r => r.coverage !== "complete")) && <DataState kind="small-sample" title={periodCoverage === "unavailable" ? "この期間のCoverage情報を取得できません" : "この期間のCoverageは一部未確認です"} />}
+    {days && recent?.key === key && (recent.coverage && recent.coverage !== "complete" || recent.values.some(r => r.coverage !== "complete")) && <DataState kind="small-sample" title={periodCoverage === "unavailable" ? "この期間の収録状況を取得できません" : "この期間の収録状況は一部未確認です"} />}
     <div className="list-heading"><strong>検索結果 {visible.length}人</strong><span>{page + 1}/{pages}ページ</span></div>
     {inputErrors.map(error => <p className="data-notice" role="status" key={error}>{error}</p>)}
     {query.teamId && compare.length > 0 && <p className="inline-note">比較へは選手・年度・期間を引き継ぎます。球団の絞り込みは引き継がず、選手の全所属分を比較します。</p>}
@@ -146,7 +146,7 @@ export function NpbDataExplorer({ services }: { services: Services }) {
     return { values: p.players.map(r => ({ playerId: r.playerId, name: r.displayName, teamId: r.teamId, batting: r.batting?.metrics ?? null, pitching: r.pitching?.metrics ?? null, coverage: p.coverage.status })), failed: [], coverage: p.coverage.status };
   }, [data]);
   const readRecent = useCallback((ids: string[], days: 7 | 14 | 30) => boundedExplorerRead(ids, id => readOne(id, days)), [readOne]);
-  if (!supported) return <DataState kind="unsupported" title="指定したNPBシーズン・Postseasonの成績は未収録です" />;
+  if (!supported) return <DataState kind="unsupported" title="指定したNPBの年度・ポストシーズンの成績は未収録です" />;
   if (failed) return <DataState kind="source-unavailable" title="整合した保存済みSeasonを取得できません" />;
   if (!data) return <LoadingSkeleton />;
   if (params.get("team") && !data.directory.teams.some(t => t.id === params.get("team"))) return <DataState kind="unsupported" title="指定した球団は未収録です" />;

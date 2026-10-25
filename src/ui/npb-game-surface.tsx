@@ -1,3 +1,5 @@
+import { readinessReasonLabel } from "../presentation/baseball-language";
+import { DailyMvp } from "./daily-mvp";
 import { useEffect,useState } from "react";
 import { Link,useSearchParams } from "react-router-dom";
 import type { GameSurfaceReader } from "../application/game-surface";
@@ -13,6 +15,7 @@ export function GameLinks({games}:{games:readonly GameIndexRow[]}){return <div c
   gameNumber={g.gameNumber > 1 ? g.gameNumber : undefined} partial={g.status === "final" && g.completeness !== "complete"} />)}</div>;}
 export function GameDateView({payload}:{payload:GameDateIndex}){return <>
   {(payload.coverage==="partial"||payload.coverage==="failed")&&<p role="status">一部データ確認中です。保存済みの試合を表示します。</p>}
+  <DailyMvp key={payload.date} date={payload.date} index={payload}/>
   {payload.games.length?<GameLinks games={payload.games}/>:<DataState kind="no-data"
     title={payload.coverage==="no_games"?"試合なし":"この日の試合予定を確認できていません"}/>}
 </>;}
@@ -27,7 +30,7 @@ export function NpbScheduleScreen({repository,favorites=[],toggle,saving=false}:
     void repository.date(date).then(v=>{if(active){setPayload(v);setState("ready");}}).catch(()=>{if(active)setState("error");});return()=>{active=false;};},[date,manifest,repository]);
   const change=(next:string)=>{setState("loading");setPayload(null);setParams({date:next});};
   return <div className="screen game-schedule"><PageHeading eyebrow="NPB" title="日程・結果"/>
-    <nav className="profile-tabs" aria-label="試合の種類"><Link to="/NPB/schedule" aria-current="page">公式戦</Link><Link to="/NPB/postseason">Postseason</Link><Link to="/NPB/preseason">オープン戦 <span className="soon-badge">Soon</span></Link></nav>
+    <nav className="profile-tabs" aria-label="試合の種類"><Link to="/NPB/schedule" aria-current="page">公式戦</Link><Link to="/NPB/postseason">ポストシーズン</Link><Link to="/NPB/preseason">オープン戦 <span className="soon-badge">準備中</span></Link></nav>
     {manifest&&date&&/^\d{4}-\d{2}-\d{2}$/.test(date)&&date>=manifest.from&&date<=manifest.to&&<DateRibbon date={date} min={manifest.from} max={manifest.to} onChange={change} />}
     {state==="loading"&&<LoadingSkeleton/>}{state==="error"&&<DataState kind="source-unavailable" title="日程を読み込めません"/>}
     {state==="ready"&&payload&&payload.date===date&&<GameDateView payload={payload}/>}
@@ -36,8 +39,8 @@ export function NpbScheduleScreen({repository,favorites=[],toggle,saving=false}:
 }
 export function RecordsView({payload}:{payload:NpbRecords}){return <><p>2026シーズン · 保存済み成績 · データ基準日 {payload.effectiveDate}</p>
   {payload.readiness!=="ready"?<><DataState kind="unsupported" title="2026年シーズン集計を確認中" detail="確認が完了したカテゴリから表示します。"/>
-    <details className="advanced-disclosure"><summary>集計状態の詳細</summary><p>Coverage: {payload.coverage} · 規定ルール: {payload.qualifierStatus}</p>
-      <ul>{payload.reasons.map(r=><li key={r}>{r}</li>)}</ul></details></>:
+    <details className="advanced-disclosure"><summary>集計状態の詳細</summary><p>収録状況: {payload.coverage === "complete" ? "収録完了" : "確認中"} · 規定到達の判定: {payload.qualifierStatus === "verified" ? "確認済み" : "確認中"}</p>
+      <ul>{payload.reasons.map(r=><li key={r}>{readinessReasonLabel(r)}</li>)}</ul></details></>:
     payload.categories.map(c=><section key={`${c.role}:${c.metric}`}><h2>{c.role==="batting"?"打撃":"投球"} · {c.metric}</h2>
       {c.rows.length?<ol className="row-list">{c.rows.map(r=><li key={r.playerId}><Link className="surface-record" to={`/NPB/players/${encodeURIComponent(r.playerId)}`}>
         <span>{r.rank}位 {r.displayName}</span><strong>{r.value}</strong></Link></li>)}</ol>:<p>表示できる記録はありません</p>}</section>)}

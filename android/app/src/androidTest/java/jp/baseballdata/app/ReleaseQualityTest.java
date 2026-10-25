@@ -543,7 +543,7 @@ public class ReleaseQualityTest {
         waitCondition("Bounded CS results", "document.querySelectorAll('a.player-row').length>0 && document.querySelectorAll('a.player-row').length<=30");
         js("Array.from(document.querySelectorAll('a.player-row')).find(a=>a.textContent.includes('リバン・モイネロ')).click()");
         waitText("2026年 · CS ファイナル"); waitText("2.2");
-        assertTrue("CS sample stays explicit", js("document.body.innerText").contains("CS全試合・選手の大会通算成績ではありません"));
+        assertTrue("CS sample stays explicit", js("document.body.innerText").contains("CS全試合・全選手の通算成績ではありません"));
         String csHash=js("location.hash");
         waitPaint();
         scenario.onActivity(activity -> {
@@ -902,5 +902,25 @@ public class ReleaseQualityTest {
         for (int i=0; i<100 && !js("document.documentElement.dataset.fcm").equals("false"); i++) Thread.sleep(50);
         assertEquals("false", js("document.documentElement.dataset.fcm"));
         js("Capacitor.Plugins.Preferences.remove({key:'qa-persistence'})");
+    }
+
+    @Test public void postseasonReadingsKeepFactsSeparateAndMvpUnavailableAtLargeFont() throws Exception {
+        scenario=ActivityScenario.launch(MainActivity.class);waitText("BASEBALL");
+        org.junit.Assume.assumeTrue("Japan Series editorial period only",Boolean.parseBoolean(js("(()=>{const d=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Tokyo'}).format(new Date());return d>='2026-10-24'&&d<='2026-11-08';})()")));
+        setTheme("light","ライト");js("location.hash='#/NPB/home'");
+        waitCondition("Editorial CS readings","document.querySelectorAll('.spotlight-card').length===2");
+        assertEquals("Masaki exact collected batting counts","8|2|3",js("Array.from(document.querySelectorAll('.spotlight-card[data-player=\"2b2a8d97-2a6e-441c-9a33-0d79d2a7d147\"] > .spotlight-numbers dd')).map(e=>e.textContent).join('|')"));
+        js("Array.from(document.querySelectorAll('.spotlight-switch button')).find(b=>b.textContent==='次戦への注目').click()");
+        waitCondition("Real saved Regular readings","!!document.querySelector('.spotlight-card[data-player=\"852bed28-a3f1-4b60-8a1f-950cc2947686\"]')");
+        assertEquals("Maki exact saved Regular counts","467|29|72",js("Array.from(document.querySelectorAll('.spotlight-card[data-player=\"852bed28-a3f1-4b60-8a1f-950cc2947686\"] > .spotlight-numbers dd')).map(e=>e.textContent).join('|')"));
+        fontScaleAndRecreate(2.0f);waitCondition("CS readings after recreation","document.querySelectorAll('.spotlight-card').length===2");waitViewport(360);
+        assertEquals("Editorial Light 200 percent no overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));screenshot("postseason-readings-font-20-light");
+        setTheme("dark","ダーク");js("location.hash='#/NPB/home'");waitCondition("Dark CS readings","document.querySelectorAll('.spotlight-card').length===2");
+        assertEquals("Editorial Dark 200 percent no overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));screenshot("postseason-readings-font-20-dark");
+        js("document.querySelector('.spotlight-card[data-player=\"21a327b4-3924-422a-a1fc-d853e236a201\"] .spotlight-destination').click()");waitText("CS ファースト");
+        assertTrue("CS role/stage survives navigation",js("location.hash").contains("competition=postseason&stage=npb_cs_first&role=pitching"));
+        shell("input keyevent KEYCODE_BACK");waitCondition("Back to editorial Home","!!document.querySelector('.postseason-spotlight')");
+        js("document.querySelector('.japan-home-result').click()");waitText("アプリ独自選出");
+        assertTrue("No invented Japan Series MVP",js("document.querySelector('.daily-mvp').innerText").contains("選手成績未収録"));
     }
 }

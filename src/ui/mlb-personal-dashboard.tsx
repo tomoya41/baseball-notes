@@ -50,7 +50,7 @@ export function MlbPersonalDashboard({ manifest, season, directory, compact = fa
   const selected = manifest.seasons.find(s => s.season === season);
   const teams = actions.favorites.filter(f => f.league === "MLB" && f.kind === "team"), players = actions.favorites.filter(f => f.league === "MLB" && f.kind === "player");
   const chronology = useHistoricalStatic<HistoricalChronology>(selected && !compact && players.length ? `chronology/${season}.json` : null);
-  if (!selected) return <DataState kind="unsupported" title="この年は未収録です。Currentの試合・成績は未対応です。" />;
+  if (!selected) return <DataState kind="unsupported" title="この年は未収録です。今季の試合・成績は未対応です。" />;
   return <>
     <section className="home-section"><SectionHeader title="フォロー球団" action="球団を探す" to={`/MLB/teams${scope}`} /><p className="inline-note">{season}年の{competition === "postseason" ? "Postseason" : "Regular Season"}過去記録。現在の試合・次戦ではありません。</p>
       {!teams.length ? !compact && <p className="inline-note">球団ページの★から追加できます。</p> : <>{!compact && <div className="row-list">{teams.map(f => { const t = manifest.teams.find(t => t.id === f.entityId); return <div className="surface-favorite" key={f.entityId}><Link className="player-row" to={`/MLB/teams/${encodeURIComponent(f.entityId)}${scope}`}>{t?.name ?? "球団情報未確認"}</Link><TeamFavorite league="MLB" teamId={f.entityId} name={t?.name ?? "登録済み球団"} {...actions} /></div>; })}</div>}{teams.filter(f => manifest.teams.some(t => t.id === f.entityId)).slice(0, compact ? 1 : 4).map(f => <HistoricalFavoriteTeam key={`${f.entityId}:${season}`} id={f.entityId} manifest={manifest} season={season} scope={scope} />)}{teams.length > (compact ? 1 : 4) && <p className="inline-note">試合表示は先頭{compact ? 1 : 4}球団。全お気に入りはMyの一覧へ。</p>}</>}

@@ -1,3 +1,4 @@
+import { formatThrowBat } from "../presentation/baseball-language";
 import { Link } from "react-router-dom";
 import { draftTeams, draftExpandedPredictionOutcome, type DraftEvent } from "../domain/npb-draft-event";
 import { npbTeamShortName as getTeamName } from "./npb-team-names";
@@ -12,7 +13,7 @@ export function NpbDraftCandidates({data,q,group,onSearch,onGroup}:{data:DraftEv
   return <><h2>注目候補を探す</h2><p>高校・大学の公式名簿と志望届を照合した選手を表示します。一部収録で、全候補の一覧ではありません。</p>
     {data.candidateGroups&&<label>所属区分<select value={group} onChange={e=>onGroup(e.target.value)}><option value="all">すべて</option>{Object.entries(draftGroupLabels).map(([key,name])=><option key={key} value={key}>{name}</option>)}</select></label>}
     <label className="search-field"><span className="sr-only">名前・学校・所属・守備位置</span><input type="search" maxLength={80} value={q} onChange={e=>onSearch(e.target.value)} placeholder="選手・学校・チームから探す"/></label><p className="inline-note">{rows.length}人 · 一部収録</p>
-    {rows.map(c=><article className="player-row" key={c.id}><div className="player-row__body"><small>{groups.has(c.id)?draftGroupLabels[groups.get(c.id)!]:""} · 志望届提出を確認</small><strong>{c.name}</strong><p>{c.affiliation} · {c.position} · {c.throws==="未確認"&&c.bats==="未確認"?"投打未確認":`${c.throws}投${c.bats}打`}</p><small>{c.context}</small><a href={draftForecastAdmission(c,groups.get(c.id)).url??undefined}>照合した公式名簿</a></div></article>)}
+    {rows.map(c=><article className="player-row" key={c.id}><div className="player-row__body"><small>{groups.has(c.id)?draftGroupLabels[groups.get(c.id)!]:""} · 志望届提出を確認</small><strong>{c.name}</strong><p>{c.affiliation} · {c.position} · {formatThrowBat(c.throws,c.bats)}</p><small>{c.context}</small><a href={draftForecastAdmission(c,groups.get(c.id)).url??undefined}>照合した公式名簿</a></div></article>)}
     {!!held.length&&<details><summary>対象外・確認待ちの以前の収録記録（{held.length}人）</summary><p>以下は現在の注目候補・予想には含めません。社会人・独立リーグは志望届未提出という意味ではありません。</p>{held.map(c=>{const r=draftForecastAdmission(c,groups.get(c.id));return <p key={c.id}>{c.name} · {c.affiliation}<br/>{r.note}</p>;})}</details>}
     {!rows.length&&<p role="status">{held.length?"この条件の選手は対象外・確認待ちです。":"この条件の選手は未収録です。"}</p>}
   </>;

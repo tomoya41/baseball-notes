@@ -1,3 +1,4 @@
+import { formatThrowBat } from "../presentation/baseball-language";
 import { LicensedPlayerPhoto, PlayerPhotoCredits } from "./licensed-player-photo";
 import { BattingViewControl } from "./player-display-role";
 import { useSeasonDisplayRoles } from "./use-player-display-role";
@@ -165,7 +166,7 @@ export function MlbHistoricalSchedule({ manifest, ...actions }: { manifest: Mani
     <DataState kind="unsupported" title={season === 2026 ? "2026年の試合結果・選手成績は未対応" : "このシーズンは未収録です"}
       action="過去の記録を見る" to="/MLB/schedule?season=2025" /></div>;
   return <div className="screen"><PageHeading eyebrow="MLB / 過去記録" title="日程・結果" />
-    <div className="schedule-season"><label>シーズン<select value={selected.season} onChange={e => { const next = manifest.seasons.find(s => s.season === Number(e.target.value))!; navigate(next.lastDate); }}>{manifest.seasons.map(s => <option key={s.season}>{s.season}</option>)}</select></label><span>{competition === "postseason" ? "Postseason" : "Regular Season"}</span></div>
+    <div className="schedule-season"><label>シーズン<select value={selected.season} onChange={e => { const next = manifest.seasons.find(s => s.season === Number(e.target.value))!; navigate(next.lastDate); }}>{manifest.seasons.map(s => <option key={s.season}>{s.season}</option>)}</select></label><span>{competition === "postseason" ? "ポストシーズン" : "レギュラーシーズン"}</span></div>
     {validDate && <DateRibbon date={date} min={selected.firstDate} max={selected.lastDate} onChange={navigate} />}
     {!validDate ? <DataState kind="no-data" title="対象期間外の日付です" /> : result.status === "missing" ?
       <DataState kind="no-data" title="この日に収録された公式戦はありません" detail="現在シーズンの試合有無を示すものではありません。" /> :
@@ -365,7 +366,7 @@ export function MlbHistoricalPlayer({ manifest, favorites, toggle, saving }: {
         {games.find(item => item.gameId === row.gameId) && <small>打撃: PA {format(games.find(item => item.gameId === row.gameId)?.pa)} · H {format(games.find(item => item.gameId === row.gameId)?.hits)} · HR {format(games.find(item => item.gameId === row.gameId)?.homeRuns)}</small>}
         {pitches.find(item => item.gameId === row.gameId) && <small>投球: {format(pitches.find(item => item.gameId === row.gameId)?.outsRecorded)}アウト · SO {format(pitches.find(item => item.gameId === row.gameId)?.so)} · ER {format(pitches.find(item => item.gameId === row.gameId)?.er)}</small>}</Link>)}
     </div></section>{!section && <Link className="button button--secondary" to={`${base}/game-log?season=${selected}${scopeQuery}`}>試合別成績をもっと見る</Link>}</>}
-    {section === "more" && <section className="surface-card"><h2>プロフィール</h2><dl className="profile-definition"><div><dt>守備位置</dt><dd>{historicalPositions(player.positions) || "未登録"}</dd></div><div><dt>投打</dt><dd>{({R:"右",L:"左",B:"両"} as Record<string,string>)[player.throws ?? ""] ?? player.throws ?? "—"}投 / {({R:"右",L:"左",B:"両"} as Record<string,string>)[player.bats ?? ""] ?? player.bats ?? "—"}打</dd></div><div><dt>収録年</dt><dd>{player.seasons.join(" / ")}</dd></div><div><dt>所属球団</dt><dd>{player.teamIds.map(id => teamName(manifest,id)).join(" / ")}</dd></div></dl><p className="inline-note">所属球団は収録期間中の情報です。現在の所属を示すものではありません。</p></section>}
+    {section === "more" && <section className="surface-card"><h2>プロフィール</h2><dl className="profile-definition"><div><dt>守備位置</dt><dd>{historicalPositions(player.positions) || "未登録"}</dd></div><div><dt>投打</dt><dd>{formatThrowBat(player.throws,player.bats)}</dd></div><div><dt>収録年</dt><dd>{player.seasons.join(" / ")}</dd></div><div><dt>所属球団</dt><dd>{player.teamIds.map(id => teamName(manifest,id)).join(" / ")}</dd></div></dl><p className="inline-note">所属球団は収録期間中の情報です。現在の所属を示すものではありません。</p></section>}
     {section === "more" && <SavedSeasonTimeline profile={profile} manifest={manifest} competition={competition} />}
     {(!section || section === "stats") && manifest.seasons.find(s=>s.season===selected)?.coverage === "complete" && <SeasonCheckpointSummary batting={seasonTotals?.batting as ExplorerValues ?? null} pitching={seasonTotals?.pitching as ExplorerValues ?? null} season={selected} playerId={player.id} competition={competition} />}
     {section === "more" && <PlayerFutureLinks base={base} historical />}
@@ -398,7 +399,7 @@ function MlbHistoricalRecords({ manifest }: { manifest: Manifest }) {
       {manifest.features?.collectedCountingRecords === "available" && manifest.collectedRecordPeriods?.map(period => <option key={period.id} value={period.id}>{period.label}</option>)}
       {manifest.seasons.map(item => <option key={item.season}>{item.season}</option>)}</select></label></header>
     {result.status !== "ready" ? <Status state={result} /> : <>
-      {competition === "postseason" && <p className="inline-note">Postseason Leaders · 安打・本塁打などの集計。Regular Seasonの順位・規定到達とは別です。</p>}
+      {competition === "postseason" && <p className="inline-note">ポストシーズン成績 · 安打・本塁打などの集計。レギュラーシーズンの順位・規定到達とは別です。</p>}
       {collectedRange && <p className="inline-note">{scopeLabel}。MLB通算・歴代記録ではありません。Regular / Postseasonは別集計です。</p>}
       <div className="chip-list" role="group" aria-label="ランキングの種類">{(competition === "postseason" || collectedRange ? ["counting"] as const : ["counting", "rate"] as const).map(value =>
         <button className="filter-chip" type="button" key={value} aria-pressed={effectiveCategory === value}

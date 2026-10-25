@@ -1205,3 +1205,12 @@ Historical Regular supports one-season peer discovery by explicit birth year or 
 NPB Historical supports a maximum four-player comparison of seasons where each player's verified birth date makes them the selected age at December 31. This is a collected Regular Season comparison, not cumulative Career through an age/birthday, official qualification or era-adjusted ranking. The existing manifest, Catalog and bounded annual readers preserve identity/null/sample/provenance. Explicit Saved Views retain conditions; automatic Activity does not. Player annual stats also connect confirmed school/Draft/affiliation metadata to actually collected season links on explicit story expansion. See `docs/npb-player-story-age-comparison.md` for unfinished original-vision areas and evidence.
 
 User clarification: the main NPB peer entry groups the same Japanese school grade by verified birthdays **April 2–April 1**, rather than calendar-year births. The complete birth range is displayed; actual school enrollment/graduation is never inferred. `schoolYear` is additive and existing `birthYear` URLs retain their original meaning. Year-end age-season comparison remains a separate analytical view.
+
+
+### 日本語表記と独立した試合の読みどころ（2026-10-25）
+
+一般画面の投打は共通表示処理で throws→bats の順に統一する（右投左打等）。不明な側を推測せず、公式戦・CS・日本シリーズ・MLB固有シリーズを文脈に応じて表記する。出典の原文・ライセンス文言と内部データ契約は変更しない。
+
+CS・日本シリーズの注目選手は、収録済みCSの試合別観測を根拠とする実績と、保存済み公式戦からの独自の注目を分ける。対象ステージ・試合・母数・部分収録・出典を示し、個人成績未収録の日本シリーズの実績とは称しない。
+
+日別MVPは公式表彰ではない独自選出。公式戦の当日の全終了試合が収録完了で、保存済み試合別成績・日付・ID・球団・スコアを照合できる場合のみ判定する。新規DB読み取りを増やさず、既存の公開レスポンスキャッシュから確認し、不足時は選出保留。CSの部分収録・日本シリーズの個人成績未収録からMVPを捏造しない。HOT/Ranking Gateとは独立する。詳細は docs/baseball-language-and-postseason-readings.md。

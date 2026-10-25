@@ -73,7 +73,7 @@ export function NpbPlayerSearchView({ directory, state, query, onQueryChange, te
       {players.length > visibleLimit && <button className="button button--secondary" onClick={() => { setExpandedKey(filterKey); setLimit(visibleLimit + 80); }}>さらに80人を表示</button>}
       <p className="npb-directory-note">保存済み選手情報から表示しています。守備位置が未登録の選手は表示を省略します。</p>
     </>}
-    <details className="search-related"><summary>同期・過去の選手・大会から探す</summary><LifecycleLinks />
+    <details className="search-related"><summary>同期・過去の選手・シリーズから探す</summary><LifecycleLinks />
     <Link className="text-link" to={`/NPB/history?season=2025&q=${encodeURIComponent(query)}`}>過去の選手・OBを探す →</Link>
     <Link className="text-link" to="/NPB/compare">選手比較 →</Link>
     <Link className="text-link" to="/NPB/cs?season=2026">CSの収録試合・選手 →</Link></details>

@@ -38,7 +38,7 @@ export function sumNpbCompetitionRows(input:readonly unknown[]) {
   const keys=rows.map(r=>`${r.playerId}:${r.season}:${r.teamId}:${r.role}`);
   if(new Set(keys).size!==keys.length)throw Error("Duplicate aggregate");
   const total=sumHistoricalRows(rows);
-  return {...total,metrics:{...total.metrics,...historicalRates(rows[0]!.role,total.metrics)},competition:scope.competition,stage:scope.stage,scopeLabel:"収録年度・大会の範囲のみ（全キャリア通算ではありません）"};
+  return {...total,metrics:{...total.metrics,...historicalRates(rows[0]!.role,total.metrics)},competition:scope.competition,stage:scope.stage,scopeLabel:"収録年度・シリーズの範囲のみ（全キャリア通算ではありません）"};
 }
 
 /** Collection state does not imply rights, player coverage, freshness or a Production Gate. */
