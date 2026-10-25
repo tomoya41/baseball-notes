@@ -31,6 +31,7 @@ jobs:
           key: npb-ai-candidates-v1-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: npb-ai-candidates-v1-
       - name: Prepare input without invoking AI
+        id: prepare
         run: npx tsx scripts/prepare-npb-ai-insights.ts --stage
       - name: Optional single free-plan attempt, never publication
         if: inputs.generate == true
@@ -45,5 +46,13 @@ jobs:
         with:
           path: .data/npb-ai-insights
           key: npb-ai-candidates-v1-${{ github.run_id }}-${{ github.run_attempt }}
+      - name: Upload unpublished review package
+        if: always() && steps.prepare.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: npb-ai-review-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .data/npb-ai-insights/review.json
+          retention-days: 7
+          if-no-files-found: error
       - name: Record safe summary
         run: echo 'Candidate preparation only. No canonical/public writes, Gate changes, source article bodies or automatic publication. No scheduled AI execution is enabled.' >> "$GITHUB_STEP_SUMMARY"

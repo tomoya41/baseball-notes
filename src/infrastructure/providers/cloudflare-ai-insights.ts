@@ -3,7 +3,15 @@ import { validateNpbAiDraft, type NpbAiEvidence } from "../../data/npb-ai-insigh
 
 export const insightModel="@cf/meta/llama-3.1-8b-instruct-fp8";
 export interface FreeInsightConfig { accountId:string|undefined;token:string|undefined;freePlanReviewed:boolean;termsReviewed:boolean }
-const responseSchema=z.object({success:z.literal(true),result:z.object({response:z.string().max(6000)})});
+const responseSchema=z.object({success:z.literal(true),result:z.object({response:z.string().max(6000),usage:z.unknown().optional()})});
+const usageSchema=z.object({prompt_tokens:z.number().int().nonnegative(),completion_tokens:z.number().int().nonnegative(),
+  total_tokens:z.number().int().nonnegative()});
+
+function reportedUsage(value:unknown) {
+  const parsed=usageSchema.safeParse(value);
+  if(!parsed.success||parsed.data.prompt_tokens+parsed.data.completion_tokens!==parsed.data.total_tokens)return null;
+  return parsed.data;
+}
 
 /** Server-side, one bounded attempt; no retry, tools, gateway or paid fallback. */
 export async function generateNpbAiCandidate(input:NpbAiEvidence,config:FreeInsightConfig,request:typeof fetch=fetch) {
@@ -12,6 +20,9 @@ export async function generateNpbAiCandidate(input:NpbAiEvidence,config:FreeInsi
   if(!/^[a-f0-9]{32}$/i.test(config.accountId))throw Error("Invalid Cloudflare account identifier");
   const content=JSON.stringify(input);
   if(Buffer.byteLength(content)>13_000)throw Error("AI request exceeds budget");
+  let httpStatus:number|null=null;
+  let usage:ReturnType<typeof reportedUsage>=null;
+  let failureStage:"request"|"response"|"draft"="request";
   try {
     const response=await request(`https://api.cloudflare.com/client/v4/accounts/${config.accountId}/ai/run/${insightModel}`,{
       method:"POST",redirect:"error",signal:AbortSignal.timeout(20_000),
@@ -21,15 +32,23 @@ export async function generateNpbAiCandidate(input:NpbAiEvidence,config:FreeInsi
         {role:"user",content},
       ]}),
     });
-    if(response.status===429)return {status:"QUOTA_EXHAUSTED" as const,requests:1,publiclyAdmitted:false as const};
-    if(!response.ok)return {status:"PROVIDER_UNAVAILABLE" as const,requests:1,publiclyAdmitted:false as const};
+    httpStatus=response.status;
+    if(response.status===429)return {status:"QUOTA_EXHAUSTED" as const,requests:1,publiclyAdmitted:false as const,httpStatus,usage};
+    if(!response.ok)return {status:"PROVIDER_UNAVAILABLE" as const,requests:1,publiclyAdmitted:false as const,httpStatus,usage};
+    failureStage="response";
     // Bound the actual stream, not just a possibly absent Content-Length header.
     const reader=response.body?.getReader();if(!reader)throw Error("Empty AI response");
     const chunks:Uint8Array[]=[];let size=0;
     try {for(;;){const part=await reader.read();if(part.done)break;size+=part.value.length;if(size>20_000)throw Error("Oversized AI response");chunks.push(part.value);}}
     finally {await reader.cancel();}
-    const payload=responseSchema.parse(JSON.parse(Buffer.concat(chunks).toString("utf8")));
+    const text=Buffer.concat(chunks).toString("utf8");
+    // A reflected credential must never enter cache, artifacts or review prose.
+    if(text.includes(config.token))throw Error("Credential reflection");
+    const payload=responseSchema.parse(JSON.parse(text));
+    usage=reportedUsage(payload.result.usage);
+    failureStage="draft";
     const candidate=validateNpbAiDraft(JSON.parse(payload.result.response),input);
-    return {...candidate,requests:1,provider:"Cloudflare Workers AI",model:insightModel,generatedAt:new Date().toISOString()};
-  } catch {return {status:"INVALID_OR_UNAVAILABLE_CANDIDATE" as const,requests:1,publiclyAdmitted:false as const};}
+    if(JSON.stringify(candidate).includes(config.token))throw Error("Credential reflection");
+    return {...candidate,requests:1,provider:"Cloudflare Workers AI",model:insightModel,generatedAt:new Date().toISOString(),httpStatus,usage};
+  } catch {return {status:"INVALID_OR_UNAVAILABLE_CANDIDATE" as const,requests:1,publiclyAdmitted:false as const,httpStatus,usage,failureStage};}
 }
