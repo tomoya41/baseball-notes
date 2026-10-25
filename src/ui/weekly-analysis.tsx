@@ -76,7 +76,7 @@ export function NpbWeeklyScreen({services}:{services:Pick<Services,"gameSurface"
   const stage=rawStage as NpbWeeklyStage,key=`${rawStage}:${date??"latest"}`;
   const [state,setState]=useState<{key:string;value:Awaited<ReturnType<typeof readNpbWeekly>>|null;error:boolean}>({key:"",value:null,error:false}),[attempt,setAttempt]=useState(0);
   useEffect(()=>{if(!valid)return;let active=true;void readNpbWeekly(stage,date,services.gameSurface).then(value=>{if(active)setState({key,value,error:false});}).catch(()=>{if(active)setState({key,value:null,error:true});});return()=>{active=false;};},[key,stage,date,valid,services.gameSurface,attempt]);
-  const update=(field:string,value:string)=>{const p=new URLSearchParams(params);p.set(field,value);if(field==="stage")p.delete("week");setParams(p);};
+  const update=(field:string,value:string)=>{const p=new URLSearchParams(params);p.set(field,value);if(field==="stage"){p.delete("week");p.delete("competition");}setParams(p);};
   const value=state.key===key?state.value:null;
   return <div className="screen weekly-screen"><PageHeading eyebrow="NPB · 2026" title="週間レポート"/><label className="weekly-stage"><span className="sr-only">集計対象</span><select aria-label="集計対象" value={stage} onChange={e=>update("stage",e.target.value)}>{Object.entries(stages).map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label>
     {!valid?<DataState kind="no-data" title="この条件は未対応です"/>:state.key===key&&state.error?<ResultError retry={()=>setAttempt(n=>n+1)}/>:!value?<LoadingSkeleton/>:<>

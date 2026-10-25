@@ -27,6 +27,16 @@ it("rejects a contradictory NPB competition without reading or relabeling data",
   await act(async()=>root.render(<MemoryRouter initialEntries={["/NPB/weekly?stage=japan_series&competition=regular"]}><NpbWeeklyScreen services={{gameSurface:{} as Services["gameSurface"]}}/></MemoryRouter>));
   expect(state.npb).not.toHaveBeenCalled();expect(container.textContent).toContain("この条件は未対応");
 });
+it("switches both NPB stage directions from explicitly scoped shared URLs",async()=>{
+  state.npb.mockRejectedValue(new Error("Unavailable fixture source"));
+  await act(async()=>root.render(<MemoryRouter initialEntries={["/NPB/weekly?stage=japan_series&competition=postseason&season=2026&week=2026-10-19"]}><NpbWeeklyScreen services={{gameSurface:{} as Services["gameSurface"]}}/></MemoryRouter>));
+  const select=container.querySelector<HTMLSelectElement>('select[aria-label="集計対象"]')!;
+  await act(async()=>{select.value="regular";select.dispatchEvent(new Event("change",{bubbles:true}));});
+  expect(state.npb.mock.calls.at(-1)?.slice(0,2)).toEqual(["regular",undefined]);
+  await act(async()=>{select.value="npb_cs_first";select.dispatchEvent(new Event("change",{bubbles:true}));});
+  expect(state.npb.mock.calls.at(-1)?.slice(0,2)).toEqual(["npb_cs_first",undefined]);
+  expect(state.npb).toHaveBeenCalledTimes(3);expect(container.textContent).not.toContain("この条件は未対応");
+});
 it("does not request MLB Current or display old results under an invalid selection",async()=>{
   const f=weeklyFixture();await act(async()=>root.render(<MemoryRouter initialEntries={["/MLB/weekly?season=2026"]}><MlbWeeklyScreen manifest={f.manifest}/></MemoryRouter>));
   expect(state.mlb).not.toHaveBeenCalled();expect(container.textContent).toContain("未収録");
