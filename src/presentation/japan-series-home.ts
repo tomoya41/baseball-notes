@@ -11,11 +11,15 @@ export function japanSeriesHomeSummary(data: NpbJapanSeries, now: number) {
   const date = dateInZone(now, "Asia/Tokyo");
   const finals = data.series.games.filter(g => g.status === "final");
   const latest = finals.at(-1) ?? null;
-  const next = data.series.clinched ? null : data.series.games.find(g => g.date >= date && (g.status === "scheduled" || g.status === "in_progress")) ?? null;
+  const open = data.series.clinched ? [] : data.series.games.filter(g => (g.status === "scheduled" || g.status === "in_progress") && g.gameNumber > (latest?.gameNumber ?? 0));
+  const next = open.find(g => g.date >= date) ?? null;
+  // An elapsed scheduled date is missing evidence, never an inferred final or cancellation.
+  const awaitingResult = open.find(g => g.date < date) ?? null;
   // A later final cannot establish the full series standing while earlier Games are missing.
   const through = latest ? data.series.games.filter(g => g.gameNumber <= latest.gameNumber) : [];
   const standingCompleteThroughLatest = !!latest && through.every(g => g.status === "final");
-  return { latest, next, finals: finals.length, standingCompleteThroughLatest };
+  const ties = finals.filter(g => g.winnerId === null).length;
+  return { latest, next, awaitingResult, ties, finals: finals.length, standingCompleteThroughLatest };
 }
 
 export const japanSeriesGameUrl = (id: string) => `/NPB/games/${encodeURIComponent(id)}?season=2026&competition=postseason&stage=japan_series`;
