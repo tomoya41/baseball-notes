@@ -697,6 +697,9 @@ public class ReleaseQualityTest {
         org.junit.Assume.assumeTrue("Japan Series editorial period only",Boolean.parseBoolean(js("(()=>{const d=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Tokyo'}).format(new Date());return d>='2026-10-24'&&d<='2026-11-08';})()")));
         waitCondition("Validated static Japan Series Home","!!document.querySelector('.japan-home-result')");
         assertEquals("Japan Series precedes regular controls","true",js("document.querySelector('.home-hub').firstElementChild.classList.contains('japan-home')"));
+        assertEquals("Home starts with details collapsed","false",js("String(document.querySelector('.japan-home-explore').open)"));
+        assertEquals("Compact Home fits before regular results","true",js("document.querySelector('.japan-home').getBoundingClientRect().height<320"));
+        js("if(!document.querySelector('.japan-home-explore').open)document.querySelector('.japan-home-explore>summary').click()");
         waitCondition("Three independently identified portraits load","Array.from(document.querySelectorAll('.japan-home-players img')).filter(i=>i.complete&&i.naturalWidth>0).length===3");
         assertEquals("Photo links retain capture dates","3",js("String(document.querySelectorAll('.japan-home-players figcaption').length)"));
         setTheme("light","ライト");js("location.hash='#/NPB/home'");waitCondition("Japan Series Home","!!document.querySelector('.japan-home-result')");
@@ -711,13 +714,15 @@ public class ReleaseQualityTest {
         assertEquals("Home opens the exact latest admitted result",resultRoute,js("location.hash"));
         assertEquals("Latest final has actual completed inning evidence","true",js("document.querySelectorAll('.series-innings tbody tr').length>=9 && document.querySelectorAll('.series-innings tbody tr').length<=30"));
         shell("input keyevent KEYCODE_BACK");waitCondition("Back to Home","!!document.querySelector('.japan-home-result')");
+        js("if(!document.querySelector('.japan-home-explore').open)document.querySelector('.japan-home-explore>summary').click()");
+        waitCondition("Player shortcuts are available","!!document.querySelector('.japan-home-player-link')");
         js("document.querySelector('.japan-home-player-link').click()");waitText("牧秀悟");
         waitCondition("Exact canonical portrait on Player","!!document.querySelector('.player-identity img[alt*=\"牧秀悟\"]')");
         shell("input keyevent KEYCODE_BACK");waitCondition("Player Back returns to Japan Series Home","!!document.querySelector('.japan-home-result')");
     }
     @Test public void additionalJapanSeriesPortraitsKeepIdentityDatesAndLargeText() throws Exception {
         scenario=ActivityScenario.launch(MainActivity.class);waitText("BASEBALL");
-        String[][] players={{"21a327b4-3924-422a-a1fc-d853e236a201","東克樹","2018"},{"fe02470d-7c15-4c03-8a17-d6d339445ebe","周東佑京","2021"}};
+        String[][] players={{"21a327b4-3924-422a-a1fc-d853e236a201","東克樹","2018"},{"fe02470d-7c15-4c03-8a17-d6d339445ebe","周東佑京","2021"},{"2b2a8d97-2a6e-441c-9a33-0d79d2a7d147","正木智也","2022"},{"304e870e-71ba-4df7-8682-99ad852ee751","杉山一樹","2024"}};
         for(int i=0;i<players.length;i++){
             String[] p=players[i];setTheme(i==0?"light":"dark",i==0?"ライト":"ダーク");
             js("location.hash='#/NPB/players/"+p[0]+"'");waitText(p[1]);
@@ -908,18 +913,19 @@ public class ReleaseQualityTest {
         scenario=ActivityScenario.launch(MainActivity.class);waitText("BASEBALL");
         org.junit.Assume.assumeTrue("Japan Series editorial period only",Boolean.parseBoolean(js("(()=>{const d=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Tokyo'}).format(new Date());return d>='2026-10-24'&&d<='2026-11-08';})()")));
         setTheme("light","ライト");js("location.hash='#/NPB/home'");
+        waitCondition("Home summary","!!document.querySelector('.japan-home-explore')");js("if(!document.querySelector('.japan-home-explore').open)document.querySelector('.japan-home-explore>summary').click()");
         waitCondition("Editorial CS readings","document.querySelectorAll('.spotlight-card').length===2");
         assertEquals("Masaki exact collected batting counts","8|2|3",js("Array.from(document.querySelectorAll('.spotlight-card[data-player=\"2b2a8d97-2a6e-441c-9a33-0d79d2a7d147\"] > .spotlight-numbers dd')).map(e=>e.textContent).join('|')"));
         js("Array.from(document.querySelectorAll('.spotlight-switch button')).find(b=>b.textContent==='次戦への注目').click()");
         waitCondition("Real saved Regular readings","!!document.querySelector('.spotlight-card[data-player=\"852bed28-a3f1-4b60-8a1f-950cc2947686\"]')");
         assertEquals("Maki exact saved Regular counts","467|29|72",js("Array.from(document.querySelectorAll('.spotlight-card[data-player=\"852bed28-a3f1-4b60-8a1f-950cc2947686\"] > .spotlight-numbers dd')).map(e=>e.textContent).join('|')"));
-        fontScaleAndRecreate(2.0f);waitCondition("CS readings after recreation","document.querySelectorAll('.spotlight-card').length===2");waitViewport(360);
+        fontScaleAndRecreate(2.0f);waitCondition("Compact Home after recreation","!!document.querySelector('.japan-home-explore')");js("if(!document.querySelector('.japan-home-explore').open)document.querySelector('.japan-home-explore>summary').click()");waitCondition("CS readings after recreation","document.querySelectorAll('.spotlight-card').length===2");waitViewport(360);
         assertEquals("Editorial Light 200 percent no overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));screenshot("postseason-readings-font-20-light");
-        setTheme("dark","ダーク");js("location.hash='#/NPB/home'");waitCondition("Dark CS readings","document.querySelectorAll('.spotlight-card').length===2");
+        setTheme("dark","ダーク");js("location.hash='#/NPB/home'");waitCondition("Dark compact Home","!!document.querySelector('.japan-home-explore')");js("if(!document.querySelector('.japan-home-explore').open)document.querySelector('.japan-home-explore>summary').click()");waitCondition("Dark CS readings","document.querySelectorAll('.spotlight-card').length===2");
         assertEquals("Editorial Dark 200 percent no overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));screenshot("postseason-readings-font-20-dark");
         js("document.querySelector('.spotlight-card[data-player=\"21a327b4-3924-422a-a1fc-d853e236a201\"] .spotlight-destination').click()");waitText("CS ファースト");
         assertTrue("CS role/stage survives navigation",js("location.hash").contains("competition=postseason&stage=npb_cs_first&role=pitching"));
-        shell("input keyevent KEYCODE_BACK");waitCondition("Back to editorial Home","!!document.querySelector('.postseason-spotlight')");
+        shell("input keyevent KEYCODE_BACK");waitCondition("Back to compact Home","!!document.querySelector('.japan-home-result')");
         js("document.querySelector('.japan-home-result').click()");waitText("アプリ独自選出");
         assertTrue("No invented Japan Series MVP",js("document.querySelector('.daily-mvp').innerText").contains("選手成績未収録"));
     }

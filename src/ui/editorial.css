@@ -264,22 +264,22 @@
 :root[data-large-font] .team-player-list .player-row__body { min-width: min(160px,100%); }
 
 /* Japan Series: results first, with independent schedule and portrait disclosures. */
-.japan-home { margin: 0 0 20px; min-width: 0; }
-.japan-home-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
-.japan-home-heading p { margin: 0 0 2px; font-size: .625rem; letter-spacing: .16em; color: var(--color-muted); }
-.japan-home h1 { margin: 0; font-size: 1.25rem; letter-spacing: .04em; }
+.japan-home { margin: 0 0 12px; min-width: 0; }
+.japan-home-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.japan-home h1 { margin: 0; font-size: 1rem; }
+.japan-home h1 small { font-size: .6875rem; font-weight: 400; color: var(--color-muted); }
 .japan-home-heading>a { min-height: 44px; display: flex; align-items: center; gap: 8px; font-size: .75rem; white-space: nowrap; }
-.japan-home-score { padding: 12px; color: #f4f7fc; background: linear-gradient(115deg,#10283f,#061522); border-top: 2px solid #c3a16b; }
-.japan-home-caption { margin: 0 0 6px; text-align: center; font-size: .75rem; color: #c5d2e2; }
-.japan-home-result { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); gap: 8px; align-items: center; min-height: 68px; text-decoration: none; color: inherit; }
+.japan-home-score { padding: 8px 12px; color: #f4f7fc; background: linear-gradient(115deg,#10283f,#061522); border-top: 1px solid #c3a16b; }
+.japan-home-caption { margin: 0; text-align: left; font-size: .6875rem; color: #c5d2e2; }
+.japan-home-result { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); gap: 8px; align-items: center; min-height: 44px; text-decoration: none; color: inherit; }
 .japan-home-result>.club-identity { font-size: .8125rem; font-weight: 700; overflow-wrap: anywhere; }
 .japan-home-result>.club-identity:last-child { justify-self: end; }
-.japan-home-result>strong { display: flex; align-items: center; gap: 12px; font-size: 2.75rem; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.japan-home-result>strong { display: flex; align-items: center; gap: 8px; font-size: 1.5rem; font-variant-numeric: tabular-nums; line-height: 1.2; }
 .japan-home-result>strong small { color: #96a8bc; font-size: 1.125rem; font-weight: 400; }
-.japan-home-standing { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 14px; padding-top: 10px; border-top: 1px solid #ffffff29; font-size: .75rem; }
+.japan-home-standing { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 8px; padding-top: 4px; border-top: 1px solid #ffffff29; font-size: .6875rem; }
 .japan-home-standing small { color: #b9c9d9; font-size: .6875rem; }
-.japan-home-matchup { display: flex; justify-content: space-around; gap: 12px; padding: 18px 0; }
-.japan-home-next { padding: 10px 12px; background: var(--color-surface); border: 1px solid var(--color-border); border-top: 0; }
+.japan-home-matchup { display: flex; justify-content: space-around; gap: 8px; padding: 8px 0; }
+.japan-home-next { padding: 6px 12px 0; background: var(--color-surface); border: 1px solid var(--color-border); border-top: 0; }
 .japan-home-next-heading { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px; font-size: .75rem; }
 .japan-home-next-heading>span { font-variant-numeric: tabular-nums; color: var(--color-muted); }
 .japan-home-next-game { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-height: 44px; font-size: .8125rem; font-weight: 650; text-decoration: none; }
@@ -291,6 +291,10 @@
 .japan-home-starters a { display: flex; align-items: center; min-height: 44px; }
 .japan-home-source { font-size: .75rem; color: var(--color-muted); }
 .japan-home-source>summary { min-height: 44px; display: list-item; align-content: center; }
+.japan-home-explore { border-bottom: 1px solid var(--color-border); }
+.japan-home-explore>summary { min-height: 44px; align-content: center; font-size: .75rem; cursor: pointer; }
+.japan-home-explore>summary small { margin-left: 8px; color: var(--color-muted); font-size: .6875rem; }
+.japan-home-venue { font-size: .75rem; color: var(--color-muted); }
 .japan-home-players h2 { margin: 8px 0; font-size: .8125rem; }
 .japan-home-players>div { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; }
 .japan-home-players article { min-width: 0; border-bottom: 1px solid var(--color-border); }
