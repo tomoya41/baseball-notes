@@ -29,6 +29,8 @@ jobs:
         with: { distribution: temurin, java-version: "21" }
       - run: npm ci
       - run: npm run check
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
       - run: npx tsx scripts/prepare-android-web.ts && npx cap sync android
       - run: npx tsx scripts/scan-release-assets.ts .data/android-web
       - name: Debug APK and unsigned release AAB

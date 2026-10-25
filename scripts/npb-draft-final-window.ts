@@ -5,11 +5,12 @@ import display from "../src/data/npb-draft-final-display.json";
 import { assertFinalAppPublicationWindow, finalDraftForecastSchema, draft2026Start } from "../src/domain/npb-draft-final";
 
 /** Explicit postmeeting archive admission is separate from first premeeting Pages publication. */
-async function verifyPremeetingRelease(request: typeof fetch, now: number) {
+async function verifyPremeetingRelease(request: typeof fetch, now: number, githubToken: string | undefined) {
   if (now < Date.parse(draft2026Start)) throw Error("Postmeeting archive cannot be presented before the meeting");
   const response = await request(`https://api.github.com/repos/tomoya41/baseball-notes/releases/${display.releaseId}`, {
-    headers: { "User-Agent": "BaseballNotes/1.0 (https://github.com/tomoya41/baseball-notes; immutable archive verification)" },
-    signal: AbortSignal.timeout(15000), cache: "no-store",
+    headers: { "User-Agent": "BaseballNotes/1.0 (https://github.com/tomoya41/baseball-notes; immutable archive verification)",
+      Accept: "application/vnd.github+json", ...(githubToken ? { Authorization: `Bearer ${githubToken}` } : {}) },
+    signal: AbortSignal.timeout(15000), cache: "no-store", redirect: "error",
   });
   if (!response.ok || !response.body) throw Error(`Archive release proof unavailable (HTTP ${response.status})`);
   const reader = response.body.getReader(), parts: Uint8Array[] = []; let length = 0;
@@ -27,8 +28,8 @@ async function verifyPremeetingRelease(request: typeof fetch, now: number) {
 }
 
 /** Shared normal-build/deploy gate. Timestamps alone never authorize late premeeting publication. */
-export async function verifyFinalDraftWindow(request: typeof fetch = fetch, now = Date.now(), mode: "premeeting" | "postmeeting_archive" = display.mode as "postmeeting_archive") {
-  if (mode === "postmeeting_archive") return verifyPremeetingRelease(request, now);
+export async function verifyFinalDraftWindow(request: typeof fetch = fetch, now = Date.now(), mode: "premeeting" | "postmeeting_archive" = display.mode as "postmeeting_archive", githubToken: string | undefined = process.env.GITHUB_TOKEN) {
+  if (mode === "postmeeting_archive") return verifyPremeetingRelease(request, now, githubToken);
   if (mode !== "premeeting") throw Error("Unknown final forecast publication purpose");
   if (now < Date.parse(draft2026Start) - 15 * 60000) {
     assertFinalAppPublicationWindow(false, now);

@@ -67,3 +67,5 @@ Workflow rerun correction: restore/save keys include both run ID and run attempt
 機械検証に通ってもこの表を自動PASSにしない。初回が失敗した場合はtoken/権限/HTTP status/出力の検証失敗を切り分け、同一入力・UTC日次markerを削除して再試行しない。既存のアプリ表示・正式データ・Gateには影響しない。
 
 定期実行はまだ無効。将来の有効化は、許諾済みsourceの確認 → 既存手順による新しい正式snapshotの採用 → 入力hash変更時のみ1試行 → 機械照合 → 文章レビュー → 別のimmutable公開PR、の順で検討する。AIだけを毎日動かして古い試合結果を新情報に見せず、レビュー未完了の自然言語を自動公開しない。Home・Android・配信payloadはこの準備で変更しない。
+
+CIの初回検証では全1,871テスト成功後、既存ドラフト予想のRelease証拠取得がHTTP 403で停止した。匿名取得の失敗だけから原因を断定せず、Foundation/Androidのbuild stepへActions標準のcontents:read tokenを渡し、固定GitHub APIへの1リクエストにだけ利用するよう修正。redirectを拒否し、Pagesや外部sourceへ転送しない。Release/asset/digest/時刻の全照合と403時の停止は維持し、再試行・別アカウント・証拠確認の省略は追加しない。

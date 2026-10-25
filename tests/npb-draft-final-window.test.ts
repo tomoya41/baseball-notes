@@ -31,6 +31,19 @@ it("admits only an explicitly postmeeting archive of the already-public exact Re
   expect(request).toHaveBeenCalledTimes(1); expect(String(request.mock.calls[0]![0])).toContain(`/releases/${display.releaseId}`);
   await expect(verifyFinalDraftWindow(request, Date.parse("2026-10-22T07:49:59Z"), "postmeeting_archive")).rejects.toThrow(/cannot be presented before/);
 });
+it("uses the read-only Actions token only for the fixed GitHub proof endpoint and rejects redirects", async () => {
+  const request = vi.fn<typeof fetch>(async () => new Response(JSON.stringify(releaseProof())));
+  await verifyFinalDraftWindow(request, Date.parse("2026-10-23T00:00:00Z"), "postmeeting_archive", "test-ci-token");
+  expect(request.mock.calls[0]![0]).toBe(`https://api.github.com/repos/tomoya41/baseball-notes/releases/${display.releaseId}`);
+  expect(new Headers(request.mock.calls[0]![1]?.headers).get("Authorization")).toBe("Bearer test-ci-token");
+  expect(request.mock.calls[0]![1]?.redirect).toBe("error");
+  const pages = vi.fn<typeof fetch>(async () => new Response(JSON.stringify(data) + "\n"));
+  await verifyFinalDraftWindow(pages, Date.parse("2026-10-23T00:00:00Z"), "premeeting", "test-ci-token");
+  expect(new Headers(pages.mock.calls[0]![1]?.headers).has("Authorization")).toBe(false);
+  const denied=vi.fn<typeof fetch>(async()=>new Response("do not retain",{status:403}));
+  await expect(verifyFinalDraftWindow(denied,Date.parse("2026-10-23T00:00:00Z"),"postmeeting_archive","test-ci-token")).rejects.toThrow("HTTP 403");
+  expect(denied).toHaveBeenCalledOnce();
+});
 it("rejects changed, late or unpublished archive proof rather than trusting local timestamps", async () => {
   const variants = [
     (p: ReturnType<typeof releaseProof>) => { p.draft = true; },
