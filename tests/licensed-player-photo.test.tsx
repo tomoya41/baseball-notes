@@ -44,4 +44,13 @@ describe("reviewed informational player portraits", () => {
     expect(text).toContain("現在の所属・背番号");
     expect(text).toContain("同じライセンス");
   });
+  it("keeps Japan Series additions dated and available only for the exact approved identity/years",()=>{
+    for(const id of ["21a327b4-3924-422a-a1fc-d853e236a201","fe02470d-7c15-4c03-8a17-d6d339445ebe"]){
+      const p=licensedPlayerPhotos.find(p=>p.playerId===id)!;
+      const render=(who:string,year:number)=>renderToStaticMarkup(<MemoryRouter><LicensedPlayerPhoto playerId={who} season={year}/></MemoryRouter>);
+      expect(render(id,2026)).toContain(`${p.season}年撮影`);
+      expect(render(p.name,2026)).toBe("");expect(render(id,p.season-1)).toBe("");expect(render(id,2027)).toBe("");
+      expect(render(id,2026)).not.toContain("予告先発");
+    }
+  });
 });
