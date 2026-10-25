@@ -44,4 +44,6 @@ npx tsx scripts/prepare-weekly-ai.ts
 
 本番AI cron・自由文自動公開は無効。将来はJST前週決定→許諾済み新データの正式採用→未変更hashはskip→母数/範囲確認→1回選考→参照照合→編集確認→別のimmutable公開PR。MLB Historicalの同じ過去週を毎週再生成しない。NPBの個人成績が不足する間は選手候補を作らない。
 
+Actionsの復元キーと有効な日次予約履歴を確認できない場合は `BUDGET_STATE_UNAVAILABLE`、0 calls。準備だけの新しいcacheを履歴の復元と見なさず、翌Runも自動で再開しない。cacheを消したり、空の予約を作って解除しない。cacheは永続台帳ではないため、cron有効化前にはレビュー済みの入力hash台帳・最新Runとの照合を追加し、履歴の欠落を回復可能にする。[復元キーの定義](https://github.com/actions/cache/blob/v4/restore/action.yml)を2026-10-26確認。
+
 AI停止時も統計は動作する。rollbackは週間リンク/routeと任意選考を戻すだけで、データ・旧URL・保存情報のmigration/削除は不要。追加月額¥0。

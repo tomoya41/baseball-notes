@@ -61,8 +61,14 @@ jobs:
           else
             npx tsx scripts/prepare-npb-ai-insights.ts --stage
           fi
+      - name: Verify restored attempt history before allowing any provider call
+        id: history
+        env:
+          RESTORED_AI_CACHE_KEY: ${{ steps.state.outputs.cache-matched-key }}
+          GENERATE_AI: ${{ inputs.generate }}
+        run: npx tsx scripts/check-ai-attempt-history.ts
       - name: Optional single free-plan attempt, never publication
-        if: inputs.generate == true
+        if: inputs.generate == true && steps.history.outputs.available == 'true'
         env:
           AI_ANALYSIS: ${{ inputs.analysis }}
           WEEKLY_SEASON: ${{ inputs.season }}

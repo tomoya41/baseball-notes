@@ -1,10 +1,10 @@
 import { it,expect,vi } from "vitest";
-import { mkdtemp,rm,readFile } from "node:fs/promises";
+import { mkdtemp,rm,readFile,writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join,resolve } from "node:path";
 import { readMlbWeekly } from "../src/application/mlb-weekly";
 import { prepareWeeklyAiInput,validateWeeklyAiSelection,generateWeeklyAiSelection } from "../src/data/weekly-ai-insights";
-import { claimInsightAttempt } from "../scripts/lib/optional-ai-budget";
+import { claimInsightAttempt,restoredInsightHistory } from "../scripts/lib/optional-ai-budget";
 import { weeklyFixture } from "./fixtures/weekly-analysis";
 
 const config={accountId:"a".repeat(32),token:"private-test-token",freePlanReviewed:true,termsReviewed:true};
@@ -47,10 +47,15 @@ it("shares one UTC-day reservation across legacy/weekly, failed attempts, reruns
   if(!resolve(root).startsWith(resolve(tmpdir())+"\\weekly-ai-test-")&&!resolve(root).startsWith(resolve(tmpdir())+"/weekly-ai-test-"))throw Error("Unsafe test cleanup");
   try{
     const now=new Date("2026-10-25T23:59:59Z"),hash="a".repeat(64),other="b".repeat(64);
+    expect(await restoredInsightHistory(root,"npb-ai-candidates-v1-new-empty-cache")).toBe(false);
     const results=await Promise.all([claimInsightAttempt(root,hash,now),claimInsightAttempt(root,other,now)]);
     expect(results.filter(r=>r.status==="RESERVED")).toHaveLength(1);expect(results.filter(r=>r.status==="DAILY_BUDGET_OR_INFLIGHT")).toHaveLength(1);
+    expect(await restoredInsightHistory(root,undefined)).toBe(false);
+    expect(await restoredInsightHistory(root,"npb-ai-candidates-v1-restored")).toBe(true);
     const used=JSON.parse(await readFile(join(root,"attempt-2026-10-25.json"),"utf8")).inputSha256 as string;
     expect((await claimInsightAttempt(root,used,new Date("2026-10-26T00:00:00Z"))).status).toBe("UNCHANGED_INPUT");
     expect((await claimInsightAttempt(root,used===hash?other:hash,new Date("2026-10-26T00:00:00Z"))).status).toBe("RESERVED");
+    await writeFile(join(root,"attempt-2026-10-26.json"),"{}");
+    expect(await restoredInsightHistory(root,"npb-ai-candidates-v1-restored")).toBe(false);
   }finally{await rm(root,{recursive:true,force:true});}
 });
