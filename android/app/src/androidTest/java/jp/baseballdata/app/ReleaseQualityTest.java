@@ -876,7 +876,9 @@ public class ReleaseQualityTest {
         fontScaleAndRecreate(1.5f); waitCondition("Weekly at 150 percent", "document.querySelectorAll('.weekly-hot li').length===9");waitViewport(360);
         assertEquals("Weekly 150 percent has no page overflow", "true", js("document.documentElement.scrollWidth<=innerWidth"));screenshot("weekly-font-15");
         fontScaleAndRecreate(2.0f); waitCondition("Weekly at 200 percent", "document.querySelectorAll('.weekly-hot li').length===9");waitViewport(360);
+          assertEquals("The full week selector has room for both dates at 200 percent", "true", js("document.querySelector('.weekly-week select').getBoundingClientRect().width>=300"));
         assertEquals("Weekly 200 percent has no page overflow", "true", js("document.documentElement.scrollWidth<=innerWidth"));screenshot("weekly-font-20");
+          js("document.querySelector('.weekly-hot').scrollIntoView({block:'start'})");screenshot("weekly-hot-font-20");js("window.scrollTo(0,0)");
         setTheme("light", "ライト");js("location.hash='#/NPB/weekly?stage=japan_series&week=2026-10-19'");
         waitCondition("NPB results-only weekly view", "!!document.querySelector('.weekly-overview') && document.querySelector('main').innerText.includes('選手の週間評価')");
         assertEquals("Closed NPB Gate never renders HOT", "0", js("document.querySelectorAll('.weekly-hot').length"));

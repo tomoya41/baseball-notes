@@ -51,6 +51,8 @@
 .weekly-method summary { min-height: 48px; font-weight: 600; }
 .weekly-change { font-size: 11px; color: var(--color-muted); margin: 6px 0 0 20px; }
 :root[data-large-font] .weekly-person>a { display: grid; grid-template-columns: auto minmax(0,1fr); }
+:root[data-large-font] .weekly-week { grid-template-columns: repeat(2,minmax(0,1fr)); }
+:root[data-large-font] .weekly-week>label { grid-column: 1 / -1; grid-row: 1; }
 :root[data-large-font] .weekly-main-metric { grid-column: 2; text-align: left; }
 :root[data-large-font] .weekly-statline { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,calc(48px * var(--android-font-scale,1))),1fr)); }
 .weekly-totals span { overflow-wrap: anywhere; }

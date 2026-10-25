@@ -44,5 +44,5 @@ export async function readMlbWeekly(manifest:WeeklyManifest,season:number,date:s
       rising.push(...change.entries.filter(e=>e.change==="rising").slice(0,2).map(e=>({...e,category})));}
   }
   return {summary,hot,rising,names:teamNames,sourceFingerprint:index.sourceFingerprint,asOf:descriptor.lastDate,
-    attribution:RETROSHEET_ATTRIBUTION,fetches:3+dates.length+monthsNeeded.length,playerEvaluation:"available" as const};
+    attribution:RETROSHEET_ATTRIBUTION,fetches:3+dates.length+monthsNeeded.length,playerEvaluation:covered?"available" as const:"incomplete_week" as const};
 }

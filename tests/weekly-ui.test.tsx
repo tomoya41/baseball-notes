@@ -41,6 +41,13 @@ it("does not request MLB Current or display old results under an invalid selecti
   const f=weeklyFixture();await act(async()=>root.render(<MemoryRouter initialEntries={["/MLB/weekly?season=2026"]}><MlbWeeklyScreen manifest={f.manifest}/></MemoryRouter>));
   expect(state.mlb).not.toHaveBeenCalled();expect(container.textContent).toContain("未収録");
 });
+it("explains a boundary week's held evaluation without claiming no players qualified",async()=>{
+  const f=weeklyFixture(),original=await vi.importActual<typeof import("../src/application/mlb-weekly")>("../src/application/mlb-weekly"),report=await original.readMlbWeekly(f.manifest,2025,"2025-09-29","regular",f.read);
+  state.mlb.mockResolvedValue(report);
+  await act(async()=>root.render(<MemoryRouter initialEntries={["/MLB/weekly?season=2025&week=2025-09-29"]}><MlbWeeklyScreen manifest={f.manifest}/></MemoryRouter>));
+  expect(container.textContent).toContain("シーズンの端を含む週");expect(container.textContent).toContain("選手評価は保留");
+  expect(container.querySelectorAll(".weekly-hot")).toHaveLength(0);expect(container.textContent).not.toContain("上昇基準を満たす選手はいません");
+});
 it("retains Postseason in analysis links and keeps missing NPB player stats off the page",async()=>{
   const f=weeklyFixture("postseason"),original=await vi.importActual<typeof import("../src/application/mlb-weekly")>("../src/application/mlb-weekly"),report=await original.readMlbWeekly(f.manifest,2025,"2025-09-22","postseason",f.read);
   state.mlb.mockResolvedValue(report);await act(async()=>root.render(<MemoryRouter initialEntries={["/MLB/weekly?season=2025&competition=postseason&week=2025-09-22"]}><HistoricalCompetitionContext.Provider value="postseason"><MlbWeeklyScreen manifest={f.manifest}/></HistoricalCompetitionContext.Provider></MemoryRouter>));
