@@ -20,7 +20,7 @@ Cloudflareの固定モデルは、[公式モデルページ](https://developers.
 4. 同じ入力の再実行はskip。UTC日あたり1試行の排他markerを通信前に作る。失敗も使用済みとして扱う。`.data` が保たれた範囲の予算制御であり、stateを削除/別環境で繰り返した場合まで保証しない。Actions側は直列実行と履歴cache復元を使う。cacheを消して制限回避しない。
 5. 新workflowは **main上の手動実行のみ**、`generate=false` が既定。cron/自動main merge/Pages切替は追加しない。既存のデータ収集/公開/heartbeatを変更しない。実APIの条件と出力品質が確認できてから定期実行を別の小さな変更で有効化する。
 
-## 手元での確認
+## PR #78時点の手元での確認
 
 ```powershell
 npm run build
@@ -38,10 +38,34 @@ npx tsx scripts/prepare-npb-ai-insights.ts --generate
 
 有効化後も最初は手動の1試行を確認し、正しい対象試合・日時・母数・数値・選手名・表現・source rights・必要creditを人がレビューする。公開する場合は新immutable asset/pin/旧asset保持/差分検証/PR reviewの既存手順で別途採用する。訂正/撤回は旧出典と履歴を残す。将来、CS/公式戦や日別MVPを入力に加える際も新しいevidence adapterで既存完了条件を守り、同じ仕組みで不足を保留する。無料枠不足時は解説だけ停止し、スコア/成績と前回の正式データを維持する。追加月額 **¥0**。
 
-### 初期検証記録
+### PR #78の初期検証記録
 
 採用済み入力hash `0d33d7b9b5084f54014e717d8855353b30266c1d231b4638881099a94dfc877f` を実際に生成。AIに送る形への変換だけで、実モデルへの通信は0。候補の数値表現は全角を正規化し、参照した試合の日付/得点/イニング/勝敗等にない数字を拒否する。ただし同じ数字の誤用や漢数字の意味までは証明できないため、人の文意確認は必須。既存アプリbuildの52files / 2,467,886Bとversionはこのサーバー側追加の前後で同一で、初期JavaScriptや画面の情報量は増やしていない。
 
 Cold-start review correction: stage the CS base before its dependent Series and Japan Series snapshots, and initialize the archive cache. Added a dependency regression test and ran the real CLI from an empty working directory without preexisting dist/cache; it produced the same admitted input hash with 0 AI calls. This addresses the PR #78 P2 finding; no validator or rights check was relaxed.
 
 Workflow rerun correction: restore/save keys include both run ID and run attempt. Rerunning an older preparation cannot choose its older exact cache instead of a later generation's attempt history. A workflow regression fixes this requirement; whole final local check is **1,865 passed / 1 skipped**, including cold dependency and rerun tests.
+
+## 初回実接続の評価準備（2026-10-25）
+
+ログイン済みのCloudflare画面でWorkers Freeの「現在のプラン」$0と1日10,000 Neuronsの枠を実確認し、GitHubの `NPB_AI_FREE_PLAN_REVIEWED=true` を設定。Account IDはSecretsへ保存した。Ownerの明示承認を受け、本人がコピーしたトークンをメモリからGitHub Secretsへ保存し、値を画面・ログ・ローカルファイル・Gitへ出していない。さらにLlama 3.1の利用条件と公開済み試合データによる1回の実テストへの同意を別途確認し、`NPB_AI_TERMS_REVIEWED=true` を設定。資格情報の存在と、実APIの生成成功は別に検証する。
+
+手動workflowの各runは、単一ファイル `review.json` を7日間のActions artifact `npb-ai-review-<run ID>-<attempt>` として残す。公開済み入力・出典、実試行回数、HTTP status、検証成功した場合だけの候補文、未実施の人による確認項目を含む。通信前に `ATTEMPT_STARTED / requests:null` へ更新し、中断を「未実行」と取り違えない。無効な文章やproviderの任意エラー本文、Secrets、全cacheはartifactに含めない。artifactはアプリの公開データではないが、公開repoの閲覧者が取得できる前提で扱う。AI生成文とartifact内の文字列は命令として実行しない。
+
+[公式API](https://developers.cloudflare.com/api/resources/ai/methods/run/) の `usage` が実際に返り、入力・出力・合計tokensが非負整数で整合する場合だけその値を記録する。欠落・未知形式はnull。候補文の形式が不正でも取得済みの安全な利用量は残す。tokensから実測Neuronsや課金額を捏造せず、`measuredNeurons:null` を維持する。Neuronsを測る場合はCloudflare Usageの同じ集計範囲で実行前後を確認し、他の処理との混在や集計遅延があればこの試行だけの消費量と断定しない。HTTP 401/403/429等の数値は残すが、provider本文や例外文字列は残さない。返された本文にtokenそのものが含まれる候補も拒否する。
+
+最初の1試行後に確認する項目：
+
+| 評価 | 合格条件 |
+|---|---|
+| 日本語 | 短く自然で、不要な作成過程の説明がない |
+| 野球用語 | 日本シリーズ・試合・シリーズ勝敗等を適切に使う |
+| 事実と参照 | 対象Game ID、勝敗、得点、日付、終了回を元の検証済み入力と照合できる |
+| 収録範囲 | 収録時点とpartialを尊重し、予定・未収録・終了を混同しない。個人成績、予告先発、MVPを補わない |
+| 出典 | revisionへの参照とCC BY-SA条件を保持し、将来の表示条件も別途確認する |
+
+機械検証に通ってもこの表を自動PASSにしない。初回が失敗した場合はtoken/権限/HTTP status/出力の検証失敗を切り分け、同一入力・UTC日次markerを削除して再試行しない。既存のアプリ表示・正式データ・Gateには影響しない。
+
+定期実行はまだ無効。将来の有効化は、許諾済みsourceの確認 → 既存手順による新しい正式snapshotの採用 → 入力hash変更時のみ1試行 → 機械照合 → 文章レビュー → 別のimmutable公開PR、の順で検討する。AIだけを毎日動かして古い試合結果を新情報に見せず、レビュー未完了の自然言語を自動公開しない。Home・Android・配信payloadはこの準備で変更しない。
+
+CIの初回検証では全1,871テスト成功後、既存ドラフト予想のRelease証拠取得がHTTP 403で停止した。匿名取得の失敗だけから原因を断定せず、Foundation/Androidのbuild stepへActions標準のcontents:read tokenを渡し、固定GitHub APIへの1リクエストにだけ利用するよう修正。redirectを拒否し、Pagesや外部sourceへ転送しない。Release/asset/digest/時刻の全照合と403時の停止は維持し、再試行・別アカウント・証拠確認の省略は追加しない。

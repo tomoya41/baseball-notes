@@ -14,3 +14,11 @@ it("reruns cannot restore their older exact cache instead of subsequent attempt 
   expect(rerunA).not.toBe(a);expect(rerunA).not.toBe(b);
   for(const k of [a,b,rerunA])expect(k.startsWith(restore["restore-keys"]!)).toBe(true);
 });
+
+it("exports one explicit review file, not credentials, raw provider bodies or the whole cache",()=>{
+  const workflow=parse(readFileSync(".github/workflows/npb-ai-insights.yml","utf8")) as {
+    jobs:{prepare:{steps:{uses?:string;with?:Record<string,string|number>;if?:string}[]}}};
+  const upload=workflow.jobs.prepare.steps.find(s=>s.uses?.startsWith("actions/upload-artifact@"))!;
+  expect(upload.with?.path).toBe(".data/npb-ai-insights/review.json");expect(upload.with?.["retention-days"]).toBe(7);
+  expect(upload.if).toContain("steps.prepare.outcome == 'success'");
+});

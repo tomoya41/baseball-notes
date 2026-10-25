@@ -4,6 +4,7 @@ import { buildWikipediaJapanSeries } from "../src/infrastructure/providers/wikip
 import { japanResultFixture } from "./fixtures/npb-japan-series";
 import { prepareNpbAiEvidence, validateNpbAiDraft } from "../src/data/npb-ai-insights";
 import { generateNpbAiCandidate, insightModel } from "../src/infrastructure/providers/cloudflare-ai-insights";
+import { buildNpbAiReview } from "../src/data/npb-ai-review";
 
 function input(){const f=japanResultFixture(),data=buildWikipediaJapanSeries(f.archive,f.cs,"b".repeat(64),f.admission,f.review,f.now),body=Buffer.from(JSON.stringify(data));
   return {body,pin:{bodySha256:createHash("sha256").update(body).digest("hex"),seriesId:data.series.id,gameIds:data.series.games.map(g=>g.gameId)}};}
@@ -61,5 +62,46 @@ describe("optional AI evidence and review boundary",()=>{
   it("bounds the actual response body even without Content-Length",async()=>{
     const request=vi.fn().mockResolvedValue(new Response("x".repeat(20_001)));
     expect((await generateNpbAiCandidate(evidence(),config,request)).status).toBe("INVALID_OR_UNAVAILABLE_CANDIDATE");expect(request).toHaveBeenCalledOnce();
+  });
+  it("distinguishes request, response and draft failures without exporting exception text",async()=>{
+    const cases=[{request:vi.fn().mockRejectedValue(new Error("private transport error")),stage:"request"},
+      {request:vi.fn().mockResolvedValue(new Response("not JSON")),stage:"response"},
+      {request:vi.fn().mockResolvedValue(new Response(JSON.stringify({success:true,result:{response:JSON.stringify({...draft(),factIds:["invented"]})}}))),stage:"draft"}];
+    for(const {request,stage} of cases){
+      const report=buildNpbAiReview(evidence(),await generateNpbAiCandidate(evidence(),config,request));
+      expect(report.failureStage).toBe(stage);expect(JSON.stringify(report)).not.toContain("private transport error");
+    }
+  });
+  it("retains only consistent reported token counts, never invented quota consumption",async()=>{
+    for(const [usage,expected] of [[{prompt_tokens:100,completion_tokens:50,total_tokens:150,private_metadata:"do not retain"},
+      {prompt_tokens:100,completion_tokens:50,total_tokens:150}],
+      [{prompt_tokens:100,completion_tokens:50,total_tokens:149},null],
+      [{prompt_tokens:-1,completion_tokens:50,total_tokens:49},null],[{neurons:0},null],[undefined,null]] as const){
+      const request=vi.fn().mockResolvedValue(new Response(JSON.stringify({success:true,result:{response:JSON.stringify(draft()),usage}})));
+      const result=await generateNpbAiCandidate(evidence(),config,request),report=buildNpbAiReview(evidence(),result);
+      expect(report.usage).toEqual(expected);expect(report.measuredNeurons).toBeNull();expect(report.httpStatus).toBe(200);
+      expect(JSON.stringify(report)).not.toContain("private_metadata");expect(report.humanReview.factsAndReferences).toBe("NOT_RUN");
+    }
+  });
+  it("exports only validated prose for review and distinguishes absent output from a successful candidate",async()=>{
+    const a=evidence();
+    const pending=buildNpbAiReview(a,{status:"INPUT_PREPARED",requests:0,publiclyAdmitted:false});
+    expect(pending.requests).toBe(0);expect(pending.candidate).toBeNull();expect(pending.publiclyAdmitted).toBe(false);
+    const interrupted=buildNpbAiReview(a,{status:"ATTEMPT_STARTED",requests:null,publiclyAdmitted:false});
+    expect(interrupted.requests).toBeNull();expect(interrupted.candidate).toBeNull();
+    const failed=await generateNpbAiCandidate(a,config,vi.fn().mockResolvedValue(new Response("private error details",{status:403})));
+    const report=buildNpbAiReview(a,failed);expect(report.httpStatus).toBe(403);expect(report.candidate).toBeNull();
+    expect(JSON.stringify(report)).not.toContain("private error details");expect(report.usage).toBeNull();
+    const success=await generateNpbAiCandidate(a,config,vi.fn().mockResolvedValue(new Response(JSON.stringify({success:true,result:{response:JSON.stringify(draft())}}))));
+    expect(buildNpbAiReview(a,success).candidate?.draft).toEqual(draft());
+  });
+  it("rejects reflected credentials before saving even otherwise valid candidate prose",async()=>{
+    const echoed={...draft(),body:`収録済みの結果。${config.token}`};
+    for(const response of [JSON.stringify({success:true,result:{response:JSON.stringify(echoed)}}),
+      JSON.stringify({success:true,result:{response:JSON.stringify(echoed)}}).replaceAll("private-test-token",String.raw`private-test-\u0074oken`)]){
+      const result=await generateNpbAiCandidate(evidence(),config,vi.fn().mockResolvedValue(new Response(response)));
+      expect(result.status).toBe("INVALID_OR_UNAVAILABLE_CANDIDATE");expect(JSON.stringify(result)).not.toContain(config.token);
+      expect(buildNpbAiReview(evidence(),result).candidate).toBeNull();
+    }
   });
 });
