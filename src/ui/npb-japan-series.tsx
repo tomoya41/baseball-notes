@@ -1,3 +1,5 @@
+import { UnavailableDailyMvp } from "./daily-mvp";
+import { PostseasonSpotlight } from "./postseason-spotlight";
 import { EditorialCover } from "./editorial-cover";
 import { useEffect,useState } from "react";
 import { Link,useParams,useSearchParams } from "react-router-dom";
@@ -30,19 +32,22 @@ function Unavailable({failed,retry}:{failed:boolean;retry:()=>void}){return fail
 export function JapanSeriesEntry({cs}:{cs:NpbPostseasonSeries}){
   const state=useJapan(true);let consistent=false;
   if(state.data){try{assertJapanSeriesAdvancement(state.data,cs);consistent=true;}catch{/* Keep the independently valid CS visible. */}}
-  return <section><h2>日本シリーズ</h2>{!state.data?<Unavailable {...state}/>:!consistent?<DataState kind="source-unavailable" title="進出情報の照合を確認中です"/>:<><Link className="player-row" to={japanSeriesUrl}><strong>{state.data.series.teams.map(t=>name(t.teamId)).join(" vs ")}</strong><span>日程・大会詳細 →</span></Link><p>{state.data.results.length?"収録結果 · 4勝先取":"10月24日開幕予定 · 4勝先取"}</p><p className="inline-note">記事取得 {observedDate(state.data)} · {state.data.results.length?`終了確認した${state.data.results.length}試合の結果を収録。個人成績は未収録。`:`試合結果・選手成績は未収録。`}予定は変更される場合があります。</p><Sources data={state.data}/></>}</section>;
+  return <section><h2>日本シリーズ</h2>{!state.data?<Unavailable {...state}/>:!consistent?<DataState kind="source-unavailable" title="進出情報の照合を確認中です"/>:<><Link className="player-row" to={japanSeriesUrl}><strong>{state.data.series.teams.map(t=>name(t.teamId)).join(" vs ")}</strong><span>日程・シリーズ詳細 →</span></Link><p>{state.data.results.length?"収録結果 · 4勝先取":"10月24日開幕予定 · 4勝先取"}</p><p className="inline-note">記事取得 {observedDate(state.data)} · {state.data.results.length?`終了確認した${state.data.results.length}試合の結果を収録。個人成績は未収録。`:`試合結果・選手成績は未収録。`}予定は変更される場合があります。</p><Sources data={state.data}/></>}</section>;
 }
 export function NpbJapanSeriesScreen({gameDetail=false}:{gameDetail?:boolean}){
   const [params]=useSearchParams(),{gameId}=useParams();
   const valid=(!params.has("season")||params.get("season")==="2026")&&(!params.has("competition")||params.get("competition")==="postseason")&&(!params.has("stage")||["all","japan_series"].includes(params.get("stage")!));
   const state=useJapan(valid),d=state.data,s=d?.series,g=s?.games.find(row=>row.gameId===gameId),played=!!s?.games.some(row=>row.status==="final"),beforeOpening=!!d&&observedDate(d)<d.series.games[0]!.date;
   return <div className="screen postseason-screen">{(!gameDetail||!g)&&<EditorialCover kind="postseason" eyebrow="NPB · 2026 POSTSEASON" title="日本シリーズ"/>}
-    {!valid?<DataState kind="unsupported" title="指定の年度・大会条件は未対応です"/>:!d?<Unavailable {...state}/>:gameDetail&&!g?<DataState kind="no-data" title="この試合は未収録です"/>:<>
+    {!valid?<DataState kind="unsupported" title="指定の年度・シリーズは未対応です"/>:!d?<Unavailable {...state}/>:gameDetail&&!g?<DataState kind="no-data" title="この試合は未収録です"/>:<>
       <p className="inline-note">記事取得 {observedTime(d.observedAt)}（日本時間）{d.review&&` · 最終確認 ${observedTime(d.review.reviewedAt)} · ${d.review.reviewedBy}`} · 予定と収録結果を表示。リアルタイム更新ではありません。</p>
-      {gameDetail&&g?<><GameHeading title={`第${g.gameNumber}戦 · ${name(g.awayTeamId)}対${name(g.homeTeamId)}`} date={g.date} context={`NPB · 日本シリーズ · 第${g.gameNumber}戦`} backTo={japanSeriesUrl}/><ScoreHero away={name(g.awayTeamId)} home={name(g.homeTeamId)} awayId={g.awayTeamId} homeId={g.homeTeamId} awayScore={g.awayRuns} homeScore={g.homeRuns} status={statusLabel(g.status)}/><p>{d.venues[g.gameId]} · {g.scheduledAt?new Intl.DateTimeFormat("ja-JP",{hour:"2-digit",minute:"2-digit",timeZone:"Asia/Tokyo"}).format(new Date(g.scheduledAt)):"開始時刻は未収録"}</p>{g.gameNumber>=5&&<p className="inline-note">4勝先取で大会終了。開催条件を満たす場合の日程です。</p>}
+      {gameDetail&&g?<><GameHeading title={`第${g.gameNumber}戦 · ${name(g.awayTeamId)}対${name(g.homeTeamId)}`} date={g.date} context={`NPB · 日本シリーズ · 第${g.gameNumber}戦`} backTo={japanSeriesUrl}/><ScoreHero away={name(g.awayTeamId)} home={name(g.homeTeamId)} awayId={g.awayTeamId} homeId={g.homeTeamId} awayScore={g.awayRuns} homeScore={g.homeRuns} status={statusLabel(g.status)}/><p>{d.venues[g.gameId]} · {g.scheduledAt?new Intl.DateTimeFormat("ja-JP",{hour:"2-digit",minute:"2-digit",timeZone:"Asia/Tokyo"}).format(new Date(g.scheduledAt)):"開始時刻は未収録"}</p>{g.gameNumber>=5&&<p className="inline-note">4勝先取でシリーズ終了。開催条件を満たす場合の日程です。</p>}
+        <UnavailableDailyMvp/>
         <InningScore data={d} gameId={g.gameId}/><h2>個人成績</h2><p className="data-notice">{g.status==="final"?"結果を収録しています。選手別の打撃・投球成績は未収録です。":"この試合の結果・打撃・投球成績はまだ収録していません。予定スコアの空欄は0点・試合終了を意味しません。"}</p>
       </>:<><h2>{d.series.teams.map(t=>name(t.teamId)).join(" vs ")}</h2><p>7試合制 · 4勝先取</p>{played?<div className="series-score">{d.series.teams.map(t=><div key={t.teamId}><span>{name(t.teamId)}</span><strong>{t.playedWins}</strong></div>)}</div>:<p className="data-notice">{beforeOpening?"取得時点で開幕前です。シリーズ勝敗・試合結果・選手成績は未収録です。":"試合結果が未収録のため、シリーズ勝敗は確認できません。出場なし・試合なしとは判定しません。"}</p>}
+        <UnavailableDailyMvp/>
         {d.series.clinched&&<p>{name(d.series.winnerId!)} · 4勝先取で決着（収録時点）</p>}<h2>日程・試合詳細</h2><p className="inline-note">予定日は変更される場合があります。第5戦以降は開催条件付き。開始時刻は未収録です。</p><div className="scoreboard-list">{d.series.games.map(row=><ScoreboardRow key={row.gameId} to={gameUrl(row.gameId)} away={name(row.awayTeamId)} home={name(row.homeTeamId)} awayId={row.awayTeamId} homeId={row.homeTeamId} awayScore={row.awayRuns} homeScore={row.homeRuns} date={row.date.slice(5)} status={`第${row.gameNumber}戦 · ${row.status==="scheduled"?"予定":statusLabel(row.status)}`}/>)}</div></>}
+      {!gameDetail&&<PostseasonSpotlight scope={{teamIds:d.series.teams.map(t=>t.teamId)}} allowOutlook={!d.series.clinched&&d.series.games.some(g=>g.status==="scheduled"&&g.date>=new Intl.DateTimeFormat("sv-SE",{timeZone:"Asia/Tokyo"}).format(new Date()))}/>}
       <div className="hub-links">{gameDetail&&<Link to={japanSeriesUrl}>日本シリーズの日程へ →</Link>}<Link to="/NPB/postseason?season=2026">CSからの勝ち上がり →</Link><Link to="/NPB/cs?season=2026">CSの収録成績へ →</Link></div><Sources data={d}/>
     </>}
   </div>;

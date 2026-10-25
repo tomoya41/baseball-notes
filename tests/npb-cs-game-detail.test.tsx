@@ -29,7 +29,7 @@ it("uses shared scoreboard styling, explicit postseason scope and exact single-g
  }finally{await f.close();}
 });
 it.each(["?competition=regular","?season=2025","?stage=japan_series"])("rejects incompatible scope before fetching: %s",async query=>{
- const f=await mount(query);try{expect(readNpbCs).not.toHaveBeenCalled();expect(f.host.textContent).toContain("大会条件");}finally{await f.close();}
+ const f=await mount(query);try{expect(readNpbCs).not.toHaveBeenCalled();expect(f.host.textContent).toContain("年度・シリーズ");}finally{await f.close();}
 });
 it("keeps direct/reloaded CS IDs on the postseason reader and never falls back to Regular",async()=>{
  const f=await mount("",csGameId,true);try{expect(f.repository.find).not.toHaveBeenCalled();expect(f.host.textContent).toContain("ポストシーズン");}finally{await f.close();}

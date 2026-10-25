@@ -80,6 +80,6 @@ export function SavedSeasonTimeline({profile,manifest,competition}:{profile:Expl
     const teams=[...new Set([...profile.batting,...profile.pitching].filter(r=>r.season===year).map(r=>r.teamId))],totals=profile.seasonTotals[String(year)];
     return <li key={year}><h3>{year} · {competition==="postseason"?"Postseason":"Regular Season"}</h3><div className="hub-links">{teams.map(team=><Link key={team} to={`/MLB/teams/${encodeURIComponent(team)}?season=${year}${scope}`}>{manifest.teams.find(t=>t.id===team)?.name??"収録球団"}</Link>)}</div>
       <p>{totals?.batting?`${totals.batting.G?.value??"—"}試合 · ${totals.batting.H?.value??"—"}安打 · ${totals.batting.HR?.value??"—"}HR`:totals?.pitching?`${totals.pitching.appearances?.value??"—"}登板 · ${totals.pitching.SO?.value??"—"}奪三振`:"この年度の成績は未提供"}</p>
-      <nav className="explorer-links" aria-label={`${year}年の履歴`}><Link to={`/MLB/history?player=${id}&season=${year}${scope}`}>シーズン履歴</Link><Link to={`/MLB/players/${id}/game-log?season=${year}${scope}`}>試合別</Link><Link to={`/MLB/season-compare?kind=player&entity=${id}${scope}`}>年度比較</Link><Link to={`/MLB/postseason?season=${year}`}>Postseason</Link></nav></li>;
+      <nav className="explorer-links" aria-label={`${year}年の履歴`}><Link to={`/MLB/history?player=${id}&season=${year}${scope}`}>シーズン履歴</Link><Link to={`/MLB/players/${id}/game-log?season=${year}${scope}`}>試合別</Link><Link to={`/MLB/season-compare?kind=player&entity=${id}${scope}`}>年度比較</Link><Link to={`/MLB/postseason?season=${year}`}>ポストシーズン</Link></nav></li>;
   })}</ol></section>;
 }

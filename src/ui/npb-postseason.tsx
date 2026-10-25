@@ -1,3 +1,5 @@
+import { PostseasonSpotlight } from "./postseason-spotlight";
+import type { NpbCsDataset } from "../domain/npb-cs-observations";
 import { useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { readNpbCs } from "../application/npb-cs-reader";
@@ -27,15 +29,16 @@ function NpbCsPostseasonScreen() {
   const stage = params.get("stage") ?? "all";
   const valid = (!params.has("season") || params.get("season") === "2026") && (!params.has("competition") || params.get("competition") === "postseason") &&
     ["all","npb_cs_first","npb_cs_final"].includes(stage) && (!seriesId || /^npb:series:[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(seriesId));
+  const [csData,setCsData]=useState<NpbCsDataset|null>(null);
   const [data, setData] = useState<NpbPostseasonSeries | null>(null), [failed, setFailed] = useState(false), [attempt, setAttempt] = useState(0);
   useEffect(() => {
     if (!valid) return; let active = true;
-    void Promise.all([readNpbSeries(), readNpbCs()]).then(([series,cs]) => { assertCsSeriesSnapshot(series,cs); if (active) { setData(series); setFailed(false); } }).catch(() => { if (active) setFailed(true); });
+    void Promise.all([readNpbSeries(), readNpbCs()]).then(([series,cs]) => { assertCsSeriesSnapshot(series,cs); if (active) { setData(series); setCsData(cs); setFailed(false); } }).catch(() => { if (active) setFailed(true); });
     return () => { active = false; };
   }, [valid,attempt]);
   const retry = () => { setFailed(false); setAttempt(a => a + 1); }, series = data?.series.find(s => s.id === seriesId);
   return <div className="screen postseason-screen npb-postseason-screen"><EditorialCover kind="postseason" eyebrow="NPB · 2026 POSTSEASON" title={series?.name ?? "ポストシーズン"} />
-    {!valid ? <DataState kind="unsupported" title="指定の年度・大会条件は未対応です" /> : failed ? <><DataState kind="source-unavailable" title="シリーズ情報を取得できません" /><button onClick={retry}>再試行</button><Link to="/NPB/cs?season=2026">収録済みの試合・選手成績へ →</Link><Link to={japanSeriesUrl}>日本シリーズの日程へ →</Link></> : !data ? <LoadingSkeleton /> : seriesId && (!series || stage !== "all" && series.round !== stage) ? <DataState kind="no-data" title="この条件のシリーズは未収録です" /> : <>
+    {!valid ? <DataState kind="unsupported" title="指定の年度・シリーズは未対応です" /> : failed ? <><DataState kind="source-unavailable" title="シリーズ情報を取得できません" /><button onClick={retry}>再試行</button><Link to="/NPB/cs?season=2026">収録済みの試合・選手成績へ →</Link><Link to={japanSeriesUrl}>日本シリーズの日程へ →</Link></> : !data ? <LoadingSkeleton /> : seriesId && (!series || stage !== "all" && series.round !== stage) ? <DataState kind="no-data" title="この条件のシリーズは未収録です" /> : <>
       <p className="inline-note">記事取得 {data.observedAt.slice(0,10)} · CSの勝敗を収録。試合別の選手成績は一部収録です。</p>
       {series ? <>
         <SeriesScore series={series} />
@@ -45,6 +48,7 @@ function NpbCsPostseasonScreen() {
         <h2>試合結果・選手成績</h2><div className="scoreboard-list">{series.games.map(g => <ScoreboardRow key={g.gameId}
           to={`/NPB/games/${encodeURIComponent(g.gameId)}?season=2026&competition=postseason&stage=${series.round}`}
           away={name(g.awayTeamId)} home={name(g.homeTeamId)} awayScore={g.awayRuns} homeScore={g.homeRuns} date={g.date.slice(5)} status={`終了 · 第${g.gameNumber}戦`} partial />)}</div>
+        {csData&&<PostseasonSpotlight data={csData} scope={{teamIds:series.teams.map(t=>t.teamId),stage:series.round,gameIds:series.games.map(g=>g.gameId)}}/>}
         {series.npbFinalRuleEvidence && <details><summary>アドバンテージの根拠</summary><p>記事に記載された順位別勝敗数と、2026年の正式規定を照合しています。保存済みRegular成績から順位を推測していません。</p><p>{name(series.npbFinalRuleEvidence.leaderTeamId)} {series.npbFinalRuleEvidence.leader.wins}勝{series.npbFinalRuleEvidence.leader.losses}敗 ／ {name(series.npbFinalRuleEvidence.challengerTeamId)} {series.npbFinalRuleEvidence.challenger.wins}勝{series.npbFinalRuleEvidence.challenger.losses}敗</p><a href="https://npb.jp/games/2026/info_cs.html">2026年CSの規定</a></details>}
       </> : <>
         <div className="postseason-bracket" aria-label="CSの勝ち上がり">{["npb_cs_first","npb_cs_final"].filter(r => stage === "all" || stage === r).map(round => <section className="bracket-round" key={round}>

@@ -79,7 +79,7 @@ describe("compact exploration UI", () => {
   });
   it("distinguishes unavailable Coverage evidence from partial Coverage", async () => {
     await mount(<DataExplorerView league="NPB" rows={rows} teams={manifest.teams} season={2026} years={[2026]} effectiveDate="2026-10-03" coverage="complete" readRecent={async () => ({ values: [], failed: [] })} readAllRecent={async () => ({ values: [], failed: [], coverage: "unavailable" })} />, "/NPB/data?period=7");
-    expect(container.textContent).toContain("この期間のCoverage情報を取得できません"); expect(container.textContent).not.toContain("一部未確認");
+    expect(container.textContent).toContain("この期間の収録状況を取得できません"); expect(container.textContent).not.toContain("一部未確認");
   });
   it.each(["deselect", "team", "role"])("retains selected mode for legacy Recent URLs after %s", async action => {
     const all = vi.fn(async () => ({ values: [], failed: [] })), read = vi.fn(async () => ({ values: [], failed: [] }));
@@ -141,7 +141,7 @@ describe("compact exploration UI", () => {
     await mount(explorer(read), `/MLB/data?season=2025&period=${days}&recentPlayers=${id},${id2}`);
     expect(read).toHaveBeenCalledExactlyOnceWith([id, id2], days);
     expect(container.textContent).toContain("一部の選択選手を読み込めません");
-    expect(container.textContent).toContain("Coverageは一部未確認");
+    expect(container.textContent).toContain("収録状況は一部未確認");
   });
   it("requires a selection before fetching Recent and does not silently ignore unfinished numeric rules", async () => {
     const read = vi.fn(async () => ({ values: [], failed: [] })); await mount(explorer(read), "/MLB/data?period=14&metric1=OPS");
@@ -295,7 +295,7 @@ describe("discovery and glossary", () => {
   it("does not download Current Directory or game data for unsupported NPB Postseason years", async () => {
     const { deps } = seedNpb(), findLatestNpb = vi.fn(deps.directory.findLatestNpb), manifest = vi.fn(), date = vi.fn();
     await mount(<NpbDiscovery services={{ ...deps, directory: { findLatestNpb } as unknown as typeof services.directory, gameSurface: { manifest, date } as unknown as typeof services.gameSurface }} />, "/NPB/search?kind=game&competition=postseason&season=2025");
-    expect(container.textContent).toContain("指定の年度・大会条件は未対応");
+    expect(container.textContent).toContain("指定の年度・シリーズは未対応");
     expect(findLatestNpb).not.toHaveBeenCalled(); expect(manifest).not.toHaveBeenCalled(); expect(date).not.toHaveBeenCalled();
   });
   it("keeps team discovery independent of an unavailable game manifest", async () => {

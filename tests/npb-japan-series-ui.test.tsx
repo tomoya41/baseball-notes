@@ -14,7 +14,7 @@ async function mount(path="/NPB/postseason?stage=japan_series",failed=false,upda
   return {host,data,regular,close:async()=>{await act(async()=>root.unmount());host.remove();}};
 }
 it("shows scheduled null scores, conditional dates, unavailable statistics and both attributed source revisions",async()=>{
-  const f=await mount();try{expect(f.host.querySelectorAll(".scoreboard-row")).toHaveLength(7);expect(f.host.textContent).toContain("4勝先取");expect(f.host.textContent).toContain("取得時点で開幕前");expect(f.host.textContent).not.toContain("0勝");expect(f.host.querySelectorAll('a[href*="oldid="]')).toHaveLength(2);expect(f.host.textContent).toContain("第5戦以降は開催条件付き");
+  const f=await mount();try{expect(f.host.querySelectorAll(".scoreboard-row")).toHaveLength(7);expect(f.host.textContent).toContain("4勝先取");expect(f.host.textContent).toContain("取得時点で開幕前");expect(f.host.textContent).not.toContain("0勝");expect(f.host.querySelectorAll('.postseason-screen > details a[href*="oldid="]')).toHaveLength(2);expect(f.host.textContent).toContain("第5戦以降は開催条件付き");
     await act(async()=>f.host.querySelector<HTMLAnchorElement>(".scoreboard-row")!.dispatchEvent(new MouseEvent("click",{bubbles:true,button:0,cancelable:true})));
     expect(f.host.textContent).toContain("第1戦 · ソフトバンク対DeNA");expect(f.host.textContent).toContain("結果・打撃・投球成績はまだ収録していません");expect(f.host.querySelectorAll("h1")).toHaveLength(1);expect(f.host.querySelectorAll("table")).toHaveLength(0);expect(f.host.textContent).toContain("横浜スタジアム");
   }finally{await f.close();}

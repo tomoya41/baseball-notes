@@ -1,3 +1,4 @@
+import { DailyMvp, UnavailableDailyMvp } from "./daily-mvp";
 import { StatTable } from "./stat-table";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
@@ -62,6 +63,7 @@ export function NpbGameDetailView({ payload, state, services, actions, selectedS
   return <div className="screen game-detail">
     <GameHeading title={`${formatDate(payload.date, true)}の試合`} date={payload.date} context={`NPB · 公式戦${payload.gameNumber > 1 ? ` · 第${payload.gameNumber}試合` : ""}`} backTo={`/NPB/schedule?date=${payload.date}`} />
     <ScoreHero away={payload.away.shortName} home={payload.home.shortName} awayId={payload.away.id} homeId={payload.home.id} awayScore={payload.away.score} homeScore={payload.home.score} status={statusName[payload.status]} />
+    {hasBox && <DailyMvp date={payload.date} current={payload} repository={services?.gameSurface}/>}
     {hasBox && <GameJumpNav />}
     {payload.status === "scheduled" && services && <NpbGamePreview game={payload} services={services} favorites={actions?.favorites ?? []} />}
     {hasBox && <GameRecap league="NPB" complete={payload.completeness === "complete"} favorites={actions?.favorites ?? []} batting={[...payload.batting.away, ...payload.batting.home]} pitching={[...payload.pitching.away, ...payload.pitching.home].map(p => ({ ...p, outs: p.outsRecorded, so: p.strikeouts }))} />}
@@ -79,7 +81,7 @@ export function NpbGameDetailScreen(props:GameScreenProps){
   const {gameId}=useParams(),[params]=useSearchParams();
   if(gameId&&japanPin.gameIds.includes(gameId)||params.get("competition")==="postseason"&&params.get("stage")==="japan_series")return <Suspense fallback={<LoadingSkeleton/>}><JapanGame key={gameId} gameDetail/></Suspense>;
   if(gameId&&admittedCsGameIds.includes(gameId)||params.get("competition")==="postseason")return <Suspense fallback={<LoadingSkeleton />}><CsGame key={gameId} /></Suspense>;
-  if(params.has("competition")&&params.get("competition")!=="regular"||params.has("stage"))return <DataState kind="unsupported" title="試合の大会条件を確認してください" />;
+  if(params.has("competition")&&params.get("competition")!=="regular"||params.has("stage"))return <DataState kind="unsupported" title="公式戦の試合を指定してください" />;
   return <NpbRegularGameDetailScreen {...props} />;
 }
 export function PublishedGameSummaryView({ summary, retry }: { summary: PublishedGameSummary; retry: () => void }) {
@@ -88,6 +90,7 @@ export function PublishedGameSummaryView({ summary, retry }: { summary: Publishe
     <GameHeading title={`${formatDate(game.date, true)}の試合`} date={game.date} context={`NPB · 公式戦${game.gameNumber > 1 ? ` · 第${game.gameNumber}試合` : ""}`} backTo={`/NPB/schedule?date=${game.date}`} />
     <ScoreHero away={game.away.name} home={game.home.name} awayId={game.away.id} homeId={game.home.id} awayScore={game.away.score} homeScore={game.home.score} status={statusName[game.status]} />
     <p className="game-detail__note" role="status">保存済みの結果 · 更新未確認</p>
+    <UnavailableDailyMvp reason="試合別の選手成績を取得できないため、選出していません。"/>
     <section className="home-section"><h2>選手成績</h2>
       <p>{game.status === "final" ? "この試合の個人成績は現在取得できません。" : "個人成績の取得状況を確認できません。"}</p>
       <button className="text-button" onClick={retry}>試合詳細を再読み込み</button>
