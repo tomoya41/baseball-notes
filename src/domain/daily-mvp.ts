@@ -7,6 +7,7 @@ const outs=(n:number)=>`${Math.floor(n/3)}回${n%3?` ${n%3}/3`:''}`;
 export function selectDailyMvp(index:GameDateIndex,details:readonly NpbGameDetail[]):DailyMvpResult {
  const unavailable=(reason:string):DailyMvpResult=>({status:'unavailable',reason});
  if(index.games.length>12)return unavailable('対象試合数を確認できません。');
+ if(index.coverage==='no_games'&&index.games.every(g=>g.status==='postponed'||g.status==='canceled'))return unavailable('この日は公式戦の試合なしと記録されています。');
  if(index.coverage!=='complete')return unavailable('この日の収録が未完了のため、選出を保留しています。');
  if(index.games.some(g=>!['final','postponed','canceled'].includes(g.status)))return unavailable('未終了・結果未確認の試合があるため、選出を保留しています。');
  const games=index.games.filter(g=>g.status==='final');if(!games.length)return unavailable('選考対象の終了試合はありません。');
