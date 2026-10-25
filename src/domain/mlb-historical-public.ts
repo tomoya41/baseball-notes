@@ -30,6 +30,7 @@ const pitcher = z.object({ playerId: historicalCanonicalPlayerId, teamId,
 const dated = { gameId: historicalCanonicalGameId, date: z.iso.date(), season, home: z.boolean(), opponentTeamId: teamId };
 const gameHeader = z.object({ id: historicalCanonicalGameId, homeTeamId: teamId, awayTeamId: teamId,
   homeRuns: count, awayRuns: count, number: count });
+export const historicalScheduleSchema=base.extend({season,date:z.iso.date(),games:z.array(gameHeader.extend({status:z.literal("final"),complete:z.boolean()}))});
 const paMetrics = z.object({ PA: count, AB: count, H: count, "2B": count, "3B": count, HR: count,
   BB: count, HBP: count, SO: count, SH: count, SF: count,
   AVG: z.number().finite().nonnegative().nullable(), OBP: z.number().finite().nonnegative().nullable(),
@@ -111,8 +112,7 @@ export function validStaticPayload(path: string, value: unknown, expectedScope: 
     batting: z.array(batter.extend(dated)), pitching: z.array(pitcher.extend(dated)) }).safeParse(value).success;
   if (path.startsWith("games/")) return base.extend({ game: gameHeader.extend({ season, date: z.iso.date(), innings: nullable,
     batting: z.array(batter.extend({ name: z.string().nullable() })), pitching: z.array(pitcher.extend({ name: z.string().nullable() })) }) }).safeParse(value).success;
-  if (path.startsWith("schedule/")) return base.extend({ season, date: z.iso.date(), games: z.array(gameHeader.extend({
-    status: z.literal("final"), complete: z.boolean() })) }).safeParse(value).success;
+  if (path.startsWith("schedule/")) return historicalScheduleSchema.safeParse(value).success;
   if (path.startsWith("seasons/")) return base.extend({ season, coverage: z.literal("complete"), firstDate: z.iso.date(),
     lastDate: z.iso.date(), gameCount: count, players: z.array(z.object({ playerId: historicalCanonicalPlayerId, batting: metrics, pitching: metrics })) }).safeParse(value).success;
   if (/^records\/(range|decade-2010|decade-2020)\.json$/.test(path)) return base.extend({ coverage: z.literal("complete"), counting: z.literal("ready"), rate: z.literal("not_ready"),

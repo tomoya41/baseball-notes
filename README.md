@@ -209,3 +209,7 @@ MLBの `#/MLB/form?season=2024&asOfDate=2024-08-20&period=7` から、Historical
 ## NPB Historical Phase 2
 
 2015〜2025年の一部選手を593人・3,072球団別年度行へ拡張。21人のHistorical-only選手も検索・年度比較・お気に入りで確認できます。全年度partial、全Career/公式ランキングではありません。出典・再処理手順・旧版互換性・運用上の制約は [Phase 2](docs/npb-historical-phase2.md) を参照してください。
+
+## 週間レポート
+
+`#/MLB/weekly?season=2025&week=2025-09-22` から、月曜〜日曜の試合・HOT打者/先発/救援・前週からの変化を振り返れます。`competition=postseason` は別集計です。NPBの `#/NPB/weekly?stage=japan_series` 等は収録済みの試合/球団総括のみで、未達のHOT/Ranking条件を迂回しません。AIは任意の非公開選考候補で、自動公開・AI cronは無効。[データ、母数、操作、費用、rollback](docs/weekly-analysis.md)。

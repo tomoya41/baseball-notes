@@ -22,3 +22,13 @@ it("exports one explicit review file, not credentials, raw provider bodies or th
   expect(upload.with?.path).toBe(".data/npb-ai-insights/review.json");expect(upload.with?.["retention-days"]).toBe(7);
   expect(upload.if).toContain("steps.prepare.outcome == 'success'");
 });
+
+it("keeps structured weekly trials manual and inside the unchanged legacy cache boundary",()=>{
+  const workflow=parse(readFileSync(".github/workflows/npb-ai-insights.yml","utf8")) as {
+    on:{workflow_dispatch:{inputs:{analysis:{default:string};generate:{default:boolean}}}};jobs:{prepare:{concurrency?:unknown;steps:{uses?:string;with?:Record<string,string>;run?:string}[]}}};
+  expect(workflow.on.workflow_dispatch.inputs.analysis.default).toBe("weekly");expect(workflow.on.workflow_dispatch.inputs.generate.default).toBe(false);
+  expect(workflow.jobs.prepare.steps.find(s=>s.uses?.startsWith("actions/cache/restore@"))?.with?.path).toBe(".data/npb-ai-insights");
+  expect(readFileSync("scripts/prepare-weekly-ai.ts","utf8")).toContain('root=".data/npb-ai-insights"');
+  expect(readFileSync("scripts/prepare-npb-ai-insights.ts","utf8")).toContain("claimInsightAttempt");
+  expect(readFileSync("scripts/prepare-weekly-ai.ts","utf8")).toContain("claimInsightAttempt");
+});

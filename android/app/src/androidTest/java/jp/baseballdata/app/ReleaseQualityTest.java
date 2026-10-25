@@ -862,6 +862,29 @@ public class ReleaseQualityTest {
             assertNull("Oversized current route clears the old privacy/CS snapshot", saved.getString("baseball.webRoute"));
         });
     }
+    @Test public void weeklyReportKeepsCalendarScopeSamplesBackAndLargeFont() throws Exception {
+        Intent link = new Intent(Intent.ACTION_VIEW, Uri.parse("baseballnotes://MLB/weekly?season=2025&week=2025-09-22"));
+        link.setClass(InstrumentationRegistry.getInstrumentation().getTargetContext(), MainActivity.class);
+        scenario = ActivityScenario.launch(link);
+        waitText("週間レポート");
+        waitCondition("Weekly MLB facts rendered", "document.querySelectorAll('.weekly-hot li').length===9 && document.querySelector('.weekly-overview').innerText.includes('90')");
+        assertTrue("The exact calendar week survives the cold link", js("location.hash").contains("week=2025-09-22"));
+        String profile = js("document.querySelector('.weekly-person>a').getAttribute('href')");
+        assertTrue("Player analysis keeps the exact week end", profile.contains("asOfDate=2025-09-28"));
+        js("document.querySelector('.weekly-person>a').click()"); waitCondition("Scoped player analysis", "location.hash.includes('/analysis') && location.hash.includes('asOfDate=2025-09-28')");
+        shell("input keyevent KEYCODE_BACK"); waitCondition("Native Back returns to weekly report", "!!document.querySelector('.weekly-overview') && location.hash.includes('week=2025-09-22')");
+        fontScaleAndRecreate(1.5f); waitCondition("Weekly at 150 percent", "document.querySelectorAll('.weekly-hot li').length===9");waitViewport(360);
+        assertEquals("Weekly 150 percent has no page overflow", "true", js("document.documentElement.scrollWidth<=innerWidth"));screenshot("weekly-font-15");
+        fontScaleAndRecreate(2.0f); waitCondition("Weekly at 200 percent", "document.querySelectorAll('.weekly-hot li').length===9");waitViewport(360);
+        assertEquals("Weekly 200 percent has no page overflow", "true", js("document.documentElement.scrollWidth<=innerWidth"));screenshot("weekly-font-20");
+        setTheme("light", "ライト");js("location.hash='#/NPB/weekly?stage=japan_series&week=2026-10-19'");
+        waitCondition("NPB results-only weekly view", "!!document.querySelector('.weekly-overview') && document.querySelector('main').innerText.includes('選手の週間評価')");
+        assertEquals("Closed NPB Gate never renders HOT", "0", js("document.querySelectorAll('.weekly-hot').length"));
+        assertEquals("NPB weekly Light has no page overflow", "true", js("document.documentElement.scrollWidth<=innerWidth"));screenshot("weekly-npb-light-font-20");
+        setTheme("dark", "ダーク");js("location.hash='#/NPB/weekly?stage=japan_series&week=2026-10-19'");
+        waitCondition("NPB Dark weekly view", "!!document.querySelector('.weekly-overview')");
+        assertEquals("NPB weekly Dark has no page overflow", "true", js("document.documentElement.scrollWidth<=innerWidth"));screenshot("weekly-npb-dark-font-20");
+    }
     @Test public void npbRegularGameRemainsUsableWhenDetailApiIsUnavailable() throws Exception {
         Intent link = new Intent(Intent.ACTION_VIEW, Uri.parse("baseballnotes://NPB/schedule?date=2026-10-08"));
         link.setClass(InstrumentationRegistry.getInstrumentation().getTargetContext(), MainActivity.class);

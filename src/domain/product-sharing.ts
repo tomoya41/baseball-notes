@@ -17,6 +17,13 @@ export function portableRoute(path: string, search = ""): string | null {
   const parts = path.split("/").filter(Boolean), league = parts[0];
   if (league !== "NPB" && league !== "MLB") return null;
   const resource = parts[1], source = new URLSearchParams(search), clean = new URLSearchParams();
+  if(resource==="weekly"&&parts.length===2){
+    const season=source.get("season"),week=source.get("week"),competition=source.get("competition"),stage=source.get("stage")??"regular";
+    if(season!==null&&(league==="MLB"? !/^(201[4-9]|202[0-5])$/.test(season):season!=="2026")||week!==null&&!z.iso.date().safeParse(week).success||competition!==null&&!["regular","postseason"].includes(competition)||
+      league==="MLB"&&source.has("stage")||league==="NPB"&&(!["regular","npb_cs_first","npb_cs_final","japan_series"].includes(stage)||competition!==null&&competition!==(stage==="regular"?"regular":"postseason")))return null;
+    if(season)clean.set("season",season);if(week)clean.set("week",week);if(competition)clean.set("competition",competition);if(league==="NPB"&&source.has("stage"))clean.set("stage",stage);
+    return `${path}${clean.size?`?${clean}`:""}`;
+  }
   if (league === "NPB" && resource === "teams" && parts.length === 4 && parts[3] === "players") {
     if (!canonicalEntityRefSchema.safeParse({ league, kind: "team", id: decodeSafe(parts[2]!) }).success ||
       source.has("season") && !/^20\d{2}$/.test(source.get("season")!) ||

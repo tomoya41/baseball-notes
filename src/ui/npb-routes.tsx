@@ -26,6 +26,7 @@ const NpbPlayerEventsScreen = lazy(()=>import("./npb-player-events").then(m=>({d
 const NpbDraftEventScreen = lazy(()=>import("./npb-draft-event").then(m=>({default:m.NpbDraftEventScreen})));
 const NpbPlayerSeasons = lazy(()=>import("./npb-historical").then(m=>({default:m.NpbPlayerSeasons})));
 const NpbTeamPlayers = lazy(()=>import("./npb-team-players").then(m=>({default:m.NpbTeamPlayers})));
+const NpbWeeklyScreen = lazy(()=>import("./weekly-analysis").then(m=>({default:m.NpbWeeklyScreen})));
 type FavoriteTarget = Pick<Favorite, "kind" | "entityId" | "league">;
 function NpbSearchEntry(props: Parameters<typeof NpbRoutes>[0]) {
   const [params] = useSearchParams();
@@ -50,6 +51,7 @@ export function NpbRoutes({ services, favorites, toggle, saving }: { services: S
     {(["preseason", "matchup", "watch"] as const).map(feature => <Route key={feature} path={`${feature}/*`} element={<FutureFeatureScreen feature={feature} league="NPB" />} />)}
     {(["career", "advanced"] as const).map(feature => <Route key={feature} path={`players/:playerId/${feature}`} element={<FutureFeatureScreen feature={feature} league="NPB" />} />)}
     <Route path="home" element={<NpbHome services={services} favorites={favorites} toggle={toggle} saving={saving} />} />
+    <Route path="weekly" element={<Suspense fallback={<p role="status">週間レポートを読み込み中…</p>}><NpbWeeklyScreen services={services}/></Suspense>}/>
     <Route path="schedule" element={<NpbScheduleScreen repository={services.gameSurface} favorites={favorites} toggle={toggle} saving={saving} />} />
     <Route path="search" element={<NpbSearchEntry services={services} favorites={favorites} toggle={toggle} saving={saving} />} />
     <Route path="data" element={<NpbDataExplorer services={services} />} />

@@ -452,3 +452,7 @@ During the explicit 2026 Japan Series editorial window, one small static competi
 ### 2026-10-25: 編集的な注目・日別MVPをProductionランキングから分離
 
 注目選手は既存の試合別CS観測と、任意取得する保存済み公式戦を別表示する。日別MVPは当日の終了試合が揃う場合の独自評価に限定し、Turso読み取りを増やさない端末キャッシュ参照とする。収録不足時は選出保留。公式表彰・現在の好調・予告先発・HOT/Rankingの公開資格とは独立し、既存Gateを変えない。日本語の投打表示はthrows→batsの共通formatterを用い、Sourceの原文・数値は保持する。
+
+### 2026-10-26 — 週間分析は既存静的投影から算出、AIは参照選択だけ
+
+週の総括は既存の正式な静的投影を必要な範囲だけ読んで算出し、別のFact/DB/データreleaseを増やさない。MLBの既存Form条件を再利用し、NPBの未公開選手評価は独立したまま保持する。AIへは候補aliasと指標を渡し、canonical ID・hash・数値の再転記をさせず、検証した選択だけを非公開レビューへ残す。旧文章生成と同じ日次予算を共有し、統計公開とAI候補採用を分離する。詳しくは [週間分析](weekly-analysis.md)。

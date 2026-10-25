@@ -4,7 +4,7 @@ import { useHistoricalCompetition } from "./historical-competition-context";
 import { hasHistoricalPostseason, usePostseasonAvailability } from "./postseason-availability";
 function competitionTarget(pathname: string, search: string, scope: CompetitionType) {
   const p = new URLSearchParams(search);
-  p.delete("date"); p.delete("asOfDate");
+  p.delete("date"); p.delete("asOfDate"); p.delete("week");
   if (scope === "postseason") p.set("competition", scope); else p.delete("competition");
   return `${pathname}?${p}`;
 }

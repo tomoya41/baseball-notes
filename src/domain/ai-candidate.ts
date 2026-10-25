@@ -1,0 +1,4 @@
+export type AiRejectionCode="INVALID_JSON"|"SCHEMA_MISMATCH"|"UNKNOWN_CANDIDATE"|"DUPLICATE_SELECTION"|"UNSUPPORTED_REASON"|"UNSUPPORTED_METRIC"|"EVIDENCE_MISMATCH"|"UNSUPPORTED_NUMBER"|"CREDENTIAL_REFLECTION"|"RESPONSE_LIMIT"|"PROVIDER_RESPONSE";
+export class AiCandidateRejection extends Error {
+  constructor(readonly code:AiRejectionCode){super(code);}
+}
