@@ -105,6 +105,21 @@ public class ReleaseQualityTest {
         assertFalse(expectedFontTransition(new IllegalStateException("Unexpected route state")));
         assertFalse(expectedFontTransition(new RuntimeException("Cannot run onActivity since Activity has been destroyed already")));
     }
+    private boolean fontConfigurationReady(float scale) throws Exception {
+        AtomicReference<MainActivity> evaluated = new AtomicReference<>();
+        AtomicReference<String> value = new AtomicReference<>();CountDownLatch latch = new CountDownLatch(1);
+        scenario.onActivity(activity -> {
+            evaluated.set(activity);
+            activity.getBridge().getWebView().evaluateJavascript("document.documentElement ? getComputedStyle(document.documentElement).getPropertyValue('--android-font-scale').trim() : ''",result -> {value.set(result);latch.countDown();});
+        });
+        if(!latch.await(10,TimeUnit.SECONDS)) {
+            // A configuration change can destroy the queried WebView before its
+            // callback. Only an actually destroyed Activity may wait for replacement.
+            if(evaluated.get()!=null && evaluated.get().isDestroyed()) return false;
+            fail("Live WebView font callback did not respond");
+        }
+        return String.valueOf(new JSONTokener(value.get()).nextValue()).equals(Float.toString(scale));
+    }
     private void fontScaleAndRecreate(float scale) throws Exception {
         shell("settings put system font_scale " + scale);
         // fontScale deliberately uses normal OS recreation. Do not ask
@@ -115,7 +130,7 @@ public class ReleaseQualityTest {
             boolean ready = false;
             try {
                 if (scenario.getState() == androidx.lifecycle.Lifecycle.State.RESUMED)
-                    ready = js("document.documentElement ? getComputedStyle(document.documentElement).getPropertyValue('--android-font-scale').trim() : ''").equals(Float.toString(scale));
+                    ready = fontConfigurationReady(scale);
             } catch (RuntimeException transition) {
                 // Only this bounded, expected configuration transition may wait.
                 // A destroyed app that never resumes still fails the deadline.
@@ -689,13 +704,30 @@ public class ReleaseQualityTest {
         assertEquals("Light Home 200 percent has no overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));screenshot("japan-home-font-20-light");
         setTheme("dark","ダーク");js("location.hash='#/NPB/home'");waitCondition("Dark Japan Series Home","!!document.querySelector('.japan-home-result')");
         assertEquals("Dark Home 200 percent has no overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));screenshot("japan-home-font-20-dark");
+        String resultHref=js("document.querySelector('.japan-home-result').getAttribute('href')");
+        String resultRoute=resultHref.contains("#")?resultHref.substring(resultHref.indexOf('#')):"#"+resultHref;
         js("document.querySelector('.japan-home-result').click()");waitText("イニング別得点");
         assertTrue("Home result keeps Japan Series scope",js("location.hash").contains("stage=japan_series"));
-        assertEquals("First admitted final has eleven innings","11",js("String(document.querySelectorAll('.series-innings tbody tr').length)"));
+        assertEquals("Home opens the exact latest admitted result",resultRoute,js("location.hash"));
+        assertEquals("Latest final has actual completed inning evidence","true",js("document.querySelectorAll('.series-innings tbody tr').length>=9 && document.querySelectorAll('.series-innings tbody tr').length<=30"));
         shell("input keyevent KEYCODE_BACK");waitCondition("Back to Home","!!document.querySelector('.japan-home-result')");
         js("document.querySelector('.japan-home-player-link').click()");waitText("牧秀悟");
         waitCondition("Exact canonical portrait on Player","!!document.querySelector('.player-identity img[alt*=\"牧秀悟\"]')");
         shell("input keyevent KEYCODE_BACK");waitCondition("Player Back returns to Japan Series Home","!!document.querySelector('.japan-home-result')");
+    }
+    @Test public void additionalJapanSeriesPortraitsKeepIdentityDatesAndLargeText() throws Exception {
+        scenario=ActivityScenario.launch(MainActivity.class);waitText("BASEBALL");
+        String[][] players={{"21a327b4-3924-422a-a1fc-d853e236a201","東克樹","2018"},{"fe02470d-7c15-4c03-8a17-d6d339445ebe","周東佑京","2021"}};
+        for(int i=0;i<players.length;i++){
+            String[] p=players[i];setTheme(i==0?"light":"dark",i==0?"ライト":"ダーク");
+            js("location.hash='#/NPB/players/"+p[0]+"'");waitText(p[1]);
+            waitCondition("Exact dated informational portrait loaded","document.querySelector('.player-identity h1')?.textContent==='"+p[1]+"' && document.querySelector('.player-identity img')?.naturalWidth>0");
+            fontScaleAndRecreate(2.0f);waitText(p[2]+"年撮影");waitViewport(360);
+            assertEquals("No large-text portrait overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));
+            assertTrue("Exact canonical route survives recreation",js("location.hash").contains(p[0]));
+            assertTrue("Photo retains independent source link",js("document.querySelector('.licensed-player-photo figcaption a').getAttribute('href')").contains("/MLB/sources"));
+            screenshot("japan-portrait-"+i+"-font-20");
+        }
     }
     @Test public void draftPreviewRemainsSeparateFromResultsAtLargeFont() throws Exception {
         Intent link=new Intent(Intent.ACTION_VIEW,Uri.parse("baseballnotes://NPB/talent/2026?view=preview&forecast=final"));
