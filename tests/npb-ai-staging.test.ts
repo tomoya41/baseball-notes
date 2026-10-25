@@ -6,6 +6,7 @@ import { stageNpbAiInputs } from "../scripts/stage-npb-ai-inputs";
 
 it("prepares a cold filesystem and satisfies the CS → series → Japan snapshot dependency",async()=>{
   const base=resolve(tmpdir()),root=await mkdtemp(join(base,"baseball-ai-stage-")),cache=join(root,"archive"),output=join(root,"output");
+  if(!resolve(root).startsWith(base+sep))throw Error("Unexpected temporary staging path");
   try {
     await stageNpbAiInputs(output,cache,{
       cs:async p=>{await access(cache);await mkdir(p,{recursive:true});await writeFile(join(p,"cs.json"),'["reviewed-cs-fixture"]');},
@@ -14,7 +15,6 @@ it("prepares a cold filesystem and satisfies the CS → series → Japan snapsho
     });
     expect(JSON.parse(await readFile(join(output,"japan.json"),"utf8"))).toEqual(["reviewed-cs-fixture","series-fixture","japan-fixture"]);
   } finally {
-    if(!resolve(root).startsWith(base+sep))throw Error("Unexpected temporary staging path");
     await rm(root,{recursive:true,force:true});
   }
 });

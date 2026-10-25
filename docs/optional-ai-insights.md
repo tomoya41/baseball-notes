@@ -43,3 +43,5 @@ npx tsx scripts/prepare-npb-ai-insights.ts --generate
 採用済み入力hash `0d33d7b9b5084f54014e717d8855353b30266c1d231b4638881099a94dfc877f` を実際に生成。AIに送る形への変換だけで、実モデルへの通信は0。候補の数値表現は全角を正規化し、参照した試合の日付/得点/イニング/勝敗等にない数字を拒否する。ただし同じ数字の誤用や漢数字の意味までは証明できないため、人の文意確認は必須。既存アプリbuildの52files / 2,467,886Bとversionはこのサーバー側追加の前後で同一で、初期JavaScriptや画面の情報量は増やしていない。
 
 Cold-start review correction: stage the CS base before its dependent Series and Japan Series snapshots, and initialize the archive cache. Added a dependency regression test and ran the real CLI from an empty working directory without preexisting dist/cache; it produced the same admitted input hash with 0 AI calls. This addresses the PR #78 P2 finding; no validator or rights check was relaxed.
+
+Workflow rerun correction: restore/save keys include both run ID and run attempt. Rerunning an older preparation cannot choose its older exact cache instead of a later generation's attempt history. A workflow regression fixes this requirement; whole final local check is **1,865 passed / 1 skipped**, including cold dependency and rerun tests.

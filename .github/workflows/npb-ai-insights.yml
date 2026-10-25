@@ -23,12 +23,12 @@ jobs:
         with: { node-version-file: .nvmrc, cache: npm }
       - run: npm ci
       - name: Validate evidence and optional provider boundaries
-        run: npx vitest run tests/npb-ai-insights.test.ts tests/npb-ai-staging.test.ts
+        run: npx vitest run tests/npb-ai-insights.test.ts tests/npb-ai-staging.test.ts tests/npb-ai-workflow.test.ts
       - uses: actions/cache/restore@v4
         id: state
         with:
           path: .data/npb-ai-insights
-          key: npb-ai-candidates-v1-${{ github.run_id }}
+          key: npb-ai-candidates-v1-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: npb-ai-candidates-v1-
       - name: Prepare input without invoking AI
         run: npx tsx scripts/prepare-npb-ai-insights.ts --stage
@@ -44,6 +44,6 @@ jobs:
         if: always() && steps.state.outcome == 'success'
         with:
           path: .data/npb-ai-insights
-          key: npb-ai-candidates-v1-${{ github.run_id }}
+          key: npb-ai-candidates-v1-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Record safe summary
         run: echo 'Candidate preparation only. No canonical/public writes, Gate changes, source article bodies or automatic publication. No scheduled AI execution is enabled.' >> "$GITHUB_STEP_SUMMARY"
