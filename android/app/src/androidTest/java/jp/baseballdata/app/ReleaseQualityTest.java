@@ -105,6 +105,21 @@ public class ReleaseQualityTest {
         assertFalse(expectedFontTransition(new IllegalStateException("Unexpected route state")));
         assertFalse(expectedFontTransition(new RuntimeException("Cannot run onActivity since Activity has been destroyed already")));
     }
+    private boolean fontConfigurationReady(float scale) throws Exception {
+        AtomicReference<MainActivity> evaluated = new AtomicReference<>();
+        AtomicReference<String> value = new AtomicReference<>();CountDownLatch latch = new CountDownLatch(1);
+        scenario.onActivity(activity -> {
+            evaluated.set(activity);
+            activity.getBridge().getWebView().evaluateJavascript("document.documentElement ? getComputedStyle(document.documentElement).getPropertyValue('--android-font-scale').trim() : ''",result -> {value.set(result);latch.countDown();});
+        });
+        if(!latch.await(10,TimeUnit.SECONDS)) {
+            // A configuration change can destroy the queried WebView before its
+            // callback. Only an actually destroyed Activity may wait for replacement.
+            if(evaluated.get()!=null && evaluated.get().isDestroyed()) return false;
+            fail("Live WebView font callback did not respond");
+        }
+        return String.valueOf(new JSONTokener(value.get()).nextValue()).equals(Float.toString(scale));
+    }
     private void fontScaleAndRecreate(float scale) throws Exception {
         shell("settings put system font_scale " + scale);
         // fontScale deliberately uses normal OS recreation. Do not ask
@@ -115,7 +130,7 @@ public class ReleaseQualityTest {
             boolean ready = false;
             try {
                 if (scenario.getState() == androidx.lifecycle.Lifecycle.State.RESUMED)
-                    ready = js("document.documentElement ? getComputedStyle(document.documentElement).getPropertyValue('--android-font-scale').trim() : ''").equals(Float.toString(scale));
+                    ready = fontConfigurationReady(scale);
             } catch (RuntimeException transition) {
                 // Only this bounded, expected configuration transition may wait.
                 // A destroyed app that never resumes still fails the deadline.
