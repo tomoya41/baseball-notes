@@ -9,6 +9,7 @@ type Surface={manifest():Promise<GameManifest>;date(date:string):Promise<GameDat
 export async function readNpbWeekly(stage:NpbWeeklyStage,date:string|undefined,surface:Surface) {
   let games:WeeklyGame[]=[],weeks:string[],asOf:string,updatedAt:string,coverage:WeekCoverage="partial",previousCoverage:WeekCoverage="partial";
   let attribution:string,sources:{url:string;label:string}[]=[],names=new Map<string,string>();
+  const missingResultDates:string[]=[];
   if(stage==="regular"){
     const manifest=gameManifestSchema.parse(await surface.manifest());
     const week=calendarWeek(date??manifest.effectiveDate);weeks=collectedWeeks(manifest.from,manifest.to);
@@ -22,6 +23,7 @@ export async function readNpbWeekly(stage:NpbWeeklyStage,date:string|undefined,s
     const covered=(from:string,to:string)=>{const selected=days.filter(d=>d.date>=from&&d.date<=to);return selected.length===7&&selected.every(d=>d.coverage==="no_games"?d.games.length===0:d.coverage==="complete"&&d.games.every(g=>g.status==="final"&&g.completeness==="complete"&&g.home.score!==null&&g.away.score!==null));};
     coverage=covered(week.from,week.to)?"complete":"partial";previousCoverage=covered(week.previous.from,week.previous.to)?"complete":"partial";
     for(const day of days)for(const g of day.games){names.set(g.home.id,g.home.name);names.set(g.away.id,g.away.name);
+      if(g.status==="final"&&(g.home.score===null||g.away.score===null)){missingResultDates.push(g.date);continue;}
       games.push({id:g.gameId,date:g.date,homeId:g.home.id,awayId:g.away.id,homeRuns:g.home.score,awayRuns:g.away.score,status:g.status});}
     asOf=manifest.effectiveDate;updatedAt=[manifest.generatedAt,...days.map(d=>d.generatedAt)].sort()[0]!;
     attribution="nf3の保存済み公開試合データ。選手成績の週間評価とは別集計。";
@@ -38,5 +40,6 @@ export async function readNpbWeekly(stage:NpbWeeklyStage,date:string|undefined,s
   }
   const week=calendarWeek(date??asOf);if(!weeks.includes(week.from))throw Error("Week outside saved NPB range");
   const summary=summarizeWeek(games,week.from,names,{league:"NPB",season:2026,competition:stage==="regular"?"regular":"postseason",...(stage==="regular"?{}:{stage})},coverage,previousCoverage);
-  return {summary,weeks,asOf,updatedAt,attribution,sources,names,playerEvaluation:"gate_closed" as const};
+  const missingResults={current:missingResultDates.filter(d=>d>=week.from&&d<=week.to).length,previous:missingResultDates.filter(d=>d>=week.previous.from&&d<=week.previous.to).length};
+  return {summary,weeks,asOf,updatedAt,attribution,sources,names,missingResults,playerEvaluation:"gate_closed" as const};
 }
