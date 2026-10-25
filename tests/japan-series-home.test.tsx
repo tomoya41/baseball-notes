@@ -11,7 +11,9 @@ import { buildWikipediaJapanSeries } from "../src/infrastructure/providers/wikip
 import { japanSeriesFeaturedPlayers, japanSeriesHomePeriod, japanSeriesHomeSummary } from "../src/presentation/japan-series-home";
 import { JapanSeriesHomeContent, NpbJapanSeriesHome } from "../src/ui/npb-japan-series-home";
 import { readNpbJapanSeries } from "../src/application/npb-japan-series-reader";
+import { readNpbCs } from "../src/application/npb-cs-reader";
 vi.mock("../src/application/npb-japan-series-reader",()=>({readNpbJapanSeries:vi.fn()}));
+vi.mock("../src/application/npb-cs-reader",()=>({readNpbCs:vi.fn(()=>new Promise(()=>{}))}));
 afterEach(()=>{vi.clearAllMocks();vi.unstubAllGlobals();});
 const now=Date.parse("2026-10-25T00:05:00Z");
 function finalData(){const f=japanResultFixture();return buildWikipediaJapanSeries(f.archive,f.cs,"b".repeat(64),f.admission,f.review,f.now);}
@@ -19,10 +21,26 @@ const html=(d:ReturnType<typeof finalData>)=>renderToStaticMarkup(<MemoryRouter>
 it("shows an admitted final before the next schedule, scopes every Game link and never invents starters or starts",()=>{
   const d=finalData(),s=html(d),m=japanSeriesHomeSummary(d,now);
   expect(m.latest?.gameNumber).toBe(1);expect(m.next?.gameNumber).toBe(2);expect(m.standingCompleteThroughLatest).toBe(true);
-  expect(s.indexOf("japan-home-result")).toBeLessThan(s.indexOf("次の収録予定"));expect(s).toContain("1勝");expect(s).toContain("10/25 · 第2戦");
+  expect(s.indexOf("japan-home-result")).toBeLessThan(s.indexOf("次の予定"));expect(s).toContain("1勝");expect(s).toContain("10/25 · 第2戦");
   expect(s).toContain("予告先発");expect(s).toContain("未収録");expect(s).toContain("開始時刻未収録");expect(s).not.toContain("18:00");
   expect(s).toContain("competition=postseason&amp;stage=japan_series");expect(s).toContain("https://npb.jp/announcement/starter/");
-  expect(s).toContain("2021年撮影");expect(s).toContain("2023年撮影");expect(s.match(/oldid=/g)).toHaveLength(2);
+  expect(s).not.toContain('class="spotlight-card"');expect(s.match(/oldid=/g)).toHaveLength(2);
+});
+it("keeps Home readings closed and unfetched until requested, with dated photo navigation still reachable",async()=>{
+  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);
+  const host=document.createElement('div'),root=createRoot(host);document.body.append(host);
+  try {
+    await act(async()=>root.render(<MemoryRouter><JapanSeriesHomeContent data={finalData()} now={now}/></MemoryRouter>));
+    const details=host.querySelector<HTMLDetailsElement>('.japan-home-explore')!;
+    expect(details.open).toBe(false);expect(readNpbCs).not.toHaveBeenCalled();expect(host.querySelector('.japan-home-players')).toBeNull();
+    expect(host.querySelector('.japan-home-result')?.getAttribute('href')).toContain('stage=japan_series');
+    await act(async()=>{details.open=true;details.dispatchEvent(new Event('toggle'));});
+    expect(readNpbCs).toHaveBeenCalledOnce();expect(host.querySelectorAll('.japan-home-player-link')).toHaveLength(3);
+    expect(host.textContent).toContain('2021年撮影');expect(host.textContent).toContain('2023年撮影');
+    expect(host.querySelector('a[href="https://npb.jp/announcement/starter/"]')).not.toBeNull();
+    await act(async()=>{details.open=false;details.dispatchEvent(new Event('toggle'));});
+    expect(host.querySelector('.postseason-spotlight')).toBeNull();
+  } finally {await act(async()=>root.unmount());host.remove();}
 });
 it("does not fabricate 0–0 standings, a next Game after a clinch, or a completed series from missing past results",()=>{
   const f=japanFixture(),d=buildWikipediaJapanSeries(f.archive,f.cs,"b".repeat(64),f.admission);

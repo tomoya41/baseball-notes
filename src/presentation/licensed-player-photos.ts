@@ -5,6 +5,8 @@ import maki from "../assets/players/maki-2021-v1.webp";
 import yanagita from "../assets/players/yanagita-2023-v1.webp";
 import azuma from "../assets/players/azuma-2018-v1.webp";
 import shuto from "../assets/players/shuto-2021-v1.webp";
+import masaki from "../assets/players/masaki-2022-v1.webp";
+import sugiyama from "../assets/players/sugiyama-2024-v1.webp";
 
 // Reviewed informational portraits only. This registry grants no logo,
 // endorsement, advertising or current-roster rights. See visual-assets-rights.md.
@@ -44,6 +46,16 @@ export const licensedPlayerPhotos = [
     source:"https://commons.wikimedia.org/w/index.php?curid=104906283&oldid=1285448372",
     license:"CC BY-SA 4.0",licenseUrl:"https://creativecommons.org/licenses/by-sa/4.0/",
     sourceSha1:"1e694ea45992202b54445d7f8846e54a46fff05d",sha256:"e76ce541c03796a4f220eca194d7f418b9268853576b11b91ac61ed7d41f9595" },
+  { playerId:"2b2a8d97-2a6e-441c-9a33-0d79d2a7d147",qid:"Q108777002",npbId:"81885155",name:"正木智也",season:2022,years:[2022,2023,2024,2025,2026],assetName:"masaki-2022",framed:false,
+    src:masaki,width:320,height:400,author:"Orixbaseballclub",edits:"上半身の切り抜き・サイズ縮小・WebP変換。",
+    source:"https://commons.wikimedia.org/w/index.php?curid=120343988&oldid=1285124588",
+    license:"CC BY-SA 4.0",licenseUrl:"https://creativecommons.org/licenses/by-sa/4.0/",
+    sourceSha1:"ab533a9c97596a9ffc6cb86c960975ca228fbcb1",sha256:"637f4373cc9cdd1b1fdc4696546af011d4d8e1acdf0cc2c552cbf4de539a4ff2" },
+  { playerId:"304e870e-71ba-4df7-8682-99ad852ee751",qid:"Q62085220",npbId:"91995138",name:"杉山一樹",season:2024,years:[2024,2025,2026],assetName:"sugiyama-2024",framed:false,
+    src:sugiyama,width:320,height:400,author:"Hotta Akahane",edits:"上半身の切り抜き・サイズ縮小・WebP変換。",
+    source:"https://commons.wikimedia.org/w/index.php?curid=151312518&oldid=1102585718",
+    license:"CC0 1.0",licenseUrl:"https://creativecommons.org/publicdomain/zero/1.0/",
+    sourceSha1:"545ba06f891d49a0a9fe4df29e767a182afa1170",sha256:"69f99bc3c75bfc38ea0932b2ff9abc0a5d6337a24cb29cefb933f77f8ea3ff20" },
 ] as const;
 
 /** A dated portrait identifies its subject, not the season's uniform or roster.

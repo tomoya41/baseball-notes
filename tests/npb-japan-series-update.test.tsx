@@ -50,7 +50,7 @@ it("keeps ties distinct from wins and shows overdue unrecorded results without g
 });
 it("shows a confirmed champion without next-game or probable-starter claims",()=>{
   let d=initial();for(let i=1;i<7;i++)d=finish(d,i);
-  expect(d.series.clinched).toBe(true);const s=html(d,Date.parse(d.observedAt));expect(s).toContain('ソフトバンク 優勝');expect(s).not.toContain('次の収録予定');expect(s).not.toContain('class="japan-home-starters"');expect(japanSeriesHomeSummary(d,Date.parse(d.observedAt)).next).toBeNull();
+  expect(d.series.clinched).toBe(true);const s=html(d,Date.parse(d.observedAt));expect(s).toContain('ソフトバンク 優勝');expect(s).not.toContain('次の予定');expect(s).not.toContain('class="japan-home-starters"');expect(japanSeriesHomeSummary(d,Date.parse(d.observedAt)).next).toBeNull();
 });
 it("reports explicit postponements separately from confirmed results",()=>{
   const before=initial(),after=structuredClone(before);after.series.games[1]!.status="postponed";
