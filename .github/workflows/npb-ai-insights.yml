@@ -23,7 +23,7 @@ jobs:
         with: { node-version-file: .nvmrc, cache: npm }
       - run: npm ci
       - name: Validate evidence and optional provider boundaries
-        run: npx vitest run tests/npb-ai-insights.test.ts
+        run: npx vitest run tests/npb-ai-insights.test.ts tests/npb-ai-staging.test.ts
       - uses: actions/cache/restore@v4
         id: state
         with:

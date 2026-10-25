@@ -7,10 +7,8 @@ import pin from "../src/data/npb-japan-series-release.json";
 // Only admitted releases; optional staging never contacts the original source or DB.
 const root=".data/npb-ai-insights";
 if(process.argv.includes("--stage")){
-  const {stageNpbSeries}=await import("./stage-npb-series");
-  const {stageNpbJapanSeries}=await import("./stage-npb-japan-series");
-  const destination="dist/data/npb/competitions";
-  await stageNpbSeries(destination);await stageNpbJapanSeries(destination);
+  const {stageNpbAiInputs}=await import("./stage-npb-ai-inputs");
+  await stageNpbAiInputs();
 }
 const body=await readFile(`dist/data/npb/competitions/${pin.sha256}/japan-series-2026.json`);
 const input=prepareNpbAiEvidence(body,pin),directory=join(root,input.inputSha256);
