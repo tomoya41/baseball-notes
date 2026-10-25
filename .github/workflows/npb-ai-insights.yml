@@ -1,0 +1,49 @@
+name: NPB optional AI editorial candidates
+on:
+  workflow_dispatch:
+    inputs:
+      generate:
+        description: Generate one unpublished candidate only after owner free-plan and terms setup
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: npb-optional-ai-editorial
+  cancel-in-progress: false
+jobs:
+  prepare:
+    if: github.ref == 'refs/heads/main' && github.event.repository.private == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v7
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@v7
+        with: { node-version-file: .nvmrc, cache: npm }
+      - run: npm ci
+      - name: Validate evidence and optional provider boundaries
+        run: npx vitest run tests/npb-ai-insights.test.ts tests/npb-ai-staging.test.ts tests/npb-ai-workflow.test.ts
+      - uses: actions/cache/restore@v4
+        id: state
+        with:
+          path: .data/npb-ai-insights
+          key: npb-ai-candidates-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: npb-ai-candidates-v1-
+      - name: Prepare input without invoking AI
+        run: npx tsx scripts/prepare-npb-ai-insights.ts --stage
+      - name: Optional single free-plan attempt, never publication
+        if: inputs.generate == true
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_AI_TOKEN: ${{ secrets.CLOUDFLARE_AI_TOKEN }}
+          NPB_AI_FREE_PLAN_REVIEWED: ${{ vars.NPB_AI_FREE_PLAN_REVIEWED }}
+          NPB_AI_TERMS_REVIEWED: ${{ vars.NPB_AI_TERMS_REVIEWED }}
+        run: npx tsx scripts/prepare-npb-ai-insights.ts --generate
+      - uses: actions/cache/save@v4
+        if: always() && steps.state.outcome == 'success'
+        with:
+          path: .data/npb-ai-insights
+          key: npb-ai-candidates-v1-${{ github.run_id }}-${{ github.run_attempt }}
+      - name: Record safe summary
+        run: echo 'Candidate preparation only. No canonical/public writes, Gate changes, source article bodies or automatic publication. No scheduled AI execution is enabled.' >> "$GITHUB_STEP_SUMMARY"
