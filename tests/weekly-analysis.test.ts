@@ -54,11 +54,11 @@ describe("calendar week and saved-scope analysis",()=>{
     expect(portableRoute("/NPB/weekly","stage=japan_series&competition=regular")).toBeNull();expect(portableRoute("/MLB/weekly","season=2026")).toBeNull();
   });
   it("retains known NPB results when either week contains a final with an unknown score",async()=>{
-    const surface={manifest:async()=>({schemaVersion:1 as const,league:"NPB" as const,from:"2026-09-01",to:"2026-09-30",effectiveDate:"2026-09-30",generatedAt:"2026-10-01T00:00:00Z"}),date:async(date:string)=>({schemaVersion:1 as const,league:"NPB" as const,date,generatedAt:"2026-10-01T00:00:00Z",coverage:"partial" as const,
-      games:[{gameId:`npb:game:${date}`,date,gameNumber:1,scheduledTime:null,status:"final" as const,home:{id:"npb:team:tigers",name:"阪神",score:date.endsWith("22")||date.endsWith("16")?null:4},away:{id:"npb:team:giants",name:"巨人",score:1},completeness:"partial" as const,battingAvailable:false,pitchingAvailable:false,detailAvailable:false}]})};
+    const surface={manifest:async()=>({schemaVersion:1 as const,league:"NPB" as const,from:"2026-09-01",to:"2026-09-30",effectiveDate:"2026-09-30",generatedAt:"2026-10-01T00:00:00Z"}),date:async(date:string)=>{for(let i=0;i<Number(date.slice(8))%4;i++)await Promise.resolve();return {schemaVersion:1 as const,league:"NPB" as const,date,generatedAt:"2026-10-01T00:00:00Z",coverage:"partial" as const,
+      games:[{gameId:`npb:game:${date}`,date,gameNumber:1,scheduledTime:null,status:"final" as const,home:{id:"npb:team:tigers",name:"阪神",score:date.endsWith("22")||date.endsWith("16")?null:4},away:{id:"npb:team:giants",name:"巨人",score:1},completeness:"partial" as const,battingAvailable:false,pitchingAvailable:false,detailAvailable:false}]};}};
     const r=await readNpbWeekly("regular","2026-09-21",surface);
     expect(r.summary.games).toHaveLength(6);expect(r.summary.coverage).toBe("partial");expect(r.summary.previousCoverage).toBe("partial");
-    expect(r.missingResults).toEqual({current:1,previous:1});expect(r.summary.teams.find(t=>t.teamId==="npb:team:tigers")?.runsFor).toBe(24);
+    expect(r.summary.games.map(g=>g.date)).toEqual(r.summary.games.map(g=>g.date).sort());expect(r.missingResults).toEqual({current:1,previous:1});expect(r.summary.teams.find(t=>t.teamId==="npb:team:tigers")?.runsFor).toBe(24);
     expect(r.summary.teams.every(t=>t.previous===null)).toBe(true);expect("hot" in r).toBe(false);
   });
 });

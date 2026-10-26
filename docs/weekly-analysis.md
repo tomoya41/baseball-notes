@@ -27,6 +27,8 @@ MLBの収録最終日と検証世代を表示。payloadに更新日時がない�
 
 未知の対象、重複選択、不適合の理由、未知/不足の指標、追加文章を拒否。JSONまたは単一JSON code fenceのみを解析し、周囲の説明文は受理しない。失敗は固定コード（INVALID_JSON/SCHEMA_MISMATCH/UNKNOWN_CANDIDATE/UNSUPPORTED_REASON/UNSUPPORTED_METRIC等）で示し、無効な本文・任意エラー文・キーは保存しない。PR #79の失敗本文は未保存なので過去の具体的原因を断定せず、今後の切り分けを改善した。
 
+指標ID・母数の単位・部門・改善方向（OPSは上昇、ERAは低下）もプログラムが指定。前週比較は前週/当週の正確な値と差、両週の母数を根拠として要求する。NPBのスコア不足finalは欠損件数を示して数値集計から外し、他の確認済み結果とpartialを維持する。応答順で試合の表示順が変わらないよう日付/IDで固定する。
+
 接続、固定モデル `@cf/meta/llama-3.1-8b-instruct-fp8`、512出力tokens、20秒timeout、1試行、Free/規約確認flagと秘密情報保護は既存adapterを共有。[モデル](https://developers.cloudflare.com/workers-ai/models/llama-3.1-8b-instruct-fp8/)・[API](https://developers.cloudflare.com/api/resources/ai/methods/run/)・[料金](https://developers.cloudflare.com/workers-ai/platform/pricing/)を2026-10-26確認。Freeは日10,000 Neuronsで超過失敗。paid fallback・プラン変更・別アカウントによる回避はしない。
 
 旧日本シリーズ文章と週間選考で**同じUTC日次marker、入力hash marker、Actions cache、concurrency group**を共有。失敗も使用済み。同じ入力の翌日再実行もskip。cache/markerを消して再試行しない。中断はATTEMPT_STARTED/requests:null。公開済み情報だけのreview artifactを7日保持し、公開repoで取得可能な前提で扱う。人の確認欄はNOT_RUNのまま、自動PASSにしない。

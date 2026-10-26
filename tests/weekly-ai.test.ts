@@ -12,6 +12,10 @@ async function setup(){const f=weeklyFixture(),r=await readMlbWeekly(f.manifest,
 function pick(){return {picks:[{candidateRef:"C1",reason:"batting_impact",metricIds:["OPS","PA"]}]};}
 it("keeps hash/canonical IDs/exact values in program control, not model transcription",async()=>{
   const {f,r,input}=await setup();expect(prepareWeeklyAiInput(r).inputSha256).toBe(input.inputSha256);
+  expect(input.payload.candidates.find(c=>c.context?.category==="batting")?.context).toMatchObject({metricId:"OPS",sampleMetricId:"PA",improvesWhen:"higher"});
+  expect(input.payload.candidates.find(c=>c.context?.category==="starters")?.context).toMatchObject({metricId:"ERA",sampleMetricId:"outsRecorded",improvesWhen:"lower"});
+  const rise=input.payload.candidates.find(c=>c.reason==="week_improvement"&&c.context?.category==="starters")!;
+  expect(rise.metrics.delta).toBeLessThan(0);expect(rise.metrics.current).toBeLessThan(rise.metrics.previous!);
   const request=vi.fn().mockResolvedValue(new Response(JSON.stringify({success:true,result:{response:JSON.stringify(pick())}})));
   const result=await generateWeeklyAiSelection(input,config,request);expect(result.status).toBe("CANDIDATE_REQUIRES_REVIEW");
   const body=JSON.parse(request.mock.calls[0]![1].body),user=body.messages.find((m:{role:string})=>m.role==="user").content;
