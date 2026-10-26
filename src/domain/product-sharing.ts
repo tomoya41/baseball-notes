@@ -17,6 +17,10 @@ export function portableRoute(path: string, search = ""): string | null {
   const parts = path.split("/").filter(Boolean), league = parts[0];
   if (league !== "NPB" && league !== "MLB") return null;
   const resource = parts[1], source = new URLSearchParams(search), clean = new URLSearchParams();
+  if(league==="NPB"&&resource==="season"&&parts.length===2){
+    const season=source.get("season")??"2027";if(!["2026","2027"].includes(season))return null;
+    return `/NPB/season?season=${season}`;
+  }
   if(["weekly","monthly"].includes(resource??"")&&parts.length===2){
     const month=source.get("month");
     if(resource==="monthly"&&month!==null&&(!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)||!z.iso.date().safeParse(`${month}-01`).success))return null;
