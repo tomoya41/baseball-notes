@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join,resolve } from "node:path";
 import { readMlbWeekly } from "../src/application/mlb-weekly";
 import { prepareWeeklyAiInput,validateWeeklyAiSelection,generateWeeklyAiSelection } from "../src/data/weekly-ai-insights";
-import { claimInsightAttempt,restoredInsightHistory } from "../scripts/lib/optional-ai-budget";
+import { claimInsightAttempt,restoredInsightHistory,knownInsightAttempts,aiAttemptLedgerSchema } from "../scripts/lib/optional-ai-budget";
 import { weeklyFixture } from "./fixtures/weekly-analysis";
 
 const config={accountId:"a".repeat(32),token:"private-test-token",freePlanReviewed:true,termsReviewed:true};
@@ -20,7 +20,24 @@ it("keeps hash/canonical IDs/exact values in program control, not model transcri
   const result=await generateWeeklyAiSelection(input,config,request);expect(result.status).toBe("CANDIDATE_REQUIRES_REVIEW");
   const body=JSON.parse(request.mock.calls[0]![1].body),user=body.messages.find((m:{role:string})=>m.role==="user").content;
   expect(user).not.toContain(input.inputSha256);expect(user).not.toContain(f.ids[0]);expect(user).not.toContain('"subjectId"');
+  expect(body.response_format).toMatchObject({type:"json_schema",json_schema:{type:"object",required:["picks"],additionalProperties:false}});
   const selection=validateWeeklyAiSelection(pick(),input);expect(selection.picks[0]).toMatchObject({subjectId:f.ids[0],metrics:{OPS:2.25,PA:28}});expect(selection.publiclyAdmitted).toBe(false);
+});
+it("validates structured provider objects with the same schema without fixing unknown fields",async()=>{
+  const {input}=await setup();
+  const request=vi.fn().mockResolvedValue(new Response(JSON.stringify({success:true,result:{response:pick()}})));
+  expect((await generateWeeklyAiSelection(input,config,request)).status).toBe("CANDIDATE_REQUIRES_REVIEW");
+  const bad=vi.fn().mockResolvedValue(new Response(JSON.stringify({success:true,result:{response:{picks:[{ref:"C1",reason:"batting_impact",metricIds:["OPS","PA"]}],"unexpected-sensitive-text":"do not retain"}}})));
+  const result=await generateWeeklyAiSelection(input,config,bad);
+  expect(result).toMatchObject({status:"INVALID_OR_UNAVAILABLE_CANDIDATE",rejectionCode:"SCHEMA_MISMATCH",validationIssues:expect.arrayContaining([{path:"picks.0.candidateRef",code:"invalid_type"}])});
+  expect(JSON.stringify(result)).not.toMatch(/unexpected-sensitive-text|do not retain|"ref"/);expect(bad).toHaveBeenCalledOnce();
+});
+it("keeps verified actual attempts blocked after local/cache loss, including their UTC-day budget",async()=>{
+  const root=join(tmpdir(),"weekly-ai-nonexistent-history"),known=knownInsightAttempts[1]!;
+  expect((await claimInsightAttempt(root,known.inputSha256,new Date("2027-01-01T00:00:00Z"))).status).toBe("UNCHANGED_INPUT");
+  expect((await claimInsightAttempt(root,"f".repeat(64),new Date(known.recordedAt))).status).toBe("DAILY_BUDGET_OR_INFLIGHT");
+  expect(()=>aiAttemptLedgerSchema.parse({schemaVersion:1,attempts:[known,known]})).toThrow();
+  expect(()=>aiAttemptLedgerSchema.parse({schemaVersion:1,attempts:[{...known,evidenceUrl:"https://example.test/not-a-proof"}]})).toThrow();
 });
 it("returns bounded safe rejection codes instead of opaque failures or arbitrary model/error text",async()=>{
   const {input}=await setup();
@@ -52,13 +69,13 @@ it("shares one UTC-day reservation across legacy/weekly, failed attempts, reruns
   try{
     const now=new Date("2026-10-25T23:59:59Z"),hash="a".repeat(64),other="b".repeat(64);
     expect(await restoredInsightHistory(root,"npb-ai-candidates-v1-new-empty-cache")).toBe(false);
-    const results=await Promise.all([claimInsightAttempt(root,hash,now),claimInsightAttempt(root,other,now)]);
+    const results=await Promise.all([claimInsightAttempt(root,hash,now,[]),claimInsightAttempt(root,other,now,[])]);
     expect(results.filter(r=>r.status==="RESERVED")).toHaveLength(1);expect(results.filter(r=>r.status==="DAILY_BUDGET_OR_INFLIGHT")).toHaveLength(1);
     expect(await restoredInsightHistory(root,undefined)).toBe(false);
     expect(await restoredInsightHistory(root,"npb-ai-candidates-v1-restored")).toBe(true);
     const used=JSON.parse(await readFile(join(root,"attempt-2026-10-25.json"),"utf8")).inputSha256 as string;
-    expect((await claimInsightAttempt(root,used,new Date("2026-10-26T00:00:00Z"))).status).toBe("UNCHANGED_INPUT");
-    expect((await claimInsightAttempt(root,used===hash?other:hash,new Date("2026-10-26T00:00:00Z"))).status).toBe("RESERVED");
+    expect((await claimInsightAttempt(root,used,new Date("2026-10-26T00:00:00Z"),[])).status).toBe("UNCHANGED_INPUT");
+    expect((await claimInsightAttempt(root,used===hash?other:hash,new Date("2026-10-26T00:00:00Z"),[])).status).toBe("RESERVED");
     await writeFile(join(root,"attempt-2026-10-26.json"),"{}");
     expect(await restoredInsightHistory(root,"npb-ai-candidates-v1-restored")).toBe(false);
   }finally{await rm(root,{recursive:true,force:true});}
