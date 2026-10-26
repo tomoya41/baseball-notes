@@ -911,6 +911,17 @@ public class ReleaseQualityTest {
         assertEquals("NPB monthly has no player ranking", "0", js("document.querySelectorAll('.weekly-rising').length"));
         assertEquals("NPB month has no page overflow", "true", js("document.documentElement.scrollWidth<=innerWidth")); screenshot("monthly-npb-dark-font-20");
     }
+    @Test public void futureSeasonKeepsNoDataAndSavedSeasonLinks() throws Exception {
+        Intent link = new Intent(Intent.ACTION_VIEW, Uri.parse("baseballnotes://NPB/schedule?season=2027&date=2027-03-01"));
+        link.setClass(InstrumentationRegistry.getInstrumentation().getTargetContext(), MainActivity.class);
+        scenario = ActivityScenario.launch(link); waitText("2027年のデータは未収録");
+        assertEquals("Future deep link retains its unavailable year", "#/NPB/season?season=2027", js("location.hash"));
+        assertEquals("Future entry has no fabricated scoreboard", "0", js("document.querySelectorAll('.scoreboard-row,.weekly-overview').length"));
+        fontScaleAndRecreate(2.0f); waitText("2027年のデータは未収録"); waitViewport(360);
+        assertEquals("Future entry keeps 200 percent readable", "true", js("document.documentElement.scrollWidth<=innerWidth")); screenshot("season-2027-font-20");
+        js("document.querySelector('a[href=\"#/NPB/home?season=2026\"]').click()"); waitCondition("Saved 2026 home", "!!document.querySelector('.japan-home') || document.querySelector('main').innerText.includes('日本シリーズ')");
+        assertTrue("Saved 2026 URL remains explicit", js("location.hash").contains("season=2026"));
+    }
     @Test public void npbRegularGameRemainsUsableWhenDetailApiIsUnavailable() throws Exception {
         Intent link = new Intent(Intent.ACTION_VIEW, Uri.parse("baseballnotes://NPB/schedule?date=2026-10-08"));
         link.setClass(InstrumentationRegistry.getInstrumentation().getTargetContext(), MainActivity.class);

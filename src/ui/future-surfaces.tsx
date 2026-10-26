@@ -31,6 +31,7 @@ export function ExploreScreen({ league }: { league: League }) {
       { title: "データを探す", icon: ScanLine, rows: [{ to: "data", label: "データ探索", detail: "保存済み成績を条件で絞り込む", soon: false }, { to: "history", label: "シーズン履歴", detail: "収録年と選手の年度別成績", soon: false }, { to: "glossary", label: "指標ガイド", detail: "計算式・サンプル・読み方", soon: false }] },
       { title: "対戦を深く見る", icon: ScanLine, rows: [{ to: "matchup", label: "MATCHUP", detail: "実際の打席の対戦結果", soon: league !== "MLB" }] },
     ].map(group => <section className="surface-card" key={group.title}><h2 className="icon-heading"><group.icon size={19} aria-hidden="true" />{group.title}</h2><div className="explore-list">{group.rows.filter(row => row.to !== "postseason" || league !== "MLB" || hasHistoricalPostseason(availability)).map(row => <Link key={row.to} to={`/${league}/${row.to}`}><span><strong>{row.label}</strong><small>{row.detail}</small></span>{row.soon && <span className="soon-badge">未収録</span>}<ChevronRight size={17} aria-hidden="true" /></Link>)}</div></section>)}</div>
+    {league==="NPB"&&<Link className="section-action" to="/NPB/season?season=2027">年度を切り替える · 2027年 →</Link>}
     <p className="inline-note">キャリアや高度分析は、各選手ページから利用します。</p></div>;
 }
 export function PlayerFutureLinks({ base, historical = false }: { base: string; historical?: boolean }) {

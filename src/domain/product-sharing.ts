@@ -10,6 +10,7 @@ import type { League } from "./models";
 import { npbEventQuery } from "./npb-event-query";
 import japanPin from "../data/npb-japan-series-release.json";
 import { draftEventQuery } from "./npb-draft-query";
+import { needsNpbSeasonEntry } from "./npb-season-entry";
 
 export const PUBLIC_APP_URL = "https://tomoya41.github.io/baseball-notes/";
 // Local IDs and unknown keys never travel through a shareable URL.
@@ -17,6 +18,11 @@ export function portableRoute(path: string, search = ""): string | null {
   const parts = path.split("/").filter(Boolean), league = parts[0];
   if (league !== "NPB" && league !== "MLB") return null;
   const resource = parts[1], source = new URLSearchParams(search), clean = new URLSearchParams();
+  if(league==="NPB"&&needsNpbSeasonEntry(path,source))return source.get("season")==="2027"?"/NPB/season?season=2027":null;
+  if(league==="NPB"&&resource==="season"&&parts.length===2){
+    const season=source.get("season")??"2027";if(!["2026","2027"].includes(season))return null;
+    return `/NPB/season?season=${season}`;
+  }
   if(["weekly","monthly"].includes(resource??"")&&parts.length===2){
     const month=source.get("month");
     if(resource==="monthly"&&month!==null&&(!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)||!z.iso.date().safeParse(`${month}-01`).success))return null;

@@ -2,6 +2,7 @@ import { canonicalEntityRefSchema, canonicalEntityPath } from "./cross-league";
 import { portableRoute } from "./product-sharing";
 import { z } from "zod";
 import japanPin from "../data/npb-japan-series-release.json";
+import { needsNpbSeasonEntry } from "./npb-season-entry";
 export function canonicalDeepLink(input: string): string | null {
   try {
     const uri = new URL(input);
@@ -10,6 +11,7 @@ export function canonicalDeepLink(input: string): string | null {
     const route = uri.protocol === "baseballnotes:" ? `/${uri.hostname}${uri.pathname}` :
       uri.hash.startsWith("#/") ? uri.hash.slice(1) : uri.pathname.replace(/^\/baseball-notes/, "");
     const [portablePath, portableSearch] = route.split("?");
+    if(needsNpbSeasonEntry(portablePath??"",new URLSearchParams(portableSearch??uri.search)))return portableRoute(portablePath!,portableSearch??uri.search);
     if(portablePath === "/NPB/schedule") {
       const source = new URLSearchParams(portableSearch ?? uri.search);
       if(source.has("stage")||source.has("competition")&&source.get("competition")!=="regular")return null;
@@ -17,7 +19,7 @@ export function canonicalDeepLink(input: string): string | null {
       if(date!==null&&!z.iso.date().safeParse(date).success)return null;
       return `/NPB/schedule${date ? `?date=${date}` : ""}`;
     }
-    const expanded = ["data", "history", "compare", "team-compare", "season-compare", "postseason", "matchup", "milestones", "form", "cs", "moves", "weekly", "monthly"].includes(portablePath?.split("/")[2] ?? "");
+    const expanded = ["data", "history", "compare", "team-compare", "season-compare", "postseason", "matchup", "milestones", "form", "cs", "moves", "weekly", "monthly", "season"].includes(portablePath?.split("/")[2] ?? "");
     if (expanded || portablePath === "/NPB/talent/2026") return portableRoute(portablePath!, portableSearch ?? uri.search);
     const [leagueRaw, resource, encoded, child, ...extra] = route.split("?")[0]!.replace(/^\//, "").split("/");
     const teamPlayers = child === "players" && resource === "teams" && leagueRaw?.toUpperCase() === "NPB";
