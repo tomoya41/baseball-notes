@@ -6,14 +6,16 @@ import { npbTeamShortName } from "../presentation/npb-team-names";
 
 export type NpbWeeklyStage="regular"|"npb_cs_first"|"npb_cs_final"|"japan_series";
 type Surface={manifest():Promise<GameManifest>;date(date:string):Promise<GameDateIndex>};
-export async function readNpbWeekly(stage:NpbWeeklyStage,date:string|undefined,surface:Surface) {
+export class NpbWeeklyRangeUnavailable extends Error {constructor(){super("Week outside saved NPB range");}}
+export type NpbWeeklySources={cs:()=>ReturnType<typeof readNpbCs>;japanSeries:()=>ReturnType<typeof readNpbJapanSeries>};
+export async function readNpbWeekly(stage:NpbWeeklyStage,date:string|undefined,surface:Surface,readers:NpbWeeklySources={cs:()=>readNpbCs(),japanSeries:()=>readNpbJapanSeries()}) {
   let games:WeeklyGame[]=[],weeks:string[],asOf:string,updatedAt:string,coverage:WeekCoverage="partial",previousCoverage:WeekCoverage="partial";
   let attribution:string,sources:{url:string;label:string}[]=[],names=new Map<string,string>();
   const missingResultDates:string[]=[];
   if(stage==="regular"){
     const manifest=gameManifestSchema.parse(await surface.manifest());
     const week=calendarWeek(date??manifest.effectiveDate);weeks=collectedWeeks(manifest.from,manifest.to);
-    if(!weeks.includes(week.from))throw Error("Week outside saved NPB range");
+    if(!weeks.includes(week.from))throw new NpbWeeklyRangeUnavailable();
     const days:GameDateIndex[]=[],expected:string[]=[];
     for(let d=week.previous.from;d<=week.to;d=shiftGameDate(d,1))if(d>=manifest.from&&d<=manifest.to)expected.push(d);
     for(let i=0;i<expected.length;i+=4)await Promise.all(expected.slice(i,i+4).map(async day=>{
@@ -29,7 +31,7 @@ export async function readNpbWeekly(stage:NpbWeeklyStage,date:string|undefined,s
     asOf=manifest.effectiveDate;updatedAt=[manifest.generatedAt,...days.map(d=>d.generatedAt)].sort()[0]!;
     attribution="nf3の保存済み公開試合データ。選手成績の週間評価とは別集計。";
   }else{
-    const data=stage==="japan_series"?await readNpbJapanSeries():await readNpbCs();
+    const data=stage==="japan_series"?await readers.japanSeries():await readers.cs();
     updatedAt=data.observedAt;attribution="Wikipediaの収録済み試合結果を集計・表記整理。CC BY-SA 4.0。";
     sources=data.sources.map(s=>({url:`https://ja.wikipedia.org/w/index.php?curid=${s.pageId}&oldid=${s.revision}`,label:`Wikipedia「${s.title}」の執筆者`}));
     if("series" in data){games=data.series.games.map(g=>{const r=data.results.find(r=>r.gameId===g.gameId);return {id:g.gameId,date:g.date,homeId:g.homeTeamId,awayId:g.awayTeamId,homeRuns:g.homeRuns,awayRuns:g.awayRuns,status:g.status,
@@ -39,7 +41,7 @@ export async function readNpbWeekly(stage:NpbWeeklyStage,date:string|undefined,s
     weeks=collectedWeeks(dates[0]!,dates.at(-1)!);asOf=games.filter(g=>g.status==="final").map(g=>g.date).sort().at(-1)??dates[0]!;
     names=new Map(games.flatMap(g=>[g.homeId,g.awayId]).map(id=>[id,npbTeamShortName(id)]));
   }
-  const week=calendarWeek(date??asOf);if(!weeks.includes(week.from))throw Error("Week outside saved NPB range");
+  const week=calendarWeek(date??asOf);if(!weeks.includes(week.from))throw new NpbWeeklyRangeUnavailable();
   games.sort((a,b)=>a.date.localeCompare(b.date)||a.id.localeCompare(b.id));
   const summary=summarizeWeek(games,week.from,names,{league:"NPB",season:2026,competition:stage==="regular"?"regular":"postseason",...(stage==="regular"?{}:{stage})},coverage,previousCoverage);
   const missingResults={current:missingResultDates.filter(d=>d>=week.from&&d<=week.to).length,previous:missingResultDates.filter(d=>d>=week.previous.from&&d<=week.previous.to).length};
