@@ -74,6 +74,7 @@ jobs:
         shell: bash
         env:
           PRESERVE_ONLY: ${{ inputs.preserve_published_only }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           npm run build
           mkdir -p dist/data/standings/npb
@@ -113,6 +114,8 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Enforce final draft first-publication deadline
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: npx tsx scripts/verify-npb-draft-final-window.ts
       - name: Publish complete artifact to GitHub Pages
         id: deployment

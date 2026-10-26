@@ -44,6 +44,12 @@ it("uses the read-only Actions token only for the fixed GitHub proof endpoint an
   await expect(verifyFinalDraftWindow(denied,Date.parse("2026-10-23T00:00:00Z"),"postmeeting_archive","test-ci-token")).rejects.toThrow("HTTP 403");
   expect(denied).toHaveBeenCalledOnce();
 });
+it("keeps preserve-only Pages publication inside the same read-only archive proof boundary as CI",()=>{
+  const workflow=parse(readFileSync(".github/workflows/npb-player-directory-publish.yml","utf8")) as {permissions:Record<string,string>;jobs:Record<string,{permissions?:Record<string,string>;steps:{name?:string;run?:string;env?:Record<string,string>}[]}>};
+  expect(workflow.permissions.contents).toBe("read");expect(workflow.jobs.deploy?.permissions?.contents).toBe("read");
+  expect(workflow.jobs.stage?.steps.find(s=>s.name==="Build app and stage complete Pages site")?.env?.GITHUB_TOKEN).toBe("${{ github.token }}");
+  expect(workflow.jobs.deploy?.steps.find(s=>s.run==="npx tsx scripts/verify-npb-draft-final-window.ts")?.env?.GITHUB_TOKEN).toBe("${{ github.token }}");
+});
 it("rejects changed, late or unpublished archive proof rather than trusting local timestamps", async () => {
   const variants = [
     (p: ReturnType<typeof releaseProof>) => { p.draft = true; },

@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { prepareNpbAiEvidence } from "../src/data/npb-ai-insights";
 import { generateNpbAiCandidate } from "../src/infrastructure/providers/cloudflare-ai-insights";
 import { buildNpbAiReview } from "../src/data/npb-ai-review";
+import { claimInsightAttempt } from "./lib/optional-ai-budget";
 import pin from "../src/data/npb-japan-series-release.json";
 
 // Only admitted releases; optional staging never contacts the original source or DB.
@@ -26,22 +27,19 @@ if(!process.argv.includes("--generate")) {
     freePlanReviewed:process.env.NPB_AI_FREE_PLAN_REVIEWED==="true",termsReviewed:process.env.NPB_AI_TERMS_REVIEWED==="true"};
   if(!config.accountId||!config.token||!config.freePlanReviewed||!config.termsReviewed){
     await record({status:"DISABLED_OWNER_SETUP_REQUIRED",requests:0,publiclyAdmitted:false});
-  } else if(await readFile(join(directory,"attempt.json")).then(()=>true,()=>false)){
-    await record({status:"UNCHANGED_INPUT",requests:0,publiclyAdmitted:false});
   } else {
-    // Exclusive markers precede network access. A failed request is not silently retried.
-    const date=new Date().toISOString().slice(0,10);
+    const budget=await claimInsightAttempt(root,input.inputSha256);
+    if(budget.status!=="RESERVED"){await record({status:budget.status,requests:0,publiclyAdmitted:false});}
+    else {
     try {
-      await writeFile(join(root,`attempt-${date}.json`),JSON.stringify({inputSha256:input.inputSha256}),{flag:"wx"});
-      await writeFile(join(directory,"attempt.json"),JSON.stringify({at:new Date().toISOString()}),{flag:"wx"});
       // If the process stops after dispatch, do not leave a misleading zero-call preflight report.
       await record({status:"ATTEMPT_STARTED",requests:null,publiclyAdmitted:false});
       const result=await generateNpbAiCandidate(input,config);
       await writeFile(join(directory,"candidate.json"),JSON.stringify(result,null,2));
       await record(result);
     } catch(error) {
-      if(error&&typeof error==="object"&&"code" in error&&error.code==="EEXIST")await record({status:"DAILY_BUDGET_OR_INFLIGHT",requests:0,publiclyAdmitted:false});
-      else throw Error("Candidate preparation failed; retain existing app data",{cause:error});
+      throw Error("Candidate preparation failed; retain existing app data",{cause:error});
+    }
     }
   }
 }

@@ -12,6 +12,7 @@ import { historicalPositions, collectedSeasonsLabel } from "../presentation/hist
 import { Search } from "lucide-react";
 import { lazy, Suspense, useMemo, useState } from "react";
 const HistoricalFormScreen = lazy(() => import("./historical-form").then(m => ({ default: m.HistoricalFormScreen })));
+const MlbWeeklyScreen = lazy(() => import("./weekly-analysis").then(m => ({default:m.MlbWeeklyScreen})));
 import { Link, Navigate, Route, Routes, useLocation, useParams, useSearchParams } from "react-router-dom";
 import type { Favorite } from "../domain/models";
 import { isVerifiedJapanPlayer } from "../domain/mlb-japan-cohort";
@@ -122,6 +123,7 @@ export function MlbHistoricalHome({ manifest, favorites, toggle, saving }: { man
     {view === "follow" ? <MlbPersonalDashboard directory={index} manifest={manifest} season={latest.season} favorites={favorites} toggle={toggle} saving={saving} /> : view !== "league" ? <section className="follow-board"><h2 className="sr-only">日本人選手</h2>{index.status !== "ready" ? <Status state={index} /> : players.length ? players.slice(1,4).map(p => <MlbFollowPlayer key={`${p.id}:${latest.season}`} player={p} season={latest.season} favorites={favorites} toggle={toggle} saving={saving} />) : <DataState kind="no-data" title={view === "follow" ? "お気に入りの選手をここに" : "この年の日本人選手は未収録"} action="選手を探す" to={`/MLB/search?season=${latest.season}`} />}<Link className="section-action follow-board-more" to={`/MLB/search?focus=japan&season=${latest.season}`}>すべての日本人選手 →</Link></section> : <><section className="home-section"><SectionHeader title="試合結果" action="日程・結果" to={`/MLB/schedule?season=${latest.season}&date=${latest.lastDate}`} />{results.status === "ready" ? <div className="scoreboard-list">{results.value!.games.map(game => <ScoreboardRow key={game.id} to={`/MLB/games/${encodeURIComponent(game.id)}`} away={teamName(manifest,game.awayTeamId)} home={teamName(manifest,game.homeTeamId)} awayId={game.awayTeamId} homeId={game.homeTeamId} awayScore={game.awayRuns} homeScore={game.homeRuns} date={latest.lastDate.slice(5).replace("-","/")} status="試合終了" gameNumber={game.number} partial={!game.complete} />)}</div> : <Status state={results} />}</section><section className="home-section"><SectionHeader title="本塁打" action="個人成績" to={`/MLB/records?season=${latest.season}`} />{leaders ? <ol className="row-list leaderboard">{leaders.map(player => <li key={player.playerId}><Link to={`/MLB/players/${encodeURIComponent(player.playerId)}?season=${latest.season}`}><strong className="rank-number">{player.rank}</strong><span className="rank-person"><strong>{player.name}</strong></span><strong className="rank-value">{player.value}</strong></Link></li>)}</ol> : <DataState kind="unsupported" title="集計を確認中" />}</section></>}
     {view !== "follow" && favorites.some(f => f.league === "MLB" && f.kind === "team") && <MlbPersonalDashboard directory={index} manifest={manifest} season={latest.season} compact favorites={favorites} toggle={toggle} saving={saving} />}
     {hasHistoricalPostseason(postseason, latest.season) && <div className="hub-links"><Link to={`/MLB/postseason?season=${latest.season}`}>Postseason <span>→</span></Link></div>}
+    <Link className="section-action" to={`/MLB/weekly?season=${latest.season}`}>週間レポート · 試合とHOTを振り返る →</Link>
     <HomeDiscover league="MLB" year={latest.season} date={latest.lastDate} showHot={false} />
     <details className="home-tools"><summary>月間候補・変化・その他の機能</summary><div className="hub-links"><Link to={`/MLB/form?season=${latest.season}&asOfDate=${latest.lastDate}&mode=monthly`}>月間MVP候補 →</Link><Link to={`/MLB/form?season=${latest.season}&asOfDate=${latest.lastDate}&mode=change`}>上昇・下降 →</Link></div><ExplorerLinks league="MLB" scope={`?season=${latest.season}`} /></details>
     <p className="inline-note availability-note">過去記録 {manifest.seasons[0]?.season}–{manifest.seasons.at(-1)?.season} · 2026年の試合結果・選手成績は未対応</p></div>;
@@ -510,6 +512,7 @@ function MlbHistoricalDataRoutes({ favorites, toggle, saving }: HistoricalRouteP
     <Route path="analysis" element={<Navigate to="/MLB/search?focus=japan" replace />} />
     <Route path="records" element={<MlbHistoricalRecords manifest={manifest} />} />
     <Route path="form" element={<Suspense fallback={<p role="status">読み込み中…</p>}><HistoricalFormScreen manifest={manifest} favorites={favorites} toggle={toggle} saving={saving} /></Suspense>} />
+    <Route path="weekly" element={<Suspense fallback={<p role="status">週間レポートを読み込み中…</p>}><MlbWeeklyScreen manifest={manifest}/></Suspense>}/>
     <Route path="ranking" element={<Navigate to="/MLB/records" replace />} />
     <Route path="sources" element={<MlbDataSources />} />
     <Route path="favorites" element={<Navigate to="/MLB/my" replace />} />

@@ -23,6 +23,7 @@ export function ExploreScreen({ league }: { league: League }) {
   const availability = usePostseasonAvailability();
   return <div className="screen"><PageHeading eyebrow={`${league} · EXPLORE`} title="野球をもっと知る" detail="試合、記録、選手経歴。気になることから。" />
     <div className="explore-groups">{[
+      {title:"1週間を振り返る",icon:CalendarDays,rows:[{to:"weekly",label:"週間レポート",detail:league==="MLB"?"試合・HOT・前週からの変化":"収録済みの試合結果を振り返る",soon:false}]},
       { title: "試合を楽しむ", icon: CalendarDays, rows: [{ to: "schedule", label: "日程・結果", detail: league === "MLB" ? "収録済みの歴史を振り返る" : "保存済みの試合を振り返る", soon: false }, { to: "preseason", label: "オープン戦", detail: "公式戦とは別のシーズン前データ", soon: true }, { to: "watch", label: "WATCH", detail: "観戦のおともに", soon: true }] },
       { title: "記録を知る", icon: Trophy, rows: [{ to: "postseason", label: "ポストシーズン", detail: league === "MLB" ? "勝ち上がり・シリーズ・選手成績" : "2026年CSの収録試合・選手（一部）", soon: false }, { to: "records", label: "シーズン記録", detail: "成績と集計状態を確認", soon: false }, { to: "milestones", label: "達成記録", detail: league === "NPB" ? "保存済みシーズン成績の節目" : "シーズン成績の節目", soon: false }] },
       { title: "選手経歴", icon: ArrowLeftRight, rows: [{ to: "moves", label: league === "NPB" ? "選手の動き" : "選手移動・FA・Posting", detail: league === "NPB" ? "契約・トレード・引退発表の記事記載（一部）" : "所属と登録の変化をたどる", soon: league !== "NPB" }, { to: "talent", label: league === "NPB" ? "ドラフト・若手選手" : "ドラフト・プロスペクト", detail: league === "NPB" ? "指名年・年齢・出身校から探す" : "次の世代を探す", soon: league !== "NPB" }] },
