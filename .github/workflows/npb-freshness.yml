@@ -33,6 +33,14 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
+      - uses: actions/cache/restore@v4
+        with:
+          path: .data/npb-db-read-suspension.json
+          key: npb-db-read-suspension-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: npb-db-read-suspension-v1-
+      - name: Production DB operations require the main branch
+        if: github.ref != 'refs/heads/main'
+        run: exit 1
       - run: npm ci
       - name: Observe scheduled clock
         run: npx tsx scripts/log-npb-schedule.ts
@@ -41,23 +49,40 @@ jobs:
           NPB_CRON: ${{ github.event.schedule }}
           NPB_SCHEDULE_TIMEZONE: UTC
       - name: Check published JSON and Turso ingestion metadata
-        run: npm run monitor:npb:freshness -- --require-healthy
+        id: freshness
+        run: |
+          mkdir -p .data/freshness
+          npx tsx scripts/check-npb-freshness.ts --require-healthy > .data/freshness/report.json
         env:
           NPB_FRESHNESS_DEADLINE_HOUR_JST: ${{ vars.NPB_FRESHNESS_DEADLINE_HOUR_JST || '12' }}
           NPB_FRESHNESS_PAYLOAD_URL: https://tomoya41.github.io/baseball-notes/data/standings/npb/latest.json
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}
+      - name: Preserve public and Scheduled diagnostics even while DB reads are deferred
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: npb-freshness-report
+          path: .data/freshness/report.json
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Audit saved NPB integrity
-        if: always() && github.event_name == 'workflow_dispatch' && inputs.integrity_audit
+        if: always() && github.event_name == 'workflow_dispatch' && inputs.integrity_audit && steps.freshness.outputs.db_diagnostics_available == 'true'
         run: |
           mkdir -p .data/integrity-release
           npx tsx scripts/audit-npb-data-integrity.ts > .data/integrity-release/npb-integrity.json
         env:
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+      - name: Retain an actual read-block observation without extending a deferred lease
+        if: always() && env.NPB_DB_READ_BLOCKED_RECORDED == 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .data/npb-db-read-suspension.json
+          key: npb-db-read-suspension-v1-${{ github.run_id }}-${{ github.run_attempt }}
       - uses: actions/upload-artifact@v4
-        if: always() && github.event_name == 'workflow_dispatch' && inputs.integrity_audit
+        if: always() && github.event_name == 'workflow_dispatch' && inputs.integrity_audit && steps.freshness.outputs.db_diagnostics_available == 'true'
         with:
           name: npb-integrity-read-only
           path: .data/integrity-release/npb-integrity.json
@@ -65,14 +90,14 @@ jobs:
           if-no-files-found: error
           retention-days: 7
       - name: Read-only shortened readiness on independently restored private scratch DB
-        if: always() && github.event_name == 'workflow_dispatch' && inputs.shortened_readiness
+        if: always() && github.event_name == 'workflow_dispatch' && inputs.shortened_readiness && steps.freshness.outputs.db_diagnostics_available == 'true'
         run: npx tsx scripts/audit-npb-shortened-readiness.ts
         env:
           NPB_NF3_ENABLED: ${{ vars.NPB_NF3_ENABLED }}
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
       - uses: actions/upload-artifact@v4
-        if: always() && github.event_name == 'workflow_dispatch' && inputs.shortened_readiness
+        if: always() && github.event_name == 'workflow_dispatch' && inputs.shortened_readiness && steps.freshness.outputs.db_diagnostics_available == 'true'
         with:
           name: npb-shortened-readiness-diagnostic
           path: .data/shortened-readiness/report.json

@@ -7,33 +7,43 @@ import { scheduleObservation } from "../src/application/npb-schedule-observabili
 import { npbLatestStandingsSchema } from "../src/domain/standings";
 import { NpbRepository } from "../src/data/npb-repository";
 import { currentGameComplete } from "../src/data/npb-eod";
-import { planNpbCalendar, planNpbScheduleSync, type ScheduleMode } from "../src/data/npb-season-lifecycle";
+import { planNpbCalendar, planNpbScheduleSync,planNpbWatchCalendar, type ScheduleMode } from "../src/data/npb-season-lifecycle";
+import { inspectReadSuspension,recordReadSuspension } from "./lib/npb-db-read-suspension";
 
 const option=(key:string)=>process.argv.find(a=>a.startsWith(`${key}=`))?.slice(key.length+1);
 const action=option("--action")??"watch",date=option("--date")??jstToday();
+if(!["safety-check","sync","watch","mark-published"].includes(action))throw Error("Unknown EOD action");
+planNpbCalendar("daily",date); // Unknown season/calendar must fail before any DB connection.
 const url=process.env.TURSO_DATABASE_URL,token=process.env.TURSO_AUTH_TOKEN;
 if(!url||url.startsWith("file:")||!token)throw Error("Remote connection required");
+const suspension=await inspectReadSuspension();
+if(suspension.status!=="open"){
+  const report={action,date,eventName:process.env.GITHUB_EVENT_NAME??"local",result:{mode:"unavailable",reason:suspension.status==="deferred"?"database_read_suspended":"invalid_database_read_suspension",publishRequired:false,publishPerformed:false},suspension,dbReads:0,dbWrites:0,http:{httpRequests:0},scheduledFactEvidence:false};
+  await mkdir(".data/eod",{recursive:true});await writeFile(`.data/eod/${action}.json`,JSON.stringify(report,null,2));console.log(JSON.stringify(report));
+  throw Error("NPB database read deferred; collection/publication not verified");
+}
 const source=openDataClient(url,token);let dbWrites=0,dbReads=0;
+const readCall=async<T>(readOnly:boolean,call:()=>Promise<T>)=>{try{return await call();}catch(error){await recordReadSuspension(error,{readOnly,runId:process.env.GITHUB_RUN_ID,envFile:process.env.GITHUB_ENV});throw error;}};
 const redact=(text:string)=>text.replaceAll(url,"[database]").replaceAll(token,"[credential]");
 const client=new Proxy(source,{get(target,key){
   if(key==="execute")return async(s:Parameters<DataClient["execute"]>[0])=>{
     const sql=typeof s==="string"?s:s.sql;if(/^\s*SELECT\b/i.test(sql))dbReads++;else dbWrites++;
-    return target.execute(s);
+    return readCall(/^\s*SELECT\b/i.test(sql),()=>target.execute(s));
   };
   if(key==="batch")return async(s:Parameters<DataClient["batch"]>[0],mode:Parameters<DataClient["batch"]>[1])=>{
     for(const item of s){const sql=typeof item==="string"?item:item.sql;if(/^\s*SELECT\b/i.test(sql))dbReads++;else dbWrites++;}
-    return target.batch(s,mode);
+    return readCall(s.length>0&&s.every(item=>/^\s*SELECT\b/i.test(typeof item==="string"?item:item.sql)),()=>target.batch(s,mode));
   };
   if(key==="transaction")return async(mode:Parameters<DataClient["transaction"]>[0])=>{
     const tx=await target.transaction(mode);
     return new Proxy(tx,{get(t,k){
       if(k==="execute")return async(s:Parameters<typeof tx.execute>[0])=>{
         const sql=typeof s==="string"?s:s.sql;if(/^\s*SELECT\b/i.test(sql))dbReads++;else dbWrites++;
-        return t.execute(s);
+        return readCall(/^\s*SELECT\b/i.test(sql),()=>t.execute(s));
       };
       if(k==="batch")return async(s:Parameters<typeof tx.batch>[0])=>{
         for(const item of s){const sql=typeof item==="string"?item:item.sql;if(/^\s*SELECT\b/i.test(sql))dbReads++;else dbWrites++;}
-        return t.batch(s);
+        return readCall(s.length>0&&s.every(item=>/^\s*SELECT\b/i.test(typeof item==="string"?item:item.sql)),()=>t.batch(s));
       };
       const value=Reflect.get(t,k);return typeof value==="function"?value.bind(t):value;
     }});
@@ -78,8 +88,7 @@ try {
     }
   } else if(action==="watch") {
     if(date>jstToday())throw Error("Invalid EOD date");
-    const games=await new NpbRepository(client).findGamesByDate(date);
-    const calendar=planNpbCalendar("daily",date,games.length);
+    const calendar=await planNpbWatchCalendar(client,date);
     result=calendar.skip?{...calendar,publishRequired:false}:await runEodWatcher(client,request,date,new Date(),Number(process.env.NPB_MONITOR_OFFSET_MINUTES??120),
       process.env.GITHUB_EVENT_NAME==="schedule"?"scheduled":"manual");
     const report=result as {publishRequired:boolean};

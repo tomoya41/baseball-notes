@@ -18,11 +18,12 @@ export function safeNpbDiagnosticError(error: unknown): NpbDiagnosticError {
 /** One bounded diagnostic attempt. Failed ingestion skips calendar queries;
  * callers can still report independent public/Scheduled evidence and fail health. */
 export async function inspectNpbDatabaseDiagnostics(targetDate: string, open: () => DataClient,
-  readers = { ingestion: diagnoseNpbIngestion, lifecycle: inspectNpbCalendar }) {
+  readers = { ingestion: diagnoseNpbIngestion, lifecycle: inspectNpbCalendar },permission:"open"|"deferred"|"invalid"="open") {
   let ingestion: IngestionHealth | null = null;
   let lifecycle: Awaited<ReturnType<typeof inspectNpbCalendar>> | null = null;
   let ingestionError: NpbDiagnosticError | null = null;
   let lifecycleError: NpbDiagnosticError | null = null;
+  if(permission!=="open")return {ingestion,ingestionError:permission==="deferred"?{kind:"database_read_blocked" as const,code:"BLOCKED" as const}:{kind:"database_unavailable" as const,code:"UNAVAILABLE" as const},lifecycle,lifecycleError};
   let client: DataClient | undefined;
   try {
     client = open();
