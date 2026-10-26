@@ -13,6 +13,9 @@ it("passes a monthly Postseason URL through the production route's competition r
  function Route(){const location=useLocation();return <HistoricalCompetitionContext.Provider value={historicalRouteCompetition(location.pathname,location.search)}><MonthlyScreen league="MLB" manifest={f.manifest}/></HistoricalCompetitionContext.Provider>;}
  await act(async()=>root.render(<MemoryRouter initialEntries={["/MLB/monthly?season=2025&month=2025-09&competition=postseason"]}><Route/></MemoryRouter>));
  expect(state.mlb.mock.calls[0]?.[3]).toBe("postseason");expect(container.textContent).toContain("ポストシーズン");expect(container.textContent).not.toContain("月間の打者");
+ const select=container.querySelector<HTMLSelectElement>('select[aria-label="集計対象"]')!;
+ await act(async()=>{select.value="regular";select.dispatchEvent(new Event("change",{bubbles:true}));});
+ expect(state.mlb.mock.calls.at(-1)?.[3]).toBe("regular");expect(state.mlb.mock.calls.at(-1)?.[2]).toBe(f.manifest.seasons[0]!.lastDate);
 });
 
 it("renders real calendar-month totals and never labels them weekly or calls Current MLB",async()=>{

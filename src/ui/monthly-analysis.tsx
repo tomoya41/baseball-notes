@@ -21,7 +21,7 @@ export function MonthlyScreen(props:Props) {
   const season=Number(params.get("season")??manifest?.seasons.at(-1)?.season??2026),descriptor=manifest?.seasons.find(s=>s.season===season);
   const stage=params.get("stage")??"regular",raw=params.get("month"),date=raw?`${raw}-01`:descriptor?.lastDate;
   const valid=(!raw||/^\d{4}-(0[1-9]|1[0-2])$/.test(raw)&&z.iso.date().safeParse(`${raw}-01`).success)&&
-    (props.league==="MLB"?!!descriptor&&!!date&&collectedMonths(descriptor.firstDate,descriptor.lastDate).includes(calendarMonth(date).from):
+    (props.league==="MLB"?!!descriptor&&!!date&&!params.has("stage")&&(!params.has("competition")||["regular","postseason"].includes(params.get("competition")!))&&collectedMonths(descriptor.firstDate,descriptor.lastDate).includes(calendarMonth(date).from):
       season===2026&&Object.hasOwn(stages,stage)&&(!params.has("competition")||params.get("competition")===(stage==="regular"?"regular":"postseason"))&&(!raw||raw.startsWith("2026-")));
   const key=`${props.league}:${season}:${stage}:${competition}:${raw??"latest"}`;
   const [state,setState]=useState<{key:string;value:Report|null;error:boolean}>({key:"",value:null,error:false}),[retry,setRetry]=useState(0);
