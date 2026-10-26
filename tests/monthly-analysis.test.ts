@@ -5,6 +5,7 @@ import { readNpbWeekly } from "../src/application/npb-weekly";
 import { weeklyFixture } from "./fixtures/weekly-analysis";
 import { portableRoute } from "../src/domain/product-sharing";
 import { canonicalDeepLink } from "../src/domain/native-navigation";
+import { historicalRouteCompetition } from "../src/ui/historical-competition-context";
 
 it("uses complete calendar months, leap days and year boundaries rather than 30-day windows",()=>{
  expect(calendarMonth("2024-03-15")).toEqual({from:"2024-03-01",to:"2024-03-31",previous:{from:"2024-02-01",to:"2024-02-29"}});
@@ -22,10 +23,15 @@ it("reuses verified MLB daily facts and monthly sample thresholds without averag
  expect(report.rising).toEqual([]);expect(report.fetches).toBe(34);
 });
 it("does not use monthly player eligibility for Postseason or promote an incomplete month",async()=>{
+ expect(historicalRouteCompetition("/MLB/monthly","?competition=postseason&season=2025")).toBe("postseason");
  const f=weeklyFixture("postseason"),r=await readMlbWeekly(f.manifest,2025,"2025-09-01","postseason",f.read,"month");
  expect(r.summary.games).toHaveLength(30);expect(r.summary.scope.competition).toBe("postseason");expect(r.playerEvaluation).not.toBe("available");expect(r.hot.batting).toEqual([]);
  const g=weeklyFixture();g.index.firstDate="2025-09-02";g.manifest.seasons[0]!.firstDate="2025-09-02";
  await expect(readMlbWeekly(g.manifest,2025,"2025-09-01","regular",g.read,"month")).rejects.toThrow();
+});
+it("rejects a foreign competition's daily results even if the date, Game IDs and counts agree",async()=>{
+ const f=weeklyFixture("postseason"),day=f.payloads.get("postseason/schedule/2025/2025-09-10.json") as {competitionType:string};day.competitionType="regular";
+ await expect(readMlbWeekly(f.manifest,2025,"2025-09-01","postseason",f.read,"month")).rejects.toThrow("chronology");
 });
 it("bounds NPB reads to two calendar months and four concurrent requests; missing days remain partial",async()=>{
  let calls=0,active=0,maximum=0;const dates:string[]=[];

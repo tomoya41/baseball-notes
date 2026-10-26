@@ -22,7 +22,9 @@ export async function readMlbWeekly(manifest:WeeklyManifest,season:number,date:s
   // Explicit report only: <=14 weekly / <=62 monthly date files, four in flight.
   if(dates.length>(monthly?62:14))throw Error("Report date fetch budget exceeded");
   for(let i=0;i<dates.length;i+=4)await Promise.all(dates.slice(i,i+4).map(async day=>{
-    const data=historicalScheduleSchema.parse(await read(`${prefix}schedule/${season}/${day}.json`));
+    const path=`${prefix}schedule/${season}/${day}.json`,rawDay=await read(path);
+    if(!validStaticPayload(path,rawDay))throw Error("Weekly schedule/chronology scope mismatch");
+    const data=historicalScheduleSchema.parse(rawDay);
     const ids=expected.filter(g=>g.date===day).map(g=>g.gameId).sort();
     if(data.date!==day||data.season!==season||JSON.stringify(data.games.map(g=>g.id).sort())!==JSON.stringify(ids))throw Error("Weekly schedule/chronology mismatch");
     for(const g of data.games){if(!g.complete)incompleteDates.add(day);games.push({id:g.id,date:day,homeId:g.homeTeamId,awayId:g.awayTeamId,homeRuns:g.homeRuns,awayRuns:g.awayRuns,status:g.status});}
