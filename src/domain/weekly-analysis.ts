@@ -10,6 +10,19 @@ export function calendarWeek(date:string) {
   const day=new Date(`${date}T00:00:00Z`).getUTCDay(),from=shiftGameDate(date,-((day+6)%7));
   return {from,to:shiftGameDate(from,6),previous:{from:shiftGameDate(from,-7),to:shiftGameDate(from,-1)}};
 }
+export function calendarMonth(date:string) {
+  z.iso.date().parse(date);
+  const from=`${date.slice(0,7)}-01`,last=new Date(`${from}T00:00:00Z`);
+  last.setUTCMonth(last.getUTCMonth()+1);last.setUTCDate(0);
+  const previousTo=shiftGameDate(from,-1);
+  return {from,to:last.toISOString().slice(0,10),previous:{from:`${previousTo.slice(0,7)}-01`,to:previousTo}};
+}
+export function collectedMonths(first:string,last:string) {
+  collectedWeeks(first,last);
+  const rows:string[]=[];
+  for(let date=calendarMonth(first).from;date<=last;date=shiftGameDate(calendarMonth(date).to,1))rows.push(date);
+  return rows;
+}
 export function collectedWeeks(first:string,last:string) {
   z.iso.date().parse(first);z.iso.date().parse(last);
   if(first>last||Date.parse(last)-Date.parse(first)>370*86400000)throw Error("Invalid weekly saved range");
@@ -20,7 +33,15 @@ export type WeekTeam={teamId:string;name:string;games:number;wins:number;losses:
   previous:{games:number;runsPerGame:number|null}|null};
 export function summarizeWeek(games:readonly WeeklyGame[],date:string,names:ReadonlyMap<string,string>,scope:WeeklyScope,
   coverage:WeekCoverage,previousCoverage:WeekCoverage) {
-  const week=calendarWeek(date),prefix=scope.league.toLowerCase(),seen=new Set<string>();
+  return summarizeRange(games,calendarWeek(date),names,scope,coverage,previousCoverage);
+}
+export function summarizeMonth(games:readonly WeeklyGame[],date:string,names:ReadonlyMap<string,string>,scope:WeeklyScope,
+  coverage:WeekCoverage,previousCoverage:WeekCoverage) {
+  return summarizeRange(games,calendarMonth(date),names,scope,coverage,previousCoverage);
+}
+function summarizeRange(games:readonly WeeklyGame[],week:ReturnType<typeof calendarWeek>,names:ReadonlyMap<string,string>,scope:WeeklyScope,
+  coverage:WeekCoverage,previousCoverage:WeekCoverage) {
+  const prefix=scope.league.toLowerCase(),seen=new Set<string>();
   for(const g of games){
     z.iso.date().parse(g.date);
     if(!g.id.startsWith(`${prefix}:game:`)||!g.homeId.startsWith(`${prefix}:team:`)||!g.awayId.startsWith(`${prefix}:team:`)||g.homeId===g.awayId||

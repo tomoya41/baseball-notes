@@ -13,6 +13,7 @@ import { Search } from "lucide-react";
 import { lazy, Suspense, useMemo, useState } from "react";
 const HistoricalFormScreen = lazy(() => import("./historical-form").then(m => ({ default: m.HistoricalFormScreen })));
 const MlbWeeklyScreen = lazy(() => import("./weekly-analysis").then(m => ({default:m.MlbWeeklyScreen})));
+const MonthlyScreen = lazy(() => import("./monthly-analysis").then(m => ({default:m.MonthlyScreen})));
 import { Link, Navigate, Route, Routes, useLocation, useParams, useSearchParams } from "react-router-dom";
 import type { Favorite } from "../domain/models";
 import { isVerifiedJapanPlayer } from "../domain/mlb-japan-cohort";
@@ -513,6 +514,7 @@ function MlbHistoricalDataRoutes({ favorites, toggle, saving }: HistoricalRouteP
     <Route path="records" element={<MlbHistoricalRecords manifest={manifest} />} />
     <Route path="form" element={<Suspense fallback={<p role="status">読み込み中…</p>}><HistoricalFormScreen manifest={manifest} favorites={favorites} toggle={toggle} saving={saving} /></Suspense>} />
     <Route path="weekly" element={<Suspense fallback={<p role="status">週間レポートを読み込み中…</p>}><MlbWeeklyScreen manifest={manifest}/></Suspense>}/>
+    <Route path="monthly" element={<Suspense fallback={<p role="status">月間レポートを読み込み中…</p>}><MonthlyScreen league="MLB" manifest={manifest}/></Suspense>}/>
     <Route path="ranking" element={<Navigate to="/MLB/records" replace />} />
     <Route path="sources" element={<MlbDataSources />} />
     <Route path="favorites" element={<Navigate to="/MLB/my" replace />} />
