@@ -4,6 +4,7 @@ import { openDataClient } from "../src/data/database";
 import { addDays, jstToday } from "../src/data/npb-collector";
 import { verifyNpbDatabase } from "../src/data/npb-verification";
 import { npbLatestStandingsSchema } from "../src/domain/standings";
+import { inspectReadSuspension,recordReadSuspension } from "./lib/npb-db-read-suspension";
 
 function option(name: string): string | null {
   const index = process.argv.indexOf(name);
@@ -13,6 +14,7 @@ function option(name: string): string | null {
 const url = process.env.TURSO_DATABASE_URL;
 const token = process.env.TURSO_AUTH_TOKEN;
 if (!url || url.startsWith("file:") || !token) throw new Error("Remote database URL and auth token are required");
+if((await inspectReadSuspension()).status!=="open")throw Error("NPB database read deferred; integrity not verified");
 const client = openDataClient(url, token);
 try {
   if (process.argv.includes("--connection-only")) {
@@ -20,6 +22,7 @@ try {
       await client.execute("SELECT 1");
       process.stdout.write('{"connection":"ok","queries":1,"writes":0,"tableScans":0,"integrityVerified":false}\n');
     } catch (error) {
+      await recordReadSuspension(error,{readOnly:true,runId:process.env.GITHUB_RUN_ID,envFile:process.env.GITHUB_ENV});
       // No credentials, database URL, table contents or unredacted provider exception.
       const blocked = error instanceof Error && /SQL read operations are forbidden/i.test(error.message);
       process.stdout.write(`${JSON.stringify({ connection: blocked ? "reads_blocked" : "unavailable", queries: 1, writes: 0, tableScans: 0, integrityVerified: false })}\n`);

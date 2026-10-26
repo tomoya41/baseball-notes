@@ -41,6 +41,14 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
+      - uses: actions/cache/restore@v4
+        with:
+          path: .data/npb-db-read-suspension.json
+          key: npb-db-read-suspension-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: npb-db-read-suspension-v1-
+      - name: Production DB operations require the main branch
+        if: github.ref != 'refs/heads/main' && (!inputs.fixture_only || inputs.verify_backup)
+        run: exit 1
       - run: npm ci
       - name: Observe scheduled clock
         run: npx tsx scripts/log-npb-schedule.ts
@@ -98,6 +106,12 @@ jobs:
           npx tsx scripts/crypt-npb-backup.ts decrypt .data/eod-backup.tar.gz.enc .data/eod-backup.verified.tar.gz
           cmp .data/eod-backup.tar.gz .data/eod-backup.verified.tar.gz
           rm .data/eod-backup.tar.gz .data/eod-backup.verified.tar.gz
+      - name: Retain an actual read-block observation without extending a deferred lease
+        if: always() && env.NPB_DB_READ_BLOCKED_RECORDED == 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .data/npb-db-read-suspension.json
+          key: npb-db-read-suspension-v1-${{ github.run_id }}-${{ github.run_attempt }}
       - uses: actions/upload-artifact@v4
         if: steps.watch.outputs.publish == 'true' || (inputs.fixture_only && inputs.verify_backup)
         with:

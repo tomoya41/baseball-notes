@@ -60,6 +60,15 @@ export async function planNpbScheduleSync(client: DataClient, mode: ScheduleMode
   return planNpbCalendar(mode, date, Number(games.rows[0]?.count ?? 0));
 }
 
+/** In-range monitoring does not need a second Game enumeration. Outside the
+ * reviewed calendar, retain the independent saved-fixture guard with one indexed count. */
+export async function planNpbWatchCalendar(client:DataClient,date:string) {
+  const calendar=planNpbCalendar("daily",date);
+  if(!calendar.skip)return calendar;
+  const rows=await client.execute({sql:"SELECT COUNT(*) AS count FROM npb_games WHERE game_date=?",args:[date]});
+  return planNpbCalendar("daily",date,Number(rows.rows[0]?.count??0));
+}
+
 // Operational retention is distinct from Current freshness and complete season coverage.
 // Compare against the independently saved DB snapshot, not the public payload's own date.
 export function canRetainNpbSnapshot(freshness: PublishedFreshness, ingestion: IngestionHealth | null,
