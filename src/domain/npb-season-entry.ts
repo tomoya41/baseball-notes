@@ -8,7 +8,7 @@ export function npbSeasonEntry(season:number) {
 const annual=new Set(["home","schedule","weekly","monthly","records","ranking","data","search","players","teams","compare","team-compare","cs","postseason","preseason","moves","talent"]);
 export function needsNpbSeasonEntry(pathname:string,search:URLSearchParams) {
   const raw=search.get("season");
-  return raw!==null&&/^\d{4}$/.test(raw)&&Number(raw)>2026&&annual.has(pathname.split("/")[2]??"");
+  return pathname.startsWith("/NPB/")&&raw!==null&&/^\d{4}$/.test(raw)&&Number(raw)>2026&&annual.has(pathname.split("/")[2]??"");
 }
 export function savedNpbSnapshotRoute(pathname:string,search:URLSearchParams) {
   const params=new URLSearchParams(search);params.set("season","2026");

@@ -34,6 +34,6 @@ it.each(["?season=2027", "?role=unknown", "?stage=japan_series"])("does not fetc
 });
 it("preserves CS native-link filters without accepting another year/stage", () => {
   expect(canonicalDeepLink("baseballnotes://NPB/cs?season=2026&stage=npb_cs_first&role=pitching&page=2")).toContain("stage=npb_cs_first&role=pitching&page=2");
-  expect(canonicalDeepLink("baseballnotes://NPB/cs?season=2027")).toBeNull();
+  expect(canonicalDeepLink("baseballnotes://NPB/cs?season=2027")).toBe("/NPB/season?season=2027");
   expect(canonicalDeepLink("baseballnotes://MLB/cs?season=2026")).toBeNull();
 });

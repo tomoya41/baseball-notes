@@ -2,6 +2,7 @@ import { canonicalEntityRefSchema, canonicalEntityPath } from "./cross-league";
 import { portableRoute } from "./product-sharing";
 import { z } from "zod";
 import japanPin from "../data/npb-japan-series-release.json";
+import { needsNpbSeasonEntry } from "./npb-season-entry";
 export function canonicalDeepLink(input: string): string | null {
   try {
     const uri = new URL(input);
@@ -10,6 +11,7 @@ export function canonicalDeepLink(input: string): string | null {
     const route = uri.protocol === "baseballnotes:" ? `/${uri.hostname}${uri.pathname}` :
       uri.hash.startsWith("#/") ? uri.hash.slice(1) : uri.pathname.replace(/^\/baseball-notes/, "");
     const [portablePath, portableSearch] = route.split("?");
+    if(needsNpbSeasonEntry(portablePath??"",new URLSearchParams(portableSearch??uri.search)))return portableRoute(portablePath!,portableSearch??uri.search);
     if(portablePath === "/NPB/schedule") {
       const source = new URLSearchParams(portableSearch ?? uri.search);
       if(source.has("stage")||source.has("competition")&&source.get("competition")!=="regular")return null;

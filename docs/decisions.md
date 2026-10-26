@@ -468,3 +468,7 @@ During the explicit 2026 Japan Series editorial window, one small static competi
 ### 2026-10-26 — 月間総括は既存の結果投影と月間Formを再利用
 
 新しいFactや独自ランキング基盤を作らず、選択した暦月の静的データだけを集計する。前月比較には両月の収録確認を必要とし、NPBの選手評価は既存Gateを維持する。MLB月間の母数・率再計算は既存Formを再利用する。[月間レポート](monthly-analysis.md)。
+
+### 2026-10-26 — 未来年度の準備状態をカレンダーやFactから分離
+
+2027年は明示的な未収録入口を提供し、旧年度の成績・所属・試合なし判定を複製しない。未来年度のCurrent画面はadapter読込前に止め、2026年の既存URL・Myを保持する。新年度公開は独立したSource/calendar/identity/coverageレビュー後とする。[準備と棚卸し](npb-season-2027-readiness.md)。
