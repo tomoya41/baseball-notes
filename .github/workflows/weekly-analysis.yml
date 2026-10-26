@@ -1,0 +1,50 @@
+name: Prepare verified weekly reports without AI
+on:
+  schedule:
+    - cron: "47 23 * * 0"
+  workflow_dispatch:
+    inputs:
+      week:
+        description: Optional completed Monday (empty uses previous JST Monday–Sunday)
+        type: string
+        default: ""
+permissions:
+  contents: read
+concurrency:
+  group: deterministic-weekly-report-preparation
+  cancel-in-progress: false
+jobs:
+  prepare:
+    if: github.ref == 'refs/heads/main' && github.event.repository.private == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v7
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@v7
+        with: { node-version-file: .nvmrc, cache: npm }
+      - run: npm ci
+      - run: npx vitest run tests/weekly-report-preparation.test.ts tests/weekly-analysis.test.ts
+      - uses: actions/cache/restore@v4
+        id: state
+        with:
+          path: .data/weekly-reports/reports
+          key: verified-weekly-reports-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: verified-weekly-reports-v1-
+      - name: Prepare previous completed JST week from admitted public snapshots only
+        id: prepare
+        env:
+          WEEKLY_REPORT_WEEK: ${{ inputs.week }}
+        run: npx tsx scripts/prepare-weekly-report.ts
+      - uses: actions/cache/save@v4
+        if: always() && steps.state.outcome == 'success'
+        with:
+          path: .data/weekly-reports/reports
+          key: verified-weekly-reports-v1-${{ github.run_id }}-${{ github.run_attempt }}
+      - uses: actions/upload-artifact@v4
+        if: always() && (steps.prepare.outcome == 'success' || steps.prepare.outcome == 'failure')
+        with:
+          name: verified-weekly-report-${{ github.run_id }}
+          path: .data/weekly-reports/review.json
+          retention-days: 7
+          if-no-files-found: error

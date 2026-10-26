@@ -1222,3 +1222,5 @@ AIは正式Factや公開Gateの根拠にせず、採用済みimmutable snapshot�
 ### 週間分析（2026-10-26）
 
 月曜〜日曜と直前の同じ7暦日をleague/season/competition/stage別に集計する。MLB Historicalは既存FormのHOT/上昇基準・母数・null/役割検証を再利用し、収録境界/partialでは評価保留。NPBは保存済みの試合/球団総括のみ公開し、HOT/Rankingを別名の選考で迂回しない。AIは用意された候補参照・理由・根拠指標のみを選び、hash/ID/集計値はプログラムが保持する。統計はAIを必要とせず、AI候補は検証・編集確認前に自動公開しない。詳細は docs/weekly-analysis.md。
+
+月曜の定期処理は、正式に公開されたNPB静的snapshotから前週のレビュー用統計を準備するだけとする。未変更内容・範囲外・取得失敗・結果未収録を区別し、AI/DB/公開callbackは呼ばない。AIの実試行は既知hash/UTC日をレビュー済み台帳とcacheの双方で保護し、出力形式の改善を理由に同一入力を再試行しない。AI cronと自由文自動公開は品質確認前に有効化しない。

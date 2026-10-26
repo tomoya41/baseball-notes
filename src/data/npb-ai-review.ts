@@ -13,6 +13,7 @@ export function buildNpbAiReview(input:NpbAiEvidence,outcome:Outcome,now=new Dat
     httpStatus:"httpStatus" in outcome?outcome.httpStatus:null,
     failureStage:"failureStage" in outcome?outcome.failureStage:null,
     rejectionCode:"rejectionCode" in outcome?outcome.rejectionCode:null,
+    validationIssues:"validationIssues" in outcome?outcome.validationIssues:[],
     usage:"usage" in outcome?outcome.usage:null,
     // Tokens are provider-reported. Neurons need an independent dashboard measurement.
     measuredNeurons:null,

@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "attempts": [
+    {
+      "inputSha256": "0d33d7b9b5084f54014e717d8855353b30266c1d231b4638881099a94dfc877f",
+      "recordedAt": "2026-10-25T14:50:38.434Z",
+      "workflowRunId": 40204096501,
+      "workflowRunAttempt": 1,
+      "httpStatus": 200,
+      "outcome": "INVALID_OR_UNAVAILABLE_CANDIDATE",
+      "evidenceUrl": "https://github.com/tomoya41/baseball-notes/actions/runs/40204096501"
+    },
+    {
+      "inputSha256": "d62781fc7322980f0f73123c1cd0fb2d52c120fd1800724f73f655a160b8f382",
+      "recordedAt": "2026-10-26T00:25:13.664Z",
+      "workflowRunId": 40249226884,
+      "workflowRunAttempt": 1,
+      "httpStatus": 200,
+      "outcome": "INVALID_OR_UNAVAILABLE_CANDIDATE",
+      "evidenceUrl": "https://github.com/tomoya41/baseball-notes/actions/runs/40249226884"
+    }
+  ]
+}

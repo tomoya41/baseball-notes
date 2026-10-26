@@ -46,6 +46,24 @@ npx tsx scripts/prepare-weekly-ai.ts
 
 本番AI cron・自由文自動公開は無効。将来はJST前週決定→許諾済み新データの正式採用→未変更hashはskip→母数/範囲確認→1回選考→参照照合→編集確認→別のimmutable公開PR。MLB Historicalの同じ過去週を毎週再生成しない。NPBの個人成績が不足する間は選手候補を作らない。
 
-Actionsの復元キーと有効な日次予約履歴を確認できない場合は `BUDGET_STATE_UNAVAILABLE`、0 calls。準備だけの新しいcacheを履歴の復元と見なさず、翌Runも自動で再開しない。cacheを消したり、空の予約を作って解除しない。cacheは永続台帳ではないため、cron有効化前にはレビュー済みの入力hash台帳・最新Runとの照合を追加し、履歴の欠落を回復可能にする。[復元キーの定義](https://github.com/actions/cache/blob/v4/restore/action.yml)を2026-10-26確認。
+Actionsの復元キーと有効な日次予約履歴を確認できない場合は `BUDGET_STATE_UNAVAILABLE`、0 calls。準備だけの新しいcacheを履歴の復元と見なさず、翌Runも自動で再開しない。cacheを消したり、空の予約を作って解除しない。[復元キーの定義](https://github.com/actions/cache/blob/v4/restore/action.yml)を2026-10-26確認。
+
+### 実接続の結果と形式改善
+
+[10月26日の実試行](https://github.com/tomoya41/baseball-notes/actions/runs/40249226884) はHTTP 200、入力1,788/出力204/合計1,992 tokens。ただし候補は `draft / SCHEMA_MISMATCH` で不採用。入力hash `d62781fc7322980f0f73123c1cd0fb2d52c120fd1800724f73f655a160b8f382` は使用済みで、今回再試行していない。無効な応答本文は保存しておらず、どのフィールドが間違っていたか遡って断定しない。日本語・選考内容の品質評価はNOT RUN、公開採用0件。Cloudflare Usageで同UTC日29.97/10,000 Neuronsを観測したが、集計値をこの呼出しだけの課金量と断定しない。
+
+[公式JSON mode](https://developers.cloudflare.com/workers-ai/features/json-mode/) に沿って週間選考の `response_format` にstrict JSON Schemaを指定する。公式の当該fp8モデルページにはこの入力項目がある一方、JSON modeの一般的な対応モデル一覧はこの型番を明記していない。したがって**当該モデルの実動作を確認済みとはしない**。既存固定モデルのまま、未対応・生成失敗なら拒否し、別モデルや通常生成へ再試行しない。構造化されたobject応答も同じstrict schema・参照・理由・必須指標で検証する。旧文章経路はstringのみを維持する。
+
+今後のschema失敗は固定の最大5件のpath/codeのみ記録する。許可されたフィールド名以外は `field` に置換し、モデルの未知キー・値・メッセージ・本文は保存しない。mockによる正常object、誤った参照キー、余分な情報、秘密値の非保存を回帰検証した。この改善を実AIの成功や文意確認済みと取り違えない。
+
+`config/optional-ai-attempts.json` は確認済み実試行2件のhash・UTC日・run URLだけを記録するサーバー側台帳。10月25日の旧文章試行と26日の週間選考を登録した。cacheが欠落しても既知hash/同UTC日の呼出しを拒否する。新たな実試行後はレビューartifactと照合し、この台帳に別commitで追記する。台帳はcache復元ゲートを解除せず、未記録の将来呼出しを自動的に永続化する仕組みではないため、AI cronは引き続き無効。
+
+### AIを使わない月曜の週間準備
+
+`weekly-analysis.yml` は月曜08:47 JST予定（Actionsの遅延あり）に、前の完了済み月曜〜日曜を既存の公開pinから集計する。手動実行は完了済みMondayのみ指定可能。`prepare-weekly-report.ts` はNPB公式戦/CS First/CS Final/日本シリーズを別々に読み、前年度や開催前結果を作らない。CSは2区分で1回の共有取得、同一snapshotの再試行なし。モデル・DB・Secrets・新しい第三者記事にアクセスしない。
+
+収録済み結果があればprivate作業領域にhash固定reportとreview artifactを作る。取得不能/範囲外/既知の結果0件を区別し、他区分の取得失敗もreportに残す。全区分取得不能で結果0件なら失敗、旧reportを保持する。同一内容は `UNCHANGED_VERIFIED_REPORT`。AI試行履歴とは別cacheを使い、AI call 0・canonical write 0・`publiclyAdmitted:false` を固定する。
+
+これは**レビュー用統計の定期準備**であり、AIの定期実行や正式JSONの自動公開ではない。公開週間画面は今までどおり正式に採用したsnapshotから表示する。新しい試合の正式採用には既存の出典審査・immutable asset・PRレビュー・配信手順が必要。自由文の公開、AI候補の採用、NPB選手評価をこのworkflowから行わない。
 
 AI停止時も統計は動作する。rollbackは週間リンク/routeと任意選考を戻すだけで、データ・旧URL・保存情報のmigration/削除は不要。追加月額¥0。

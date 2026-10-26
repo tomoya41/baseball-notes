@@ -3,8 +3,8 @@ import { publicDataFetch,rememberPublicResponse } from "../infrastructure/public
 import { npbJapanSeriesSchema } from "../domain/npb-japan-series";
 import pin from "../data/npb-japan-series-release.json";
 import csPin from "../data/npb-series-release.json";
-export async function readNpbJapanSeries(request:typeof fetch=publicDataFetch){
-  const r=await request(`${publicAssetBase()}data/npb/competitions/${pin.sha256}/japan-series-2026.json`);
+export async function readNpbJapanSeries(request:typeof fetch=publicDataFetch,base=publicAssetBase()){
+  const r=await request(`${base}data/npb/competitions/${pin.sha256}/japan-series-2026.json`);
   if(!r.ok)throw Error(`Japan Series HTTP ${r.status}`);
   const text=await r.text(),bytes=new TextEncoder().encode(text);
   if(bytes.length!==pin.bytes||bytes.length>50000)throw Error("Japan Series size mismatch");

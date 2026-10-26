@@ -12,3 +12,7 @@
 新immutable assetは [v3](https://github.com/tomoya41/baseball-notes/releases/tag/npb-japan-series-wikipedia-20261026-v3)。gzip1533B/hash c65e35006e2f6f8470e5cf20d819d914a1024a4fe41af2d71ee6614d7eb6ef1f、JSON4341B/hash fd2531eb575f406be481fd7b3ec912e51d0f7a38d486de2fba9c1ea40a37a5d7。v1/v2を上書き・削除しない。
 
 まずinactive retained assetとしてPagesに配信し、旧版v2の画面とapp pinを維持する。HTTP/hash確認後に、別のレビュー可能なpin更新でHome・Series・Game・週間分析を同じv3 snapshotへ切り替える。配信・切替の証拠はPRへ記録する。未収録個人成績からMVP/HOTを作らない。追加月額¥0。
+
+## 表示切替
+
+先行PR #81はinactive配信のみ。次のpin更新ではv3をactive、v1/v2をretainedへ保持する。Homeの最新結果/2勝0敗/第3戦、Seriesの2確定結果、Gameの第2戦イニングスコア、週間の10/19〜25・2試合が同じbody hashに依存する。選手成績と予告先発は未収録のまま、Current公式戦のスコアfallback/統計/Production Gateを変更しない。

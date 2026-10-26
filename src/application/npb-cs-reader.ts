@@ -4,8 +4,8 @@ import { npbCsDatasetSchema } from "../domain/npb-cs-observations";
 import pin from "../data/npb-cs-release.json";
 export const admittedCsScopes = Object.entries(pin.scopes).flatMap(([playerId, stages]) => stages.map(stage => ({ playerId, season: 2026, stage })));
 export const admittedCsGameIds:readonly string[]=pin.gameIds;
-export async function readNpbCs(request: typeof fetch = publicDataFetch) {
-  const response = await request(`${publicAssetBase()}data/npb/competitions/${pin.sha256}/cs-2026.json`);
+export async function readNpbCs(request: typeof fetch = publicDataFetch,base=publicAssetBase()) {
+  const response = await request(`${base}data/npb/competitions/${pin.sha256}/cs-2026.json`);
   if (!response.ok) throw Error(`CS observation HTTP ${response.status}`);
   const text = await response.text(), bytes = new TextEncoder().encode(text);
   if (bytes.length !== pin.bytes || bytes.length > 500000) throw Error("CS observation size mismatch");
