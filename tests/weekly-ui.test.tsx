@@ -20,6 +20,7 @@ it("renders real calendar-month totals and never labels them weekly or calls Cur
  state.mlb.mockResolvedValue(await original.readMlbWeekly(f.manifest,2025,"2025-09-01","regular",f.read,"month"));
  await act(async()=>root.render(<MemoryRouter initialEntries={["/MLB/monthly?season=2025&month=2025-09"]}><MonthlyScreen league="MLB" manifest={f.manifest}/></MemoryRouter>));
  expect(container.textContent).toContain("2025-09-01〜2025-09-30");expect(container.textContent).toContain("月間の打者");expect(container.textContent).not.toContain("この週のハイライト");expect(container.textContent).not.toContain("前$");
+ expect(container.querySelector('.weekly-rising a')?.getAttribute("href")).toContain("mode=monthly&");expect(container.querySelector('.weekly-rising a')?.getAttribute("href")).not.toContain("monthly-change");
  expect(state.mlb.mock.calls[0]?.[5]).toBe("month");state.mlb.mockClear();
  await act(async()=>root.render(<MemoryRouter key="invalid-month" initialEntries={["/MLB/monthly?season=2026"]}><MonthlyScreen league="MLB" manifest={f.manifest}/></MemoryRouter>));
  expect(state.mlb).not.toHaveBeenCalled();expect(container.textContent).toContain("未収録");
