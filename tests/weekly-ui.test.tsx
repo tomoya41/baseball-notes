@@ -1,11 +1,19 @@
 // @vitest-environment jsdom
 import { act } from "react";
 import { createRoot,type Root } from "react-dom/client";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter,useLocation } from "react-router-dom";
 import { beforeEach,afterEach,it,expect,vi } from "vitest";
 import { MlbWeeklyScreen,NpbWeeklyScreen } from "../src/ui/weekly-analysis";
 import { MonthlyScreen } from "../src/ui/monthly-analysis";
-import { HistoricalCompetitionContext } from "../src/ui/historical-competition-context";
+import { HistoricalCompetitionContext,historicalRouteCompetition } from "../src/ui/historical-competition-context";
+
+it("passes a monthly Postseason URL through the production route's competition resolver",async()=>{
+ const f=weeklyFixture("postseason"),original=await vi.importActual<typeof import("../src/application/mlb-weekly")>("../src/application/mlb-weekly");
+ state.mlb.mockResolvedValue(await original.readMlbWeekly(f.manifest,2025,"2025-09-01","postseason",f.read,"month"));
+ function Route(){const location=useLocation();return <HistoricalCompetitionContext.Provider value={historicalRouteCompetition(location.pathname,location.search)}><MonthlyScreen league="MLB" manifest={f.manifest}/></HistoricalCompetitionContext.Provider>;}
+ await act(async()=>root.render(<MemoryRouter initialEntries={["/MLB/monthly?season=2025&month=2025-09&competition=postseason"]}><Route/></MemoryRouter>));
+ expect(state.mlb.mock.calls[0]?.[3]).toBe("postseason");expect(container.textContent).toContain("ポストシーズン");expect(container.textContent).not.toContain("月間の打者");
+});
 
 it("renders real calendar-month totals and never labels them weekly or calls Current MLB",async()=>{
  const f=weeklyFixture(),original=await vi.importActual<typeof import("../src/application/mlb-weekly")>("../src/application/mlb-weekly");
