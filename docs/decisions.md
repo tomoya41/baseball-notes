@@ -464,3 +464,7 @@ During the explicit 2026 Japan Series editorial window, one small static competi
 ### 2026-10-26 — DB読取禁止は24時間の接続抑制として共有
 
 実際のread-only処理が返したBLOCKEDだけを、秘密情報を含まない24時間の予約としてmainの定期処理間で共有する。抑制中も失敗・未取得を維持し、スキップ成功や収集・公開証拠へ変換しない。期限切れは通常実行の再許可であり、復旧確認ではない。静的データの利用とは独立させる。詳細は [運用・検証・rollback](npb-read-suspension.md)。
+
+### 2026-10-26 — 月間総括は既存の結果投影と月間Formを再利用
+
+新しいFactや独自ランキング基盤を作らず、選択した暦月の静的データだけを集計する。前月比較には両月の収録確認を必要とし、NPBの選手評価は既存Gateを維持する。MLB月間の母数・率再計算は既存Formを再利用する。[月間レポート](monthly-analysis.md)。

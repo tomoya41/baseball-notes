@@ -892,6 +892,25 @@ public class ReleaseQualityTest {
         waitCondition("NPB Dark weekly view", "!!document.querySelector('.weekly-overview')");
         assertEquals("NPB weekly Dark has no page overflow", "true", js("document.documentElement.scrollWidth<=innerWidth"));screenshot("weekly-npb-dark-font-20");
     }
+    @Test public void monthlyReportsKeepCompetitionCalendarAndLargeFont() throws Exception {
+        Intent link = new Intent(Intent.ACTION_VIEW, Uri.parse("baseballnotes://MLB/monthly?season=2025&month=2025-09&competition=postseason"));
+        link.setClass(InstrumentationRegistry.getInstrumentation().getTargetContext(), MainActivity.class);
+        scenario = ActivityScenario.launch(link); waitText("月間レポート");
+        waitCondition("Postseason month scope", "document.querySelector('main').innerText.includes('ポストシーズン')");
+        assertEquals("Postseason monthly player evaluation is withheld", "0", js("document.querySelectorAll('.weekly-rising').length"));
+        js("location.hash='#/MLB/monthly?season=2025&month=2025-08'");
+        waitCondition("Monthly Regular results", "document.querySelector('.weekly-overview')?.innerText.includes('2025-08-31') && document.querySelector('main').innerText.includes('月間の打者')");
+        for(float scale:new float[]{1.5f,2.0f}) {
+            fontScaleAndRecreate(scale); waitText("月間の打者"); waitViewport(360);
+            assertEquals("Monthly font scaling does not overflow page", "true", js("document.documentElement.scrollWidth<=innerWidth"));
+        }
+        setTheme("light", "ライト"); screenshot("monthly-mlb-light-font-20");
+        setTheme("dark", "ダーク"); js("location.hash='#/NPB/monthly?stage=japan_series&month=2026-10'");
+        waitCondition("NPB month uses only known series results", "document.querySelector('.weekly-overview')?.innerText.includes('2026-10-31')");
+        assertTrue("NPB monthly evaluation stays behind Gate", js("document.querySelector('main').innerText").contains("非公開"));
+        assertEquals("NPB monthly has no player ranking", "0", js("document.querySelectorAll('.weekly-rising').length"));
+        assertEquals("NPB month has no page overflow", "true", js("document.documentElement.scrollWidth<=innerWidth")); screenshot("monthly-npb-dark-font-20");
+    }
     @Test public void npbRegularGameRemainsUsableWhenDetailApiIsUnavailable() throws Exception {
         Intent link = new Intent(Intent.ACTION_VIEW, Uri.parse("baseballnotes://NPB/schedule?date=2026-10-08"));
         link.setClass(InstrumentationRegistry.getInstrumentation().getTargetContext(), MainActivity.class);

@@ -17,7 +17,7 @@ export function canonicalDeepLink(input: string): string | null {
       if(date!==null&&!z.iso.date().safeParse(date).success)return null;
       return `/NPB/schedule${date ? `?date=${date}` : ""}`;
     }
-    const expanded = ["data", "history", "compare", "team-compare", "season-compare", "postseason", "matchup", "milestones", "form", "cs", "moves", "weekly"].includes(portablePath?.split("/")[2] ?? "");
+    const expanded = ["data", "history", "compare", "team-compare", "season-compare", "postseason", "matchup", "milestones", "form", "cs", "moves", "weekly", "monthly"].includes(portablePath?.split("/")[2] ?? "");
     if (expanded || portablePath === "/NPB/talent/2026") return portableRoute(portablePath!, portableSearch ?? uri.search);
     const [leagueRaw, resource, encoded, child, ...extra] = route.split("?")[0]!.replace(/^\//, "").split("/");
     const teamPlayers = child === "players" && resource === "teams" && leagueRaw?.toUpperCase() === "NPB";
