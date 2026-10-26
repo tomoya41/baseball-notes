@@ -685,8 +685,12 @@ public class ReleaseQualityTest {
         assertEquals("No 200-percent overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));screenshot("japan-series-font-20-light");
         setTheme("dark","ダーク");js("location.hash='"+route+"'");waitText("日程・試合詳細");
         assertEquals("Dark Japan Series has no 200-percent overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));screenshot("japan-series-font-20-dark");
-        js("document.querySelector('a.scoreboard-row[href*=\"8aabfefe82d76006b9a9\"]').click()");waitText("第2戦 · ソフトバンク対DeNA");waitText("結果・打撃・投球成績はまだ収録していません");
+        String scheduledRoute=js("Array.from(document.querySelectorAll('a.scoreboard-row')).find(a=>a.getAttribute('aria-label')?.endsWith('· 予定'))?.getAttribute('href') || ''");
+        assertFalse("Admitted snapshot still contains a scheduled Game",scheduledRoute.isEmpty());
+        js("Array.from(document.querySelectorAll('a.scoreboard-row')).find(a=>a.getAttribute('href')==='"+scheduledRoute+"').click()");waitText("結果・打撃・投球成績はまだ収録していません");
+        assertEquals("Open the exact source-admitted scheduled Game",scheduledRoute,js("location.hash"));
         assertTrue("Scheduled Game retains Japan Series scope",js("location.hash").contains("stage=japan_series"));
+        assertEquals("Both uncollected scores stay unknown","true",js("Array.from(document.querySelectorAll('.score-hero-club>b')).length===2 && Array.from(document.querySelectorAll('.score-hero-club>b')).every(e=>e.textContent==='—')"));
         assertEquals("No fabricated box score","0",js("String(document.querySelectorAll('main table').length)"));
         shell("input keyevent KEYCODE_BACK");waitText("日程・試合詳細");assertEquals("System Back returns to exact series",route,js("location.hash"));
     }
@@ -713,6 +717,7 @@ public class ReleaseQualityTest {
         assertTrue("Home result keeps Japan Series scope",js("location.hash").contains("stage=japan_series"));
         assertEquals("Home opens the exact latest admitted result",resultRoute,js("location.hash"));
         assertEquals("Latest final has actual completed inning evidence","true",js("document.querySelectorAll('.series-innings tbody tr').length>=9 && document.querySelectorAll('.series-innings tbody tr').length<=30"));
+        assertEquals("Displayed final scores equal the independent inning sums","true",js("[0,1].every(side=>Array.from(document.querySelectorAll('.series-innings tbody tr')).reduce((sum,row)=>sum+Number(row.querySelectorAll('td')[side]?.textContent?.replace(/[xX]/g,'') || 0),0)===Number(document.querySelectorAll('.score-hero-club>b')[side]?.textContent))"));
         shell("input keyevent KEYCODE_BACK");waitCondition("Back to Home","!!document.querySelector('.japan-home-result')");
         js("if(!document.querySelector('.japan-home-explore').open)document.querySelector('.japan-home-explore>summary').click()");
         waitCondition("Player shortcuts are available","!!document.querySelector('.japan-home-player-link')");
