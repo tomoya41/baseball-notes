@@ -18,7 +18,9 @@ npx tsx scripts/verify-android-apk.ts --apk=<候補APK> --sdk-build-tools=<SDK�
 
 過去の非公開ローカル証拠には、初回APK SHA256 `3fc935e113aafa419a03efc084c9df36c0b0657b2a6b31378d0f15f35672ac09` の埋込公開証明書 `223912d3da4f0c257f9a849c05a6db9dabb11caa7b2d36fba92803ce00ce360f` と、後続APKの別証明書が記録されている。ただし、その旧手法は証明書の抽出であり暗号署名検証ではないため、更新許可の証拠には流用しない。
 
-今回、初回APKの実在と上記ファイルSHA256、およびPR #85の保存APK SHA256 `b71ec2c7e06df8fa24168aa71e91f97cbacf12bb9af13af73a1ee5bbd0e981cf` をGet-FileHashで再確認。初回確認時はローカルSDK/JDKがなく、後述のSDK導入後もJDKがないため、この2本のapksigner付き比較は未実施。新しいCIビルド自身の暗号署名検証と、初回APK/実機との更新互換性は別の確認事項として保持する。
+今回、初回APKの実在と上記ファイルSHA256、およびPR #85の保存APK SHA256 `b71ec2c7e06df8fa24168aa71e91f97cbacf12bb9af13af73a1ee5bbd0e981cf` をGet-FileHashで再確認。初回確認時のSDK/JDK不足は、公式チェックサム照合済みportable Temurin21と公式SDK36のapksignerで解消した。システムへのインストール、環境変数・鍵の変更は行っていない。
+
+初回APK `3fc935e…` と本バッチのCI run40441073968 APK `e46dc99c…` を両方apksignerで暗号検証し、いずれも成功した。ただし初回の署名証明書SHA256 `223912d3da4f0c257f9a849c05a6db9dabb11caa7b2d36fba92803ce00ce360f` に対し、比較対象は `268a561e13cd3c09deff5c9269cd7f6fe002e13e9007a49fd1a80797376e692f` で不一致。Application ID/versionCodeの一致だけでは更新できず、`signer_mismatch_or_unverified_rotation`で保留した。ローカル証拠はignored `.data/release-quality-20261027/apk-signature-continuity.json`。実機に現在入っている版の証明書や所有者の元の秘密鍵保有は未確認のため、この比較を更新許可には使わない。比較のための端末操作・再署名・鍵生成は0。
 
 GitHub-hosted runnerのdebug keyは実行環境依存で、異なるrunのdebug APKの更新互換性は保証できない。署名検証付き比較で一致を確認するまで更新インストールを行わない。保存データを守る解決には、所有者が初回署名鍵を保持していることの確認と、その正規の鍵を使ったビルドが必要。証明書から秘密鍵は復元できない。新規鍵生成・無断の署名差し替え・`adb uninstall`・`pm clear` では解決しない。
 
