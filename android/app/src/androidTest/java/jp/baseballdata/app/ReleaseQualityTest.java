@@ -969,6 +969,68 @@ public class ReleaseQualityTest {
         js("Capacitor.Plugins.Preferences.remove({key:'qa-persistence'})");
     }
 
+    @Test public void nativeSharedCounterLoadsAndPersistsAtActualPageSize() throws Exception {
+        var target = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        Bundle arguments = InstrumentationRegistry.getArguments();
+        String suppliedSession = arguments.getString("native_counter_session");
+        String session = suppliedSession == null ? "standalone-" + java.util.UUID.randomUUID() : suppliedSession;
+        assertTrue("QA counter session is bounded and contains no path syntax", session.matches("[a-zA-Z0-9-]{1,64}"));
+        String phase = arguments.getString("native_counter_phase", "prepare");
+        assertTrue("Native counter phase is explicit", phase.equals("prepare") || phase.equals("reopen"));
+        assertTrue("A restart check requires its original session", !phase.equals("reopen") || suppliedSession != null);
+        long pageSize = android.system.Os.sysconf(android.system.OsConstants._SC_PAGESIZE);
+        assertTrue("Actual native page size is supported", pageSize == 4096 || pageSize == 16384);
+        String expectedPageSize = arguments.getString("expected_page_size");
+        if (expectedPageSize != null) assertEquals("Native sysconf matches measured adb page size", expectedPageSize, String.valueOf(pageSize));
+        assertTrue("Native verification does not initialize Firebase", com.google.firebase.FirebaseApp.getApps(target).isEmpty());
+
+        // Exercise the exact packaged DataStore 1.1.7 native implementation. Its
+        // official sources define Factory.loadLib() and these JNI methods:
+        // https://dl.google.com/dl/android/maven2/androidx/datastore/datastore-core-android/1.1.7/datastore-core-android-1.1.7-sources.jar
+        // Reflection stays in androidTest and deliberately fails if this pinned
+        // SDK contract changes; it never substitutes a Java counter or skips JNI.
+        ClassLoader targetLoader = target.getClassLoader();
+        Class<?> sharedCounter = Class.forName("androidx.datastore.core.SharedCounter", true, targetLoader);
+        Object factory = sharedCounter.getField("Factory").get(null);
+        factory.getClass().getMethod("loadLib").invoke(factory);
+        Class<?> nativeCounter = Class.forName("androidx.datastore.core.NativeSharedCounter", true, targetLoader);
+        var constructor = nativeCounter.getDeclaredConstructor(); constructor.setAccessible(true);
+        Object counter = constructor.newInstance();
+        var truncate = nativeCounter.getMethod("nativeTruncateFile", int.class);
+        var create = nativeCounter.getMethod("nativeCreateSharedCounter", int.class);
+        var get = nativeCounter.getMethod("nativeGetCounterValue", long.class);
+        var increment = nativeCounter.getMethod("nativeIncrementAndGetCounterValue", long.class);
+        File cache = target.getCacheDir().getCanonicalFile();
+        File file = new File(cache, "qa-native-counter-" + session + ".bin").getCanonicalFile();
+        assertEquals("QA counter is directly inside this app's cache", cache, file.getParentFile());
+        boolean preparing = phase.equals("prepare"), createdHere = false;
+        try {
+            if (preparing) {
+                assertFalse("A new QA session never overwrites an existing file", file.exists());
+                assertTrue("Create only this test's unique counter file", file.createNewFile()); createdHere = true;
+            } else assertTrue("Restart must read the counter from the previous process", file.isFile() && file.length() >= 4);
+            try (var descriptor = android.os.ParcelFileDescriptor.open(file, android.os.ParcelFileDescriptor.MODE_READ_WRITE)) {
+                if (preparing) assertEquals("Native file initialization", 0, ((Number)truncate.invoke(counter, descriptor.getFd())).intValue());
+                long address = ((Number)create.invoke(counter, descriptor.getFd())).longValue();
+                assertTrue("Native mmap returned a valid address", address > 0);
+                assertEquals("Counter reads real persisted native memory", preparing ? 0 : 8, ((Number)get.invoke(counter, address)).intValue());
+                if (preparing) for (int value = 1; value <= 7; value++)
+                    assertEquals("Native atomic increment", value, ((Number)increment.invoke(counter, address)).intValue());
+                else assertEquals("Native increment after process restart", 9, ((Number)increment.invoke(counter, address)).intValue());
+            }
+            if (preparing) try (var descriptor = android.os.ParcelFileDescriptor.open(file, android.os.ParcelFileDescriptor.MODE_READ_WRITE)) {
+                long reopened = ((Number)create.invoke(counter, descriptor.getFd())).longValue();
+                assertTrue("Counter can remap its existing file", reopened > 0);
+                assertEquals("Descriptor reopen retains the seven increments", 7, ((Number)get.invoke(counter, reopened)).intValue());
+                assertEquals("Reopened native counter remains writable", 8, ((Number)increment.invoke(counter, reopened)).intValue());
+            }
+            System.out.println("BASEBALL_PERF native_counter_page_size=" + pageSize + " phase=" + phase + " value=" + (preparing ? 8 : 9));
+        } finally {
+            if ((!preparing || suppliedSession == null) && (createdHere || !preparing))
+                assertTrue("Remove only this session's QA counter", file.delete());
+        }
+    }
+
     @Test public void postseasonReadingsKeepFactsSeparateAndMvpUnavailableAtLargeFont() throws Exception {
         scenario=ActivityScenario.launch(MainActivity.class);waitText("BASEBALL");
         org.junit.Assume.assumeTrue("Japan Series editorial period only",Boolean.parseBoolean(js("(()=>{const d=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Tokyo'}).format(new Date());return d>='2026-10-24'&&d<='2026-11-08';})()")));
