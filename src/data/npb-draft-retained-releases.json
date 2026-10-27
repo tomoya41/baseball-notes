@@ -24,11 +24,11 @@
     "forecastSha256": "25a1bb0d7a2c00e231b3e5510519ab13096fbdea06eb14f614fe22c81c5adbb9"
   },
   {
-    "tag": "npb-draft-2026-20261027-results-v5",
-    "assetUrl": "https://github.com/tomoya41/baseball-notes/releases/download/npb-draft-2026-20261027-results-v5/draft-2026.json.gz",
-    "sha256": "88d6aff9e2691e406d7bf8b71cbdda94bdf8395be0ae8d70a65746d994a912c0",
-    "bodySha256": "8297261f1628b0c90de60b4a26cdae2af0ebda7fc334cfe1ec46e7da58a0e986",
-    "bytes": 149330,
+    "tag": "npb-draft-2026-20261023-results-v4",
+    "assetUrl": "https://github.com/tomoya41/baseball-notes/releases/download/npb-draft-2026-20261023-results-v4/draft-2026.json.gz",
+    "sha256": "325625ceff1aa5b6b0af5156fe7d6c4119731cad90b797582a107482397e2f1c",
+    "bodySha256": "ef7463a83e9c2ce3567a9be4fd15281cdc0f8ba7ef7c2c7bbea3d6e3cda41d52",
+    "bytes": 148040,
     "forecastSha256": "25a1bb0d7a2c00e231b3e5510519ab13096fbdea06eb14f614fe22c81c5adbb9"
   }
 ]

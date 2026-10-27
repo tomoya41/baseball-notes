@@ -753,7 +753,7 @@ public class ReleaseQualityTest {
         setTheme("dark","ダーク");js("location.hash='"+route+"'");waitText("2026ドラフト直前最終予想");
         assertEquals("Dark draft preview no overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));screenshot("draft-2026-font-20-dark");
         js("Array.from(document.querySelectorAll('nav[aria-label=\"ドラフト特集の表示\"] a')).find(a=>a.textContent==='指名結果').click()");
-        waitText("収録 122件");waitText("支配下 74 / 育成 48");waitText("当選は未確認");
+        waitText("収録 124件");waitText("支配下 76 / 育成 48");waitText("当選は未確認");
         assertEquals("Bounded twenty result rows and three independent lottery groups","23",js("String(document.querySelectorAll('main article').length)"));
         assertEquals("Result list at 200 percent has no overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));screenshot("draft-2026-results-font-20-dark");
         js("Array.from(document.querySelectorAll('main button')).find(b=>b.textContent==='次の20件').click()");waitText("2 / 7ページ");
