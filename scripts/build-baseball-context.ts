@@ -39,7 +39,7 @@ for(const link of archive.titles){
   const ids=[...r.slots.main.content.matchAll(/npb\.jp\/bis\/players\/(\d+)\.html/g)].map(m=>m[1]);if(ids.length&&!ids.includes(link.npbId))throw Error("independent_npb_id_conflict");
   const id=`npb:${link.npbId}`,sourceId=`wiki:${p.pageid}:${r.revid}`,source={id:sourceId,name:`Wikipedia「${p.title}」の執筆者`,url:`https://ja.wikipedia.org/w/index.php?curid=${p.pageid}&oldid=${r.revid}`,authorsUrl:`https://ja.wikipedia.org/w/index.php?title=${encodeURIComponent(p.title)}&action=history`,license:"CC-BY-SA-4.0" as const,sha256:hash(r.slots.main.content),revision:r.revid};
   const parsed=parseNpbHonors(r.slots.main.content,id,sourceId);held.push(...parsed.issues.map(i=>({recipientId:id,...i})));if(!parsed.rows.length)continue;
-  const recipient:HonorRecipient={id,name:p.title,externalIds:{npb:link.npbId,wikidata:link.wikidataId},links:[{league:"NPB",playerId:link.playerId,seasons:[...new Set(history.rows.filter(row=>row.playerId===link.playerId).map(row=>row.season))]}],counts:{}};
+  const recipient:HonorRecipient={id,name:p.title,identityStatus:"verified",externalIds:{npb:link.npbId,wikidata:link.wikidataId},links:[{league:"NPB",playerId:link.playerId,seasons:[...new Set(history.rows.filter(row=>row.playerId===link.playerId).map(row=>row.season))]}],counts:{}};
   players.set(id,recipient);npbByQid.set(link.wikidataId,recipient);sources.push(source);
   for(const row of parsed.rows){const teams=[...new Set(history.rows.filter(h=>h.playerId===link.playerId&&h.season===row.year).map(h=>h.teamId))];row.seasonTeams=teams.map(id=>({id,name:npbTeamShortName(id)}));const divisions=new Set(teams.map(id=>["giants","tigers","dragons","carp","swallows","baystars"].some(t=>id===`npb:team:${t}`)?"CL":"PL"));row.division=divisions.size===1?[...divisions][0]!:null;records.push(row);}
  }catch(e){held.push({playerId:link.playerId,reason:(e as Error).message});}
@@ -53,7 +53,7 @@ const index=(await json("mlb-players.json") as {players:{id:string;seasons:numbe
 const recipients=new Map<string,HonorRecipient>();
 for(const id of [...wanted].sort()){const p=peopleById.get(id!);if(!p)continue;const identity=matchLahmanIdentity(p,identities);
  const profileId=identity?historicalId("player",`chadwick:${identity.key_uuid}`):null,profile=profileId?mlbProfiles.get(profileId):null;
- const recipient:HonorRecipient={id:`lahman:${id}`,name:[p.nameFirst,p.nameLast].filter(Boolean).join(" "),externalIds:{lahman:id!,...(p.retroID?{retrosheet:p.retroID}:{}),...(p.bbrefID?{bbref:p.bbrefID}:{}),...(identity?.key_wikidata?{wikidata:identity.key_wikidata}:{})},links:profile?[{league:"MLB",playerId:profileId!,seasons:profile.seasons}]:[],counts:{}};
+ const recipient:HonorRecipient={id:`lahman:${id}`,identityStatus:identity?"verified":"unresolved",name:[p.nameFirst,p.nameLast].filter(Boolean).join(" "),externalIds:{lahman:id!,...(identity?{chadwick:identity.key_uuid!}:{}),...(p.retroID?{retrosheet:p.retroID}:{}),...(p.bbrefID?{bbref:p.bbrefID}:{}),...(identity?.key_wikidata?{wikidata:identity.key_wikidata}:{})},links:profile?[{league:"MLB",playerId:profileId!,seasons:profile.seasons}]:[],counts:{}};
  const npb=identity?.key_wikidata?npbByQid.get(identity.key_wikidata):null;
  if(npb&&(!identity?.key_npb||identity.key_npb===npb.externalIds.npb))recipient.links.push(...npb.links);
  recipients.set(id!,recipient);players.set(recipient.id,recipient);

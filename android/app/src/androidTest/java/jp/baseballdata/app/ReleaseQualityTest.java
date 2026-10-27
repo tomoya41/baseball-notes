@@ -1057,7 +1057,7 @@ public class ReleaseQualityTest {
         scenario = ActivityScenario.launch(MainActivity.class); waitText("BASEBALL");
         shell("wm size 360x800"); setTheme("light", "ライト");
         js("location.hash='#/MLB/awards?year=2024&award=mlb_mvp'");
-        waitText("Shohei Ohtani");
+        waitText("大谷翔平");
         assertEquals("Award winners remain a list of actual source records", "2", js("document.querySelectorAll('.honors-list > li').length"));
         screenshot("honors-360-light");
         js("location.hash='#/MLB/games/mlb%3Agame%3A331cd576-4f1a-5a52-8a23-c1a31726a070?season=2024&competition=postseason'");

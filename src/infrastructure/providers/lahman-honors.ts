@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import {z} from "zod";
 import type { Honor, HonorRecipient } from "../../domain/player-honors";
 export type CsvRecord=Record<string,string>;
 export const annualMlbHonors:Record<string,[string,string]>={
@@ -8,7 +9,7 @@ export const evidenceDigest=(s:string)=>createHash("sha256").update(s).digest("h
 export function matchLahmanIdentity(person:CsvRecord,identities:readonly CsvRecord[]){
  const matches=identities.filter(r=>person.bbrefID&&r.key_bbref===person.bbrefID||person.retroID&&r.key_retro===person.retroID);
  if(new Set(matches.map(r=>r.key_uuid)).size!==1)return null;const identity=matches[0]!;
- if(!identity.key_uuid||(person.bbrefID&&identity.key_bbref!==person.bbrefID)||(person.retroID&&identity.key_retro!==person.retroID)||[["birthYear","birth_year"],["birthMonth","birth_month"],["birthDay","birth_day"]].some(([a,b])=>person[a!]&&identity[b!]&&Number(person[a!])!==Number(identity[b!])))return null;
+ if(!z.uuid().safeParse(identity.key_uuid).success||(person.bbrefID&&identity.key_bbref!==person.bbrefID)||(person.retroID&&identity.key_retro!==person.retroID)||[["birthYear","birth_year"],["birthMonth","birth_month"],["birthDay","birth_day"]].some(([a,b])=>person[a!]&&identity[b!]&&Number(person[a!])!==Number(identity[b!])))return null;
  return identity;
 }
 /** AwardsPlayers winners only. Votes, statistical maxima and candidates are not inputs. */
@@ -17,9 +18,16 @@ export function parseLahmanHonors(rows:readonly CsvRecord[],recipients:ReadonlyM
  for(const r of rows){const def=annualMlbHonors[r.awardID??""];if(!def)continue;const proof=evidenceDigest(JSON.stringify(r));
   const year=Number(r.yearID),p=recipients.get(r.playerID??"");
   if(!p||!/^\d{4}$/.test(r.yearID??"")||year>2025||year<1871||!["AL","NL","ML"].includes(r.lgID??"")||r.awardID==="Most Valuable Player"&&year<1931){held.push({reason:!p?"missing_person_identity":"year_or_historical_institution_unsupported",evidenceSha256:proof});continue;}
-  const position=r.notes?.trim()||null,id=evidenceDigest(`lahman:${r.playerID}:${r.awardID}:${year}:${r.lgID}:${position??""}`);
+  const sourceNote=r.notes?.trim()||null,position=sourceNote&&['P','SP','RP','C','1B','2B','3B','SS','LF','CF','RF','OF','DH','UT'].includes(sourceNote)?sourceNote:null,id=evidenceDigest(`lahman:${r.playerID}:${r.awardID}:${year}:${r.lgID}:${sourceNote??""}`);
+  let [awardId,name]=def;
+  if(r.awardID==='Reliever of the Year Award'){
+   if(year<=2012){awardId='mlb_rolaids';name='ローレイズ・リリーフマン賞';}
+   else if(year>=2014&&r.lgID==='AL'){awardId='mlb_rivera';name='マリアノ・リベラ賞';}
+   else if(year>=2014&&r.lgID==='NL'){awardId='mlb_hoffman';name='トレバー・ホフマン賞';}
+   else{held.push({reason:'unreviewed_reliever_institution',evidenceSha256:proof});continue;}
+  }
   if(records.some(a=>a.id===id))throw Error("Duplicate Lahman winner identity");
-  records.push({id,recipientId:p.id,league:"MLB",year,division:r.lgID!,awardId:def[0],name:def[1],sourceName:r.awardID!,kind:"award",position,seasonTeams:teams.get(`${r.playerID}:${year}:${r.lgID}`)??[],joint:r.tie==="Y"?true:r.tie==="N"?false:null,sourceId,evidenceSha256:proof,reportedCareerWins:null});
+  records.push({id,recipientId:p.id,league:"MLB",year,division:r.lgID!,awardId,name,sourceName:r.awardID!,sourceNote,kind:"award",position,seasonTeams:teams.get(`${r.playerID}:${year}:${r.lgID}`)??[],joint:r.tie==="Y"||sourceNote==='Co-MVP'?true:r.tie==="N"?false:null,sourceId,evidenceSha256:proof,reportedCareerWins:null});
  }
  return{records,held};
 }
