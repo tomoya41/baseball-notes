@@ -77,16 +77,17 @@ export function assertDraftSnapshotAdvance(previous:DraftEvent,next:DraftEvent){
   if(previous.additionalSources||next.additionalSources){
     if(JSON.stringify(previous.sources)!==JSON.stringify(next.sources))throw Error("Original Draft source must remain immutable when supplemental revisions are used");
     for(const source of previous.additionalSources??[])if(!next.additionalSources?.some(s=>JSON.stringify(s)===JSON.stringify(source)))throw Error("Supplemental Draft source correction/deletion requires separate review");
-    for(const kind of ["candidates","selections","lotteries"] as const){
+    for(const kind of ["candidates","selections"] as const){
       const oldRows=new Set(previous[kind].map(row=>JSON.stringify(row)));
       if(next[kind].some(row=>!oldRows.has(JSON.stringify(row))&&row.sourceRevision===undefined))throw Error("New Draft evidence must explicitly identify its source revision");
     }
+    if(next.lotteries.some(row=>!previous.lotteries.some(old=>old.attempt===row.attempt&&old.candidateId===row.candidateId)&&row.sourceRevision===undefined))throw Error("New Draft evidence must explicitly identify its source revision");
   }
   const keys=new Set(next.selections.map(s=>JSON.stringify(s)));
   if(previous.selections.some(s=>!keys.has(JSON.stringify(s))))throw Error("Selection correction/deletion requires separate review");
   for(const old of previous.lotteries){
     const current=next.lotteries.find(l=>l.attempt===old.attempt&&l.candidateId===old.candidateId);
-    if(!current||JSON.stringify([...current.teamIds].sort())!==JSON.stringify([...old.teamIds].sort())||old.winnerId!==null&&current.winnerId!==old.winnerId)throw Error("Lottery correction/deletion requires separate review");
+    if(!current||current.sourcePageId!==old.sourcePageId||current.sourceRevision!==old.sourceRevision||current.evidenceSha256!==old.evidenceSha256||JSON.stringify([...current.teamIds].sort())!==JSON.stringify([...old.teamIds].sort())||old.winnerId!==null&&current.winnerId!==old.winnerId)throw Error("Lottery correction/deletion requires separate review");
   }
 }
 /** First actual selection, distinct from first-bid lottery. Missing results never mean a miss. */

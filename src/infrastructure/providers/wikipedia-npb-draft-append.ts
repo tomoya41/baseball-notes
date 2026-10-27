@@ -36,7 +36,11 @@ export function appendReviewedDraftResults(previous:DraftEvent,rawArchive:unknow
     keys.add(key);
     const matches=audit.rows.filter(r=>r.teamId===entry.teamId&&r.type===entry.type&&r.round===entry.round&&r.name===entry.name&&r.article===entry.article&&r.affiliation===entry.affiliation&&r.position===entry.position&&r.evidenceSha256===entry.evidenceSha256);
     if(matches.length!==1)throw Error("Append row must have exact independently reviewed team/matrix evidence");
-    const r=matches[0]!,id=draftResultRowId(r),existing=old.candidates.find(c=>c.id===id);
+    const r=matches[0]!;
+    // Linked IDs also contain affiliation text. A changed school spelling must
+    // not create a second selection for an already-selected article identity.
+    if(r.article&&next.selections.some(s=>next.candidates.find(c=>c.id===s.candidateId)?.article===r.article))throw Error("Selected article identity requires separate correction review");
+    const id=draftResultRowId(r),existing=old.candidates.find(c=>c.id===id);
     if(existing){
       if(entry.existingCandidateId!==id||existing.name!==r.name||existing.article!==r.article||existing.affiliation!==r.affiliation||existing.position!==r.position)throw Error("Append cannot replace or merge an existing candidate identity without exact reviewed evidence");
       if(old.selections.some(s=>s.candidateId===id))throw Error("Existing candidate was already selected");

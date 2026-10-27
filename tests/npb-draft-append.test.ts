@@ -94,3 +94,27 @@ it("does not weaken the old normal builder's changed-carried-evidence guard",()=
   expect(()=>assertCarriedDraftEvidence(f.old,[{source:f.review.source,content:f.content}])).toThrow(/evidence changed/);
   expect(()=>apply(f)).not.toThrow();
 });
+it("holds an already-selected article even when affiliation text would create another candidate ID",()=>{
+  const f=fixture(),row=f.review.selections[0]!;
+  Object.assign(f.old.candidates[0]!,{article:row.article,name:row.name,affiliation:"架空の以前の所属表記"});
+  f.review.previousBodySha256=draftHash(JSON.stringify(f.old));
+  expect(()=>apply(f)).toThrow("Selected article identity");
+  const sameRun=fixture(),content=sameRun.content.replaceAll("架空左腕","架空右腕");
+  sameRun.archive.response.query.pages[1]!.revisions[0]!.slots.main.content=content;
+  sameRun.review.source.contentSha256=draftHash(content);
+  sameRun.review.selections=auditDraft2026ResultTables(content).rows.map(({teamId,type,round,name,article,affiliation,position,evidenceSha256})=>({teamId,type,round,name,article,affiliation,position,evidenceSha256}));
+  expect(()=>apply(sameRun)).toThrow("Selected article identity");
+});
+it("preserves lottery provenance while permitting a separately validated winner with the same evidence",()=>{
+  const f=fixture();
+  f.old.lotteries=[{attempt:1,candidateId:f.old.candidates[0]!.id,teamIds:["npb:team:tigers","npb:team:giants"],winnerId:null,sourcePageId:5282993,evidenceSha256:"e".repeat(64)}];
+  f.review.previousBodySha256=draftHash(JSON.stringify(f.old));
+  const next=apply(f).data;
+  next.lotteries[0]!.winnerId="npb:team:tigers";
+  expect(()=>assertDraftSnapshotAdvance(f.old,next)).not.toThrow();
+  for(const edit of [
+    (d:typeof next)=>{d.lotteries[0]!.sourcePageId=5209342;},
+    (d:typeof next)=>{d.lotteries[0]!.sourceRevision=3;},
+    (d:typeof next)=>{d.lotteries[0]!.evidenceSha256="0".repeat(64);},
+  ]){const changed=structuredClone(next);edit(changed);expect(()=>assertDraftSnapshotAdvance(f.old,changed)).toThrow("Lottery correction");}
+});
