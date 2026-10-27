@@ -38,3 +38,9 @@ raw tableの形式検証は125行を読めるが、ソフトバンク育成9位�
 候補immutable版 `npb-draft-2026-20261027-results-v5`：JSON149,330B/hash `8297261f1628b0c90de60b4a26cdae2af0ebda7fc334cfe1ec46e7da58a0e986`、gzip31,739B/hash `88d6aff9e2691e406d7bf8b71cbdda94bdf8395be0ae8d70a65746d994a912c0`。独立出力へ再処理して両方完全一致。
 
 公開はデータ先行とする。新assetをretained/inactiveで配信し、HTTP/hash確認後に別pin更新でactive化。v4以前を上書き・削除しない。rollbackはactive pinを戻し、全immutable URLを維持する。Source/DB write0、Current Gate・NPB/MLB統計・保存情報・月額¥0を維持する。公開完了・実機確認は実際の配信/検証後のreceiptで扱う。
+
+## Active切替
+
+PR #87（merge `e1a5924`）のpreserve-only Pages run `40489473678`でv5をinactive配信し、2026-10-27のHTTP readbackでv1〜v5の本文SHA・bytes・件数を確認した。後続のpin変更ではv5をactive、v4をretainedへ移し、全immutable URLを保持する。指名結果の表示順だけを球団→支配下/育成→順位へ整え、追補2件も自然な位置に表示する。元のselections配列・出典・予想の並びは変更しない。旧URL・保存情報の移行や初期Home fetchの追加はない。
+
+新しい指名行の出典はrevision111527305、旧指名行の出典は旧固定revisionを維持する。正式発表の直接検証、入団・所属・支配下登録の証明、全指名の完全収録とは扱わない。過去の監査時点の「新規採用0」は[基準監査](season-release-quality-2026-10-27.md)の状態であり、この追補の最終件数は124（支配下76、育成48）、保留3件である。

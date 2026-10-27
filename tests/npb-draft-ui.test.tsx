@@ -39,6 +39,18 @@ it("links supplemental results to their exact new revision while legacy rows and
   }finally{await f.close();}
 });
 it("filters candidates without fetching Current Player profiles",async()=>{const f=await mount("?view=candidates&q=not-collected");try{expect(f.host.textContent).toContain("この条件の選手は未収録");await act(async()=>{const input=f.host.querySelector("input")!;Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value")!.set!.call(input,"");input.dispatchEvent(new Event("input",{bubbles:true}));});expect(readNpbDraftEvent).toHaveBeenCalledTimes(1);}finally{await f.close();}});
+it("places appended picks in team, regular/developmental and round order without changing source arrays",async()=>{
+  const f=await mount("?view=results",false,d=>{
+    Object.assign(d,expandedDraftFixture());d.eventState="ended";d.coverage="partial";
+    const slots=[{teamId:"npb:team:tigers",type:"regular" as const,round:1},{teamId:"npb:team:giants",type:"developmental" as const,round:1},{teamId:"npb:team:giants",type:"regular" as const,round:3},{teamId:"npb:team:giants",type:"regular" as const,round:1},{teamId:"npb:team:giants",type:"regular" as const,round:2}];
+    d.selections=slots.map((s,i)=>({...s,candidateId:d.candidates[i]!.id,status:"confirmed",sourcePageId:5209342,evidenceSha256:"c".repeat(64)}));
+  });
+  try{const rows=[...f.host.querySelectorAll("article")].map(r=>r.querySelector("small")!.textContent);
+    expect(rows).toEqual(["巨人 · 支配下1位 · 記事記載","巨人 · 支配下2位 · 記事記載","巨人 · 支配下3位 · 記事記載","巨人 · 育成1位 · 記事記載","阪神 · 支配下1位 · 記事記載"]);
+    expect(f.data.selections.map(s=>[s.teamId,s.type,s.round])).toEqual([["npb:team:tigers","regular",1],["npb:team:giants","developmental",1],["npb:team:giants","regular",3],["npb:team:giants","regular",1],["npb:team:giants","regular",2]]);
+    expect(readNpbDraftEvent).toHaveBeenCalledTimes(1);
+  }finally{await f.close();}
+});
 it("keeps missing results distinct from no selection and draws no fake lottery",async()=>{const f=await mount("?view=results");try{expect(f.host.textContent).toContain("未収録は未指名・指名終了を意味しません");expect(f.host.textContent).toContain("独自案の重複を実際の競合とは扱いません");expect(f.host.querySelectorAll("article")).toHaveLength(0);}finally{await f.close();}});
 it("brings the next/previous result page into view and restores keyboard focus without refetching",async()=>{
   const f=await mount("?view=results&type=regular",false,d=>{Object.assign(d,expandedDraftFixture());d.eventState="ended";d.observedAt="2026-10-22T10:00:00Z";d.coverage="partial";d.selections=d.candidates.slice(0,21).map((c,i)=>({teamId:d.forecast.predictions[i%12]!.teamId,candidateId:c.id,type:"regular",round:Math.floor(i/12)+1,status:"confirmed",sourcePageId:c.sourcePageId,evidenceSha256:c.evidenceSha256}));});
@@ -46,7 +58,7 @@ it("brings the next/previous result page into view and restores keyboard focus w
     const heading=f.host.querySelector<HTMLHeadingElement>("#draft-results-heading")!,scroll=vi.fn();heading.scrollIntoView=scroll;
     expect(f.host.querySelectorAll("article")).toHaveLength(20);
     await act(async()=>[...f.host.querySelectorAll("button")].find(b=>b.textContent==="次の20件")!.click());
-    expect(f.host.querySelectorAll("article")).toHaveLength(1);expect(f.host.textContent).toContain("2 / 2ページ");expect(f.host.querySelector("article")!.textContent).toContain(f.data.candidates[20]!.name);
+    expect(f.host.querySelectorAll("article")).toHaveLength(1);expect(f.host.textContent).toContain("2 / 2ページ");expect(f.host.querySelector("article")!.textContent).toContain(f.data.candidates[11]!.name);
     expect(document.activeElement).toBe(heading);expect(scroll).toHaveBeenCalledWith({block:"start"});
     await act(async()=>[...f.host.querySelectorAll("button")].find(b=>b.textContent==="前の20件")!.click());
     expect(f.host.querySelectorAll("article")).toHaveLength(20);expect(document.activeElement).toBe(heading);expect(scroll).toHaveBeenCalledTimes(2);expect(readNpbDraftEvent).toHaveBeenCalledTimes(1);

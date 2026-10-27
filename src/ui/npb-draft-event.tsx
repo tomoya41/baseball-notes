@@ -26,7 +26,7 @@ export function NpbDraftEventScreen(){
   const turnPage=(page:number)=>{set("page",String(page));resultHeading.current?.scrollIntoView({block:"start"});resultHeading.current?.focus({preventScroll:true});};
   const link=(view:string)=>{const next=new URLSearchParams(params);next.set("view",view);next.delete("page");if(view!=="candidates"){next.delete("q");next.delete("group");}return `/NPB/talent/2026?${next}`;};
   const candidates=data?new Map(data.candidates.map(c=>[c.id,c])):null;
-  const rows=data?.selections.filter(s=>(query.team==="all"||s.teamId===query.team)&&(query.type==="all"||s.type===query.type))??[];
+  const rows=data?.selections.filter(s=>(query.team==="all"||s.teamId===query.team)&&(query.type==="all"||s.type===query.type)).sort((a,b)=>draftTeams.indexOf(a.teamId)-draftTeams.indexOf(b.teamId)||Number(a.type==="developmental")-Number(b.type==="developmental")||a.round-b.round)??[];
   const lotteries=query.type==="developmental"?[]:data?.lotteries.filter(l=>query.team==="all"||l.teamIds.includes(query.team))??[];
   const resultPage=Math.min(query.page,Math.max(1,Math.ceil(rows.length/20)));
   return <div className="screen draft-screen"><EditorialCover kind="draft" eyebrow="NPB · DRAFT 2026" title="ドラフト2026"><small>2026年10月22日 · NPBドラフト会議</small></EditorialCover>

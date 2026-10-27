@@ -5,10 +5,22 @@ import japanPin from "../data/npb-japan-series-release.json";
 import { needsNpbSeasonEntry } from "./npb-season-entry";
 export function canonicalDeepLink(input: string): string | null {
   try {
-    const uri = new URL(input);
-    if (uri.protocol !== "baseballnotes:" && !(uri.protocol === "https:" && uri.hostname === "tomoya41.github.io" &&
+    const customScheme = /^baseballnotes:/i.test(input);
+    const customAuthority = /^baseballnotes:\/\/(NPB|MLB)(?=\/|\?|$)/i.exec(input);
+    if (customScheme) {
+      if (!customAuthority || /[\\#]/.test(input)) return null;
+      for (const character of input) {
+        const code = character.charCodeAt(0);
+        if (code <= 0x20 || code === 0x7f) return null;
+      }
+    }
+    // WebView before Chromium 130 treats non-special schemes as opaque and
+    // returns an empty hostname. Parse our strictly whitelisted authority as a
+    // standard URL instead. This is string parsing only; it never fetches HTTPS.
+    const uri = new URL(customScheme ? input.replace(/^baseballnotes:/i, "https:") : input);
+    if (!customScheme && !(uri.protocol === "https:" && uri.hostname === "tomoya41.github.io" &&
       uri.pathname.startsWith("/baseball-notes/"))) return null;
-    const route = uri.protocol === "baseballnotes:" ? `/${uri.hostname}${uri.pathname}` :
+    const route = customScheme ? `/${customAuthority![1]!.toUpperCase()}${uri.pathname}` :
       uri.hash.startsWith("#/") ? uri.hash.slice(1) : uri.pathname.replace(/^\/baseball-notes/, "");
     const [portablePath, portableSearch] = route.split("?");
     if(needsNpbSeasonEntry(portablePath??"",new URLSearchParams(portableSearch??uri.search)))return portableRoute(portablePath!,portableSearch??uri.search);
