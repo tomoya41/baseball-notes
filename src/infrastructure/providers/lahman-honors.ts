@@ -2,6 +2,12 @@ import { createHash } from "node:crypto";
 import {z} from "zod";
 import type { Honor, HonorRecipient } from "../../domain/player-honors";
 export type CsvRecord=Record<string,string>;
+export function mergeMlbHonorProfiles(regular:readonly {id:string;seasons:number[]}[],postseason:readonly {id:string;seasons:number[]}[]){
+ const post=new Map(postseason.map(p=>[p.id,p])),profiles=new Map<string,{id:string;seasons:number[];competition:"regular"|"postseason";postseasonSeasons:number[]}>();
+ for(const p of postseason)profiles.set(p.id,{...p,competition:"postseason",postseasonSeasons:p.seasons});
+ for(const p of regular)profiles.set(p.id,{...p,competition:"regular",postseasonSeasons:post.get(p.id)?.seasons??[]});
+ return profiles;
+}
 export const annualMlbHonors:Record<string,[string,string]>={
  "Most Valuable Player":["mlb_mvp","MVP（最優秀選手）"],"Cy Young Award":["mlb_cy_young","サイ・ヤング賞"],"Rookie of the Year":["mlb_rookie","新人王"],"Gold Glove":["mlb_gold_glove","ゴールドグラブ賞"],"Silver Slugger":["mlb_silver_slugger","シルバースラッガー賞"],"Hank Aaron Award":["mlb_hank_aaron","ハンク・アーロン賞"],"World Series MVP":["mlb_ws_mvp","ワールドシリーズMVP"],"ALCS MVP":["mlb_alcs_mvp","ア・リーグ優勝決定シリーズMVP"],"NLCS MVP":["mlb_nlcs_mvp","ナ・リーグ優勝決定シリーズMVP"],"All-Star Game MVP":["mlb_allstar_mvp","オールスターゲームMVP"],"Roberto Clemente Award":["mlb_clemente","ロベルト・クレメンテ賞"],"Comeback Player of the Year":["mlb_comeback","カムバック賞"],"Reliever of the Year Award":["mlb_reliever","リリーバー・オブ・ザ・イヤー賞"],"All-MLB Team - First Team":["mlb_first_team","オールMLB・ファーストチーム"],"All-MLB Team - Second Team":["mlb_second_team","オールMLB・セカンドチーム"],"Platinum Glove":["mlb_platinum","プラチナグラブ賞"]};
 export const evidenceDigest=(s:string)=>createHash("sha256").update(s).digest("hex");

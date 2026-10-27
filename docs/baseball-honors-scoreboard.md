@@ -30,7 +30,7 @@ Offline builder → new immutable release → pin → stage validates all hashes
 
 Honors reads one manifest plus the requested year / two-hex profile bucket, only on navigation/expansion. Scores read a selected month and Regular/Postseason scope. Home adds zero requests. Runtime validates before offline caching, bounds memory to 64 files. Errors preserve original Game totals. No dataset enters initial JS / APK shell.
 
-## Active v2 scope
+## Active v3 scope
 
 - NPB: **682 records / 140 linked recipients / 1999–2025**, partial.
 - MLB: **3,289 records / 1,022 recipients / 1931–2025**, 16 award classes, partial. **All 1,022 recipients** have convergent independent Chadwick identities (0 unresolved). **1,330 records / 413 recipients** have collected-profile links. **609 recipients** remain without a profile link, including players outside 2014–2025. Names never force linkage.
@@ -46,7 +46,7 @@ Final exact-head review / CI / Android / data preservation / Pages / HTTP eviden
 - All **28,095** supplemental MLB scoreboards compared against the previously published Game JSON: Game ID/date/teams/R/Regular–Postseason scope agree, **0 mismatches**. Existing Games are untouched.
 - After adding the multiline comment/ref and candidate guards, all **682** admitted NPB honor IDs and exact excerpt hashes are unchanged.
 - Initial full local foundation run: **206 files, 1,994 passed + 1 existing Windows-only skip**. Subsequent focused guard tests passed; final exact-head CI remains the release gate.
-- Web/Vercel build and release credential scan passed. Shell remains data-free. Active additive projection: **543 files / 18,354,425 bytes**, max individual payload **209,858 bytes**; gzip bundle **3,228,865 bytes**. Existing public data baseline is 301,164,338 bytes; projected total stays below 320MB.
+- Web/Vercel build and release credential scan passed. Shell remains data-free. Active additive projection: **543 files / 18,463,990 bytes**, max individual payload **209,858 bytes**; gzip bundle **3,233,894 bytes**. Existing public data baseline is 301,164,338 bytes; projected total stays below 320MB.
 - Physical ADB device list empty (2026-10-28 JST): Pixel/TalkBack NOT RUN, no install/uninstall/data clear/signing changes. Existing release-signature/Play owner gates remain.
 - Latest observed EOD run 40585641952 honors read-suspension lease from 40542701449 through 2026-10-28T16:37:34.787Z, **dbReads=0/dbWrites=0**. This task adds no probes and does not assert Turso recovery.
 
@@ -62,4 +62,8 @@ The v1 GitHub release remains immutable and was never deployed to Pages. v2 sepa
 
 All 1,022 MLB recipients pass independent ID convergence and DOB contradiction checks; 609 lack a collected profile, not an established identity. Preserve that distinction in UI. Existing canonical Japanese player names are used only through the verified ID for display/search; source names are retained. Club names use source spelling; exhaustive historical official-name normalization remains unimplemented.
 
-No v1 asset is replaced. v2 uses a new version/hash. The retained-pins list is for generations already deployed to Pages; on a later v3 adoption, retain the deployed v2 projection first.
+No v1 asset is replaced. v2 uses a new version/hash. The retained-pins list is for generations already deployed to Pages; on a later generation, retain the deployed v3 projection first.
+
+### Reviewed v3 coverage correction
+
+Preserve the regular profile entry when the same MLB ID also has a postseason profile. Store regular seasons and postseason seasons separately; postseason-only profiles carry explicit scope. Award-year links request only a covered year, and Series MVP links use the collected postseason scope. All **413** linked MLB recipients were compared to both published directory indexes: exact regular/postseason year arrays and default scope agree, **0 mismatches**. All 105 inning projections remain unchanged. v1/v2 release assets remain immutable, neither was deployed to Pages; v3 is the sole active projection generation.

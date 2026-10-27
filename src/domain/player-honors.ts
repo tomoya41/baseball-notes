@@ -1,7 +1,7 @@
 import { z } from "zod";
 const hash = z.string().regex(/^[a-f0-9]{64}$/);
 export const honorsSourceSchema = z.strictObject({ id:z.string(), name:z.string(), url:z.url(), license:z.enum(["CC-BY-SA-3.0","CC-BY-SA-4.0","CC0-1.0","ODC-BY-1.0","Retrosheet-notice"]), sha256:hash, revision:z.number().int().positive().optional(), authorsUrl:z.url().optional() });
-export const honorRecipientSchema = z.strictObject({ id:z.string().min(1), name:z.string().min(1), identityStatus:z.enum(["verified","unresolved"]).optional(), externalIds:z.record(z.string(),z.string()), links:z.array(z.strictObject({ league:z.enum(["NPB","MLB"]), playerId:z.string(), seasons:z.array(z.number().int()) })), counts:z.record(z.string(),z.number().int().positive()) });
+export const honorRecipientSchema = z.strictObject({ id:z.string().min(1), name:z.string().min(1), identityStatus:z.enum(["verified","unresolved"]).optional(), externalIds:z.record(z.string(),z.string()), links:z.array(z.strictObject({ league:z.enum(["NPB","MLB"]), playerId:z.string(), seasons:z.array(z.number().int()),competition:z.enum(["regular","postseason"]).optional(),postseasonSeasons:z.array(z.number().int()).optional() })), counts:z.record(z.string(),z.number().int().positive()) });
 export const honorSchema = z.strictObject({ id:hash, recipientId:z.string(), league:z.enum(["NPB","MLB"]), year:z.number().int().min(1871).max(2025), division:z.string().nullable(), awardId:z.string().regex(/^[a-z0-9_-]+$/), name:z.string().min(1), sourceName:z.string().min(1), sourceNote:z.string().nullable().optional(), kind:z.enum(["title","award"]), position:z.string().nullable(), seasonTeams:z.array(z.strictObject({ name:z.string(), id:z.string().nullable() })), joint:z.boolean().nullable(), sourceId:z.string(), evidenceSha256:hash, reportedCareerWins:z.number().int().positive().nullable() });
 export const honorsPageSchema = z.strictObject({ schemaVersion:z.literal(1), recipients:z.array(honorRecipientSchema), records:z.array(honorSchema), sources:z.array(honorsSourceSchema) }).superRefine((d,c)=>{
   const ids=new Set(d.recipients.map(p=>p.id)),sources=new Set(d.sources.map(s=>s.id));
@@ -17,8 +17,9 @@ export type ContextManifest=z.infer<typeof contextManifestSchema>;
 export const playerHonorBucket=(id:string)=>id.replace(/^mlb:player:/,"").slice(0,2);
 /** NPB seasons resolves both Current and historical-only identities. */
 export function honorProfilePath(link:HonorRecipient["links"][number],year:number,award?:Pick<Honor,"awardId"|"position">){
- const query=new URLSearchParams();if(link.seasons.includes(year))query.set("season",String(year));
- if(link.league==="MLB"&&link.seasons.includes(year)&&award&&["mlb_ws_mvp","mlb_alcs_mvp","mlb_nlcs_mvp"].includes(award.awardId))query.set("competition","postseason");
+ const postYears=link.postseasonSeasons??(link.competition==="postseason"?link.seasons:[]),seriesAward=!!award&&["mlb_ws_mvp","mlb_alcs_mvp","mlb_nlcs_mvp"].includes(award.awardId);
+ const post=link.league==="MLB"&&(link.competition==="postseason"||seriesAward&&postYears.includes(year)),years=post?postYears:link.seasons;
+ const query=new URLSearchParams();if(years.includes(year))query.set("season",String(year));if(post)query.set("competition","postseason");
  if(link.league==="NPB"&&award&&(["npb_era","npb_w","npb_so","npb_sv","npb_relief","npb_wpct","npb_hold","npb_sawamura"].includes(award.awardId)||award.position==="投手部門"))query.set("role","pitching");
  return `/${link.league}/players/${encodeURIComponent(link.playerId)}${link.league==="NPB"?"/seasons":""}${query.size?`?${query}`:""}`;
 }
