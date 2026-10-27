@@ -21,6 +21,11 @@ diagnose_16kb_failure() {
   # to observed target PIDs/the target package, including its native tombstone.
   record_app_pid
   adb shell dumpsys activity exit-info com.tomoya41.baseballnotes | head -c 32000 > .data/android-emulator/16kb-app-exit-info.txt
+  # A low-memory kill can occur before the first live-PID poll. Recover only
+  # PIDs from this package's bounded exit records so its crash lines aren't lost.
+  awk '/timestamp=/ { for (i=1;i<=NF;i++) if ($i ~ /^pid=[0-9]+$/) { sub(/^pid=/,"",$i); print $i } }' \
+    .data/android-emulator/16kb-app-exit-info.txt >> .data/android-emulator/app-pids.txt
+  adb shell cat /proc/meminfo | grep -E '^(MemTotal|MemFree|MemAvailable|SwapTotal|SwapFree):' > .data/android-emulator/16kb-memory-at-failure.txt
   adb shell dumpsys activity activities | grep -E 'com\.tomoya41\.baseballnotes|topResumedActivity|mResumedActivity' | head -c 16000 > .data/android-emulator/16kb-resumed-state.txt
   adb shell dumpsys webviewupdate | grep -E 'Current WebView package|Preferred WebView package|Minimum targetSdkVersion|Multiprocess enabled' | head -c 4000 > .data/android-emulator/16kb-webview-provider.txt
   adb logcat -b main -d -v threadtime -t 500 -s System.out:I | grep 'BASEBALL_PERF native_counter' | head -c 16000 > .data/android-emulator/native-16kb-performance.txt
@@ -100,6 +105,7 @@ adb shell wm density 160
 if [ "$page_size" = 16384 ]; then
   # Run the real JNI mmap/atomic/persistence check before any WebView/UI launch.
   # It isolates a native-library failure from a later cold-shell/WebView failure.
+  adb shell cat /proc/meminfo | grep -E '^(MemTotal|MemFree|MemAvailable|SwapTotal|SwapFree):' > .data/android-emulator/16kb-memory-before-native.txt
   native_counter_check prepare "preflight-$native_counter_session" .data/android-emulator/native-16kb-prepare.txt
   adb shell am force-stop com.tomoya41.baseballnotes
   native_counter_check reopen "preflight-$native_counter_session" .data/android-emulator/native-16kb-reopen.txt

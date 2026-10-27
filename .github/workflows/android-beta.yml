@@ -96,6 +96,10 @@ jobs:
           arch: x86_64
           profile: pixel_2
           target: ${{ inputs.page_size == '16kb' && 'google_apis_ps16k' || 'google_apis' }}
+          # The 16KB image killed the target before JNI/test startup at the
+          # profile's 2560MB default (ApplicationExitInfo LOW_MEMORY/status 9).
+          # Bound this disposable guest to 4GB; standard API36 stays unchanged.
+          ram-size: ${{ inputs.page_size == '16kb' && '4096M' || '' }}
           disable-animations: true
           script: bash scripts/android-emulator-smoke.sh
       - uses: actions/upload-artifact@v4

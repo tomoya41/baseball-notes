@@ -60,4 +60,10 @@ PR初回CIは`invalid_apk_metadata`で停止し、エミュレーターは未実
 
 64bitのRELRO末尾は16KB剰余8,192だが、これだけで非互換とは判定しない。[公式ガイドの独立LOAD例外](https://developer.android.com/guide/practices/page-sizes)と実ELF配置を照合した。arm64のRELRO `0x51c0–0x6000`は対応するRW LOAD `0x51c0–0x5428`を全て覆い、後続の`.bss`は別LOAD `0x9428–0x9429`。16KBに丸めた読取専用範囲`0x4000–0x8000`と重ならない。x86_64もRW LOAD `0x4f20–0x5148`全体がRELRO `0x4f20–0x6000`内にあり、後続の書込データがない。静的配置上、懸念したRELROと書込データの同一ページ競合は見つからなかった。
 
-**16KB環境のruntimeはNOT RUN**。通常のAPI36エミュレーター成功やZIP/ELF検査だけで代替しない。次の最小検証は、公式16KB system imageで`getconf PAGE_SIZE=16384`を記録し、互換モードに頼らずnative load・初回起動・保存/再起動を確認すること。AABから生成されるAPKの配置確認も別に必要。依存版・署名・個人保存データ・Pixel/TalkBack/Playの所有者Gateは変更していない。
+**16KB環境のruntime検証は未完了**。通常のAPI36エミュレーター成功やZIP/ELF検査だけで代替しない。公式16KB system imageで`getconf PAGE_SIZE=16384`を記録し、互換モードに頼らずnative load・初回起動・保存/再起動を確認する。AABから生成されるAPKの配置確認も別に必要。依存版・署名・個人保存データ・Pixel/TalkBack/Playの所有者Gateは変更していない。
+
+### 16KB実行を妨げたエミュレーターのメモリー不足
+
+[Run 40445143266](https://github.com/tomoya41/baseball-notes/actions/runs/40445143266)は実測`PAGE_SIZE=16384`でAPKをインストールできたが、native検証の開始前にtarget processが終了した。自アプリ限定`ApplicationExitInfo`は`reason=3 (LOW_MEMORY) / status=9`を記録し、JNI開始ログも出ていない。ローカル診断はignored `.data/release-quality-20261027/16kb-second/16kb-app-exit-info.txt`。これは低メモリーkillの証拠であり、nativeライブラリ不良やRELROのクラッシュの証拠にはしない。16KBのruntime合格ではなく、検証未完了の失敗として残す。
+
+該当runのguest RAMは自動設定2,560MBだったため、16KB指定のときだけ[pinned emulator actionの対応入力`ram-size`](https://github.com/ReactiveCircus/android-emulator-runner/blob/a421e43855164a8197daf9d8d40fe71c6996bb0d/action.yml)で`4096M`に固定する。通常API36のメモリー設定は変更しない。既存[public Linux standard runnerは16GB RAM](https://docs.github.com/en/actions/reference/runners/github-hosted-runners)のままで、有料runnerへ変更しない。次回はguestの総メモリー/空きメモリーを記録し、同じ16384照合・native読書き・再起動・UIの合格条件を全て維持して検証する。互換モード、テスト省略、前回失敗のPASS化は行わない。
