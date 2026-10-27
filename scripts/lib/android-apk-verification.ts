@@ -28,7 +28,9 @@ export type UpdateCompatibility = {
 
 export function parseApkBadging(output: string) {
   const packages = [...output.matchAll(/^package: name='([^']+)' versionCode='(\d+)' versionName='([^']*)'/gm)];
-  const minSdk = [...output.matchAll(/^sdkVersion:'(\d+)'\r?$/gm)];
+  // SDK 36 aapt2 emits minSdkVersion; older aapt uses sdkVersion.
+  // Both denote the same field. Reject duplicates, including mixed aliases.
+  const minSdk = [...output.matchAll(/^(?:minSdkVersion|sdkVersion):'(\d+)'\r?$/gm)];
   const targetSdk = [...output.matchAll(/^targetSdkVersion:'(\d+)'\r?$/gm)];
   if (packages.length !== 1 || minSdk.length !== 1 || targetSdk.length !== 1) throw Error("invalid_apk_metadata");
   const pkg = packages[0]!, versionCode = Number(pkg[2]);

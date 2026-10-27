@@ -49,3 +49,7 @@ GitHub-hosted runnerのdebug keyは実行環境依存で、異なるrunのdebug 
 - [登録・本人確認](https://support.google.com/googleplay/android-developer/answer/6112435?hl=en)：登録料US$25一回と本人/端末確認。費用承認・登録・支払いは未実施。
 
 ビルド・エミュレーター・公開HTTPの最終実測結果は、この変更を含むdelivery PRに記録する。旧テスト結果を今回のPASSへ読み替えない。
+
+## 実SDK出力への追従
+
+PR初回CIは`invalid_apk_metadata`で停止し、エミュレーターは未実施だった。SDK36の`aapt2 dump badging`は旧` sdkVersion`ではなく`minSdkVersion:'24'`を出力するためで、証明書検証にはまだ到達していなかった。Google公式SDK repository XMLが示すbuild-tools36 Windows zip（58,699,878B、SHA1 `f16ccffd34de8790dede813a6c7d8e2c11a27b50`）を照合し、実際の初回APKで再現した。parserは二つの表記の合計が1行の場合だけ受理し、重複/矛盾/欠落は拒否する。新しい実出力fixtureを追加し、暗号署名検証は省略しない。初回失敗をPASSと読み替えず、修正版の実CI結果を別途確認する。

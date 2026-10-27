@@ -28,6 +28,12 @@ describe("read-only Android APK update evidence", () => {
       expect(() => parseVerifiedApkSigners(output)).toThrow("invalid_apksigner_result");
     expect(() => parseApkBadging("package: name='wrong' versionCode='1' versionName=''\n")).toThrow("invalid_apk_metadata");
   });
+  it("accepts the actual SDK 36 minSdkVersion field while rejecting conflicting aliases", () => {
+    const actual = "package: name='com.tomoya41.baseballnotes' versionCode='1' versionName='0.1.0-beta.1' platformBuildVersionName='16' platformBuildVersionCode='36' compileSdkVersion='36' compileSdkVersionCodename='16'\nminSdkVersion:'24'\ntargetSdkVersion:'36'\n";
+    expect(parseApkBadging(actual)).toMatchObject({ packageId: apk().packageId, minSdk: 24, targetSdk: 36 });
+    expect(() => parseApkBadging(actual + "sdkVersion:'23'\n")).toThrow("invalid_apk_metadata");
+    expect(() => parseApkBadging(actual + "minSdkVersion:'24'\n")).toThrow("invalid_apk_metadata");
+  });
   it("holds signer mismatch, package mismatch and downgrade without proposing destructive fixes", () => {
     expect(compareAndroidApks(apk(), apk({ signerCertificateSha256: [other] }))).toEqual({ status: "held", reasons: ["signer_mismatch_or_unverified_rotation"], installedDeviceVerified: false });
     expect(compareAndroidApks(apk({ versionCode: 2 }), apk({ packageId: "other.package" }))).toEqual({ status: "held", reasons: ["package_mismatch", "version_downgrade"], installedDeviceVerified: false });
