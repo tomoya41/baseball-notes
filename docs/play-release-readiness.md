@@ -1,5 +1,7 @@
 # Google Play release preparation — checked 2026-10-14
 
+2026-10-27の再点検と署名検証付きAPK更新前チェックは[最新提出準備監査](android-submission-audit-2026-10-27.md)を参照。以下の所有者Gateは未完了のまま。
+
 This is preparation, not a Play release. No account registration, fee payment, signature/key change, production Firebase or Play upload was performed. Monthly operating cost remains **¥0**; potential store registration cost is separate.
 
 ## Packaging and owner decisions

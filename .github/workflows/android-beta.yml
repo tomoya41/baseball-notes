@@ -2,7 +2,7 @@ name: Android beta build and release quality
 on:
   push:
     branches: [main, "codex/**"]
-    paths: ["android/**", "src/**", "scripts/prepare-android-web.ts", "scripts/scan-release-assets.ts", "package*.json", "capacitor.config.ts", ".github/workflows/android-beta.yml"]
+    paths: ["android/**", "src/**", "scripts/prepare-android-web.ts", "scripts/scan-release-assets.ts", "scripts/verify-android-apk.ts", "scripts/lib/android-apk-verification.ts", "package*.json", "capacitor.config.ts", ".github/workflows/android-beta.yml"]
   pull_request:
   workflow_dispatch:
     inputs:
@@ -36,6 +36,8 @@ jobs:
       - name: Debug APK and unsigned release AAB
         working-directory: android
         run: bash gradlew :app:assembleDebug :app:assembleRelease :app:bundleRelease :app:assembleDebugAndroidTest --no-daemon
+      - name: Verify debug APK identity and cryptographic signatures
+        run: npx tsx scripts/verify-android-apk.ts --apk=android/app/build/outputs/apk/debug/app-debug.apk --sdk-build-tools="$ANDROID_HOME/build-tools/36.0.0" --report=.data/android-apk-verification.json
       - name: Scan packaged assets and record sizes
         run: |
           mkdir -p .data/apk-inspection
@@ -51,6 +53,14 @@ jobs:
             android/app/build/outputs/apk/release/*.apk
             android/app/build/outputs/bundle/release/*.aab
             android/app/build/outputs/apk/androidTest/debug/*.apk
+          retention-days: 7
+      - name: Retain APK verification separately without changing install artifact paths
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk-verification
+          path: .data/android-apk-verification.json
+          include-hidden-files: true
+          if-no-files-found: error
           retention-days: 7
   emulator:
     needs: build
