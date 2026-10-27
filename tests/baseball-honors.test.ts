@@ -1,7 +1,7 @@
 import {expect,it} from "vitest";
 import {parseNpbHonors} from "../src/infrastructure/providers/wikipedia-npb-honors";
 import {matchLahmanIdentity,parseLahmanHonors} from "../src/infrastructure/providers/lahman-honors";
-import {honorsPageSchema,contextManifestSchema,type HonorRecipient} from "../src/domain/player-honors";
+import {honorsPageSchema,contextManifestSchema,honorProfilePath,type HonorRecipient} from "../src/domain/player-honors";
 const parse=(text:string)=>parseNpbHonors(text,"npb:123","wiki:1:2");
 it("extracts explicit annual titles, nested positions and ranges, retaining raw excerpt hashes",()=>{
  const a=parse('=== タイトル ===\n* [[首位打者 (日本プロ野球)|首位打者]]：2回（2023年、2024年）<ref>2026年</ref>\n=== 表彰 ===\n* [[ベストナイン (日本プロ野球)|ベストナイン]]：3回\n** 外野手部門：2回（2022年 - 2023年）\n** 指名打者部門：1回（2024年）');
@@ -18,3 +18,5 @@ it("requires convergent independent IDs and rejects namesakes, birthdays and spl
 const recipient:HonorRecipient={id:'lahman:abc',name:'Fixture Winner',externalIds:{lahman:'abc'},links:[],counts:{mlb_cy_young:1}};
 it("keeps unlinked winners, co-winners and multiple award-season clubs, including MLB-wide Cy Young",()=>{const a=parseLahmanHonors([{playerID:'abc',awardID:'Cy Young Award',yearID:'1966',lgID:'ML',tie:'Y',notes:''},{playerID:'abc',awardID:'Most Valuable Player',yearID:'1929',lgID:'AL'}],new Map([['abc',recipient]]),new Map([['abc:1966:ML',[{name:'Prior Club',id:null},{name:'Later Club',id:null}]]]),'s');expect(a.records).toHaveLength(1);expect(a.records[0]).toMatchObject({division:'ML',joint:true,year:1966});expect(a.records[0]?.seasonTeams).toHaveLength(2);expect(a.held).toHaveLength(1);expect(honorsPageSchema.safeParse({schemaVersion:1,records:a.records,recipients:[recipient],sources:[{id:'s',name:'SABR',url:'https://sabr.org/lahman-database/',license:'CC-BY-SA-3.0',sha256:'a'.repeat(64)}]}).success).toBe(true);});
 it("rejects broken provenance and unsafe publication paths",()=>{expect(honorsPageSchema.safeParse({schemaVersion:1,records:[],recipients:[{...recipient,links:[{league:'NPB',playerId:'same name',seasons:[]}]}],sources:[]}).success).toBe(false);expect(contextManifestSchema.safeParse({schemaVersion:1,observedAt:'2026-10-27T21:00:00Z',cutoff:2025,coverage:'partial',attribution:'test',years:{NPB:[],MLB:[]},counts:{},files:{'../raw.json':{sha256:'a'.repeat(64),bytes:4}}}).success).toBe(false);});
+
+it("routes historical-only NPB recipients to resolvable seasons without inventing uncovered award-year stats",()=>{const link={league:"NPB" as const,playerId:"00000000-0000-4000-8000-000000000001",seasons:[2000,2001]};expect(honorProfilePath(link,2000)).toBe("/NPB/players/00000000-0000-4000-8000-000000000001/seasons?season=2000");expect(honorProfilePath(link,1999)).toBe("/NPB/players/00000000-0000-4000-8000-000000000001/seasons");});

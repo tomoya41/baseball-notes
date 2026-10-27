@@ -15,3 +15,5 @@ export const contextPath=/^(?:honors\/(?:years\/(?:NPB|MLB)\/\d{4}|players\/(?:N
 export const contextManifestSchema=z.strictObject({schemaVersion:z.literal(1),observedAt:z.iso.datetime(),cutoff:z.literal(2025),coverage:z.literal("partial"),attribution:z.string().min(1),years:z.strictObject({NPB:z.array(z.number().int().min(1936).max(2025)),MLB:z.array(z.number().int().min(1871).max(2025))}),counts:z.record(z.string(),z.number().int().nonnegative()),files:z.record(z.string().regex(contextPath),z.strictObject({sha256:hash,bytes:z.number().int().positive().max(1_000_000)}))});
 export type ContextManifest=z.infer<typeof contextManifestSchema>;
 export const playerHonorBucket=(id:string)=>id.replace(/^mlb:player:/,"").slice(0,2);
+/** NPB seasons resolves both Current and historical-only identities. */
+export function honorProfilePath(link:HonorRecipient["links"][number],year:number){return `/${link.league}/players/${encodeURIComponent(link.playerId)}${link.league==="NPB"?`/seasons${link.seasons.includes(year)?`?season=${year}`:""}`:""}`;}
