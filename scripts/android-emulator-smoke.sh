@@ -16,6 +16,39 @@ native_counter_session="$(cat /proc/sys/kernel/random/uuid)"
 record_app_pid() {
   adb shell pidof com.tomoya41.baseballnotes | tr -d '\r' >> .data/android-emulator/app-pids.txt || true
 }
+diagnose_16kb_failure() {
+  # Only the disposable test emulator is inspected. Keep bounded logs belonging
+  # to observed target PIDs/the target package, including its native tombstone.
+  record_app_pid
+  adb shell dumpsys activity exit-info com.tomoya41.baseballnotes | head -c 32000 > .data/android-emulator/16kb-app-exit-info.txt
+  adb shell dumpsys activity activities | grep -E 'com\.tomoya41\.baseballnotes|topResumedActivity|mResumedActivity' | head -c 16000 > .data/android-emulator/16kb-resumed-state.txt
+  adb shell dumpsys webviewupdate | grep -E 'Current WebView package|Preferred WebView package|Minimum targetSdkVersion|Multiprocess enabled' | head -c 4000 > .data/android-emulator/16kb-webview-provider.txt
+  adb logcat -b main -d -v threadtime -t 500 -s System.out:I | grep 'BASEBALL_PERF native_counter' | head -c 16000 > .data/android-emulator/native-16kb-performance.txt
+  adb logcat -b main -b system -b crash -d -v threadtime -t 1500 \
+    'libc:V' 'DEBUG:V' 'AndroidRuntime:V' 'ActivityManager:V' 'ActivityTaskManager:V' 'chromium:V' 'WebViewLibraryLoader:V' '*:S' |
+    awk 'FILENAME!="-" { for (i=1;i<=NF;i++) own[$i]=1; next }
+      /Cmdline:|>>>/ { own_tombstone=index($0,"com.tomoya41.baseballnotes")>0 }
+      $3 in own || index($0,"com.tomoya41.baseballnotes")>0 || (own_tombstone && / DEBUG /) { print }
+      /Tombstone written to:/ { own_tombstone=0 }' .data/android-emulator/app-pids.txt - |
+    head -c 128000 > .data/android-emulator/16kb-target-crash-diagnostics.txt
+}
+if [ "$page_size" = 16384 ]; then
+  # ERR inheritance covers helper failures as well as the outer shell. Preserve
+  # the failure; diagnostics never turn a failed screen/native test into PASS.
+  set -E
+  trap 'failure_status=$?; trap - ERR; set +e; diagnose_16kb_failure; exit "$failure_status"' ERR
+fi
+native_counter_check() {
+  local phase="$1" session="$2" target="$3"
+  adb shell am instrument -w -e class jp.baseballdata.app.ReleaseQualityTest#nativeSharedCounterLoadsAndPersistsAtActualPageSize \
+    -e expected_page_size "$page_size" -e native_counter_session "$session" -e native_counter_phase "$phase" \
+    com.tomoya41.baseballnotes.test/androidx.test.runner.AndroidJUnitRunner > "$target" &
+  local native_test_pid=$!
+  while kill -0 "$native_test_pid" 2>/dev/null; do record_app_pid; sleep 1; done
+  wait "$native_test_pid"
+  cat "$target"
+  grep -q 'OK (1 test)' "$target"
+}
 network_offline() {
   # svc toggles alone can race the freshly booted emulator's cellular setup.
   # Establish and record a real disconnected transport before asserting UI.
@@ -48,6 +81,7 @@ network_online() {
 wait_screen() {
   local expected="$1" target="$2"
   for attempt in $(seq 1 15); do
+    record_app_pid
     adb shell rm -f /sdcard/window.xml
     if adb shell uiautomator dump /sdcard/window.xml >/dev/null &&
        adb pull /sdcard/window.xml "$target" >/dev/null &&
@@ -63,6 +97,15 @@ adb install artifacts/apk/debug/app-debug.apk
 adb install artifacts/apk/androidTest/debug/app-debug-androidTest.apk
 adb shell wm size 360x800
 adb shell wm density 160
+if [ "$page_size" = 16384 ]; then
+  # Run the real JNI mmap/atomic/persistence check before any WebView/UI launch.
+  # It isolates a native-library failure from a later cold-shell/WebView failure.
+  native_counter_check prepare "preflight-$native_counter_session" .data/android-emulator/native-16kb-prepare.txt
+  adb shell am force-stop com.tomoya41.baseballnotes
+  native_counter_check reopen "preflight-$native_counter_session" .data/android-emulator/native-16kb-reopen.txt
+  adb shell am force-stop com.tomoya41.baseballnotes
+  adb logcat -d -s System.out:I > .data/android-emulator/native-16kb-performance.txt
+fi
 # Fresh install has no data cache: the bundled shell still starts offline.
 network_offline
 adb shell am start -W -n com.tomoya41.baseballnotes/jp.baseballdata.app.MainActivity > .data/android-emulator/cold-launch.txt

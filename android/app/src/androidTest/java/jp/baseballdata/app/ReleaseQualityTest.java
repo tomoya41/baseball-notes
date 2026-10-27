@@ -990,9 +990,11 @@ public class ReleaseQualityTest {
         // Reflection stays in androidTest and deliberately fails if this pinned
         // SDK contract changes; it never substitutes a Java counter or skips JNI.
         ClassLoader targetLoader = target.getClassLoader();
+        System.out.println("BASEBALL_PERF native_counter_begin page_size=" + pageSize + " phase=" + phase);
         Class<?> sharedCounter = Class.forName("androidx.datastore.core.SharedCounter", true, targetLoader);
         Object factory = sharedCounter.getField("Factory").get(null);
         factory.getClass().getMethod("loadLib").invoke(factory);
+        System.out.println("BASEBALL_PERF native_counter_library_loaded page_size=" + pageSize + " phase=" + phase);
         Class<?> nativeCounter = Class.forName("androidx.datastore.core.NativeSharedCounter", true, targetLoader);
         var constructor = nativeCounter.getDeclaredConstructor(); constructor.setAccessible(true);
         Object counter = constructor.newInstance();
