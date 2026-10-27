@@ -53,8 +53,14 @@ jobs:
             android/app/build/outputs/apk/release/*.apk
             android/app/build/outputs/bundle/release/*.aab
             android/app/build/outputs/apk/androidTest/debug/*.apk
-            .data/android-apk-verification.json
+          retention-days: 7
+      - name: Retain APK verification separately without changing install artifact paths
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk-verification
+          path: .data/android-apk-verification.json
           include-hidden-files: true
+          if-no-files-found: error
           retention-days: 7
   emulator:
     needs: build

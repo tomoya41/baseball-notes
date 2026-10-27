@@ -174,3 +174,16 @@ it("native project and workflows retain safety schedules, no secrets or placehol
     expect(steps[notify]["timeout-minutes"]).toBe(5);
   }
 });
+it("keeps downloaded APK paths compatible with the real emulator install script", () => {
+  const workflow = parse(readFileSync(".github/workflows/android-beta.yml", "utf8"));
+  const uploads = workflow.jobs.build.steps.filter((s: { uses?: string }) => s.uses === "actions/upload-artifact@v4");
+  const apk = uploads.find((s: { with: { name: string } }) => s.with.name === "android-beta-unsigned");
+  const report = uploads.find((s: { with: { name: string } }) => s.with.name === "android-apk-verification");
+  const paths = (apk.with.path as string).trim().split(/\r?\n/).map(p => p.trim().split("/").slice(0, -1));
+  const common = paths[0]!.filter((_, i) => paths.every(p => p.slice(0, i + 1).join("/") === paths[0]!.slice(0, i + 1).join("/")));
+  expect(common.join("/")).toBe("android/app/build/outputs");
+  expect(report.with.path).toBe(".data/android-apk-verification.json");
+  const smoke = readFileSync("scripts/android-emulator-smoke.sh", "utf8");
+  expect(smoke).toContain("artifacts/apk/debug/app-debug.apk");
+  expect(smoke).toContain("artifacts/apk/androidTest/debug/app-debug-androidTest.apk");
+});
