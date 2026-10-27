@@ -31,7 +31,7 @@ export function canonicalDeepLink(input: string): string | null {
       if(date!==null&&!z.iso.date().safeParse(date).success)return null;
       return `/NPB/schedule${date ? `?date=${date}` : ""}`;
     }
-    const expanded = ["data", "history", "compare", "team-compare", "season-compare", "postseason", "matchup", "milestones", "form", "cs", "moves", "weekly", "monthly", "season"].includes(portablePath?.split("/")[2] ?? "");
+    const expanded = ["awards", "data", "history", "compare", "team-compare", "season-compare", "postseason", "matchup", "milestones", "form", "cs", "moves", "weekly", "monthly", "season"].includes(portablePath?.split("/")[2] ?? "");
     if (expanded || portablePath === "/NPB/talent/2026") return portableRoute(portablePath!, portableSearch ?? uri.search);
     const [leagueRaw, resource, encoded, child, ...extra] = route.split("?")[0]!.replace(/^\//, "").split("/");
     const teamPlayers = child === "players" && resource === "teams" && leagueRaw?.toUpperCase() === "NPB";
@@ -61,6 +61,7 @@ export function parentNativeRoute(path: string): string | null {
   }
   if (league === "MLB" && /^20\d{2}$/.test(source.get("season") ?? "")) scope.set("season", source.get("season")!);
   const suffix = scope.size ? `?${scope}` : "";
+  if(segments[1]==="awards")return `/${league}/records`;
   if (league === "NPB" && segments[1] === "teams" && segments[3] === "players") return `/NPB/teams/${segments[2]}`;
   if(league==="NPB"&&segments[1]==="talent"&&segments[2]==="2026")return "/NPB/talent";
   if(league==="NPB"&&segments[1]==="games"){

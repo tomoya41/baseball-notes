@@ -1,0 +1,11 @@
+.player-honors { margin-block: 1rem; border-block: 1px solid var(--color-border); padding-block: .8rem; }
+.player-honors > summary { font-weight: 700; cursor: pointer; }
+.honors-list { list-style: none; padding: 0; margin: .7rem 0; }
+.honors-list > li { display: grid; grid-template-columns: 5.2rem minmax(0,1fr); gap: .7rem; padding: .8rem 0; border-bottom: 1px solid var(--color-border); }
+.honors-year,.honors-result { display: flex; flex-direction: column; align-items: flex-start; gap: .25rem; overflow-wrap: anywhere; }
+.honors-year > a { font-size: 1.15rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.honors-list small,.honors-evidence { font-size: .78rem; color: var(--color-muted); }
+.honors-filters { display: flex; flex-wrap: wrap; gap: .6rem; }
+.honors-filters label { display: flex; flex: 1 1 8rem; min-width: 0; flex-direction: column; gap: .25rem; }
+.honors-filters select,.honors-filters input { width: 100%; min-width: 0; }
+.honors-sources { font-size: .85rem; margin-block: 1rem; overflow-wrap: anywhere; }

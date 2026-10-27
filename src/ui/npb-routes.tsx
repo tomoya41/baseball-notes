@@ -1,3 +1,4 @@
+import {HonorsScreen} from "./player-honors";
 import { lazy, Suspense } from "react";
 import { Link, Navigate, Route, Routes, useLocation, useSearchParams } from "react-router-dom";
 import type { Services } from "../app/services";
@@ -72,6 +73,7 @@ export function NpbRoutes({ services, favorites, toggle, saving }: { services: S
     <Route path="teams/:teamId/players" element={<Suspense fallback={<p role="status">選手一覧を読み込み中…</p>}><NpbTeamPlayers services={services} favorites={favorites} /></Suspense>} />
     <Route path="teams" element={<NpbTeams services={services} />} />
     <Route path="compare" element={<NpbPlayerCompare services={services} />} />
+    <Route path="awards" element={<HonorsScreen league="NPB"/>}/>
     <Route path="records" element={<NpbRecordsScreen repository={services.gameSurface} />} />
     <Route path="ranking" element={<Navigate to="/NPB/records" replace />} />
     <Route path="my" element={<div className="screen"><header><p className="eyebrow">NPB / My</p><h1>My</h1></header>{favorites.some(f => f.league === "NPB") ? <><NpbPersonalDashboard services={services} favorites={favorites} toggle={toggle} saving={saving} /><NpbSavedPlayers heading={false} repository={services.directory} favorites={favorites} toggle={toggle} saving={saving} /></> : <section className="my-start"><p>選手・球団をフォローすると、ここで成績や変化を追えます。</p><div className="hub-links"><Link to="/NPB/search">選手を探す →</Link><Link to="/NPB/teams">球団を探す →</Link></div></section>}<Link className="section-action" to="/NPB/moves?follow=1">フォローに関連する選手の動き →</Link><MyLibrary league="NPB" /></div>} />

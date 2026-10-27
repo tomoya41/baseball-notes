@@ -5,6 +5,7 @@ import { historicalBattingKeys, historicalPitchingKeys, historicalRates, npbHist
 import { npbCompetitionAggregateSchema, type NpbCompetitionAggregate } from "../../domain/npb-competition";
 import type { NpbCsDataset } from "../../domain/npb-cs-observations";
 import { splitWikipediaCells as split } from "./wikipedia-cells";
+import {inningScoreSchema,type InningScore} from "../../domain/inning-score";
 
 const teams: Record<string, string> = { 日本ハム: "fighters", 西武: "lions", ソフトバンク: "hawks", DeNA: "baystars", 巨人: "giants", 阪神: "tigers" };
 const plain = (v: string) => v.replace(/'''?/g, "").replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_, a: string, b?: string) => b ?? a).replace(/<[^>]*>/g, "").replace(/\s/g, "");
@@ -19,6 +20,7 @@ export function parseWikipediaCs(raw: unknown, observedAt: string, identities: r
   const text = original.replace(/<!--[\s\S]*?-->/g, ""), byArticle = new Map(identities.map(v => [v.article, v.playerId]));
   if (byArticle.size !== identities.length) throw Error("Ambiguous article identity");
   const games: NpbCsDataset["games"] = [], observations: { aggregate: NpbCompetitionAggregate; gameId: string; identityReference?: { field: string; article: string; label: string } }[] = [], issues: { date?: string; reason: string; article?: string }[] = [];
+  const scoreboards:InningScore[]=[];
   const starts = [...text.matchAll(/\{\{Linescore\s*\n/g)];
   for (let n = 0; n < starts.length; n++) {
     const start = starts[n]!.index!, end = starts[n + 1]?.index ?? text.length, block = text.slice(start, end), before = text.slice(0, start);
@@ -110,9 +112,12 @@ export function parseWikipediaCs(raw: unknown, observedAt: string, identities: r
         return known(String(teamId), "batting", "R") > Number(runs) || known(String(teamId), "batting", "RBI") > Number(runs) || hits !== null && known(String(teamId), "batting", "H") > Number(hits) || known(String(teamId), "pitching", "ER") > Number(opponentRuns) || opponentHits !== null && known(String(teamId), "pitching", "H") > Number(opponentHits) || known(String(teamId), "pitching", "outsRecorded") > innings * 3;
       });
       games.push(game);
+      const side=(prefix:string,id:string,runs:number,hits:number|null)=>{const keys=Object.keys(fields).filter(k=>new RegExp(`^${prefix}\\d+$`).test(k));const length=Math.max(...keys.map(k=>Number(k.slice(1))));return{id,runs,hits,errors:number(fields[`${prefix}E`]??""),innings:Array.from({length},(_,i)=>{const v=plain(fields[`${prefix}${i+1}`]!);return v.toUpperCase()==="X"?"X" as const:/x$/i.test(v)?`${parseInt(v)}x`:Number(v);})};};
+      try{scoreboards.push(inningScoreSchema.parse({gameId:id,league:"NPB",season:2026,date,competition:"postseason",away:side("R",awayTeamId,rs,game.awayHits),home:side("H",homeTeamId,hs,game.homeHits),sourceId:`wiki:${p.pageid}:${rev.revid}`,evidenceSha256:createHash("sha256").update(block.slice(0,close+2)).digest("hex")}));}
+      catch{issues.push({date,reason:"supplemental_scoreboard_validation"});}
       if (mismatch) issues.push({ date, reason: "box_team_totals_conflict" });
       else observations.push(...perGame);
     } catch (e) { issues.push({ date, reason: (e as Error).message }); }
   }
-  return { source: { pageId: p.pageid, title: p.title, revision: rev.revid, revisionAt: rev.timestamp, contentSha256: createHash("sha256").update(original).digest("hex") }, games, observations, issues };
+  return { source: { pageId: p.pageid, title: p.title, revision: rev.revid, revisionAt: rev.timestamp, contentSha256: createHash("sha256").update(original).digest("hex") }, games, observations, issues,scoreboards };
 }

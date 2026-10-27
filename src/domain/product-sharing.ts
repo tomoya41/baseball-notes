@@ -18,6 +18,7 @@ export function portableRoute(path: string, search = ""): string | null {
   const parts = path.split("/").filter(Boolean), league = parts[0];
   if (league !== "NPB" && league !== "MLB") return null;
   const resource = parts[1], source = new URLSearchParams(search), clean = new URLSearchParams();
+  if(resource==="awards"&&parts.length===2){const year=source.get("year"),award=source.get("award");if(year!==null&&(!/^\d{4}$/.test(year)||Number(year)<(league==="NPB"?1936:1871)||Number(year)>2025)||award!==null&&!/^[a-z0-9_-]+$/.test(award))return null;if(year)clean.set("year",year);if(award)clean.set("award",award);if(source.has("q"))clean.set("q",source.get("q")!.slice(0,100));return `${path}${clean.size?`?${clean}`:""}`;}
   if(league==="NPB"&&needsNpbSeasonEntry(path,source))return source.get("season")==="2027"?"/NPB/season?season=2027":null;
   if(league==="NPB"&&resource==="season"&&parts.length===2){
     const season=source.get("season")??"2027";if(!["2026","2027"].includes(season))return null;

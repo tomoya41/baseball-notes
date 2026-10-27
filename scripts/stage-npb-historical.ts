@@ -55,4 +55,6 @@ const finalDraft = await stageNpbFinalDraft(join(target,"..","draft"));
 const { stageNpbPlayerEvents } = await import("./stage-npb-player-events");
 const events = await stageNpbPlayerEvents(join(target,"..","events"));
 const gameDateIndex = await stageNpbGameDateIndex(join(target,"..","games"));
-console.log(JSON.stringify({retained,current,competition,cs,series,japan,draft,finalDraft,events,gameDateIndex}));
+const {stageBaseballContext}=await import("./stage-baseball-context");
+const context=await stageBaseballContext(join(target,"..","..","baseball-context"));
+console.log(JSON.stringify({retained,current,competition,cs,series,japan,draft,finalDraft,events,gameDateIndex,context}));

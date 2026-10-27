@@ -1,3 +1,4 @@
+import { InningScoreboard } from "./inning-scoreboard";
 import { UnavailableDailyMvp } from "./daily-mvp";
 import { PostseasonSpotlight } from "./postseason-spotlight";
 import { EditorialCover } from "./editorial-cover";
@@ -19,7 +20,7 @@ const observedDate=(data:NpbJapanSeries)=>dateInZone(Date.parse(data.observedAt)
 const observedTime=(time:string)=>new Intl.DateTimeFormat("ja-JP",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit",timeZone:"Asia/Tokyo"}).format(new Date(time));
 function InningScore({data,gameId}:{data:NpbJapanSeries;gameId:string}){
   const result=data.results.find(r=>r.gameId===gameId),game=data.series.games.find(g=>g.gameId===gameId);if(!result||!game)return null;
-  return <section><h2>イニング別得点</h2><table className="series-innings" aria-label="イニング別得点"><thead><tr><th scope="col">回</th><th scope="col">{name(game.awayTeamId)}</th><th scope="col">{name(game.homeTeamId)}</th></tr></thead><tbody>{result.awayInnings.map((runs,i)=><tr key={i}><th scope="row">{i+1}</th><td>{runs}</td><td>{i===result.homeInnings.length-1&&result.homeLastInning==="not_played"?"X":`${result.homeInnings[i]}${i===result.homeInnings.length-1&&result.homeLastInning==="walk_off"?"x":""}`}</td></tr>)}</tbody></table><p className="inline-note">試合時間 {Math.floor(result.durationMinutes/60)}時間{result.durationMinutes%60}分 · Xはその回の攻撃なし、xはサヨナラ終了。投球アウト数は推定しません。</p></section>;
+  return <><InningScoreboard away={{name:name(game.awayTeamId),runs:game.awayRuns,innings:result.awayInnings}} home={{name:name(game.homeTeamId),runs:game.homeRuns,innings:result.homeInnings.map((n,i)=>i===result.homeInnings.length-1&&result.homeLastInning==="not_played"?"X":i===result.homeInnings.length-1&&result.homeLastInning==="walk_off"?`${n}x` as const:n)}}/><p className="inline-note">試合時間 {Math.floor(result.durationMinutes/60)}時間{result.durationMinutes%60}分</p></>;
 }
 const gameUrl=(id:string)=>`/NPB/games/${encodeURIComponent(id)}?season=2026&competition=postseason&stage=japan_series`;
 function useJapan(valid:boolean){

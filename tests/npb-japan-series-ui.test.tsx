@@ -46,5 +46,5 @@ it("keeps CS rows usable when Japan Series fails, with an explicit partial warni
 });
 it("shows source-reviewed inning scores and X in an accessible narrow table, without inventing individual stats",async()=>{
   const f=await mount("/NPB/games/npb:game:9f6c547e7852f6c5a928?competition=postseason&stage=japan_series",false,d=>{const r=japanResultFixture();Object.assign(d,buildWikipediaJapanSeries(r.archive,r.cs,"b".repeat(64),r.admission,r.review,r.now));});
-  try{expect(f.host.textContent).toContain("イニング別得点");expect(f.host.textContent).toContain("試合時間 3時間12分");expect(f.host.textContent).toContain("最終確認");expect(f.host.querySelectorAll("tbody tr")).toHaveLength(9);expect(f.host.querySelector("tbody tr:last-child td:last-child")!.textContent).toBe("X");expect(f.host.textContent).toContain("投球成績は未収録");expect(f.host.querySelectorAll("table")).toHaveLength(1);}finally{await f.close();}
+  try{expect(f.host.textContent).toContain("イニング別得点");expect(f.host.textContent).toContain("試合時間 3時間12分");expect(f.host.textContent).toContain("最終確認");expect(f.host.querySelectorAll("tbody tr")).toHaveLength(2);expect(f.host.querySelector("tbody tr:last-child td:nth-child(10)")!.textContent).toBe("X");expect(f.host.textContent).toContain("投球成績は未収録");expect(f.host.querySelectorAll("table")).toHaveLength(1);}finally{await f.close();}
 });
