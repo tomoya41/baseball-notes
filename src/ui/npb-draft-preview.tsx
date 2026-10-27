@@ -1,3 +1,4 @@
+import { DraftSourceLink } from "./npb-draft-source-link";
 import { formatThrowBat } from "../presentation/baseball-language";
 import { Link } from "react-router-dom";
 import { draftTeams, draftExpandedPredictionOutcome, type DraftEvent } from "../domain/npb-draft-event";
@@ -34,7 +35,7 @@ export function NpbExpandedDraftPreview({data,team}:{data:DraftEvent;team:string
         if(!draftForecastAdmission(c,group).admitted)return <DraftHeldPrediction key={p.round} candidate={c} group={group} round={p.round}/>;
         return <article key={p.round}>
           <Link className="player-row" to={`/NPB/talent/2026?view=candidates&forecast=expanded&q=${encodeURIComponent(c.name)}`}><div className="player-row__body"><small>{p.round}位 · {group?draftGroupLabels[group]:"区分未確認"} · 独自予想</small><strong>{c.name}</strong><span>{c.affiliation} · {c.position}</span></div><span aria-hidden="true">→</span></Link>
-          <details><summary>{p.round}位の理由・答え合わせ</summary><p>{p.reason}</p>{actualPlayer&&<p>収録済みの支配下{p.round}位：<strong>{actualPlayer.name}</strong> · {actualPlayer.affiliation}</p>}<p>{({unavailable:"指名結果が未収録のため、答え合わせ待ちです。",match:"収録済みの指名と一致しています。",unverified:"記事・所属表記の照合を確認中です。名前だけで一致・不一致を判定しません。",different:"収録済みの指名は独自予想と異なります。"})[outcome]}</p><p>{c.context}</p></details>
+          <details><summary>{p.round}位の理由・答え合わせ</summary><p>{p.reason}</p>{actualPlayer&&<p>収録済みの支配下{p.round}位：<strong>{actualPlayer.name}</strong> · {actualPlayer.affiliation}{actual&&<> · <DraftSourceLink data={data} row={actual}/></>}</p>}<p>{({unavailable:"指名結果が未収録のため、答え合わせ待ちです。",match:"収録済みの指名と一致しています。",unverified:"記事・所属表記の照合を確認中です。名前だけで一致・不一致を判定しません。",different:"収録済みの指名は独自予想と異なります。"})[outcome]}</p><p>{c.context}</p></details>
         </article>;
       })}
     </section>)}

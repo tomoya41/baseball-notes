@@ -472,3 +472,7 @@ During the explicit 2026 Japan Series editorial window, one small static competi
 ### 2026-10-26 — 未来年度の準備状態をカレンダーやFactから分離
 
 2027年は明示的な未収録入口を提供し、旧年度の成績・所属・試合なし判定を複製しない。未来年度のCurrent画面はadapter読込前に止め、2026年の既存URL・Myを保持する。新年度公開は独立したSource/calendar/identity/coverageレビュー後とする。[準備と棚卸し](npb-season-2027-readiness.md)。
+
+### 2026-10-27 — ドラフト追補の改版を旧出典から分離
+
+同じ記事の表が改版されても、旧候補・指名・保存予想の出典を最新改版へ付け替えない。限定追補では旧`sources`を保持し、同じ記事の明示的な`additionalSources`と行ごとの`sourceRevision`で新しい根拠を参照する。本人・slot・行hashをレビューし、未解決訂正を追加に偽装しない。旧版APKは旧immutable URLを使い続ける。詳細は[追補とrollback](npb-draft-result-additions.md)。

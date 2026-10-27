@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { draftTeams, type DraftEvent } from "./npb-draft-event";
+import { draftTeams, draftEvidenceSource, type DraftEvent } from "./npb-draft-event";
 import { draftForecastAdmission, draftEligibilityReview } from "./npb-draft-eligibility";
 
 export const draft2026Start = "2026-10-22T07:50:00Z";
@@ -125,7 +125,7 @@ export function finalDraftOutcome(f: FinalDraftForecast, base: DraftEvent, teamI
   // Abbreviations/changed names stay unverified rather than being silently normalized.
   const individualUrls = individualIdentityUrls(expected, f.candidates);
   const mappedCandidate = bridge && base.candidates.find(c => c.id === bridge.resultCandidateId && c.name === bridge.name && c.affiliation === bridge.affiliation && c.article === bridge.article && c.evidenceSha256 === bridge.resultEvidenceSha256);
-  const resultSource = mappedCandidate && base.sources.find(s => s.pageId === mappedCandidate.sourcePageId);
+  const resultSource = mappedCandidate && draftEvidenceSource(base,mappedCandidate);
   const resultUrl = resultSource && `https://ja.wikipedia.org/w/index.php?curid=${resultSource.pageId}&oldid=${resultSource.revision}`;
   const bridged = bridge && bridge.name === expected.name && bridge.affiliation === expected.affiliation &&
     resultSource && Date.parse(bridge.reviewedAt) >= Date.parse(resultSource.revisionAt) && bridge.identityEvidenceUrls.some(u => individualUrls.includes(u)) &&

@@ -23,6 +23,16 @@ it("checks horizontal/vertical/bold-rank rows against explicit matrix team colum
   expect(a.rows.map(r => r.type)).toEqual(["regular", "developmental", "regular"]);
   expect(a.rows[0]).toMatchObject({ teamId: "npb:team:tigers", name: "架空一", article: "架空一", affiliation: "架空大学" });
 });
+it("supports a separate empty fourth cell and a balanced affiliation footnote without importing its claims",()=>{
+  const old="!'''1位'''\n|架空三\n|外野手\n|[[架空大学]]\n|";
+  const split=fixture().replace(old,"!1位\n|[[架空三]]||外野手||[[架空大学]]\n|");
+  const note="{{Refnest|架空の補足<ref>{{Cite web|title=架空の参照|url=https://example.test/source}}</ref>。}}";
+  const annotated=fixture().replace(old,`!1位\n|[[架空三]]||外野手||[[架空大学]]${note}||`);
+  for(const text of [split,annotated]){const a=auditDraft2026ResultTables(text);expect(a.rows).toHaveLength(3);expect(a.quarantine).toEqual([]);expect(a.rows.find(r=>r.type==="developmental")).toMatchObject({name:"架空三",article:"架空三",affiliation:"架空大学"});}
+  for(const text of [split.replace("[[架空大学]]\n|","[[架空大学]]\n|不明\n|"),annotated.replace(note,note+"別の所属"),annotated.replace(note,note.slice(0,-2)),annotated.replace("[[架空大学]]"+note,"架空大学"+note)]){
+    const a=auditDraft2026ResultTables(text);expect(a.rows).toHaveLength(2);expect(a.quarantine).toHaveLength(1);
+  }
+});
 it("supports only explicit display wrappers and provisional links, without inventing Japanese article identities", () => {
   for (const [row, matrix, school] of [
     ["架空三", "<small>[[架空三|架空<br/>三]]</small>", "[[架空大学]]"],
