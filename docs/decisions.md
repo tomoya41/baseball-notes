@@ -1,5 +1,9 @@
 # Durable Decisions
 
+## 2026-10-28: Independently licensed historical honors and supplemental linescores
+
+Keep annual honors separate from statistical seasons and app-selected MVPs. Link recipients only by convergent independent IDs and an existing profile; awards outside statistical coverage do not create season rows. Keep source-specific ShareAlike licenses separate from application code. Supplemental inning data must match admitted Game identity, scope and totals, and never fills missing innings with zero. Use additive, hash-scoped static projections with bounded lazy reads; rollback changes the pin/app, never old assets or the canonical DB. See `docs/baseball-honors-scoreboard.md`.
+
 ## 2026-10-01: Data-first sports presentation and contextual metric help
 
 Results use a shared aligned scoreboard; primary statistics and rankings use ruled rows, explicit season/sample context and tabular values. Decorative hero copy is removed. Metric definitions live in local accessible dialogs next to their labels; qualification rules remain a separate disclosure. This changes presentation only, with existing calculations, null semantics and capability gates retained. See `docs/sports-ui-research.md` for first-party research and the app-specific interpretation.

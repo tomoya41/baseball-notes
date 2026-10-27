@@ -48,6 +48,6 @@ export function RecordsView({payload}:{payload:NpbRecords}){return <><p>2026シ�
 export function NpbRecordsScreen({repository}:{repository:GameSurfaceReader}){
   const [payload,setPayload]=useState<NpbRecords|null>(null),[error,setError]=useState(false);
   useEffect(()=>{let active=true;void repository.records().then(v=>{if(active)setPayload(v);}).catch(()=>{if(active)setError(true);});return()=>{active=false;};},[repository]);
-  return <div className="screen"><PageHeading eyebrow="NPB" title="シーズン記録"/><nav className="profile-tabs" aria-label="記録の種類"><Link to="/NPB/records" aria-current="page">シーズン成績</Link><Link to="/NPB/milestones">達成記録</Link><Link to="/NPB/history?season=2025">過去の成績（一部）</Link></nav>{error?<DataState kind="source-unavailable" title="記録データを読み込めません"/>:
+  return <div className="screen"><PageHeading eyebrow="NPB" title="シーズン記録"/><nav className="profile-tabs" aria-label="記録の種類"><Link to="/NPB/records" aria-current="page">シーズン成績</Link><Link to="/NPB/milestones">達成記録</Link><Link to="/NPB/awards">タイトル・表彰</Link><Link to="/NPB/history?season=2025">過去の成績（一部）</Link></nav>{error?<DataState kind="source-unavailable" title="記録データを読み込めません"/>:
     payload?<RecordsView payload={payload}/>:<LoadingSkeleton/>}</div>;
 }

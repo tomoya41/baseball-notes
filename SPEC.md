@@ -4,6 +4,8 @@ Status: Architecture selected; Phase 0 vertical proof and Analysis A foundation.
 
 Competition scope: Regular Season and Postseason are first-class, separate scopes. Absent legacy scope means Regular Season. Postseason has canonical Series, explicit rounds, rule advantages and independently admitted stats/analysis; its numbers never enter regular Season/Recent/Records/rankings. NPB CS Final advantage is not a played Game. Current/Historical availability depends on each league's verified source rights. See `docs/postseason.md`.
 
+Historical honors are independent annual source records, not inferred rankings or new season statistics. Supplemental inning scoreboards preserve existing Game identities and totals; unknown innings never become zero. See `docs/baseball-honors-scoreboard.md`.
+
 ---
 
 ## 1. Product vision

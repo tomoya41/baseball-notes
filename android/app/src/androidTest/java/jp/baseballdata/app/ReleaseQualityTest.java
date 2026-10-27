@@ -1053,4 +1053,25 @@ public class ReleaseQualityTest {
         js("document.querySelector('.japan-home-result').click()");waitText("アプリ独自選出");
         assertTrue("No invented Japan Series MVP",js("document.querySelector('.daily-mvp').innerText").contains("選手成績未収録"));
     }
+    @Test public void honorsAndHorizontalScoreboard() throws Exception {
+        scenario = ActivityScenario.launch(MainActivity.class); waitText("BASEBALL");
+        shell("wm size 360x800"); setTheme("light", "ライト");
+        js("location.hash='#/MLB/awards?year=2024&award=mlb_mvp'");
+        waitText("Shohei Ohtani");
+        assertEquals("Award winners remain a list of actual source records", "2", js("document.querySelectorAll('.honors-list > li').length"));
+        screenshot("honors-360-light");
+        js("location.hash='#/MLB/games/mlb%3Agame%3A331cd576-4f1a-5a52-8a23-c1a31726a070?season=2024&competition=postseason'");
+        waitCondition("Verified 2024 World Series inning score", "document.querySelector('.inning-board__table')?.textContent.includes('4x')");
+        assertEquals("Two teams, not inning rows", "2", js("document.querySelectorAll('.inning-board__table tbody tr').length"));
+        assertEquals("Scoreboard scroll is local to the region", "true", js("document.documentElement.scrollWidth<=innerWidth && document.querySelector('.inning-board__scroll').scrollWidth>document.querySelector('.inning-board__scroll').clientWidth"));
+        js("document.querySelector('.inning-board').scrollIntoView({block:'start'})");
+        screenshot("scoreboard-360-light");
+        setTheme("dark", "ダーク"); fontScaleAndRecreate(2.0f); waitText("BASEBALL");
+        js("location.hash='#/MLB/games/mlb%3Agame%3A331cd576-4f1a-5a52-8a23-c1a31726a070?season=2024&competition=postseason'");
+        waitCondition("200% score remains horizontal", "document.querySelector('.inning-board__table')?.textContent.includes('4x')");
+        assertEquals("200% has no document overflow", "true", js("document.documentElement.scrollWidth<=innerWidth"));
+        assertEquals("Accessible row headers", "2", js("document.querySelectorAll('.inning-board__table th[scope=row]').length"));
+        js("document.querySelector('.inning-board').scrollIntoView({block:'start'})");
+        screenshot("scoreboard-360-dark-200");
+    }
 }
