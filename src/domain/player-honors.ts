@@ -16,4 +16,8 @@ export const contextManifestSchema=z.strictObject({schemaVersion:z.literal(1),ob
 export type ContextManifest=z.infer<typeof contextManifestSchema>;
 export const playerHonorBucket=(id:string)=>id.replace(/^mlb:player:/,"").slice(0,2);
 /** NPB seasons resolves both Current and historical-only identities. */
-export function honorProfilePath(link:HonorRecipient["links"][number],year:number){return `/${link.league}/players/${encodeURIComponent(link.playerId)}${link.league==="NPB"?`/seasons${link.seasons.includes(year)?`?season=${year}`:""}`:""}`;}
+export function honorProfilePath(link:HonorRecipient["links"][number],year:number,award?:Pick<Honor,"awardId"|"position">){
+ const query=new URLSearchParams();if(link.seasons.includes(year))query.set("season",String(year));
+ if(link.league==="NPB"&&award&&(["npb_era","npb_w","npb_so","npb_sv","npb_relief","npb_wpct","npb_hold","npb_sawamura"].includes(award.awardId)||award.position==="投手部門"))query.set("role","pitching");
+ return `/${link.league}/players/${encodeURIComponent(link.playerId)}${link.league==="NPB"?"/seasons":""}${query.size?`?${query}`:""}`;
+}
