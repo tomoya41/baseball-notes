@@ -11,7 +11,7 @@ on:
         type: boolean
         default: true
       page_size:
-        description: Standard API 36 regression or API 35 with actual 16 KB pages
+        description: Standard API 36 regression or API 36 with actual 16 KB pages
         type: choice
         options: [standard, 16kb]
         default: standard
@@ -92,7 +92,7 @@ jobs:
           sudo udevadm trigger --name-match=kvm
       - uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
         with:
-          api-level: ${{ inputs.page_size == '16kb' && 35 || 36 }}
+          api-level: 36
           arch: x86_64
           profile: pixel_2
           target: ${{ inputs.page_size == '16kb' && 'google_apis_ps16k' || 'google_apis' }}

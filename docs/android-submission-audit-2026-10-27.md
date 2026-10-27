@@ -69,3 +69,15 @@ PR初回CIは`invalid_apk_metadata`で停止し、エミュレーターは未実
 [Run 40445143266](https://github.com/tomoya41/baseball-notes/actions/runs/40445143266)は実測`PAGE_SIZE=16384`でAPKをインストールできたが、native検証の開始前にtarget processが終了した。自アプリ限定`ApplicationExitInfo`は`reason=3 (LOW_MEMORY) / status=9`を記録し、JNI開始ログも出ていない。ローカル診断はignored `.data/release-quality-20261027/16kb-second/16kb-app-exit-info.txt`。これは低メモリーkillの証拠であり、nativeライブラリ不良やRELROのクラッシュの証拠にはしない。16KBのruntime合格ではなく、検証未完了の失敗として残す。
 
 該当runのguest RAMは自動設定2,560MBだったため、16KB指定のときだけ[pinned emulator actionの対応入力`ram-size`](https://github.com/ReactiveCircus/android-emulator-runner/blob/a421e43855164a8197daf9d8d40fe71c6996bb0d/action.yml)で`4096M`に固定する。通常API36のメモリー設定は変更しない。既存[public Linux standard runnerは16GB RAM](https://docs.github.com/en/actions/reference/runners/github-hosted-runners)のままで、有料runnerへ変更しない。次回はguestの総メモリー/空きメモリーを記録し、同じ16384照合・native読書き・再起動・UIの合格条件を全て維持して検証する。互換モード、テスト省略、前回失敗のPASS化は行わない。
+
+RAM修正後run40490472605は実16KB/guest RAM約4GBでnative prepare→別process reopenを両方成功させた。全UIは未合格で、終了時のown-process tombstoneはWebView124の`MemoryInfra`/`libmonochrome_64.so`内SIGTRAPを示した。DataStoreの16KB不適合と断定せず、別に判明した旧WebViewのcustom-scheme URL解析差異はアプリ側で修正する。
+
+現在の[Google公式system image metadata](https://dl.google.com/android/repository/sys-img/google_apis/sys-img2-3.xml)に、`system-images;android-36;google_apis_ps16k;x86_64` revision7（`x86_64-ps16k-36_r07.zip`、1,849,428,145B、公開SHA1 `dd783282e84bf475a02eba6777c79fc5695e1583`）があることを2026-10-27に確認した。16KB検証も通常検証と同じAPI36の公式imageへ更新し、実`getconf PAGE_SIZE=16384`・JNI・cold link・全UI・保存/再起動の条件を維持する。API35/WebView124の失敗は記録に残し、image変更だけで旧環境の不具合を修正済みとは扱わない。新imageの成功は実行後に判定する。
+
+### 古いWebViewでのcold linkとシステムWebViewの障害
+
+[Run 40490472605](https://github.com/tomoya41/baseball-notes/actions/runs/40490472605)は実測16KB・guest総メモリー4,014,392kBで、DataStore JNIのprepare値8と別プロセスreopen値9がそれぞれ1テストPASS。低メモリーによる初期化停止は再現しなかった。一方、cold linkの有効なURI受信後にHomeへ戻る不具合と、後続のnative crashで全画面検証は失敗した。
+
+同imageのWebView124は[non-special schemeのhostnameを分解しないChromiumの既知問題](https://issues.chromium.org/issues/40283413/resources)の影響範囲で、[Chrome130で解析が変更されている](https://issues.chromium.org/issues/373928202)。`canonicalDeepLink`は`baseballnotes://`のNPB/MLB authorityを先に厳格検証し、解析時だけHTTPS形式へ変換する。通信は発生せず、既存canonical ID/日付/season/Competition検証をそのまま使う。credentials・port・backslash・未符号化空白/制御文字・fragment・第三者hostは受理しない。旧エンジンのopaque解析fixtureと既存リンク回帰で確認する。実エミュレーターでの修正後結果は別途必要。
+
+同run終盤の終了理由は`APP CRASH(NATIVE) / status=5`。`MemoryInfra` threadのSIGTRAPとsystem WebView124の`TrichromeLibrary.apk!libmonochrome_64.so`のbacktraceが記録された。DataStoreのRELRO不良やcold link修正済みの証拠へ読み替えず、外部WebViewを含む16KB全画面QAは保留する。互換モード・テスト条件の緩和で回避しない。
