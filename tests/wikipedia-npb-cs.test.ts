@@ -25,6 +25,7 @@ it("accepts an explicitly observed final but never splits combined walks and HBP
   expect(row.metrics.SO).toBe(10); expect(row.metrics.BB).toBeNull(); expect(row.metrics.HBP).toBeNull(); expect(row.metrics.WHIP).toBeNull();
   expect(row.metrics.ERA).toBe(0); expect(row.metrics.W).toBe(1);
 });
+it("isolates unknown supplemental error cells from the existing accepted player observations",()=>{const result=parse(template.replace('|RR=1','|RE=unknown|RR=1'));expect(result.games).toHaveLength(1);expect(result.observations).toHaveLength(1);expect(result.scoreboards).toEqual([]);expect(result.issues.some(i=>i.reason==='supplemental_scoreboard_validation')).toBe(true);});
 it("preserves blank vs explicit zero and never merges a plain name", () => {
   const blank = parse(template.replace("||0||0||10||1", "|| ||0||10||1"));
   expect(blank.observations[0]?.aggregate.metrics.H).toBeNull(); expect(blank.observations[0]?.aggregate.metrics.HR).toBe(0);

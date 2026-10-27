@@ -113,7 +113,8 @@ export function parseWikipediaCs(raw: unknown, observedAt: string, identities: r
       });
       games.push(game);
       const side=(prefix:string,id:string,runs:number,hits:number|null)=>{const keys=Object.keys(fields).filter(k=>new RegExp(`^${prefix}\\d+$`).test(k));const length=Math.max(...keys.map(k=>Number(k.slice(1))));return{id,runs,hits,errors:number(fields[`${prefix}E`]??""),innings:Array.from({length},(_,i)=>{const v=plain(fields[`${prefix}${i+1}`]!);return v.toUpperCase()==="X"?"X" as const:/x$/i.test(v)?`${parseInt(v)}x`:Number(v);})};};
-      scoreboards.push(inningScoreSchema.parse({gameId:id,league:"NPB",season:2026,date,competition:"postseason",away:side("R",awayTeamId,rs,game.awayHits),home:side("H",homeTeamId,hs,game.homeHits),sourceId:`wiki:${p.pageid}:${rev.revid}`,evidenceSha256:createHash("sha256").update(block.slice(0,close+2)).digest("hex")}));
+      try{scoreboards.push(inningScoreSchema.parse({gameId:id,league:"NPB",season:2026,date,competition:"postseason",away:side("R",awayTeamId,rs,game.awayHits),home:side("H",homeTeamId,hs,game.homeHits),sourceId:`wiki:${p.pageid}:${rev.revid}`,evidenceSha256:createHash("sha256").update(block.slice(0,close+2)).digest("hex")}));}
+      catch{issues.push({date,reason:"supplemental_scoreboard_validation"});}
       if (mismatch) issues.push({ date, reason: "box_team_totals_conflict" });
       else observations.push(...perGame);
     } catch (e) { issues.push({ date, reason: (e as Error).message }); }
