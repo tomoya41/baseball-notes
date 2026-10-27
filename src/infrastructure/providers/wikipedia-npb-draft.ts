@@ -63,6 +63,7 @@ export function carryDraftPreview(previous:DraftEvent,incoming:DraftEvent,pages:
   return {...incoming,
     candidates:[...previous.candidates,...incoming.candidates.filter(c=>!previous.candidates.some(p=>p.id===c.id))],
     sources:[...incoming.sources,...previous.sources.filter(s=>!incoming.sources.some(p=>p.pageId===s.pageId))],
+    ...(previous.additionalSources?{additionalSources:previous.additionalSources}:{}),
     expandedForecast:previous.expandedForecast,researchedForecast:previous.researchedForecast,
     candidateGroups:[...previous.candidateGroups??[],...incoming.candidates.filter(c=>!previous.candidateGroups?.some(g=>g.candidateId===c.id)).map(c=>({candidateId:c.id,group:"university" as const}))],
     review:previous.review,

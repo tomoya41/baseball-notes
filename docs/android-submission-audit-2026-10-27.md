@@ -18,7 +18,7 @@ npx tsx scripts/verify-android-apk.ts --apk=<候補APK> --sdk-build-tools=<SDK�
 
 過去の非公開ローカル証拠には、初回APK SHA256 `3fc935e113aafa419a03efc084c9df36c0b0657b2a6b31378d0f15f35672ac09` の埋込公開証明書 `223912d3da4f0c257f9a849c05a6db9dabb11caa7b2d36fba92803ce00ce360f` と、後続APKの別証明書が記録されている。ただし、その旧手法は証明書の抽出であり暗号署名検証ではないため、更新許可の証拠には流用しない。
 
-今回、初回APKの実在と上記ファイルSHA256、およびPR #85の保存APK SHA256 `b71ec2c7e06df8fa24168aa71e91f97cbacf12bb9af13af73a1ee5bbd0e981cf` をGet-FileHashで再確認。ローカルSDK/JDKが利用できないため、この2本のapksigner付き比較は未実施。新しいCIビルド自身の暗号署名検証と、初回APK/実機との更新互換性は別の確認事項として保持する。
+今回、初回APKの実在と上記ファイルSHA256、およびPR #85の保存APK SHA256 `b71ec2c7e06df8fa24168aa71e91f97cbacf12bb9af13af73a1ee5bbd0e981cf` をGet-FileHashで再確認。初回確認時はローカルSDK/JDKがなく、後述のSDK導入後もJDKがないため、この2本のapksigner付き比較は未実施。新しいCIビルド自身の暗号署名検証と、初回APK/実機との更新互換性は別の確認事項として保持する。
 
 GitHub-hosted runnerのdebug keyは実行環境依存で、異なるrunのdebug APKの更新互換性は保証できない。署名検証付き比較で一致を確認するまで更新インストールを行わない。保存データを守る解決には、所有者が初回署名鍵を保持していることの確認と、その正規の鍵を使ったビルドが必要。証明書から秘密鍵は復元できない。新規鍵生成・無断の署名差し替え・`adb uninstall`・`pm clear` では解決しない。
 
@@ -53,3 +53,11 @@ GitHub-hosted runnerのdebug keyは実行環境依存で、異なるrunのdebug 
 ## 実SDK出力への追従
 
 PR初回CIは`invalid_apk_metadata`で停止し、エミュレーターは未実施だった。SDK36の`aapt2 dump badging`は旧` sdkVersion`ではなく`minSdkVersion:'24'`を出力するためで、証明書検証にはまだ到達していなかった。Google公式SDK repository XMLが示すbuild-tools36 Windows zip（58,699,878B、SHA1 `f16ccffd34de8790dede813a6c7d8e2c11a27b50`）を照合し、実際の初回APKで再現した。parserは二つの表記の合計が1行の場合だけ受理し、重複/矛盾/欠落は拒否する。新しい実出力fixtureを追加し、暗号署名検証は省略しない。初回失敗をPASSと読み替えず、修正版の実CI結果を別途確認する。
+
+## 16KBページサイズの静的監査
+
+[Run 40441073968](https://github.com/tomoya41/baseball-notes/actions/runs/40441073968)の実APKには、DataStore 1.1.7の`libdatastore_shared_counter.so`が4 ABI分同梱されている。debug APKのapksigner検証は成功。debug / unsigned release APKとも、公式SDK36 `zipalign -c -P 16 4`はPASSし、全ライブラリのELF `LOAD` alignmentは16,384だった。「native libraryなし」という旧版の結果を今回へ流用しない。
+
+64bitのRELRO末尾は16KB剰余8,192だが、これだけで非互換とは判定しない。[公式ガイドの独立LOAD例外](https://developer.android.com/guide/practices/page-sizes)と実ELF配置を照合した。arm64のRELRO `0x51c0–0x6000`は対応するRW LOAD `0x51c0–0x5428`を全て覆い、後続の`.bss`は別LOAD `0x9428–0x9429`。16KBに丸めた読取専用範囲`0x4000–0x8000`と重ならない。x86_64もRW LOAD `0x4f20–0x5148`全体がRELRO `0x4f20–0x6000`内にあり、後続の書込データがない。静的配置上、懸念したRELROと書込データの同一ページ競合は見つからなかった。
+
+**16KB環境のruntimeはNOT RUN**。通常のAPI36エミュレーター成功やZIP/ELF検査だけで代替しない。次の最小検証は、公式16KB system imageで`getconf PAGE_SIZE=16384`を記録し、互換モードに頼らずnative load・初回起動・保存/再起動を確認すること。AABから生成されるAPKの配置確認も別に必要。依存版・署名・個人保存データ・Pixel/TalkBack/Playの所有者Gateは変更していない。

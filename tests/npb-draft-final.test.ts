@@ -72,6 +72,10 @@ it("cannot join new candidates to actual results by name or treat developmental 
   const resultSource = base.sources.find(s => s.pageId === actual.sourcePageId)!;
   const bridge = { forecastCandidateId: expected.id, resultCandidateId: actual.id, name: actual.name, affiliation: actual.affiliation, article: actual.article, resultEvidenceSha256: actual.evidenceSha256, identityEvidenceUrls: [expected.identityUrls[0]!, `https://ja.wikipedia.org/w/index.php?curid=${resultSource.pageId}&oldid=${resultSource.revision}`], reviewedAt: base.observedAt };
   expect(finalDraftOutcome(data, base, p.teamId, p.round, [bridge])).toBe("match");
+  base.additionalSources=[{...resultSource,revision:2}];actual.sourceRevision=2;
+  expect(finalDraftOutcome(data,base,p.teamId,p.round,[bridge])).toBe("unverified");
+  expect(finalDraftOutcome(data,base,p.teamId,p.round,[{...bridge,identityEvidenceUrls:[expected.identityUrls[0]!,`https://ja.wikipedia.org/w/index.php?curid=${resultSource.pageId}&oldid=2`]}])).toBe("match");
+  delete actual.sourceRevision;delete base.additionalSources;
   expect(finalDraftOutcome(data, base, p.teamId, p.round, [{ ...bridge, identityEvidenceUrls: [expected.eligibility.urls[0]!, "https://example.com/"] }])).toBe("unverified");
   expect(finalDraftOutcome(data, base, p.teamId, p.round, [{ ...bridge, article: "別人" }])).toBe("unverified");
   expect(finalDraftOutcome(data, base, p.teamId, p.round, [bridge, bridge])).toBe("unverified");

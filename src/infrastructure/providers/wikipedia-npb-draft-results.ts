@@ -17,6 +17,20 @@ const nameCell = (raw: string): PersonCell | null => {
 };
 const key = (r: { teamId: string; type: Kind; round: number }) => `${r.teamId}:${r.type}:${r.round}`;
 
+// One explanatory footnote after an explicit affiliation link; its text supplies no identity or roster facts.
+function affiliationCell(raw: string) {
+  const value = raw.trim(), note = value.indexOf("{{Refnest|");
+  if (note < 0) return nameCell(value);
+  const link = value.slice(0, note);
+  if (!/^\[\[[^[\]<>]+\]\]$/.test(link)) return null;
+  let depth = 0;
+  for (let i = note; i < value.length; i++) {
+    if (value.slice(i, i + 2) === "{{") { depth++; i++; }
+    else if (value.slice(i, i + 2) === "}}") { depth--; i++; if (depth === 0 && i !== value.length - 1) return null; if (depth < 0) return null; }
+  }
+  return depth === 0 ? nameCell(link) : null;
+}
+
 /** Only the explicitly headed 2026 table. Styles are discarded, never treated as lottery wins. */
 function matrixCells(content: string) {
   const sections = content.split("== 指名選手一覧 ==\n");
@@ -71,10 +85,12 @@ export function auditDraft2026ResultTables(content: string) {
       const round = Number(rank[1]), row = lines.join("\n");
       const reject = (reason: string) => quarantine.push({ teamId, type, round, evidenceSha256: draftHash(row), reason });
       if (!type || !header) { reject("unverified_scope_or_header"); continue; }
-      const cells = lines.length === 2 && lines[1]!.startsWith("|") ? lines[1]!.slice(1).split("||").map(s => s.trim()) : lines.length === 5 && lines.slice(1).every(l => l.startsWith("|") && !l.includes("||")) ? lines.slice(1).map(l => l.slice(1).trim()) : [];
+      const cells = lines.length === 2 && lines[1]!.startsWith("|") ? lines[1]!.slice(1).split("||").map(s => s.trim())
+        : lines.length === 3 && lines[2] === "|" && lines[1]!.startsWith("|") && lines[1]!.slice(1).split("||").length === 3 ? [...lines[1]!.slice(1).split("||").map(c => c.trim()), ""]
+        : lines.length === 5 && lines.slice(1).every(l => l.startsWith("|") && !l.includes("||")) ? lines.slice(1).map(l => l.slice(1).trim()) : [];
       if (cells.length !== 4) { reject("unsupported_row_shape"); continue; }
       if (cells.every(c => !c || c === "---")) continue; // Empty source cells never become results.
-      const person = nameCell(cells[0]!), school = nameCell(cells[2]!);
+      const person = nameCell(cells[0]!), school = affiliationCell(cells[2]!);
       if (!person || !school || !["投手", "捕手", "内野手", "外野手"].includes(cells[1]!)) { reject("unsupported_identity_or_position"); continue; }
       const matches = matrices.filter(m => m.teamId === teamId && m.type === type && m.round === round && m.name === person.name);
       if (matches.length !== 1 || person.article && matches[0]!.article && person.article !== matches[0]!.article) { reject("matrix_team_table_conflict"); continue; }

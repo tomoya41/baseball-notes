@@ -1,3 +1,4 @@
+import { DraftSourceLink } from "./npb-draft-source-link";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { readNpbFinalDraft } from "../application/npb-draft-final-reader";
@@ -41,7 +42,7 @@ export function NpbFinalDraft({ base, team, view, q, group, onSearch, onGroup }:
             const actual = selection && base.candidates.find(c => c.id === selection.candidateId);
             return <article key={p.round}>
               <Link className="player-row" to={`/NPB/talent/2026?view=candidates&forecast=final&q=${encodeURIComponent(c.name)}`}><span className="player-row__body"><small>{p.round}位・獲得予想 · {groups[c.group]}</small><strong>{c.name}</strong><span>{c.affiliation} · {c.position}</span></span><span aria-hidden="true">→</span></Link>
-              {actual && <p><strong>記事の支配下{p.round}位：{actual.name}</strong><br /><span className="inline-note">{actual.affiliation} · 指名時の所属</span></p>}
+              {actual && <p><strong>記事の支配下{p.round}位：{actual.name}</strong><br /><span className="inline-note">{actual.affiliation} · 指名時の所属</span><br/>{selection&&<DraftSourceLink data={base} row={selection}/>}</p>}
               <details><summary>{p.round}位の理由・資格・答え合わせ</summary><p>{p.reason}</p><Evidence c={c} /><p>{({ unavailable: "この順位の確認済み支配下指名は未収録です。未収録を不的中とは判定しません。", unverified: "実結果との選手ID照合を確認中です。名前だけでは答え合わせしません。", match: "確認済みの支配下指名と獲得予想が一致しています。", different: "確認済みの支配下指名は獲得予想と異なります。" })[outcome]}</p><p>答え合わせは抽選後の支配下指名に対して行います。初回入札・抽選の仮定は別で、育成指名を混ぜません。</p></details>
             </article>;
           })}

@@ -23,6 +23,21 @@ async function mount(query="",fail=false,modify?:(data:ReturnType<typeof draftFi
   return {host,data,close:async()=>{await act(async()=>root.unmount());host.remove();}};
 }
 it("shows 12 hypotheses, source/time and no fabricated results",async()=>{const f=await mount();try{expect(f.host.querySelectorAll("article")).toHaveLength(12);expect(f.host.textContent).toContain("志望届・指名資格は未確認");expect(f.host.textContent).toContain("Baseball Notesの独自予想");expect(f.host.textContent).not.toMatch(/AIで作成|作り方|アプリコード/);expect(f.host.textContent).toContain("答え合わせ待ち");expect(f.host.querySelectorAll('a[href*="oldid="]')).toHaveLength(1);expect(readNpbDraftEvent).toHaveBeenCalledTimes(1);}finally{await f.close();}});
+it("links supplemental results to their exact new revision while legacy rows and all source credits remain old",async()=>{
+  const f=await mount("?view=results",false,d=>{
+    const source={...d.sources[0]!,pageId:5282993,title:"架空の指名記事",revision:2};d.sources.push(source);
+    d.additionalSources=[{...source,revision:3,revisionAt:"2026-10-26T00:00:00Z",contentSha256:"e".repeat(64)}];
+    d.observedAt="2026-10-27T00:00:00Z";d.review={reviewedBy:"fixture",reviewedAt:"2026-10-27T00:01:00Z"};d.eventState="ended";d.coverage="partial";
+    const extra={...d.candidates[0]!,id:"npb:draft:2026:"+"e".repeat(24),name:"架空の追補指名選手",sourcePageId:5282993,sourceRevision:3,evidenceSha256:"e".repeat(64)};d.candidates.push(extra);
+    d.selections=[{teamId:"npb:team:tigers",type:"regular",round:1,status:"confirmed",candidateId:d.candidates[0]!.id,sourcePageId:5282993,evidenceSha256:"b".repeat(64)},
+      {teamId:"npb:team:giants",type:"regular",round:2,status:"confirmed",candidateId:extra.id,sourcePageId:5282993,sourceRevision:3,evidenceSha256:extra.evidenceSha256}];
+  });
+  try{const rows=[...f.host.querySelectorAll("article")];expect(rows).toHaveLength(2);const old=rows.find(r=>r.textContent?.includes("阪神"))!,next=rows.find(r=>r.textContent?.includes("架空の追補"))!;
+    expect(old.querySelector('a')!.href).toContain("oldid=2");expect(next.querySelector('a')!.href).toContain("oldid=3");
+    const sources=[...f.host.querySelectorAll("details")].find(d=>d.querySelector("summary")?.textContent==="出典・収録範囲")!;
+    expect(sources.querySelector('a[href*="oldid=2"]')).not.toBeNull();expect(sources.querySelector('a[href*="oldid=3"]')).not.toBeNull();expect(sources.textContent).toContain("CC BY-SA 4.0");
+  }finally{await f.close();}
+});
 it("filters candidates without fetching Current Player profiles",async()=>{const f=await mount("?view=candidates&q=not-collected");try{expect(f.host.textContent).toContain("この条件の選手は未収録");await act(async()=>{const input=f.host.querySelector("input")!;Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value")!.set!.call(input,"");input.dispatchEvent(new Event("input",{bubbles:true}));});expect(readNpbDraftEvent).toHaveBeenCalledTimes(1);}finally{await f.close();}});
 it("keeps missing results distinct from no selection and draws no fake lottery",async()=>{const f=await mount("?view=results");try{expect(f.host.textContent).toContain("未収録は未指名・指名終了を意味しません");expect(f.host.textContent).toContain("独自案の重複を実際の競合とは扱いません");expect(f.host.querySelectorAll("article")).toHaveLength(0);}finally{await f.close();}});
 it("brings the next/previous result page into view and restores keyboard focus without refetching",async()=>{
