@@ -1065,6 +1065,23 @@ public class ReleaseQualityTest {
         js("document.querySelector('.japan-home-result').click()");waitText("アプリ独自選出");
         assertTrue("No invented Japan Series MVP",js("document.querySelector('.daily-mvp').innerText").contains("選手成績未収録"));
     }
+    @Test public void japanSeriesThirdGamePreservesWalkOffAndOriginalCitations() throws Exception {
+        Intent link = new Intent(Intent.ACTION_VIEW, Uri.parse("baseballnotes://NPB/games/npb%3Agame%3A5fcadb011aedcfd894cb?season=2026&competition=postseason&stage=japan_series"));
+        link.setClass(InstrumentationRegistry.getInstrumentation().getTargetContext(), MainActivity.class);
+        scenario = ActivityScenario.launch(link); waitText("第3戦"); waitText("イニング別得点");
+        assertEquals("Ten collected innings remain horizontal", "10", js("String(document.querySelectorAll('.inning-board__table thead th[aria-label$=\"回\"]').length)"));
+        assertEquals("Walk-off half inning is explicit, not an unplayed X", "1x", js("document.querySelectorAll('.inning-board__table tbody tr')[1].querySelectorAll('td')[9].textContent"));
+        assertTrue("No invented individual statistics or MVP", js("document.body.innerText").contains("選手別の打撃・投球成績は未収録"));
+        js("Array.from(document.querySelectorAll('main details>summary')).find(s=>s.textContent==='収録範囲・出典').click()");
+        assertEquals("Third final cites its exact reviewed revision", "true", js("!!document.querySelector('main a[href*=\"oldid=111547084\"]')"));
+        setThemeWithoutNavigation("dark", "ダーク"); fontScaleAndRecreate(2.0f); waitText("イニング別得点"); waitViewport(360);
+        assertEquals("200 percent walk-off scoreboard keeps document in bounds", "true", js("document.documentElement.scrollWidth<=innerWidth"));
+        screenshot("japan-game3-360-dark-200");
+        js("location.hash='#/NPB/games/npb%3Agame%3A8aabfefe82d76006b9a9?season=2026&competition=postseason&stage=japan_series'");
+        waitText("第2戦"); waitText("イニング別得点");
+        js("(()=>{const s=Array.from(document.querySelectorAll('main details>summary')).find(s=>s.textContent==='収録範囲・出典');if(!s.parentElement.open)s.click();})()");
+        assertEquals("Prior final retains its original citation, despite later article whitespace edits", "true", js("!!document.querySelector('main a[href*=\"oldid=111523167\"]') && !document.querySelector('main a[href*=\"oldid=111547084\"]')"));
+    }
     @Test public void honorsRecipientHistoryKeepsUncollectedStatisticsAndNativeBackAtLargeFont() throws Exception {
         Intent link = new Intent(Intent.ACTION_VIEW, Uri.parse("baseballnotes://MLB/awards?recipient=lahman%3Abondsba01"));
         link.setClass(InstrumentationRegistry.getInstrumentation().getTargetContext(), MainActivity.class);
