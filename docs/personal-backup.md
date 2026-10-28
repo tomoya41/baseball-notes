@@ -37,3 +37,13 @@ rollback：成績データ・immutable assetは一切更新しない。旧コー
 ## 検証と公開
 
 同一性とURL、追加/置換、上限、破損・不正参照、期限、確認後の変更、同時編集、保存失敗/途中中断、Watch初回通知抑止をテストする。360px Light/Dark、Androidの実保存先選択・キャンセル・再取込み、150%/200%を確認する。実施したrun・画面・公開後データ保全を追記する。Pixel・TalkBack・正規署名付き更新は独立した未検証Gateのまま。
+
+PR #99のローカル結果：213 test files、2,077 PASS / Windows専用の既存条件で1 SKIP（計2,078）。Lint、typecheck、Web/Vercel build成功。取込専用の33テストには全書込み段階の中断/再起動、commit応答喪失、上限時の追加失敗→削除なしで置換を選択する回帰を含む。
+
+実画面：[変更前360px Light](assets/personal-backup/before-360-light.png)、[変更後Light](assets/personal-backup/after-360-light.png)、[変更後Dark](assets/personal-backup/after-360-dark.png)。変更後の取り込み検証は隔離したlocalhostの個人項目fixtureを用い、公式データや実ユーザーの保存内容は操作していない。見出し15px、ボタン13px/高さ44px、プレビュー表12px。横はみ出しなし。別環境のファイルを選択→確認→保存→Myの件数更新→PWA更新後の保存維持、再取込時の重複なしを実操作で確認した。ローカルに未配置の球団/日程データの失敗表示を、Production障害・試合なし・成績ゼロへ読み替えない。
+
+初期JavaScriptの静的import全体（3ファイル合算、同じNode gzip条件）は525,486→535,276 bytes、gzip 163,178→164,634 bytes（+1,456 bytes）。単体entryの増分には共通chunk間の移動が含まれる。取込UI（JS6,681/CSS1,197 bytes）はMyで遅延読込み。データファイル・追加API/Source・DB読取り/書込み・AI呼出し・月額追加費用はいずれも0。
+
+配信サーバーを停止したlocalhostで、既存service workerのアプリ本体からMyを再起動し、保存情報の維持・JSON保存・実ファイルの再プレビューを確認した。PC全体のネットワーク切断やPixelのオフライン検証の代替証拠にはしない。
+
+Android実行：[standard](https://github.com/tomoya41/baseball-notes/actions/runs/40774384043)、[16KB](https://github.com/tomoya41/baseball-notes/actions/runs/40774390720)。機能commit `9bb5d736d54ee19d73147225f5c0c9f9dd38e851`を固定した実行。実際の完了結果・公開後HTTP/65,727ファイル保全は[PR #99の検証記録](https://github.com/tomoya41/baseball-notes/pull/99)を参照する。Pixel/TalkBackは未実施、正規署名による更新互換性・Play提出は未完了。
