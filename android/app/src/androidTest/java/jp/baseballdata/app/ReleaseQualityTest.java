@@ -716,8 +716,8 @@ public class ReleaseQualityTest {
         js("document.querySelector('.japan-home-result').click()");waitText("イニング別得点");
         assertTrue("Home result keeps Japan Series scope",js("location.hash").contains("stage=japan_series"));
         assertEquals("Home opens the exact latest admitted result",resultRoute,js("location.hash"));
-        assertEquals("Latest final has actual completed inning evidence","true",js("document.querySelectorAll('.series-innings tbody tr').length>=9 && document.querySelectorAll('.series-innings tbody tr').length<=30"));
-        assertEquals("Displayed final scores equal the independent inning sums","true",js("[0,1].every(side=>Array.from(document.querySelectorAll('.series-innings tbody tr')).reduce((sum,row)=>sum+Number(row.querySelectorAll('td')[side]?.textContent?.replace(/[xX]/g,'') || 0),0)===Number(document.querySelectorAll('.score-hero-club>b')[side]?.textContent))"));
+        waitCondition("Latest final has two team rows and completed inning evidence","document.querySelectorAll('.inning-board__table tbody tr').length===2 && document.querySelectorAll('.inning-board__table thead th[aria-label$=\"回\"]').length>=9");
+        assertEquals("Displayed final scores equal the independent inning sums","true",js("(()=>{const n=document.querySelectorAll('.inning-board__table thead th[aria-label$=\"回\"]').length;return n<=30 && Array.from(document.querySelectorAll('.inning-board__table tbody tr')).every((row,side)=>{const cells=Array.from(row.querySelectorAll('td')).slice(0,n).map(c=>c.textContent);return cells.every(v=>v==='X'||/^\\d+x?$/.test(v)) && cells.reduce((sum,v)=>sum+(v==='X'?0:Number(v.replace(/x$/,''))),0)===Number(document.querySelectorAll('.score-hero-club>b')[side]?.textContent);});})()"));
         shell("input keyevent KEYCODE_BACK");waitCondition("Back to Home","!!document.querySelector('.japan-home-result')");
         js("if(!document.querySelector('.japan-home-explore').open)document.querySelector('.japan-home-explore>summary').click()");
         waitCondition("Player shortcuts are available","!!document.querySelector('.japan-home-player-link')");
@@ -935,7 +935,8 @@ public class ReleaseQualityTest {
         boolean summary = js("Boolean(document.querySelector('[aria-label=\"球団の選手を探す\"]'))").equals("true");
         if (summary) {
             waitText("保存済みの結果 · 更新未確認"); waitText("個人成績は現在取得できません");
-            assertEquals("Score-only fallback does not fabricate player rows", "0", js("document.querySelectorAll('main table').length"));
+            assertEquals("Score-only fallback does not fabricate player tables", "0", js("document.querySelectorAll('main table:not(.inning-board__table)').length"));
+            assertEquals("Unknown innings remain unknown beside saved totals", "true", js("(()=>{const rows=Array.from(document.querySelectorAll('.inning-board__table tbody tr'));return rows.length===2 && rows.every((row,side)=>{const innings=Array.from(row.querySelectorAll('td:not(.inning-board__total)'));return innings.length===9 && innings.every(c=>c.textContent==='—') && row.querySelector('.inning-board__total')?.textContent===document.querySelectorAll('.score-hero-club>b')[side]?.textContent;});})()"));
             screenshot("npb-regular-saved-result");
             js("document.querySelector('[aria-label=\"球団の選手を探す\"] a[href*=\"tigers\"]').click()");
             waitText("阪神の選手");
