@@ -967,6 +967,12 @@ public class ReleaseQualityTest {
         assertFalse(EodMessagingService.isFavoritePlayer(fixture, "removed-player"));
         assertFalse(EodMessagingService.isFavoritePlayer(fixture.replace("NPB", "MLB"), "canonical-player"));
         assertFalse(EodMessagingService.isFavoritePlayer("corrupt", "canonical-player"));
+        var notificationSnapshot = new java.util.HashMap<String, Object>(); notificationSnapshot.put("baseball:favorites:v1", fixture);
+        assertTrue("Stable favorite can authorize existing delivery", EodMessagingService.isStableFavoritePlayer(notificationSnapshot, "canonical-player"));
+        for (String journal : new String[]{"pending", "committed", "corrupt"}) {
+            notificationSnapshot.put("baseball:personal-restore:journal:v1", journal);
+            assertFalse("A restore journal cannot authorize delivery", EodMessagingService.isStableFavoritePlayer(notificationSnapshot, "canonical-player"));
+        }
         scenario = ActivityScenario.launch(MainActivity.class); waitText("BASEBALL");
         js("Capacitor.Plugins.Preferences.set({key:'qa-persistence',value:'canonical-key'}).then(()=>document.documentElement.dataset.qa='saved')");
         for (int i=0; i<100 && !js("document.documentElement.dataset.qa").equals("saved"); i++) Thread.sleep(50);

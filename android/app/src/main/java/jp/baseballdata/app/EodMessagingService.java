@@ -12,6 +12,13 @@ import com.google.firebase.messaging.*;
 import org.json.JSONObject;
 
 public class EodMessagingService extends FirebaseMessagingService {
+    static boolean isStableFavoritePlayer(java.util.Map<String, ?> snapshot, String playerId) {
+        // A single Preferences snapshot cannot combine a pre-restore marker
+        // check with a partially written favorite list. Fail closed until cleanup.
+        if (snapshot.containsKey("baseball:personal-restore:journal:v1")) return false;
+        Object saved = snapshot.get("baseball:favorites:v1");
+        return saved instanceof String && isFavoritePlayer((String) saved, playerId);
+    }
     static boolean isFavoritePlayer(String saved, String playerId) {
         try {
             var items = new JSONObject(saved == null ? "{}" : saved).optJSONArray("items");
@@ -32,7 +39,7 @@ public class EodMessagingService extends FirebaseMessagingService {
         if (id == null || !id.matches("npb:notification:eod:20[0-9]{2}-[0-9]{2}-[0-9]{2}:[0-9a-f-]{36}") || link == null ||
             !link.matches("baseballnotes://NPB/players/[0-9a-f-]{36}")) return;
         String playerId = Uri.parse(link).getLastPathSegment();
-        if (!isFavoritePlayer(getSharedPreferences("CapacitorStorage", 0).getString("baseball:favorites:v1", null), playerId)) return;
+        if (!isStableFavoritePlayer(getSharedPreferences("CapacitorStorage", 0).getAll(), playerId)) return;
         if (prefs.contains(id)) return;
         var manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         if (Build.VERSION.SDK_INT >= 26)
