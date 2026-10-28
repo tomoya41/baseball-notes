@@ -9,3 +9,22 @@
 .honors-filters label { display: flex; flex: 1 1 8rem; min-width: 0; flex-direction: column; gap: .25rem; }
 .honors-filters select,.honors-filters input { width: 100%; min-width: 0; }
 .honors-sources { font-size: .85rem; margin-block: 1rem; overflow-wrap: anywhere; }
+.honors-view { display: flex; gap: .35rem; margin-block: .8rem; }
+.honors-view button { flex: 1; min-width: 0; min-height: 48px; }
+.honors-view button[aria-pressed="true"] { background: var(--brand); color: var(--on-brand); }
+.honors-row-links { display: flex; flex-wrap: wrap; gap: .8rem; font-size: .78rem; }
+.honors-player-list { display: flex; flex-direction: column; }
+.honors-player-link { display: flex; justify-content: space-between; align-items: center; gap: .7rem; padding: .85rem 0; border-bottom: 1px solid var(--color-border); text-decoration: none; min-height: 48px; }
+.honors-player-link > span:first-child { min-width: 0; overflow-wrap: anywhere; display: flex; flex-direction: column; gap: .25rem; }
+.honors-player-link > span:last-child { flex-shrink: 0; font-variant-numeric: tabular-nums; }
+.honors-player-link small { color: var(--color-muted); font-size: .78rem; }
+.honors-recipient { min-width: 0; }
+.honors-recipient h2 { margin-block: .8rem .3rem; overflow-wrap: anywhere; }
+.honors-summary { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); border-block: 1px solid var(--color-border); padding-block: .7rem; gap: .5rem; }
+.honors-summary dt { color: var(--color-muted); font-size: .78rem; }
+.honors-summary > div { min-width: 0; overflow-wrap: anywhere; }
+.honors-summary dd { margin: .2rem 0 0; font-size: 1.35rem; font-weight: 750; font-variant-numeric: tabular-nums; }
+.honors-summary small { font-size: .72rem; font-weight: 400; margin-left: .2rem; }
+.honors-counts { margin-block: .8rem; font-size: .85rem; }
+.honors-counts dl > div { display: flex; justify-content: space-between; gap: .6rem; padding-block: .3rem; }
+.honors-counts dd { flex-shrink: 0; margin: 0; }
