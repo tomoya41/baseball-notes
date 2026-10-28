@@ -1012,6 +1012,21 @@ public class ReleaseQualityTest {
         }
         fail("Android save picker did not open / " + js("document.body.innerText"));
     }
+    private void tapBackupImport() throws Exception {
+        // HTML file inputs require a trusted user gesture. evaluateJavascript
+        // button.click() cannot open the picker and is not a device interaction.
+        String button = "Array.from(document.querySelectorAll('.backup-actions button')).find(b=>b.textContent==='ファイルを選ぶ')";
+        js(button + ".scrollIntoView({block:'center'})"); waitPaint();
+        var point = new org.json.JSONArray(js("(()=>{const r=(" + button + ").getBoundingClientRect();return [r.x+r.width/2,r.y+r.height/2,innerWidth]})()"));
+        AtomicReference<float[]> screen = new AtomicReference<>();
+        scenario.onActivity(activity -> { var web = activity.getBridge().getWebView(); int[] origin = new int[2]; web.getLocationOnScreen(origin); float scale = web.getWidth() / (float) point.optDouble(2); screen.set(new float[]{origin[0] + (float) point.optDouble(0)*scale, origin[1] + (float) point.optDouble(1)*scale}); });
+        long time = android.os.SystemClock.uptimeMillis();
+        MotionEvent down = MotionEvent.obtain(time, time, MotionEvent.ACTION_DOWN, screen.get()[0], screen.get()[1], 0);
+        MotionEvent up = MotionEvent.obtain(time, time+60, MotionEvent.ACTION_UP, screen.get()[0], screen.get()[1], 0);
+        try { InstrumentationRegistry.getInstrumentation().sendPointerSync(down); InstrumentationRegistry.getInstrumentation().sendPointerSync(up); }
+        finally { down.recycle(); up.recycle(); }
+        waitDocumentPicker();
+    }
     @Test public void personalBackupUsesAndroidDocumentsAndConfirmedRestoreWithoutLosingOtherSettings() throws Exception {
         var context = InstrumentationRegistry.getInstrumentation().getTargetContext();
         var preferences = context.getSharedPreferences("CapacitorStorage", 0);
@@ -1032,7 +1047,7 @@ public class ReleaseQualityTest {
             String filename = js("'baseball-notes-backup-'+new Date().toISOString().slice(0,10)+'.json'");
             js("Array.from(document.querySelectorAll('.backup-actions button')).find(b=>b.textContent==='ファイルを保存').click()");
             clickDocumentText("Save"); waitText("ファイルを保存しました");
-            js("Array.from(document.querySelectorAll('.backup-actions button')).find(b=>b.textContent==='ファイルを選ぶ').click()");
+            tapBackupImport();
             clickDocumentText(filename); waitText("取り込み内容");
             assertEquals("Import is confirmation-only", "true", js("Array.from(document.querySelectorAll('.backup-actions button')).find(b=>b.textContent==='取り込む').disabled"));
             js("document.querySelector('.backup-confirm input').click()");
