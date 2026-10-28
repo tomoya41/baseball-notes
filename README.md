@@ -2,6 +2,8 @@
 
 Androidを主対象とする野球データアプリ。製品仕様は [SPEC.md](SPEC.md)、恒久ルールは [AGENTS.md](AGENTS.md)、重要な判断は [docs/decisions.md](docs/decisions.md) を参照。
 
+完成版の製品要件・提供範囲・完成条件は [SPEC §0](SPEC.md#completion-baseline)、実施順・未完了項目・必要な証拠は [完成までの作業計画](docs/product-completion-plan.md) を参照。古いPhase説明や日付付きの棚卸しは、その時点の履歴であり最新の完成率ではありません。
+
 ## NPB Schedule-aware EOD運用
 
 `NPB_EOD_ENABLED=true` のrepository variableで予定同期と毎時17分JSTのWatcherを有効化します。`NPB_MONITOR_OFFSET_MINUTES` は初期120分。最初に `npb-schedule-sync.yml` を手動でdaily/weekly/monthly/seasonのいずれかで実行してください。通常は毎朝09:27、月曜08:37、毎月1日08:47 JSTに同じServiceを使用します。
