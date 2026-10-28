@@ -1,6 +1,6 @@
-# Baseball Data App — Product Specification
+# Baseball Notes — Product Specification
 
-Status: Architecture selected; Phase 0 vertical proof and Analysis A foundation. Live data providers remain subject to the documented adoption gate.
+Status: 完成版要件の統合基準（2026-10-28）。実装・収録・本番運用・正式リリースがすべて完了したという意味ではない。まず [§0 完成版の要件](#completion-baseline) を読む。機能別の詳細契約は後続節、実施順と確認済み範囲は [完成までの作業計画](docs/product-completion-plan.md) にまとめる。
 
 Competition scope: Regular Season and Postseason are first-class, separate scopes. Absent legacy scope means Regular Season. Postseason has canonical Series, explicit rounds, rule advantages and independently admitted stats/analysis; its numbers never enter regular Season/Recent/Records/rankings. NPB CS Final advantage is not a played Game. Current/Historical availability depends on each league's verified source rights. See `docs/postseason.md`.
 
@@ -9,9 +9,81 @@ Honors can be explored by year or by independently identified source recipient, 
 
 ---
 
+<a id="completion-baseline"></a>
+
+## 0. Completion baseline — 完成版の要件
+
+### 0.1 製品の軸と仕様の読み方
+
+**好きな選手の今・変化・歩みを、一年を通して追える野球アプリ。** NPBの現役選手を中心に、試合、過去成績、比較、記録、ドラフト、移籍・引退をつなぐ。MLB Historicalは独立した強みとして維持し、利用条件を満たす豊富なデータを生かす。一球速報は中心機能にしない。
+
+本節が現在の製品優先順位・提供範囲・完成判定の基準。従来の節番号と技術契約は保持する。§27/§29の初期タスク境界、日付付き実証記録、旧画面案を現在の進捗や実装制限へ読み替えない。Source、Canonical identity、Facts、Coverage、Production Gate、保存形式、immutable assetの保護は引き続き有効で、本節を理由に緩和しない。実装済みの機能を重複開発せず、既存の導線と計算を接続・完成させる。
+
+### 0.2 提供範囲と完了状態
+
+- **本体要件（R01–R12）**：完成版が提供する体験。データや所有者操作の不足で満たせない項目は未完了として残す。画面、型、workflow、fixtureがあるだけでは完了しない。
+- **条件付き拡張**：MLB Current、球種・計測・守備・走塁・捕手の詳細、網羅的な二軍/マイナー、全選手写真・公式ロゴ。Source・粒度・identity・権利が確認できた範囲から採用する。機能を構想から削除せず、本体と別に提供可否を記録する。
+- **任意の強化**：生成AIの候補選択・短い説明。統計、検索、比較、記録、通知の根拠処理はAIなしで成立させる。クラウド同期・アカウント必須化も本体の前提にしない。
+- 各リリースはLeague / season / competition / stage / 対象選手・試合 / 指標 / 更新時点 / Coverage / Sourceを宣言する。古い一部収録データを最新Current、収録分合計を完全通算、収録内順位を公式・歴代ランキングと呼ばない。
+- 部分収録でも根拠付きの表示・比較は可能。ただし、完全性を必要とするランキング・記録達成・対象日全体の選考は、その個別条件を満たすまで公開しない。本体の不足を「条件付き拡張」へ黙って移して完成扱いにしない。
+- Web/PWA公開、機能の完成、継続運用の確認、Android正式リリースは別の判定。未解決の必須要件がある段階では、実際に満たした対象範囲のみを公開・報告する。
+
+### 0.3 完成版の機能要件
+
+| ID | 要件 | 完成条件 |
+|---|---|---|
+| R01 | 自分向けのホームと年間体験 | お気に入り球団・選手の結果、次戦、最近の変化へ短い導線で進める。春・公式戦・CS/日本シリーズ・ドラフト・FA期の内容が利用者の関心と時期に合い、特集が通常導線を圧迫しない。対象外・未収録・更新失敗を「試合なし」「変化なし」にしない。 |
+| R02 | 試合・シリーズ | 一覧→試合詳細→出場選手・個人成績→選手分析がつながる。公式戦、オープン戦、CS First/Final、日本シリーズ、MLB Historical Postseasonを独立した成績範囲で扱う。試合結果、イニング別得点、シリーズ勝敗・勝ち上がり、次戦を同じ検証済み根拠から表示し、未収録の個人成績・予告先発を補わない。 |
+| R03 | 選手の歩み | プロフィール、年度別成績、推移、自己ベスト、通算/収録分、表彰、所属履歴、経歴を既存の選手identityで接続する。現在の球団・背番号・登録状態には独立した根拠と確認時点が必要。Historical-only選手を現役Directoryへ混入させず、受賞年の成績がなくても表彰歴のみを表示できる。 |
+| R04 | 比較・変化の理解 | 同年度、過去の本人、日本の同学年、ドラフト同期、同年齢シーズン、移籍前後を比較できる。年末年齢による年度比較と誕生日到達時点の比較は別の定義とする。必要な日別Factsがないときに年度合計を誕生日までの成績へ変換しない。比較ごとの期間、母数、球団、欠損、基準を確認できる。 |
+| R05 | 記録・表彰・Record Watch | 検証済みの完全通算を持つ対象では通算記録への接近・達成を追える。収録分の節目は別表示とし、完全通算Record Watchの代用で完了扱いにしない。歴代・年代・現役別の比較は母集団・資格・収録範囲を明示する。正式表彰とアプリ独自選出を分け、同時受賞、当時の球団・部門・制度名、出典を保持する。 |
+| R06 | ドラフトから成長を追う | 候補→予想→指名→入団→収録済みの二軍/一軍成績・成長へたどれる。高校・大学・社会人・独立リーグの資格を区別し、名前だけで既存選手へ統合しない。予想は確認時点・版を固定し、実結果を混ぜず答え合わせする。二軍/マイナーの不足や新人資格未確認を、成績ゼロ・正式な新人資格へ置き換えない。 |
+| R07 | オフシーズン・球団情報 | FA、ポスティング、移籍、入団、退団、戦力外、自由契約、引退を別の事象として時系列と球団別IN/OUTで探索できる。Official / Reported / Encyclopedia record / Predictionを区別し、出典・確認時点・訂正を残す。記事にある移籍観測から現在所属や契約確定を推測しない。球団から所属時点・年度成績・選手へ進める。 |
+| R08 | 週間・月間・シーズンの発見 | 既存の検証済みデータから結果、得失点、成績推移、注目理由と母数を示せる。HOT/急上昇/日別MVPは既存の最低母数・対象範囲・Gateを守る。イニングスコアから出場経過・打席内容・因果関係を生成しない。AIは構造化した候補・指標参照の選択に限定し、未知の選手・数字・試合を足さない。 |
+| R09 | My・通知・保存情報の持ち運び | Favorites、Collections、保存した比較/検索条件、Watchを接続する。アプリ内の確認差分とバックグラウンド配信を分け、後者は実配信証拠が必要。種類・頻度/時間帯・停止、重複抑制・訂正を扱う。アカウントなしでも個人保存の安全な書出し/復元/移行ができる。 |
+| R10 | データの信頼性・継続運用・年度切替 | 許された取得・保存・加工・Web/Android表示の範囲だけを採用する。本人照合、率の構成値、整数アウト、球団別行、未収録/null/0、SourceとCoverageを維持する。正常Scheduled、整合性、バックアップ/新規scratchへの復元、公開readbackの実証を得る。2027年等へ切り替えても旧年度・ID・URL・保存情報を保持する。 |
+| R11 | スマートフォンの体験品質 | 既存のコンパクトなデザイン・5つの主要導線を再利用する。新規画面は画像生成→既存UIとの照合→実装→実画面比較を必須にする。通常サイズの360–390pxで文字・余白・情報量を確認し、Light/Dark、150%/200%、Back、キーボード、表・グラフの代替テキストも検証する。写真/ロゴは個別に利用可能な素材だけを使う。 |
+| R12 | 配布・更新・正式リリース | Web/PWAのホーム画面起動・更新・保存済みオフライン表示と、Androidパッケージの署名付き更新を別に検証する。データ更新とアプリ本体更新を混同しない。Pixel/TalkBack、正式署名、App Links、Privacy/Data Safety、所有者のストア手続きは実際の証拠が必要で、エミュレーターやunsigned AABで代用しない。 |
+
+### 0.4 一連の体験としての受け入れ条件
+
+各体験は実際の採用データで検証する。fixtureで境界値を試せても、未開催・未収録の実データや本番成功の証拠にはしない。
+
+| ID | 利用者が完結できること | 重要な境界 |
+|---|---|---|
+| J01 | ホーム→試合→選手→年度推移→比較→フォロー→次回の変化確認 | 年度・試合区分・選手IDを保持。未収録の成績は短い状態表示と利用可能な移動先を示す。 |
+| J02 | 公式戦/CS/日本シリーズ/オープン戦を選び、試合・シリーズと選手成績を調べる | データがない試合区分を利用可能に見せない。スコアだけの試合でも、その事実と未収録の詳細を区別する。 |
+| J03 | 年度、同学年、同期、同年齢、移籍前後で選手を比較し、条件を保存して再訪する | 学年・年齢・資格が不明なら一致を推測しない。率を年度の単純平均にせず、リーグ・時代・期間差を明示する。 |
+| J04 | 通算記録の対象選手を選び、節目の根拠・達成・表彰歴・受賞年度へたどる | 完全通算と収録分、公式表彰と独自評価、成績未収録の受賞年を区別する。 |
+| J05 | ドラフト候補→保存予想→実結果→入団→成長→移籍/FA/引退を追う | 候補identity、プロ入り後のCanonical ID、事象の確定度、出典、訂正を保持。経路の予約だけでは完了しない。 |
+| J06 | 保存情報を書き出し、別環境で検証・確認して復元し、元の条件で再開する | 全個人保存の対象/除外を宣言。schema/version/サイズ/参照を検証し、重複・マージ/置換を確認する。失敗時は旧状態を維持。秘密・制限付きFacts/Raw/キャッシュを混ぜない。 |
+| J07 | 更新失敗/オフライン/新年度/アプリ更新後も、保存情報と以前のデータへ戻る | 未取得・stale・no_gamesを分離。署名不一致をアンインストール・データ削除・無断再署名で突破しない。 |
+
+J05は発生済みの段階だけを扱い、後続段階は別の実在選手の事例でも検証できる。2026年指名選手が引退するまで完成を待つ設計にはせず、将来の入団・FA・引退や、保存していない事前予想は作らない。J06のWatch数値baseline・統計を含む本文にはSourceのexport条件を適用する。可搬にできない場合は個人設定・参照ID・既読状態等の許される範囲を移行し、baselineを再確立する。復元直後の初回観測を新たな活躍・達成として通知しない。
+
+### 0.5 完成・公開の判定
+
+1. **機能**：対象R/Jごとに、実際の導線、採用範囲、未対応範囲、関連テスト、実画面の証拠を記録する。公開URL・型・画面の存在だけを完了根拠にしない。
+2. **データ**：Source条件、本人照合、Coverage、統計検証、採用version/hashを確認する。独立した対象母集団がない場合にcompleteを宣言しない。公開前後で既存immutableデータ・ID・参照・保存形式を照合する。
+3. **運用**：既存Production Gateが要求する実Scheduled・バックアップ/復元・readbackの証拠を確認する。DB制限中は最後の検証済み公開データを扱い、制限回避・無制限リトライをしない。期限到来や静的公開成功をDB復旧と呼ばない。
+4. **UI/端末**：通常サイズの実画面と文字拡大を別々に評価する。機能テストだけで見た目を合格にしない。エミュレーター、Pixel、TalkBack、署名付き更新を別に記録し、未実施は未実施のまま残す。
+5. **配布**：Web/PWA公開済み、Android engineering-ready、実機確認済み、正式署名/ストア提出可能、正式公開済みを分離する。所有者操作が残る段階ではストア提出可能・全体完成と報告しない。
+
+各項目の状態は「未着手 / 実装・接続中 / 検証待ち / 外部依存で保留 / 宣言した範囲で完了」で管理し、保留には不足証拠と再開条件を付ける。条件付き拡張の不採用と、本体要件の未完了は別に記録する。古い棚卸しの完成率やPASSを新しい版へ流用しない。
+
+### 0.6 固定条件と実施方針
+
+- 追加月額¥0。支出・有料API・継続課金・契約/鍵/署名/アカウント等の所有者操作は既存の事前承認条件を維持する。問い合わせ・許諾申請は原則行わず、公開条件で評価する。
+- NPB Current、MLB Historical、Canonical ID、Facts、Coverage、Production Gate、HOT/Ranking Gate、出典、個人保存、既存URLとimmutable assetを保全する。新要件が追加されてもGateを開ける根拠にはしない。
+- AI候補と公開済み統計を分離し、失敗履歴・入力hash・無料枠を維持する。未検証候補の自動公開や有料fallbackを導入しない。
+- 初期表示で全年度・全選手・全競技区分を読み込まない。既存reader/cache/集計を再利用し、取得回数・容量・初期表示を変更前後で測る。公開可能な個人保存と、再配布が制限された成績データのexportは別扱いにする。
+- 実装は小さく独立してレビュー・テスト・revertできる単位に分割する。外部Source/DB/実機待ちで独立作業を停止せず、未解決依存を推測で突破しない。現在の承認済みUIの全面再設計を再開しない。
+
+---
+
 ## 1. Product vision
 
-Create an Android-first baseball data application for NPB and MLB fans.
+Create an Android-smartphone-first baseball data application for NPB and MLB fans, distributed through Web/PWA and the maintained native Android foundation. Prioritize NPB active-player context and year-round discovery; retain MLB Historical and legitimately richer MLB capabilities. The current completion baseline is §0, not the initial Phase 0 task description.
 
 The product should answer questions such as:
 
@@ -53,7 +125,7 @@ Example:
 ## 3. Hard constraints
 
 1. Android smartphone app first.
-2. NPB and MLB are both first-class.
+2. Preserve both NPB and MLB support; prioritize NPB active-player completion and retain MLB Historical without artificial feature parity.
 3. Additional recurring monthly operating cost must remain ¥0 unless explicitly approved later.
 4. Use only data sources whose use is compatible with the intended application.
 5. Do not rely on prohibited scraping, reverse engineering, or undocumented private APIs.
@@ -68,7 +140,7 @@ Example:
 ## 4. Product principles
 
 ### 4.1 Rich data, simple presentation
-Store and support as much useful permitted data as practical, especially for MLB, but progressively disclose it in the UI.
+Store and support useful permitted data, prioritizing NPB active players and retaining MLB's legitimately richer historical data. Progressively disclose it in the UI.
 
 ### 4.2 MLB can be richer than NPB
 Do not reduce MLB to artificial parity with NPB.
@@ -740,16 +812,16 @@ Do not treat a developer subscription such as Google AI Pro as an application ba
 
 ## 24. App / web development direction
 
-Android is the primary distribution target.
+Android smartphones are the primary use case. Retain the existing Web/PWA and Capacitor Android paths, with separate update and release acceptance under R12.
 
-Preferred initial direction:
+Established implementation:
 - TypeScript web UI for fast iteration,
 - Capacitor for Android packaging,
 - browser preview during development,
 - GitHub for source control,
 - Vercel may be used for free previews or developer/admin views if useful.
 
-This is a preference, not an irreversible mandate. The initial architecture task may choose a materially better zero-cost approach but must document the reason before implementation.
+The initial architecture choice is historical, not an instruction to reselect the stack on each task. Any material architecture change needs a documented reason, affected areas, migration risk and rollback path before implementation.
 
 ---
 
@@ -766,15 +838,17 @@ At minimum:
 ## 26. Accessibility / usability
 
 - Touch targets appropriate for smartphones.
-- Respect system font scaling where practical.
+- Respect system font scaling; validate normal, 150% and 200% separately.
 - Do not communicate important state by color alone.
-- Support dark and light themes eventually; initial architecture must not block either.
+- Support dark and light themes in every delivered scope.
 - Charts/tables must have readable textual context.
 - Japanese-first UI, while MLB names/terms may retain appropriate English labels.
 
 ---
 
 ## 27. Phased implementation
+
+Historical implementation sequence: these phase headings are retained for traceability, not a current progress report or a new instruction to stop at Phase 0. Use §0 and the completion work plan for current priorities. Source/identity/coverage gates and incremental review remain required.
 
 All phases are part of the long-term product. They are **implementation order**, not abandoned scope.
 
@@ -884,6 +958,8 @@ Before advancing:
 ---
 
 ## 29. Initial Work task boundary
+
+Historical boundary for the first architecture task only. It does not limit ongoing authorized completion work; current product scope and acceptance are in §0. The original text remains below for traceability.
 
 The first Work/Codex task must **not** implement the full roadmap.
 
@@ -1060,7 +1136,7 @@ Centralize locale, numbers, units, dates, names, positions, pitch types and metr
 
 The approved compact smartphone presentation remains the baseline for all subsequent screens. Before coding a new screen, create and inspect an actual image-generated phone concept that follows this design; retain its reference with the implementation evidence. A desktop mockup or a claim that an image was generated is not sufficient. Reuse the existing mobile type scale and controls, keep ordinary headings/numbers compact, and verify the real implementation at 360–390px in Light/Dark before delivery. Native 150%/200% enlargement is a separate accessibility check and must remain enabled. Detailed workflow and sizes are in `docs/design-system.md`.
 
-The approved visual direction is Modern / Sports / Data / Clean, with usability before ornament. The first visible layer is conclusion or important value; detail appears through clearly labeled rows, tabs, chips and optional explanations. Primary navigation uses five Japanese labels: ホーム / 検索 / 分析 / 記録 / マイ. WATCH enters from Home's 今日の試合, not a sixth tab. Player uses 概要 / 成績 / 分析 / その他, retaining room for records and career in その他. All routes retain global NPB/MLB switching. Existing bookmarked `/players/:id` URLs remain valid; legacy `/players` and `/favorites` redirect to the new Search/My routes.
+The approved visual direction is Modern / Sports / Data / Clean, with usability before ornament. The first visible layer is conclusion or important value; detail appears through clearly labeled rows, tabs, chips and optional explanations. Primary navigation uses five destinations: ホーム / 試合 / 選手 / 記録 / My. Analysis and Watch remain secondary destinations in Player/Home/My context, not additional primary tabs. Player groups overview, recorded seasons/statistics, analysis and career/records through clear existing secondary routes. All routes retain global NPB/MLB switching. Existing bookmarked `/players/:id` URLs remain valid; legacy `/players` and `/favorites` redirect to the new Search/My routes.
 
 The design token layer defines light/dark backgrounds, surfaces, borders, text, brand, semantic states, charts, spacing, radius, typography, elevation, icon sizes and touch targets. Default theme follows the device. Use deep navy/blue sparingly for CTA, links and selection; team color is a small identity accent, not the application theme. Normal UI icons use one SVG set; required baseball-specific icons are original vectors. No official NPB/MLB/team logo is bundled without reviewed application-use permission. Shared Team/League branding chooses a permitted logo or a clearly nonofficial badge/text/monogram fallback. Do not generate confusingly similar official marks or depend on player photos.
 

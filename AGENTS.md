@@ -1,7 +1,7 @@
 # AGENTS.md
 
 ## Source of truth
-- `SPEC.md` is the product specification and primary source of truth.
+- `SPEC.md` is the product specification and primary source of truth. Start with section 0 for the current completion requirements, declared scope, and acceptance criteria; historical phase/task notes are not the current work boundary. `docs/product-completion-plan.md` tracks work and evidence without replacing those requirements.
 - `docs/decisions.md` records durable product and architecture decisions and why they were made.
 - `README.md` contains setup and operating instructions.
 - Do not duplicate large sections of the specification into this file.
