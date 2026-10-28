@@ -82,14 +82,32 @@ function RecipientHonors({ league, recipientId, filters, change }: { league: Hon
 
 function HonorPlayers({ league, manifest, recipientId, filters, change }: { league: HonorLeague; manifest: ContextManifest; recipientId: string | null; filters: Filters; change: Change }) {
   const [state, setState] = useState<{ league: HonorLeague; data: HonorCatalog | null; failed?: boolean } | null>(null), [attempt, setAttempt] = useState(0);
+  const [annual, setAnnual] = useState<{ key: string; page: HonorsPage | null; failed?: boolean } | null>(null);
+  const annualKey = `${league}:${filters.year}`, needsAnnual = !recipientId && !!filters.year && !!filters.award;
   useEffect(() => { let active = true; void contextReader.catalog(league).then(data => { if (active) setState({ league, data }); }).catch(() => { if (active) setState({ league, data: null, failed: true }); }); return () => { active = false; }; }, [league, attempt]);
+  useEffect(() => {
+    if (!needsAnnual || !manifest.years[league].includes(Number(filters.year))) return;
+    let active = true;
+    void contextReader.honors(`honors/years/${league}/${filters.year}.json`).then(page => {
+      if (active) setAnnual({ key: annualKey, page });
+    }).catch(() => { if (active) setAnnual({ key: annualKey, page: null, failed: true }); });
+    return () => { active = false; };
+  }, [needsAnnual, league, filters.year, annualKey, manifest, attempt]);
   const current = state?.league === league ? state : null;
   if (current?.failed) return <Retry retry={() => setAttempt(n => n + 1)} />;
   if (!current) return <LoadingSkeleton />;
   const catalog = current.data;
   if (!catalog || catalog.league !== league) return <DataState kind="no-data" title="選手別の表彰歴は未収録です" />;
   if (recipientId) return catalog.players.some(p => p.id === recipientId) ? <RecipientHonors league={league} recipientId={recipientId} filters={filters} change={change} /> : <DataState kind="no-data" title="この選手の表彰歴は未収録です" />;
-  const players = catalog.players.filter(p => (!filters.year || p.years.includes(Number(filters.year))) && (!filters.award || p.awardIds.includes(filters.award)) && (!filters.query || p.name.toLowerCase().includes(filters.query.toLowerCase()) || league === "MLB" && p.playerId !== null && matchesMlbPlayerName(p.playerId, p.name, filters.query)));
+  const annualState = annual?.key === annualKey ? annual : null;
+  if (needsAnnual && !manifest.years[league].includes(Number(filters.year))) return <DataState kind="no-data" title="この年度の表彰歴は未収録です" />;
+  if (needsAnnual && annualState?.failed) return <Retry retry={() => setAttempt(n => n + 1)} />;
+  if (needsAnnual && !annualState) return <LoadingSkeleton />;
+  const annualPage = annualState?.page;
+  if (needsAnnual && (!annualPage || !annualPage.records.every(r => r.league === league && String(r.year) === filters.year))) return <DataState kind="no-data" title="この年度の表彰歴は未収録です" />;
+  // Career-wide year and award indexes cannot prove that an award was won in that year.
+  const annualRecipients = new Set(annualPage?.records.filter(r => r.awardId === filters.award).map(r => r.recipientId));
+  const players = catalog.players.filter(p => (!filters.year || p.years.includes(Number(filters.year))) && (!filters.award || p.awardIds.includes(filters.award)) && (!needsAnnual || annualRecipients.has(p.id)) && (!filters.query || p.name.toLowerCase().includes(filters.query.toLowerCase()) || league === "MLB" && p.playerId !== null && matchesMlbPlayerName(p.playerId, p.name, filters.query)));
   return <><FilterControls years={manifest.years[league]} awards={catalog.awards} filters={filters} change={change} allYears /><p className="inline-note">{players.length}人 · 表彰歴の収録選手</p><div className="honors-player-list">{players.slice(0, filters.limit).map(p => <Link key={p.id} className="honors-player-link" to={honorRecipientPath(league, p.id)}><span><strong>{league === "MLB" && p.playerId ? japaneseMlbPlayerName(p.playerId, p.name) : p.name}</strong><small>{Math.min(...p.years)}–{Math.max(...p.years)}年{!p.playerId && " · 表彰歴のみ"}{p.identityStatus === "unresolved" && " · 本人照合保留"}</small></span><span>{p.total}<small>件</small><span aria-hidden="true"> ›</span></span></Link>)}</div>{!players.length && <p>該当する選手の表彰歴は未収録です。</p>}{players.length > filters.limit && <button onClick={() => change("limit", String(filters.limit + 30))}>さらに表示</button>}</>;
 }
 

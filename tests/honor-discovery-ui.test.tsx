@@ -68,3 +68,28 @@ it("keeps a failed request distinct from missing data and retries only on an exp
     expect(f.host.querySelectorAll(".honors-player-link")).toHaveLength(2);
   } finally { await f.close(); }
 });
+it("requires the award and year to match the same annual record, not separate career indexes", async () => {
+  setup();
+  const records = [row("d", a, 1990), { ...row("e", a, 2004), awardId: "mlb_gold_glove", name: "ゴールドグラブ" }, row("f", b, 2004)];
+  vi.mocked(contextReader.catalog).mockResolvedValue(buildHonorCatalog("MLB", records, page.recipients));
+  vi.mocked(contextReader.honors).mockResolvedValue({ ...page, records: records.filter(r => r.year === 2004) });
+  const f = await mount("/MLB/awards?view=players&year=2004&award=mlb_mvp");
+  try {
+    expect(contextReader.honors).toHaveBeenCalledExactlyOnceWith("honors/years/MLB/2004.json");
+    const links = f.host.querySelectorAll(".honors-player-link");
+    expect(links).toHaveLength(1);
+    expect(links[0]!.getAttribute("href")).toContain(encodeURIComponent(b));
+    expect(contextReader.recipient).not.toHaveBeenCalled();
+  } finally { await f.close(); }
+});
+it("does not show a false empty directory when annual filter evidence fails to load", async () => {
+  setup(); vi.mocked(contextReader.honors).mockRejectedValueOnce(Error("503"));
+  const f = await mount("/MLB/awards?view=players&year=2004&award=mlb_mvp");
+  try {
+    expect(f.host.textContent).toContain("読み込めません");
+    expect(f.host.textContent).not.toContain("0人");
+    vi.mocked(contextReader.honors).mockResolvedValue({ ...page, records: page.records.filter(r => r.year === 2004) });
+    await act(async () => [...f.host.querySelectorAll("button")].find(b => b.textContent === "再試行")!.click());
+    expect(f.host.querySelectorAll(".honors-player-link")).toHaveLength(1);
+  } finally { await f.close(); }
+});
