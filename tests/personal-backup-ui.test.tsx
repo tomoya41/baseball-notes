@@ -38,6 +38,14 @@ describe("explicit backup/restore UI", () => {
     expect(div.textContent).toContain("対象の保存内容を置き換えることを確認しました"); expect(button("取り込む").disabled).toBe(true);
     await click(button("キャンセル")); expect(div.querySelector("table")).toBeNull(); expect(data.size).toBe(0);
   });
+  it("still offers replacement when adding would exceed the destination limit", async () => {
+    data.set(PERSONAL_KEYS.library, JSON.stringify({ version: 1, views: [], activity: [], collections: [{ id: "incoming", name: "移行する集合", players: [], updatedAt: now }] }));
+    const incoming = (await transfer.export()).text;
+    data.set(PERSONAL_KEYS.library, JSON.stringify({ version: 1, views: [], activity: [], collections: Array.from({ length: 20 }, (_, i) => ({ id: `existing-${i}`, name: `端末の集合${i}`, players: [], updatedAt: now })) }));
+    const before = new Map(data); await choose(incoming); expect(div.querySelector('[role="alert"]')?.textContent).toContain("上限"); expect(div.querySelector("table")).toBeNull();
+    await click(div.querySelectorAll('input[type="radio"]')[1]!); expect(div.querySelector("table")?.textContent).toContain("コレクション20件1件"); expect(button("取り込む").disabled).toBe(true); expect(data).toEqual(before);
+    await click(div.querySelector('input[type="checkbox"]')!); await click(button("取り込む")); expect(JSON.parse(data.get(PERSONAL_KEYS.library)!).collections).toHaveLength(1);
+  });
   it("shows safe invalid-file/stale-preview errors and never overwrites a later edit", async () => {
     await choose("invalid JSON"); expect(div.querySelector('[role="alert"]')?.textContent).toContain("形式"); expect(data.size).toBe(0);
     await choose(); await click(div.querySelector('input[type="checkbox"]')!); data.set(PERSONAL_KEYS.favorites, JSON.stringify({ version: 1, items: [] }));
