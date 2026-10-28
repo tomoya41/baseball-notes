@@ -3,6 +3,7 @@ import {publicAssetBase} from "../app/platform";
 import {publicDataFetch,rememberPublicResponse} from "../infrastructure/public-response-cache";
 import {contextManifestSchema,honorsPageSchema,contextPath,type ContextManifest} from "../domain/player-honors";
 import {inningScorePageSchema} from "../domain/inning-score";
+import {honorCatalogSchema,honorRecipientBucket,isHonorRecipientId,type HonorLeague} from "../domain/honor-discovery";
 import pin from "../data/baseball-context-release.json";
 const digest=async(b:Uint8Array)=>[...new Uint8Array(await crypto.subtle.digest("SHA-256",b as BufferSource))].map(v=>v.toString(16).padStart(2,"0")).join("");
 export function createContextReader(request:typeof fetch=publicDataFetch,base=publicAssetBase(),release=pin){
@@ -13,7 +14,7 @@ export function createContextReader(request:typeof fetch=publicDataFetch,base=pu
  }
  const manifest=()=>file("manifest.json",contextManifestSchema,{sha256:release.manifestSha256,bytes:release.manifestBytes});
  async function page<T>(path:string,schema:z.ZodType<T>){const m=await manifest(),f=m.files[path];return f?file(path,schema,f):null;}
- return{manifest,honors:(path:string)=>page(path,honorsPageSchema),scoreboards:(league:"NPB"|"MLB",date:string,competition:"regular"|"postseason")=>page(`scoreboards/${league}/${date.slice(0,7)}-${competition}.json`,inningScorePageSchema)};
+ return{manifest,honors:(path:string)=>page(path,honorsPageSchema),catalog:(league:HonorLeague)=>page(`honors/catalog/${league}.json`,honorCatalogSchema),recipient:(league:HonorLeague,id:string)=>isHonorRecipientId(league,id)?page(`honors/recipients/${league}/${honorRecipientBucket(id)}.json`,honorsPageSchema):Promise.resolve(null),scoreboards:(league:"NPB"|"MLB",date:string,competition:"regular"|"postseason")=>page(`scoreboards/${league}/${date.slice(0,7)}-${competition}.json`,inningScorePageSchema)};
 }
 export const contextReader=createContextReader();
 export type {ContextManifest};

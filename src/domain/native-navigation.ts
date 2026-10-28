@@ -61,7 +61,11 @@ export function parentNativeRoute(path: string): string | null {
   }
   if (league === "MLB" && /^20\d{2}$/.test(source.get("season") ?? "")) scope.set("season", source.get("season")!);
   const suffix = scope.size ? `?${scope}` : "";
-  if(segments[1]==="awards")return `/${league}/records`;
+  if(segments[1]==="awards"){
+    const portable=portableRoute(`/${league}/awards`,source.toString());
+    if(portable&&source.has("recipient"))return source.has("year")||source.has("award")?`/${league}/awards?${new URLSearchParams({recipient:source.get("recipient")!})}`:`/${league}/awards?view=players`;
+    return `/${league}/records`;
+  }
   if (league === "NPB" && segments[1] === "teams" && segments[3] === "players") return `/NPB/teams/${segments[2]}`;
   if(league==="NPB"&&segments[1]==="talent"&&segments[2]==="2026")return "/NPB/talent";
   if(league==="NPB"&&segments[1]==="games"){

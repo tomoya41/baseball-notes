@@ -11,6 +11,7 @@ import { npbEventQuery } from "./npb-event-query";
 import japanPin from "../data/npb-japan-series-release.json";
 import { draftEventQuery } from "./npb-draft-query";
 import { needsNpbSeasonEntry } from "./npb-season-entry";
+import { isHonorRecipientId } from "./honor-discovery";
 
 export const PUBLIC_APP_URL = "https://tomoya41.github.io/baseball-notes/";
 // Local IDs and unknown keys never travel through a shareable URL.
@@ -18,7 +19,12 @@ export function portableRoute(path: string, search = ""): string | null {
   const parts = path.split("/").filter(Boolean), league = parts[0];
   if (league !== "NPB" && league !== "MLB") return null;
   const resource = parts[1], source = new URLSearchParams(search), clean = new URLSearchParams();
-  if(resource==="awards"&&parts.length===2){const year=source.get("year"),award=source.get("award");if(year!==null&&(!/^\d{4}$/.test(year)||Number(year)<(league==="NPB"?1936:1871)||Number(year)>2025)||award!==null&&!/^[a-z0-9_-]+$/.test(award))return null;if(year)clean.set("year",year);if(award)clean.set("award",award);if(source.has("q"))clean.set("q",source.get("q")!.slice(0,100));return `${path}${clean.size?`?${clean}`:""}`;}
+  if(resource==="awards"&&parts.length===2){
+    const year=source.get("year"),award=source.get("award"),view=source.get("view"),recipient=source.get("recipient");
+    if(["year","award","view","recipient","q"].some(k=>source.getAll(k).length>1)||year!==null&&(!/^\d{4}$/.test(year)||Number(year)<(league==="NPB"?1936:1871)||Number(year)>2025)||award!==null&&!/^[a-z0-9_-]+$/.test(award)||view!==null&&!["years","players"].includes(view)||recipient!==null&&(!isHonorRecipientId(league,recipient)||view==="years"))return null;
+    if(recipient)clean.set("recipient",recipient);else if(view==="players")clean.set("view",view);
+    if(year)clean.set("year",year);if(award)clean.set("award",award);if(source.has("q"))clean.set("q",source.get("q")!.slice(0,100));return `${path}${clean.size?`?${clean}`:""}`;
+  }
   if(league==="NPB"&&needsNpbSeasonEntry(path,source))return source.get("season")==="2027"?"/NPB/season?season=2027":null;
   if(league==="NPB"&&resource==="season"&&parts.length===2){
     const season=source.get("season")??"2027";if(!["2026","2027"].includes(season))return null;

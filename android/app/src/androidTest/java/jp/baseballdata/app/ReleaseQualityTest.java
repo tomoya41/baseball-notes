@@ -1054,6 +1054,28 @@ public class ReleaseQualityTest {
         js("document.querySelector('.japan-home-result').click()");waitText("アプリ独自選出");
         assertTrue("No invented Japan Series MVP",js("document.querySelector('.daily-mvp').innerText").contains("選手成績未収録"));
     }
+    @Test public void honorsRecipientHistoryKeepsUncollectedStatisticsAndNativeBackAtLargeFont() throws Exception {
+        Intent link = new Intent(Intent.ACTION_VIEW, Uri.parse("baseballnotes://MLB/awards?recipient=lahman%3Abondsba01"));
+        link.setClass(InstrumentationRegistry.getInstrumentation().getTargetContext(), MainActivity.class);
+        scenario=ActivityScenario.launch(link);waitText("Barry Bonds");waitText("年度成績は未収録");
+        assertEquals("No fabricated statistics profile for an honors-only recipient","0",js("String(document.querySelectorAll('.honors-recipient a[href*=\"/players/\"]').length)"));
+        assertEquals("All collected rows for the exact source identity","30",js("String(document.querySelectorAll('.honors-recipient .honors-list>li').length)"));
+        js("document.querySelector('.honors-counts>summary').click()");
+        assertEquals("MVP count comes from the seven adopted annual records","7回",js("Array.from(document.querySelectorAll('.honors-counts dl>div')).find(e=>e.querySelector('dt')?.textContent==='MVP（最優秀選手）')?.querySelector('dd')?.textContent"));
+        setTheme("light","ライト");screenshot("honors-recipient-360-light");
+        js("(()=>{const y=document.querySelector('.honors-recipient select');y.value='2004';y.dispatchEvent(new Event('change',{bubbles:true}));})()");
+        waitCondition("Selected award year is retained in the URL","location.hash.includes('year=2004')");
+        fontScaleAndRecreate(2.0f);waitText("Barry Bonds");waitViewport(360);
+        assertEquals("Award year survives recreation","2004",js("document.querySelector('.honors-recipient select')?.value"));
+        assertEquals("No unrelated year or person leaks from the recipient bucket","true",js("document.querySelectorAll('.honors-recipient .honors-list>li').length>0 && Array.from(document.querySelectorAll('.honors-recipient .honors-year>a')).every(a=>a.textContent==='2004')"));
+        assertEquals("Honors at 200 percent do not overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));
+        setTheme("dark","ダーク");screenshot("honors-recipient-360-dark-200");
+        shell("input keyevent KEYCODE_BACK");waitText("Barry Bonds");
+        waitCondition("Back clears the selected year without losing the source identity","location.hash.includes('recipient=')&&!location.hash.includes('year=')");
+        shell("input keyevent KEYCODE_BACK");waitCondition("Cold-link parent is the recipient directory","!!document.querySelector('.honors-player-list')");
+        assertEquals("Recipient directory remains bounded","30",js("String(document.querySelectorAll('.honors-player-link').length)"));
+        assertEquals("Directory at 200 percent does not overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));
+    }
     @Test public void honorsAndHorizontalScoreboard() throws Exception {
         scenario = ActivityScenario.launch(MainActivity.class); waitText("BASEBALL");
         shell("wm size 360x800"); setTheme("light", "ライト");
