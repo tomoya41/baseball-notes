@@ -9,6 +9,7 @@ import japanPin from "../src/data/npb-japan-series-release.json";
 import retained from "../src/data/npb-japan-series-retained-releases.json";
 import {assertImmutableReleaseTag,assertReleasePredecessor} from "../src/data/immutable-release-tag";
 import {japanSeriesUpdateReport} from "../src/domain/npb-japan-series-update";
+import {appendReviewedJapanFinals,npbJapanSeriesSchema} from "../src/domain/npb-japan-series";
 const option=(key:string)=>process.argv.find(a=>a.startsWith(`--${key}=`))?.slice(key.length+3);
 const archive=option("archive"),base=option("cs"),output=option("output");
 if(!archive||!base||!output?.startsWith(".data/"))throw Error("Explicit private archive, CS file and .data output required");
@@ -17,9 +18,12 @@ const hash=(b:Uint8Array)=>createHash("sha256").update(b).digest("hex"),cs=await
 if(hash(cs)!==pin.bodySha256)throw Error("Unpinned CS snapshot");
 const review=option("review"),previous=option("previous"),tag=option("tag");
 if(review&&(!previous||!process.argv.includes("--review-confirmed")))throw Error("Result update requires pinned previous snapshot and review confirmation");
-const data=buildWikipediaJapanSeries(JSON.parse(await readFile(archive,"utf8")),npbPostseasonSeriesSchema.parse(JSON.parse(cs.toString())),pin.bodySha256,undefined,review?JSON.parse(await readFile(review,"utf8")):undefined),body=Buffer.from(JSON.stringify(data)),gzip=gzipSync(body,{level:9});
+const append=process.argv.includes("--append-reviewed-finals");
+if(append&&(!review||!previous||!process.argv.includes("--review-confirmed")))throw Error("Append requires separately reviewed source blocks and pinned predecessor");
+let data=buildWikipediaJapanSeries(JSON.parse(await readFile(archive,"utf8")),npbPostseasonSeriesSchema.parse(JSON.parse(cs.toString())),pin.bodySha256,undefined,review?JSON.parse(await readFile(review,"utf8")):undefined);
 let report:ReturnType<typeof japanSeriesUpdateReport>|undefined;
-if(previous){const old=await readFile(previous);if(hash(old)!==japanPin.bodySha256)throw Error("Unpinned previous Japan Series snapshot");report=japanSeriesUpdateReport(JSON.parse(old.toString()),data);}
+if(previous){const old=await readFile(previous);if(hash(old)!==japanPin.bodySha256)throw Error("Unpinned previous Japan Series snapshot");const prior=npbJapanSeriesSchema.parse(JSON.parse(old.toString()));if(append)data=appendReviewedJapanFinals(prior,data);report=japanSeriesUpdateReport(prior,data);}
+const body=Buffer.from(JSON.stringify(data)),gzip=gzipSync(body,{level:9});
 if(tag&&!/^npb-japan-series-wikipedia-[a-z0-9-]+$/.test(tag))throw Error("New immutable release tag required");
 if(tag)assertImmutableReleaseTag(tag,hash(body),hash(gzip),[...retained,japanPin]);
 assertReleasePredecessor(tag,hash(body),japanPin.bodySha256,!!previous);

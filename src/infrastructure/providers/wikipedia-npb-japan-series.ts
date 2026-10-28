@@ -60,9 +60,9 @@ export function buildWikipediaJapanSeries(raw:unknown,cs:NpbPostseasonSeries,csS
     const gameId=japanGameId(gameNumber);venues[gameId]=venue;
     const score=plain(cells[3]!);
     if(score!=="-"){
-      const result=/^(\d+)\s*[-–−]\s*(\d+)$/.exec(score);
-      if(!review||!result)throw Error("Changed schedule result needs separately reviewed completion evidence");
-      scheduleScores.set(gameId,`${Number(result[1])}-${Number(result[2])}`);
+      const result=/^(\d+)\s*[-–−]\s*(\d+)(x?)$/.exec(score);
+      if(!review||!result||result[3]&&Number(result[2])<=Number(result[1]))throw Error("Changed schedule result needs separately reviewed completion evidence");
+      scheduleScores.set(gameId,`${Number(result[1])}-${Number(result[2])}${result[3]}`);
     }
     games.push({gameId,gameNumber,date:day,awayTeamId:away,homeTeamId:home,awayRuns:null,homeRuns:null,status:"scheduled",scheduledAt:null,winnerId:null});
   }

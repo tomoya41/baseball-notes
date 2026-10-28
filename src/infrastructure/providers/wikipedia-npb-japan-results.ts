@@ -26,7 +26,8 @@ export function applyReviewedJapanResults(base:NpbJapanSeries,article:string,raw
     const awayInnings=counts(away),homeInnings=counts(home);
     if(away.length!==home.length||!/^\d+$/.test(fields.RR??"")||!/^\d+$/.test(fields.HR??""))throw Error("Unknown final score");
     const awayRuns=Number(fields.RR),homeRuns=Number(fields.HR);
-    if(awayRuns!==awayInnings.reduce((a,b)=>a+b,0)||homeRuns!==homeInnings.reduce((a,b)=>a+b,0)||scheduleScores.get(g.gameId)!==`${awayRuns}-${homeRuns}`||awayRuns!==homeRuns&&!fields.WP)throw Error("Score/schedule/innings mismatch");
+    const scheduled=scheduleScores.get(g.gameId);
+    if(awayRuns!==awayInnings.reduce((a,b)=>a+b,0)||homeRuns!==homeInnings.reduce((a,b)=>a+b,0)||scheduled?.replace(/x$/,"")!==`${awayRuns}-${homeRuns}`||scheduled?.endsWith("x")&&(!/^\d+x$/i.test(home.at(-1)!)||homeRuns<=awayRuns)||awayRuns!==homeRuns&&!fields.WP)throw Error("Score/schedule/innings mismatch");
     g.status="final";g.awayRuns=awayRuns;g.homeRuns=homeRuns;g.winnerId=homeRuns>awayRuns?g.homeTeamId:awayRuns>homeRuns?g.awayTeamId:null;
     const last=home.at(-1)!;d.results.push({gameId:g.gameId,awayInnings,homeInnings,durationMinutes:minutes,homeLastInning:/^[xX]$/.test(last)?"not_played":/[xX]$/.test(last)?"walk_off":"completed",sourcePageId:5306035,evidenceSha256:createHash("sha256").update(block).digest("hex")});
   }
