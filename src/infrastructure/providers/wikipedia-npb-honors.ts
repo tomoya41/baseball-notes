@@ -64,7 +64,9 @@ export function parseNpbHonors(text:string,recipientId:string,sourceId:string){
    if(/候補|予想|未確定|受賞予定|取消|辞退/.test(block.join("\n")))throw Error("not_confirmed_winner");
    const count=Number(match[3]),children=block.slice(1).map(s=>s.replace(/^\*\*\s*/,""));
    const counted=children.filter(s=>new RegExp(`^(?:${positionPattern}\\s*[：:]\\s*)?\\d+回\\s*（`).test(s));
-   if(children.some(s=>/\d+回\s*（/.test(s)&&!counted.includes(s)))throw Error("unsupported_award_child");
+   const awardLike=(s:string)=>/^\d+(?:回|年)|^\[\[\d{4}年/.test(s)||new RegExp(`^${positionPattern}`).test(s)||/部門\s*[：:]|\d+回\s*（|^\[\[[^\]]+\]\]\s*[：:]?\s*\d+(?:回|年)/.test(s)||/部門/.test(s)&&/\d+(?:回|年)/.test(s);
+   if(children.some(s=>awardLike(s)&&!counted.includes(s)))throw Error("unsupported_award_child");
+   if(children.some(s=>[...s.matchAll(/(\d{4})年/g)].some(m=>Number(m[1])>2025)))throw Error("unconfirmed_child_year");
    if(counted.length&&/\d{4}年/.test(match[4]??""))throw Error("ambiguous_parent_and_child_years");
    const parts=counted.length?counted.flatMap(parsePart):parsePart(`${match[3]}回${match[4]}`);
    if(parts.reduce((n,p)=>n+p.years.length,0)!==count)throw Error("nested_count_mismatch");
