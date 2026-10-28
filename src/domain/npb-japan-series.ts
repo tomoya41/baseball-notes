@@ -5,9 +5,9 @@ import type { NpbPostseasonSeries } from "./npb-postseason-series";
 import { dateInZone } from "./analysis-query";
 
 type JapanSource = z.infer<typeof csSourceSchema>;
-type JapanProvenance = { sources: readonly JapanSource[]; additionalSources?: readonly JapanSource[] };
+type JapanProvenance = { sources: readonly JapanSource[]; additionalSources?: readonly JapanSource[] | undefined };
 export const allJapanSeriesSources = (d: JapanProvenance) => [...d.sources, ...(d.additionalSources ?? [])];
-export function japanResultSource(d: JapanProvenance & { results: readonly { gameId: string; sourcePageId?: number; sourceRevision?: number }[] }, gameId: string) {
+export function japanResultSource(d: JapanProvenance & { results: readonly { gameId: string; sourcePageId?: number | undefined; sourceRevision?: number | undefined }[] }, gameId: string) {
   const result = d.results.find(r => r.gameId === gameId);
   return result?.sourceRevision === undefined ? d.sources.find(s => s.pageId === result?.sourcePageId)
     : allJapanSeriesSources(d).find(s => s.pageId === result.sourcePageId && s.revision === result.sourceRevision);
