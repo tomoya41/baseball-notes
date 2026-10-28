@@ -488,3 +488,7 @@ During the explicit 2026 Japan Series editorial window, one small static competi
 ### 2026-10-28 — 完成版の要件・範囲・判定をSPEC冒頭へ統合
 
 ユーザーの要件再検討を受け、NPBの現役選手の今・変化・歩みを一年通して追う体験を中心に、[SPEC §0](../SPEC.md#completion-baseline)へ本体R01–R12、体験J01–J07、完成判定を集約する。MLB Historicalを維持し、権利/粒度が必要な拡張、任意AI、所有者による正式配布を別に判定する。型・画面・fixture・過去のPASSだけで完成扱いしない。学年/年齢・完全通算/収録分・公式表彰/独自選出・アプリ内Watch/背景通知を分離し、個人保存の安全な移行を本体に含める。旧節番号・技術契約・実証記録は保持し、初期Phase/初回タスクだけを履歴と明示する。[作業計画](product-completion-plan.md)は要件の複製ではなく、依存と不足証拠を管理する。文書の合意は新Sourceの利用権、Gate解除、課金、AI自動公開、署名/ストア操作の根拠にはしない。今回は文書のみの変更で、rollbackはこのcommitのrevert。
+
+### 2026-10-29 — 個人保存は確認付きファイルで持ち運び、成績とは分離する
+
+アカウントや新しいサーバーを追加せず、Favorites/Collections/保存条件/閲覧履歴/Watch設定だけをversion固定JSONで移行する。制限付き成績、観測値、アラート本文、端末購読情報は含めない。追加/置換の確認と保存中断時の一貫性は共通の保存adapterとローカルjournalで守り、既存の保存キー/versionを継続する。復元でbaselineが変わる時は初回観測を新しい活躍通知にしない。Web/PWAとAndroidを分離したまま本人の選択で移行し、署名問題の消去による迂回に使わない。旧コードへのrollbackにはjournalの回復完了が必要。[対象・除外・失敗回復](personal-backup.md)。

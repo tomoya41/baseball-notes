@@ -981,6 +981,63 @@ public class ReleaseQualityTest {
         js("Capacitor.Plugins.Preferences.remove({key:'qa-persistence'})");
     }
 
+    private void clickDocumentText(String text) throws Exception {
+        long start = System.currentTimeMillis();
+        while (System.currentTimeMillis() - start < 20000) {
+            android.view.accessibility.AccessibilityNodeInfo root = InstrumentationRegistry.getInstrumentation().getUiAutomation().getRootInActiveWindow();
+            if (root != null && root.getPackageName() != null && root.getPackageName().toString().contains("documentsui")) {
+                for (android.view.accessibility.AccessibilityNodeInfo node : root.findAccessibilityNodeInfosByText(text)) {
+                    android.view.accessibility.AccessibilityNodeInfo target = node;
+                    for (int depth = 0; target != null && depth < 4; depth++, target = target.getParent()) {
+                        if (target.isEnabled() && target.isClickable() && target.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK)) return;
+                    }
+                }
+            }
+            Thread.sleep(100);
+        }
+        fail("Android document picker action unavailable: " + text);
+    }
+    @Test public void personalBackupUsesAndroidDocumentsAndConfirmedRestoreWithoutLosingOtherSettings() throws Exception {
+        var context = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        var preferences = context.getSharedPreferences("CapacitorStorage", 0);
+        String[] keys = {"baseball:favorites:v1", "baseball:personal-library:v1", "baseball:personal-watch:v1"};
+        String[] original = new String[keys.length]; for (int i = 0; i < keys.length; i++) original[i] = preferences.getString(keys[i], null);
+        assertFalse("No pending restoration before isolated QA", preferences.contains("baseball:personal-restore:journal:v1"));
+        String unchanged = preferences.getString("appearance-v1", null);
+        try {
+            preferences.edit().putString(keys[0], "{\"version\":1,\"items\":[{\"league\":\"MLB\",\"kind\":\"player\",\"entityId\":\"mlb:player:00000000-0000-4000-8000-000000000001\",\"addedAt\":\"2026-01-01T00:00:00Z\"}]}")
+                .putString(keys[1], "{\"version\":1,\"collections\":[{\"id\":\"qa-backup\",\"name\":\"持ち運ぶ選手\",\"players\":[],\"updatedAt\":1}],\"views\":[],\"activity\":[]}")
+                .remove(keys[2]).commit();
+            scenario = ActivityScenario.launch(MainActivity.class); waitText("BASEBALL"); js("location.hash='#/MLB/my'"); waitText("設定・バックアップ");
+            js("document.querySelector('.my-settings-disclosure>summary').click()"); waitText("ファイルを保存");
+            js("Capacitor.Plugins.PersonalBackupFiles.save({filename:'../forbidden.json',text:'{}'}).then(()=>document.documentElement.dataset.badBackup='accepted',()=>document.documentElement.dataset.badBackup='rejected')");
+            waitCondition("Native adapter rejects arbitrary paths", "document.documentElement.dataset.badBackup==='rejected'");
+            js("Array.from(document.querySelectorAll('.backup-actions button')).find(b=>b.textContent==='ファイルを保存').click()");
+            Thread.sleep(1500); shell("input keyevent KEYCODE_BACK"); waitText("保存をキャンセルしました");
+            String filename = js("'baseball-notes-backup-'+new Date().toISOString().slice(0,10)+'.json'");
+            js("Array.from(document.querySelectorAll('.backup-actions button')).find(b=>b.textContent==='ファイルを保存').click()");
+            clickDocumentText("Save"); waitText("ファイルを保存しました");
+            js("Array.from(document.querySelectorAll('.backup-actions button')).find(b=>b.textContent==='ファイルを選ぶ').click()");
+            clickDocumentText(filename); waitText("取り込み内容");
+            assertEquals("Import is confirmation-only", "true", js("Array.from(document.querySelectorAll('.backup-actions button')).find(b=>b.textContent==='取り込む').disabled"));
+            js("document.querySelector('.backup-confirm input').click()");
+            waitCondition("Explicit confirmation enables restore", "!Array.from(document.querySelectorAll('.backup-actions button')).find(b=>b.textContent==='取り込む').disabled");
+            js("Array.from(document.querySelectorAll('.backup-actions button')).find(b=>b.textContent==='取り込む').click()");
+            waitText("保存内容を取り込みました"); assertEquals("Appearance unchanged", unchanged, preferences.getString("appearance-v1", null));
+            assertTrue("Collection retained", preferences.getString(keys[1], "").contains("持ち運ぶ選手"));
+            assertFalse("Journal committed and cleared", preferences.contains("baseball:personal-restore:journal:v1"));
+            for (float scale : new float[]{1.0f, 1.5f, 2.0f}) {
+                fontScaleAndRecreate(scale); waitText("設定・バックアップ"); waitViewport(360);
+                js("if(!document.querySelector('.my-settings-disclosure').open)document.querySelector('.my-settings-disclosure>summary').click()"); waitText("ファイルを保存");
+                assertEquals("Backup controls do not overflow at " + scale, "true", js("document.documentElement.scrollWidth<=innerWidth"));
+                js("document.querySelector('.personal-backup').scrollIntoView({block:'start'})"); screenshot("personal-backup-font-" + scale);
+            }
+        } finally {
+            if (scenario != null) { scenario.close(); scenario = null; }
+            var editor = preferences.edit(); for (int i = 0; i < keys.length; i++) { if (original[i] == null) editor.remove(keys[i]); else editor.putString(keys[i], original[i]); } editor.commit();
+        }
+    }
+
     @Test public void nativeSharedCounterLoadsAndPersistsAtActualPageSize() throws Exception {
         var target = InstrumentationRegistry.getInstrumentation().getTargetContext();
         Bundle arguments = InstrumentationRegistry.getArguments();

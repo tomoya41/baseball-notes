@@ -3,20 +3,21 @@ import { favoriteSchema } from "../domain/models";
 import type { Favorite } from "../domain/models";
 import type { SettingsStore } from "./ports";
 import { favoriteMatches } from "../domain/cross-league";
+import { mutatePersonalSettings, PERSONAL_KEYS } from "./personal-settings";
 
 const schema = z.object({
   version: z.literal(1),
   items: z.array(favoriteSchema),
 });
-const key = "baseball:favorites:v1";
+const key = PERSONAL_KEYS.favorites;
 export class Favorites {
   private queue: Promise<unknown> = Promise.resolve();
   constructor(
     private readonly storage: SettingsStore,
     private readonly now: () => number = Date.now,
   ) {}
-  async list(): Promise<Favorite[]> {
-    const raw = await this.storage.get(key);
+  async list(storage = this.storage): Promise<Favorite[]> {
+    const raw = await storage.get(key);
     if (raw === null) return [];
     try {
       return schema.parse(JSON.parse(raw)).items;
@@ -30,8 +31,8 @@ export class Favorites {
     target: Pick<Favorite, "entityId" | "kind" | "league">,
     mode: "toggle" | "add" | "remove" = "toggle",
   ): Promise<Favorite[]> {
-    const operation = this.queue.then(async () => {
-      const current = await this.list();
+    const operation = this.queue.then(() => mutatePersonalSettings(this.storage, async storage => {
+      const current = await this.list(storage);
       const match = (item: Favorite) => favoriteMatches(item, target);
       const exists=current.some(match);
       if((mode==="add"&&exists)||(mode==="remove"&&!exists))return current;
@@ -41,12 +42,12 @@ export class Favorites {
             ...current,
             { ...target, addedAt: new Date(this.now()).toISOString() },
           ];
-      await this.storage.set(
+      await storage.set(
         key,
         JSON.stringify(schema.parse({ version: 1, items: next })),
       );
       return next;
-    });
+    }));
     this.queue = operation.catch(() => undefined);
     return operation;
   }
