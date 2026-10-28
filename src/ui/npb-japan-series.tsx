@@ -28,7 +28,7 @@ function useJapan(valid:boolean){
   useEffect(()=>{if(!valid)return;let active=true;void readNpbJapanSeries().then(d=>{if(active){setData(d);setFailed(false);}}).catch(()=>{if(active)setFailed(true);});return()=>{active=false;};},[valid,attempt]);
   return {data,failed,retry:()=>{setFailed(false);setAttempt(n=>n+1);}};
 }
-function Sources({data,gameId}:{data:NpbJapanSeries;gameId?:string}){
+function Sources({data,gameId}:{data:NpbJapanSeries;gameId?:string|undefined}){
   const own=gameId?japanResultSource(data,gameId):undefined,sources=own?[own]:allJapanSeriesSources(data);
   return <details><summary>収録範囲・出典</summary><p>記事取得 {observedTime(data.observedAt)}（日本時間）{data.review&&` · 最終確認 ${observedTime(data.review.reviewedAt)}`}。リアルタイム更新ではありません。</p><p>Wikipediaの記事に記載された日程です。実際の開催・開始時刻・選手の出場を保証するものではありません。公式戦・CSとは別集計です。CSの勝数・アドバンテージは日本シリーズへ持ち越しません。</p>{sources.map(s=><p key={`${s.pageId}:${s.revision}`}><a href={`https://ja.wikipedia.org/w/index.php?curid=${s.pageId}&oldid=${s.revision}`}>Wikipedia「{s.title}」の執筆者 · 改版{s.revision}</a> · <a href={`https://ja.wikipedia.org/w/index.php?curid=${s.pageId}&action=history`}>執筆履歴</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a> · 原記事からの変更：日程・結果・球場の抜粋・表記整理</p>)}<a href="https://npb.jp/nippons/2026/">最新の開催情報を公式サイトで確認</a></details>;
 }
