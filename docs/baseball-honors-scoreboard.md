@@ -30,7 +30,9 @@ Offline builder → new immutable release → pin → stage validates all hashes
 
 Honors reads one manifest plus the requested year / two-hex profile bucket, only on navigation/expansion. Scores read a selected month and Regular/Postseason scope. Home adds zero requests. Runtime validates before offline caching, bounds memory to 64 files. Errors preserve original Game totals. No dataset enters initial JS / APK shell.
 
-## Active v3 scope
+## v3公開時の収録範囲
+
+選手別探索は[v4](honors-player-discovery.md)、既存アーカイブからの52件補完は[v5の監査](npb-honors-recovery-2026-10-28.md)を参照。以下の件数は当初v3の記録である。
 
 - NPB: **682 records / 140 linked recipients / 1999–2025**, partial.
 - MLB: **3,289 records / 1,022 recipients / 1931–2025**, 16 award classes, partial. **All 1,022 recipients** have convergent independent Chadwick identities (0 unresolved). **1,330 records / 413 recipients** have collected-profile links. **609 recipients** remain without a profile link, including players outside 2014–2025. Names never force linkage.
