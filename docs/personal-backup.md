@@ -24,7 +24,7 @@ Webはブラウザーのダウンロード、AndroidはStorage Access Framework�
 
 既存の3保存キー・schema/versionは変更しない。共通の保存adapterが通常の編集も直列化し、複数キーの復元にはpending/committedのローカルjournalを使う。pending中は全体の旧状態、commit後は全体の新状態を読み、途中の物理書込みを画面へ混ぜない。次の編集で回復・cleanupする。journalの形式破損は自動リセットせず保持してエラーにする。
 
-Web Locksを利用可能な環境では同じoriginの現行クライアント間でも直列化する。古いキャッシュ版の同時編集やWeb Locksのない複数ウィンドウとの排他までは保証しない。最初の書込み前にも読み取った値を再照合する。利用中の旧画面は閉じて移行する。Android/PWAの保存領域は独立したままで、署名差異を消去・無断アンインストールで迂回しない。
+WebではWeb Locksを利用可能なら同じoriginの現行クライアント間でも直列化する。Androidは共有adapterのプロセス内queueとjournalを利用する。WebViewに存在するWeb Locksのfacadeがcallbackを呼ばず、既存のお気に入り保存まで待機させる実測不具合を検出したため、nativeではブラウザー間用のlockを要求しない。古いキャッシュ版の同時編集やWeb Locksのない複数ウィンドウとの排他までは保証しない。最初の書込み前にも読み取った値を再照合する。利用中の旧画面は閉じて移行する。Android/PWAの保存領域は独立したままで、署名差異を消去・無断アンインストールで迂回しない。
 
 rollback：成績データ・immutable assetは一切更新しない。旧コードへ戻す前に新adapterでjournalの回復/確定を完了させる。pendingのままadapterだけを外すと物理的な途中状態が読まれ得るため、単純revertで済ませない。ユーザーのバックアップや保存内容を手作業で削除しない。
 
@@ -38,12 +38,14 @@ rollback：成績データ・immutable assetは一切更新しない。旧コー
 
 同一性とURL、追加/置換、上限、破損・不正参照、期限、確認後の変更、同時編集、保存失敗/途中中断、Watch初回通知抑止をテストする。360px Light/Dark、Androidの実保存先選択・キャンセル・再取込み、150%/200%を確認する。実施したrun・画面・公開後データ保全を追記する。Pixel・TalkBack・正規署名付き更新は独立した未検証Gateのまま。
 
-PR #99のローカル結果：213 test files、2,077 PASS / Windows専用の既存条件で1 SKIP（計2,078）。Lint、typecheck、Web/Vercel build成功。取込専用の33テストには全書込み段階の中断/再起動、commit応答喪失、上限時の追加失敗→削除なしで置換を選択する回帰を含む。
+PR #99のローカル結果：213 test files、2,079 PASS / Windows専用の既存条件で1 SKIP（計2,080）。Lint、typecheck、Web/Vercel build成功。取込専用の35テストには全書込み段階の中断/再起動、commit応答喪失、上限時の追加失敗→削除なしで置換を選択する回帰、応答しないWeb Locksをnativeで要求しない回帰を含む。
 
 実画面：[変更前360px Light](assets/personal-backup/before-360-light.png)、[変更後Light](assets/personal-backup/after-360-light.png)、[変更後Dark](assets/personal-backup/after-360-dark.png)。変更後の取り込み検証は隔離したlocalhostの個人項目fixtureを用い、公式データや実ユーザーの保存内容は操作していない。見出し15px、ボタン13px/高さ44px、プレビュー表12px。横はみ出しなし。別環境のファイルを選択→確認→保存→Myの件数更新→PWA更新後の保存維持、再取込時の重複なしを実操作で確認した。ローカルに未配置の球団/日程データの失敗表示を、Production障害・試合なし・成績ゼロへ読み替えない。
 
-初期JavaScriptの静的import全体（3ファイル合算、同じNode gzip条件）は525,486→535,276 bytes、gzip 163,178→164,634 bytes（+1,456 bytes）。単体entryの増分には共通chunk間の移動が含まれる。取込UI（JS6,681/CSS1,197 bytes）はMyで遅延読込み。データファイル・追加API/Source・DB読取り/書込み・AI呼出し・月額追加費用はいずれも0。
+初期JavaScriptの静的import全体（3ファイル合算、同じNode gzip条件）は525,486→535,348 bytes、gzip 163,178→164,667 bytes（+1,489 bytes）。単体entryの増分には共通chunk間の移動が含まれる。取込UI（JS6,681/CSS1,197 bytes）はMyで遅延読込み。データファイル・追加API/Source・DB読取り/書込み・AI呼出し・月額追加費用はいずれも0。
 
 配信サーバーを停止したlocalhostで、既存service workerのアプリ本体からMyを再起動し、保存情報の維持・JSON保存・実ファイルの再プレビューを確認した。PC全体のネットワーク切断やPixelのオフライン検証の代替証拠にはしない。
 
-Android実行：[standard](https://github.com/tomoya41/baseball-notes/actions/runs/40774384043)、[16KB](https://github.com/tomoya41/baseball-notes/actions/runs/40774390720)。機能commit `9bb5d736d54ee19d73147225f5c0c9f9dd38e851`を固定した実行。実際の完了結果・公開後HTTP/65,727ファイル保全は[PR #99の検証記録](https://github.com/tomoya41/baseball-notes/pull/99)を参照する。Pixel/TalkBackは未実施、正規署名による更新互換性・Play提出は未完了。
+Android v2実行：[standard](https://github.com/tomoya41/baseball-notes/actions/runs/40774384043)、[16KB](https://github.com/tomoya41/baseball-notes/actions/runs/40774390720)は各34件中2件FAIL（お気に入り保存待ち、保存pickerへ未到達）。この失敗は公開せず、nativeのlock選択を修正した。修正後の固定実行・確定結果・公開後HTTP/65,727ファイル保全は[PR #99の検証記録](https://github.com/tomoya41/baseball-notes/pull/99)を参照する。Pixel/TalkBackは未実施（ローカルADBの接続端末0台）、正規署名による更新互換性・Play提出は未完了。
+
+修正後の機能commit `16476d769f010c3d8b1bfc1ad9b83b086d7788b4`：[standard v3](https://github.com/tomoya41/baseball-notes/actions/runs/40777200157)、[16KB v3](https://github.com/tomoya41/baseball-notes/actions/runs/40777204761)。fixtureを保存する実行先は破棄可能なCIエミュレーターのみ。
