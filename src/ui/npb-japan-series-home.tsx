@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { readNpbJapanSeries } from "../application/npb-japan-series-reader";
-import type { NpbJapanSeries } from "../domain/npb-japan-series";
+import { allJapanSeriesSources,type NpbJapanSeries } from "../domain/npb-japan-series";
 import { japanSeriesFeaturedPlayers, japanSeriesGameUrl, japanSeriesHomeSummary } from "../presentation/japan-series-home";
 import pin from "../data/npb-japan-series-release.json";
 import { ClubIdentity } from "./club-identity";
@@ -32,7 +32,7 @@ export function JapanSeriesHomeContent({ data, now }: { data: NpbJapanSeries; no
     </div>
     <details className="japan-home-explore" onToggle={e=>setExplore(e.currentTarget.open)}><summary>注目選手・試合情報 <small>{observedTime(data.observedAt)}取得</small></summary>
     {next && <><p className="japan-home-venue">{data.venues[next.gameId]} · {next.scheduledAt ? new Intl.DateTimeFormat("ja-JP",{hour:"2-digit",minute:"2-digit",timeZone:"Asia/Tokyo"}).format(new Date(next.scheduledAt)) : "開始時刻未収録"}{next.gameNumber>=5&&" · 開催条件付き"}</p><div className="japan-home-starters"><span>予告先発 <b>未収録</b></span><a href="https://npb.jp/announcement/starter/" target="_blank" rel="noreferrer">公式発表 ↗</a></div></>}
-    <details className="japan-home-source"><summary>{observedTime(data.observedAt)}取得 · 収録範囲・出典</summary><p>収録済みの結果と記事記載の日程。リアルタイム更新ではありません。未収録の試合結果・予告先発・個人成績は補完しません。</p>{data.sources.map(s => <p key={s.pageId}><a href={`https://ja.wikipedia.org/w/index.php?curid=${s.pageId}&oldid=${s.revision}`}>Wikipedia「{s.title}」の執筆者</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a> · 日程・結果の抜粋、表記整理。</p>)}</details>
+    <details className="japan-home-source"><summary>{observedTime(data.observedAt)}取得 · 収録範囲・出典</summary><p>収録済みの結果と記事記載の日程。リアルタイム更新ではありません。未収録の試合結果・予告先発・個人成績は補完しません。</p>{allJapanSeriesSources(data).map(s => <p key={`${s.pageId}:${s.revision}`}><a href={`https://ja.wikipedia.org/w/index.php?curid=${s.pageId}&oldid=${s.revision}`}>Wikipedia「{s.title}」の執筆者 · 改版{s.revision}</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a> · 日程・結果の抜粋、表記整理。</p>)}</details>
     {explore && <PostseasonSpotlight scope={{teamIds:data.series.teams.map(t=>t.teamId)}} allowOutlook={!!next}/>}
     {explore && <div className="japan-home-players"><h2>出場球団の選手</h2><div>{japanSeriesFeaturedPlayers.filter(p => data.series.teams.some(t => t.teamId===p.teamId)).map(p => <article key={p.id}><LicensedPlayerPhoto playerId={p.id} season={2026}/><Link className="japan-home-player-link" to={`/NPB/players/${p.id}`}><strong>{p.name}</strong><ClubIdentity teamId={p.teamId}>{name(p.teamId)}</ClubIdentity></Link></article>)}</div></div>}
     </details>

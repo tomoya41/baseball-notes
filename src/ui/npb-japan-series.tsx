@@ -5,7 +5,7 @@ import { EditorialCover } from "./editorial-cover";
 import { useEffect,useState } from "react";
 import { Link,useParams,useSearchParams } from "react-router-dom";
 import { readNpbJapanSeries } from "../application/npb-japan-series-reader";
-import { assertJapanSeriesAdvancement,type NpbJapanSeries } from "../domain/npb-japan-series";
+import { assertJapanSeriesAdvancement,allJapanSeriesSources,japanResultSource,type NpbJapanSeries } from "../domain/npb-japan-series";
 import type { NpbPostseasonSeries } from "../domain/npb-postseason-series";
 import pin from "../data/npb-japan-series-release.json";
 import { DataState, LoadingSkeleton } from "./components";
@@ -28,7 +28,10 @@ function useJapan(valid:boolean){
   useEffect(()=>{if(!valid)return;let active=true;void readNpbJapanSeries().then(d=>{if(active){setData(d);setFailed(false);}}).catch(()=>{if(active)setFailed(true);});return()=>{active=false;};},[valid,attempt]);
   return {data,failed,retry:()=>{setFailed(false);setAttempt(n=>n+1);}};
 }
-function Sources({data}:{data:NpbJapanSeries}){return <details><summary>収録範囲・出典</summary><p>Wikipediaの記事に記載された日程です。実際の開催・開始時刻・選手の出場を保証するものではありません。公式戦・CSとは別集計です。CSの勝数・アドバンテージは日本シリーズへ持ち越しません。</p>{data.sources.map(s=><p key={s.pageId}><a href={`https://ja.wikipedia.org/w/index.php?curid=${s.pageId}&oldid=${s.revision}`}>Wikipedia「{s.title}」の執筆者</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a> · 原記事からの変更：日程・結果・球場の抜粋・表記整理</p>)}<a href="https://npb.jp/nippons/2026/">最新の開催情報を公式サイトで確認</a></details>;}
+function Sources({data,gameId}:{data:NpbJapanSeries;gameId?:string}){
+  const own=gameId?japanResultSource(data,gameId):undefined,sources=own?[own]:allJapanSeriesSources(data);
+  return <details><summary>収録範囲・出典</summary><p>記事取得 {observedTime(data.observedAt)}（日本時間）{data.review&&` · 最終確認 ${observedTime(data.review.reviewedAt)}`}。リアルタイム更新ではありません。</p><p>Wikipediaの記事に記載された日程です。実際の開催・開始時刻・選手の出場を保証するものではありません。公式戦・CSとは別集計です。CSの勝数・アドバンテージは日本シリーズへ持ち越しません。</p>{sources.map(s=><p key={`${s.pageId}:${s.revision}`}><a href={`https://ja.wikipedia.org/w/index.php?curid=${s.pageId}&oldid=${s.revision}`}>Wikipedia「{s.title}」の執筆者 · 改版{s.revision}</a> · <a href={`https://ja.wikipedia.org/w/index.php?curid=${s.pageId}&action=history`}>執筆履歴</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a> · 原記事からの変更：日程・結果・球場の抜粋・表記整理</p>)}<a href="https://npb.jp/nippons/2026/">最新の開催情報を公式サイトで確認</a></details>;
+}
 function Unavailable({failed,retry}:{failed:boolean;retry:()=>void}){return failed?<><DataState kind="source-unavailable" title="日本シリーズ情報を取得できません"/><button onClick={retry}>再試行</button><Link to="/NPB/cs?season=2026">収録済みのCSへ →</Link></>:<LoadingSkeleton/>;}
 export function JapanSeriesEntry({cs}:{cs:NpbPostseasonSeries}){
   const state=useJapan(true);let consistent=false;
@@ -41,7 +44,7 @@ export function NpbJapanSeriesScreen({gameDetail=false}:{gameDetail?:boolean}){
   const state=useJapan(valid),d=state.data,s=d?.series,g=s?.games.find(row=>row.gameId===gameId),played=!!s?.games.some(row=>row.status==="final"),beforeOpening=!!d&&observedDate(d)<d.series.games[0]!.date;
   return <div className="screen postseason-screen">{(!gameDetail||!g)&&<EditorialCover kind="postseason" eyebrow="NPB · 2026 POSTSEASON" title="日本シリーズ"/>}
     {!valid?<DataState kind="unsupported" title="指定の年度・シリーズは未対応です"/>:!d?<Unavailable {...state}/>:gameDetail&&!g?<DataState kind="no-data" title="この試合は未収録です"/>:<>
-      <p className="inline-note">記事取得 {observedTime(d.observedAt)}（日本時間）{d.review&&` · 最終確認 ${observedTime(d.review.reviewedAt)} · ${d.review.reviewedBy}`} · 予定と収録結果を表示。リアルタイム更新ではありません。</p>
+      <p className="inline-note">収録時点 {observedTime(d.observedAt)}（日本時間）</p>
       {gameDetail&&g?<><GameHeading title={`第${g.gameNumber}戦 · ${name(g.awayTeamId)}対${name(g.homeTeamId)}`} date={g.date} context={`NPB · 日本シリーズ · 第${g.gameNumber}戦`} backTo={japanSeriesUrl}/><ScoreHero away={name(g.awayTeamId)} home={name(g.homeTeamId)} awayId={g.awayTeamId} homeId={g.homeTeamId} awayScore={g.awayRuns} homeScore={g.homeRuns} status={statusLabel(g.status)}/><p>{d.venues[g.gameId]} · {g.scheduledAt?new Intl.DateTimeFormat("ja-JP",{hour:"2-digit",minute:"2-digit",timeZone:"Asia/Tokyo"}).format(new Date(g.scheduledAt)):"開始時刻は未収録"}</p>{g.gameNumber>=5&&<p className="inline-note">4勝先取でシリーズ終了。開催条件を満たす場合の日程です。</p>}
         <UnavailableDailyMvp/>
         <InningScore data={d} gameId={g.gameId}/><h2>個人成績</h2><p className="data-notice">{g.status==="final"?"結果を収録しています。選手別の打撃・投球成績は未収録です。":"この試合の結果・打撃・投球成績はまだ収録していません。予定スコアの空欄は0点・試合終了を意味しません。"}</p>
@@ -49,7 +52,7 @@ export function NpbJapanSeriesScreen({gameDetail=false}:{gameDetail?:boolean}){
         <UnavailableDailyMvp/>
         {d.series.clinched&&<p>{name(d.series.winnerId!)} · 4勝先取で決着（収録時点）</p>}<h2>日程・試合詳細</h2><p className="inline-note">予定日は変更される場合があります。第5戦以降は開催条件付き。開始時刻は未収録です。</p><div className="scoreboard-list">{d.series.games.map(row=><ScoreboardRow key={row.gameId} to={gameUrl(row.gameId)} away={name(row.awayTeamId)} home={name(row.homeTeamId)} awayId={row.awayTeamId} homeId={row.homeTeamId} awayScore={row.awayRuns} homeScore={row.homeRuns} date={row.date.slice(5)} status={`第${row.gameNumber}戦 · ${row.status==="scheduled"?"予定":statusLabel(row.status)}`}/>)}</div></>}
       {!gameDetail&&<PostseasonSpotlight scope={{teamIds:d.series.teams.map(t=>t.teamId)}} allowOutlook={!d.series.clinched&&d.series.games.some(g=>g.status==="scheduled"&&g.date>=new Intl.DateTimeFormat("sv-SE",{timeZone:"Asia/Tokyo"}).format(new Date()))}/>}
-      <div className="hub-links">{gameDetail&&<Link to={japanSeriesUrl}>日本シリーズの日程へ →</Link>}<Link to="/NPB/postseason?season=2026">CSからの勝ち上がり →</Link><Link to="/NPB/cs?season=2026">CSの収録成績へ →</Link></div><Sources data={d}/>
+      <div className="hub-links">{gameDetail&&<Link to={japanSeriesUrl}>日本シリーズの日程へ →</Link>}<Link to="/NPB/postseason?season=2026">CSからの勝ち上がり →</Link><Link to="/NPB/cs?season=2026">CSの収録成績へ →</Link></div><Sources data={d} gameId={gameDetail?g?.gameId:undefined}/>
     </>}
   </div>;
 }

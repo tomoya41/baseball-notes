@@ -3,7 +3,7 @@ import {expect,it} from "vitest";
 import {renderToStaticMarkup} from "react-dom/server";
 import {MemoryRouter} from "react-router-dom";
 import {buildWikipediaJapanSeries} from "../src/infrastructure/providers/wikipedia-npb-japan-series";
-import {npbJapanSeriesSchema,type NpbJapanSeries} from "../src/domain/npb-japan-series";
+import {npbJapanSeriesSchema,appendReviewedJapanFinals,type NpbJapanSeries} from "../src/domain/npb-japan-series";
 import {japanSeriesUpdateReport} from "../src/domain/npb-japan-series-update";
 import {japanSeriesHomeSummary} from "../src/presentation/japan-series-home";
 import {JapanSeriesHomeContent} from "../src/ui/npb-japan-series-home";
@@ -29,7 +29,7 @@ it("switches the hero, standings and next Game together after a validated second
 });
 it("does not request a result release for timestamp/source-only changes or idempotent replay",()=>{
   const before=initial(),after=structuredClone(before);after.observedAt="2026-10-25T01:00:00Z";after.review!.reviewedAt="2026-10-25T01:01:00Z";after.sources[0]!.revision++;
-  expect(japanSeriesUpdateReport(before,after)).toMatchObject({requiresPublication:false,addedResults:[],scheduleChanges:[]});
+  expect(japanSeriesUpdateReport(before,appendReviewedJapanFinals(before,after))).toMatchObject({requiresPublication:false,addedResults:[],scheduleChanges:[]});
   expect(japanSeriesUpdateReport(before,before).requiresPublication).toBe(false);
 });
 it("rejects corrections, deletions, identity changes and source regression before publication",()=>{
