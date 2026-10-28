@@ -11,7 +11,7 @@ export const honorsPageSchema = z.strictObject({ schemaVersion:z.literal(1), rec
 export type Honor = z.infer<typeof honorSchema>;
 export type HonorRecipient = z.infer<typeof honorRecipientSchema>;
 export type HonorsPage = z.infer<typeof honorsPageSchema>;
-export const contextPath=/^(?:honors\/(?:years\/(?:NPB|MLB)\/\d{4}|players\/(?:NPB|MLB)\/[a-f0-9]{2})|scoreboards\/(?:NPB|MLB)\/\d{4}-\d{2}-(?:regular|postseason))\.json$/;
+export const contextPath=/^(?:honors\/(?:catalog\/(?:NPB|MLB)|years\/(?:NPB|MLB)\/\d{4}|(?:players|recipients)\/(?:NPB|MLB)\/[a-f0-9]{2})|scoreboards\/(?:NPB|MLB)\/\d{4}-\d{2}-(?:regular|postseason))\.json$/;
 export const contextManifestSchema=z.strictObject({schemaVersion:z.literal(1),observedAt:z.iso.datetime(),cutoff:z.literal(2025),coverage:z.literal("partial"),attribution:z.string().min(1),years:z.strictObject({NPB:z.array(z.number().int().min(1936).max(2025)),MLB:z.array(z.number().int().min(1871).max(2025))}),counts:z.record(z.string(),z.number().int().nonnegative()),files:z.record(z.string().regex(contextPath),z.strictObject({sha256:hash,bytes:z.number().int().positive().max(1_000_000)}))});
 export type ContextManifest=z.infer<typeof contextManifestSchema>;
 export const playerHonorBucket=(id:string)=>id.replace(/^mlb:player:/,"").slice(0,2);
