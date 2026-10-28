@@ -18,6 +18,7 @@ import {RETROSHEET_ATTRIBUTION} from "../src/data/source-registry";
 import csPin from "../src/data/npb-cs-release.json";
 import {npbCsDatasetSchema} from "../src/domain/npb-cs-observations";
 import {parseWikipediaCs} from "../src/infrastructure/providers/wikipedia-npb-cs";
+import {buildHonorCatalog,honorRecipientBucket} from "../src/domain/honor-discovery";
 
 const root=process.argv[2],output=process.argv[3],observedAt=process.argv[4];
 if(!root||!output||!observedAt||![root,output].every(p=>resolve(p).startsWith(resolve(".data")+sep))||!Number.isFinite(Date.parse(observedAt))||Date.parse(observedAt)>Date.now())throw Error("Private input/output and fixed past observation time required");
@@ -69,6 +70,11 @@ for(const r of records){const p=players.get(r.recipientId)!;p.counts[r.awardId]=
 const ordered=records.sort((a,b)=>a.league.localeCompare(b.league)||a.year-b.year||a.awardId.localeCompare(b.awardId)||a.id.localeCompare(b.id));
 const page=(rows:Honor[])=>honorsPageSchema.parse({schemaVersion:1,records:rows,recipients:[...new Set(rows.map(r=>r.recipientId))].map(id=>players.get(id)!),sources:sources.filter(s=>rows.some(r=>r.sourceId===s.id))});
 const files:Record<string,unknown>={};
+for(const league of["NPB","MLB"] as const){
+ const rows=ordered.filter(r=>r.league===league),recipients=[...new Set(rows.map(r=>r.recipientId))];
+ files[`honors/catalog/${league}.json`]=buildHonorCatalog(league,rows,[...players.values()]);
+ for(const bucket of new Set(recipients.map(honorRecipientBucket)))files[`honors/recipients/${league}/${bucket}.json`]=page(rows.filter(r=>honorRecipientBucket(r.recipientId)===bucket));
+}
 for(const league of["NPB","MLB"] as const)for(const year of new Set(ordered.filter(r=>r.league===league).map(r=>r.year)))files[`honors/years/${league}/${year}.json`]=page(ordered.filter(r=>r.league===league&&r.year===year));
 for(const league of["NPB","MLB"] as const)for(const bucket of new Set([...players.values()].flatMap(p=>p.links.filter(l=>l.league===league).map(l=>playerHonorBucket(l.playerId))))){files[`honors/players/${league}/${bucket}.json`]=page(ordered.filter(r=>players.get(r.recipientId)!.links.some(l=>l.league===league&&playerHonorBucket(l.playerId)===bucket)));}
 const oldPaths=Object.keys(JSON.parse(await readFile(".data/integrated-batch/protected-all-before.json","utf8")));const admittedGames=new Set(oldPaths.filter(p=>p.includes("/mlb/historical/")&&/\/games\/mlb_game_/.test(p)).map(p=>p.match(/mlb_game_([a-f0-9-]+)\.json/)?.[1]).filter((v):v is string=>!!v).map(v=>`mlb:game:${v}`));
