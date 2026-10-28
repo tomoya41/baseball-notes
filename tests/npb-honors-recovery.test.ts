@@ -48,6 +48,15 @@ it.each([
   `* ${best}：1回（捕手部門：2024年、）`,
   `* ${best}：2回（捕手部門：2023年、、一塁手部門：2024年）`,
   `* ${best}：1回（2024年）\n** 架空部門：1回（2024年）`,
+  `* ${best}：1回（2024年）\n** 二塁手部門：2回`,
+  `* ${best}：1回（2024年）\n** 二塁手部門：2026年`,
+  `* ${best}：1回（2024年）\n** 二塁手部門 2回`,
+  `* ${best}：1回（2024年）\n** 2回`,
+  `* ${best}：1回（2024年）\n** 2026年`,
+  `* ${best}：1回（2024年）\n** 別の受賞（2026年）`,
+  `* ${best}：1回（2024年）\n** 架空部門2回`,
+  `* ${best}：1回（2024年）\n** （架空部門）2023年`,
+  `* ${best}：1回（2024年）\n** [[2023年]]`,
 ])("holds unknown, contradictory, future and candidate records as a whole: %s", block => {
   const result = parse(block); expect(result.rows).toEqual([]); expect(result.issues).toHaveLength(1);
 });
