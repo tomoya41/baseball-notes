@@ -8,6 +8,16 @@ Updated 2026-10-23 for the full-screen editorial redesign. See [design, assets a
 
 Production uses saved NPB 2026 data and admitted MLB Historical 2014–2025, with Regular/Postseason isolated. NPB HOT/Ranking remain gated. There is no production mock-data fallback, MLB Current, official Career claim or invented portrait/number. See `astra-reconstruction-research.md` for actual competitor-screen research and the route inventory.
 
+## Required workflow for new screens
+
+1. Start from the approved compact phone screens and their information hierarchy. Use a 360–390px phone at normal text size as the baseline, not a desktop layout scaled down later.
+2. **Before implementing any new screen, generate and inspect a real image concept with the image-generation tool.** Keep the image/path and design observations with the task's review evidence. A written description or unexecuted prompt does not fulfill this step. If the tool is unavailable, record the missing dependency and continue independent existing-screen fixes.
+3. Check the concept against the existing design: concise labels, ordinary body text 13–14px, secondary text around 12px, ordinary page titles 18–20px, and normal stat values 16–17px at 100%. Reserve larger score typography for actual game scores. Keep touch controls at least 44px; do not enlarge labels to fill the control. Use rem-based sizes so OS text scaling works.
+4. Implement interactive information in React. Generated scene imagery is optional decoration; never use a bitmap in place of a table, chart control, text, or navigation. Concept-only examples must not become invented production facts, portraits, or club marks.
+5. Compare real phone screenshots with the generated reference and the approved existing screens. Validate 360px Light/Dark, navigation, and 150%/200% native text scaling separately from the 100% density check. Record any deliberate differences; passing functional tests alone does not establish visual consistency.
+
+Existing-screen corrections may reuse their established composition without a new generated concept. This is not permission to introduce a new screen or a competing visual system through a small CSS change. No per-screen user confirmation is required unless requested; proceed within the user's authorized task.
+
 ## CSS ownership
 
 - `src/ui/styles.css`: theme tokens, reset, typography, shared controls, shell, dialog, semantic data states.
@@ -27,7 +37,7 @@ Import order is explicit in `src/main.tsx`. Avoid adding competing global reset/
 | Muted | `#586b7e` | `#a7b9cb` |
 | Brand | `#2162d6` | `#a1c4ff` |
 
-Game and featured-Home surfaces retain their own readable light text. Player uses a navy identity heading, immediately followed by tabs and quiet major-stat surfaces; HOT uses one lead entry with a brand rule, then dense rows. These accents are app colours, not official team colours. On a 360–390px viewport at standard text size, body is 14px with 1.5 line height, controls 13–14px and stat captions 12px. Page titles, player names and headline stats are 20px, HOT lead names 17px and subsequent names 15px; ordinary stat values are 16–17px. Game scores remain distinct at 36px. Avoid promotional typography on phone screens. Desktop headings grow moderately with available width. These are rem-based scales, not a restriction on Android text enlargement. Navigation and help controls retain 44px-or-larger targets. A stat guide's button stretches over its own cell so the visible label and value can sit together without a separate 44px label row; no adjacent cell is covered. HOT metric columns wrap with Android font scale instead of squeezing values. Numbers use tabular figures. System fonts avoid extra network/font dependencies.
+Game and featured-Home surfaces retain their own readable light text. Player uses a navy identity heading, immediately followed by tabs and quiet major-stat surfaces; HOT uses one lead entry with a brand rule, then dense rows. These accents are app colours, not official team colours. On a 360–390px viewport at standard text size, body is 14px with 1.5 line height, controls 13–14px and stat captions 12px. Ordinary page titles are 18–20px, player names and headline stats are 20px, HOT lead names 17px and subsequent names 15px; ordinary stat values are 16–17px. Game scores remain distinct at 36px. Avoid promotional typography on phone screens. Desktop headings grow moderately with available width. These are rem-based scales, not a restriction on Android text enlargement. Navigation and help controls retain 44px-or-larger targets. A stat guide's button stretches over its own cell so the visible label and value can sit together without a separate 44px label row; no adjacent cell is covered. HOT metric columns wrap with Android font scale instead of squeezing values. Numbers use tabular figures. System fonts avoid extra network/font dependencies.
 
 ## Icons and asset rights
 

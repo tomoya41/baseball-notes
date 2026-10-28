@@ -1,16 +1,21 @@
 .player-honors { margin-block: 1rem; border-block: 1px solid var(--color-border); padding-block: .8rem; }
 .player-honors > summary { font-weight: 700; cursor: pointer; }
+.honors-screen > header { display: flex; flex-wrap: wrap; align-items: center; column-gap: .75rem; }
+.honors-screen > header .eyebrow { flex-basis: 100%; margin: 0; font-size: .6875rem; }
+.honors-screen > header h1 { margin: 0; font-size: 1.125rem; }
+.honors-screen > header a { display: inline-flex; align-items: center; min-height: var(--touch); margin-left: auto; font-size: var(--type-caption); }
+.honors-screen > .inline-note { margin-block: 0 .5rem; font-size: var(--type-caption); line-height: 1.5; }
 .honors-list { list-style: none; padding: 0; margin: .7rem 0; }
-.honors-list > li { display: grid; grid-template-columns: 5.2rem minmax(0,1fr); gap: .7rem; padding: .8rem 0; border-bottom: 1px solid var(--color-border); }
+.honors-list > li { display: grid; grid-template-columns: 4.5rem minmax(0,1fr); gap: .5rem; padding: .625rem 0; border-bottom: 1px solid var(--color-border); }
 .honors-year,.honors-result { display: flex; flex-direction: column; align-items: flex-start; gap: .25rem; overflow-wrap: anywhere; }
-.honors-year > a { font-size: 1.15rem; font-weight: 800; font-variant-numeric: tabular-nums; }
-.honors-list small,.honors-evidence { font-size: .78rem; color: var(--color-muted); }
-.honors-filters { display: flex; flex-wrap: wrap; gap: .6rem; }
-.honors-filters label { display: flex; flex: 1 1 8rem; min-width: 0; flex-direction: column; gap: .25rem; }
-.honors-filters select,.honors-filters input { width: 100%; min-width: 0; }
+.honors-year > a { font-size: .875rem; font-weight: 750; font-variant-numeric: tabular-nums; }
+.honors-list small,.honors-evidence { font-size: var(--type-caption); color: var(--color-muted); }
+.honors-filters { display: flex; flex-wrap: wrap; gap: .5rem; }
+.honors-filters label { display: flex; flex: 1 1 8rem; min-width: 0; flex-direction: column; gap: .125rem; font-size: var(--type-caption); }
+.honors-filters select,.honors-filters input { width: 100%; min-width: 0; font-size: .8125rem; }
 .honors-sources { font-size: .85rem; margin-block: 1rem; overflow-wrap: anywhere; }
-.honors-view { display: flex; gap: .35rem; margin-block: .8rem; }
-.honors-view button { flex: 1; min-width: 0; min-height: 48px; }
+.honors-view { display: flex; gap: .25rem; margin-block: .5rem; }
+.honors-view button { flex: 1; min-width: 0; min-height: var(--touch); font-size: .8125rem; }
 .honors-view button[aria-pressed="true"] { background: var(--brand); color: var(--on-brand); }
 .honors-row-links { display: flex; flex-wrap: wrap; gap: .8rem; font-size: .78rem; }
 .honors-player-list { display: flex; flex-direction: column; }
@@ -19,12 +24,13 @@
 .honors-player-link > span:last-child { flex-shrink: 0; font-variant-numeric: tabular-nums; }
 .honors-player-link small { color: var(--color-muted); font-size: .78rem; }
 .honors-recipient { min-width: 0; }
-.honors-recipient h2 { margin-block: .8rem .3rem; overflow-wrap: anywhere; }
-.honors-summary { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); border-block: 1px solid var(--color-border); padding-block: .7rem; gap: .5rem; }
-.honors-summary dt { color: var(--color-muted); font-size: .78rem; }
+.honors-recipient h2 { margin-block: .5rem .125rem; overflow-wrap: anywhere; }
+.honors-recipient > .inline-note { margin-bottom: .5rem; font-size: var(--type-caption); }
+.honors-summary { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); border-block: 1px solid var(--color-border); padding-block: .5rem; margin-block: .5rem; gap: .375rem; }
+.honors-summary dt { color: var(--color-muted); font-size: var(--type-caption); }
 .honors-summary > div { min-width: 0; overflow-wrap: anywhere; }
-.honors-summary dd { margin: .2rem 0 0; font-size: 1.35rem; font-weight: 750; font-variant-numeric: tabular-nums; }
+.honors-summary dd { margin: .125rem 0 0; font-size: 1.0625rem; font-weight: 750; font-variant-numeric: tabular-nums; }
 .honors-summary small { font-size: .72rem; font-weight: 400; margin-left: .2rem; }
-.honors-counts { margin-block: .8rem; font-size: .85rem; }
+.honors-counts { margin-block: .5rem; font-size: .8125rem; }
 .honors-counts dl > div { display: flex; justify-content: space-between; gap: .6rem; padding-block: .3rem; }
 .honors-counts dd { flex-shrink: 0; margin: 0; }

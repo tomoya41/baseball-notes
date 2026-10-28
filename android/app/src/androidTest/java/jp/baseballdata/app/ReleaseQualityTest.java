@@ -1093,6 +1093,9 @@ public class ReleaseQualityTest {
         setThemeWithoutNavigation("light", "ライト"); screenshot("npb-recovered-honors-360-light");
         js("(()=>{const y=document.querySelector('.honors-recipient select');y.value='2024';y.dispatchEvent(new Event('change',{bubbles:true}));})()");
         waitCondition("Explicit year and award survive URL navigation", "location.hash.includes('year=2024')&&location.hash.includes('award=npb_glove')");
+        fontScaleAndRecreate(1.5f); waitViewport(360);
+        waitCondition("Selected award survives 150 percent text", "document.querySelectorAll('.honors-recipient .honors-list>li').length===1&&document.querySelector('.honors-recipient .honors-list').textContent.includes('三塁手部門')");
+        assertEquals("Compact honors retain 150 percent text without horizontal overflow", "true", js("document.documentElement.scrollWidth<=innerWidth")); screenshot("npb-recovered-honors-360-light-150");
         setThemeWithoutNavigation("dark", "ダーク"); fontScaleAndRecreate(2.0f); waitText("坂本勇人"); waitViewport(360);
         waitCondition("Only the reviewed 2024 position is displayed", "document.querySelectorAll('.honors-recipient .honors-list>li').length===1&&document.querySelector('.honors-recipient .honors-list').textContent.includes('三塁手部門')");
         assertEquals("Recovered awards do not overflow at 200 percent", "true", js("document.documentElement.scrollWidth<=innerWidth")); screenshot("npb-recovered-honors-360-dark-200");
