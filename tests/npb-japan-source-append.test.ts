@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { buildWikipediaJapanSeries } from "../src/infrastructure/providers/wikipedia-npb-japan-series";
 import { appendReviewedJapanFinals, assertJapanSeriesAdvance, japanResultSource, npbJapanSeriesSchema, type NpbJapanSeries } from "../src/domain/npb-japan-series";
 import { japanResultFixture } from "./fixtures/npb-japan-series";
+import { readNpbWeekly } from "../src/application/npb-weekly";
 const initial = () => { const f = japanResultFixture("0", 0, 1); return buildWikipediaJapanSeries(f.archive, f.cs, "b".repeat(64), f.admission, f.review, f.now); };
 function next(before: NpbJapanSeries) {
   const d = structuredClone(before), g = d.series.games[1]!;
@@ -50,4 +51,18 @@ it("accepts schedule x only with matching reviewed home walk-off innings, never 
   const invalid = block.replace("|H9=1x", "|H9=1");
   pages[0]!.revisions[0]!.slots.main.content = pages[0]!.revisions[0]!.slots.main.content.replace(block, invalid); f.review.games[0]!.linescore = invalid;
   hashes(); expect(build).toThrow("mismatch");
+});
+it("keeps both original and appended revision citations in weekly and monthly reports without opening player gates", async () => {
+  const before = initial(), data = appendReviewedJapanFinals(before, next(before));
+  const unavailable = async () => { throw Error("Current/CS must not be read for a Japan Series report"); };
+  for (const [period, date] of [["week", "2026-10-19"], ["month", "2026-10-01"]] as const) {
+    const report = await readNpbWeekly("japan_series", date, { manifest: unavailable, date: unavailable }, { cs: unavailable, japanSeries: async () => data }, period);
+    expect(report.summary.games).toHaveLength(2);
+    expect(report.sources).toHaveLength(4);
+    expect(report.sources.some(s => s.url.includes(`oldid=${before.sources[0]!.revision}`))).toBe(true);
+    expect(report.sources.some(s => s.url.includes(`oldid=${data.additionalSources![0]!.revision}`))).toBe(true);
+    expect(report.summary.scope.stage).toBe("japan_series");
+    expect(report.playerEvaluation).toBe("gate_closed");
+    expect("hot" in report).toBe(false);
+  }
 });

@@ -1,5 +1,6 @@
 import { calendarWeek,collectedWeeks,summarizeWeek,calendarMonth,collectedMonths,summarizeMonth,type WeeklyGame,type WeekCoverage } from "../domain/weekly-analysis";
 import { readNpbJapanSeries } from "./npb-japan-series-reader";
+import { allJapanSeriesSources } from "../domain/npb-japan-series";
 import { readNpbCs } from "./npb-cs-reader";
 import { gameManifestSchema,gameDateIndexSchema,shiftGameDate,type GameManifest,type GameDateIndex } from "../domain/npb-game-index";
 import { npbTeamShortName } from "../presentation/npb-team-names";
@@ -34,7 +35,7 @@ export async function readNpbWeekly(stage:NpbWeeklyStage,date:string|undefined,s
   }else{
     const data=stage==="japan_series"?await readers.japanSeries():await readers.cs();
     updatedAt=data.observedAt;attribution="Wikipediaの収録済み試合結果を集計・表記整理。CC BY-SA 4.0。";
-    sources=data.sources.map(s=>({url:`https://ja.wikipedia.org/w/index.php?curid=${s.pageId}&oldid=${s.revision}`,label:`Wikipedia「${s.title}」の執筆者`}));
+    sources=("series" in data?allJapanSeriesSources(data):data.sources).map(s=>({url:`https://ja.wikipedia.org/w/index.php?curid=${s.pageId}&oldid=${s.revision}`,label:`Wikipedia「${s.title}」の執筆者`}));
     if("series" in data){games=data.series.games.map(g=>{const r=data.results.find(r=>r.gameId===g.gameId);return {id:g.gameId,date:g.date,homeId:g.homeTeamId,awayId:g.awayTeamId,homeRuns:g.homeRuns,awayRuns:g.awayRuns,status:g.status,
       ...(r?{innings:{away:r.awayInnings,home:r.homeInnings,...(r.homeLastInning?{homeLastInning:r.homeLastInning}:{})}}:{})};});}
     else games=data.games.filter(g=>g.stage===stage).map(g=>({id:g.id,date:g.date,homeId:g.homeTeamId,awayId:g.awayTeamId,homeRuns:g.homeScore,awayRuns:g.awayScore,status:g.status}));
