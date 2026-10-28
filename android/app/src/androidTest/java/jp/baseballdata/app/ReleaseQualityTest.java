@@ -1082,6 +1082,26 @@ public class ReleaseQualityTest {
         js("(()=>{const s=Array.from(document.querySelectorAll('main details>summary')).find(s=>s.textContent==='収録範囲・出典');if(!s.parentElement.open)s.click();})()");
         assertEquals("Prior final retains its original citation, despite later article whitespace edits", "true", js("!!document.querySelector('main a[href*=\"oldid=111523167\"]') && !document.querySelector('main a[href*=\"oldid=111547084\"]')"));
     }
+    @Test public void recoveredNpbHonorsKeepPositionsSourcesAndExistingPlayerNavigation() throws Exception {
+        Intent link = new Intent(Intent.ACTION_VIEW, Uri.parse("baseballnotes://NPB/awards?recipient=npb%3A51955114&award=npb_glove"));
+        link.setClass(InstrumentationRegistry.getInstrumentation().getTargetContext(), MainActivity.class);
+        scenario = ActivityScenario.launch(link); waitText("坂本勇人");
+        waitCondition("Six independently reviewed Gold Glove records", "document.querySelectorAll('.honors-recipient .honors-list>li').length===6");
+        assertEquals("Five shortstop awards are not relabelled to the player's other position", "5", js("String(Array.from(document.querySelectorAll('.honors-recipient .honors-list>li')).filter(r=>r.textContent.includes('遊撃手部門')).length)"));
+        assertEquals("The explicitly reported third-base award stays separate", "1", js("String(Array.from(document.querySelectorAll('.honors-recipient .honors-list>li')).filter(r=>r.textContent.includes('三塁手部門')).length)"));
+        assertEquals("Original revision evidence is retained", "true", js("Array.from(document.querySelectorAll('.honors-recipient .honors-evidence')).every(a=>a.href.includes('oldid=111196306'))"));
+        setThemeWithoutNavigation("light", "ライト"); screenshot("npb-recovered-honors-360-light");
+        js("(()=>{const y=document.querySelector('.honors-recipient select');y.value='2024';y.dispatchEvent(new Event('change',{bubbles:true}));})()");
+        waitCondition("Explicit year and award survive URL navigation", "location.hash.includes('year=2024')&&location.hash.includes('award=npb_glove')");
+        setThemeWithoutNavigation("dark", "ダーク"); fontScaleAndRecreate(2.0f); waitText("坂本勇人"); waitViewport(360);
+        waitCondition("Only the reviewed 2024 position is displayed", "document.querySelectorAll('.honors-recipient .honors-list>li').length===1&&document.querySelector('.honors-recipient .honors-list').textContent.includes('三塁手部門')");
+        assertEquals("Recovered awards do not overflow at 200 percent", "true", js("document.documentElement.scrollWidth<=innerWidth")); screenshot("npb-recovered-honors-360-dark-200");
+        js("location.hash='#/NPB/awards?recipient=npb%3A71075151'"); waitText("佐藤都志也");
+        waitCondition("New honors-only admission uses the existing independently matched player", "document.querySelectorAll('.honors-recipient .honors-list>li').length===1&&document.querySelector('.honors-recipient .honors-list').textContent.includes('捕手部門')");
+        js("document.querySelector('.honors-recipient a[href*=\"/players/d7c6d2b7-52c0-4a01-9065-d9118a8c7acf/seasons?season=2024\"]').click()");
+        waitCondition("Award-year statistics retain the original canonical ID and year", "location.hash.includes('/players/d7c6d2b7-52c0-4a01-9065-d9118a8c7acf/seasons?season=2024')");
+        waitText("佐藤都志也"); shell("input keyevent KEYCODE_BACK"); waitCondition("Back returns to the original recipient, not Current", "location.hash.includes('recipient=npb%3A71075151')");
+    }
     @Test public void honorsRecipientHistoryKeepsUncollectedStatisticsAndNativeBackAtLargeFont() throws Exception {
         Intent link = new Intent(Intent.ACTION_VIEW, Uri.parse("baseballnotes://MLB/awards?recipient=lahman%3Abondsba01"));
         link.setClass(InstrumentationRegistry.getInstrumentation().getTargetContext(), MainActivity.class);
