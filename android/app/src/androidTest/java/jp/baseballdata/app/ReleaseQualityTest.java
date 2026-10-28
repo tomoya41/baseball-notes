@@ -993,6 +993,10 @@ public class ReleaseQualityTest {
             android.view.accessibility.AccessibilityNodeInfo root = InstrumentationRegistry.getInstrumentation().getUiAutomation().getRootInActiveWindow();
             if (root != null && root.getPackageName() != null && root.getPackageName().toString().contains("documentsui")) {
                 for (android.view.accessibility.AccessibilityNodeInfo node : root.findAccessibilityNodeInfosByText(text)) {
+                    if (text.startsWith("baseball-notes-backup-") && node.isVisibleToUser() && node.isEnabled()) {
+                        android.graphics.Rect bounds = new android.graphics.Rect(); node.getBoundsInScreen(bounds);
+                        if (!bounds.isEmpty()) { tapAndroidPoint(bounds.centerX(), bounds.centerY()); return; }
+                    }
                     android.view.accessibility.AccessibilityNodeInfo target = node;
                     for (int depth = 0; target != null && depth < 4; depth++, target = target.getParent()) {
                         if (target.isEnabled() && target.isClickable() && target.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK)) return;
@@ -1002,6 +1006,41 @@ public class ReleaseQualityTest {
             Thread.sleep(100);
         }
         fail("Android document picker action unavailable: " + text);
+    }
+    private void tapAndroidPoint(float x, float y) {
+        long time = android.os.SystemClock.uptimeMillis();
+        MotionEvent down = MotionEvent.obtain(time, time, MotionEvent.ACTION_DOWN, x, y, 0);
+        MotionEvent up = MotionEvent.obtain(time, time+60, MotionEvent.ACTION_UP, x, y, 0);
+        try { InstrumentationRegistry.getInstrumentation().sendPointerSync(down); InstrumentationRegistry.getInstrumentation().sendPointerSync(up); }
+        finally { down.recycle(); up.recycle(); }
+    }
+    private void finishDocumentSelection() throws Exception {
+        long start = System.currentTimeMillis(); boolean confirmed = false;
+        while (System.currentTimeMillis() - start < 20000) {
+            var root = InstrumentationRegistry.getInstrumentation().getUiAutomation().getRootInActiveWindow();
+            if (root != null && root.getPackageName() != null) {
+                if (root.getPackageName().toString().equals("com.tomoya41.baseballnotes")) return;
+                if (!confirmed && root.getPackageName().toString().contains("documentsui")) {
+                    var queue = new java.util.ArrayDeque<android.view.accessibility.AccessibilityNodeInfo>(); queue.add(root);
+                    while (!queue.isEmpty()) {
+                        var node = queue.removeFirst(); String text = node.getText() == null ? "" : node.getText().toString();
+                        if (node.isEnabled() && node.isVisibleToUser() && (text.equalsIgnoreCase("Open") || text.equalsIgnoreCase("Select"))) {
+                            android.graphics.Rect bounds = new android.graphics.Rect(); node.getBoundsInScreen(bounds);
+                            if (!bounds.isEmpty()) { tapAndroidPoint(bounds.centerX(), bounds.centerY()); confirmed = true; break; }
+                        }
+                        for (int i = 0; i < node.getChildCount(); i++) if (node.getChild(i) != null) queue.add(node.getChild(i));
+                    }
+                }
+            }
+            Thread.sleep(100);
+        }
+        var root = InstrumentationRegistry.getInstrumentation().getUiAutomation().getRootInActiveWindow();
+        var text = new StringBuilder(); var queue = new java.util.ArrayDeque<android.view.accessibility.AccessibilityNodeInfo>(); if (root != null) queue.add(root);
+        while (!queue.isEmpty() && text.length() < 12000) { var node = queue.removeFirst(); text.append(node.getClassName()).append(" | ").append(node.getText()).append(" | ").append(node.getContentDescription()).append(" | enabled=").append(node.isEnabled()).append('\n'); for (int i = 0; i < node.getChildCount(); i++) if (node.getChild(i) != null) queue.add(node.getChild(i)); }
+        File dir = new File(InstrumentationRegistry.getInstrumentation().getTargetContext().getExternalFilesDir(null), "ui-redesign"); assertTrue(dir.isDirectory() || dir.mkdirs());
+        try (FileOutputStream output = new FileOutputStream(new File(dir, "personal-backup-picker.txt"))) { output.write(text.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8)); }
+        Bitmap image = InstrumentationRegistry.getInstrumentation().getUiAutomation().takeScreenshot(); if (image != null) { try (FileOutputStream output = new FileOutputStream(new File(dir, "personal-backup-picker.png"))) { image.compress(Bitmap.CompressFormat.PNG, 100, output); } finally { image.recycle(); } }
+        fail("Android selection did not return to the app: " + text);
     }
     private void waitDocumentPicker() throws Exception {
         long start = System.currentTimeMillis();
@@ -1048,7 +1087,7 @@ public class ReleaseQualityTest {
             js("Array.from(document.querySelectorAll('.backup-actions button')).find(b=>b.textContent==='ファイルを保存').click()");
             clickDocumentText("Save"); waitText("ファイルを保存しました");
             tapBackupImport();
-            clickDocumentText(filename); waitText("取り込み内容");
+            clickDocumentText(filename); finishDocumentSelection(); waitText("取り込み内容");
             assertEquals("Import is confirmation-only", "true", js("Array.from(document.querySelectorAll('.backup-actions button')).find(b=>b.textContent==='取り込む').disabled"));
             js("document.querySelector('.backup-confirm input').click()");
             waitCondition("Explicit confirmation enables restore", "!Array.from(document.querySelectorAll('.backup-actions button')).find(b=>b.textContent==='取り込む').disabled");
