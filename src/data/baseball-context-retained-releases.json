@@ -5,5 +5,12 @@
     "bodySha256": "ab8cd4a1a2bbb647b7b5b4e859b8fbc28a20181474b9e17f2a16e2c5479a9d48",
     "manifestSha256": "07b5476bf7c8d2130b65e7e21b515436cf1e988582557d112a86b4b6378029a6",
     "manifestBytes": 67972
+  },
+  {
+    "assetUrl": "https://github.com/tomoya41/baseball-notes/releases/download/baseball-context-20261028-v5/context.json.gz",
+    "sha256": "e6bd72ce02c1e22f7d4d69b051df97fe24a4474f6759222feb379f56583d7e12",
+    "bodySha256": "dbc5f4d1df3dcfa565f37638e6d48b513d00308b138921f8a563ad01da6d96b3",
+    "manifestSha256": "016acaf5181b0a7ac90d56f280478901206f29634da4e89de8a69369ead447fb",
+    "manifestBytes": 112824
   }
 ]
