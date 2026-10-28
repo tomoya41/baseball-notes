@@ -14,10 +14,10 @@ const error = () => Error("保存状態を確認できません。データは�
 /** Existing keys remain authoritative. A bounded write-ahead journal protects multi-key restore. */
 export class PersonalSettingsStore implements SettingsStore {
   private queue: Promise<unknown> = Promise.resolve();
-  constructor(private readonly raw: Backend) {}
+  constructor(private readonly raw: Backend, private readonly useBrowserLocks = true) {}
   private exclusive<T>(work: () => Promise<T>): Promise<T> {
     const next = this.queue.then(async () => {
-      if (typeof navigator !== "undefined" && navigator.locks) { let result!: T; await navigator.locks.request("baseball:personal-settings:v1", async () => { result = await work(); }); return result; }
+      if (this.useBrowserLocks && typeof navigator !== "undefined" && navigator.locks) { let result!: T; await navigator.locks.request("baseball:personal-settings:v1", async () => { result = await work(); }); return result; }
       return work();
     });
     this.queue = next.catch(() => undefined); return next;

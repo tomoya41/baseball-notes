@@ -997,6 +997,15 @@ public class ReleaseQualityTest {
         }
         fail("Android document picker action unavailable: " + text);
     }
+    private void waitDocumentPicker() throws Exception {
+        long start = System.currentTimeMillis();
+        while (System.currentTimeMillis() - start < 20000) {
+            android.view.accessibility.AccessibilityNodeInfo root = InstrumentationRegistry.getInstrumentation().getUiAutomation().getRootInActiveWindow();
+            if (root != null && root.getPackageName() != null && root.getPackageName().toString().contains("documentsui")) return;
+            Thread.sleep(100);
+        }
+        fail("Android save picker did not open / " + js("document.body.innerText"));
+    }
     @Test public void personalBackupUsesAndroidDocumentsAndConfirmedRestoreWithoutLosingOtherSettings() throws Exception {
         var context = InstrumentationRegistry.getInstrumentation().getTargetContext();
         var preferences = context.getSharedPreferences("CapacitorStorage", 0);
@@ -1013,7 +1022,7 @@ public class ReleaseQualityTest {
             js("Capacitor.Plugins.PersonalBackupFiles.save({filename:'../forbidden.json',text:'{}'}).then(()=>document.documentElement.dataset.badBackup='accepted',()=>document.documentElement.dataset.badBackup='rejected')");
             waitCondition("Native adapter rejects arbitrary paths", "document.documentElement.dataset.badBackup==='rejected'");
             js("Array.from(document.querySelectorAll('.backup-actions button')).find(b=>b.textContent==='ファイルを保存').click()");
-            Thread.sleep(1500); shell("input keyevent KEYCODE_BACK"); waitText("保存をキャンセルしました");
+            waitDocumentPicker(); shell("input keyevent KEYCODE_BACK"); waitText("保存をキャンセルしました");
             String filename = js("'baseball-notes-backup-'+new Date().toISOString().slice(0,10)+'.json'");
             js("Array.from(document.querySelectorAll('.backup-actions button')).find(b=>b.textContent==='ファイルを保存').click()");
             clickDocumentText("Save"); waitText("ファイルを保存しました");

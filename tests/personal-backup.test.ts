@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { Favorites } from "../src/application/favorites";
 import { PersonalLibrary } from "../src/application/personal-library";
 import { PersonalWatch } from "../src/application/personal-watch";
@@ -107,6 +107,20 @@ describe("portable personal backup", () => {
 
 describe("atomic multi-key personal restore", () => {
   const keys = Object.values(K);
+  it("native persistence completes even when a WebView advertises nonresponsive Web Locks", async () => {
+    const s = setup(), request = vi.fn(() => new Promise<void>(() => undefined)); vi.stubGlobal("navigator", { locks: { request } });
+    try {
+      const native = new PersonalSettingsStore(s.raw, false), favorites = new Favorites(native, s.clock), transfer = new PersonalBackup(native, s.clock);
+      await favorites.add(npb); expect(await favorites.list()).toHaveLength(1);
+      const p = await transfer.preview((await transfer.export()).text, "replace"); await transfer.restore(p.token);
+      expect(await favorites.list()).toHaveLength(1); expect(request).not.toHaveBeenCalled(); expect(s.data.has(J)).toBe(false);
+    } finally { vi.unstubAllGlobals(); }
+  });
+  it("browser persistence holds its cooperative origin lock for the complete operation", async () => {
+    let locked = false; const s = setup(); const request = vi.fn(async (_name: string, work: () => Promise<void>) => { locked = true; try { await work(); } finally { locked = false; } }); vi.stubGlobal("navigator", { locks: { request } });
+    try { await s.store.transaction(async v => { expect(locked).toBe(true); await v.set(K.favorites, "new"); }); expect(locked).toBe(false); expect(request).toHaveBeenCalledTimes(1); }
+    finally { vi.unstubAllGlobals(); }
+  });
   it.each([1, 2, 3, 4, 5, 6])("survives interruption/failure at write %i and recovers a coherent old/new state", async failAt => {
     const data = new Map<string, string>(keys.map(k => [k, `old:${k}`])); data.set("unrelated", "untouched"); let writes = 0, stopped = false;
     const raw = { get: async (k: string) => data.get(k) ?? null, set: async (k: string, v: string) => { if (stopped || ++writes === failAt) { stopped = true; throw Error("power loss"); } data.set(k, v); }, remove: async (k: string) => { if (stopped || ++writes === failAt) { stopped = true; throw Error("power loss"); } data.delete(k); } };

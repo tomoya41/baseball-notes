@@ -16,7 +16,7 @@ import { HttpPlayerPeriodComparisonRepository } from "../infrastructure/provider
 import { HttpPlayerHomeAwayRepository } from "../infrastructure/providers/http-player-home-away-repository";
 import { HttpPlayerOpponentRepository } from "../infrastructure/providers/http-player-opponent-repository";
 import { HttpPlayerAnalysisBundleRepository } from "../infrastructure/providers/http-player-analysis-bundle-repository";
-import { publicAssetBase } from "./platform";
+import { isAndroid, publicAssetBase } from "./platform";
 import { StaticGameSurfaceRepository } from "../infrastructure/providers/static-game-surface-repository";
 import { StaticLeagueAvailabilityRepository } from "../infrastructure/providers/static-league-availability-repository";
 import { StaticNpbProductRepository } from "../infrastructure/providers/static-npb-product-repository";
@@ -24,7 +24,9 @@ import { StaticNpbProductRepository } from "../infrastructure/providers/static-n
 // Composition root: replace adapters here, never inside a screen.
 const npbDataBaseUrl = import.meta.env.VITE_NPB_DATA_BASE_URL?.trim() ||
   publicAssetBase();
-const personal = new PersonalSettingsStore(new PreferenceStore());
+// A native Preferences bridge has one active WebView. Its Web Locks facade can
+// leave requests pending without invoking their callback; use the local queue.
+const personal = new PersonalSettingsStore(new PreferenceStore(), !isAndroid());
 
 export const services = {
   personalLibrary: new PersonalLibrary(personal),
