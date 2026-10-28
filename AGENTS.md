@@ -24,6 +24,9 @@
 - Advanced metrics are welcome, but every unfamiliar metric must have an accessible explanation: what it measures, how to interpret it, and when useful, what counts as roughly high/low.
 - Prefer progressive disclosure: important metrics first, advanced metrics behind tabs, drawers, or expandable sections.
 - Never invent unavailable NPB data to match MLB.
+- Treat the approved compact smartphone UI as the visual baseline. Verify new work at 360–390px and normal text size; reuse the existing typography, spacing, controls, and navigation instead of introducing oversized headings, numbers, or explanatory blocks. Follow `docs/design-system.md`.
+- Before implementing any new screen, use the image-generation tool to create and inspect a smartphone concept based on the approved design. Record the generated reference and use it to guide the implementation; do not substitute an imagined or ungenerated reference. If image generation is unavailable, report that dependency and continue independent existing-screen fixes.
+- Keep native text enlargement functional. Validate normal, 150%, and 200% text separately; do not shrink the user's font setting or touch targets to make a dense screen fit.
 
 ## Code quality
 - Use TypeScript strict mode where TypeScript is used.

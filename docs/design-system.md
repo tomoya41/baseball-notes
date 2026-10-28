@@ -8,6 +8,16 @@ Updated 2026-10-23 for the full-screen editorial redesign. See [design, assets a
 
 Production uses saved NPB 2026 data and admitted MLB Historical 2014–2025, with Regular/Postseason isolated. NPB HOT/Ranking remain gated. There is no production mock-data fallback, MLB Current, official Career claim or invented portrait/number. See `astra-reconstruction-research.md` for actual competitor-screen research and the route inventory.
 
+## Required workflow for new screens
+
+1. Start from the approved compact phone screens and their information hierarchy. Use a 360–390px phone at normal text size as the baseline, not a desktop layout scaled down later.
+2. **Before implementing any new screen, generate and inspect a real image concept with the image-generation tool.** Keep the image/path and design observations with the task's review evidence. A written description or unexecuted prompt does not fulfill this step. If the tool is unavailable, record the missing dependency and continue independent existing-screen fixes.
+3. Check the concept against the existing design: concise labels, ordinary body text 13–14px, secondary text around 12px, ordinary page titles 18–20px, and normal stat values 16–17px at 100%. Reserve larger score typography for actual game scores. Keep touch controls at least 44px; do not enlarge labels to fill the control. Use rem-based sizes so OS text scaling works.
+4. Implement interactive information in React. Generated scene imagery is optional decoration; never use a bitmap in place of a table, chart control, text, or navigation. Concept-only examples must not become invented production facts, portraits, or club marks.
+5. Compare real phone screenshots with the generated reference and the approved existing screens. Validate 360px Light/Dark, navigation, and 150%/200% native text scaling separately from the 100% density check. Record any deliberate differences; passing functional tests alone does not establish visual consistency.
+
+Existing-screen corrections may reuse their established composition without a new generated concept. This is not permission to introduce a new screen or a competing visual system through a small CSS change. No per-screen user confirmation is required unless requested; proceed within the user's authorized task.
+
 ## CSS ownership
 
 - `src/ui/styles.css`: theme tokens, reset, typography, shared controls, shell, dialog, semantic data states.
