@@ -1,6 +1,6 @@
-# Baseball Notes — NPB / MLB Data App
+# Baseball Notes — NPB中心の野球データアプリ
 
-Androidを主対象とする野球データアプリ。製品仕様は [SPEC.md](SPEC.md)、恒久ルールは [AGENTS.md](AGENTS.md)、重要な判断は [docs/decisions.md](docs/decisions.md) を参照。
+NPBファン向けに、選手の成績・変化・歩みを一年を通して追う野球データアプリ。Android・スマートフォンを主対象とし、MLB Historicalは補助機能として維持します。開発と完成判定はNPBを最優先にします。製品仕様は [SPEC.md](SPEC.md)、恒久ルールは [AGENTS.md](AGENTS.md)、重要な判断は [docs/decisions.md](docs/decisions.md) を参照。
 
 完成版の製品要件・提供範囲・完成条件は [SPEC §0](SPEC.md#completion-baseline)、実施順・未完了項目・必要な証拠は [完成までの作業計画](docs/product-completion-plan.md) を参照。古いPhase説明や日付付きの棚卸しは、その時点の履歴であり最新の完成率ではありません。
 
