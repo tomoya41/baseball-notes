@@ -1013,6 +1013,8 @@ public class ReleaseQualityTest {
         MotionEvent up = MotionEvent.obtain(time, time+60, MotionEvent.ACTION_UP, x, y, 0);
         // DocumentsUI belongs to a different UID. Instrumentation's targeted
         // injector is restricted to our app; UiAutomation controls system UI.
+        down.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);
+        up.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);
         var automation = InstrumentationRegistry.getInstrumentation().getUiAutomation();
         try { assertTrue("System picker touch down", automation.injectInputEvent(down, true)); assertTrue("System picker touch up", automation.injectInputEvent(up, true)); }
         finally { down.recycle(); up.recycle(); }
