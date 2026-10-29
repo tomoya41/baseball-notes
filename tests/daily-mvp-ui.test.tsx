@@ -29,4 +29,17 @@ it('does not manufacture a game selection when no complete player box is saved',
   expect(host.querySelector('.saved-game-mvps')).toBeNull();expect(host.querySelector('.game-mvp__player')).toBeNull();expect(host.textContent).toContain('選手成績未収録');
  }finally{await act(async()=>root.unmount());host.remove();}
 });
+it('withdraws the saved game selection while a same-date score correction is checked',async()=>{
+ vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);const {game,index}=mvpFixture();vi.mocked(readCachedMvpGames).mockResolvedValue([game]);
+ const host=document.createElement('div'),root=createRoot(host);document.body.append(host);
+ const render=(day:typeof index)=>root.render(<MemoryRouter><DailyMvp date={day.date} index={day}/></MemoryRouter>);
+ try{
+  await act(async()=>render(index));await act(async()=>host.querySelector('summary')!.click());await act(async()=>host.querySelector('details')!.dispatchEvent(new Event('toggle')));
+  expect(host.querySelector('.game-mvp__player')).not.toBeNull();
+  let resolve!:(games:NpbGameDetail[])=>void;vi.mocked(readCachedMvpGames).mockReturnValue(new Promise(r=>{resolve=r;}));
+  const corrected={...index,games:[{...index.games[0]!,home:{...index.games[0]!.home,score:4}}]};
+  await act(async()=>render(corrected));expect(host.querySelector('.game-mvp__player')).toBeNull();expect(host.textContent).toContain('確認中');
+  await act(async()=>resolve([game]));expect(host.querySelector('.saved-game-mvps')).toBeNull();expect(host.textContent).toContain('照合が未完了');
+ }finally{await act(async()=>root.unmount());host.remove();}
+});
 it('does not show the previous date MVP while a different date/snapshot is being checked',async()=>{vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);const {game,index}=mvpFixture();vi.mocked(readCachedMvpGames).mockResolvedValue([game]);const host=document.createElement('div'),root=createRoot(host);document.body.append(host);const render=(i:typeof index)=>root.render(<MemoryRouter><DailyMvp date={i.date} index={i}/></MemoryRouter>);try{await act(async()=>render(index));const summary=host.querySelector('summary')!;await act(async()=>summary.click());await act(async()=>{host.querySelector('details')!.dispatchEvent(new Event('toggle'));});expect(host.textContent).toContain('架空打者0');let resolve!:(games:NpbGameDetail[])=>void;vi.mocked(readCachedMvpGames).mockReturnValue(new Promise(r=>{resolve=r;}));const next={...index,date:'2026-09-26',generatedAt:'2026-09-27T00:00:00Z',coverage:'partial' as const,games:[]};await act(async()=>render(next));expect(host.textContent).not.toContain('架空打者0');expect(host.textContent).toContain('確認中');await act(async()=>resolve([]));expect(host.textContent).toContain('収録が未完了');expect(host.textContent).not.toContain('架空打者0');}finally{await act(async()=>root.unmount());host.remove();}});
