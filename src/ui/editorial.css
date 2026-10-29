@@ -353,6 +353,8 @@
 .spotlight-sources { font-size:.75rem; }
 .daily-mvp { margin-block:16px; padding:12px; border-top:2px solid #b18c50; background:var(--color-surface); }
 .daily-mvp h2 { font-size:.9375rem; margin:0; }
+.offseason-home-links { display:flex; flex-wrap:wrap; gap:.375rem; margin-top:.5rem; }
+.offseason-home-links a { display:flex; align-items:center; justify-content:space-between; flex:1 1 8.5rem; min-height:44px; padding:.5rem .625rem; border:1px solid var(--color-border); border-radius:.375rem; font-size:.8125rem; }
 .daily-mvp p { font-size:.75rem; }
 .daily-mvp summary,.daily-mvp a { min-height:44px; align-content:center; }
 :root[data-large-font] .spotlight-numbers { grid-template-columns:repeat(2,minmax(0,1fr)); }

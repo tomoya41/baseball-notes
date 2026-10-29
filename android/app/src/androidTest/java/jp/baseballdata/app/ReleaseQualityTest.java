@@ -821,7 +821,7 @@ public class ReleaseQualityTest {
         Intent link = new Intent(Intent.ACTION_VIEW, Uri.parse("baseballnotes://NPB/moves?kind=trade&player=3deea6d2-3347-430e-93c3-26ca2ebf15fa"));
         link.setClassName("com.tomoya41.baseballnotes", "jp.baseballdata.app.MainActivity");
         scenario = ActivityScenario.launch(link); waitText("杉浦稔大"); waitText("金銭トレードの記載");
-        assertEquals("Events retain exact licensed source", "true", js("!!document.querySelector('a[href*=\"oldid=111421457\"]')"));
+        assertEquals("Events retain exact licensed source", "true", js("!!document.querySelector('a[href*=\"oldid=111560963\"]')"));
         assertEquals("Events do not certify current membership", "true", js("document.body.innerText.includes('現在の所属や登録の認定ではありません')"));
         screenshot("npb-player-events-360");
         fontScaleAndRecreate(2.0f); waitText("金銭トレードの記載"); waitViewport(360);
@@ -833,7 +833,7 @@ public class ReleaseQualityTest {
         waitText("新しい記載から表示");
         assertEquals("Player history retains explicit trade evidence", "true", js("document.querySelector('section[aria-label=\"記事でたどる選手の動き\"]').textContent.includes('トレード')"));
         assertEquals("History fits at 200 percent", "true", js("document.documentElement.scrollWidth<=innerWidth")); screenshot("npb-player-event-history-font-20");
-        js("location.hash='#/NPB/moves?kind=nonrenewal_notice'"); waitText("藤浪晋太郎"); waitText("戦力外通告");
+        js("location.hash='#/NPB/moves?kind=nonrenewal_notice'"); waitText("緒方理貢"); waitText("戦力外通告");
         assertFalse("Nonrenewal is not promoted to free agency", js("document.querySelector('main').innerText").contains("自由契約の公示済み"));
         screenshot("npb-nonrenewal-font-20");
         js("location.hash='#/NPB/moves?kind=release'"); waitText("萩尾匡也"); waitText("自由契約");
@@ -844,6 +844,22 @@ public class ReleaseQualityTest {
         scenario.recreate(); waitText("萩尾匡也");
         assertTrue("Recreation retains free-contract filter", js("location.hash").contains("kind=release"));
         screenshot("npb-release-font-20");
+    }
+    @Test public void offseasonRenewalsKeepUnknownStateAndOfficialLinksAtLargeFont() throws Exception {
+        Intent link = new Intent(Intent.ACTION_VIEW, Uri.parse("baseballnotes://NPB/moves?kind=contract_renewal&team=npb:team:hawks"));
+        link.setClassName("com.tomoya41.baseballnotes", "jp.baseballdata.app.MainActivity");
+        scenario = ActivityScenario.launch(link);
+        for(float scale : new float[]{1.0f, 1.5f, 2.0f}) {
+            if(scale!=1.0f) fontScaleAndRecreate(scale);
+            waitText("契約更改の記録は未収録です");waitViewport(360);
+            assertEquals("Club-scoped official link without invented salary or publication state", "true", js("document.querySelectorAll('.club-official-news a').length===1&&document.querySelector('.club-official-news a').href==='https://www.softbankhawks.co.jp/news/'&&!document.querySelector('main').innerText.includes('未発表')"));
+            assertEquals("Renewal scope survives recreation", "true", js("(()=>{const q=new URLSearchParams(location.hash.split('?')[1]);return q.get('kind')==='contract_renewal'&&q.get('team')==='npb:team:hawks'})()"));
+            assertEquals("Topic controls stay usable", "true", js("Array.from(document.querySelectorAll('.event-topics a,.club-official-news a')).every(e=>e.getBoundingClientRect().height>=44)"));
+            assertEquals("Offseason screen fits enlarged native text", "true", js("document.documentElement.scrollWidth<=innerWidth"));
+            screenshot("npb-contract-renewal-font-"+scale);
+        }
+        scenario.onActivity(activity -> activity.getOnBackPressedDispatcher().onBackPressed());waitCondition("Back reaches the scoped club", "decodeURIComponent(location.hash.split('?')[0])==='#/NPB/teams/npb:team:hawks'");
+        assertEquals("Back returns to the scoped club", "true", js("decodeURIComponent(location.hash.split('?')[0])==='#/NPB/teams/npb:team:hawks'"));
     }
     @Test public void longNavigationHistoryHasBoundedRecreationState() throws Exception {
         assertEquals("/NPB/search?q=A%26B%3DC%25", MainActivity.savedRoute("https://localhost/#/NPB/search?q=A%26B%3DC%25"));

@@ -36,3 +36,18 @@ it("pins the new identity evidence to existing independent UUID/NPB ID/QID bridg
   for (const player of registry.players) { expect(() => assertHistoricalBridge(player)).not.toThrow(); expect(player.identityRevision).toBeGreaterThan(0); expect(player.identityContentSha256).toMatch(/^[a-f0-9]{64}$/); }
   for (const key of ["playerId", "npbId", "wikidataId", "article"] as const) expect(new Set(registry.players.map(p => p[key])).size).toBe(registry.players.length);
 });
+it.each(["との契約更改を終えたと", "との契約更改に合意したと", "と来季の契約を更改したことを", "と契約を更改したと"])("recognizes only an explicitly completed renewal: %s", ending => {
+  const event = parse(`** 阪神タイガースは、[[架空太郎]]${ending}発表${citation}。`).dataset.events[0]!;
+  expect(event).toMatchObject({ kind: "contract_renewal", status: "encyclopedia_record", announcementDate: null, effectiveDate: null, fromTeamId: null, toTeamId: null, relatedTeamIds: ["npb:team:tigers"] });
+});
+it.each([
+  `** 阪神タイガースは、[[架空太郎]]との契約更改交渉を予定していると発表${citation}。`,
+  `** 阪神タイガースは、[[架空太郎]]との契約更改交渉が保留となったと発表${citation}。`,
+  `** 阪神タイガースは、[[架空太郎]]との契約更改を打診したと発表${citation}。`,
+  `** 阪神タイガースは、[[架空太郎]]との契約更改に合意する見込みと発表${citation}。`,
+  `** 阪神タイガースは、[[架空太郎]]と推定年俸1億円で契約更改に合意したと発表${citation}。`,
+  `** 阪神タイガースは、架空太郎との契約更改を終えたと発表${citation}。`,
+  `** 阪神タイガースは、[[架空太郎]]との契約更改を終えたと発表。別の話題${citation}。`,
+])("holds offers, negotiations, estimates, name-only joins and unrelated citations: %s", body => {
+  expect(parse(body).dataset.events).toHaveLength(0);
+});

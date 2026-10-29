@@ -58,6 +58,7 @@ export function parseWikipediaPlayerEvents(raw: unknown, observedAt: string, ide
     const retirement = /^@(\w+)@は、@PLAYER@(?:が|の)今季限りで(?:の)?現役(?:を)?引退(?:することを|すると|を)発表$/.exec(normalized);
     const registration = /^@(\w+)@は、育成選手の@PLAYER@と支配下選手契約を(?:締結した(?:ことを|と)|結んだことを)発表$/.exec(normalized);
     const signing = /^@(\w+)@は、@PLAYER@と(?:今季の)?(?:育成選手)?契約(?:を(?:締結したこと|結んだこと)|合意した)(?:を|と)発表$/.exec(normalized);
+    const renewal = /^@(\w+)@は、@PLAYER@と(?:の契約更改(?:を終えたと|に合意したと)|(?:来季の)?契約を更改した(?:と|ことを))発表$/.exec(normalized);
     const release = /^@(\w+)@は、@PLAYER@に自由契約を通達したと発表$/.exec(normalized);
     // A shared notice can be split only for independently admitted participants,
     // when every list entry is an article link, the explicit headcount matches,
@@ -86,6 +87,7 @@ export function parseWikipediaPlayerEvents(raw: unknown, observedAt: string, ide
     else if (trade) { kind = "trade"; clubs = [trade[1]!, trade[2]!]; from = `npb:team:${trade[1]}`; to = `npb:team:${trade[2]}`; }
     else if (retirement) { kind = "retirement_announcement"; clubs = [retirement[1]!]; }
     else if (registration) { kind = "registration_change"; clubs = [registration[1]!]; }
+    else if (renewal) { kind = "contract_renewal"; clubs = [renewal[1]!]; }
     else if (signing) { kind = "signing"; clubs = [signing[1]!]; }
     else if (release) { kind = "release"; clubs = [release[1]!]; }
     if (!kind && !selected) { reject("unsupported_event_grammar"); continue; }
