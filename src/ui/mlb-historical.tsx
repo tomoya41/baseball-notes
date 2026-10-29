@@ -43,6 +43,7 @@ import type { HistoricalChronology } from "../domain/game-chronology";
 import { MlbPersonalDashboard } from "./mlb-personal-dashboard";
 import { GameBoxScore, GameJumpNav } from "./game-box-score";
 import { GameRecap, GameTeamLinks, PostseasonGameContext } from "./game-story";
+import { GameMvp } from "./game-mvp";
 import { TeamFavorite, type FavoriteActions } from "./team-favorite";
 import { ExplorerLinks, MlbDataExplorer } from "./data-explorer";
 import { CollectionButton, MyLibrary } from "./personal-library";
@@ -226,6 +227,7 @@ export function MlbHistoricalGame({ manifest, ...actions }: { manifest: Manifest
   };
   return <div className="screen game-detail"><GameHeading title={`${game.date} 試合結果`} date={game.date} context={`MLB · 過去の記録 · ${competition === "postseason" ? "ポストシーズン" : "公式戦"}`} backTo={`/MLB/schedule?season=${game.season}&date=${game.date}${scopeQuery}`} />
     <ScoreHero away={teamName(manifest,game.awayTeamId)} home={teamName(manifest,game.homeTeamId)} awayId={game.awayTeamId} homeId={game.homeTeamId} awayScore={game.awayRuns} homeScore={game.homeRuns} status="試合終了" />
+    <GameMvp input={{league:"MLB",gameId:game.id,date:game.date,competition,final:true,complete:game.validationIssues.length===0,teamIds:[game.awayTeamId,game.homeTeamId],batting:game.batting,pitching:game.pitching}} playerScope={`?season=${game.season}${scopeQuery}`} />
     <ContextScoreboard gameId={game.id} league="MLB" date={game.date} competition={competition} away={{id:game.awayTeamId,name:teamName(manifest,game.awayTeamId),runs:game.awayRuns}} home={{id:game.homeTeamId,name:teamName(manifest,game.homeTeamId),runs:game.homeRuns}}/>
     <GameJumpNav />
     <GameRecap league="MLB" batting={game.batting.map(p => ({ ...p, name: p.name ?? "選手" }))} pitching={game.pitching.map(p => ({ ...p, name: p.name ?? "選手", outs: p.outsRecorded }))} complete={game.validationIssues.length === 0} scope={`?season=${game.season}${scopeQuery}`} favorites={actions.favorites ?? []} />
