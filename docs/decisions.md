@@ -492,3 +492,7 @@ During the explicit 2026 Japan Series editorial window, one small static competi
 ### 2026-10-29 — 個人保存は確認付きファイルで持ち運び、成績とは分離する
 
 アカウントや新しいサーバーを追加せず、Favorites/Collections/保存条件/閲覧履歴/Watch設定だけをversion固定JSONで移行する。制限付き成績、観測値、アラート本文、端末購読情報は含めない。追加/置換の確認と保存中断時の一貫性は共通の保存adapterとローカルjournalで守り、既存の保存キー/versionを継続する。復元でbaselineが変わる時は初回観測を新しい活躍通知にしない。Web/PWAとAndroidを分離したまま本人の選択で移行し、署名問題の消去による迂回に使わない。旧コードへのrollbackにはjournalの回復完了が必要。[対象・除外・失敗回復](personal-backup.md)。
+
+### 2026-10-29 — NPBを主製品、MLBを補助機能として固定する
+
+ユーザーの「NPBに特化、MLBはおまけ」という指定に従い、[SPEC §0.1](../SPEC.md#completion-baseline)と作業計画の優先順位を明確化する。NPBのHOT・試合別MVPの実データとオフシーズン情報を先に進め、外部制限で一部が止まっても独立したNPB作業へ進む。MLBの既存機能・データ・URL・個人保存は保守し、共通処理の検証を続ける。単独のMLB拡張を先行せず、MLBの成功だけでNPB要件を完了にしない。現在の初回起動とPWAホームは既にNPBであり、今回は文書と開発方針だけの変更。ランタイム、Data Contract、保存形式、immutable asset、権利/Production Gateは変更しない。rollbackはこの文書commitのrevert。

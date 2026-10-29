@@ -7,6 +7,7 @@
 - Do not duplicate large sections of the specification into this file.
 
 ## Development policy
+- NPB is the primary product; MLB is supplementary. Follow `SPEC.md` §0.1 for development priority and NPB-specific completion evidence. Maintain existing MLB behavior without letting standalone MLB expansion displace unfinished NPB work.
 - Build incrementally. Do not implement multiple future phases at once.
 - Each task must be small enough to review, run, test, and revert independently.
 - Preserve working behavior unless the specification explicitly requires a change.
