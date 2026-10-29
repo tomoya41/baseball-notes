@@ -996,12 +996,12 @@ public class ReleaseQualityTest {
                     // Filename searches also match the thumbnail's separate
                     // "Preview the file ..." action. Select the actual title.
                     if (text.startsWith("baseball-notes-backup-") && (node.getText() == null || !text.contentEquals(node.getText()))) continue;
-                    if (text.startsWith("baseball-notes-backup-") && node.isVisibleToUser() && node.isEnabled()) {
-                        android.graphics.Rect bounds = new android.graphics.Rect(); node.getBoundsInScreen(bounds);
-                        if (!bounds.isEmpty()) { tapAndroidPoint(bounds.centerX(), bounds.centerY()); return; }
-                    }
+                    // Activate the selectable document row, not its title's
+                    // truncated text bounds or the separate preview surface.
+                    InstrumentationRegistry.getInstrumentation().getUiAutomation().waitForIdle(300, 5000);
+                    if (!node.refresh() || !node.isVisibleToUser()) continue;
                     android.view.accessibility.AccessibilityNodeInfo target = node;
-                    for (int depth = 0; target != null && depth < 4; depth++, target = target.getParent()) {
+                    for (int depth = 0; target != null && depth < 8; depth++, target = target.getParent()) {
                         if (target.isEnabled() && target.isClickable() && target.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK)) return;
                     }
                 }
