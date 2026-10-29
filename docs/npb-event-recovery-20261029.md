@@ -35,6 +35,8 @@ R03/R07、J05。新しい画面・MLB拡張は追加しない。既存の許諾S
 
 v6候補：body 47,651 bytes / gzip 9,960 bytes、body SHA256 `9e334e8a29d12ab7e09d1bf21b620682e5a2dab88ba73ee69c88b39ea44daaff`、gzip `64b176c873b6d265c61de432e1277f806f4ae23917786b646d2084b48a9ddffe`、identity input `30afa530273fce33d76ab4676100178daf8dc016b97733de1f485b3500ef5b68`。同一原本・同一入力で再現一致。既存v1–v5を上書きせず、新しいimmutable releaseをinactiveで配信・HTTP照合してから別のアプリpinで有効化する。
 
+[immutable v6 release](https://github.com/tomoya41/baseball-notes/releases/tag/npb-events-wikipedia-20261029-v6)は、Source/本人/原本再現の検証とcore `4a4cd53`のCodex Review後に固定した。このデータ先行PRではretainedへv6を追加し、active v5/39件を維持する。最初の217 test filesは2,128 PASS＋Windows既存1 SKIP（Linux2,129）。配信アプリの非data 62ファイルは前回公開と全byte同一。inactive公開HTTPと既存65,728データファイルの保全結果は実行後にPRへ記録する。
+
 ## 運用と検証
 
 最新Freshness run [40854179731](https://github.com/tomoya41/baseball-notes/actions/runs/40854179731)の報告は`unhealthy/stale`、公開effective date 2026-10-12、`database_read_blocked`。24時間の予約を復元し、`probeDue=false`、retryAfter 2026-10-29T21:03:29.727Zを維持。期限到来を復旧証拠にはしない。今回のDB probe/write、Source API、AI呼出し0。NPB HOT/Ranking、NPB個人成績未収録試合のMVP保留は維持する。
