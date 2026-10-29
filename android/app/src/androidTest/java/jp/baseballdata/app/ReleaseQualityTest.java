@@ -993,6 +993,9 @@ public class ReleaseQualityTest {
             android.view.accessibility.AccessibilityNodeInfo root = InstrumentationRegistry.getInstrumentation().getUiAutomation().getRootInActiveWindow();
             if (root != null && root.getPackageName() != null && root.getPackageName().toString().contains("documentsui")) {
                 for (android.view.accessibility.AccessibilityNodeInfo node : root.findAccessibilityNodeInfosByText(text)) {
+                    // Filename searches also match the thumbnail's separate
+                    // "Preview the file ..." action. Select the actual title.
+                    if (text.startsWith("baseball-notes-backup-") && (node.getText() == null || !text.contentEquals(node.getText()))) continue;
                     if (text.startsWith("baseball-notes-backup-") && node.isVisibleToUser() && node.isEnabled()) {
                         android.graphics.Rect bounds = new android.graphics.Rect(); node.getBoundsInScreen(bounds);
                         if (!bounds.isEmpty()) { tapAndroidPoint(bounds.centerX(), bounds.centerY()); return; }
