@@ -681,7 +681,9 @@ public class ReleaseQualityTest {
             assertEquals("Expanding MVP sends no individual Game Detail/DB request",before,js("performance.getEntriesByType('resource').filter(e=>e.name.includes('/api/npb/game-detail')).length"));
             assertEquals("Uncollected player boxes never create a winner","0",js("document.querySelectorAll('.daily-mvp .game-mvp__player').length"));
             for(String theme:new String[]{"light","dark"}){
-                setTheme(theme,theme.equals("light")?"ライト":"ダーク");
+                setThemeWithoutNavigation(theme,theme.equals("light")?"ライト":"ダーク");
+                assertEquals("Theme verification stays on this NPB date","#/NPB/schedule?date=2026-03-27",js("location.hash"));
+                assertEquals("Theme verification keeps the MVP panel open","true",js("document.querySelector('.daily-mvp>details')?.open===true"));
                 assertEquals("NPB MVP disclosure has no overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));
                 js("document.querySelector('.daily-mvp').scrollIntoView({block:'start'})");screenshot("npb-schedule-mvp-"+theme+"-font-"+scale);
             }
