@@ -63,7 +63,8 @@ export function parseWikipediaPlayerEvents(raw: unknown, observedAt: string, ide
     // when every list entry is an article link, the explicit headcount matches,
     // and the entire sentence has one meaning. Unresolved entries get no IDs.
     // No retirement, development offer or free-agency status is inferred from it.
-    const nonrenewal = /^@(\w+)@は、(?:育成(?:契約)?の)?(@(?:PLAYER|UNRESOLVED)@(?:、(?:育成の)?@(?:PLAYER|UNRESOLVED)@)*)(?:の([1-9]\d?)選手)?に(?:対し)?、?(?:来季の契約を結ばない旨を通知したことを|来季の契約は締結しない旨を通達したと|来季契約を行わない旨を通知したと|来季の契約を結ばないことを通告したと)発表$/.exec(normalized);
+    const nonrenewal = /^@(\w+)@は、(?:育成(?:契約)?の)?(@(?:PLAYER|UNRESOLVED)@(?:、(?:育成の)?@(?:PLAYER|UNRESOLVED)@)*)(?:の([1-9]\d?)選手)?に(?:対し)?、?(?:来季の契約を結ばない旨を通知したことを|来季の契約は締結しない旨を通達したと|来季契約を行わない旨を通知したと|来季の契約を結ばないことを通告したと|来季契約を結ばない旨を通知したと|来季契約を結ばないことを通告したと|来季の契約を結ばないことを通達したと|来季の(?:選手)?契約を締結しない旨を通達したことを)発表$/.exec(normalized);
+    const releaseList = /^@(\w+)@は、(?:育成の)?(@(?:PLAYER|UNRESOLVED)@(?:、(?:育成の)?@(?:PLAYER|UNRESOLVED)@)*)(?:の([1-9]\d?)選手)?に自由契約とすることを通知したと発表$/.exec(normalized);
     // This exact two-clause form states two different actions. Keep the article
     // positions (including unresolved participants) so the final player's release
     // cannot be attributed to anyone in the preceding nonrenewal list.
@@ -72,12 +73,14 @@ export function parseWikipediaPlayerEvents(raw: unknown, observedAt: string, ide
     let selected: { identity: EventIdentity; kind: PlayerEvent["kind"] }[] | undefined;
     const listedCount = linked.length + unresolvedArticles.length;
     const noticeCountMatches = nonrenewal && (nonrenewal[3] ? Number(nonrenewal[3]) === listedCount : listedCount === 1) && new Set(unresolvedArticles).size === unresolvedArticles.length;
+    const releaseCountMatches = releaseList && (releaseList[3] ? Number(releaseList[3]) === listedCount : listedCount === 1) && new Set(unresolvedArticles).size === unresolvedArticles.length;
     if (mixed && noticeParticipants === Number(mixed[3]) && participants.length === noticeParticipants + 1 && new Set(unresolvedArticles).size === unresolvedArticles.length) {
       clubs = [mixed[1]!];
       selected = participants.flatMap((identity, index) => identity ? [{ identity, kind: index < noticeParticipants ? "nonrenewal_notice" as const : "release" as const }] : []);
       if (unresolvedArticles.length) reject("unresolved_clause_participants");
     }
     else if (noticeCountMatches) { kind = "nonrenewal_notice"; clubs = [nonrenewal[1]!]; if (unresolvedArticles.length) reject("unresolved_notice_participants"); }
+    else if (releaseCountMatches) { kind = "release"; clubs = [releaseList[1]!]; if (unresolvedArticles.length) reject("unresolved_release_participants"); }
     else if (unresolvedArticles.length) { reject("unresolved_article_outside_notice_list"); continue; }
     else if (linked.length !== 1) { reject("unsupported_multiple_player_statement"); continue; }
     else if (trade) { kind = "trade"; clubs = [trade[1]!, trade[2]!]; from = `npb:team:${trade[1]}`; to = `npb:team:${trade[2]}`; }

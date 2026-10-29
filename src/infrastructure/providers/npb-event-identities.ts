@@ -22,13 +22,15 @@ export async function admittedEventIdentities(directory: unknown) {
       map.set(title, Math.max(map.get(title) ?? 0, revision)); associations.set(e.playerId, map);
     }
   }
-  const admittedBytes = await readFile("src/data/npb-event-identity-registry.json"); hash.update(admittedBytes);
-  const admitted = JSON.parse(admittedBytes.toString()) as { players: (EventIdentity & { identityContentSha256: string })[] };
-  for (const p of admitted.players) {
-    assertHistoricalBridge(p);
-    if (!/^[a-f0-9]{64}$/.test(p.identityContentSha256)) throw Error("Missing pinned identity content proof");
-    const map = associations.get(p.playerId) ?? new Map<string, number>();
-    map.set(p.article, Math.max(map.get(p.article) ?? 0, p.identityRevision)); associations.set(p.playerId, map);
+  for (const file of ["src/data/npb-event-identity-registry.json", "src/data/npb-offseason-event-identity-registry.json"]) {
+    const admittedBytes = await readFile(file); hash.update(admittedBytes);
+    const admitted = JSON.parse(admittedBytes.toString()) as { players: (EventIdentity & { identityContentSha256: string })[] };
+    for (const p of admitted.players) {
+      assertHistoricalBridge(p);
+      if (!/^[a-f0-9]{64}$/.test(p.identityContentSha256)) throw Error("Missing pinned identity content proof");
+      const map = associations.get(p.playerId) ?? new Map<string, number>();
+      map.set(p.article, Math.max(map.get(p.article) ?? 0, p.identityRevision)); associations.set(p.playerId, map);
+    }
   }
   const identities: EventIdentity[] = [];
   for (const bridge of historicalCurrentBridges) {
