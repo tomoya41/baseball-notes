@@ -853,13 +853,13 @@ public class ReleaseQualityTest {
             if(scale!=1.0f) fontScaleAndRecreate(scale);
             waitText("契約更改の記録は未収録です");waitViewport(360);
             assertEquals("Club-scoped official link without invented salary or publication state", "true", js("document.querySelectorAll('.club-official-news a').length===1&&document.querySelector('.club-official-news a').href==='https://www.softbankhawks.co.jp/news/'&&!document.querySelector('main').innerText.includes('未発表')"));
-            assertEquals("Renewal scope survives recreation", "true", js("location.hash.includes('kind=contract_renewal')&&location.hash.includes('team=npb:team:hawks')"));
+            assertEquals("Renewal scope survives recreation", "true", js("(()=>{const q=new URLSearchParams(location.hash.split('?')[1]);return q.get('kind')==='contract_renewal'&&q.get('team')==='npb:team:hawks'})()"));
             assertEquals("Topic controls stay usable", "true", js("Array.from(document.querySelectorAll('.event-topics a,.club-official-news a')).every(e=>e.getBoundingClientRect().height>=44)"));
             assertEquals("Offseason screen fits enlarged native text", "true", js("document.documentElement.scrollWidth<=innerWidth"));
             screenshot("npb-contract-renewal-font-"+scale);
         }
-        scenario.onActivity(activity -> activity.getOnBackPressedDispatcher().onBackPressed());waitCondition("Back reaches the scoped club", "location.hash.includes('/NPB/teams/npb:team:hawks')");
-        assertEquals("Back returns to the scoped club", "true", js("location.hash.includes('/NPB/teams/npb:team:hawks')"));
+        scenario.onActivity(activity -> activity.getOnBackPressedDispatcher().onBackPressed());waitCondition("Back reaches the scoped club", "decodeURIComponent(location.hash.split('?')[0])==='#/NPB/teams/npb:team:hawks'");
+        assertEquals("Back returns to the scoped club", "true", js("decodeURIComponent(location.hash.split('?')[0])==='#/NPB/teams/npb:team:hawks'"));
     }
     @Test public void longNavigationHistoryHasBoundedRecreationState() throws Exception {
         assertEquals("/NPB/search?q=A%26B%3DC%25", MainActivity.savedRoute("https://localhost/#/NPB/search?q=A%26B%3DC%25"));

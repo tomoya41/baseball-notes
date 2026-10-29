@@ -70,6 +70,8 @@ it("keeps topic links shareable without discarding player, club, name or Follow 
     expect(npbEventQuery(query).valid).toBe(true);
     expect(portableRoute('/NPB/moves', `?${query}`)).toContain('kind=contract_renewal');
     expect(canonicalDeepLink(`baseballnotes://NPB/moves?${query}`)).toContain('kind=contract_renewal');
+    const cold = canonicalDeepLink(`baseballnotes://NPB/moves?${query}`)!;
+    expect(new URLSearchParams(cold.split('?')[1]).get('team')).toBe('npb:team:tigers');
     expect(readNpbPlayerEvents).toHaveBeenCalledTimes(1);
   } finally { await f.close(); }
 });
