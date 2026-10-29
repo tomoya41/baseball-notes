@@ -9,6 +9,10 @@ import { readNpbPlayerEvents } from "../src/application/npb-player-events-reader
 import { citation, eventFixture, eventPage, eventPerson, otherEventPerson } from "./fixtures/npb-player-events";
 import { parseWikipediaPlayerEvents } from "../src/infrastructure/providers/wikipedia-npb-player-events";
 import type { Favorite } from "../src/domain/models";
+import { npbEventQuery } from "../src/domain/npb-event-query";
+import { canonicalDeepLink } from "../src/domain/native-navigation";
+import { portableRoute } from "../src/domain/product-sharing";
+import { clubNewsUrl } from "../src/presentation/npb-club-news";
 vi.mock("../src/application/npb-player-events-reader", () => ({ readNpbPlayerEvents: vi.fn() }));
 afterEach(() => { vi.clearAllMocks(); vi.unstubAllGlobals(); });
 function Location() { return <output data-location>{useLocation().search}</output>; }
@@ -52,5 +56,46 @@ it("filters a compound announcement by the participant's own action without losi
     const select = f.host.querySelector("select")!; await act(async () => { select.value = "nonrenewal_notice"; select.dispatchEvent(new Event("change", { bubbles: true })); });
     expect(f.host.querySelector("article h2")?.textContent).toBe("架空太郎 · 戦力外通告");
     expect(readNpbPlayerEvents).toHaveBeenCalledTimes(1);
+  } finally { await f.close(); }
+});
+it("keeps topic links shareable without discarding player, club, name or Follow scope", async () => {
+  const f = await mount(`?player=${eventPerson.playerId}&team=npb:team:tigers&q=架空&follow=1&page=3`);
+  try {
+    const a = Array.from(f.host.querySelectorAll<HTMLAnchorElement>('.event-topics a')).find(a => a.textContent === '契約更改')!;
+    const query = new URL(a.getAttribute('href')!, 'https://example.test').searchParams;
+    expect(query.get('kind')).toBe('contract_renewal'); expect(query.get('player')).toBe(eventPerson.playerId);
+    expect(query.get('team')).toBe('npb:team:tigers'); expect(query.get('q')).toBe('架空'); expect(query.get('follow')).toBe('1'); expect(query.has('page')).toBe(false);
+    await act(async () => a.click());
+    expect(f.host.querySelector('.event-topics a[aria-current="page"]')?.textContent).toBe('契約更改');
+    expect(npbEventQuery(query).valid).toBe(true);
+    expect(portableRoute('/NPB/moves', `?${query}`)).toContain('kind=contract_renewal');
+    expect(canonicalDeepLink(`baseballnotes://NPB/moves?${query}`)).toContain('kind=contract_renewal');
+    expect(readNpbPlayerEvents).toHaveBeenCalledTimes(1);
+  } finally { await f.close(); }
+});
+it("distinguishes uncollected renewals from no renewals and offers official club navigation without fetching news", async () => {
+  const fetch = vi.fn(); vi.stubGlobal('fetch', fetch);
+  const all = await mount('?kind=contract_renewal');
+  try {
+    expect(all.host.textContent).toContain('契約更改の記録は未収録です');
+    expect(all.host.textContent).not.toContain('契約更改なし'); expect(all.host.textContent).not.toContain('未発表');
+    expect(all.host.querySelectorAll('.club-official-news a')).toHaveLength(12);
+    for (const a of all.host.querySelectorAll<HTMLAnchorElement>('.club-official-news a')) { expect(a.protocol).toBe('https:'); expect(a.target).toBe('_blank'); expect(a.rel).toBe('noreferrer'); }
+    expect(fetch).not.toHaveBeenCalled();
+  } finally { await all.close(); }
+  const one = await mount('?kind=contract_renewal&team=npb:team:hawks');
+  try {
+    expect(one.host.querySelectorAll('.club-official-news a')).toHaveLength(1);
+    expect(one.host.querySelector('.club-official-news a')?.getAttribute('href')).toBe('https://www.softbankhawks.co.jp/news/');
+    expect(clubNewsUrl('npb:team:unknown')).toBeNull(); expect(clubNewsUrl('https://evil.example')).toBeNull();
+    expect(fetch).not.toHaveBeenCalled();
+  } finally { await one.close(); }
+});
+it("keeps the Home offseason entry compact and does not fetch event or official news data", async () => {
+  const f = await mount('', [], false, true);
+  try {
+    expect(f.host.querySelectorAll('.offseason-home-links a')).toHaveLength(2);
+    expect(f.host.querySelector('.offseason-home-links a:last-child')?.getAttribute('href')).toBe('/NPB/moves?kind=contract_renewal');
+    expect(readNpbPlayerEvents).not.toHaveBeenCalled();
   } finally { await f.close(); }
 });

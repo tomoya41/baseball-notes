@@ -34,3 +34,17 @@ v5 `npb-events-wikipedia-20261029-v5`：39件/39人、body 30,608 bytes / gzip 6
 契約更改の記載は今回の原本内で0。0件を「更改なし」「未発表」と表示せず、未収録として扱う。年俸・推定額・実際の契約期間を生成しない。以降のUI/分類対応は独立したレビュー単位で進める。
 
 データ先行段階のローカル検証：214 test files、2,087 PASS＋Windows既存1 SKIP（Linux全2,088）。Lint/typecheck/Web buildとSource/Coverage/旧release検証成功。新しい10記事のページID/QID・NPB ID・改版時刻・本文hash、原本archive hashと全28旧statement hashも再照合した。配信アプリ本体61ファイルは公開main `23ddeb3`と全byte同一。新inactive JSON以外の保護データ、表示機能、既存nativeコードに変更はない。
+
+## v5表示への切替と契約更改の入口
+
+データ先行[PR #101](https://github.com/tomoya41/baseball-notes/pull/101)と[Pages run 40844207981](https://github.com/tomoya41/baseball-notes/actions/runs/40844207981)は完了。公開HTTPの39件JSONは上記body hashと一致し、旧65,727ファイル・362,242,456 bytesの欠落/変更0、新規JSON1ファイル30,608 bytesのみ。次のアプリ更新でv5をactiveとし、v4もretainedへ移して旧URLを保持する。
+
+既存Homeへ「移籍・退団・引退」「契約更改」の2本の入口を追加。Homeのイベント取得0、既存Moves内の種類切替はURL条件・選手/球団/フォローを保持する。既存の13px文字と44pxタップ領域を使い、新画面や全面再設計は追加しない。選手から記事記載・元改版・ID照合記事・ライセンスへの経路を維持する。
+
+`contract_renewal`は契約発表、戦力外、自由契約と独立。固定文法の成立済み更改だけを認識し、交渉予定、保留、打診、見込み、推定年俸、名前のみ、無関係な脚注は受理しない。契約年数・推定額・登録状態は付加しない。現原本の更改記録0件は「未収録」と表示し、なし/未発表と断定しない。
+
+契約更改欄には12球団の公式ニュースへの外部リンクを設置。ドメインは[NPBの球団案内](https://npb.jp/teams/)と球団自身のナビゲーションで確認（2026-10-29）。11球団のHEADは200、巨人は自動HEAD403だが公式ドメインのニュース導線として保持。日本ハムの`/news/`はメディア出演ページへ転送されるため、公式ナビの[すべてのニュース](https://www.fighters.co.jp/news/list/)を採用した。これは閲覧先の案内であり、記事本文の取得・複製・Source採用許諾ではない。球団ロゴ、本文、写真の新規転載0。
+
+変更後parserで同じ保存原本を再処理して39イベント・39人の内容/ID/statement hashが完全一致。identity input digestはGitのregistryファイルのbyte表現を含むため再処理時のdigestを新たに記録し、既存v5のdigest/assetを上書きしない。旧28件からの差分11件、訂正/削除0という人による確認結果も維持する。
+
+NPB HOTは従来のCoverage・最低母数・Scheduled証拠がそろうまで非公開。試合別MVPとオフシーズン記事はHOTの代替ランキングではない。Tursoの24時間読み取り抑制中のprobe/DB書込み0、追加費用¥0。実機Pixel/TalkBack/署名互換性は別の未検証Gate。
