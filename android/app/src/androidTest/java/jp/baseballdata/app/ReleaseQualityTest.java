@@ -1213,7 +1213,7 @@ public class ReleaseQualityTest {
         assertTrue("CS role/stage survives navigation",js("location.hash").contains("competition=postseason&stage=npb_cs_first&role=pitching"));
         shell("input keyevent KEYCODE_BACK");waitCondition("Back to compact Home","!!document.querySelector('.japan-home-result')");
         js("document.querySelector('.japan-home-result').click()");waitText("アプリ独自選出");
-        assertTrue("No invented Japan Series MVP",js("document.querySelector('.daily-mvp').innerText").contains("選手成績未収録"));
+        assertTrue("No invented Japan Series game MVP",js("document.querySelector('.game-mvp').innerText").contains("選手成績未収録"));
     }
     @Test public void japanSeriesThirdGamePreservesWalkOffAndOriginalCitations() throws Exception {
         Intent link = new Intent(Intent.ACTION_VIEW, Uri.parse("baseballnotes://NPB/games/npb%3Agame%3A5fcadb011aedcfd894cb?season=2026&competition=postseason&stage=japan_series"));
