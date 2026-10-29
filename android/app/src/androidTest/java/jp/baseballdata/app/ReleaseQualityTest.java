@@ -967,6 +967,12 @@ public class ReleaseQualityTest {
         assertFalse(EodMessagingService.isFavoritePlayer(fixture, "removed-player"));
         assertFalse(EodMessagingService.isFavoritePlayer(fixture.replace("NPB", "MLB"), "canonical-player"));
         assertFalse(EodMessagingService.isFavoritePlayer("corrupt", "canonical-player"));
+        var notificationSnapshot = new java.util.HashMap<String, Object>(); notificationSnapshot.put("baseball:favorites:v1", fixture);
+        assertTrue("Stable favorite can authorize existing delivery", EodMessagingService.isStableFavoritePlayer(notificationSnapshot, "canonical-player"));
+        for (String journal : new String[]{"pending", "committed", "corrupt"}) {
+            notificationSnapshot.put("baseball:personal-restore:journal:v1", journal);
+            assertFalse("A restore journal cannot authorize delivery", EodMessagingService.isStableFavoritePlayer(notificationSnapshot, "canonical-player"));
+        }
         scenario = ActivityScenario.launch(MainActivity.class); waitText("BASEBALL");
         js("Capacitor.Plugins.Preferences.set({key:'qa-persistence',value:'canonical-key'}).then(()=>document.documentElement.dataset.qa='saved')");
         for (int i=0; i<100 && !js("document.documentElement.dataset.qa").equals("saved"); i++) Thread.sleep(50);
@@ -979,6 +985,134 @@ public class ReleaseQualityTest {
         for (int i=0; i<100 && !js("document.documentElement.dataset.fcm").equals("false"); i++) Thread.sleep(50);
         assertEquals("false", js("document.documentElement.dataset.fcm"));
         js("Capacitor.Plugins.Preferences.remove({key:'qa-persistence'})");
+    }
+
+    private void clickDocumentText(String text) throws Exception {
+        long start = System.currentTimeMillis();
+        while (System.currentTimeMillis() - start < 20000) {
+            android.view.accessibility.AccessibilityNodeInfo root = InstrumentationRegistry.getInstrumentation().getUiAutomation().getRootInActiveWindow();
+            if (root != null && root.getPackageName() != null && root.getPackageName().toString().contains("documentsui")) {
+                for (android.view.accessibility.AccessibilityNodeInfo node : root.findAccessibilityNodeInfosByText(text)) {
+                    // Filename searches also match the thumbnail's separate
+                    // "Preview the file ..." action. Select the actual title.
+                    if (text.startsWith("baseball-notes-backup-") && (node.getText() == null || !text.contentEquals(node.getText()))) continue;
+                    // Activate the selectable document row, not its title's
+                    // truncated text bounds or the separate preview surface.
+                    InstrumentationRegistry.getInstrumentation().getUiAutomation().waitForIdle(300, 5000);
+                    if (!node.refresh() || !node.isVisibleToUser()) continue;
+                    android.view.accessibility.AccessibilityNodeInfo target = node;
+                    for (int depth = 0; target != null && depth < 8; depth++, target = target.getParent()) {
+                        if (target.isEnabled() && target.isClickable() && target.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK)) return;
+                    }
+                }
+            }
+            Thread.sleep(100);
+        }
+        fail("Android document picker action unavailable: " + text);
+    }
+    private void tapAndroidPoint(float x, float y) {
+        long time = android.os.SystemClock.uptimeMillis();
+        MotionEvent down = MotionEvent.obtain(time, time, MotionEvent.ACTION_DOWN, x, y, 0);
+        MotionEvent up = MotionEvent.obtain(time, time+60, MotionEvent.ACTION_UP, x, y, 0);
+        // DocumentsUI belongs to a different UID. Instrumentation's targeted
+        // injector is restricted to our app; UiAutomation controls system UI.
+        down.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);
+        up.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);
+        var automation = InstrumentationRegistry.getInstrumentation().getUiAutomation();
+        try { assertTrue("System picker touch down", automation.injectInputEvent(down, true)); assertTrue("System picker touch up", automation.injectInputEvent(up, true)); }
+        finally { down.recycle(); up.recycle(); }
+    }
+    private void finishDocumentSelection() throws Exception {
+        long start = System.currentTimeMillis(); boolean confirmed = false;
+        while (System.currentTimeMillis() - start < 20000) {
+            var root = InstrumentationRegistry.getInstrumentation().getUiAutomation().getRootInActiveWindow();
+            if (root != null && root.getPackageName() != null) {
+                if (root.getPackageName().toString().equals("com.tomoya41.baseballnotes")) return;
+                if (!confirmed && root.getPackageName().toString().contains("documentsui")) {
+                    var queue = new java.util.ArrayDeque<android.view.accessibility.AccessibilityNodeInfo>(); queue.add(root);
+                    while (!queue.isEmpty()) {
+                        var node = queue.removeFirst(); String text = node.getText() == null ? "" : node.getText().toString();
+                        if (node.isEnabled() && node.isVisibleToUser() && (text.equalsIgnoreCase("Open") || text.equalsIgnoreCase("Select"))) {
+                            android.graphics.Rect bounds = new android.graphics.Rect(); node.getBoundsInScreen(bounds);
+                            if (!bounds.isEmpty()) { tapAndroidPoint(bounds.centerX(), bounds.centerY()); confirmed = true; break; }
+                        }
+                        for (int i = 0; i < node.getChildCount(); i++) if (node.getChild(i) != null) queue.add(node.getChild(i));
+                    }
+                }
+            }
+            Thread.sleep(100);
+        }
+        var root = InstrumentationRegistry.getInstrumentation().getUiAutomation().getRootInActiveWindow();
+        var text = new StringBuilder(); var queue = new java.util.ArrayDeque<android.view.accessibility.AccessibilityNodeInfo>(); if (root != null) queue.add(root);
+        while (!queue.isEmpty() && text.length() < 12000) { var node = queue.removeFirst(); text.append(node.getClassName()).append(" | ").append(node.getText()).append(" | ").append(node.getContentDescription()).append(" | enabled=").append(node.isEnabled()).append('\n'); for (int i = 0; i < node.getChildCount(); i++) if (node.getChild(i) != null) queue.add(node.getChild(i)); }
+        File dir = new File(InstrumentationRegistry.getInstrumentation().getTargetContext().getExternalFilesDir(null), "ui-redesign"); assertTrue(dir.isDirectory() || dir.mkdirs());
+        try (FileOutputStream output = new FileOutputStream(new File(dir, "personal-backup-picker.txt"))) { output.write(text.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8)); }
+        Bitmap image = InstrumentationRegistry.getInstrumentation().getUiAutomation().takeScreenshot(); if (image != null) { try (FileOutputStream output = new FileOutputStream(new File(dir, "personal-backup-picker.png"))) { image.compress(Bitmap.CompressFormat.PNG, 100, output); } finally { image.recycle(); } }
+        fail("Android selection did not return to the app: " + text);
+    }
+    private void waitDocumentPicker() throws Exception {
+        long start = System.currentTimeMillis();
+        while (System.currentTimeMillis() - start < 20000) {
+            android.view.accessibility.AccessibilityNodeInfo root = InstrumentationRegistry.getInstrumentation().getUiAutomation().getRootInActiveWindow();
+            if (root != null && root.getPackageName() != null && root.getPackageName().toString().contains("documentsui")) return;
+            Thread.sleep(100);
+        }
+        fail("Android save picker did not open / " + js("document.body.innerText"));
+    }
+    private void tapBackupImport() throws Exception {
+        // HTML file inputs require a trusted user gesture. evaluateJavascript
+        // button.click() cannot open the picker and is not a device interaction.
+        String button = "Array.from(document.querySelectorAll('.backup-actions button')).find(b=>b.textContent==='ファイルを選ぶ')";
+        js(button + ".scrollIntoView({block:'center'})"); waitPaint();
+        var point = new org.json.JSONArray(js("(()=>{const r=(" + button + ").getBoundingClientRect();return [r.x+r.width/2,r.y+r.height/2,innerWidth]})()"));
+        AtomicReference<float[]> screen = new AtomicReference<>();
+        scenario.onActivity(activity -> { var web = activity.getBridge().getWebView(); int[] origin = new int[2]; web.getLocationOnScreen(origin); float scale = web.getWidth() / (float) point.optDouble(2); screen.set(new float[]{origin[0] + (float) point.optDouble(0)*scale, origin[1] + (float) point.optDouble(1)*scale}); });
+        long time = android.os.SystemClock.uptimeMillis();
+        MotionEvent down = MotionEvent.obtain(time, time, MotionEvent.ACTION_DOWN, screen.get()[0], screen.get()[1], 0);
+        MotionEvent up = MotionEvent.obtain(time, time+60, MotionEvent.ACTION_UP, screen.get()[0], screen.get()[1], 0);
+        try { InstrumentationRegistry.getInstrumentation().sendPointerSync(down); InstrumentationRegistry.getInstrumentation().sendPointerSync(up); }
+        finally { down.recycle(); up.recycle(); }
+        waitDocumentPicker();
+    }
+    @Test public void personalBackupUsesAndroidDocumentsAndConfirmedRestoreWithoutLosingOtherSettings() throws Exception {
+        var context = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        var preferences = context.getSharedPreferences("CapacitorStorage", 0);
+        String[] keys = {"baseball:favorites:v1", "baseball:personal-library:v1", "baseball:personal-watch:v1"};
+        String[] original = new String[keys.length]; for (int i = 0; i < keys.length; i++) original[i] = preferences.getString(keys[i], null);
+        assertFalse("No pending restoration before isolated QA", preferences.contains("baseball:personal-restore:journal:v1"));
+        String unchanged = preferences.getString("appearance-v1", null);
+        try {
+            preferences.edit().putString(keys[0], "{\"version\":1,\"items\":[{\"league\":\"MLB\",\"kind\":\"player\",\"entityId\":\"mlb:player:00000000-0000-4000-8000-000000000001\",\"addedAt\":\"2026-01-01T00:00:00Z\"}]}")
+                .putString(keys[1], "{\"version\":1,\"collections\":[{\"id\":\"qa-backup\",\"name\":\"持ち運ぶ選手\",\"players\":[],\"updatedAt\":1}],\"views\":[],\"activity\":[]}")
+                .remove(keys[2]).commit();
+            scenario = ActivityScenario.launch(MainActivity.class); waitText("BASEBALL"); js("location.hash='#/MLB/my'"); waitText("設定・バックアップ");
+            js("document.querySelector('.my-settings-disclosure>summary').click()"); waitText("ファイルを保存");
+            js("Capacitor.Plugins.PersonalBackupFiles.save({filename:'../forbidden.json',text:'{}'}).then(()=>document.documentElement.dataset.badBackup='accepted',()=>document.documentElement.dataset.badBackup='rejected')");
+            waitCondition("Native adapter rejects arbitrary paths", "document.documentElement.dataset.badBackup==='rejected'");
+            js("Array.from(document.querySelectorAll('.backup-actions button')).find(b=>b.textContent==='ファイルを保存').click()");
+            waitDocumentPicker(); shell("input keyevent KEYCODE_BACK"); waitText("保存をキャンセルしました");
+            String filename = js("'baseball-notes-backup-'+new Date().toISOString().slice(0,10)+'.json'");
+            js("Array.from(document.querySelectorAll('.backup-actions button')).find(b=>b.textContent==='ファイルを保存').click()");
+            clickDocumentText("Save"); waitText("ファイルを保存しました");
+            tapBackupImport();
+            clickDocumentText(filename); finishDocumentSelection(); waitText("取り込み内容");
+            assertEquals("Import is confirmation-only", "true", js("Array.from(document.querySelectorAll('.backup-actions button')).find(b=>b.textContent==='取り込む').disabled"));
+            js("document.querySelector('.backup-confirm input').click()");
+            waitCondition("Explicit confirmation enables restore", "!Array.from(document.querySelectorAll('.backup-actions button')).find(b=>b.textContent==='取り込む').disabled");
+            js("Array.from(document.querySelectorAll('.backup-actions button')).find(b=>b.textContent==='取り込む').click()");
+            waitText("保存内容を取り込みました"); assertEquals("Appearance unchanged", unchanged, preferences.getString("appearance-v1", null));
+            assertTrue("Collection retained", preferences.getString(keys[1], "").contains("持ち運ぶ選手"));
+            assertFalse("Journal committed and cleared", preferences.contains("baseball:personal-restore:journal:v1"));
+            for (float scale : new float[]{1.0f, 1.5f, 2.0f}) {
+                fontScaleAndRecreate(scale); waitText("設定・バックアップ"); waitViewport(360);
+                js("if(!document.querySelector('.my-settings-disclosure').open)document.querySelector('.my-settings-disclosure>summary').click()"); waitText("ファイルを保存");
+                assertEquals("Backup controls do not overflow at " + scale, "true", js("document.documentElement.scrollWidth<=innerWidth"));
+                js("document.querySelector('.personal-backup').scrollIntoView({block:'start'})"); screenshot("personal-backup-font-" + scale);
+            }
+        } finally {
+            if (scenario != null) { scenario.close(); scenario = null; }
+            var editor = preferences.edit(); for (int i = 0; i < keys.length; i++) { if (original[i] == null) editor.remove(keys[i]); else editor.putString(keys[i], original[i]); } editor.commit();
+        }
     }
 
     @Test public void nativeSharedCounterLoadsAndPersistsAtActualPageSize() throws Exception {

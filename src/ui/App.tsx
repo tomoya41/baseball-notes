@@ -1,4 +1,5 @@
-import { lazy, Suspense, useCallback, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { onPersonalRestored } from "../app/personal-events";
 import { RouteErrorBoundary, RouteFocus } from "./route-reliability";
 import { House, Search, Trophy, UserRound, CalendarDays } from "lucide-react";
 import { Link, Navigate, Route, Routes, useLocation } from "react-router-dom";
@@ -19,6 +20,7 @@ const NpbGameDetailScreen = lazy(() => import("./npb-game-detail").then(module =
 const CollectionDashboard = lazy(() => import("./collection-dashboard").then(module => ({ default: module.CollectionDashboard })));
 const PersonalLibraryScreen = lazy(() => import("./personal-library").then(module => ({ default: module.PersonalLibraryScreen })));
 const WatchCenter = lazy(() => import("./personal-watch").then(module => ({ default: module.WatchCenter })));
+const PersonalBackupSettings = lazy(() => import("./personal-backup").then(module => ({ default: module.PersonalBackupSettings })));
 const navItems = [
   { label: "ホーム", segment: "home", icon: House }, { label: "試合", segment: "schedule", icon: CalendarDays },
   { label: "選手", segment: "search", icon: Search }, { label: "記録", segment: "records", icon: Trophy }, { label: "My", segment: "my", icon: UserRound },
@@ -37,20 +39,24 @@ export function App({ services }: { services: Services }) {
   const [saving, setSaving] = useState(false);
   const [favoriteMessage, setFavoriteMessage] = useState("");
   const [favoriteError, setFavoriteError] = useState(false);
+  const favoriteRead = useRef(0);
   useEffect(() => {
     if (!favoriteMessage || favoriteError) return;
     const timer = window.setTimeout(() => setFavoriteMessage(""), 3200);
     return () => window.clearTimeout(timer);
   }, [favoriteMessage, favoriteError]);
   useEffect(() => {
-    let active = true;
-    void services.favorites.list().then((items) => { if (active) { setFavorites(items); setFavoritesReady(true); } })
-      .catch(() => { if (active) { setFavoriteMessage("お気に入りを読み込めません。保存データは保持しています。"); setFavoriteError(true); } });
-    return () => { active = false; };
+    let active = true; const refresh = () => { const version = ++favoriteRead.current;
+      void services.favorites.list().then(items => { if (active && version === favoriteRead.current) { setFavorites(items); setFavoritesReady(true); setFavoriteError(false); } })
+        .catch(() => { if (active && version === favoriteRead.current) { setFavoriteMessage("お気に入りを読み込めません。保存データは保持しています。"); setFavoriteError(true); } }); };
+    refresh(); const unsubscribe = onPersonalRestored(refresh);
+    return () => { active = false; unsubscribe(); };
   }, [services]);
   const toggle = useCallback((target: FavoriteTarget) => {
+    const version = ++favoriteRead.current;
     setSaving(true);
     void services.favorites.toggle(target).then((items) => {
+      if (version !== favoriteRead.current) return;
       setFavorites(items); setFavoriteError(false);
       setFavoriteMessage(items.some((item) => favoriteMatches(item, target))
         ? "お気に入りを保存しました。" : "お気に入りから削除しました。");
@@ -89,7 +95,7 @@ export function App({ services }: { services: Services }) {
     </Routes></Suspense>
     </RouteErrorBoundary>
     {section === "home" && <WatchSummary league={league} />}
-    {section === "my" && <details className="my-settings-disclosure"><summary>表示・通知・アプリについて</summary><MySettings /><WebOfflineInfo /><NotificationSettings favorites={favorites} ready={favoritesReady} visible /></details>}
+    {section === "my" && <details className="my-settings-disclosure"><summary>設定・バックアップ</summary><Suspense fallback={<LoadingSkeleton />}><PersonalBackupSettings transfer={services.personalBackup} /></Suspense><MySettings /><WebOfflineInfo /><NotificationSettings favorites={favorites} ready={favoritesReady} visible /></details>}
     <footer className="app-footer"><Link to="/MLB/sources">データ提供元</Link><Link to={`/${league}/explore`}>機能一覧 ↗</Link></footer></main>
     <nav className="bottom-nav" aria-label="基本ナビゲーション">{navItems.map(({ label, segment, icon: Icon }) =>
       <Link key={segment} to={`/${league}/${segment}`} aria-current={currentNav === segment ? "page" : undefined}>

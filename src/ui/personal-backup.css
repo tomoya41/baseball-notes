@@ -1,0 +1,16 @@
+.personal-backup h2 { font-size: .9375rem; }
+.personal-backup p { margin-block: .375rem; }
+.backup-actions,.backup-mode { display: flex; flex-wrap: wrap; gap: .5rem; }
+.backup-actions button { display: inline-flex; align-items: center; justify-content: center; gap: .375rem; flex: 1 1 8rem; min-height: var(--touch); font-size: .8125rem; }
+.backup-actions button:first-child { background: var(--brand); color: var(--on-brand); }
+.backup-preview { margin-top: .75rem; padding-block: .5rem; border-top: 1px solid var(--color-border); }
+.backup-preview table { width: 100%; border-collapse: collapse; font-size: .75rem; }
+.backup-preview th,.backup-preview td { padding: .375rem .25rem; border-bottom: 1px solid var(--color-border); overflow-wrap: anywhere; }
+.backup-preview th { text-align: left; font-weight: 600; }
+.backup-preview td { text-align: right; font-variant-numeric: tabular-nums; }
+.personal-backup fieldset { min-width: 0; padding: 0; border: 0; margin-block: .5rem; }
+.personal-backup legend { font-size: .75rem; padding: 0; }
+.backup-mode label,.backup-confirm { display: flex; align-items: center; gap: .5rem; min-height: var(--touch); font-size: .8125rem; }
+.backup-mode label { flex: 1 1 8rem; }
+.backup-filename { font-size: .75rem; overflow-wrap: anywhere; color: var(--color-muted); }
+.personal-backup details { font-size: .75rem; }

@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { SettingsStore } from "./ports";
 import type { League } from "../domain/models";
 import { viewConditions } from "../domain/portable-conditions";
+import { mutatePersonalSettings, PERSONAL_KEYS } from "./personal-settings";
 export { viewConditions } from "../domain/portable-conditions";
 
 const league = z.enum(["NPB", "MLB"]), id = z.string().min(1).max(160).regex(/^[a-zA-Z0-9:_-]+$/);
@@ -11,11 +12,12 @@ export type LibraryPlayer = z.infer<typeof libraryTargetSchema>;
 const viewSchema = z.strictObject({ id, name: z.string().trim().min(1).max(60), league, kind: z.enum(["data", "history"]), conditions: z.string().max(6000), savedAt: z.number().finite() });
 const collectionSchema = z.strictObject({ id, name: z.string().trim().min(1).max(60), players: z.array(libraryTargetSchema).max(100), updatedAt: z.number().finite() });
 const activitySchema = z.strictObject({ league, kind: z.enum(["players", "teams", "games", "series", "data", "history"]), entityId: id.nullable(), conditions: z.string().max(6000), visitedAt: z.number().finite() });
-const schema = z.strictObject({ version: z.literal(1), views: z.array(viewSchema).max(20), collections: z.array(collectionSchema).max(20), activity: z.array(activitySchema).max(60) });
+export const personalLibrarySchema = z.strictObject({ version: z.literal(1), views: z.array(viewSchema).max(20), collections: z.array(collectionSchema).max(20), activity: z.array(activitySchema).max(60) });
+const schema = personalLibrarySchema;
 export type PersonalState = z.infer<typeof schema>;
 export type Activity = PersonalState["activity"][number];
 const empty = (): PersonalState => ({ version: 1, views: [], collections: [], activity: [] });
-export const PERSONAL_LIBRARY_KEY = "baseball:personal-library:v1";
+export const PERSONAL_LIBRARY_KEY = PERSONAL_KEYS.library;
 const MAX_AGE = 90 * 86400000;
 export function activityFromRoute(path: string, search: string, now: number): Activity | null {
   const [l, resource, rawId] = path.split("/").filter(Boolean), parsedLeague = league.safeParse(l);
@@ -43,8 +45,8 @@ export function activityPath(item: Activity): string {
 export class PersonalLibrary {
   private queue: Promise<unknown> = Promise.resolve();
   constructor(private readonly storage: SettingsStore, private readonly now: () => number = Date.now, private readonly uuid: () => string = () => crypto.randomUUID()) {}
-  async read(): Promise<PersonalState> {
-    const raw = await this.storage.get(PERSONAL_LIBRARY_KEY); if (!raw) return empty();
+  async read(storage = this.storage): Promise<PersonalState> {
+    const raw = await storage.get(PERSONAL_LIBRARY_KEY); if (!raw) return empty();
     let value: unknown; try { value = JSON.parse(raw); } catch { throw Error("保存データが破損しています。リセットまで保持します。"); }
     // Version 0 used the same explicit item structures before Activity was introduced.
     if (value && typeof value === "object" && "version" in value && value.version === 0) value = { ...value, version: 1, activity: [] };
@@ -55,11 +57,11 @@ export class PersonalLibrary {
       collections: data.collections.map(c => ({ ...c, players: c.players.filter((p, i, all) => all.findIndex(x => x.league === p.league && x.playerId === p.playerId) === i) })) };
   }
   private change(update: (s: PersonalState) => PersonalState, reset = false): Promise<PersonalState> {
-    const work = this.queue.then(async () => {
-      const next = schema.parse(update(reset ? empty() : await this.read()));
+    const work = this.queue.then(() => mutatePersonalSettings(this.storage, async storage => {
+      const next = schema.parse(update(reset ? empty() : await this.read(storage)));
       const json = JSON.stringify(next); if (json.length > 250000) throw Error("保存容量の上限に達しました。");
-      await this.storage.set(PERSONAL_LIBRARY_KEY, json); return next;
-    }); this.queue = work.catch(() => undefined); return work;
+      await storage.set(PERSONAL_LIBRARY_KEY, json); return next;
+    })); this.queue = work.catch(() => undefined); return work;
   }
   reset() { return this.change(empty, true); }
   visit(item: Activity) { return this.change(s => ({ ...s, activity: [item, ...s.activity.filter(a => !(a.league === item.league && a.kind === item.kind && a.entityId === item.entityId && a.conditions === item.conditions))].slice(0, 60) })); }

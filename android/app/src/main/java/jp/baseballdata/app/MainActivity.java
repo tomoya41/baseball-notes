@@ -53,6 +53,7 @@ public class MainActivity extends BridgeActivity {
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         registerPlugin(FavoriteNotificationsPlugin.class);
         registerPlugin(RouteRestorePlugin.class);
+        registerPlugin(PersonalBackupFilesPlugin.class);
         EdgeToEdge.enable(this);
         setTheme(R.style.AppTheme_NoActionBar);
         super.onCreate(savedInstanceState);

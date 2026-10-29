@@ -105,7 +105,7 @@ npm run collector:import -- --date 2025-06-01 --zip .data/raw/2025csvs.zip
 
 `--dry-run`はFact/Snapshotを書きません。2行目は再取得せず、保存・静的Payload出力まで実行します。出力先は`public/data/standings/mlb/2025-06-01.json`。Retrosheetの指定クレジット原文をPayloadに含めていますが、公開画面では目立つ表示も必要です。`TURSO_DATABASE_URL`/`TURSO_AUTH_TOKEN`はCollector専用で、remote DBはTurso Freeの東京リージョンに作成済みです。詳細は[データ基盤](docs/data-architecture.md)。
 
-- お気に入り：Android Preferences / Web localStorage。アプリ削除やサイトデータ削除で消えます。同期機能なし。
+- お気に入り：Android Preferences / Web localStorage。アプリ削除やサイトデータ削除で消えます。クラウド同期なし。My→設定・バックアップから個人保存のJSON書出し・確認付き取込みができます（成績/Watch数値・確認履歴・端末の通知許可は対象外）。[対象と復元手順](docs/personal-backup.md)。
 - キャッシュ：IndexedDB、正規化済みcatalogをリーグ・Provider別に保存。期限切れ/通信失敗を表示し、取得時刻と元データ更新時刻を分離。
 - AndroidはWeb assetsを同梱。Web／ホーム画面版は一度オンラインでアプリ本体を保存した後、オフラインで再起動できます。成績は検証済みキャッシュがあるものだけ表示します。ブラウザーの保存領域消去・初回オフライン起動は対象外です。[更新と制限](docs/web-offline-shell.md)。
 - `public/data/*.json`は実装とテストが使う架空データで、不要mockではありません。

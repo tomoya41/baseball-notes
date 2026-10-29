@@ -1,4 +1,5 @@
-import { useContext, useEffect, useState, type ReactNode } from "react";
+import { useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { onPersonalRestored } from "../app/personal-events";
 import { Link } from "react-router-dom";
 import type { PersonalWatch } from "../application/personal-watch";
 import type { League } from "../domain/models";
@@ -7,8 +8,10 @@ import { PersonalWatchContext } from "./personal-watch-context";
 
 export function PersonalWatchProvider({ store, children }: { store: PersonalWatch; children: ReactNode }) {
   const [state, setState] = useState<PersonalWatchState | null>(null), [error, setError] = useState("");
-  useEffect(() => { let active = true; void store.read().then(s => { if (active) setState(s); }).catch(e => { if (active) setError(String(e.message)); }); return () => { active = false; }; }, [store]);
-  const run = async (operation: () => Promise<PersonalWatchState>) => { try { setState(await operation()); setError(""); return true; } catch (e) { setError(e instanceof Error ? e.message : "Watchを保存できません。"); return false; } };
+  const generation = useRef(0);
+  useEffect(() => { let active = true; const refresh = () => { const v = ++generation.current; void store.read().then(s => { if (active && v === generation.current) { setState(s); setError(""); } }).catch(e => { if (active && v === generation.current) setError(String(e.message)); }); };
+    refresh(); const unsubscribe = onPersonalRestored(refresh); return () => { active = false; unsubscribe(); }; }, [store]);
+  const run = async (operation: () => Promise<PersonalWatchState>) => { const v = ++generation.current; try { const next = await operation(); if (v === generation.current) { setState(next); setError(""); } return true; } catch (e) { if (v === generation.current) setError(e instanceof Error ? e.message : "Watchを保存できません。"); return false; } };
   return <PersonalWatchContext.Provider value={{ state, error, store, run }}>{children}</PersonalWatchContext.Provider>;
 }
 export function WatchSummary({ league }: { league: League }) {

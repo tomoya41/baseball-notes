@@ -1,6 +1,8 @@
 import { Favorites } from "../application/favorites";
 import { PersonalLibrary } from "../application/personal-library";
 import { PersonalWatch } from "../application/personal-watch";
+import { PersonalSettingsStore } from "../application/personal-settings";
+import { PersonalBackup } from "../application/personal-backup";
 import { PreferenceStore } from "../infrastructure/storage";
 import { StaticStandingsRepository } from "../infrastructure/providers/static-standings-repository";
 import { StaticHotRepository } from "../infrastructure/providers/static-hot-repository";
@@ -14,7 +16,7 @@ import { HttpPlayerPeriodComparisonRepository } from "../infrastructure/provider
 import { HttpPlayerHomeAwayRepository } from "../infrastructure/providers/http-player-home-away-repository";
 import { HttpPlayerOpponentRepository } from "../infrastructure/providers/http-player-opponent-repository";
 import { HttpPlayerAnalysisBundleRepository } from "../infrastructure/providers/http-player-analysis-bundle-repository";
-import { publicAssetBase } from "./platform";
+import { isAndroid, publicAssetBase } from "./platform";
 import { StaticGameSurfaceRepository } from "../infrastructure/providers/static-game-surface-repository";
 import { StaticLeagueAvailabilityRepository } from "../infrastructure/providers/static-league-availability-repository";
 import { StaticNpbProductRepository } from "../infrastructure/providers/static-npb-product-repository";
@@ -22,10 +24,14 @@ import { StaticNpbProductRepository } from "../infrastructure/providers/static-n
 // Composition root: replace adapters here, never inside a screen.
 const npbDataBaseUrl = import.meta.env.VITE_NPB_DATA_BASE_URL?.trim() ||
   publicAssetBase();
+// A native Preferences bridge has one active WebView. Its Web Locks facade can
+// leave requests pending without invoking their callback; use the local queue.
+const personal = new PersonalSettingsStore(new PreferenceStore(), !isAndroid());
 
 export const services = {
-  personalLibrary: new PersonalLibrary(new PreferenceStore()),
-  personalWatch: new PersonalWatch(new PreferenceStore()),
+  personalLibrary: new PersonalLibrary(personal),
+  personalWatch: new PersonalWatch(personal),
+  personalBackup: new PersonalBackup(personal),
   leagueAvailability: new StaticLeagueAvailabilityRepository(publicAssetBase()),
   standings: new StaticStandingsRepository(import.meta.env.BASE_URL, undefined, npbDataBaseUrl),
   hot: new StaticHotRepository(npbDataBaseUrl),
@@ -40,6 +46,6 @@ export const services = {
   homeAway: new HttpPlayerHomeAwayRepository(import.meta.env.VITE_NPB_PLAYER_API_BASE_URL?.trim() || "https://baseball-notes-recent.vercel.app/"),
   opponent: new HttpPlayerOpponentRepository(import.meta.env.VITE_NPB_PLAYER_API_BASE_URL?.trim() || "https://baseball-notes-recent.vercel.app/"),
   analysisBundle: new HttpPlayerAnalysisBundleRepository(import.meta.env.VITE_NPB_PLAYER_API_BASE_URL?.trim() || "https://baseball-notes-recent.vercel.app/"),
-  favorites: new Favorites(new PreferenceStore()),
+  favorites: new Favorites(personal),
 };
 export type Services = typeof services;

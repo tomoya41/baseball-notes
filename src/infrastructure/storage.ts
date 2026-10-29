@@ -8,6 +8,7 @@ export class PreferenceStore implements SettingsStore {
   async set(key: string, value: string): Promise<void> {
     await Preferences.set({ key, value });
   }
+  async remove(key: string): Promise<void> { await Preferences.remove({ key }); }
 }
 
 // Disposable normalized catalog snapshots, one per provider/league. No raw feeds.
