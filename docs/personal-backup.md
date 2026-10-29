@@ -48,6 +48,6 @@ PR #99のローカル結果：213 test files、2,079 PASS / Windows専用の既�
 
 配信サーバーを停止したlocalhostで、既存service workerのアプリ本体からMyを再起動し、保存情報の維持・JSON保存・実ファイルの再プレビューを確認した。PC全体のネットワーク切断やPixelのオフライン検証の代替証拠にはしない。
 
-Android v2実行：[standard](https://github.com/tomoya41/baseball-notes/actions/runs/40774384043)、[16KB](https://github.com/tomoya41/baseball-notes/actions/runs/40774390720)は各34件中2件FAIL（お気に入り保存待ち、保存pickerへ未到達）。この失敗は公開せず、nativeのlock選択を修正した。修正後の固定実行・確定結果・公開後HTTP/65,727ファイル保全は[PR #99の検証記録](https://github.com/tomoya41/baseball-notes/pull/99)を参照する。Pixel/TalkBackは未実施（ローカルADBの接続端末0台）、正規署名による更新互換性・Play提出は未完了。
+Androidの製品コードは`2bd81149fd6468cdbec89f0a1cc5b1aed28b8914`、最終操作テストは`66799f9a5a270bb256d30725f1c3d73e4d82ea0b`で固定。[通常4096B環境](https://github.com/tomoya41/baseball-notes/actions/runs/40814048619)は34項目とプロセス再起動後の1項目がPASS。実際のOS保存先選択・取消し・JSON再選択・確認付き復元、元の保存情報と表示設定の保全を確認した。文字拡大の実画面：[100%](assets/personal-backup/android-font-100.webp)、[150%](assets/personal-backup/android-font-150.webp)、[200%](assets/personal-backup/android-font-200.webp)。通常サイズの密度と、ユーザーが選ぶ拡大表示を分けて評価する。
 
-修正後の機能commit `16476d769f010c3d8b1bfc1ad9b83b086d7788b4`：[standard v3](https://github.com/tomoya41/baseball-notes/actions/runs/40777200157)、[16KB v3](https://github.com/tomoya41/baseball-notes/actions/runs/40777204761)。fixtureを保存する実行先は破棄可能なCIエミュレーターのみ。
+[16KB環境の固定実行](https://github.com/tomoya41/baseball-notes/actions/runs/40815746534)、最終CI、公開後HTTP/65,727ファイル保全の確定結果は[PR #99の検証記録](https://github.com/tomoya41/baseball-notes/pull/99)に残す。両環境の検証成功後のみ公開する。過去のnative lock不具合とOS picker操作テストの失敗は成功へ読み替えず、PRの修正履歴に保持する。fixtureを保存する実行先は破棄可能なCIエミュレーターのみ。Pixel/TalkBackは未実施（ローカルADBの接続端末0台）、正規署名による更新互換性・Play提出は未完了。
