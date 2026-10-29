@@ -42,3 +42,13 @@ v6候補：body 47,651 bytes / gzip 9,960 bytes、body SHA256 `9e334e8a29d12ab7e
 最新Freshness run [40854179731](https://github.com/tomoya41/baseball-notes/actions/runs/40854179731)の報告は`unhealthy/stale`、公開effective date 2026-10-12、`database_read_blocked`。24時間の予約を復元し、`probeDue=false`、retryAfter 2026-10-29T21:03:29.727Zを維持。期限到来を復旧証拠にはしない。今回のDB probe/write、Source API、AI呼出し0。NPB HOT/Ranking、NPB個人成績未収録試合のMVP保留は維持する。
 
 新fixtureは合成の人物/脚注だけを使い、実データとして公開しない。新形式の正例、2人の引退の本人/重複/脚注/予測、共有通知の人数・部分未照合、育成打診/混在節の拒否を検証する。今回のnode-only段階ではactive pinはv5/39件で、配信アプリのbyte一致を確認してからデータ先行公開する。切替後は既存Moves・Player記事履歴・検索・フォロー・Source/ライセンス・Androidを別に確認する。Pixel/TalkBack・署名互換性は未検証。追加月額費用¥0。
+
+## v6表示への切替
+
+core/data先行は[PR #104](https://github.com/tomoya41/baseball-notes/pull/104)、main `1a1e455`。別の表示PRでactive pinをv6/62件にし、v5をretainedへ移してv1–v5のURLとbodyを保持する。データは既に固定したものと同一で、表示のためにSourceを再取得しない。Movesは従来の15件/ページ、Home/Player初期表示のイベント取得0を継続する。開いたイベント本文のみ30,608→47,651 bytes。新規画面・文字/余白の再設計・写真/フォントの追加0。
+
+表示切替のAndroid回帰では、従来の各種事象/Deep Link/Back/文字拡大・保存・オフライン検証に加え、実データの角中勝也（7/20引退発表）と佐藤爽（4/30支配下契約）を本人IDで絞って確認する。source revisionと記事日、支配下契約/契約更改/現在の状態の区別を維持する。先行公開の全既存data hash・新v6のHTTP照合が成功するまで、nativeが参照する未配信assetで試験を代用しない。実行結果は表示PRで記録する。
+
+先行Pages run 40872219575は成功。旧65,728 data files/362,273,064 bytesの変更・欠落0、新v6 JSON1件のみ追加し、全65,729 files/362,320,715 bytes。旧v5と新v6のHTTP/body hash、アプリ非data 62ファイルのbyte一致も確認した。
+
+ローカル実データの360px [Light](assets/npb-event-recovery/retirement-360-light.png)・[Dark](assets/npb-event-recovery/retirement-360-dark.png)、[支配下契約](assets/npb-event-recovery/registration-360-light.png)で、62件表示、引退/支配下契約の名前検索・本人IDリンク・記事日、横溢れなしを確認。通常の行見出しは15px、既存の操作領域を維持する。この画像は実アプリの検証記録であり、新たなアプリ用画像素材ではない。公開環境の最終画面は表示PRの公開後に別途確認する。

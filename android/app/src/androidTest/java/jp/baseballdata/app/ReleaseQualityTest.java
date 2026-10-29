@@ -844,6 +844,13 @@ public class ReleaseQualityTest {
         scenario.recreate(); waitText("萩尾匡也");
         assertTrue("Recreation retains free-contract filter", js("location.hash").contains("kind=release"));
         screenshot("npb-release-font-20");
+        js("location.hash='#/NPB/moves?kind=retirement_announcement&player=b269eafc-223f-4c91-97d0-3f6fe1855011'");waitText("角中勝也");
+        assertEquals("Recovered retirement keeps its player and article date", "true", js("document.querySelectorAll('article.explorer-result').length===1&&document.querySelector('article.explorer-result').innerText.includes('2026-07-20')&&document.querySelector('article.explorer-result h2').innerText.includes('引退発表')&&!!document.querySelector('article a[href*=\"b269eafc-223f-4c91-97d0-3f6fe1855011\"]')"));
+        js("document.querySelector('article.explorer-result').scrollIntoView({block:'center'})");screenshot("npb-recovered-retirement-font-20");
+        js("location.hash='#/NPB/moves?kind=registration_change&player=8dd5e308-bedb-4283-92c2-f210bff0a86c'");waitText("佐藤爽");
+        assertEquals("Recovered registration is distinct from current status and renewal", "true", js("document.querySelectorAll('article.explorer-result').length===1&&document.querySelector('article.explorer-result').innerText.includes('2026-04-30')&&document.querySelector('article.explorer-result h2').innerText.includes('支配下契約')&&!!document.querySelector('article a[href*=\"oldid=111560963\"]')&&!document.querySelector('article.explorer-result h2').innerText.includes('契約更改')"));
+        assertEquals("New recorded events fit at 200 percent", "true", js("document.documentElement.scrollWidth<=innerWidth"));
+        js("document.querySelector('article.explorer-result').scrollIntoView({block:'center'})");screenshot("npb-recovered-registration-font-20");
     }
     @Test public void offseasonRenewalsKeepUnknownStateAndOfficialLinksAtLargeFont() throws Exception {
         Intent link = new Intent(Intent.ACTION_VIEW, Uri.parse("baseballnotes://NPB/moves?kind=contract_renewal&team=npb:team:hawks"));
