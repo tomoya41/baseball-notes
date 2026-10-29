@@ -14,6 +14,8 @@ R02/R08、J01。既存の試合詳細に小さなMVP枠を加える。新規画�
 
 NPB公式戦は取得済みの完全なGame Detailから選ぶ。Turso停止中のスコアfallbackでは選手成績を持たないため保留。CSの部分成績、日本シリーズの個人成績未収録も「この試合」の未収録表示にし、架空のMVPを作らない。NPB HOT/RankingのProduction Gateは変更しない。
 
+NPBの日程・結果からも、既に端末へ保存された完全なGame Detailを照合し、[試合ごとのMVP](npb-schedule-game-mvp.md)を確認できる。日別は全試合が揃うまで保留し、各試合の選考とは分ける。新しい試合別成績の収録・取得やTurso復旧を意味せず、キャッシュがない端末では選出しない。
+
 MLBは採用済み2014–2025 Historicalのみ。公式戦とポストシーズンのGameを別々に選考し、選手リンクに年度・試合区分を保持する。2026 Currentの取得・Gateは変更しない。既存のRaw/JSON、統計、ID、URL、Favorites/Collections/Watch/バックアップ形式は変更しない。
 
 ## 検証

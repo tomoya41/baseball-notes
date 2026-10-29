@@ -1,6 +1,19 @@
-import { scoreGameMvp, npbGameMvpInput } from "./game-mvp";
+import { scoreGameMvp, selectGameMvp, npbGameMvpInput } from "./game-mvp";
 import type {NpbGameDetail} from './npb-game-detail';
-import type {GameDateIndex} from './npb-game-index';
+import type {GameDateIndex, GameIndexRow} from './npb-game-index';
+function matchedGame(index:GameDateIndex,summary:GameIndexRow,details:readonly NpbGameDetail[]) {
+ const matched=details.filter(d=>d.gameId===summary.gameId),game=matched[0];
+ return summary.date===index.date&&summary.status==='final'&&summary.completeness==='complete'&&summary.battingAvailable&&summary.pitchingAvailable&&summary.detailAvailable&&summary.home.score!==null&&summary.away.score!==null&&matched.length===1&&game?.status==='final'&&game.completeness==='complete'&&game.date===index.date&&game.gameNumber===summary.gameNumber&&game.home.id===summary.home.id&&game.away.id===summary.away.id&&game.home.score===summary.home.score&&game.away.score===summary.away.score?game:null;
+}
+/** One independently complete Game remains usable when other Games are uncollected. */
+export function savedGameMvpInputs(index:GameDateIndex,details:readonly NpbGameDetail[]) {
+ if(!['complete','partial'].includes(index.coverage)||index.games.length>12||new Set(index.games.map(g=>g.gameId)).size!==index.games.length)return [];
+ return index.games.flatMap(summary=>{
+  const game=matchedGame(index,summary,details);if(!game)return [];
+  const input=npbGameMvpInput(game);
+  return selectGameMvp(input).status==='selected'?[{summary,input}]:[];
+ });
+}
 export type DailyMvpResult={status:'selected';players:{playerId:string;name:string;teamId:string;gameId:string;role:'batting'|'pitching';score:number;reason:string}[];games:number;date:string}|{status:'unavailable';reason:string};
 /** A transparent editorial reading of closed, saved game samples; never an official award. */
 export function selectDailyMvp(index:GameDateIndex,details:readonly NpbGameDetail[]):DailyMvpResult {
@@ -12,8 +25,8 @@ export function selectDailyMvp(index:GameDateIndex,details:readonly NpbGameDetai
  const games=index.games.filter(g=>g.status==='final');if(!games.length)return unavailable('選考対象の終了試合はありません。');
  const candidates:Extract<DailyMvpResult,{status:'selected'}>['players']=[];
  for(const summary of games){
-  const matched=details.filter(d=>d.gameId===summary.gameId),game=matched[0];
-  if(summary.completeness!=='complete'||!summary.battingAvailable||!summary.pitchingAvailable||!summary.detailAvailable||summary.home.score===null||summary.away.score===null||matched.length!==1||!game||game.status!=='final'||game.completeness!=='complete'||game.date!==index.date||game.gameNumber!==summary.gameNumber||game.home.id!==summary.home.id||game.away.id!==summary.away.id||game.home.score!==summary.home.score||game.away.score!==summary.away.score)return unavailable('選手成績未収録、または試合別成績の照合が未完了です。');
+  const game=matchedGame(index,summary,details);
+  if(!game)return unavailable('選手成績未収録、または試合別成績の照合が未完了です。');
   const scored=scoreGameMvp(npbGameMvpInput(game));
   if(scored.status==='unavailable')return scored;
   candidates.push(...scored.candidates);
