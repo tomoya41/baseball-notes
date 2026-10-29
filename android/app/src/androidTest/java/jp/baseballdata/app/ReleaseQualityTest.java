@@ -1011,7 +1011,10 @@ public class ReleaseQualityTest {
         long time = android.os.SystemClock.uptimeMillis();
         MotionEvent down = MotionEvent.obtain(time, time, MotionEvent.ACTION_DOWN, x, y, 0);
         MotionEvent up = MotionEvent.obtain(time, time+60, MotionEvent.ACTION_UP, x, y, 0);
-        try { InstrumentationRegistry.getInstrumentation().sendPointerSync(down); InstrumentationRegistry.getInstrumentation().sendPointerSync(up); }
+        // DocumentsUI belongs to a different UID. Instrumentation's targeted
+        // injector is restricted to our app; UiAutomation controls system UI.
+        var automation = InstrumentationRegistry.getInstrumentation().getUiAutomation();
+        try { assertTrue("System picker touch down", automation.injectInputEvent(down, true)); assertTrue("System picker touch up", automation.injectInputEvent(up, true)); }
         finally { down.recycle(); up.recycle(); }
     }
     private void finishDocumentSelection() throws Exception {
