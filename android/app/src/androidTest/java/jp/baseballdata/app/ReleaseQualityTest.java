@@ -669,6 +669,23 @@ public class ReleaseQualityTest {
         js("Array.from(document.querySelectorAll('a')).find(a=>a.textContent==='森下翔太').click()");waitText("2026年 · CS ファイナル");
         assertTrue("Player link retains postseason/role",js("location.hash").contains("competition=postseason&stage=npb_cs_final&role=batting"));
     }
+    @Test public void npbScheduleMvpKeepsUncollectedBoxesHeldWithoutDetailRequests() throws Exception {
+        scenario=ActivityScenario.launch(MainActivity.class);waitText("BASEBALL");
+        js("location.hash='#/NPB/schedule?date=2026-03-27'");waitText("MVPを見る（アプリ独自選出）");
+        for(float scale:new float[]{1.0f,1.5f,2.0f}){
+            fontScaleAndRecreate(scale);waitText("MVPを見る（アプリ独自選出）");waitViewport(360);
+            String before=js("performance.getEntriesByType('resource').filter(e=>e.name.includes('/api/npb/game-detail')).length");
+            js("const d=document.querySelector('.daily-mvp>details');if(!d.open)d.querySelector('summary').click()");
+            waitCondition("Saved-only NPB MVP check resolves","document.querySelector('.daily-mvp>details')?.open && !document.querySelector('.daily-mvp').innerText.includes('保存済みの試合別成績を確認中')");
+            assertEquals("Expanding MVP sends no individual Game Detail/DB request",before,js("performance.getEntriesByType('resource').filter(e=>e.name.includes('/api/npb/game-detail')).length"));
+            assertEquals("Uncollected player boxes never create a winner","0",js("document.querySelectorAll('.daily-mvp .game-mvp__player').length"));
+            for(String theme:new String[]{"light","dark"}){
+                setTheme(theme,theme.equals("light")?"ライト":"ダーク");
+                assertEquals("NPB MVP disclosure has no overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));
+                js("document.querySelector('.daily-mvp').scrollIntoView({block:'start'})");screenshot("npb-schedule-mvp-"+theme+"-font-"+scale);
+            }
+        }
+    }
     @Test public void gameMvpUsesClosedHistoricalFactsAndPreservesPlayerScopeAtLargeFont() throws Exception {
         Intent link = new Intent(Intent.ACTION_VIEW, Uri.parse("baseballnotes://MLB/games/mlb%3Agame%3A0000523f-86d2-5c92-b466-d191e31baf38?season=2024"));
         scenario = ActivityScenario.launch(link);
