@@ -22,7 +22,7 @@ export async function admittedEventIdentities(directory: unknown) {
       map.set(title, Math.max(map.get(title) ?? 0, revision)); associations.set(e.playerId, map);
     }
   }
-  for (const file of ["src/data/npb-event-identity-registry.json", "src/data/npb-offseason-event-identity-registry.json"]) {
+  for (const file of ["src/data/npb-event-identity-registry.json", "src/data/npb-offseason-event-identity-registry.json", "src/data/npb-offseason-recovery-identity-registry.json"]) {
     const admittedBytes = await readFile(file); hash.update(admittedBytes);
     const admitted = JSON.parse(admittedBytes.toString()) as { players: (EventIdentity & { identityContentSha256: string })[] };
     for (const p of admitted.players) {

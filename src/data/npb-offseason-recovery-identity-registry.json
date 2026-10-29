@@ -1,0 +1,206 @@
+{
+  "schemaVersion": 1,
+  "verificationMethod": "Existing canonical UUID/NPB ID/QID bridge + exact linked archived Wikipedia page QID and unique NPB profile/template ID; no name join",
+  "archiveSha256": "d4946a34dd2c2c72bc10ee0a2bf0b2336690a705f51d38198d00bb35f9f9b092",
+  "observedAt": "2026-10-17T05:17:30.261Z",
+  "players": [
+    {
+      "playerId": "6d84ce2b-a26f-4a98-ba94-b935359d3c8d",
+      "npbId": "41145134",
+      "wikidataId": "Q28158909",
+      "name": "石垣勝海",
+      "article": "石垣雅海",
+      "identityRevision": 110437482,
+      "identityContentSha256": "ff40c1f8b2dbea50b3be31bd1b958b9971113daacbcd01f247f94a6a0f4da567"
+    },
+    {
+      "playerId": "b2ad04eb-ff26-4162-ab85-eb1af7f6516a",
+      "npbId": "11815150",
+      "wikidataId": "Q131701960",
+      "name": "廣澤優",
+      "article": "廣澤優",
+      "identityRevision": 111076318,
+      "identityContentSha256": "dd692c39925ca24695ffbf2bd29d52a969642ba7d79a992fccbb320d3cb55597"
+    },
+    {
+      "playerId": "8dd5e308-bedb-4283-92c2-f210bff0a86c",
+      "npbId": "31035150",
+      "wikidataId": "Q132431766",
+      "name": "佐藤爽",
+      "article": "佐藤爽",
+      "identityRevision": 109778764,
+      "identityContentSha256": "ac46ad520178edcbcef5f13220afd87734da911455d8de5661f05ddce33821b4"
+    },
+    {
+      "playerId": "f273b726-7b3c-4093-85ba-e4bea8921146",
+      "npbId": "11715152",
+      "wikidataId": "Q138420235",
+      "name": "金子京介",
+      "article": "金子京介",
+      "identityRevision": 110631878,
+      "identityContentSha256": "8f7859c9a9419a6f8169486838a7bef0cbbbbf3f35af16cd5a177f12af518256"
+    },
+    {
+      "playerId": "dc088039-6eed-41eb-b6a7-e7211a99e2a5",
+      "npbId": "23125157",
+      "wikidataId": "Q83158234",
+      "name": "モンテル",
+      "article": "日隈モンテル",
+      "identityRevision": 111071532,
+      "identityContentSha256": "ddfa0144776380e9689fde23b2765f584ec51bcf50fdbcd6c4a7db39ace0c790"
+    },
+    {
+      "playerId": "ac56377e-cc5b-48da-82f0-58feb61744c3",
+      "npbId": "61665151",
+      "wikidataId": "Q74145519",
+      "name": "松岡洸希",
+      "article": "松岡洸希",
+      "identityRevision": 111184276,
+      "identityContentSha256": "b546cc44c962c7552782ebf2fba3e59523bec7b890ab9660e12304293c2d9bda"
+    },
+    {
+      "playerId": "d0a97d83-4a5d-4709-991d-aa099b19cc60",
+      "npbId": "21925155",
+      "wikidataId": "Q110403755",
+      "name": "笹原操希",
+      "article": "笹原操希",
+      "identityRevision": 110407887,
+      "identityContentSha256": "0fcf88c0b60b1a604a608773f1e8a4a4624a79bfe565a2d6954b80b3b197b3ea"
+    },
+    {
+      "playerId": "733f5952-34d7-499d-8ecc-6b6bd1bd2378",
+      "npbId": "71875138",
+      "wikidataId": "Q64783558",
+      "name": "森脇亮介",
+      "article": "森脇亮介",
+      "identityRevision": 111149380,
+      "identityContentSha256": "95ad3c1385ceea55076e757934e0b92f6bceb08affdea12072d0bba5bc593797"
+    },
+    {
+      "playerId": "b269eafc-223f-4c91-97d0-3f6fe1855011",
+      "npbId": "41545114",
+      "wikidataId": "Q2263002",
+      "name": "角中勝也",
+      "article": "角中勝也",
+      "identityRevision": 111036186,
+      "identityContentSha256": "787739dc2c3e0cc6a9757074859da5b9938afec85fa83c9b1fd3cda235eaeb89"
+    },
+    {
+      "playerId": "7e56b8fc-ec06-46db-b996-ef4b7bb419ee",
+      "npbId": "61465131",
+      "wikidataId": "Q11470189",
+      "name": "山田修義",
+      "article": "山田修義",
+      "identityRevision": 111164690,
+      "identityContentSha256": "d30e9ee1550b3480c85062af71cd337ad2d4b93c91db6dc4f8d858b3de156a67"
+    },
+    {
+      "playerId": "6c693863-7118-42b8-8adf-b9abd0ec3ded",
+      "npbId": "91495130",
+      "wikidataId": "Q18817928",
+      "name": "西野真弘",
+      "article": "西野真弘",
+      "identityRevision": 111237763,
+      "identityContentSha256": "4ffdbe0cd6ab163e3e5adf24692724b647e3bd8e67222ef68c1a9f5347f71e46"
+    },
+    {
+      "playerId": "d1a2f152-f77d-4bc8-8f56-73c60e395458",
+      "npbId": "41945139",
+      "wikidataId": "Q17160673",
+      "name": "田口麗斗",
+      "article": "田口麗斗",
+      "identityRevision": 111228515,
+      "identityContentSha256": "1d9d0c83eb80fa6c465d36a90d9d86914d156d0a51b863d5b93960219ce35869"
+    },
+    {
+      "playerId": "f700bdfc-01eb-4105-8ec6-5452f57f109d",
+      "npbId": "11615134",
+      "wikidataId": "Q28690059",
+      "name": "長谷川宙輝",
+      "article": "長谷川宙輝",
+      "identityRevision": 111207449,
+      "identityContentSha256": "38ea04d49f74c4ee18829395f70873ceaf99f8ce40080e51cc1ffec33214e61f"
+    },
+    {
+      "playerId": "e7bd2ad3-3778-4dfd-88ae-7e720fe95cdc",
+      "npbId": "21825138",
+      "wikidataId": "Q62085128",
+      "name": "山野辺翔",
+      "article": "山野辺翔",
+      "identityRevision": 111210959,
+      "identityContentSha256": "ae6c0e195ccc004e0c24fc391e55144d2d9bc0413bd3d92b3307f47b2bac2600"
+    },
+    {
+      "playerId": "8f3cb524-ebae-47f0-89e3-f0a61d05bef7",
+      "npbId": "41645132",
+      "wikidataId": "Q22940865",
+      "name": "福敬登",
+      "article": "福敬登",
+      "identityRevision": 111240713,
+      "identityContentSha256": "b2c16c9a67a27018836b104f7db22ff7380d5f78f36a0d73c3f01dcefe3355f8"
+    },
+    {
+      "playerId": "c48c890c-8caa-4894-81a6-678c7d6afaf9",
+      "npbId": "23125155",
+      "wikidataId": "Q112239163",
+      "name": "三浦瑞樹",
+      "article": "三浦瑞樹",
+      "identityRevision": 111240746,
+      "identityContentSha256": "19f7bb173b3650748c1e781b9a0b18f308f9a90b228d5394f77f33a94623e47d"
+    },
+    {
+      "playerId": "2480e6ff-4e16-4473-b324-e805495df781",
+      "npbId": "71575159",
+      "wikidataId": "Q124097444",
+      "name": "尾田剛樹",
+      "article": "尾田剛樹",
+      "identityRevision": 111219323,
+      "identityContentSha256": "afb2d16605d37636be5d95982de6d4796ae24015cf18d2da6bd8747e95882250"
+    },
+    {
+      "playerId": "411ac87c-ccf5-42c3-963e-189e8aac764e",
+      "npbId": "61265159",
+      "wikidataId": "Q123405991",
+      "name": "辻本倫太郎",
+      "article": "辻本倫太郎",
+      "identityRevision": 111240683,
+      "identityContentSha256": "aa9cb5eb63d6acd7f645f9d0008a7fe669fef840afdcc9e01f254ecaeb1f42e3"
+    },
+    {
+      "playerId": "2614787b-0c53-4f5e-b64c-bd455ff49f6e",
+      "npbId": "71875155",
+      "wikidataId": "Q108776428",
+      "name": "ブライト健太",
+      "article": "ブライト健太",
+      "identityRevision": 111240642,
+      "identityContentSha256": "f47d2673d142f6a4dd8beff6b67dea662f9c2004bf07139be4328e3677707bd4"
+    },
+    {
+      "playerId": "96d5d6cd-97cb-40a0-88da-65109588596e",
+      "npbId": "91095138",
+      "wikidataId": "Q64782756",
+      "name": "知野直人",
+      "article": "知野直人",
+      "identityRevision": 111240670,
+      "identityContentSha256": "ec560cf57a989519a1cf033276c8ea96101af8b01aa469e0c4ec8b02ccc16889"
+    },
+    {
+      "playerId": "acc15369-af2f-41e5-8f09-e9ecbf3996d6",
+      "npbId": "31135138",
+      "wikidataId": "Q62601500",
+      "name": "東妻勇輔",
+      "article": "東妻勇輔",
+      "identityRevision": 108881287,
+      "identityContentSha256": "d723d6befec741ad7387fbe2541c6254900ad8da7ee2d75d25240a1ddc17b729"
+    },
+    {
+      "playerId": "44fa26ba-3ce2-4551-8621-f81224e31cd2",
+      "npbId": "91595157",
+      "wikidataId": "Q115529780",
+      "name": "菊地吏玖",
+      "article": "菊地吏玖",
+      "identityRevision": 111034660,
+      "identityContentSha256": "3efc21cbc6bf2a6312abfa9e901f5f88c670dd752795cf30571e24fc3d2e4610"
+    }
+  ]
+}
