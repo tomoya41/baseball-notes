@@ -28,5 +28,15 @@
     "players": 25,
     "sourceRevision": 111421457,
     "identityInputSha256": "535447cf028be04e73f5dab3a9a8a7877eb28c3126d0614526aa1d9a6e267617"
+  },
+  {
+    "assetUrl": "https://github.com/tomoya41/baseball-notes/releases/download/npb-events-wikipedia-20261029-v5/npb-player-events.json.gz",
+    "sha256": "f8fbc1ca88f75a117d168df216022bedd1ffcd0f3f475331193311ef81cd72b5",
+    "bodySha256": "791dbbca29071f69ae128192ce18313a6ff4925169d814a208f71723aa7bc490",
+    "bytes": 30608,
+    "events": 39,
+    "players": 39,
+    "sourceRevision": 111560963,
+    "identityInputSha256": "ad41801b59f538d058bd30b4caba18ce7e5d2866af3d967c2269b5c765269f54"
   }
 ]

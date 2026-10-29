@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "verificationMethod": "Existing canonical UUID/NPB ID/QID bridge + exact linked archived Wikipedia page QID and unique NPB profile/template ID; no name join",
+  "archiveSha256": "d4946a34dd2c2c72bc10ee0a2bf0b2336690a705f51d38198d00bb35f9f9b092",
+  "observedAt": "2026-10-17T05:17:30.261Z",
+  "players": [
+    {
+      "playerId": "21c23e78-93f6-41aa-ae56-304b13923d6d",
+      "npbId": "81585132",
+      "wikidataId": "Q22118411",
+      "name": "川越誠司",
+      "article": "川越誠司",
+      "identityRevision": 110625600,
+      "identityContentSha256": "403014aff179d53f0b4c19d24511b82fecda5b70d2030e8473047d4d21de8d7c"
+    },
+    {
+      "playerId": "a9798ba5-ce06-4a3d-ba16-d96e3346b5b8",
+      "npbId": "31535132",
+      "wikidataId": "Q24871432",
+      "name": "愛斗",
+      "article": "愛斗",
+      "identityRevision": 108881849,
+      "identityContentSha256": "a653197c8ecfbf2e272d6a9e7c15c8f04a2fd5bb95f265850466bf11db3d2dca"
+    },
+    {
+      "playerId": "3101a1d1-fb68-4616-b17c-6fc6e6f17032",
+      "npbId": "11315159",
+      "wikidataId": "Q124096923",
+      "name": "糸川亮太",
+      "article": "糸川亮太",
+      "identityRevision": 111078951,
+      "identityContentSha256": "c62d406e1e36ede33856a37fd7e66748f9a0f0d12ada0eaddf91daf04b0f604b"
+    },
+    {
+      "playerId": "5ef4e58d-5c7d-429e-8e1b-43babc5375a3",
+      "npbId": "51155157",
+      "wikidataId": "Q115529812",
+      "name": "青山美夏人",
+      "article": "青山美夏人",
+      "identityRevision": 108672727,
+      "identityContentSha256": "9b7dda3c833066fe7e8c359dabf930a7654d3e163cc8089a2b69bf0346d65dea"
+    },
+    {
+      "playerId": "5e2f070c-0b63-4acd-85a9-5b32dd24aaad",
+      "npbId": "61065157",
+      "wikidataId": "Q115529449",
+      "name": "茶野篤政",
+      "article": "茶野篤政",
+      "identityRevision": 111063785,
+      "identityContentSha256": "be58abc829aa9eab49b95e8393d7c94f2479f565b3ee68876ef58e1cb3ae556a"
+    },
+    {
+      "playerId": "ddde7861-9ace-4d99-b7ea-83d7210ad27b",
+      "npbId": "51355159",
+      "wikidataId": "Q123405952",
+      "name": "岩井俊介",
+      "article": "岩井俊介",
+      "identityRevision": 110837393,
+      "identityContentSha256": "40939a2a0d3adadf509eaad48a61ec326d7b4c965a5e053773732f7083e59ffe"
+    },
+    {
+      "playerId": "3792684f-8481-4247-8803-1b594b332c23",
+      "npbId": "01205138",
+      "wikidataId": "Q64783127",
+      "name": "中村稔弥",
+      "article": "中村稔弥",
+      "identityRevision": 110788564,
+      "identityContentSha256": "cded94709e31ad8b9743831a1a9fe0e4b805c7b9b53759a2fbdae655264b2842"
+    },
+    {
+      "playerId": "fd0abb4e-a40e-4209-997b-050a07367e21",
+      "npbId": "01705132",
+      "wikidataId": "Q24874434",
+      "name": "小澤怜史",
+      "article": "小澤怜史",
+      "identityRevision": 111178111,
+      "identityContentSha256": "474fe85afed7118a8f0ce44fe46eb945c532c7704cdaa71b3802e50f1747bbf2"
+    },
+    {
+      "playerId": "ca7b9d09-2982-48d8-aa51-26f26023501f",
+      "npbId": "61865132",
+      "wikidataId": "Q21608099",
+      "name": "茂木栄五郎",
+      "article": "茂木栄五郎",
+      "identityRevision": 111163567,
+      "identityContentSha256": "374db8bca143cd4ed808927ac284fce8bda8ba307aa677118829193c03727121"
+    },
+    {
+      "playerId": "8ef89b86-de65-416c-8092-0c3b1df01670",
+      "npbId": "01505157",
+      "wikidataId": "Q116187987",
+      "name": "北村恵吾",
+      "article": "北村恵吾",
+      "identityRevision": 108083190,
+      "identityContentSha256": "7ca36161ad07461c575677b8c326c04b1b107bee4699db2a292beb53cc816834"
+    }
+  ]
+}
