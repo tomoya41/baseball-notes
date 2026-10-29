@@ -1,5 +1,6 @@
 import { ContextScoreboard } from "./context-scoreboard";
 import { UnavailableDailyMvp } from "./daily-mvp";
+import { UnavailableGameMvp } from "./game-mvp";
 import { GameBoxScore } from "./game-box-score";
 import { useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
@@ -82,7 +83,7 @@ export function NpbCsGameDetail(){
   return <div className="screen game-detail"><GameHeading title={`${game.date} ${name(game.awayTeamId)}対${name(game.homeTeamId)}`} date={game.date} context={`NPB · ポストシーズン · ${npbCompetitionLabels[game.stage]}`} backTo={`/NPB/cs?season=2026&stage=${game.stage}`} />
     <ScoreHero away={name(game.awayTeamId)} home={name(game.homeTeamId)} awayId={game.awayTeamId} homeId={game.homeTeamId} awayScore={game.awayScore} homeScore={game.homeScore} status="試合終了" />
     <ContextScoreboard gameId={game.id} league="NPB" date={game.date} competition="postseason" away={{id:game.awayTeamId,name:name(game.awayTeamId),runs:game.awayScore,hits:game.awayHits}} home={{id:game.homeTeamId,name:name(game.homeTeamId),runs:game.homeScore,hits:game.homeHits}}/>
-    <UnavailableDailyMvp reason="CSの試合別成績は一部収録のため、日別MVPの選出を保留しています。"/>
+    <UnavailableGameMvp reason="CSの選手成績が一部未収録のため、選出を保留しています。"/>
     <p role="status" className="game-detail__note">選手成績 · 一部収録</p>
     <GameBoxScore away={{name:name(game.awayTeamId),content:renderTeam(game.awayTeamId,0)}} home={{name:name(game.homeTeamId),content:renderTeam(game.homeTeamId,1)}} selectedSide={params.get("boxSide")==="home"?"home":"away"} onSideChange={side=>{const next=new URLSearchParams(params);next.set("boxSide",side);setParams(next,{preventScrollReset:true});}} />
     {!observations.length&&<p>この試合の選手成績は未収録です。</p>}

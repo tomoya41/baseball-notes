@@ -330,6 +330,8 @@ public class ReleaseQualityTest {
         long gameStart = System.currentTimeMillis();
         waitCondition("Loaded Game score and participants", "location.hash.includes('0000523f') && !!document.querySelector('.score-hero') && document.querySelectorAll('.mlb-box-team').length===2 && document.querySelectorAll('.mlb-box-team tbody tr').length>18 && !document.querySelector('.skeleton-page')");
         System.out.println("PERF game_detail_ms=" + (System.currentTimeMillis()-gameStart));
+        waitCondition("Game MVP is selected from this saved game's actual player rows", "document.querySelector('.game-mvp')?.textContent.includes('この試合のMVP') && document.querySelectorAll('.game-mvp__player').length>0");
+        assertTrue("MVP link retains historical season", js("document.querySelector('.game-mvp__player a').getAttribute('href')").contains("season="));
         waitCondition("Transient favorite confirmation dismissed", "!document.querySelector('.toast')");
         assertEquals("true", js("document.documentElement.scrollWidth <= window.innerWidth"));
         screenshot("mlb-game-360");
@@ -667,6 +669,20 @@ public class ReleaseQualityTest {
         js("Array.from(document.querySelectorAll('a')).find(a=>a.textContent==='森下翔太').click()");waitText("2026年 · CS ファイナル");
         assertTrue("Player link retains postseason/role",js("location.hash").contains("competition=postseason&stage=npb_cs_final&role=batting"));
     }
+    @Test public void gameMvpUsesClosedHistoricalFactsAndPreservesPlayerScopeAtLargeFont() throws Exception {
+        Intent link = new Intent(Intent.ACTION_VIEW, Uri.parse("baseballnotes://MLB/games/mlb%3Agame%3A0000523f-86d2-5c92-b466-d191e31baf38?season=2024"));
+        scenario = ActivityScenario.launch(link);
+        for (float scale : new float[]{1.0f, 1.5f, 2.0f}) {
+            fontScaleAndRecreate(scale); waitText("この試合のMVP"); waitViewport(360);
+            waitCondition("Actual saved Game selects its verified pitcher", "document.querySelector('.game-mvp__player a')?.getAttribute('href').includes('2c375d8c-1f0b-55a1-b6a4-148aa133751f')===true");
+            assertTrue("Selected player retains game season", js("document.querySelector('.game-mvp__player a').getAttribute('href')").contains("season=2024"));
+            assertTrue("Reason uses the recorded integer outs and strikeouts", js("document.querySelector('.game-mvp').textContent").contains("5回・7奪三振・1失点"));
+            assertEquals("MVP does not overflow at " + scale, "true", js("document.documentElement.scrollWidth<=innerWidth"));
+            assertEquals("Player navigation retains 44px target", "true", js("document.querySelector('.game-mvp__player a').getBoundingClientRect().height>=44"));
+            js("document.querySelector('.game-mvp').scrollIntoView({block:'center'})"); screenshot("game-mvp-font-" + scale);
+        }
+    }
+
     @Test public void npbSeriesColdDeepLinkKeepsAdvantageAndSystemBackAtLargeFont() throws Exception {
         Intent link=new Intent(Intent.ACTION_VIEW,Uri.parse("baseballnotes://NPB/postseason/series/npb%3Aseries%3A19106473-c7b5-5171-bf77-40b5d93190a0?season=2026"));
         link.setClassName("com.tomoya41.baseballnotes","jp.baseballdata.app.MainActivity");
@@ -1197,7 +1213,7 @@ public class ReleaseQualityTest {
         assertTrue("CS role/stage survives navigation",js("location.hash").contains("competition=postseason&stage=npb_cs_first&role=pitching"));
         shell("input keyevent KEYCODE_BACK");waitCondition("Back to compact Home","!!document.querySelector('.japan-home-result')");
         js("document.querySelector('.japan-home-result').click()");waitText("アプリ独自選出");
-        assertTrue("No invented Japan Series MVP",js("document.querySelector('.daily-mvp').innerText").contains("選手成績未収録"));
+        assertTrue("No invented Japan Series game MVP",js("document.querySelector('.game-mvp').innerText").contains("選手成績未収録"));
     }
     @Test public void japanSeriesThirdGamePreservesWalkOffAndOriginalCitations() throws Exception {
         Intent link = new Intent(Intent.ACTION_VIEW, Uri.parse("baseballnotes://NPB/games/npb%3Agame%3A5fcadb011aedcfd894cb?season=2026&competition=postseason&stage=japan_series"));
