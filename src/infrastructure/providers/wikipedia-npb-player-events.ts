@@ -56,7 +56,9 @@ export function parseWikipediaPlayerEvents(raw: unknown, observedAt: string, ide
     let kind: PlayerEvent["kind"] | undefined, clubs: string[] = [], from: string | null = null, to: string | null = null;
     const trade = /^@(\w+)@の@PLAYER@が金銭トレードで@(\w+)@に移籍することを両球団が発表$/.exec(normalized);
     const retirement = /^@(\w+)@は、@PLAYER@(?:が|の)今季限りで(?:の)?現役(?:を)?引退(?:することを|すると|を)発表$/.exec(normalized);
-    const registration = /^@(\w+)@は、育成選手の@PLAYER@と支配下選手契約を(?:締結した(?:ことを|と)|結んだことを)発表$/.exec(normalized);
+    const playerRetirement = /^@(\w+)@の@PLAYER@が、今季限りでの現役引退を発表$/.exec(normalized);
+    const pairRetirement = /^@(\w+)@は、@PLAYER@と@PLAYER@が今季限りで現役を引退することを発表$/.exec(normalized);
+    const registration = /^@(\w+)@は、育成選手の@PLAYER@と支配下(?:選手)?契約を(?:締結した(?:ことを|と)|結んだ(?:ことを|と))発表$/.exec(normalized);
     const signing = /^@(\w+)@は、@PLAYER@と(?:今季の)?(?:育成選手)?契約(?:を(?:締結したこと|結んだこと)|合意した)(?:を|と)発表$/.exec(normalized);
     const renewal = /^@(\w+)@は、@PLAYER@と(?:の契約更改(?:を終えたと|に合意したと)|(?:来季の)?契約を更改した(?:と|ことを))発表$/.exec(normalized);
     const release = /^@(\w+)@は、@PLAYER@に自由契約を通達したと発表$/.exec(normalized);
@@ -64,7 +66,7 @@ export function parseWikipediaPlayerEvents(raw: unknown, observedAt: string, ide
     // when every list entry is an article link, the explicit headcount matches,
     // and the entire sentence has one meaning. Unresolved entries get no IDs.
     // No retirement, development offer or free-agency status is inferred from it.
-    const nonrenewal = /^@(\w+)@は、(?:育成(?:契約)?の)?(@(?:PLAYER|UNRESOLVED)@(?:、(?:育成の)?@(?:PLAYER|UNRESOLVED)@)*)(?:の([1-9]\d?)選手)?に(?:対し)?、?(?:来季の契約を結ばない旨を通知したことを|来季の契約は締結しない旨を通達したと|来季契約を行わない旨を通知したと|来季の契約を結ばないことを通告したと|来季契約を結ばない旨を通知したと|来季契約を結ばないことを通告したと|来季の契約を結ばないことを通達したと|来季の(?:選手)?契約を締結しない旨を通達したことを)発表$/.exec(normalized);
+    const nonrenewal = /^@(\w+)@は、(?:育成(?:契約)?の)?(@(?:PLAYER|UNRESOLVED)@(?:、(?:育成の)?@(?:PLAYER|UNRESOLVED)@)*)(?:の([1-9]\d?)選手)?(?:に(?:対し)?|へ)、?(?:来季の契約を結ばない旨を通知したことを|来季の契約は締結しない旨を通達したと|来季契約を行わない旨を通知した(?:と|ことを)|来季の契約を行わない旨を通告したと|来季の契約を結ばないことを通告したと|来季契約を結ばない旨を通知したと|来季契約を結ばないことを通告したと|来季の契約を結ばないことを通達したと|来季の(?:選手)?契約を締結しない旨を通達したことを)発表$/.exec(normalized);
     const releaseList = /^@(\w+)@は、(?:育成の)?(@(?:PLAYER|UNRESOLVED)@(?:、(?:育成の)?@(?:PLAYER|UNRESOLVED)@)*)(?:の([1-9]\d?)選手)?に自由契約とすることを通知したと発表$/.exec(normalized);
     // This exact two-clause form states two different actions. Keep the article
     // positions (including unresolved participants) so the final player's release
@@ -82,10 +84,12 @@ export function parseWikipediaPlayerEvents(raw: unknown, observedAt: string, ide
     }
     else if (noticeCountMatches) { kind = "nonrenewal_notice"; clubs = [nonrenewal[1]!]; if (unresolvedArticles.length) reject("unresolved_notice_participants"); }
     else if (releaseCountMatches) { kind = "release"; clubs = [releaseList[1]!]; if (unresolvedArticles.length) reject("unresolved_release_participants"); }
+    else if (pairRetirement && linked.length === 2 && !unresolvedArticles.length) { clubs = [pairRetirement[1]!]; selected = linked.map(identity => ({ identity, kind: "retirement_announcement" })); }
     else if (unresolvedArticles.length) { reject("unresolved_article_outside_notice_list"); continue; }
     else if (linked.length !== 1) { reject("unsupported_multiple_player_statement"); continue; }
     else if (trade) { kind = "trade"; clubs = [trade[1]!, trade[2]!]; from = `npb:team:${trade[1]}`; to = `npb:team:${trade[2]}`; }
     else if (retirement) { kind = "retirement_announcement"; clubs = [retirement[1]!]; }
+    else if (playerRetirement) { kind = "retirement_announcement"; clubs = [playerRetirement[1]!]; }
     else if (registration) { kind = "registration_change"; clubs = [registration[1]!]; }
     else if (renewal) { kind = "contract_renewal"; clubs = [renewal[1]!]; }
     else if (signing) { kind = "signing"; clubs = [signing[1]!]; }
