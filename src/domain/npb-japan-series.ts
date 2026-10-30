@@ -85,6 +85,15 @@ export function assertJapanSeriesAdvance(previous:NpbJapanSeries,next:NpbJapanSe
 /** Explicit reviewed append: preserve prior facts AND their exact original source citations. */
 export function appendReviewedJapanFinals(previous: NpbJapanSeries, candidate: NpbJapanSeries): NpbJapanSeries {
   const before=npbJapanSeriesSchema.parse(previous), fresh=npbJapanSeriesSchema.parse(candidate);
+  // A completed source may omit conditional Games that were never required.
+  // Preserve their old IDs/dates/venues, but never invent a cancellation before
+  // a separately validated four-win clinch or drop a previously played Game.
+  const lastFinal=fresh.series.games.filter(g=>g.status==="final").at(-1)?.gameNumber??0;
+  for(const old of before.series.games.filter(g=>!fresh.series.games.some(p=>p.gameId===g.gameId))){
+    if(!fresh.series.clinched||old.gameNumber<=lastFinal||!["scheduled","cancelled"].includes(old.status))throw Error("Unexplained schedule deletion requires separate review");
+    fresh.series.games.push({...old,status:"cancelled"});fresh.venues[old.gameId]=before.venues[old.gameId]!;
+  }
+  fresh.series.games.sort((a,b)=>a.gameNumber-b.gameNumber);
   for(const source of allJapanSeriesSources(fresh)){
     const retained=allJapanSeriesSources(before).find(s=>s.pageId===source.pageId&&s.revision===source.revision);
     if(retained&&JSON.stringify(retained)!==JSON.stringify(source))throw Error("Japan Series source regression or conflicting revision hash");
@@ -102,7 +111,7 @@ export function appendReviewedJapanFinals(previous: NpbJapanSeries, candidate: N
   const appended=npbJapanSeriesSchema.parse({...fresh,sources:before.sources,
     additionalSources:all.filter(s=>!before.sources.some(p=>p.pageId===s.pageId&&p.revision===s.revision)),
     results:[...before.results,...fresh.results.filter(r=>!before.results.some(p=>p.gameId===r.gameId)).map(r=>({...r,sourceRevision:japanResultSource(fresh,r.gameId)!.revision}))],
-    transformation:`${before.transformation} Later reviewed finals appended with explicit source revisions; prior facts, evidence hashes and citations retained.`,
+    transformation:`${before.transformation} Later reviewed finals appended with explicit source revisions; prior facts, evidence hashes and citations retained. Post-clinch conditional Games retained as cancelled (not required) under the four-win rule, not as missing results.`,
   });
   assertJapanSeriesAdvance(before,appended);return appended;
 }

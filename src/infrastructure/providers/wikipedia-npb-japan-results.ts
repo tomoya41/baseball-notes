@@ -34,5 +34,6 @@ export function applyReviewedJapanResults(base:NpbJapanSeries,article:string,raw
   if([...scheduleScores.keys()].some(id=>!seen.has(id)))throw Error("Schedule result has no reviewed completion evidence");
   for(const t of d.series.teams){t.playedWins=d.series.games.filter(g=>g.winnerId===t.teamId).length;t.seriesTotal=t.playedWins;}
   const winner=d.series.teams.find(t=>t.playedWins===4);d.series.clinched=!!winner;d.series.winnerId=winner?.teamId??null;d.series.status=winner?"complete":"in_progress";
+  if(winner){const last=d.series.games.filter(g=>g.status==="final").at(-1)!.gameNumber;for(const g of d.series.games)if(g.gameNumber>last&&g.status==="scheduled")g.status="cancelled";}
   d.review={reviewedBy:review.reviewedBy,reviewedAt:review.reviewedAt};d.transformation+=" Reviewed exact Linescore blocks matched to schedule scores; final half-innings retained, played wins derived only from admitted finals. Player statistics unavailable.";return npbJapanSeriesSchema.parse(d);
 }

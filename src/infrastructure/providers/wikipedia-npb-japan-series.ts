@@ -66,12 +66,15 @@ export function buildWikipediaJapanSeries(raw:unknown,cs:NpbPostseasonSeries,csS
     }
     games.push({gameId,gameNumber,date:day,awayTeamId:away,homeTeamId:home,awayRuns:null,homeRuns:null,status:"scheduled",scheduledAt:null,winnerId:null});
   }
-  if(games.length<7||games.length>9||remaining!==0||games[0]!.date!=="2026-10-24"||!review&&(games.length!==7||games.some(g=>g.date<asOf)))throw Error("Schedule-only admission requires reviewed pre-opening dates; additional Games need reviewed completion evidence");
+  const compact = games.length < 7;
+  const champion = /\n!colspan="6"\|優勝：\s*(福岡ソフトバンクホークス|横浜DeNAベイスターズ)(?:（[^{}\n|]{1,50}）)?\s*\n/.exec(schedule.revisions[0]!.slots.main.content)?.[1];
+  if(games.length<4||games.length>9||remaining!==0||games[0]!.date!=="2026-10-24"||compact&&(!review||!champion)||!review&&(games.length!==7||games.some(g=>g.date<asOf)))throw Error("Schedule-only admission requires reviewed pre-opening dates; additional Games need reviewed completion evidence");
   const sources=archive.response.query.pages.map(p=>({pageId:p.pageid,title:p.title,revision:p.revisions[0]!.revid,revisionAt:p.revisions[0]!.timestamp,contentSha256:digest(p.revisions[0]!.slots.main.content)}));
   // Extra Games can only be validated together with the reviewed first seven/eight
   // finals. Do not validate their temporary scoreless skeleton as a public snapshot.
   const data:NpbJapanSeries={schemaVersion:1,league:"NPB",season:2026,competition:"postseason",provider:"Wikipedia",license:"CC-BY-SA-4.0",coverage:"partial",observedAt:archive.observedAt,csSeriesBodySha256,sources,
     series:{id:npbSeriesId(5306035,"japan_series"),league:"NPB",season:2026,competitionType:"postseason",round:"japan_series",name:"2026 日本シリーズ",bestOf:7,winsRequired:4,teams:["npb:team:baystars","npb:team:hawks"].map(teamId=>({teamId,playedWins:0,advantageWins:0,seriesTotal:0})),games,status:"in_progress",winnerId:null,clinched:false,clinchReason:"wins_required",advancesToSeriesId:null,effectiveDate:asOf},venues,results,playerStats:"unavailable",transformation:"Article-linked clubs and schedule-template rows normalized with explicit venue rowspans. Pre-opening placeholder zero scores excluded. No player stats, Current Facts, inferred start times or official certification."};
   const validated=review?applyReviewedJapanResults(data,text,review,scheduleScores,now):npbJapanSeriesSchema.parse(data);
+  if(compact&&(!validated.series.clinched||validated.series.winnerId!==team[champion!]||validated.series.games.some(g=>g.status!=="final")))throw Error("Truncated schedule requires a matching champion and fully reviewed four-win clinch");
   assertJapanSeriesAdvancement(validated,cs);return validated;
 }
