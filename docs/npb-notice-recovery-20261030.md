@@ -37,10 +37,16 @@ Wikipedia「2026年の日本プロ野球」の10月29日欄にある楽天の来
 
 過去成績の不整合がある現役20選手を最新revisionで再検証したが、追加可能な年度行は0、既存正常行の変更0。統計検証は緩めていない。CSの明示リンク5選手は、既存Canonicalとの独立した橋渡し不足、またはQID/Directory不足を確認し、今回追加0。これらの個別確認でHistorical全59件が解決したとは扱わない。
 
-Tursoの最後のScheduled記録 `40947544825` は `database_read_suspended`、DB read/write 0。抑制期限の経過だけでは復旧と判定しない。HOT/Ranking、最新Production整合性、バックアップ証拠の不足は別に残す。ブラウザー操作はWork設定で無効。Pixel/TalkBack/署名互換性は未実施の独立Gate。
+Tursoは[Scheduled 40969575586](https://github.com/tomoya41/baseball-notes/actions/runs/40969575586)の2026-10-29T22:56:39.701Zの最小read 1回で `SQL read operations are forbidden` が再発した。その後の[40976633625](https://github.com/tomoya41/baseball-notes/actions/runs/40976633625)は `database_read_suspended`、DB read/write 0、再試行抑制期限2026-10-30T22:56:39.701Z。本作業は既存のログだけを読み、手動DBアクセスは0。アカウント側の具体的原因・quota解除を推測しない。HOT/Ranking、最新Production整合性、バックアップ証拠の不足は別に残す。ブラウザー操作はWork設定で無効。ADB接続端末0のためPixel/TalkBack/署名互換性は未実施の独立Gate。
 
 ## 検証・公開
 
 ローカル全体検証は218ファイル・2,150テスト成功、Windows固有の既存skip 1件。lint/typecheck/Web/Vercel build成功。新規15境界ケースは、人数不一致、引用の欠落、未照合/氏名のみ、重複、コーチ節の混入、打診/推測の拒否、旧transformationの互換性を含む。CI/Android/Pagesの成否は別途追記する。
 
 固定データは[release v7](https://github.com/tomoya41/baseball-notes/releases/tag/npb-events-wikipedia-20261030-v7)。gzip 10,504 bytes / SHA256 `d44ec8503809c8efce85863fb6f840ba7f2c8f70997a1c511f54a50037e32588`、公開JSON 50,921 bytes / SHA256 `93eebf13b7a2d6f173d4cb1b060bc39ccb64f1b943858f20cbd6a69974ec08d9`、identity input `b3c8541c1029cf9c0a033f52b5b00a6da36fa9b2bd13791ad1fe94c77dea73af`。アップロードしたgzipも独立に再取得してhash照合した。これはPagesでの採用・アプリ有効化とは別。
+
+[PR #107](https://github.com/tomoya41/baseball-notes/pull/107)は `c65b3a8ec10ea35331b01141e02d5c98c1aad9e2` へマージ。レビュー対象 `42281e8` はCodex Review指摘なし。[Foundation](https://github.com/tomoya41/baseball-notes/actions/runs/40977793953)で218ファイル/2,151テスト成功、[Android debug APK/unsigned AAB build](https://github.com/tomoya41/baseball-notes/actions/runs/40977794052)成功。この自動PR実行はエミュレーターをskipしており、実機/エミュレーター成功とは呼ばない。先行[Pages配信](https://github.com/tomoya41/baseball-notes/actions/runs/40978464032)はv6 pinを維持したデータ先行段階。66件版の有効化・Android実行の結果は後続PRで個別確認する。
+
+先行Pages artifact **12943223840**（ZIP 301,838,260 bytes、SHA256 `c637a647cd5b9a9ee5da708c000fdcf8ef7635cd6d59a660c8033ed3719256c1`）を全件検査。既存65,729データファイル/362,320,715 bytesはhash・件数とも同一、変更/削除0。追加はv7 JSON 1ファイル/50,921 bytesだけで、合計65,730ファイル/362,371,636 bytes。v7と旧v6の公開HTTP 200/body hash、公開HTML/entry JSのartifact一致も確認した。ここまでアプリのactive表示は62件のまま。次のPRはpinをv7へ進め、v6をretainedへ移すだけで、新旧データの公開URLを保持する。
+
+その後の[定期候補40992863758](https://github.com/tomoya41/baseball-notes/actions/runs/40992863758)、改版111571656も確認。66件の意味・本文・statement hash・使用選手のidentityと、隔離107件がv7と一致した。identity input hashの差は、追跡済みregistryのLF/CRLF表現差だけで再現できたため、ID変更・追加事象とは扱わない。元の入力hashを上書きせず、新版の自動再配信も行わない。確認済みrun/revisionはignored automation-stateに記録した。定期候補は今回の手動開発・レビュー・公開承認と別に扱う。

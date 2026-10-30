@@ -868,9 +868,38 @@ public class ReleaseQualityTest {
         assertEquals("Recovered retirement keeps its player and article date", "true", js("document.querySelectorAll('article.explorer-result').length===1&&document.querySelector('article.explorer-result').innerText.includes('2026-07-20')&&document.querySelector('article.explorer-result h2').innerText.includes('引退発表')&&!!document.querySelector('article a[href*=\"b269eafc-223f-4c91-97d0-3f6fe1855011\"]')"));
         js("document.querySelector('article.explorer-result').scrollIntoView({block:'center'})");screenshot("npb-recovered-retirement-font-20");
         js("location.hash='#/NPB/moves?kind=registration_change&player=8dd5e308-bedb-4283-92c2-f210bff0a86c'");waitText("佐藤爽");
-        assertEquals("Recovered registration is distinct from current status and renewal", "true", js("document.querySelectorAll('article.explorer-result').length===1&&document.querySelector('article.explorer-result').innerText.includes('2026-04-30')&&document.querySelector('article.explorer-result h2').innerText.includes('支配下契約')&&!!document.querySelector('article a[href*=\"oldid=111560963\"]')&&!document.querySelector('article.explorer-result h2').innerText.includes('契約更改')"));
+        assertEquals("Recovered registration is distinct from current status and renewal", "true", js("document.querySelectorAll('article.explorer-result').length===1&&document.querySelector('article.explorer-result').innerText.includes('2026-04-30')&&document.querySelector('article.explorer-result h2').innerText.includes('支配下契約')&&!!document.querySelector('article a[href*=\"oldid=111569587\"]')&&!document.querySelector('article.explorer-result h2').innerText.includes('契約更改')"));
         assertEquals("New recorded events fit at 200 percent", "true", js("document.documentElement.scrollWidth<=innerWidth"));
         js("document.querySelector('article.explorer-result').scrollIntoView({block:'center'})");screenshot("npb-recovered-registration-font-20");
+    }
+    @Test public void recoveredNonrenewalsKeepCanonicalLinksAndCompactNativeViews() throws Exception {
+        String[][] players = {
+            {"4d22997f-bbd4-4c66-b54a-9505e0605b74", "渡辺翔太"},
+            {"ba4c7dbc-089c-4494-8b21-8bb9b846405b", "古賀康誠"},
+            {"ec709e2d-8ccd-4657-b71a-9c4d446a8a85", "石原彪"},
+            {"9d0b8ce3-24dc-41cd-9b2d-99d0a1f5cf34", "入江大樹"}
+        };
+        Intent link = new Intent(Intent.ACTION_VIEW, Uri.parse("baseballnotes://NPB/moves?kind=nonrenewal_notice&player=" + players[0][0]));
+        link.setClassName("com.tomoya41.baseballnotes", "jp.baseballdata.app.MainActivity");
+        scenario = ActivityScenario.launch(link);
+        for (String[] player : players) {
+            js("location.hash='#/NPB/moves?kind=nonrenewal_notice&player=" + player[0] + "'"); waitText(player[1]);
+            assertEquals("Only the independently linked recipient is selected", "true", js("document.querySelectorAll('article.explorer-result').length===1&&document.querySelector('article.explorer-result h2').textContent.includes('" + player[1] + "')&&document.querySelector('article.explorer-result h2').textContent.includes('戦力外通告')"));
+            assertEquals("Exact article date and canonical profile link", "true", js("document.querySelector('article.explorer-result').innerText.includes('2026-10-29')&&!!document.querySelector('article.explorer-result a[href*=\"/NPB/players/" + player[0] + "\"]')"));
+            assertEquals("Pinned source and identity evidence remain reachable", "true", js("!!document.querySelector('article.explorer-result a[href*=\"oldid=111569587\"]')&&Array.from(document.querySelectorAll('article.explorer-result a')).some(a=>a.textContent==='選手ID照合の記事')"));
+            assertEquals("Coaching announcement never becomes the player's status", "false", js("document.querySelector('article.explorer-result').textContent.includes('育成総合コーチ')"));
+        }
+        js("location.hash='#/NPB/moves?kind=nonrenewal_notice&player=" + players[0][0] + "'"); waitText(players[0][1]);
+        for(float scale : new float[]{1.0f, 1.5f, 2.0f}) {
+            fontScaleAndRecreate(scale); waitText(players[0][1]);
+            for(String theme : new String[]{"light", "dark"}) {
+                setThemeWithoutNavigation(theme, theme.equals("light") ? "ライト" : "ダーク"); waitText(players[0][1]);
+                assertTrue("Recreation preserves the scoped player route", js("location.hash").contains(players[0][0]));
+                assertEquals("Nonrenewal stays separate from free contract and renewal", "true", js("document.querySelector('article.explorer-result h2').textContent.includes('戦力外通告')&&!/自由契約|契約更改/.test(document.querySelector('article.explorer-result h2').textContent)"));
+                assertEquals("Compact notice fits native text enlargement", "true", js("document.documentElement.scrollWidth<=innerWidth"));
+                screenshot("npb-nonrenewal-v7-" + theme + "-font-" + scale);
+            }
+        }
     }
     @Test public void offseasonRenewalsKeepUnknownStateAndOfficialLinksAtLargeFont() throws Exception {
         Intent link = new Intent(Intent.ACTION_VIEW, Uri.parse("baseballnotes://NPB/moves?kind=contract_renewal&team=npb:team:hawks"));
