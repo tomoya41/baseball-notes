@@ -1,5 +1,9 @@
 # NPB sourced player events — first admitted increment
 
+Latest follow-up (2026-10-30): [PR #107](https://github.com/tomoya41/baseball-notes/pull/107) / [promotion PR #108](https://github.com/tomoya41/baseball-notes/pull/108) add four independently identified October 29 nonrenewal notices, bringing the reviewed v7 dataset to **66 partial records / 66 players**. The v7 JSON was published and read back before app promotion; old v1–v6 URLs remain. Source, hashes, identity proofs, exact rollout and device evidence are recorded in [the current follow-up](npb-notice-recovery-20261030.md). The dated sections below remain the original delivery history, not the latest record count.
+
+The only additional grammar is an independently cited first player-notice clause in one reviewed compound announcement, followed by separately cited coaching clauses. Only explicit, independently verified player article links produce records. Bare names count as unresolved list positions and never acquire IDs; matching headcounts, unique participants and exact clause/citation boundaries are required. Coaches, development offers, current registration and effective dates are not inferred. The new explicit transformation label is additive; retained releases keep their old label. The source remains the already admitted 2026 Wikipedia chronology, CC BY-SA 4.0, candidate-only scheduled review and manually validated immutable publication. No additional news provider or automatic main/Pages promotion is admitted.
+
 Reviewed 2026-10-19 (JST), baseline main `4cef88b` / PR #45. This is the first bounded licensed chronology view, not a complete transfer ledger, official announcement feed or general-purpose news reader. No Current statistics, canonical tables, roster registration, uniform numbers or Production Gates are written.
 
 ## Source admission and evidence
