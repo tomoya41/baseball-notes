@@ -24,6 +24,7 @@ import static org.junit.Assert.*;
 
 @RunWith(AndroidJUnit4.class)
 public class ReleaseQualityTest {
+    private static final String NPB_EVENT_SOURCE_REVISION = "111569587";
     private ActivityScenario<MainActivity> scenario;
     private String js(String expression) throws Exception {
         AtomicReference<String> value = new AtomicReference<>(); CountDownLatch latch = new CountDownLatch(1);
@@ -841,7 +842,7 @@ public class ReleaseQualityTest {
         Intent link = new Intent(Intent.ACTION_VIEW, Uri.parse("baseballnotes://NPB/moves?kind=trade&player=3deea6d2-3347-430e-93c3-26ca2ebf15fa"));
         link.setClassName("com.tomoya41.baseballnotes", "jp.baseballdata.app.MainActivity");
         scenario = ActivityScenario.launch(link); waitText("杉浦稔大"); waitText("金銭トレードの記載");
-        assertEquals("Events retain exact licensed source", "true", js("!!document.querySelector('a[href*=\"oldid=111560963\"]')"));
+        assertEquals("Events retain exact licensed source", "true", js("!!document.querySelector('a[href*=\"oldid=" + NPB_EVENT_SOURCE_REVISION + "\"]')"));
         assertEquals("Events do not certify current membership", "true", js("document.body.innerText.includes('現在の所属や登録の認定ではありません')"));
         screenshot("npb-player-events-360");
         fontScaleAndRecreate(2.0f); waitText("金銭トレードの記載"); waitViewport(360);
@@ -868,7 +869,7 @@ public class ReleaseQualityTest {
         assertEquals("Recovered retirement keeps its player and article date", "true", js("document.querySelectorAll('article.explorer-result').length===1&&document.querySelector('article.explorer-result').innerText.includes('2026-07-20')&&document.querySelector('article.explorer-result h2').innerText.includes('引退発表')&&!!document.querySelector('article a[href*=\"b269eafc-223f-4c91-97d0-3f6fe1855011\"]')"));
         js("document.querySelector('article.explorer-result').scrollIntoView({block:'center'})");screenshot("npb-recovered-retirement-font-20");
         js("location.hash='#/NPB/moves?kind=registration_change&player=8dd5e308-bedb-4283-92c2-f210bff0a86c'");waitText("佐藤爽");
-        assertEquals("Recovered registration is distinct from current status and renewal", "true", js("document.querySelectorAll('article.explorer-result').length===1&&document.querySelector('article.explorer-result').innerText.includes('2026-04-30')&&document.querySelector('article.explorer-result h2').innerText.includes('支配下契約')&&!!document.querySelector('article a[href*=\"oldid=111569587\"]')&&!document.querySelector('article.explorer-result h2').innerText.includes('契約更改')"));
+        assertEquals("Recovered registration is distinct from current status and renewal", "true", js("document.querySelectorAll('article.explorer-result').length===1&&document.querySelector('article.explorer-result').innerText.includes('2026-04-30')&&document.querySelector('article.explorer-result h2').innerText.includes('支配下契約')&&!!document.querySelector('article a[href*=\"oldid=" + NPB_EVENT_SOURCE_REVISION + "\"]')&&!document.querySelector('article.explorer-result h2').innerText.includes('契約更改')"));
         assertEquals("New recorded events fit at 200 percent", "true", js("document.documentElement.scrollWidth<=innerWidth"));
         js("document.querySelector('article.explorer-result').scrollIntoView({block:'center'})");screenshot("npb-recovered-registration-font-20");
     }
@@ -886,7 +887,7 @@ public class ReleaseQualityTest {
             js("location.hash='#/NPB/moves?kind=nonrenewal_notice&player=" + player[0] + "'"); waitText(player[1]);
             assertEquals("Only the independently linked recipient is selected", "true", js("document.querySelectorAll('article.explorer-result').length===1&&document.querySelector('article.explorer-result h2').textContent.includes('" + player[1] + "')&&document.querySelector('article.explorer-result h2').textContent.includes('戦力外通告')"));
             assertEquals("Exact article date and canonical profile link", "true", js("document.querySelector('article.explorer-result').innerText.includes('2026-10-29')&&!!document.querySelector('article.explorer-result a[href*=\"/NPB/players/" + player[0] + "\"]')"));
-            assertEquals("Pinned source and identity evidence remain reachable", "true", js("!!document.querySelector('article.explorer-result a[href*=\"oldid=111569587\"]')&&Array.from(document.querySelectorAll('article.explorer-result a')).some(a=>a.textContent==='選手ID照合の記事')"));
+            assertEquals("Pinned source and identity evidence remain reachable", "true", js("!!document.querySelector('article.explorer-result a[href*=\"oldid=" + NPB_EVENT_SOURCE_REVISION + "\"]')&&Array.from(document.querySelectorAll('article.explorer-result a')).some(a=>a.textContent==='選手ID照合の記事')"));
             assertEquals("Coaching announcement never becomes the player's status", "false", js("document.querySelector('article.explorer-result').textContent.includes('育成総合コーチ')"));
         }
         js("location.hash='#/NPB/moves?kind=nonrenewal_notice&player=" + players[0][0] + "'"); waitText(players[0][1]);
@@ -897,6 +898,8 @@ public class ReleaseQualityTest {
                 assertTrue("Recreation preserves the scoped player route", js("location.hash").contains(players[0][0]));
                 assertEquals("Nonrenewal stays separate from free contract and renewal", "true", js("document.querySelector('article.explorer-result h2').textContent.includes('戦力外通告')&&!/自由契約|契約更改/.test(document.querySelector('article.explorer-result h2').textContent)"));
                 assertEquals("Compact notice fits native text enlargement", "true", js("document.documentElement.scrollWidth<=innerWidth"));
+                js("document.querySelector('article.explorer-result').scrollIntoView({block:'center'})"); waitPaint();
+                assertEquals("The selected recipient is visible after scrolling at each native text size", "true", js("(()=>{const r=document.querySelector('article.explorer-result h2').getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight})()"));
                 screenshot("npb-nonrenewal-v7-" + theme + "-font-" + scale);
             }
         }
