@@ -15,6 +15,7 @@ export function NpbHomeLead({ now, requested, favorites, visible }: { now: numbe
   const [failed, setFailed] = useState(false), [retry, setRetry] = useState(0), [archive, setArchive] = useState(false);
   const context = npbHomeContext(now, requested, series, events, favorites);
   const { wantsSeries, wantsMovements } = context;
+  const needsMovements = wantsMovements && (!series || !wantsSeries || !relevantJapanSeries(series, now));
   // Pins are immutable. Re-evaluate dates/follows without polling providers or DB.
   // This component stays mounted across Home tabs, retaining verified responses.
   useEffect(() => {
@@ -35,7 +36,7 @@ export function NpbHomeLead({ now, requested, favorites, visible }: { now: numbe
     return () => { active = false; };
     // Immutable responses are deliberately retained, not effect dependencies.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [wantsSeries, wantsMovements, context.season.date, retry, visible]);
+  }, [wantsSeries, wantsMovements, needsMovements, context.season.date, retry, visible]);
   if (!visible || context.focus === "scores") return null;
   return <div className="home-seasonal-lead" data-home-focus={context.focus}>
     {context.focus === "series" && series ? <JapanSeriesHomeContent data={series} now={now} embedded /> : context.focus === "moves" && events ? <section className="home-section" aria-label="注目の選手の動き">

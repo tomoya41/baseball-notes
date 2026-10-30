@@ -86,3 +86,13 @@ it("personalizes from saved UUIDs without treating photos or a text name as evid
   expect(host.querySelector(".player-row strong")?.textContent).toBe(p.name);
   expect(host.querySelector(".player-row small")?.textContent).toContain("フォロー");
 });
+it("loads an independent lead when a scheduled series snapshot expires within the same JST date, without polling",async()=>{
+  const d=series();d.observedAt="2026-10-24T00:00:00Z";d.results=[];d.series.games=d.series.games.slice(1,2);d.series.games[0]!.date="2026-10-26";
+  const e=events();e.observedAt="2026-10-25T01:00:00Z";e.events[0]!.recordedDate="2026-10-25";
+  vi.mocked(readNpbJapanSeries).mockResolvedValue(d);vi.mocked(readNpbPlayerEvents).mockResolvedValue(e);
+  const render=async(at:string)=>act(async()=>root.render(<MemoryRouter><NpbHomeLead now={Date.parse(at)} requested={null} visible favorites={[]}/></MemoryRouter>));
+  await render("2026-10-25T23:59:00Z");expect(host.querySelector("[data-home-focus]")?.getAttribute("data-home-focus")).toBe("series");
+  expect(readNpbPlayerEvents).not.toHaveBeenCalled();
+  await render("2026-10-26T00:01:00Z");expect(host.querySelector("[data-home-focus]")?.getAttribute("data-home-focus")).toBe("moves");
+  expect(readNpbJapanSeries).toHaveBeenCalledOnce();expect(readNpbPlayerEvents).toHaveBeenCalledOnce();
+});
