@@ -2,7 +2,7 @@ import { formatThrowBat } from "../presentation/baseball-language";
 import { clubStyle } from "../presentation/club-style";
 import { currentTeamPlayers, sortTeamPlayers } from "../presentation/team-player-list";
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import type { Services } from "../app/services";
 import type { Favorite } from "../domain/models";
 import type { NpbCatalog, NpbTeamSeason } from "../domain/npb-product-contract";
@@ -19,9 +19,8 @@ import { TeamFavorite } from "./team-favorite";
 import { ExplorerLinks } from "./data-explorer";
 import { LifecycleLinks } from "./npb-lifecycle";
 import { HomeDiscover, HomeSearchEntry, TeamRecord } from "./signature";
-import { NpbSeasonalHome } from "./npb-seasonal-home";
-import { NpbJapanSeriesHome } from "./npb-japan-series-home";
-import { japanSeriesHomePeriod } from "../presentation/japan-series-home";
+import { NpbHomeLead } from "./npb-home-lead";
+import { npbSeasonalHome } from "../domain/npb-seasonal-home";
 
 type Target = Pick<Favorite, "kind" | "entityId" | "league">;
 export function NpbStandings({ services, onEffectiveDate }: { services: Services; onEffectiveDate?: (date: string) => void }) {
@@ -43,19 +42,23 @@ export function NpbStandings({ services, onEffectiveDate }: { services: Services
 export function NpbHome({ services, favorites, toggle, saving }: { services: Services; favorites: Favorite[]; toggle: (target: Target) => void; saving: boolean }) {
   const [now,setNow] = useState(Date.now);
   useEffect(()=>{const tick=()=>setNow(Date.now());window.addEventListener("focus",tick);const timer=window.setInterval(tick,60000);return()=>{window.removeEventListener("focus",tick);window.clearInterval(timer);};},[]);
-  const seriesFeatured = japanSeriesHomePeriod(now);
+  const [params, setParams] = useSearchParams();
+  const context = npbSeasonalHome(now, params.get("homeSeason"));
+  const [savedOpen, setSavedOpen] = useState(false);
   const [view,setView] = useState("scores");
   const [effectiveDate, setEffectiveDate] = useState<string | null>(null);
   const changeView = (next: string) => {
     if (next !== view) setEffectiveDate(null);
     setView(next);
   };
-  return <div className="screen home-screen home-hub">{seriesFeatured&&<NpbJapanSeriesHome now={now}/>}<div className="home-controls">{seriesFeatured?<div className="competition-header"><div><h2>公式戦</h2><p>{effectiveDate?.slice(0,4)??"2026"}年</p></div></div>:<CompetitionHeader league="NPB" context={effectiveDate ? `${effectiveDate.slice(0, 4)}年 · 公式戦` : "公式戦"} />}
-    <HomeModeNav active={view} onChange={changeView} modes={[{id:"scores",label:"スコア"},{id:"standings",label:"順位表"},{id:"follow",label:"フォロー"}]} /></div>
-    {view === "scores" && <>{!seriesFeatured&&<NpbSeasonalHome/>}<div className="home-main"><NpbSavedGames services={services} onEffectiveDate={setEffectiveDate} />{favorites.some(f=>f.league==="NPB"&&f.kind==="player")&&<div className="home-follow"><NpbPersonalDashboard services={services} favorites={favorites} toggle={toggle} saving={saving} compact /></div>}</div><HomeSearchEntry league="NPB" />{seriesFeatured&&<NpbSeasonalHome supporting/>}</>}
+  const savedResults = <div className="home-main"><NpbSavedGames services={services} onEffectiveDate={setEffectiveDate} />{favorites.some(f=>f.league==="NPB"&&f.kind==="player")&&<div className="home-follow"><NpbPersonalDashboard services={services} favorites={favorites} toggle={toggle} saving={saving} compact /></div>}<Link className="section-action" to="/NPB/weekly?stage=regular">公式戦の週間レポート →</Link></div>;
+  return <div className="screen home-screen home-hub"><div className="home-controls home-controls--contextual"><CompetitionHeader league="NPB" context={view !== "scores" || context.mode === "regular" ? effectiveDate ? `${effectiveDate.slice(0,4)}年 · 公式戦` : "公式戦" : "野球のいまを探す"}>
+      <label className="competition-season"><span className="sr-only">ホームの表示内容</span><select aria-label="ホームの表示内容" value={context.manual ? context.mode : "auto"} onChange={e => { const next = new URLSearchParams(params); if(e.target.value === "auto")next.delete("homeSeason");else next.set("homeSeason", e.target.value);setParams(next); }}><option value="auto">自動</option><option value="spring">春・開幕前</option><option value="regular">公式戦</option><option value="autumn">CS・ドラフト</option><option value="winter">移籍・契約更改</option></select></label>
+    </CompetitionHeader><HomeModeNav active={view} onChange={changeView} modes={[{id:"scores",label:"トップ"},{id:"standings",label:"順位表"},{id:"follow",label:"フォロー"}]} /></div>
+    <NpbHomeLead now={now} requested={params.get("homeSeason")} favorites={favorites} visible={view === "scores"}/>
+    {view === "scores" && <>{context.mode === "regular" ? savedResults : <details className="home-tools" onToggle={e=>setSavedOpen(e.currentTarget.open)}><summary>公式戦の保存済み結果</summary>{savedOpen && savedResults}</details>}<HomeSearchEntry league="NPB" /></>}
     {view === "standings" && <NpbStandings services={services} onEffectiveDate={setEffectiveDate} />}
     {view === "follow" && <><NpbToday services={services} favorites={favorites} toggle={toggle} saving={saving} personal /><NpbPersonalDashboard services={services} favorites={favorites} toggle={toggle} saving={saving} compact /><section className="home-section"><SectionHeader title="お気に入り選手" action="My" to="/NPB/my" /><NpbSavedPlayers repository={services.directory} favorites={favorites} toggle={toggle} saving={saving} compact /></section></>}
-    <Link className="section-action" to={`/NPB/weekly?stage=${seriesFeatured?"japan_series":"regular"}`}>週間レポート · 収録結果を振り返る →</Link>
     <HomeDiscover league="NPB" />
     <details className="home-availability"><summary>HOT · 公開状況を確認</summary><NpbHotSection repository={services.hot} /></details>
     <details className="home-tools"><summary>記録・ポストシーズン・その他の機能</summary><div className="hub-links"><Link to="/NPB/records">個人成績 →</Link><Link to="/NPB/postseason">ポストシーズン →</Link></div><ExplorerLinks league="NPB" /></details>
