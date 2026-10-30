@@ -1,11 +1,9 @@
-import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { npbSeasonalHome } from "../domain/npb-seasonal-home";
 import { EditorialCover } from "./editorial-cover";
 
-export function NpbSeasonalHome({supporting=false}:{supporting?:boolean}){
-  const [params,setParams]=useSearchParams(),[now,setNow]=useState(Date.now);
-  useEffect(()=>{const tick=()=>setNow(Date.now());window.addEventListener("focus",tick);const timer=window.setInterval(tick,60000);return()=>{window.removeEventListener("focus",tick);window.clearInterval(timer);};},[]);
+export function NpbSeasonalHome({supporting=false,now}:{supporting?:boolean;now:number}){
+  const [params]=useSearchParams();
   const context=npbSeasonalHome(now,params.get("homeSeason"));
   const labels: Record<string,string> = {
     "/NPB/cs?season=2026":"クライマックスシリーズ",
@@ -23,6 +21,6 @@ export function NpbSeasonalHome({supporting=false}:{supporting?:boolean}){
       </Link>;
     })}</div>
     <nav className="offseason-home-links" aria-label="オフシーズンの選手情報"><Link to="/NPB/moves">移籍・退団・引退 <span aria-hidden="true">→</span></Link><Link to="/NPB/moves?kind=contract_renewal">契約更改 <span aria-hidden="true">→</span></Link></nav>
-    <details className="source-note seasonal-options"><summary>収録範囲・季節を変更</summary><p>{context.description}</p><label>楽しみ方<select value={context.manual?context.mode:"auto"} onChange={e=>setParams(previous=>{const next=new URLSearchParams(previous);if(e.target.value==="auto")next.delete("homeSeason");else next.set("homeSeason",e.target.value);return next;})}><option value="auto">季節に合わせる</option><option value="spring">春・開幕前</option><option value="regular">公式戦の時期</option><option value="autumn">秋・CSとドラフト</option><option value="winter">オフシーズン</option></select></label><p>{context.unavailable}</p><p className="inline-note">{context.date}（日本時間）の暦を使った案内です。実際の開催状況・公式日程・データ更新の証拠ではありません。</p><Link to="/NPB/moves">契約・移籍・引退の記事記載 →</Link></details>
+    <details className="source-note seasonal-options"><summary>収録範囲</summary><p>{context.description}</p><p>{context.unavailable}</p><p className="inline-note">{context.date}（日本時間）の暦を使った案内です。実際の開催状況・公式日程・データ更新の証拠ではありません。</p><Link to="/NPB/moves">契約・移籍・引退の記事記載 →</Link></details>
   </section>;
 }

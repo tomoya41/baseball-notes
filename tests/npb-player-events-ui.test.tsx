@@ -19,7 +19,7 @@ function Location() { return <output data-location>{useLocation().search}</outpu
 async function mount(query = "", favorites: Favorite[] = [], failed = false, home = false, dataset = eventFixture()) {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true); vi.mocked(readNpbPlayerEvents).mockImplementation(async () => { if (failed) throw Error("offline"); return dataset; });
   const host = document.createElement("div"), root = createRoot(host); document.body.append(host);
-  await act(async () => root.render(<MemoryRouter initialEntries={[`/NPB/moves${query}`]}>{home ? <NpbSeasonalHome /> : <NpbPlayerEventsScreen favorites={favorites} />}<Location /></MemoryRouter>));
+  await act(async () => root.render(<MemoryRouter initialEntries={[`/NPB/moves${query}`]}>{home ? <NpbSeasonalHome now={Date.parse("2026-10-30T03:00:00Z")} /> : <NpbPlayerEventsScreen favorites={favorites} />}<Location /></MemoryRouter>));
   return { host, close: async () => { await act(async () => root.unmount()); host.remove(); } };
 }
 it("shows source confidence, exact player/team links and accessible per-record evidence without official certification", async () => {

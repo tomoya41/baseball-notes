@@ -496,3 +496,7 @@ During the explicit 2026 Japan Series editorial window, one small static competi
 ### 2026-10-29 — NPBを主製品、MLBを補助機能として固定する
 
 ユーザーの「NPBに特化、MLBはおまけ」という指定に従い、[SPEC §0.1](../SPEC.md#completion-baseline)と作業計画の優先順位を明確化する。NPBのHOT・試合別MVPの実データとオフシーズン情報を先に進め、外部制限で一部が止まっても独立したNPB作業へ進む。MLBの既存機能・データ・URL・個人保存は保守し、共通処理の検証を続ける。単独のMLB拡張を先行せず、MLBの成功だけでNPB要件を完了にしない。現在の初回起動とPWAホームは既にNPBであり、今回は文書と開発方針だけの変更。ランタイム、Data Contract、保存形式、immutable asset、権利/Production Gateは変更しない。rollbackはこの文書commitのrevert。
+
+### 2026-10-30 — ホームの主役は暦だけで固定しない
+
+NPBトップは季節の案内に加え、検証済みデータの時点・未収録結果・フォローID・手動選択から優先表示を決める。日本シリーズの暦期間でも古い未更新スコアを先頭固定せず、記録は折りたたんで到達可能に保つ。順位表／フォローを選んだ時はその表示を優先する。移籍等は一部の百科事典記録として表示し、登録状態・公式確認・HOTと混同しない。保存形式・immutable pin・Gateを変えず、同じHomeの共通時計と静的readerを使う。[条件と検証](npb-contextual-home.md)。rollbackはUI commitのrevertで既存データへの移行は不要。

@@ -50,6 +50,13 @@
 .home-controls>.competition-header>div { display: block; }
 .home-controls>.home-mode-nav { flex: 1; margin: 0; min-width: 0; }
 .home-controls .home-mode-nav button { padding-inline: 4px; font-size: .75rem; }
+.home-controls--contextual { display: block; }
+.home-controls--contextual>.competition-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.home-controls--contextual .competition-season { max-width: 60%; }
+.home-controls--contextual .competition-season select { max-width: 100%; font-size: .75rem; }
+:root[data-large-font] .home-controls--contextual>.competition-header { flex-wrap: wrap; }
+:root[data-large-font] .home-controls--contextual .competition-season { max-width: 100%; }
+.home-seasonal-lead .player-row time { font-size: .75rem; color: var(--color-muted); white-space: nowrap; }
 .home-screen>.competition-header select { min-height: 44px; padding-block: 6px; font-size: .8125rem; }
 .home-screen>.home-mode-nav { margin-bottom: 12px; }
 .home-player-lead { margin-bottom: 16px; }
@@ -266,8 +273,8 @@
 /* Japan Series: results first, with independent schedule and portrait disclosures. */
 .japan-home { margin: 0 0 12px; min-width: 0; }
 .japan-home-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.japan-home h1 { margin: 0; font-size: 1rem; }
-.japan-home h1 small { font-size: .6875rem; font-weight: 400; color: var(--color-muted); }
+.japan-home-heading :is(h1,h2) { margin: 0; font-size: 1rem; }
+.japan-home-heading :is(h1,h2) small { font-size: .6875rem; font-weight: 400; color: var(--color-muted); }
 .japan-home-heading>a { min-height: 44px; display: flex; align-items: center; gap: 8px; font-size: .75rem; white-space: nowrap; }
 .japan-home-score { padding: 8px 12px; color: #f4f7fc; background: linear-gradient(115deg,#10283f,#061522); border-top: 1px solid #c3a16b; }
 .japan-home-caption { margin: 0; text-align: left; font-size: .6875rem; color: #c5d2e2; }

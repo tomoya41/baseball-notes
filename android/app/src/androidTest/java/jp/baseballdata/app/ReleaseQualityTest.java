@@ -257,6 +257,8 @@ public class ReleaseQualityTest {
         }
         fontScaleAndRecreate(1.0f); waitHomeStatistics(); waitViewport(360);
         js("location.hash='#/NPB/home?homeSeason=autumn'");
+        openSeasonalStories();
+        js("Array.from(document.querySelectorAll('.home-tools>summary')).filter(s=>s.textContent==='公式戦の保存済み結果'&&!s.parentElement.open).forEach(s=>s.click())");
         waitCondition("NPB seasonal links and saved games", "document.querySelectorAll('.seasonal-stories>a').length===3 && document.querySelectorAll('.today-board .scoreboard-row').length===2");
         assertEquals("Seasonal Home has no horizontal overflow", "true", js("document.documentElement.scrollWidth<=innerWidth")); screenshot("npb-home-360-dark");
         setTheme("light", "ライト"); shell("wm size 600x1000");
@@ -742,22 +744,73 @@ public class ReleaseQualityTest {
         assertEquals("No fabricated box score","0",js("String(document.querySelectorAll('main table').length)"));
         shell("input keyevent KEYCODE_BACK");waitText("日程・試合詳細");assertEquals("System Back returns to exact series",route,js("location.hash"));
     }
+    private void openRecordedJapanHome() throws Exception {
+        waitCondition("Recorded series available independently of Home priority", "!!document.querySelector('[data-japan-home-archive]') || !!document.querySelector('.japan-home-result')");
+        js("(()=>{const d=document.querySelector('[data-japan-home-archive]');if(d&&!d.open)d.querySelector('summary').click();})()");
+        waitCondition("Exact recorded series result", "!!document.querySelector('.japan-home-result')");
+    }
+    private void settleContextualHome() throws Exception {
+        // Freeze only the test clock. The app still reads its actual immutable
+        // public events/series pins; no fixture or provider response substitution.
+        js("Date.now=()=>Date.parse('2026-10-30T03:00:00Z');window.dispatchEvent(new Event('focus'))");
+        waitCondition("Fresh records precede overdue series snapshot", "document.querySelector('[data-home-focus]')?.dataset.homeFocus==='moves'");
+    }
+    @Test public void contextualHomeUsesFreshRecordsAndHonorsSelectedViewAtAllFontSizes() throws Exception {
+        scenario=ActivityScenario.launch(MainActivity.class);waitText("BASEBALL");
+        js("location.hash='#/NPB/home'");settleContextualHome();waitViewport(360);
+        assertEquals("Verified bounded movement list", "3", js("String(document.querySelectorAll('[aria-label=\"注目の選手の動き\"] .player-row').length)"));
+        assertEquals("Stale series is an explicit closed archive", "true", js("!!document.querySelector('[data-japan-home-archive]') && !document.querySelector('[data-japan-home-archive]').open && !document.querySelector('.japan-home-result')"));
+        assertEquals("Regular results do not load into the offseason lead", "false", js("!!document.querySelector('.today-board')"));
+        assertEquals("Licensed article record remains labeled and linked", "true", js("document.querySelector('[data-home-focus] .inline-note').textContent.includes('記事記録') && !!document.querySelector('[data-home-focus] a[href*=\"oldid=111569587\"]') && !!document.querySelector('[data-home-focus] a[href=\"https://creativecommons.org/licenses/by-sa/4.0/\"]')"));
+        assertTrue("No invented contract renewals", js("document.querySelector('.home-context-links').innerText").contains("未収録"));
+        for(float scale:new float[]{1.0f,1.5f,2.0f}) {
+            fontScaleAndRecreate(scale);settleContextualHome();waitViewport(360);
+            for(String theme:new String[]{"light","dark"}) {
+                setThemeWithoutNavigation(theme,theme.equals("light")?"ライト":"ダーク");
+                js("window.scrollTo(0,0)");waitPaint();
+                assertEquals("Contextual Home has no overflow at "+scale,"true",js("document.documentElement.scrollWidth<=innerWidth"));
+                assertEquals("Actual native font enlargement retained","true",js("Math.abs(parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--android-font-scale'))-"+scale+")<0.01"));
+                assertEquals("Top record remains visible", "true", js("(()=>{const r=document.querySelector('[data-home-focus] .player-row').getBoundingClientRect();return r.top>=0&&r.bottom<innerHeight;})()"));
+                assertEquals("Five native navigation destinations remain usable", "5", js("String(document.querySelectorAll('.bottom-nav a').length)"));
+                screenshot("npb-contextual-home-360-"+theme+"-"+scale);
+            }
+        }
+        js("(()=>{const s=document.querySelector('select[aria-label=\"ホームの表示内容\"]');s.value='regular';s.dispatchEvent(new Event('change',{bubbles:true}));})()");
+        waitCondition("Manual Regular keeps its URL and actual saved results", "location.hash.includes('homeSeason=regular') && !document.querySelector('[data-home-focus]') && !!document.querySelector('.today-board .scoreboard-row')");
+        js("(()=>{const s=document.querySelector('select[aria-label=\"ホームの表示内容\"]');s.value='auto';s.dispatchEvent(new Event('change',{bubbles:true}));})()");settleContextualHome();
+        for(String tab:new String[]{"フォロー","順位表"}) {
+            js("Array.from(document.querySelectorAll('.home-mode-nav button')).find(b=>b.textContent==='"+tab+"').click()");
+            waitCondition("Selected Home tab has no unrelated headline", "!document.querySelector('[data-home-focus]') && !document.querySelector('.japan-home')");
+        }
+        js("Array.from(document.querySelectorAll('.home-mode-nav button')).find(b=>b.textContent==='トップ').click()");settleContextualHome();
+        String target=js("document.querySelector('[data-home-focus] .player-row').getAttribute('href')");
+        js("document.querySelector('[data-home-focus] .player-row').click()");waitText("選手の動き");
+        assertTrue("Home record opens the independently identified player context", js("location.hash").endsWith(target.substring(target.indexOf("/NPB"))));
+        assertEquals("Specific player context, not every event", "true", js("new URLSearchParams(location.hash.split('?')[1]).has('player')"));
+        String playerId=target.substring(target.indexOf("player=")+7);
+        waitCondition("Actual admitted event links to the same canonical profile", "!!document.querySelector('.explorer-result h2 a[href*=\""+playerId+"\"]')");
+        js("document.querySelector('.explorer-result h2 a[href*=\""+playerId+"\"]').click()");
+        waitCondition("Canonical Player remains reachable from Home record", "location.hash.includes('/NPB/players/"+playerId+"') && !!document.querySelector('.player-identity h1')");
+    }
+    private void openSeasonalStories() throws Exception {
+        waitCondition("Seasonal stories ready", "document.querySelectorAll('.seasonal-stories>a').length===3");
+        js("Array.from(document.querySelectorAll('.home-tools>summary')).filter(s=>s.textContent==='季節の特集'&&!s.parentElement.open).forEach(s=>s.click())");
+    }
     @Test public void japanSeriesHomeKeepsResultsFirstAndPortraitNavigationAtLargeFont() throws Exception {
-        Intent link=new Intent(Intent.ACTION_VIEW,Uri.parse("baseballnotes://NPB/home"));
+        Intent link=new Intent(Intent.ACTION_VIEW,Uri.parse("baseballnotes://NPB/home?homeSeason=autumn"));
         link.setClassName("com.tomoya41.baseballnotes","jp.baseballdata.app.MainActivity");
         scenario=ActivityScenario.launch(link);waitText("BASEBALL");
-        org.junit.Assume.assumeTrue("Japan Series editorial period only",Boolean.parseBoolean(js("(()=>{const d=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Tokyo'}).format(new Date());return d>='2026-10-24'&&d<='2026-11-08';})()")));
-        waitCondition("Validated static Japan Series Home","!!document.querySelector('.japan-home-result')");
-        assertEquals("Japan Series precedes regular controls","true",js("document.querySelector('.home-hub').firstElementChild.classList.contains('japan-home')"));
+        openRecordedJapanHome();
+        assertEquals("Controls precede contextual stories","true",js("document.querySelector('.home-hub').firstElementChild.classList.contains('home-controls')"));
         assertEquals("Home starts with details collapsed","false",js("String(document.querySelector('.japan-home-explore').open)"));
         assertEquals("Compact Home fits before regular results","true",js("document.querySelector('.japan-home').getBoundingClientRect().height<320"));
         js("if(!document.querySelector('.japan-home-explore').open)document.querySelector('.japan-home-explore>summary').click()");
         waitCondition("Three independently identified portraits load","Array.from(document.querySelectorAll('.japan-home-players img')).filter(i=>i.complete&&i.naturalWidth>0).length===3");
         assertEquals("Photo links retain capture dates","3",js("String(document.querySelectorAll('.japan-home-players figcaption').length)"));
-        setTheme("light","ライト");js("location.hash='#/NPB/home'");waitCondition("Japan Series Home","!!document.querySelector('.japan-home-result')");
-        fontScaleAndRecreate(2.0f);waitCondition("Japan Series survives font recreation","!!document.querySelector('.japan-home-result')");waitViewport(360);
+        setTheme("light","ライト");js("location.hash='#/NPB/home?homeSeason=autumn'");openRecordedJapanHome();
+        fontScaleAndRecreate(2.0f);openRecordedJapanHome();waitViewport(360);
         assertEquals("Light Home 200 percent has no overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));screenshot("japan-home-font-20-light");
-        setTheme("dark","ダーク");js("location.hash='#/NPB/home'");waitCondition("Dark Japan Series Home","!!document.querySelector('.japan-home-result')");
+        setTheme("dark","ダーク");js("location.hash='#/NPB/home?homeSeason=autumn'");openRecordedJapanHome();
         assertEquals("Dark Home 200 percent has no overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));screenshot("japan-home-font-20-dark");
         String resultHref=js("document.querySelector('.japan-home-result').getAttribute('href')");
         String resultRoute=resultHref.contains("#")?resultHref.substring(resultHref.indexOf('#')):"#"+resultHref;
@@ -766,12 +819,12 @@ public class ReleaseQualityTest {
         assertEquals("Home opens the exact latest admitted result",resultRoute,js("location.hash"));
         waitCondition("Latest final has two team rows and completed inning evidence","document.querySelectorAll('.inning-board__table tbody tr').length===2 && document.querySelectorAll('.inning-board__table thead th[aria-label$=\"回\"]').length>=9");
         assertEquals("Displayed final scores equal the independent inning sums","true",js("(()=>{const n=document.querySelectorAll('.inning-board__table thead th[aria-label$=\"回\"]').length;return n<=30 && Array.from(document.querySelectorAll('.inning-board__table tbody tr')).every((row,side)=>{const cells=Array.from(row.querySelectorAll('td')).slice(0,n).map(c=>c.textContent);return cells.every(v=>v==='X'||/^\\d+x?$/.test(v)) && cells.reduce((sum,v)=>sum+(v==='X'?0:Number(v.replace(/x$/,''))),0)===Number(document.querySelectorAll('.score-hero-club>b')[side]?.textContent);});})()"));
-        shell("input keyevent KEYCODE_BACK");waitCondition("Back to Home","!!document.querySelector('.japan-home-result')");
+        shell("input keyevent KEYCODE_BACK");openRecordedJapanHome();
         js("if(!document.querySelector('.japan-home-explore').open)document.querySelector('.japan-home-explore>summary').click()");
         waitCondition("Player shortcuts are available","!!document.querySelector('.japan-home-player-link')");
         js("document.querySelector('.japan-home-player-link').click()");waitText("牧秀悟");
         waitCondition("Exact canonical portrait on Player","!!document.querySelector('.player-identity img[alt*=\"牧秀悟\"]')");
-        shell("input keyevent KEYCODE_BACK");waitCondition("Player Back returns to Japan Series Home","!!document.querySelector('.japan-home-result')");
+        shell("input keyevent KEYCODE_BACK");openRecordedJapanHome();
     }
     @Test public void additionalJapanSeriesPortraitsKeepIdentityDatesAndLargeText() throws Exception {
         scenario=ActivityScenario.launch(MainActivity.class);waitText("BASEBALL");
@@ -822,10 +875,11 @@ public class ReleaseQualityTest {
     @Test public void seasonalHomeAndCollectedAgeTotalsKeepScopeAndExplicitLoading() throws Exception {
         scenario=ActivityScenario.launch(MainActivity.class);waitText("BASEBALL");
         js("location.hash='#/NPB/home?homeSeason=autumn'");
+        openSeasonalStories();
         waitCondition("Seasonal CS remains directly reachable", "!!document.querySelector('.seasonal-stories>a[href*=\"/NPB/cs?season=2026\"] .editorial-cover')");
         assertEquals("Seasonal destinations stay directly reachable", "3", js("String(document.querySelectorAll('.seasonal-stories>a').length)"));
         assertEquals("Every seasonal card keeps the collected 2026 context", "true", js("Array.from(document.querySelectorAll('.seasonal-stories>a')).every(a=>a.querySelector('.editorial-cover-copy>p')?.textContent.includes('2026') && a.getAttribute('aria-label')?.length>0)"));
-        js("document.querySelector('.seasonal-feature .source-note>summary').click()");waitText("楽しみ方");
+        js("document.querySelector('.seasonal-feature .source-note>summary').click()");waitText("CSは一部収録");
         assertEquals("Short seasonal labels retain partial-source context", "true", js("document.querySelector('.seasonal-feature').textContent.includes('CSは一部収録')"));
         screenshot("npb-seasonal-home-360");
         js("location.hash='#/NPB/history?cohort=ageSeason&age=26&ageMode=collected&role=batting&recentPlayers=92a02594-a4f7-498c-bb83-8a41855b4645'");
@@ -1021,7 +1075,7 @@ public class ReleaseQualityTest {
         assertEquals("Future entry has no fabricated scoreboard", "0", js("document.querySelectorAll('.scoreboard-row,.weekly-overview').length"));
         fontScaleAndRecreate(2.0f); waitText("2027年のデータは未収録"); waitViewport(360);
         assertEquals("Future entry keeps 200 percent readable", "true", js("document.documentElement.scrollWidth<=innerWidth")); screenshot("season-2027-font-20");
-        js("document.querySelector('a[href=\"#/NPB/home?season=2026\"]').click()"); waitCondition("Saved 2026 home", "!!document.querySelector('.japan-home') || document.querySelector('main').innerText.includes('日本シリーズ')");
+        js("document.querySelector('a[href=\"#/NPB/home?season=2026\"]').click()"); waitCondition("Saved 2026 home", "location.hash==='#/NPB/home?season=2026' && !!document.querySelector('.home-controls')");
         assertTrue("Saved 2026 URL remains explicit", js("location.hash").contains("season=2026"));
     }
     @Test public void npbRegularGameRemainsUsableWhenDetailApiIsUnavailable() throws Exception {
@@ -1272,21 +1326,20 @@ public class ReleaseQualityTest {
 
     @Test public void postseasonReadingsKeepFactsSeparateAndMvpUnavailableAtLargeFont() throws Exception {
         scenario=ActivityScenario.launch(MainActivity.class);waitText("BASEBALL");
-        org.junit.Assume.assumeTrue("Japan Series editorial period only",Boolean.parseBoolean(js("(()=>{const d=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Tokyo'}).format(new Date());return d>='2026-10-24'&&d<='2026-11-08';})()")));
-        setTheme("light","ライト");js("location.hash='#/NPB/home'");
-        waitCondition("Home summary","!!document.querySelector('.japan-home-explore')");js("if(!document.querySelector('.japan-home-explore').open)document.querySelector('.japan-home-explore>summary').click()");
+        setTheme("light","ライト");js("location.hash='#/NPB/home?homeSeason=autumn'");
+        openRecordedJapanHome();js("if(!document.querySelector('.japan-home-explore').open)document.querySelector('.japan-home-explore>summary').click()");
         waitCondition("Editorial CS readings","document.querySelectorAll('.spotlight-card').length===2");
         assertEquals("Masaki exact collected batting counts","8|2|3",js("Array.from(document.querySelectorAll('.spotlight-card[data-player=\"2b2a8d97-2a6e-441c-9a33-0d79d2a7d147\"] > .spotlight-numbers dd')).map(e=>e.textContent).join('|')"));
         js("Array.from(document.querySelectorAll('.spotlight-switch button')).find(b=>b.textContent==='次戦への注目').click()");
         waitCondition("Real saved Regular readings","!!document.querySelector('.spotlight-card[data-player=\"852bed28-a3f1-4b60-8a1f-950cc2947686\"]')");
         assertEquals("Maki exact saved Regular counts","467|29|72",js("Array.from(document.querySelectorAll('.spotlight-card[data-player=\"852bed28-a3f1-4b60-8a1f-950cc2947686\"] > .spotlight-numbers dd')).map(e=>e.textContent).join('|')"));
-        fontScaleAndRecreate(2.0f);waitCondition("Compact Home after recreation","!!document.querySelector('.japan-home-explore')");js("if(!document.querySelector('.japan-home-explore').open)document.querySelector('.japan-home-explore>summary').click()");waitCondition("CS readings after recreation","document.querySelectorAll('.spotlight-card').length===2");waitViewport(360);
+        fontScaleAndRecreate(2.0f);openRecordedJapanHome();js("if(!document.querySelector('.japan-home-explore').open)document.querySelector('.japan-home-explore>summary').click()");waitCondition("CS readings after recreation","document.querySelectorAll('.spotlight-card').length===2");waitViewport(360);
         assertEquals("Editorial Light 200 percent no overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));screenshot("postseason-readings-font-20-light");
-        setTheme("dark","ダーク");js("location.hash='#/NPB/home'");waitCondition("Dark compact Home","!!document.querySelector('.japan-home-explore')");js("if(!document.querySelector('.japan-home-explore').open)document.querySelector('.japan-home-explore>summary').click()");waitCondition("Dark CS readings","document.querySelectorAll('.spotlight-card').length===2");
+        setTheme("dark","ダーク");js("location.hash='#/NPB/home?homeSeason=autumn'");openRecordedJapanHome();js("if(!document.querySelector('.japan-home-explore').open)document.querySelector('.japan-home-explore>summary').click()");waitCondition("Dark CS readings","document.querySelectorAll('.spotlight-card').length===2");
         assertEquals("Editorial Dark 200 percent no overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));screenshot("postseason-readings-font-20-dark");
         js("document.querySelector('.spotlight-card[data-player=\"21a327b4-3924-422a-a1fc-d853e236a201\"] .spotlight-destination').click()");waitText("CS ファースト");
         assertTrue("CS role/stage survives navigation",js("location.hash").contains("competition=postseason&stage=npb_cs_first&role=pitching"));
-        shell("input keyevent KEYCODE_BACK");waitCondition("Back to compact Home","!!document.querySelector('.japan-home-result')");
+        shell("input keyevent KEYCODE_BACK");openRecordedJapanHome();
         js("document.querySelector('.japan-home-result').click()");waitText("アプリ独自選出");
         assertTrue("No invented Japan Series game MVP",js("document.querySelector('.game-mvp').innerText").contains("選手成績未収録"));
     }

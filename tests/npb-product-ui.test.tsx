@@ -53,7 +53,7 @@ afterEach(async () => {
   await act(async () => { root.unmount(); }); container.remove();
   vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks();
 });
-async function mount(child: ReactNode, path = "/NPB/home") {
+async function mount(child: ReactNode, path = "/NPB/home?homeSeason=regular") {
   await act(async () => { root.render(<MemoryRouter initialEntries={[path]}>{child}</MemoryRouter>); });
 }
 const context = () => container.querySelector(".competition-header .eyebrow")?.textContent;
