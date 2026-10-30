@@ -9,7 +9,7 @@
 製品の主対象は[仕様§0.1](../SPEC.md#completion-baseline)のNPB。MLB Historicalは補助機能として維持・回帰確認を行う。単独のMLB拡張へ作業を振り替えてNPBの未完了を閉じない。
 
 1. **NPB HOT・試合別MVPの実用化**：公開できるNPB試合別成績、本人照合、収録範囲と本番証拠をそろえる。既存のHOT最低母数/Coverage/Production Gateと、MVPの両球団の完全な選手成績という条件を維持する。[PR #100](https://github.com/tomoya41/baseball-notes/pull/100)の選考処理とMLB Historicalでの動作確認は、NPBの未収録試合の完了証拠にしない。NPBのスコアのみの試合、CSの部分収録、日本シリーズ個人成績未収録は引き続き保留。[試合別MVPの範囲](game-mvp.md)。
-2. **NPBオフシーズンの実データ**：移籍・退団・戦力外・自由契約・引退・契約更改を優先する。[PR #101](https://github.com/tomoya41/baseball-notes/pull/101)・[#102](https://github.com/tomoya41/baseball-notes/pull/102)でWikipedia記事記録を28→39件へ更新。2026-10-29取得の改版111560963による一部収録であり、現在の登録状態の認定ではない。契約更改は分類・導線を追加した段階で、実データ0件/未収録。許諾・本人・成立の根拠が確認できた記録を追加する。[最新の採用範囲](npb-offseason-20261029.md)。
+2. **NPBオフシーズンの実データ**：移籍・退団・戦力外・自由契約・引退・契約更改を優先する。[PR #101](https://github.com/tomoya41/baseball-notes/pull/101)・[#102](https://github.com/tomoya41/baseball-notes/pull/102)で28→39件、[#104](https://github.com/tomoya41/baseball-notes/pull/104)・[#105](https://github.com/tomoya41/baseball-notes/pull/105)で62件へ更新。今回[#107](https://github.com/tomoya41/baseball-notes/pull/107)で独立確認済みの戦力外通告4件を先行配信し、改版111569587・66件版を公開JSONの照合後に有効化する。Wikipedia記事の一部収録で、現在の登録状態の認定ではない。契約更改は分類・導線を追加した段階で、実データ0件/未収録。許諾・本人・成立の根拠が確認できた記録を追加する。[最新の採用範囲・検証証拠](npb-notice-recovery-20261030.md)。
 3. **NPB選手の継続的な分析**：既存の年度比較、推移、所属履歴、プロフィール、記録・フォローを接続し、欠損を安全に補う。Tursoや一つのSource待ちでも、独立したNPBの取得・静的配信・分析・運用改善を継続する。追加費用¥0・権利・既存データ保護は維持する。
 
 初回起動のfallbackとPWAの`start_url`は既にNPB。明示されたMLBのURLや個人保存は保持する。今回の方針固定は、新しいNPBデータの収録、HOT Gate解除、Turso復旧、実機QAの成功を表すものではない。
