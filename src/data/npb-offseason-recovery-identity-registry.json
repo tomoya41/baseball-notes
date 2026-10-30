@@ -201,6 +201,42 @@
       "article": "菊地吏玖",
       "identityRevision": 111034660,
       "identityContentSha256": "3efc21cbc6bf2a6312abfa9e901f5f88c670dd752795cf30571e24fc3d2e4610"
+    },
+    {
+      "playerId": "4d22997f-bbd4-4c66-b54a-9505e0605b74",
+      "npbId": "23525157",
+      "wikidataId": "Q116936256",
+      "name": "渡辺翔太",
+      "article": "渡辺翔太 (野球)",
+      "identityRevision": 110616546,
+      "identityContentSha256": "de0712ed298c3ebe77ba33022e7f8f22e53b89e43ad3a2f1da5bc7733c25896a"
+    },
+    {
+      "playerId": "ba4c7dbc-089c-4494-8b21-8bb9b846405b",
+      "npbId": "31735157",
+      "wikidataId": "Q115529915",
+      "name": "古賀康誠",
+      "article": "古賀康誠",
+      "identityRevision": 110784178,
+      "identityContentSha256": "78035824b14bf4017c0889a39e490440a6899af010d3505c50c3f045213c25fe"
+    },
+    {
+      "playerId": "ec709e2d-8ccd-4657-b71a-9c4d446a8a85",
+      "npbId": "61165134",
+      "wikidataId": "Q30922868",
+      "name": "石原彪",
+      "article": "石原彪",
+      "identityRevision": 110809071,
+      "identityContentSha256": "9444ac575f4e9f1eb981278cfbc4af388f98ea2d4fb540dc7dbee4d4529350d1"
+    },
+    {
+      "playerId": "9d0b8ce3-24dc-41cd-9b2d-99d0a1f5cf34",
+      "npbId": "41345153",
+      "wikidataId": "Q105704063",
+      "name": "入江大樹",
+      "article": "入江大樹",
+      "identityRevision": 109843575,
+      "identityContentSha256": "4a81fb51c17e1455815ef0ddff7e397c37edd8da060ff66bcb10cc701619ed97"
     }
   ]
 }

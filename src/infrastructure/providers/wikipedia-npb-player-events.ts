@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
-import { npbPlayerEventsSchema, type EventIdentity, type PlayerEvent } from "../../domain/npb-player-events";
+import { npbPlayerEventsSchema, legacyEventTransformation, citedClauseEventTransformation, type EventIdentity, type PlayerEvent } from "../../domain/npb-player-events";
 import { dateInZone } from "../../domain/analysis-query";
 
 const pageSchema = z.object({ pageid: z.literal(5145794), title: z.literal("2026年の日本プロ野球"), revisions: z.array(z.object({ revid: z.number().int().positive(), timestamp: z.iso.datetime(), slots: z.object({ main: z.object({ content: z.string().max(1000000) }) }) })).length(1) });
@@ -14,7 +14,7 @@ export function parseWikipediaPlayerEvents(raw: unknown, observedAt: string, ide
   const articles = new Map(identities.map(i => [i.article, i]));
   // Remove self-closing references first; they must not consume the next paired reference.
   const clean = text.replace(/<!--[\s\S]*?(?:-->|$)/g, "").replace(/<ref\b[^>]*\/\s*>/gi, "§REF§").replace(/<ref\b[^>]*>[\s\S]*?<\/ref\s*>/gi, "§REF§");
-  let month = 0, date: string | null = null, inChronology = false;
+  let month = 0, date: string | null = null, inChronology = false, includedCitedClause = false;
   const events: PlayerEvent[] = [], issues: { date: string | null; reason: string; statementSha256: string }[] = [];
   for (const line of clean.split(/\r?\n/)) {
     if (/^==\s*できごと\s*==$/.test(line)) { inChronology = true; continue; }
@@ -30,7 +30,12 @@ export function parseWikipediaPlayerEvents(raw: unknown, observedAt: string, ide
     }
     if (/^\*(?!\*)/.test(line)) { date = null; continue; }
     if (!/^\*\* /.test(line)) continue;
-    const parts = line.slice(3).split("。"), first = parts[0]!.trim(), statement = first.replaceAll("§REF§", "");
+    const parts = line.slice(3).split("。"), first = parts[0]!.trim();
+    // The reviewed compound announcement cites its player notice separately
+    // from two coaching clauses. Admit only that exact first clause: neither
+    // coaches nor a later contract offer supplies player/roster evidence.
+    const citedNotice = /^(.+に対し、来季の契約を行わない旨を通知したこと)§REF§、育成総合コーチの[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}ー・]+が今季限りで退任すること§REF§、新任コーチ、及び来季のコーチングスタッフについて発表$/u.exec(first)?.[1];
+    const statement = (citedNotice ?? first).replaceAll("§REF§", "");
     const tail = parts.slice(1).join("。").trim();
     // This source also puts a shared reference after a following uniform-number
     // sentence. It supports the event, but we never publish/infer that current number.
@@ -68,6 +73,15 @@ export function parseWikipediaPlayerEvents(raw: unknown, observedAt: string, ide
     // No retirement, development offer or free-agency status is inferred from it.
     const nonrenewal = /^@(\w+)@は、(?:育成(?:契約)?の)?(@(?:PLAYER|UNRESOLVED)@(?:、(?:育成の)?@(?:PLAYER|UNRESOLVED)@)*)(?:の([1-9]\d?)選手)?(?:に(?:対し)?|へ)、?(?:来季の契約を結ばない旨を通知したことを|来季の契約は締結しない旨を通達したと|来季契約を行わない旨を通知した(?:と|ことを)|来季の契約を行わない旨を通告したと|来季の契約を結ばないことを通告したと|来季契約を結ばない旨を通知したと|来季契約を結ばないことを通告したと|来季の契約を結ばないことを通達したと|来季の(?:選手)?契約を締結しない旨を通達したことを)発表$/.exec(normalized);
     const releaseList = /^@(\w+)@は、(?:育成の)?(@(?:PLAYER|UNRESOLVED)@(?:、(?:育成の)?@(?:PLAYER|UNRESOLVED)@)*)(?:の([1-9]\d?)選手)?に自由契約とすることを通知したと発表$/.exec(normalized);
+    // A bare name is an unresolved list position, never an identity lookup.
+    // Count all positions before emitting any independently linked recipient.
+    const compoundNotice = citedNotice && /^@(\w+)@は、(.+)の([1-9]\d?)選手に対し、来季の契約を行わない旨を通知したこと$/.exec(normalized);
+    const noticeEntries = compoundNotice?.[2]?.split("、");
+    const unlinkedEntries = noticeEntries?.filter(entry => !/^@(?:PLAYER|UNRESOLVED)@$/.test(entry)) ?? [];
+    const compoundCountMatches = compoundNotice && noticeEntries && noticeEntries.length === Number(compoundNotice[3]) &&
+      noticeEntries.every(entry => /^@(?:PLAYER|UNRESOLVED)@$/.test(entry) || /^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}ー・]{1,24}$/u.test(entry)) &&
+      noticeEntries.length === participants.length + unlinkedEntries.length &&
+      new Set(unlinkedEntries).size === unlinkedEntries.length && new Set(unresolvedArticles).size === unresolvedArticles.length;
     // This exact two-clause form states two different actions. Keep the article
     // positions (including unresolved participants) so the final player's release
     // cannot be attributed to anyone in the preceding nonrenewal list.
@@ -84,6 +98,7 @@ export function parseWikipediaPlayerEvents(raw: unknown, observedAt: string, ide
     }
     else if (noticeCountMatches) { kind = "nonrenewal_notice"; clubs = [nonrenewal[1]!]; if (unresolvedArticles.length) reject("unresolved_notice_participants"); }
     else if (releaseCountMatches) { kind = "release"; clubs = [releaseList[1]!]; if (unresolvedArticles.length) reject("unresolved_release_participants"); }
+    else if (compoundCountMatches) { kind = "nonrenewal_notice"; clubs = [compoundNotice[1]!]; if (unresolvedArticles.length || unlinkedEntries.length) reject("unresolved_notice_participants"); }
     else if (pairRetirement && linked.length === 2 && !unresolvedArticles.length) { clubs = [pairRetirement[1]!]; selected = linked.map(identity => ({ identity, kind: "retirement_announcement" })); }
     else if (unresolvedArticles.length) { reject("unresolved_article_outside_notice_list"); continue; }
     else if (linked.length !== 1) { reject("unsupported_multiple_player_statement"); continue; }
@@ -100,6 +115,7 @@ export function parseWikipediaPlayerEvents(raw: unknown, observedAt: string, ide
     for (const { identity, kind: eventKind } of selected ?? linked.map(identity => ({ identity, kind: kind! }))) {
       const id = `npb:event:${digest(JSON.stringify([date, eventKind, identity.playerId, clubs])).slice(0, 24)}`;
       if (events.some(e => e.id === id)) { reject("duplicate_statement"); continue; }
+      if (compoundCountMatches) includedCitedClause = true;
       events.push({ id, kind: eventKind, playerId: identity.playerId, recordedDate: date, announcementDate: null, effectiveDate: null, status: "encyclopedia_record", relatedTeamIds: clubs.map(c => `npb:team:${c}`), fromTeamId: from, toTeamId: to, sourceRevision: r.revid, statementSha256, excerpt });
     }
   }
@@ -107,6 +123,6 @@ export function parseWikipediaPlayerEvents(raw: unknown, observedAt: string, ide
   const dataset = npbPlayerEventsSchema.parse({ schemaVersion: 1, league: "NPB", season: 2026, coverage: "partial", provider: "Wikipedia", license: "CC-BY-SA-4.0", observedAt,
     source: { provider: "Wikipedia", pageId: p.pageid, title: p.title, revision: r.revid, revisionAt: r.timestamp, contentSha256: digest(text), url: `https://ja.wikipedia.org/w/index.php?curid=${p.pageid}&oldid=${r.revid}`, license: "CC-BY-SA-4.0", licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/" },
     identityInputSha256, players: identities.filter(i => used.has(i.playerId)), events: events.sort((a, b) => b.recordedDate.localeCompare(a.recordedDate) || a.id.localeCompare(b.id)),
-    transformation: "Explicit dated first sentences and verified article identities; deterministic labels; no official certification, effective-date inference, AI-generated facts or canonical writes" });
+    transformation: includedCitedClause ? citedClauseEventTransformation : legacyEventTransformation });
   return { dataset, issues };
 }

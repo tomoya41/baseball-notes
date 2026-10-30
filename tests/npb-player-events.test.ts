@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseWikipediaPlayerEvents } from "../src/infrastructure/providers/wikipedia-npb-player-events";
-import { npbPlayerEventsSchema, compareEventSnapshots } from "../src/domain/npb-player-events";
+import { npbPlayerEventsSchema, compareEventSnapshots, citedClauseEventTransformation, legacyEventTransformation } from "../src/domain/npb-player-events";
 import { npbEventQuery } from "../src/domain/npb-event-query";
 import { portableRoute } from "../src/domain/product-sharing";
 import { canonicalDeepLink, parentNativeRoute } from "../src/domain/native-navigation";
@@ -47,6 +47,41 @@ describe("explicit sourced movement observations", () => {
       `** 阪神タイガースは、前年に戦力外となっていた[[架空太郎]]の現役引退を発表${citation}。`,
       `** 阪神タイガースは、[[架空太郎]]のウェーバー公示申請を発表${citation}。後に自由契約となった${citation}。`,
     ]) expect(parse(body).dataset.events).toHaveLength(0);
+  });
+  const compoundNotice = `** 阪神タイガースは、[[架空太郎]]、[[未照合三郎]]、架空次郎、[[架空次郎]]の4選手に対し、来季の契約を行わない旨を通知したこと${citation}、育成総合コーチの架空指導者が今季限りで退任すること${citation}、新任コーチ、及び来季のコーチングスタッフについて発表。`;
+  it("extracts only the separately cited player-notice clause of a reviewed compound announcement", () => {
+    const result = parse(compoundNotice);
+    expect(result.dataset.events).toHaveLength(2);
+    expect(result.dataset.events.map(e => e.playerId).sort()).toEqual([eventPerson.playerId, otherEventPerson.playerId].sort());
+    expect(result.dataset.events.every(e => e.kind === "nonrenewal_notice" && e.status === "encyclopedia_record" && e.effectiveDate === null && e.announcementDate === null && e.fromTeamId === null && e.toTeamId === null)).toBe(true);
+    expect(result.dataset.events.every(e => !e.excerpt.includes("コーチ") && !e.excerpt.includes("退任"))).toBe(true);
+    expect(result.issues.map(i => i.reason)).toEqual(["unresolved_notice_participants"]);
+    expect(result.dataset.transformation).toBe(citedClauseEventTransformation);
+    expect(eventFixture().transformation).toBe(legacyEventTransformation);
+    expect(npbPlayerEventsSchema.safeParse(eventFixture()).success).toBe(true);
+    // A bare name identical to an admitted display name never acquires its ID.
+    expect(parse(compoundNotice.replace("[[架空次郎]]", "別の未照合名")).dataset.events.map(e => e.playerId)).toEqual([eventPerson.playerId]);
+    const unrelated = parse(compoundNotice.replace("架空指導者", "別の指導者"));
+    expect(unrelated.dataset.events).toEqual(result.dataset.events);
+    expect(unrelated.dataset.source.contentSha256).not.toBe(result.dataset.source.contentSha256);
+  });
+  it.each([
+    compoundNotice.replace("の4選手", "の3選手"),
+    compoundNotice.replace("[[架空次郎]]", "[[架空太郎]]"),
+    compoundNotice.replace("架空次郎、", "未照合三郎、未照合三郎、").replace("の4選手", "の5選手"),
+    compoundNotice.replace("架空次郎、", "[[未照合三郎]]、"),
+    compoundNotice.replace("架空次郎、", "架空次郎ほか2名、"),
+    compoundNotice.replace("架空次郎、", "[[別球団]]の選手、"),
+    compoundNotice.replace("架空次郎、", "@PLAYER@、"),
+    compoundNotice.replace("通知したこと", "打診したこと"),
+    compoundNotice.replace("通知したこと", "通知した可能性"),
+    compoundNotice.replace(`通知したこと${citation}`, "通知したこと"),
+    compoundNotice.replace(`退任すること${citation}`, "退任すること"),
+    compoundNotice.replace("スタッフについて発表", "スタッフについて報道"),
+    compoundNotice.replace("育成総合コーチの架空指導者", "[[架空太郎]]"),
+    compoundNotice.replaceAll(citation, ""),
+  ])("holds unsupported, mismatched or ambiguously cited compound notices: %s", body => {
+    expect(parse(body).dataset.events).toHaveLength(0);
   });
   const mixedNotice = `** 阪神タイガースは、[[架空太郎]]、[[未照合次郎]]、[[未照合三郎]]の3選手に来季の契約を結ばないことを通知したこと、[[架空次郎]]を自由契約とすることを発表${citation}。`;
   it("assigns each explicit action only to the article-linked participants in its own clause", () => {
