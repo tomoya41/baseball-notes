@@ -39,7 +39,7 @@ it.each([
   `** 阪神タイガースの架空太郎が、今季限りでの現役引退を発表${citation}。`,
 ])("holds mixed scope, offers, predictions and unlinked names: %s", body=>{expect(parse(body).dataset.events).toHaveLength(0);});
 it("keeps new evidence collision-free in the existing canonical namespace",()=>{
-  expect(registry.players).toHaveLength(22);expect(registry.archiveSha256).toBe('d4946a34dd2c2c72bc10ee0a2bf0b2336690a705f51d38198d00bb35f9f9b092');
+  expect(registry.players).toHaveLength(26);expect(registry.archiveSha256).toBe('d4946a34dd2c2c72bc10ee0a2bf0b2336690a705f51d38198d00bb35f9f9b092');
   for(const p of registry.players){expect(()=>assertHistoricalBridge(p)).not.toThrow();expect(p.identityContentSha256).toMatch(/^[a-f0-9]{64}$/);expect(p.identityRevision).toBeGreaterThan(0);}
   for(const key of ['playerId','npbId','wikidataId','article'] as const)expect(new Set(registry.players.map(p=>p[key])).size).toBe(registry.players.length);
 });

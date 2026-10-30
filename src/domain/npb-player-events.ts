@@ -2,6 +2,8 @@ import { z } from "zod";
 import { dateInZone } from "./analysis-query";
 import { playerEventKinds } from "./npb-event-query";
 export { playerEventKinds } from "./npb-event-query";
+export const legacyEventTransformation = "Explicit dated first sentences and verified article identities; deterministic labels; no official certification, effective-date inference, AI-generated facts or canonical writes";
+export const citedClauseEventTransformation = "Explicit dated first sentences or separately cited first player-notice clauses and verified article identities; deterministic labels; no official certification, effective-date inference, AI-generated facts or canonical writes";
 
 export const playerEventLabels: Record<typeof playerEventKinds[number], string> = {
   trade: "トレード", signing: "契約発表", retirement_announcement: "引退発表", nonrenewal_notice: "戦力外通告", release: "自由契約",
@@ -16,7 +18,7 @@ export const playerEventSchema = z.strictObject({
   status: z.literal("encyclopedia_record"), relatedTeamIds: z.array(team).min(1).max(2),
   fromTeamId: team.nullable(), toTeamId: team.nullable(),
   sourceRevision: z.number().int().positive(), statementSha256: z.string().regex(/^[a-f0-9]{64}$/),
-  // Licensed first-sentence evidence only, not a scraped external news body.
+  // Licensed first sentence or separately cited first notice clause only.
   excerpt: z.string().min(1).max(300),
 }).superRefine((e, c) => {
   if (!e.recordedDate.startsWith("2026-") || new Set(e.relatedTeamIds).size !== e.relatedTeamIds.length) c.addIssue({ code: "custom", message: "Invalid event scope" });
@@ -27,7 +29,8 @@ export const npbPlayerEventsSchema = z.strictObject({
   schemaVersion: z.literal(1), league: z.literal("NPB"), season: z.literal(2026), coverage: z.literal("partial"),
   provider: z.literal("Wikipedia"), license: z.literal("CC-BY-SA-4.0"), observedAt: z.iso.datetime(),
   source: sourceSchema, identityInputSha256: z.string().regex(/^[a-f0-9]{64}$/), players: z.array(eventIdentitySchema).max(740), events: z.array(playerEventSchema).max(1000),
-  transformation: z.literal("Explicit dated first sentences and verified article identities; deterministic labels; no official certification, effective-date inference, AI-generated facts or canonical writes"),
+  // Retained releases/installed readers keep their original transformation.
+  transformation: z.enum([legacyEventTransformation, citedClauseEventTransformation]),
 }).superRefine((d, c) => {
   const ids = new Set(d.players.map(p => p.playerId));
   if (ids.size !== d.players.length || ["article", "npbId", "wikidataId"].some(k => new Set(d.players.map(p => p[k as "article" | "npbId" | "wikidataId"])).size !== d.players.length) || new Set(d.events.map(e => e.id)).size !== d.events.length) c.addIssue({ code: "custom", message: "Ambiguous event identity or duplicate event" });
