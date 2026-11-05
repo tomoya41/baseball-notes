@@ -46,6 +46,6 @@ export function NpbHomeLead({ now, requested, favorites, visible }: { now: numbe
       <nav className="home-context-links" aria-label="移籍と契約更改"><Link to="/NPB/moves?kind=trade"><strong>移籍・トレード</strong><small>収録された記載へ</small></Link><Link to="/NPB/moves?kind=contract_renewal"><strong>契約更改</strong><small>{events.events.some(e => e.kind === "contract_renewal") ? "収録された記載へ" : "未収録"}</small></Link></nav>
       <details className="home-tools"><summary>季節の特集</summary><NpbSeasonalHome supporting now={now}/></details>
     </section> : <><NpbSeasonalHome now={now}/>{failed && <p role="status" className="inline-note">選手の動きを読み込めません。<button onClick={() => { setFailed(false); setRetry(n => n + 1); }}>再試行</button></p>}</>}
-    {context.focus !== "series" && wantsSeries && series && <details className="home-tools" data-japan-home-archive onToggle={e => setArchive(e.currentTarget.open)}><summary>日本シリーズの収録情報</summary>{archive && <JapanSeriesHomeContent data={series} now={now} embedded/>}</details>}
+    {context.focus !== "series" && wantsSeries && series && <details className="home-tools" data-japan-home-archive onToggle={e => setArchive(e.currentTarget.open)}><summary>{series.series.clinched?"日本シリーズ総括・結果":"日本シリーズの収録情報"}</summary>{archive && <JapanSeriesHomeContent data={series} now={now} embedded/>}</details>}
   </div>;
 }

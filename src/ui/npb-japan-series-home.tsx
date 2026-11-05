@@ -18,7 +18,7 @@ export function JapanSeriesHomeContent({ data, now, embedded = false }: { data: 
   const { latest, next, awaitingResult, ties, finals, standingCompleteThroughLatest } = japanSeriesHomeSummary(data, now);
   const Heading = embedded ? "h2" : "h1";
   return <section className="japan-home" aria-labelledby="japan-home-title">
-    <header className="japan-home-heading"><Heading id="japan-home-title">日本シリーズ <small>2026</small></Heading><Link to={seriesUrl}>日程・結果 <span aria-hidden="true">›</span></Link></header>
+    <header className="japan-home-heading"><Heading id="japan-home-title">日本シリーズ <small>2026</small></Heading><Link to={seriesUrl}>{data.series.clinched?"総括・結果":"日程・結果"} <span aria-hidden="true">›</span></Link></header>
     <div className="japan-home-score">
       <p className="japan-home-caption">{latest ? `${shortDate(latest.date)} 第${latest.gameNumber}戦 · ${latest.winnerId === null ? "引き分け" : "終了"}` : "最新結果 · 未収録"}</p>
       {latest ? <Link className="japan-home-result" to={japanSeriesGameUrl(latest.gameId)} aria-label={`第${latest.gameNumber}戦 ${name(latest.awayTeamId)} ${latest.awayRuns}対${latest.homeRuns} ${name(latest.homeTeamId)}、試合詳細`}>

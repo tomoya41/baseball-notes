@@ -14,7 +14,8 @@ import { LibraryShortcuts } from "./personal-library";
 import { readNpbSeries } from "../application/npb-series-reader";
 import { readNpbCs } from "../application/npb-cs-reader";
 import { readNpbJapanSeries } from "../application/npb-japan-series-reader";
-import type { NpbJapanSeries } from "../domain/npb-japan-series";
+import { allJapanSeriesSources, type NpbJapanSeries } from "../domain/npb-japan-series";
+import { japanGameNotRequired } from "../presentation/japan-series-recap";
 import type { NpbPostseasonSeries } from "../domain/npb-postseason-series";
 import type { NpbCsDataset } from "../domain/npb-cs-observations";
 import { npbTeamShortName } from "./npb-team-names";
@@ -69,7 +70,7 @@ function NpbPostseasonDiscovery({ kind }: { kind: "series" | "game" }) {
   const wantsJapan=!stage||stage==="all"||stage==="japan_series",useCs=stage!=="japan_series"&&!failed,useJapan=wantsJapan&&!japanFailed;
   const ready=!!(useCs&&(kind==="series"?series:cs)||useJapan&&japan),fatal=stage==="japan_series"?japanFailed:wantsJapan?failed&&japanFailed:failed;
   const retry=()=>{setFailed(false);setJapanFailed(false);setAttempt(a=>a+1);};
-  const sources=[...(useCs?(kind==="series"?series?.sources:cs?.sources)??[]:[]),...(useJapan?japan?.sources??[]:[])];
+  const sources=[...(useCs?(kind==="series"?series?.sources:cs?.sources)??[]:[]),...(useJapan&&japan?allJapanSeriesSources(japan):[])];
   const allSeries=[...(useCs?series?.series??[]:[]),...(useJapan&&japan?[japan.series]:[])];
   const teams=[...new Set([...allSeries.flatMap(s=>s.teams.map(t=>t.teamId)),...(useCs?cs?.games.flatMap(g=>[g.homeTeamId,g.awayTeamId])??[]:[])])].map(id=>({id,name:npbTeamShortName(id)}));
   return <div className="screen"><PageHeading eyebrow="NPB · 2026 · ポストシーズン" title="探す"/><DiscoveryNavigation league="NPB"/>
@@ -77,7 +78,7 @@ function NpbPostseasonDiscovery({ kind }: { kind: "series" | "game" }) {
       <DiscoveryList league="NPB" teams={teams} scope="?season=2026&competition=postseason"
         message="2026年の収録予定・結果。CS勝数はアドバンテージを含みます。日本シリーズの個人成績は未収録。検索結果なしを試合なしとは判定しません。"
         series={allSeries.filter(s=>!stage||stage==="all"||s.round===stage)}
-        games={[...(useCs?cs?.games.map(g=>({id:g.id,stage:g.stage,date:g.date,home:npbTeamShortName(g.homeTeamId),away:npbTeamShortName(g.awayTeamId),homeScore:g.homeScore,awayScore:g.awayScore,state:`${g.date} · 終了`}))??[]:[]),...(useJapan?japan?.series.games.map(g=>({id:g.gameId,stage:"japan_series",date:g.date,home:npbTeamShortName(g.homeTeamId),away:npbTeamShortName(g.awayTeamId),homeScore:g.homeRuns,awayScore:g.awayRuns,state:`${g.date} · 日本シリーズ · ${g.status==="final"?"終了":g.status==="postponed"?"延期":g.status==="cancelled"?"中止":"予定・結果未収録"}`}))??[]:[])].filter(g=>(!stage||stage==="all"||g.stage===stage)&&(!date||g.date===date))}/>
+        games={[...(useCs?cs?.games.map(g=>({id:g.id,stage:g.stage,date:g.date,home:npbTeamShortName(g.homeTeamId),away:npbTeamShortName(g.awayTeamId),homeScore:g.homeScore,awayScore:g.awayScore,state:`${g.date} · 終了`}))??[]:[]),...(useJapan?japan?.series.games.map(g=>({id:g.gameId,stage:"japan_series",date:g.date,home:npbTeamShortName(g.homeTeamId),away:npbTeamShortName(g.awayTeamId),homeScore:g.homeRuns,awayScore:g.awayRuns,state:`${g.date} · 日本シリーズ · ${japanGameNotRequired(japan!,g)?"開催不要":g.status==="final"?"終了":g.status==="postponed"?"延期":g.status==="cancelled"?"中止":"予定・結果未収録"}`}))??[]:[])].filter(g=>(!stage||stage==="all"||g.stage===stage)&&(!date||g.date===date))}/>
       {japanFailed&&stage!=="japan_series"&&<p className="data-notice">日本シリーズの追加情報を取得できません。CSの収録範囲のみ表示しています。<button onClick={retry}>再試行</button></p>}
       {failed&&wantsJapan&&<p className="data-notice">CSの追加情報を取得できません。日本シリーズの収録範囲のみ表示しています。<button onClick={retry}>再試行</button></p>}
       <details><summary>出典・収録範囲</summary><p>選手成績は一部収録。日本シリーズは日程と確認済みの結果を、公式戦とは別に表示します。</p>{sources.map(s=><p key={s.pageId}><a href={`https://ja.wikipedia.org/w/index.php?curid=${s.pageId}&oldid=${s.revision}`}>Wikipedia「{s.title}」の執筆者</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a> · 原記事からの変更：勝敗・試合表の抜粋・表記整理</p>)}</details>

@@ -724,7 +724,7 @@ public class ReleaseQualityTest {
         shell("input keyevent KEYCODE_BACK");waitText("試合3勝 ＋ アドバンテージ2勝");
         assertEquals("Real system Back returns to exact series",seriesHash,js("location.hash"));
     }
-    @Test public void japanSeriesScheduledGameKeepsNullResultsAndNativeBackAtLargeFont() throws Exception {
+    @Test public void japanSeriesUnneededGameKeepsNullResultsAndNativeBackAtLargeFont() throws Exception {
         Intent link=new Intent(Intent.ACTION_VIEW,Uri.parse("baseballnotes://NPB/postseason/series/npb%3Aseries%3Afae89d8d-b1f8-5675-82e8-d9136be4f7c1?season=2026"));
         link.setClassName("com.tomoya41.baseballnotes","jp.baseballdata.app.MainActivity");
         scenario=ActivityScenario.launch(link);waitText("日程・試合詳細");waitText("4勝先取");
@@ -735,13 +735,15 @@ public class ReleaseQualityTest {
         assertEquals("No 200-percent overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));screenshot("japan-series-font-20-light");
         setTheme("dark","ダーク");js("location.hash='"+route+"'");waitText("日程・試合詳細");
         assertEquals("Dark Japan Series has no 200-percent overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));screenshot("japan-series-font-20-dark");
-        String scheduledRoute=js("Array.from(document.querySelectorAll('a.scoreboard-row')).find(a=>a.getAttribute('aria-label')?.endsWith('· 予定'))?.getAttribute('href') || ''");
-        assertFalse("Admitted snapshot still contains a scheduled Game",scheduledRoute.isEmpty());
-        js("Array.from(document.querySelectorAll('a.scoreboard-row')).find(a=>a.getAttribute('href')==='"+scheduledRoute+"').click()");waitText("結果・打撃・投球成績はまだ収録していません");
-        assertEquals("Open the exact source-admitted scheduled Game",scheduledRoute,js("location.hash"));
-        assertTrue("Scheduled Game retains Japan Series scope",js("location.hash").contains("stage=japan_series"));
-        assertEquals("Both uncollected scores stay unknown","true",js("Array.from(document.querySelectorAll('.score-hero-club>b')).length===2 && Array.from(document.querySelectorAll('.score-hero-club>b')).every(e=>e.textContent==='—')"));
+        String unneededRow="a.scoreboard-row[aria-label$='開催不要']";
+        assertEquals("All three unneeded games retain their routes","3",js("String(document.querySelectorAll(\""+unneededRow+"\").length)"));
+        String unneededRoute=js("document.querySelector(\""+unneededRow+"\").getAttribute('href')");
+        js("document.querySelector(\""+unneededRow+"\").click()");waitText("開催不要となった試合");
+        assertEquals("Open the retained Game",unneededRoute,js("location.hash"));
+        assertTrue("Unneeded Game retains Japan Series scope",js("location.hash").contains("stage=japan_series"));
+        assertEquals("Both scores remain blank","true",js("Array.from(document.querySelectorAll('.score-hero-club>b')).length===2 && Array.from(document.querySelectorAll('.score-hero-club>b')).every(e=>e.textContent==='—')"));
         assertEquals("No fabricated box score","0",js("String(document.querySelectorAll('main table').length)"));
+        assertEquals("An unplayed game cannot have an MVP","false",js("!!document.querySelector('.game-mvp')"));
         shell("input keyevent KEYCODE_BACK");waitText("日程・試合詳細");assertEquals("System Back returns to exact series",route,js("location.hash"));
     }
     private void openRecordedJapanHome() throws Exception {
@@ -752,8 +754,42 @@ public class ReleaseQualityTest {
     private void settleContextualHome() throws Exception {
         // Freeze only the test clock. The app still reads its actual immutable
         // public events/series pins; no fixture or provider response substitution.
-        js("Date.now=()=>Date.parse('2026-10-30T03:00:00Z');window.dispatchEvent(new Event('focus'))");
+        js("Date.now=()=>Date.parse('2026-10-31T03:00:00Z');window.dispatchEvent(new Event('focus'))");
         waitCondition("Fresh records precede overdue series snapshot", "document.querySelector('[data-home-focus]')?.dataset.homeFocus==='moves'");
+    }
+    @Test public void japanSeriesRecapUsesAllFourFinalsAndLinksToClincher() throws Exception {
+        Intent link = new Intent(Intent.ACTION_VIEW, Uri.parse("baseballnotes://NPB/home?homeSeason=autumn"));
+        link.setClass(InstrumentationRegistry.getInstrumentation().getTargetContext(), MainActivity.class);
+        scenario = ActivityScenario.launch(link);
+        openRecordedJapanHome();
+        assertTrue("Home links the verified fourth game", js("document.querySelector('.japan-home-result').getAttribute('href')").contains("a7485a4ae336ed934ca5"));
+        assertEquals("Completed series has no next game", "false", js("!!document.querySelector('.japan-home-next-game')"));
+        js("document.querySelector('.japan-home-heading a').click()");
+        waitText("シリーズ総括");
+        String seriesRoute = js("location.hash");
+        assertEquals("All four final scores contribute to the recap", "13|7|3試合|2試合",
+            js("Array.from(document.querySelectorAll('.series-recap-facts dd')).map(e=>e.textContent).join('|')"));
+        waitText("初戦から3試合連続で延長戦");
+        waitText("4回裏の3得点で逆転");
+        for (float scale : new float[]{1.0f, 1.5f, 2.0f}) {
+            fontScaleAndRecreate(scale); waitText("シリーズ総括"); waitViewport(360);
+            for (String theme : new String[]{"light", "dark"}) {
+                setThemeWithoutNavigation(theme, theme.equals("light") ? "ライト" : "ダーク");
+                js("document.querySelector('.series-recap').scrollIntoView()");
+                waitPaint();
+                assertEquals("Recap stays within the viewport width", "true", js("document.documentElement.scrollWidth<=innerWidth"));
+                assertEquals("Native enlargement remains applied", "true", js("Math.abs(parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--android-font-scale'))-"+scale+")<0.01"));
+                screenshot("japan-recap-360-"+theme+"-"+scale);
+            }
+        }
+        js("document.querySelector('.series-recap a').click()"); waitText("イニング別得点");
+        assertTrue("Recap goes to the exact clincher", js("location.hash").contains("a7485a4ae336ed934ca5"));
+        assertEquals("Game 4 final", "2|4", js("Array.from(document.querySelectorAll('.score-hero-club>b')).map(e=>e.textContent).join('|')"));
+        assertEquals("Bottom of the ninth was not played", "X", js("document.querySelectorAll('.inning-board__table tbody tr')[1].querySelectorAll('td')[8].textContent"));
+        waitText("試合時間 2時間33分");
+        assertEquals("Game 4 links its exact source revision", "true", js("!!document.querySelector('a[href*=\"oldid=111577168\"]')"));
+        shell("input keyevent KEYCODE_BACK"); waitText("シリーズ総括");
+        assertEquals("Native Back returns to the series", seriesRoute, js("location.hash"));
     }
     @Test public void contextualHomeUsesFreshRecordsAndHonorsSelectedViewAtAllFontSizes() throws Exception {
         scenario=ActivityScenario.launch(MainActivity.class);waitText("BASEBALL");
@@ -1330,9 +1366,8 @@ public class ReleaseQualityTest {
         openRecordedJapanHome();js("if(!document.querySelector('.japan-home-explore').open)document.querySelector('.japan-home-explore>summary').click()");
         waitCondition("Editorial CS readings","document.querySelectorAll('.spotlight-card').length===2");
         assertEquals("Masaki exact collected batting counts","8|2|3",js("Array.from(document.querySelectorAll('.spotlight-card[data-player=\"2b2a8d97-2a6e-441c-9a33-0d79d2a7d147\"] > .spotlight-numbers dd')).map(e=>e.textContent).join('|')"));
-        js("Array.from(document.querySelectorAll('.spotlight-switch button')).find(b=>b.textContent==='次戦への注目').click()");
-        waitCondition("Real saved Regular readings","!!document.querySelector('.spotlight-card[data-player=\"852bed28-a3f1-4b60-8a1f-950cc2947686\"]')");
-        assertEquals("Maki exact saved Regular counts","467|29|72",js("Array.from(document.querySelectorAll('.spotlight-card[data-player=\"852bed28-a3f1-4b60-8a1f-950cc2947686\"] > .spotlight-numbers dd')).map(e=>e.textContent).join('|')"));
+        assertEquals("Ended series does not offer a next-game outlook","false",
+            js("Array.from(document.querySelectorAll('.spotlight-switch button')).some(b=>b.textContent==='次戦への注目')"));
         fontScaleAndRecreate(2.0f);openRecordedJapanHome();js("if(!document.querySelector('.japan-home-explore').open)document.querySelector('.japan-home-explore>summary').click()");waitCondition("CS readings after recreation","document.querySelectorAll('.spotlight-card').length===2");waitViewport(360);
         assertEquals("Editorial Light 200 percent no overflow","true",js("document.documentElement.scrollWidth<=innerWidth"));screenshot("postseason-readings-font-20-light");
         setTheme("dark","ダーク");js("location.hash='#/NPB/home?homeSeason=autumn'");openRecordedJapanHome();js("if(!document.querySelector('.japan-home-explore').open)document.querySelector('.japan-home-explore>summary').click()");waitCondition("Dark CS readings","document.querySelectorAll('.spotlight-card').length===2");
