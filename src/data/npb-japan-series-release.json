@@ -1,8 +1,8 @@
 {
-  "assetUrl": "https://github.com/tomoya41/baseball-notes/releases/download/npb-japan-series-wikipedia-20261028-v4/npb-japan-series.json.gz",
-  "sha256": "52994c553d5e18f8837294371bbf04eba921cf3a90bda4d8df69ded99b8bdd82",
-  "bodySha256": "2700f60d7c34407a88266c9397bf6632fbc3044f9ec3f6edbefe4b09d479de8f",
-  "bytes": 5185,
+  "assetUrl": "https://github.com/tomoya41/baseball-notes/releases/download/npb-japan-series-wikipedia-20261031-v5/npb-japan-series.json.gz",
+  "sha256": "5a214036a3ecd662417f27dcda96082ce94a1a5fed7d84aa024b706569de8381",
+  "bodySha256": "ebc37cceb1644b91d084708429edb267a15bc88f07f4cdb9f8385a8bfa5a91ec",
+  "bytes": 6137,
   "csSeriesBodySha256": "6dacff4d1bef8aabb8a2741bdddf44e37410b440b39170ada008a02e4642b3d4",
   "seriesId": "npb:series:fae89d8d-b1f8-5675-82e8-d9136be4f7c1",
   "gameIds": [

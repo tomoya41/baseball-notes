@@ -272,6 +272,13 @@
 
 /* Japan Series: results first, with independent schedule and portrait disclosures. */
 .japan-home { margin: 0 0 12px; min-width: 0; }
+.series-recap { margin-block: 12px; padding-block: 8px; border-block: 1px solid var(--color-border); }
+.series-recap h2 { font-size: 1rem; margin: 4px 0; }
+.series-recap p { margin-block: 8px; }
+.series-recap-facts { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-block: 12px; }
+.series-recap-facts>div { flex: 1 1 120px; min-width: 0; }
+.series-recap-facts dt { font-size: .8125rem; color: var(--color-muted); }
+.series-recap-facts dd { margin: 2px 0 0; font-size: 1.125rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 .japan-home-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .japan-home-heading :is(h1,h2) { margin: 0; font-size: 1rem; }
 .japan-home-heading :is(h1,h2) small { font-size: .6875rem; font-weight: 400; color: var(--color-muted); }
