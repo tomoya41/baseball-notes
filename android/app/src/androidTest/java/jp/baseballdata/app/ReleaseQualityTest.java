@@ -764,15 +764,18 @@ public class ReleaseQualityTest {
         openRecordedJapanHome();
         assertTrue("Home links the verified fourth game", js("document.querySelector('.japan-home-result').getAttribute('href')").contains("a7485a4ae336ed934ca5"));
         assertEquals("Completed series has no next game", "false", js("!!document.querySelector('.japan-home-next-game')"));
+        // Home's disclosure also contains the words "シリーズ総括". Wait
+        // for the destination and its facts, independent of shared labels.
+        String recapRendered = "location.hash.includes('/NPB/postseason/series/') && document.querySelectorAll('.series-recap-facts dd').length===4";
         js("document.querySelector('.japan-home-heading a').click()");
-        waitText("シリーズ総括");
+        waitCondition("Series recap has rendered", recapRendered);
         String seriesRoute = js("location.hash");
         assertEquals("All four final scores contribute to the recap", "13|7|3試合|2試合",
             js("Array.from(document.querySelectorAll('.series-recap-facts dd')).map(e=>e.textContent).join('|')"));
         waitText("初戦から3試合連続で延長戦");
         waitText("4回裏の3得点で逆転");
         for (float scale : new float[]{1.0f, 1.5f, 2.0f}) {
-            fontScaleAndRecreate(scale); waitText("シリーズ総括"); waitViewport(360);
+            fontScaleAndRecreate(scale); waitCondition("Series recap survives recreation", recapRendered); waitViewport(360);
             for (String theme : new String[]{"light", "dark"}) {
                 setThemeWithoutNavigation(theme, theme.equals("light") ? "ライト" : "ダーク");
                 js("document.querySelector('.series-recap').scrollIntoView()");
@@ -790,7 +793,7 @@ public class ReleaseQualityTest {
         assertEquals("Bottom of the ninth was not played", "X", js("document.querySelectorAll('.inning-board__table tbody tr')[1].querySelectorAll('td')[8].textContent"));
         waitText("試合時間 2時間33分");
         assertEquals("Game 4 links its exact source revision", "true", js("!!document.querySelector('a[href*=\"oldid=111577168\"]')"));
-        shell("input keyevent KEYCODE_BACK"); waitText("シリーズ総括");
+        shell("input keyevent KEYCODE_BACK"); waitCondition("Back restores the series recap", recapRendered);
         assertEquals("Native Back returns to the series", seriesRoute, js("location.hash"));
     }
     @Test public void contextualHomeUsesFreshRecordsAndHonorsSelectedViewAtAllFontSizes() throws Exception {
