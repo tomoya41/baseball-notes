@@ -782,7 +782,9 @@ public class ReleaseQualityTest {
                 screenshot("japan-recap-360-"+theme+"-"+scale);
             }
         }
-        js("document.querySelector('.series-recap a').click()"); waitText("イニング別得点");
+        js("document.querySelector('.series-recap a').click()");
+        waitCondition("Clinching game and its scoreboard have rendered",
+            "location.hash.includes('a7485a4ae336ed934ca5') && !!document.querySelector('.inning-board__table') && document.querySelectorAll('.score-hero-club>b').length===2");
         assertTrue("Recap goes to the exact clincher", js("location.hash").contains("a7485a4ae336ed934ca5"));
         assertEquals("Game 4 final", "2|4", js("Array.from(document.querySelectorAll('.score-hero-club>b')).map(e=>e.textContent).join('|')"));
         assertEquals("Bottom of the ninth was not played", "X", js("document.querySelectorAll('.inning-board__table tbody tr')[1].querySelectorAll('td')[8].textContent"));
