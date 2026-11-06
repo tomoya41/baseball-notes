@@ -173,7 +173,10 @@ export async function inspectLatestScheduledAction(repository: string, token?: s
       return artifact.name === name && artifact.expired === false;
     });
     encryptedBackupArtifact = hasArtifact(`npb-facts-encrypted-${run.id}`) ? "present" : "missing";
-    calendarSkipArtifact = hasArtifact(`npb-daily-calendar-skip-${inferredTargetDate}`) ? "present" : "missing";
+    if (typeof run.run_attempt === "number" && Number.isSafeInteger(run.run_attempt) && run.run_attempt > 0) {
+      calendarSkipArtifact = hasArtifact(`npb-daily-calendar-skip-${inferredTargetDate}-${run.run_attempt}`) ?
+        "present" : "missing";
+    }
   }
   return {runId:run.id,startedAt:run.run_started_at,conclusion:run.conclusion,
     url:run.html_url,inferredTargetDate,encryptedBackupArtifact,calendarSkipArtifact};

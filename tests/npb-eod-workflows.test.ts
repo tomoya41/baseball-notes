@@ -39,7 +39,7 @@ test("only the scheduled calendar skip uses a dated lifecycle artifact", () => {
   const name = step?.with?.name;
   expect(name).toContain("github.event_name == 'schedule'");
   expect(name).toContain("steps.safety.outputs.calendar_skip == 'true'");
-  expect(name).toContain("format('npb-daily-calendar-skip-{0}', steps.safety.outputs.target_date)");
+  expect(name).toContain("format('npb-daily-calendar-skip-{0}-{1}', steps.safety.outputs.target_date, github.run_attempt)");
   expect(step?.with?.path).toBe(".data/eod");
 });
 

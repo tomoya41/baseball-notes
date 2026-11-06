@@ -71,7 +71,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ github.event_name == 'schedule' && steps.safety.outputs.calendar_skip == 'true' && format('npb-daily-calendar-skip-{0}', steps.safety.outputs.target_date) || 'npb-daily-lifecycle' }}
+          name: ${{ github.event_name == 'schedule' && steps.safety.outputs.calendar_skip == 'true' && format('npb-daily-calendar-skip-{0}-{1}', steps.safety.outputs.target_date, github.run_attempt) || 'npb-daily-lifecycle' }}
           path: .data/eod
           retention-days: 7
           if-no-files-found: ignore

@@ -162,19 +162,20 @@ describe("NPB daily health",()=>{
   it("finds the scheduled Action and its encrypted Artifact",async()=>{
     const request=(async(input:RequestInfo|URL)=>new Response(JSON.stringify(String(input).includes("/artifacts?") ?
       {artifacts:[{name:"npb-facts-encrypted-42",expired:false}]} :
-      {workflow_runs:[{id:42,run_started_at:"2026-09-26T00:00:00Z",conclusion:"success",html_url:"https://example.test/42"}]}))) as typeof fetch;
+      {workflow_runs:[{id:42,run_attempt:1,run_started_at:"2026-09-26T00:00:00Z",conclusion:"success",html_url:"https://example.test/42"}]}))) as typeof fetch;
     expect(await inspectLatestScheduledAction("owner/repo",undefined,request)).toMatchObject({runId:42,
       inferredTargetDate:"2026-09-25",encryptedBackupArtifact:"present",calendarSkipArtifact:"missing"});
   });
   it.each([
-    ["npb-daily-calendar-skip-2026-09-25", false, "present"],
-    ["npb-daily-calendar-skip-2026-09-24", false, "missing"],
-    ["npb-daily-calendar-skip-2026-09-25", true, "missing"],
+    ["npb-daily-calendar-skip-2026-09-25-2", false, "present"],
+    ["npb-daily-calendar-skip-2026-09-24-2", false, "missing"],
+    ["npb-daily-calendar-skip-2026-09-25-2", true, "missing"],
+    ["npb-daily-calendar-skip-2026-09-25-1", false, "missing"],
     ["npb-daily-lifecycle", false, "missing"],
   ] as const)("checks dated calendar skip artifact %s (expired: %s)", async (name, expired, expected) => {
     const request: typeof fetch = async input => Response.json(String(input).includes("/artifacts?") ?
       { artifacts: [{ name, expired }] } :
-      { workflow_runs: [{ id: 42, run_started_at: "2026-09-26T00:00:00Z", conclusion: "success", html_url: "https://example.test/42" }] });
+      { workflow_runs: [{ id: 42, run_attempt: 2, run_started_at: "2026-09-26T00:00:00Z", conclusion: "success", html_url: "https://example.test/42" }] });
     expect(await inspectLatestScheduledAction("owner/repo", undefined, request)).toMatchObject({
       encryptedBackupArtifact: "missing", calendarSkipArtifact: expected,
     });
