@@ -12,6 +12,14 @@ Tursoから最新scheduled Day Run、最新Day Run、期待日のDay Run、最�
 
 ログにはUTC/JST双方の検査時刻、期待/公開日付、HTTP状態、Day状態・試合/Fact件数、Backup状態、GitHub scheduled RunとArtifact状態をJSONで残す。Turso SecretやBackup鍵はログへ出さない。GitHub Actions failureを第一通知として使い、Issue自動生成はしない。
 
+### 収集対象外の日の切り分け
+
+Dailyの定時実行が確認済み公式戦カレンダーの範囲外で、対象日に保存試合がないことを確認してスキップした場合、従来のライフサイクルレポートを `npb-daily-calendar-skip-YYYY-MM-DD-<run attempt>` の名前で保持する。同日の定時Runが成功し、その最新試行の未失効Artifactがあり、監視側のDB確認でも対象試合・カレンダーの矛盾がなければ `collectionStatus=calendar_skip_verified` と記録する。Artifactを確認できない場合は `calendar_skip_unverified`、保存試合と日程が矛盾する場合は `calendar_review_required`、対象の定時Runが失敗した場合は `scheduled_failure`。JSONとActionsの実行サマリーから収集状態と公開鮮度を別々に確認できる。
+
+対象外スキップの確認後も前日基準の `stale` と期限後のfailureを維持する。公開日がDBの保存日と一致する場合は鮮度の遅れをCollector障害に帰さない。公開日がDBより古ければ配信工程を、HTTPやJSON検証が失敗すれば配信先を調査する。暗号化Fact Backup、保存スナップショットの保持確認、HOTの定時収集証拠はそれぞれ独立の判定を維持する。
+
+新年度も日付を入力とするHOTの7日集計と鮮度判定を使う。年度のカレンダーとSourceを採用した後、最初の収集対象期間でCoverage・部門別の出場条件・定時Run・暗号化Artifact・HTTP readbackを照合する。SeasonとRecordsの固定年度のパス・schemaは、既存2026年の公開先を保持したうえで新年度の配信先を追加する別の変更で扱う。
+
 ## 実行と修復
 
 ローカルの公開URL確認：`npm run monitor:npb:freshness`。GitHubでは`NPB published data freshness`を`workflow_dispatch`で起動し、TursoのSecretを含めた診断を確認する。正午の定刻Workflowは独立しているためDaily CollectorにRun自体が無くても公開日付の遅れを検知できる。
