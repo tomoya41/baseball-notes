@@ -11,6 +11,7 @@ import { readNpbGameDateIndex } from "../src/application/npb-game-date-index-rea
 import pin from "../src/data/npb-game-date-index-release.json";
 import { createHash, webcrypto } from "node:crypto";
 import { createPublicFetch } from "../src/infrastructure/public-response-cache";
+import { mvpFixture } from "./fixtures/daily-mvp";
 
 const gameId = "npb:game:49a69ad2efd3bf67d3e5";
 const index = {schemaVersion:1,league:"NPB",competition:"regular",effectiveDate:"2026-10-12",generatedAt:"2026-10-14T15:05:03.165Z",dates:{[gameId]:"2026-10-08"}};
@@ -132,5 +133,31 @@ it("keeps a successful complete/cached API response and player links without con
     expect(summaryFind).not.toHaveBeenCalled();
     expect(host.textContent).toContain("ボックススコア");
     expect(host.textContent).not.toContain("現在取得できません");
+  } finally { await act(async () => root.unmount()); vi.unstubAllGlobals(); }
+});
+
+it("never shows the previous game's box score or MVP while another game loads", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const host = document.createElement("div"), root = createRoot(host);
+  const first = mvpFixture().game;
+  const nextId = "npb:game:bbbbbbbbbbbbbbbbbbbb";
+  let failNext!: (reason: Error) => void;
+  const next = new Promise<null>((_resolve, reject) => { failNext = reject; });
+  const find = vi.fn((id: string) => id === first.gameId ? Promise.resolve(first) : next);
+  const summaryFind = vi.fn();
+  try {
+    await act(async () => root.render(<MemoryRouter initialEntries={[`/NPB/games/${first.gameId}`]}>
+      <nav><Link to={`/NPB/games/${nextId}`}>次の試合</Link><Link to={`/NPB/games/${first.gameId}`}>最初の試合</Link></nav>
+      <Routes><Route path="/NPB/games/:gameId" element={<NpbGameDetailScreen repository={{ find }} summaryRepository={{ find: summaryFind }} />} /></Routes>
+    </MemoryRouter>));
+    expect(host.querySelector(".game-mvp__player")).not.toBeNull();
+    await act(async () => host.querySelector<HTMLAnchorElement>("nav a")!.click());
+    expect(host.querySelector('[aria-label="試合詳細の読み込み中"]')).not.toBeNull();
+    expect(host.querySelector(".game-mvp")).toBeNull();
+    expect(host.textContent).not.toContain("架空打者");
+    await act(async () => host.querySelector<HTMLAnchorElement>("nav a:nth-child(2)")!.click());
+    await act(async () => failNext(new Error("HTTP 503")));
+    expect(host.querySelector(".game-mvp__player")).not.toBeNull();
+    expect(summaryFind).not.toHaveBeenCalled();
   } finally { await act(async () => root.unmount()); vi.unstubAllGlobals(); }
 });

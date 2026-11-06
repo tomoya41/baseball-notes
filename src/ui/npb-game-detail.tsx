@@ -87,7 +87,7 @@ export function NpbGameDetailScreen(props:GameScreenProps){
   if(gameId&&japanPin.gameIds.includes(gameId)||params.get("competition")==="postseason"&&params.get("stage")==="japan_series")return <Suspense fallback={<LoadingSkeleton/>}><JapanGame key={gameId} gameDetail/></Suspense>;
   if(gameId&&admittedCsGameIds.includes(gameId)||params.get("competition")==="postseason")return <Suspense fallback={<LoadingSkeleton />}><CsGame key={gameId} /></Suspense>;
   if(params.has("competition")&&params.get("competition")!=="regular"||params.has("stage"))return <DataState kind="unsupported" title="公式戦の試合を指定してください" />;
-  return <NpbRegularGameDetailScreen {...props} />;
+  return <NpbRegularGameDetailScreen key={gameId} {...props} />;
 }
 export function PublishedGameSummaryView({ summary, retry }: { summary: PublishedGameSummary; retry: () => void }) {
   const { game } = summary;
@@ -121,6 +121,7 @@ function NpbRegularGameDetailScreen({ repository, summaryRepository, services, f
     void repository.find(gameId).then((value) => {
       if (active) { setPayload(value); setState(value ? "ready" : "missing"); }
     }).catch(async () => {
+      if (!active) return;
       const saved = await summaryRepository?.find(gameId, dateHint).catch(() => null);
       if (active) { setSummary(saved ?? null); setState("error"); }
     });
