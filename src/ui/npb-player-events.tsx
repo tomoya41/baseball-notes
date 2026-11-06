@@ -26,7 +26,7 @@ function ClubNews({ team }: { team: string | null }) {
 }
 function EventEvidence({ event: e, dataset, selected = false }: { event: PlayerEvent; dataset: NpbPlayerEvents; selected?: boolean }) {
   const p = dataset.players.find(p => p.playerId === e.playerId)!;
-  return <details open={selected || undefined}><summary>記載内容・出典</summary><p>{e.excerpt}</p><p className="inline-note">原記事からの変更：該当文の抜粋・分類とリンク・脚注の省略。実施日・契約期間・現在の状態を示すものではありません。</p>
+  return <details open={selected || undefined}><summary>記載内容・出典</summary><p>{e.excerpt}</p><p className="inline-note">原文を抜粋・分類し、リンクと脚注を省略。文の一部を抜き出す際は原文の主語を補っています。</p>
     <a href={`https://ja.wikipedia.org/w/index.php?curid=${dataset.source.pageId}&oldid=${e.sourceRevision}`} target="_blank" rel="noreferrer">元記事のこの版・執筆者</a><span> · </span><a href={`https://ja.wikipedia.org/w/index.php?title=${encodeURIComponent(p.article)}&oldid=${p.identityRevision}`} target="_blank" rel="noreferrer">選手ID照合の記事</a>
     <p className="inline-note"><a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a> · 記載文・分類データにも同じ条件が適用されます。</p></details>;
 }
