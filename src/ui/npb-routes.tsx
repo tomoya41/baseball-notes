@@ -23,6 +23,7 @@ import { NpbTeamCompare, SeasonCompare } from "./team-season-compare";
 import { NpbLifecycleExplorer } from "./npb-lifecycle";
 import { needsNpbSeasonEntry } from "../domain/npb-season-entry";
 import { NpbSeasonEntry } from "./npb-season-entry";
+import { NpbFollowedEventRecords } from "./npb-followed-event-records";
 const NpbCsScreen = lazy(()=>import("./npb-cs").then(m=>({default:m.NpbCsScreen})));
 const NpbPostseasonScreen = lazy(()=>import("./npb-postseason").then(m=>({default:m.NpbPostseasonScreen})));
 const NpbPlayerEventsScreen = lazy(()=>import("./npb-player-events").then(m=>({default:m.NpbPlayerEventsScreen})));
@@ -76,7 +77,15 @@ export function NpbRoutes({ services, favorites, toggle, saving }: { services: S
     <Route path="awards" element={<HonorsScreen league="NPB"/>}/>
     <Route path="records" element={<NpbRecordsScreen repository={services.gameSurface} />} />
     <Route path="ranking" element={<Navigate to="/NPB/records" replace />} />
-    <Route path="my" element={<div className="screen"><header><p className="eyebrow">NPB / My</p><h1>My</h1></header>{favorites.some(f => f.league === "NPB") ? <><NpbPersonalDashboard services={services} favorites={favorites} toggle={toggle} saving={saving} /><NpbSavedPlayers heading={false} repository={services.directory} favorites={favorites} toggle={toggle} saving={saving} /></> : <section className="my-start"><p>選手・球団をフォローすると、ここで成績や変化を追えます。</p><div className="hub-links"><Link to="/NPB/search">選手を探す →</Link><Link to="/NPB/teams">球団を探す →</Link></div></section>}<Link className="section-action" to="/NPB/moves?follow=1">フォローに関連する選手の動き →</Link><MyLibrary league="NPB" /></div>} />
+    <Route path="my" element={<div className="screen">
+      <header><p className="eyebrow">NPB / My</p><h1>My</h1></header>
+      <NpbFollowedEventRecords favorites={favorites} />
+      {favorites.some(f => f.league === "NPB") ? <>
+        <NpbPersonalDashboard services={services} favorites={favorites} toggle={toggle} saving={saving} />
+        <NpbSavedPlayers heading={false} repository={services.directory} favorites={favorites} toggle={toggle} saving={saving} />
+      </> : <section className="my-start"><p>選手・球団をフォローすると、ここで成績や変化を追えます。</p><div className="hub-links"><Link to="/NPB/search">選手を探す →</Link><Link to="/NPB/teams">球団を探す →</Link><Link to="/NPB/moves">選手の動き →</Link></div></section>}
+      <MyLibrary league="NPB" />
+    </div>} />
     <Route path="favorites" element={<Navigate to="/NPB/my" replace />} />
     <Route path="players" element={<Navigate to="/NPB/search" replace />} />
     <Route path="*" element={<Navigate to="/NPB/home" replace />} />

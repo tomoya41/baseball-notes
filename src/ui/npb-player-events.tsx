@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import type { Favorite } from "../domain/models";
-import { playerEventKinds, playerEventLabels, type NpbPlayerEvents, type PlayerEvent } from "../domain/npb-player-events";
+import { isFollowedNpbEvent, playerEventKinds, playerEventLabels, type NpbPlayerEvents, type PlayerEvent } from "../domain/npb-player-events";
 import { readNpbPlayerEvents } from "../application/npb-player-events-reader";
 import { npbEventQuery } from "../domain/npb-event-query";
 import { normalizePlayerSearch } from "../domain/npb-player-directory";
@@ -24,18 +24,28 @@ function ClubNews({ team }: { team: string | null }) {
   const clubs: [string,string][] = team && clubNewsUrl(team) ? [[team.slice(9), clubNewsUrl(team)!]] : Object.entries(npbClubNews);
   return <section className="club-news-panel" aria-label="契約更改の球団発表"><h2>球団発表を確認</h2><p className="inline-note">最新情報は各球団の公式ニュースへ。</p><ul className="club-official-news">{clubs.map(([id,url])=><li key={id}><a href={url} target="_blank" rel="noreferrer">{names[id]} ↗</a></li>)}</ul></section>;
 }
-function EventEvidence({ event: e, dataset }: { event: PlayerEvent; dataset: NpbPlayerEvents }) {
+function EventEvidence({ event: e, dataset, selected = false }: { event: PlayerEvent; dataset: NpbPlayerEvents; selected?: boolean }) {
   const p = dataset.players.find(p => p.playerId === e.playerId)!;
-  return <details><summary>記載内容・出典</summary><p>{e.excerpt}</p><p className="inline-note">原記事からの変更：該当文の抜粋・分類とリンク・脚注の省略。実施日・契約期間・現在の状態を示すものではありません。</p>
+  return <details open={selected || undefined}><summary>記載内容・出典</summary><p>{e.excerpt}</p><p className="inline-note">原記事からの変更：該当文の抜粋・分類とリンク・脚注の省略。実施日・契約期間・現在の状態を示すものではありません。</p>
     <a href={`https://ja.wikipedia.org/w/index.php?curid=${dataset.source.pageId}&oldid=${e.sourceRevision}`} target="_blank" rel="noreferrer">元記事のこの版・執筆者</a><span> · </span><a href={`https://ja.wikipedia.org/w/index.php?title=${encodeURIComponent(p.article)}&oldid=${p.identityRevision}`} target="_blank" rel="noreferrer">選手ID照合の記事</a>
     <p className="inline-note"><a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a> · 記載文・分類データにも同じ条件が適用されます。</p></details>;
 }
 
+function usePlayerEvents(enabled = true) {
+  const [dataset, setDataset] = useState<NpbPlayerEvents | null>(null), [failed, setFailed] = useState(false), [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    if (!enabled) return;
+    let active = true;
+    void readNpbPlayerEvents().then(d => { if (active) { setDataset(d); setFailed(false); } }).catch(() => { if (active) setFailed(true); });
+    return () => { active = false; };
+  }, [attempt, enabled]);
+  return { dataset, failed, retry: () => { setFailed(false); setAttempt(n => n + 1); } };
+}
+
 /** Loaded only when the player-context disclosure is opened. No profile/roster mutation. */
 export function NpbPlayerEventHistoryBody({ playerId }: { playerId: string }) {
-  const [dataset, setDataset] = useState<NpbPlayerEvents | null>(null), [failed, setFailed] = useState(false), [attempt, setAttempt] = useState(0);
-  useEffect(() => { let active = true; void readNpbPlayerEvents().then(d => { if (active) { setDataset(d); setFailed(false); } }).catch(() => { if (active) setFailed(true); }); return () => { active = false; }; }, [attempt]);
-  if (failed) return <><DataState kind="source-unavailable" title="選手の動きを読み込めません" /><button onClick={() => { setFailed(false); setAttempt(n => n + 1); }}>選手の動きを再試行</button></>;
+  const { dataset, failed, retry } = usePlayerEvents();
+  if (failed) return <><DataState kind="source-unavailable" title="選手の動きを読み込めません" /><button onClick={retry}>選手の動きを再試行</button></>;
   if (!dataset) return <LoadingSkeleton />;
   const records = dataset.events.filter(e => e.playerId === playerId).slice().sort((a, b) => b.recordedDate.localeCompare(a.recordedDate) || a.id.localeCompare(b.id));
   return <><p className="inline-note">2026年のWikipedia記事の一部です。日付は記事記載で、公式発表の直接確認・現在の所属や登録の認定ではありません。</p>
@@ -43,23 +53,44 @@ export function NpbPlayerEventHistoryBody({ playerId }: { playerId: string }) {
     <p className="inline-note">戦力外通告・自由契約・引退発表は別の出来事です。一つから別の状態を推定しません。</p><Link to={`/NPB/moves?player=${playerId}`}>この選手の動きを一覧で見る →</Link></>;
 }
 
+export function NpbFollowedEventRecordsBody({ favorites }: { favorites: readonly Favorite[] }) {
+  const { dataset, failed, retry } = usePlayerEvents();
+  if (failed) return <><p role="status">記事記録を読み込めません。</p><button type="button" onClick={retry}>再試行</button></>;
+  if (!dataset) return <LoadingSkeleton />;
+  const records = dataset.events.filter(e => isFollowedNpbEvent(e, favorites))
+    .sort((a, b) => b.recordedDate.localeCompare(a.recordedDate) || a.id.localeCompare(b.id));
+  return <>
+    <p className="inline-note"><a href={dataset.source.url}>Wikipediaの記事記録</a> · 一部収録 · {new Date(dataset.observedAt).toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo" })}取得 · <a href={dataset.source.licenseUrl}>CC BY-SA 4.0</a></p>
+    {records.length ? <ol className="row-list">{records.slice(0, 3).map(e => {
+      const player = dataset.players.find(p => p.playerId === e.playerId)!;
+      const query = new URLSearchParams({ player: e.playerId, event: e.id });
+      return <li key={e.id}><Link className="player-row" to={`/NPB/moves?${query}`}><span className="player-row__body">
+        <strong>{player.name}</strong><small>{playerEventLabels[e.kind]} · {e.relatedTeamIds.map(clubName).join("・")}</small>
+      </span><time dateTime={e.recordedDate}>{e.recordedDate.slice(5).replace("-", "/")}</time></Link></li>;
+    })}</ol> : <p>フォローに関連する記事記載は未収録です。</p>}
+    <Link className="section-action" to="/NPB/moves?follow=1">関連する記事記録をすべて見る →</Link>
+  </>;
+}
+
 export function NpbPlayerEventsScreen({ favorites = [] }: { favorites?: Favorite[] }) {
-  const [params, setParams] = useSearchParams(), [dataset, setDataset] = useState<NpbPlayerEvents | null>(null), [failed, setFailed] = useState(false), [attempt, setAttempt] = useState(0);
-  const { valid, kind, team, direction, player, query, follow, requestedPage } = npbEventQuery(params);
-  useEffect(() => { if (!valid) return; let active = true; void readNpbPlayerEvents().then(d => { if (active) { setDataset(d); setFailed(false); } }).catch(() => { if (active) setFailed(true); }); return () => { active = false; }; }, [attempt, valid]);
+  const [params, setParams] = useSearchParams();
+  const { valid, kind, team, direction, player, event, query, follow, requestedPage } = npbEventQuery(params);
+  const { dataset, failed, retry } = usePlayerEvents(valid);
   const change = (key: string, value: string) => setParams(previous => eventFilter(previous, key, value));
   const matching = dataset?.events.filter(e =>
     (!kind || e.kind === kind) &&
     (!team || (direction ? e[direction === "in" ? "toTeamId" : "fromTeamId"] === team : e.relatedTeamIds.includes(team))) &&
     (!player || e.playerId === player) &&
+    (!event || e.id === event) &&
     (!query || normalizePlayerSearch(dataset.players.find(p => p.playerId === e.playerId)!.name).includes(normalizePlayerSearch(query))) &&
-    (!follow || favorites.some(f => f.league === "NPB" && (f.kind === "player" ? f.entityId === e.playerId : e.relatedTeamIds.includes(f.entityId))))
+    (!follow || isFollowedNpbEvent(e, favorites))
   ) ?? [];
   const page = Math.min(Number(requestedPage), Math.max(1, Math.ceil(matching.length / 15))), visible = matching.slice((page - 1) * 15, page * 15);
   return <div className="screen"><PageHeading eyebrow="NPB · 2026年の記事記載" title="選手の動き" detail="移籍・退団・引退・契約更改の記録。" />
     <p className="data-notice">Wikipedia記事の一部収録です。公式発表の直接確認・現在の所属や登録の認定ではありません。</p>
-    {!valid ? <DataState kind="unsupported" title="年度・選手・球団・絞り込み条件を確認してください" /> : failed ? <><DataState kind="source-unavailable" title="選手の動きを読み込めません" /><button type="button" onClick={() => { setFailed(false); setAttempt(n => n + 1); }}>再試行</button></> : !dataset ? <LoadingSkeleton /> : <>
+    {!valid ? <DataState kind="unsupported" title="年度・選手・球団・絞り込み条件を確認してください" /> : failed ? <><DataState kind="source-unavailable" title="選手の動きを読み込めません" /><button type="button" onClick={retry}>再試行</button></> : !dataset ? <LoadingSkeleton /> : <>
       <p className="inline-note">{dataset.events.length}件・{dataset.players.length}選手 · 原記事取得 {new Date(dataset.observedAt).toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo" })}</p>
+      {event && <button type="button" className="text-button" onClick={() => change("event", "")}>この記録の指定を解除</button>}
       <nav className="event-topics" aria-label="選手の動きの種類">{([["","すべて"],["contract_renewal","契約更改"],["trade","トレード"],["nonrenewal_notice","戦力外"],["release","自由契約"],["retirement_announcement","引退"]] as const).map(([value,label])=><Link key={value} to={`?${eventFilter(params,"kind",value)}`} aria-current={(kind??"")===value?"page":undefined}>{label}</Link>)}</nav>
       {team && kind === "trade" && <nav className="event-topics event-directions" aria-label={`${clubName(team)}のトレード方向`}>
         <strong>{clubName(team)}</strong>
@@ -75,7 +106,7 @@ export function NpbPlayerEventsScreen({ favorites = [] }: { favorites?: Favorite
       {!matching.length ? <DataState kind="no-data" title={kind==="contract_renewal"?"契約更改の記録は未収録です":follow ? "フォローに関連する記事記載は未収録です" : "この条件の記事記載は未収録です"} detail="出来事がなかった、移籍していない、という意味ではありません。" /> : <><p role="status">{matching.length}件 · {page}ページ</p><div className="row-list">{visible.map(e => { const p = dataset.players.find(p => p.playerId === e.playerId)!; return <article className="explorer-result" key={e.id}>
         <p className="inline-note">{e.recordedDate} · 出来事の日付（記事記載）</p><h2><Link to={`/NPB/players/${e.playerId}`}>{p.name}</Link> · {playerEventLabels[e.kind]}</h2>
         <p>{e.kind === "trade" ? `${clubName(e.fromTeamId!)} → ${clubName(e.toTeamId!)}（金銭トレードの記載）` : `${e.relatedTeamIds.map(clubName).join("・")}に関する記事記載`}</p>
-        <EventEvidence event={e} dataset={dataset} />
+        <EventEvidence event={e} dataset={dataset} selected={event === e.id} />
         <div className="hub-links"><Link to={`/NPB/players/${e.playerId}`}>選手ページ →</Link>{e.relatedTeamIds.map(t => <Link key={t} to={`/NPB/teams/${t}`}>{clubName(t)} →</Link>)}</div>
       </article>; })}</div><nav className="explorer-pagination" aria-label="選手の動きのページ"><button disabled={page <= 1} onClick={() => change("page", String(page - 1))}>前へ</button><span>{page} / {Math.ceil(matching.length / 15)}</span><button disabled={page * 15 >= matching.length} onClick={() => change("page", String(page + 1))}>次へ</button></nav></>}
       {kind==="contract_renewal"&&<ClubNews team={team}/>}

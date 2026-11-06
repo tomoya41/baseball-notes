@@ -6,6 +6,10 @@
 
 First observation, newly tracked entities and preference changes establish a quiet baseline. Later successful reads compare normalized values against the preceding check. Wording is “前回確認時からデータ上変化” / “新しく確認できた試合記録”; observation time never claims an actual event time. An initial release smoke with unchanged real data correctly produces no alerts; synthetic change cases are covered only by tests.
 
+NPBのMyとWatchでは、フォロー中の選手・球団に関連する記事記録を任意で開ける。
+公開済みのWikipedia年表から記載日順に最大3件を表示し、選手UUIDと記録IDでその記載と出典を開く。
+開く前の追加取得は0件。記事記録を開いてもWatchの既読数・確認状態や保存形式は変わらない。
+
 `WatchObservation` contains league, canonical player/team identity (local view identity for Saved Views), rule, season, competition, projection content key, effectiveDate, generatedAt where available, eventDate, Coverage, compact numeric observations, observation timestamp and canonical detail route. No raw Facts/PA, search terms, source credentials or analytics are stored. Saved-condition membership stores canonical IDs (max 100) and a conditions fingerprint, not the query text. View labels remain local.
 
 ## Rules / independent availability

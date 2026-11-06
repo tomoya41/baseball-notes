@@ -9,6 +9,7 @@ import { PersonalWatchContext } from "./personal-watch-context";
 import { LibraryContext } from "./personal-library-context";
 import { publicFallbackRevision, publicNetworkOnline } from "../app/mobile-services";
 import { LoadingSkeleton, PageHeading, MetricLabel } from "./components";
+import { NpbFollowedEventRecords } from "./npb-followed-event-records";
 
 const labels: [keyof WatchPreferences, string][] = [["players","お気に入り選手の試合記録"],["teams","お気に入り球団の試合記録・保存済み次戦"],["recent","直近成績の変化・過去のHOT／月間候補"],["streaks","確認できる連続記録"],["milestones","シーズンの節目"],["postseason","過去シリーズの変化"],["collections","コレクション内の選手"],["savedViews","保存した直近成績の条件に新しく該当"]];
 export function WatchCenter({ league, services, favorites, ready }: { league: League; services: Services; favorites: Favorite[]; ready: boolean }) {
@@ -37,6 +38,7 @@ export function WatchCenter({ league, services, favorites, ready }: { league: Le
   const visible = alerts.filter(a=>filter !== "unread" || !a.read);
   return <div className="screen watch-center"><PageHeading eyebrow={`${league} · ${league === "MLB" ? "過去シーズン" : "保存済みデータ"}`} title="フォローの変化" /><Link className="back-link" to={`/${league}/my`}>← My</Link>
     <p className="inline-note">前回確認時からデータ上変化。アプリで取得した際に検出します。リアルタイム・バックグラウンド通知ではありません。</p>
+    {league === "NPB" && <NpbFollowedEventRecords favorites={favorites} />}
     <div className="list-heading"><strong>{unread} 未読</strong><button onClick={() => void evaluate()} disabled={busy || !ctx.state || !library?.state || !ready}>{busy ? "確認中…" : "データを確認"}</button><button disabled={!unread || busy} onClick={()=>void ctx.run(()=>ctx.store.markRead(undefined,league))}>すべて既読</button></div>
     {message && <p role="status" className="data-notice">{message}</p>}{ctx.error && <p role="alert" className="data-notice">{ctx.error}</p>}{library?.error && <p role="alert">保存条件・Collectionsを読み込めません。{library.error}</p>}
     {!ctx.state && !ctx.error && <LoadingSkeleton />}

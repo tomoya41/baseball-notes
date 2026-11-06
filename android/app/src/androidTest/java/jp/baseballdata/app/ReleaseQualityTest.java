@@ -1003,6 +1003,40 @@ public class ReleaseQualityTest {
             }
         }
     }
+    @Test public void myFollowedArticleRecordsOpenExactEvidenceAtAllFontSizes() throws Exception {
+        String playerId = "3deea6d2-3347-430e-93c3-26ca2ebf15fa";
+        Intent link = new Intent(Intent.ACTION_VIEW, Uri.parse("baseballnotes://NPB/players/" + playerId));
+        link.setClass(InstrumentationRegistry.getInstrumentation().getTargetContext(), MainActivity.class);
+        scenario = ActivityScenario.launch(link);
+        waitCondition("Verified player has a favorite control", "!!document.querySelector('.player-identity .favorite-button')");
+        js("(()=>{const b=document.querySelector('.player-identity .favorite-button');if(b.getAttribute('aria-pressed')==='false')b.click()})()");
+        waitCondition("Favorite was saved", "document.querySelector('.player-identity .favorite-button')?.getAttribute('aria-pressed')==='true'");
+        js("document.querySelector('.bottom-nav a[href$=\"/NPB/my\"]').click()");
+        String myPanel = ".npb-followed-event-records";
+        String records = "Array.from(document.querySelectorAll('" + myPanel + " .player-row')).find(a=>a.textContent.includes('杉浦稔大'))";
+        waitCondition("My shows the followed-record disclosure", "location.hash==='#/NPB/my' && !!document.querySelector('" + myPanel + "')");
+        assertEquals("Article records are not loaded until requested", "false", js("!!document.querySelector('" + myPanel + " .player-row')"));
+        for (float scale : new float[]{1.0f, 1.5f, 2.0f}) {
+            if (scale != 1.0f) fontScaleAndRecreate(scale);
+            waitCondition("My disclosure survives recreation", "!!document.querySelector('" + myPanel + "')");
+            js("(()=>{const d=document.querySelector('" + myPanel + "');if(!d.open)d.querySelector('summary').click()})()");
+            waitCondition("Exact followed player from the published chronology", "!!(" + records + ")");
+            waitViewport(360);
+            for (String theme : new String[]{"light", "dark"}) {
+                setThemeWithoutNavigation(theme, theme.equals("light") ? "ライト" : "ダーク");
+                js("document.querySelector('" + myPanel + "').scrollIntoView()");
+                waitPaint();
+                assertEquals("Followed records have no horizontal overflow", "true", js("document.documentElement.scrollWidth<=innerWidth"));
+                screenshot("npb-my-event-360-"+theme+"-"+scale);
+            }
+        }
+        js("(" + records + ").click()");
+        waitCondition("Exact article record and its evidence have loaded",
+            "location.hash.startsWith('#/NPB/moves?') && new URLSearchParams(location.hash.split('?')[1]).get('player')==='" + playerId + "' && new URLSearchParams(location.hash.split('?')[1]).has('event') && document.querySelectorAll('.explorer-result').length===1 && !!document.querySelector('.explorer-result details[open] a[href*=\"oldid=" + NPB_EVENT_SOURCE_REVISION + "\"]')");
+        assertTrue("Shows the trade from the original dated article", js("document.querySelector('.explorer-result').textContent").contains("日本ハム → 中日"));
+        shell("input keyevent KEYCODE_BACK");
+        waitCondition("Native Back returns to My", "location.hash==='#/NPB/my' && !!document.querySelector('" + myPanel + "')");
+    }
     @Test public void offseasonClubTradeDirectionsUseTheAdmittedArticleAtAllFontSizes() throws Exception {
         Intent link = new Intent(Intent.ACTION_VIEW, Uri.parse("baseballnotes://NPB/moves?kind=trade&team=npb:team:dragons&direction=in"));
         link.setClass(InstrumentationRegistry.getInstrumentation().getTargetContext(), MainActivity.class);

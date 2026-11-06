@@ -60,7 +60,7 @@ export function portableRoute(path: string, search = ""): string | null {
   }
   if (league === "NPB" && resource === "moves" && parts.length === 2) {
     if (!npbEventQuery(source).valid) return null;
-    for (const key of ["season", "kind", "team", "direction", "player", "q", "page", "follow"]) { const value = source.get(key); if (value) clean.set(key, value); }
+    for (const key of ["season", "kind", "team", "direction", "player", "event", "q", "page", "follow"]) { const value = source.get(key); if (value) clean.set(key, value); }
     return `${path}${clean.size ? `?${clean}` : ""}`;
   }
   if(league==="NPB"&&resource==="games"&&(source.get("competition")==="postseason"||japanPin.gameIds.includes(decodeSafe(parts[2]??"")))){
