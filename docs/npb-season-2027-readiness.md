@@ -6,6 +6,14 @@
 
 新年度の実データを有効化するには、許諾されたSource、年度別calendar/competition、canonical照合、Coverage/公開条件、検証済みのsnapshotを別途レビューする。2026年のGateやnf3契約をコピーしない。バックエンドも未確認calendarをDB接続前に拒否する。
 
+## 公式発表とアプリ収録の境界（2026-11-07確認）
+
+セ・パ公式戦の2027年3月26日開幕予定と、11月4日のセ・リーグ公式戦・交流戦の発表を既存の年度入口で案内する。公式サイトで確認できる日程と、アプリへの採用、結果・成績の取得は別の状態。[年間行事予定](https://npb.jp/event/2027/)・[日程一覧](https://npb.jp/games/2027/)・[セ・リーグ発表](https://npb.jp/news/detail/20261104_03.html)・[交流戦発表](https://npb.jp/news/detail/20261104_02.html)
+
+- 未承認年度では公式リンクのみ表示する。日程表、開始時刻、予告先発を取り込まない。手動の収集・日次収集・日次dry-runも、予定収集と同じ承認済み年度をDB初期化前に確認する。Historical Backfillは既存の2026年限定を維持する。
+- 承認後は、年度と競技区分ごとに収集範囲、providerの年度識別、追加・延期・変更の証拠、Game/Fact/Dayの完全性を検証する。calendarの承認・一部日程・初回Factは、それぞれ単独ではCoverage、HOT、公式ランキングの公開根拠にならない。
+- `npb-collector.ts`、`npb-day-collector.ts`、`npb-eod.ts` のnf3経路は確認済み2026年に限定。新年度のprovider採用後に年度引数を検証してから経路を拡張する。`generate-npb-season.ts`、`generate-npb-game-surface.ts`、`npb-records.ts` の2026固定の配信先・schemaは既存snapshot用に維持し、2027のProjectionは年度別pin・readbackとセットで追加する。
+
 ## 2026-10-26 棚卸し（DB readbackではない）
 
 公開済みDirectory/Catalogと現行immutable v8から既存の厳格auditを再実行した。Directory基準日は2026-10-12、Historical archive取得日は2026-10-17。

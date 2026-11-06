@@ -1,9 +1,11 @@
 import { mkdir } from "node:fs/promises";
 import { openDataClient } from "../src/data/database";
 import { runNpbDayDryRun } from "../src/data/npb-day-dry-run";
+import { requireNpbRegularSeason } from "../src/data/npb-season-metadata";
 
 const date = process.argv.find((arg)=>/^--date=\d{4}-\d{2}-\d{2}$/.test(arg))?.slice(7);
 if (!date) throw new Error("Pass --date=YYYY-MM-DD");
+requireNpbRegularSeason(date);
 const url = process.env.TURSO_DATABASE_URL ?? "file:.data/baseball.db";
 if (process.argv.includes("--require-remote") && (url.startsWith("file:") || !process.env.TURSO_AUTH_TOKEN))
   throw new Error("Remote database URL and token required");
