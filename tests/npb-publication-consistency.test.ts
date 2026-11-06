@@ -328,7 +328,11 @@ describe("coordinated NPB publication", () => {
   });
 });
 
-type Workflow = { jobs: Record<string, { steps: { run?: string; uses?: string; if?: string }[] }> };
+type Workflow = {
+  on?: { push?: { branches: string[]; paths: string[] } };
+  env?: Record<string, string>;
+  jobs: Record<string, { steps: { run?: string; uses?: string; if?: string; env?: Record<string, string> }[] }>;
+};
 const workflow = (name: string) => parse(readFileSync(`.github/workflows/${name}.yml`, "utf8")) as Workflow;
 describe("all Pages publication entry points", () => {
   it("profile-only publication skips every DB path and retains the coordinated artifact checks", () => {
@@ -336,9 +340,28 @@ describe("all Pages publication entry points", () => {
     for (const script of ["import-npb-player-master-v2.ts", "generate-npb-player-directory.ts", "publish:npb:remote"]) {
       expect(steps.find(s => s.run?.includes(script))?.if).toContain("inputs.profile_projection_only != true");
     }
-    expect(steps.find(s => s.run?.includes("stage-npb-profile-only-directory.ts"))?.if).toBe("inputs.profile_projection_only == true || inputs.preserve_published_only == true");
+    expect(steps.find(s => s.run?.includes("stage-npb-profile-only-directory.ts"))?.if).toBe("env.PRESERVE_ONLY == 'true' || inputs.profile_projection_only == true");
     expect(steps.some(s => s.run?.includes("refresh-npb-profile-projections.ts"))).toBe(true);
     expect(steps.some(s => s.run?.includes("verify-npb-publication.ts"))).toBe(true);
+  });
+  it("automates publication only for reviewed main event pins and verifies public assets", () => {
+    const job = workflow("npb-player-directory-publish");
+    expect(job.on?.push).toEqual({ branches: ["main"], paths: [
+      "src/data/npb-player-events-release.json", "src/data/npb-player-events-retained-releases.json",
+    ] });
+    expect(job.env?.PRESERVE_ONLY).toBe("${{ github.event_name == 'push' || inputs.preserve_published_only == true }}");
+    const stage = job.jobs.stage!.steps, deploy = job.jobs.deploy!.steps;
+    for (const step of stage.filter(s => s.env?.TURSO_DATABASE_URL || s.env?.TURSO_AUTH_TOKEN)) {
+      expect(step.if).toContain("github.event_name == 'workflow_dispatch'");
+    }
+    const preflight = stage.findIndex(s => s.run?.includes("verify-published-npb-player-events.ts --active-only"));
+    expect(preflight).toBeGreaterThanOrEqual(0);
+    expect(stage[preflight]?.if).toBe("github.event_name == 'push'");
+    expect(preflight).toBeLessThan(stage.findIndex(s => s.run?.includes("npm run build")));
+    expect(stage.some(s => s.run?.includes("sha256sum dist/index.html"))).toBe(true);
+    const readback = deploy.findIndex(s => s.run?.includes("verify-published-npb-player-events.ts"));
+    expect(readback).toBeGreaterThan(deploy.findIndex(s => s.uses?.startsWith("actions/deploy-pages")));
+    expect(deploy[readback]?.env?.EXPECTED_APP_INDEX_SHA256).toBe("${{ needs.stage.outputs.app_index_sha256 }}");
   });
   it("Historical-only delivery cannot access canonical DB or refresh the current generation",()=>{
     const steps=workflow("npb-player-directory-publish").jobs.stage!.steps;
