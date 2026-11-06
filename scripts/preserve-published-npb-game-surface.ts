@@ -4,11 +4,11 @@ import { gameManifestSchema,gameDateIndexSchema,recentGamesSchema,shiftGameDate 
 import { recordsSchema } from "../src/domain/npb-records";
 import { npbCatalogSchema,npbCapabilitiesSchema,npbTeamSeasonSchema } from "../src/domain/npb-product-contract";
 import { npbSeasonMilestonesSchema } from "../src/domain/npb-season-milestones";
-const base="https://tomoya41.github.io/baseball-notes/data/npb/";
-async function fetchJson(path:string){const r=await fetch(base+path,{cache:"no-cache",signal:AbortSignal.timeout(15000)});
-  if(!r.ok)throw Error(`Surface preservation HTTP ${r.status}`);return r.json() as Promise<unknown>;}
+import { fetchNpbPublicGameSurface } from "./lib/fetch-npb-public-game-surface";
+async function fetchJson(path:string){const r=await fetchNpbPublicGameSurface(path);
+  if(!r.ok)throw Error(`Surface preservation HTTP ${r.status}: ${path}`);return r.json() as Promise<unknown>;}
 async function save(path:string,value:unknown){const p=`dist/data/npb/${path}`;await mkdir(dirname(p),{recursive:true});await writeFile(p,JSON.stringify(value));}
-const response=await fetch(base+"games/manifest.json",{cache:"no-cache",signal:AbortSignal.timeout(15000)});
+const response=await fetchNpbPublicGameSurface("games/manifest.json");
 if(response.status===404){console.log("No prior Game surface to preserve");}
 else {if(!response.ok)throw Error("Game manifest preservation failed");const manifest=gameManifestSchema.parse(await response.json());
   const dates:string[]=[];for(let d=manifest.from;d<=manifest.to;d=shiftGameDate(d,1))dates.push(d);
@@ -17,7 +17,7 @@ else {if(!response.ok)throw Error("Game manifest preservation failed");const man
   await save("games/recent.json",recentGamesSchema.parse(await fetchJson("games/recent.json")));
   await save("records/2026/latest.json",recordsSchema.parse(await fetchJson("records/2026/latest.json")));
   // Additive contract rollout: old deployments have no catalog. Once present, preserve all three validated files.
-  const catalogResponse=await fetch(base+"catalog/latest.json",{cache:"no-cache",signal:AbortSignal.timeout(15000)});
+  const catalogResponse=await fetchNpbPublicGameSurface("catalog/latest.json");
   if(catalogResponse.status!==404){
     if(!catalogResponse.ok)throw Error("Catalog preservation failed");
     const catalog=npbCatalogSchema.parse(await catalogResponse.json());
