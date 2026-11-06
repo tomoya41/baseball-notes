@@ -999,6 +999,33 @@ public class ReleaseQualityTest {
             }
         }
     }
+    @Test public void offseasonClubTradeDirectionsUseTheAdmittedArticleAtAllFontSizes() throws Exception {
+        Intent link = new Intent(Intent.ACTION_VIEW, Uri.parse("baseballnotes://NPB/moves?kind=trade&team=npb:team:dragons&direction=in"));
+        link.setClass(InstrumentationRegistry.getInstrumentation().getTargetContext(), MainActivity.class);
+        scenario = ActivityScenario.launch(link);
+        String arrival = "location.hash.includes('direction=in') && document.querySelector('.event-directions a[aria-current=page]')?.textContent==='加入' && document.querySelector('.explorer-result h2')?.textContent.includes('杉浦稔大')";
+        for (float scale : new float[]{1.0f, 1.5f, 2.0f}) {
+            if (scale != 1.0f) fontScaleAndRecreate(scale);
+            waitCondition("Admitted trade destination survives recreation", arrival);
+            waitViewport(360);
+            for (String theme : new String[]{"light", "dark"}) {
+                setThemeWithoutNavigation(theme, theme.equals("light") ? "ライト" : "ダーク");
+                js("document.querySelector('.event-directions').scrollIntoView()");
+                waitPaint();
+                assertEquals("Trade filters fit enlarged native text", "true", js("document.documentElement.scrollWidth<=innerWidth"));
+                assertEquals("Trade direction touch targets stay usable", "true",
+                    js("Array.from(document.querySelectorAll('.event-directions a')).every(a=>a.getBoundingClientRect().height>=44)"));
+                screenshot("npb-club-trade-360-"+theme+"-"+scale);
+            }
+        }
+        js("document.querySelector('.event-directions a[href*=\"direction=out\"]').click()");
+        waitCondition("Trade is not a departure from the receiving club",
+            "location.hash.includes('direction=out') && !document.querySelector('.explorer-result') && document.querySelector('main').innerText.includes('記事記載は未収録')");
+        shell("input keyevent KEYCODE_BACK");
+        waitCondition("Back restores the admitted trade destination", arrival);
+        assertEquals("The trade retains its exact article revision", "true",
+            js("!!document.querySelector('.explorer-result a[href*=\"oldid=" + NPB_EVENT_SOURCE_REVISION + "\"]')"));
+    }
     @Test public void offseasonRenewalsKeepUnknownStateAndOfficialLinksAtLargeFont() throws Exception {
         Intent link = new Intent(Intent.ACTION_VIEW, Uri.parse("baseballnotes://NPB/moves?kind=contract_renewal&team=npb:team:hawks"));
         link.setClassName("com.tomoya41.baseballnotes", "jp.baseballdata.app.MainActivity");
