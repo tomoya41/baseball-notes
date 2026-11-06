@@ -1,6 +1,12 @@
 # NPB sourced player events — first admitted increment
 
-Latest follow-up (2026-10-30): [PR #107](https://github.com/tomoya41/baseball-notes/pull/107) / [promotion PR #108](https://github.com/tomoya41/baseball-notes/pull/108) add four independently identified October 29 nonrenewal notices, bringing the reviewed v7 dataset to **66 partial records / 66 players**. The v7 JSON was published and read back before app promotion; old v1–v6 URLs remain. Source, hashes, identity proofs, exact rollout and device evidence are recorded in [the current follow-up](npb-notice-recovery-20261030.md). The dated sections below remain the original delivery history, not the latest record count.
+## 2026-11-06 — 追補と改版の保全
+
+[年表の改版111659037](https://ja.wikipedia.org/w/index.php?curid=5145794&oldid=111659037)（2026-11-06 15:29 JST取得）から、本人照合済みの10選手10件を追加する。FA宣言3件、ポスティング容認1件・申請1件、金銭トレード1件、退団発表2件、引退発表1件、戦力外通告1件。9件の本人記事を既存のUUID・NPB ID・QIDと、保存済み記事版の一意なNPB ID・本文ハッシュで照合した。原記事の著者・改版とCC BY-SA 4.0の継承条件は従来どおり。引用先のメディア本文は取得していない。
+
+新しい記事版で文の構成が変わった戦力外通告4件も、従来の記録・出典版のまま保持する。追補時は前版のJSON、記事内容、照合入力、各追加記録のIDと文のハッシュを照合する。旧66件と旧identityは全件同一、新版76件は一部収録。容認・申請・移籍成立を区別し、契約更改は未収録。権利・本人・引用範囲が確定しない記述は保留する。
+
+2026-10-30: [PR #107](https://github.com/tomoya41/baseball-notes/pull/107) / [promotion PR #108](https://github.com/tomoya41/baseball-notes/pull/108) added four independently identified October 29 nonrenewal notices, bringing v7 to 66 partial records for 66 players. Source, hashes, identity proofs, exact rollout and device evidence are recorded in [the October 30 follow-up](npb-notice-recovery-20261030.md).
 
 The only additional grammar is an independently cited first player-notice clause in one reviewed compound announcement, followed by separately cited coaching clauses. Only explicit, independently verified player article links produce records. Bare names count as unresolved list positions and never acquire IDs; matching headcounts, unique participants and exact clause/citation boundaries are required. Coaches, development offers, current registration and effective dates are not inferred. The new explicit transformation label is additive; retained releases keep their old label. The source remains the already admitted 2026 Wikipedia chronology, CC BY-SA 4.0, candidate-only scheduled review and manually validated immutable publication. No additional news provider or automatic main/Pages promotion is admitted.
 

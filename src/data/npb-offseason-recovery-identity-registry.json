@@ -237,6 +237,87 @@
       "article": "入江大樹",
       "identityRevision": 109843575,
       "identityContentSha256": "4a81fb51c17e1455815ef0ddff7e397c37edd8da060ff66bcb10cc701619ed97"
+    },
+    {
+      "playerId": "ad5f7282-8dd8-4a15-bf5a-0dd8c5555722",
+      "npbId": "61665136",
+      "wikidataId": "Q53764767",
+      "name": "本田仁海",
+      "article": "本田仁海",
+      "identityRevision": 110771297,
+      "identityContentSha256": "3d948daf2b28d1b3a01e94389b2af67b0e81d0269532d441927d15ac2dc89cf7"
+    },
+    {
+      "playerId": "ace94b36-2619-4b1c-8775-8a1a4f8a99cb",
+      "npbId": "21025137",
+      "wikidataId": "Q11594440",
+      "name": "福谷浩司",
+      "article": "福谷浩司",
+      "identityRevision": 111080859,
+      "identityContentSha256": "78dc5fc8bb63eed4d19b66169eb943f6cfc0aaab9a8e0c8ebd34812e8e70abb5"
+    },
+    {
+      "playerId": "a5262598-2466-4486-8e07-b4dfa518f140",
+      "npbId": "91595133",
+      "wikidataId": "Q11577891",
+      "name": "甲斐拓也",
+      "article": "甲斐拓也",
+      "identityRevision": 111121924,
+      "identityContentSha256": "0ef3ab8aa1485a1a5b6f9d7ab6dc943f335d6c21a8c56513a42b0a2426643eac"
+    },
+    {
+      "playerId": "ba9b1d16-6c1a-4643-827c-f37805162675",
+      "npbId": "31035136",
+      "wikidataId": "Q56886329",
+      "name": "平良海馬",
+      "article": "平良海馬",
+      "identityRevision": 110460252,
+      "identityContentSha256": "297bcb85a7f3cdca05d0f3a8ca7cc2590607aa3c5a46fb707a7a522584aa4d95"
+    },
+    {
+      "playerId": "4c14e916-c8aa-4f16-b169-125496c77d9f",
+      "npbId": "71075139",
+      "wikidataId": "Q17229482",
+      "name": "中村祐太",
+      "article": "中村祐太",
+      "identityRevision": 109280990,
+      "identityContentSha256": "701efdf94c825c0cb421cd59f1d5e90cb297bf959e65b0383328359590a4ff45"
+    },
+    {
+      "playerId": "e894c7ec-cf2d-4000-98d4-4211c1a4b345",
+      "npbId": "51355153",
+      "wikidataId": "Q102246676",
+      "name": "伊藤大海",
+      "article": "伊藤大海 (野球)",
+      "identityRevision": 111225052,
+      "identityContentSha256": "3a5e31fb5d8bcbcada5bc55152231f0cba8c28c37893638520d8e5ba5bb72a28"
+    },
+    {
+      "playerId": "2ff53a45-253a-4a70-bab5-daef2f8042ef",
+      "npbId": "11515138",
+      "wikidataId": "Q62601485",
+      "name": "小島和哉",
+      "article": "小島和哉",
+      "identityRevision": 110647941,
+      "identityContentSha256": "7b15abbf1d5cb8e8c5372450ccac2c8f64111c476040fcfa35bda689f7efe814"
+    },
+    {
+      "playerId": "d7230086-ab0b-488b-a7cc-e57f164df9f4",
+      "npbId": "73575132",
+      "wikidataId": "Q22123071",
+      "name": "宋家豪",
+      "article": "宋家豪",
+      "identityRevision": 109168903,
+      "identityContentSha256": "09f540a91f5ba21e80cffba41906e8a55396443d7a7e575a086c83cb1a440e51"
+    },
+    {
+      "playerId": "a4d91a39-9764-409c-978a-d73d4af0deec",
+      "npbId": "51255138",
+      "wikidataId": "Q60685509",
+      "name": "中川圭太",
+      "article": "中川圭太",
+      "identityRevision": 111240139,
+      "identityContentSha256": "aba428cde6dd8743c359b00779e2cc8d6afaf784d7a81660ff2d4f2708e32632"
     }
   ]
 }

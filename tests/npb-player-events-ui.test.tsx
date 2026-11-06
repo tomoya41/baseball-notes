@@ -9,6 +9,7 @@ import { NpbFollowedEventRecords } from "../src/ui/npb-followed-event-records";
 import { readNpbPlayerEvents } from "../src/application/npb-player-events-reader";
 import { citation, eventFixture, eventPage, eventPerson, otherEventPerson, retirement } from "./fixtures/npb-player-events";
 import { parseWikipediaPlayerEvents } from "../src/infrastructure/providers/wikipedia-npb-player-events";
+import { appendReviewedNpbEvents } from "../src/infrastructure/providers/npb-event-append";
 import type { Favorite } from "../src/domain/models";
 import { npbEventQuery } from "../src/domain/npb-event-query";
 import { canonicalDeepLink } from "../src/domain/native-navigation";
@@ -31,6 +32,28 @@ it("shows source confidence, exact player/team links and accessible per-record e
     const select = f.host.querySelector("select")!; await act(async () => { select.value = "trade"; select.dispatchEvent(new Event("change", { bubbles: true })); });
     expect(f.host.textContent).toContain("この条件の記事記載は未収録です"); expect(f.host.querySelector("[data-location]")?.textContent).toContain("kind=trade"); expect(readNpbPlayerEvents).toHaveBeenCalledTimes(1);
   } finally { await f.close(); }
+});
+it("keeps each record's exact article revision after an offseason append", async () => {
+  const previous = eventFixture();
+  const candidate = parseWikipediaPlayerEvents(
+    eventPage(`** 阪神タイガースは、[[架空太郎]]が今季取得した国内FA権を行使することを発表${citation}。`, 201),
+    "2026-10-20T00:00:00Z", [eventPerson], "a".repeat(64),
+  ).dataset;
+  const { id, statementSha256 } = candidate.events[0]!;
+  const data = appendReviewedNpbEvents(previous, candidate, {
+    previousBodySha256: "b".repeat(64), sourceContentSha256: candidate.source.contentSha256,
+    identityInputSha256: candidate.identityInputSha256, additions: [{ id, statementSha256 }],
+  });
+  const view = await mount("", [], false, false, data);
+  try {
+    const rows = [...view.host.querySelectorAll("article")];
+    const fa = rows.find(row => row.querySelector("h2")?.textContent?.includes("FA宣言"));
+    const old = rows.find(row => row.querySelector("h2")?.textContent?.includes("引退発表"));
+    expect(fa?.querySelector('a[href*="oldid=201"]')).not.toBeNull();
+    expect(fa?.querySelector('a[href*="oldid=200"]')).toBeNull();
+    expect(old?.querySelector('a[href*="oldid=200"]')).not.toBeNull();
+    expect(old?.querySelector('a[href*="oldid=201"]')).toBeNull();
+  } finally { await view.close(); }
 });
 it("does not fetch an invalid deep link or fetch events when Home merely links to them", async () => {
   const invalid = await mount("?player=not-a-canonical-id"); try { expect(readNpbPlayerEvents).not.toHaveBeenCalled(); expect(invalid.host.textContent).toContain("絞り込み条件"); } finally { await invalid.close(); }

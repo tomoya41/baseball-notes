@@ -1,4 +1,4 @@
-export const playerEventKinds = ["trade", "signing", "retirement_announcement", "nonrenewal_notice", "release", "registration_change", "fa_declaration", "posting_application", "draft_selection", "contract_renewal"] as const;
+export const playerEventKinds = ["trade", "signing", "retirement_announcement", "nonrenewal_notice", "release", "registration_change", "fa_declaration", "posting_application", "draft_selection", "contract_renewal", "departure", "posting_permission"] as const;
 export const npbPlayerEventId = /^npb:event:[a-f0-9]{24}$/;
 export function npbEventQuery(params: URLSearchParams) {
   const kind = params.get("kind"), team = params.get("team"), player = params.get("player"), event = params.get("event"), query = params.get("q") ?? "", follow = params.get("follow") === "1", rawPage = params.get("page") ?? "1";
