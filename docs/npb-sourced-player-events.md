@@ -44,6 +44,8 @@ GitHub Actions `NPB sourced player events check` is configured daily **08:17 JST
 
 Candidate detection is not automatic public promotion. Review exact source/identity/date/changes, replay locally, add a new immutable release/pin, retain previous assets, test/review/merge and preserve-published-only Pages publication. Empty, regressed, removed/corrected or unsupported claims require inspection; retain the last valid published snapshot on failure. Existing Plus/local Codex can assist review within plan limits; no OpenAI/Gemini paid API is provisioned. Source text is untrusted input and must never set commands, credentials or publication policy.
 
+Merging a reviewed change to either event pin on `main` starts the preserve-only Pages workflow. A retained-only change stages the new file while the app continues to use its current pin. Before a subsequent promotion can publish, that active file must already return its pinned length and SHA-256 from Pages. After deployment, the workflow checks the app HTML against the staged artifact and verifies every active and retained event JSON. The scheduled source check remains a read-only candidate workflow and cannot create pins, merge a change, or deploy.
+
 ## Validation and remaining scope
 
 Synthetic fixtures cover explicit IDs, name-only/multiple-player rejection, quotes/uncited text, source mismatch, reference formats, JST boundaries, deterministic dedupe, corrections, missing events, query/deep links, read-only favorites, UI error/Retry and validated offline readback. Android adds a real event deep-link/recreation/200% text case. Full release evidence is recorded below after it runs; no emulator/physical result is implied by a test file's existence.

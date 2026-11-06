@@ -1,5 +1,10 @@
 name: Publish NPB Player Directory
 on:
+  push:
+    branches: [main]
+    paths:
+      - src/data/npb-player-events-release.json
+      - src/data/npb-player-events-retained-releases.json
   workflow_dispatch:
     inputs:
       preserve_published_only:
@@ -16,17 +21,20 @@ on:
         default: false
 permissions:
   contents: read
+env:
+  PRESERVE_ONLY: ${{ github.event_name == 'push' || inputs.preserve_published_only == true }}
 concurrency:
   group: daily-npb-collector-and-pages
   cancel-in-progress: false
 jobs:
   stage:
-    if: github.event.repository.private == false
+    if: github.event.repository.private == false && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     outputs:
       generated_at: ${{ steps.identity.outputs.generated_at }}
       projection_hashes: ${{ steps.publication.outputs.projection_hashes }}
+      app_index_sha256: ${{ steps.publication.outputs.app_index_sha256 }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -36,28 +44,29 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      - name: Require the active player-event version to be publicly readable before switching the app
+        if: github.event_name == 'push'
+        run: npx tsx scripts/verify-published-npb-player-events.ts --active-only
       - name: Import reviewed Player Master v2 profiles
-        if: inputs.import_verified_profiles == true && inputs.profile_projection_only != true && inputs.preserve_published_only != true
+        if: github.event_name == 'workflow_dispatch' && inputs.import_verified_profiles == true && inputs.profile_projection_only != true && inputs.preserve_published_only != true
         env:
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
         run: npx tsx scripts/import-npb-player-master-v2.ts --apply --confirmed-mapping
       - name: Generate validated Player Directory from read-only queries
-        if: inputs.profile_projection_only != true && inputs.preserve_published_only != true
+        if: github.event_name == 'workflow_dispatch' && inputs.profile_projection_only != true && inputs.preserve_published_only != true
         env:
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
         run: npx tsx scripts/generate-npb-player-directory.ts --require-remote --payload-root=.data/publish
       - name: Stage current standings without source access
-        if: inputs.profile_projection_only != true && inputs.preserve_published_only != true
+        if: github.event_name == 'workflow_dispatch' && inputs.profile_projection_only != true && inputs.preserve_published_only != true
         env:
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
         run: npm run publish:npb:remote -- --payload-root .data/publish
       - name: Stage published Directory and standings without canonical DB access
-        if: inputs.profile_projection_only == true || inputs.preserve_published_only == true
-        env:
-          PRESERVE_ONLY: ${{ inputs.preserve_published_only }}
+        if: env.PRESERVE_ONLY == 'true' || inputs.profile_projection_only == true
         run: |
           if [ "$PRESERVE_ONLY" = 'true' ]; then
             npx tsx scripts/stage-npb-profile-only-directory.ts .data/publish --preserve-only
@@ -73,7 +82,6 @@ jobs:
       - name: Build app and stage complete Pages site
         shell: bash
         env:
-          PRESERVE_ONLY: ${{ inputs.preserve_published_only }}
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           npm run build
@@ -90,7 +98,9 @@ jobs:
       - uses: actions/configure-pages@v5
       - name: Validate coordinated NPB projections before artifact upload
         id: publication
-        run: npx tsx scripts/verify-npb-publication.ts dist
+        run: |
+          npx tsx scripts/verify-npb-publication.ts dist
+          echo "app_index_sha256=$(sha256sum dist/index.html | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-pages-artifact@v4
         with:
           path: dist
@@ -120,6 +130,10 @@ jobs:
       - name: Publish complete artifact to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+      - name: Verify active and retained player-event versions over public HTTP
+        env:
+          EXPECTED_APP_INDEX_SHA256: ${{ needs.stage.outputs.app_index_sha256 }}
+        run: npx tsx scripts/verify-published-npb-player-events.ts
       - name: Verify public Player Directory HTTP
         env:
           EXPECTED_GENERATED_AT: ${{ needs.stage.outputs.generated_at }}
