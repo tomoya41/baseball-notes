@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { npbPlayerEventId } from "../../domain/npb-event-query";
-import { npbPlayerEventsSchema, type NpbPlayerEvents } from "../../domain/npb-player-events";
+import { citedOffseasonEventTransformation, npbPlayerEventsSchema, type NpbPlayerEvents } from "../../domain/npb-player-events";
 
 const digest = z.string().regex(/^[a-f0-9]{64}$/);
 export const eventAppendReviewSchema = z.strictObject({
@@ -38,5 +38,6 @@ export function appendReviewedNpbEvents(previous: NpbPlayerEvents, candidate: Np
     retainedSources: [...previous.retainedSources ?? [], previous.source],
     players: [...players.values()],
     events: [...previous.events, ...additions].sort((a, b) => b.recordedDate.localeCompare(a.recordedDate) || a.id.localeCompare(b.id)),
+    transformation: citedOffseasonEventTransformation,
   });
 }

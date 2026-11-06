@@ -219,6 +219,7 @@ describe("reviewed offseason clauses", () => {
     expect(next.events.find(e => e.id === previous.events[0]!.id)).toEqual(previous.events[0]);
     expect(next.players).toEqual(previous.players);
     expect(next.retainedSources).toEqual([previous.source]);
+    expect(next.transformation).toBe(citedOffseasonEventTransformation);
     expect(next.source).toEqual(candidate.source);
     expect(compareEventSnapshots(previous, next)).toMatchObject({ added: [id], removed: [], changed: [], playersChanged: [] });
     expect(npbPlayerEventsSchema.safeParse({ ...next, retainedSources: undefined }).success).toBe(false);
