@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { parseWikipediaPlayerEvents } from "../src/infrastructure/providers/wikipedia-npb-player-events";
-import { npbPlayerEventsSchema, compareEventSnapshots, citedClauseEventTransformation, legacyEventTransformation } from "../src/domain/npb-player-events";
+import { npbPlayerEventsSchema, compareEventSnapshots, citedClauseEventTransformation, citedOffseasonEventTransformation, legacyEventTransformation } from "../src/domain/npb-player-events";
+import { appendReviewedNpbEvents } from "../src/infrastructure/providers/npb-event-append";
 import { npbEventQuery } from "../src/domain/npb-event-query";
 import { portableRoute } from "../src/domain/product-sharing";
 import { canonicalDeepLink, parentNativeRoute } from "../src/domain/native-navigation";
@@ -158,6 +159,74 @@ describe("explicit sourced movement observations", () => {
   it("rejects official/rumor promotion, foreign/unknown identity, forged provenance and source-future snapshots", () => {
     for (const mutate of [(d: ReturnType<typeof eventFixture>) => { d.events[0]!.playerId = otherEventPerson.playerId; }, (d: ReturnType<typeof eventFixture>) => { d.source.url = "https://npb.jp/"; }, (d: ReturnType<typeof eventFixture>) => { d.events[0]!.effectiveDate = "2026-10-19" as never; }]) { const d = eventFixture(); mutate(d); expect(npbPlayerEventsSchema.safeParse(d).success).toBe(false); }
     const d = eventFixture(); expect(npbPlayerEventsSchema.safeParse({ ...d, events: [{ ...d.events[0]!, status: "official_announcement" }] }).success).toBe(false);
+  });
+});
+
+describe("reviewed offseason clauses", () => {
+  const permission = "埼玉西武ライオンズは、[[架空太郎]]のポスティングシステムによるMLB移籍を容認したこと";
+  const notice = "[[架空次郎]]に来季の契約を結ばないことを通告したこと";
+  const staffList = "並びに来季のコーチングスタッフを以下の通り発表";
+  const compound = `** ${permission}${citation}、${notice}${citation}、${staffList}。[[架空次郎]]に育成契約を打診${citation}。`;
+  const application = `** 阪神タイガースは、[[架空太郎]]のポスティングシステムを利用したMLB移籍を容認、申請手続きをしたことを発表${citation}。`;
+  const fa = `** 阪神タイガースは、[[架空太郎]]が今季取得した国内FA権を行使することを発表${citation}。`;
+  const trade = `** 阪神タイガースは、[[架空太郎]]が金銭トレードで中日ドラゴンズに移籍すること${citation}、並びに来季のコーチングスタッフを発表${citation}。`;
+
+  it("splits separately cited posting permission and nonrenewal, leaving the development offer out", () => {
+    const { dataset } = parse(compound);
+    expect(dataset.transformation).toBe(citedOffseasonEventTransformation);
+    expect(dataset.events).toHaveLength(2);
+    expect(dataset.events.find(e => e.playerId === eventPerson.playerId)?.kind).toBe("posting_permission");
+    expect(dataset.events.find(e => e.playerId === otherEventPerson.playerId)?.kind).toBe("nonrenewal_notice");
+    for (const event of dataset.events) {
+      expect(event).toMatchObject({ effectiveDate: null, announcementDate: null, fromTeamId: null, toTeamId: null });
+      expect(event.excerpt).not.toMatch(/コーチ|育成契約|打診/);
+    }
+  });
+
+  it.each([
+    [application, "posting_application"],
+    [fa, "fa_declaration"],
+    [`** 阪神タイガースの[[架空太郎]]が、今季取得した海外FA権を行使することを表明${citation}。`, "fa_declaration"],
+    [`** 阪神タイガースは、[[架空太郎]]の本人からの申し入れによる現役引退${citation}と、新コーチングスタッフとして[[架空次郎]]が就任することを発表${citation}。`, "retirement_announcement"],
+    [`** 阪神タイガースは、[[架空太郎]]、[[未照合次郎]]の退団を発表${citation}。`, "departure"],
+    [trade, "trade"],
+  ])("admits one exact, independently attributed observation: %s", (body, kind) => {
+    const { dataset } = parse(body);
+    expect(dataset.events).toHaveLength(1);
+    expect(dataset.events[0]).toMatchObject({ kind, playerId: eventPerson.playerId, status: "encyclopedia_record", effectiveDate: null });
+    if (kind === "trade") expect(dataset.events[0]).toMatchObject({ fromTeamId: "npb:team:tigers", toTeamId: "npb:team:dragons" });
+  });
+
+  it.each([
+    compound.replace(`${permission}${citation}`, permission),
+    compound.replace(`${notice}${citation}`, notice),
+    trade.replace("移籍すること", "移籍する可能性"),
+    fa.replace("行使する", "行使せず残留する"),
+    fa.replace("[[架空太郎]]", "架空太郎"),
+    application.replace("申請手続きをした", "申請を検討する"),
+    `** 阪神タイガースは、[[架空太郎]]の退団を検討${citation}。`,
+  ])("holds missing proof, guesses, and unsupported clauses: %s", body => {
+    expect(parse(body).dataset.events).toHaveLength(0);
+  });
+
+  it("appends only reviewed additions with exact provenance, leaving missing old events and identities intact", () => {
+    const previous = eventFixture();
+    const candidate = parseWikipediaPlayerEvents(eventPage(`${fa}\n${application}`, 201), "2026-10-20T00:00:00Z", [eventPerson], "b".repeat(64)).dataset;
+    const { id, statementSha256 } = candidate.events.find(e => e.kind === "fa_declaration")!;
+    const review = { previousBodySha256: "a".repeat(64), sourceContentSha256: candidate.source.contentSha256, identityInputSha256: candidate.identityInputSha256, additions: [{ id, statementSha256 }] };
+    const next = appendReviewedNpbEvents(previous, candidate, review);
+    expect(next.events).toHaveLength(2);
+    expect(next.events.find(e => e.id === previous.events[0]!.id)).toEqual(previous.events[0]);
+    expect(next.players).toEqual(previous.players);
+    expect(next.retainedSources).toEqual([previous.source]);
+    expect(next.transformation).toBe(citedOffseasonEventTransformation);
+    expect(next.source).toEqual(candidate.source);
+    expect(compareEventSnapshots(previous, next)).toMatchObject({ added: [id], removed: [], changed: [], playersChanged: [] });
+    expect(npbPlayerEventsSchema.safeParse({ ...next, retainedSources: undefined }).success).toBe(false);
+    expect(npbPlayerEventsSchema.safeParse({ ...next, retainedSources: [next.source] }).success).toBe(false);
+    expect(appendReviewedNpbEvents.bind(null, previous, candidate, { ...review, sourceContentSha256: "0".repeat(64) })).toThrow();
+    expect(appendReviewedNpbEvents.bind(null, previous, candidate, { ...review, additions: [review.additions[0], review.additions[0]] })).toThrow();
+    expect(() => appendReviewedNpbEvents(previous, { ...candidate, players: [{ ...eventPerson, name: "架空の変更" }] }, review)).toThrow("identity");
   });
 });
 it("preserves bounded event query, share/native scope and cold Back while discarding unknown keys", () => {

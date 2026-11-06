@@ -110,7 +110,7 @@ export function NpbPlayerEventsScreen({ favorites = [] }: { favorites?: Favorite
         <div className="hub-links"><Link to={`/NPB/players/${e.playerId}`}>選手ページ →</Link>{e.relatedTeamIds.map(t => <Link key={t} to={`/NPB/teams/${t}`}>{clubName(t)} →</Link>)}</div>
       </article>; })}</div><nav className="explorer-pagination" aria-label="選手の動きのページ"><button disabled={page <= 1} onClick={() => change("page", String(page - 1))}>前へ</button><span>{page} / {Math.ceil(matching.length / 15)}</span><button disabled={page * 15 >= matching.length} onClick={() => change("page", String(page + 1))}>次へ</button></nav></>}
       {kind==="contract_renewal"&&<ClubNews team={team}/>}
-      <details className="source-note"><summary>収録範囲・更新について</summary><p>原記事の版：{new Date(dataset.source.revisionAt).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}／取得：{new Date(dataset.observedAt).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}（日本時間）。日付は記事の年表に記載された出来事の日で、発表日・実施日を独立に確認したものではありません。</p><p>一部の選手・出来事のみ収録しています。戦力外通告・自由契約・引退はそれぞれ異なる出来事です。FA・ポスティング・今年のドラフト指名結果は未収録です。退団・登録・契約の全件一覧、速報、公式のIN／OUT一覧ではありません。</p></details>
+      <details className="source-note"><summary>収録範囲・出典</summary><p>最新の収録元：{new Date(dataset.source.revisionAt).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}（日本時間）。各記録の参照版は「記載内容・出典」で確認できます。</p><p>年表の一部収録です。ポスティングの容認・申請・移籍成立は別の出来事です。</p></details>
     </>}
   </div>;
 }
