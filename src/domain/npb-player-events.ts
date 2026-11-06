@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { dateInZone } from "./analysis-query";
-import { playerEventKinds } from "./npb-event-query";
+import type { Favorite } from "./models";
+import { npbPlayerEventId, playerEventKinds } from "./npb-event-query";
 export { playerEventKinds } from "./npb-event-query";
 export const legacyEventTransformation = "Explicit dated first sentences and verified article identities; deterministic labels; no official certification, effective-date inference, AI-generated facts or canonical writes";
 export const citedClauseEventTransformation = "Explicit dated first sentences or separately cited first player-notice clauses and verified article identities; deterministic labels; no official certification, effective-date inference, AI-generated facts or canonical writes";
@@ -13,7 +14,7 @@ const team = z.string().regex(/^npb:team:(giants|tigers|dragons|carp|swallows|ba
 export const eventIdentitySchema = z.strictObject({ playerId: z.uuid(), name: z.string().min(1).max(100), article: z.string().min(1).max(120), wikidataId: z.string().regex(/^Q\d+$/), npbId: z.string().regex(/^\d+$/), identityRevision: z.number().int().positive() });
 const sourceSchema = z.strictObject({ provider: z.literal("Wikipedia"), pageId: z.literal(5145794), title: z.literal("2026年の日本プロ野球"), revision: z.number().int().positive(), revisionAt: z.iso.datetime(), contentSha256: z.string().regex(/^[a-f0-9]{64}$/), url: z.url(), license: z.literal("CC-BY-SA-4.0"), licenseUrl: z.literal("https://creativecommons.org/licenses/by-sa/4.0/") });
 export const playerEventSchema = z.strictObject({
-  id: z.string().regex(/^npb:event:[a-f0-9]{24}$/), kind: z.enum(playerEventKinds), playerId: z.uuid(),
+  id: z.string().regex(npbPlayerEventId), kind: z.enum(playerEventKinds), playerId: z.uuid(),
   recordedDate: z.iso.date(), announcementDate: z.null(), effectiveDate: z.null(),
   status: z.literal("encyclopedia_record"), relatedTeamIds: z.array(team).min(1).max(2),
   fromTeamId: team.nullable(), toTeamId: team.nullable(),
@@ -40,6 +41,11 @@ export const npbPlayerEventsSchema = z.strictObject({
 export type EventIdentity = z.infer<typeof eventIdentitySchema>;
 export type PlayerEvent = z.infer<typeof playerEventSchema>;
 export type NpbPlayerEvents = z.infer<typeof npbPlayerEventsSchema>;
+
+export function isFollowedNpbEvent(event: PlayerEvent, favorites: readonly Favorite[]) {
+  return favorites.some(f => f.league === "NPB" &&
+    (f.kind === "player" ? f.entityId === event.playerId : event.relatedTeamIds.includes(f.entityId)));
+}
 
 /** A missing/changed source row requires review, never an automatic retraction or roster edit. */
 export function compareEventSnapshots(previous: NpbPlayerEvents, candidate: NpbPlayerEvents) {

@@ -11,8 +11,10 @@ import { WatchCenter } from "../src/ui/personal-watch";
 import { PersonalWatchProvider, WatchSummary } from "../src/ui/watch-shell";
 import { services } from "../src/app/services";
 import type { WatchObservation } from "../src/domain/personal-watch";
-const mocks=vi.hoisted(()=>({read:vi.fn(),online:true,revision:0}));
+import { eventFixture, eventPerson } from "./fixtures/npb-player-events";
+const mocks=vi.hoisted(()=>({read:vi.fn(),events:vi.fn(),online:true,revision:0}));
 vi.mock("../src/application/watch-observations",async()=>({...await vi.importActual("../src/application/watch-observations"),readWatchObservations:mocks.read}));
+vi.mock("../src/application/npb-player-events-reader",()=>({readNpbPlayerEvents:mocks.events}));
 vi.mock("../src/app/mobile-services",()=>({publicNetworkOnline:()=>mocks.online,publicFallbackRevision:()=>mocks.revision}));
 const id="00000000-0000-4000-8000-000000000001",game="npb:game:01234567890123456789",date="2026-10-07",now=Date.parse("2026-10-08T01:00:00Z");
 const observation=(hits=1):WatchObservation=>({key:"game",league:"NPB",kind:"player",entityId:id,name:"非常に長い外国人選手の登録名",rule:"result",season:2026,competition:"regular",effectiveDate:date,generatedAt:null,eventDate:date,coverage:"partial",path:`/NPB/games/${game}`,metric:"Game",values:{gameId:game,gameNumber:1,H:hits},collectionOnly:false,observedAt:now});
@@ -25,6 +27,23 @@ const click=async(text:string)=>{const b=[...div.querySelectorAll("button")].fin
 describe("Watch Center interaction",()=>{
   it("keeps Home summary local, links to Watch without any payload acquisition",async()=>{await mount(<WatchSummary league="NPB"/>);expect(mocks.read).not.toHaveBeenCalled();expect(div.textContent).toContain("0 未読");expect(div.querySelector("a")?.href).toContain("/NPB/watch-center");});
   it("shows initial baseline/empty state rather than fabricated alerts",async()=>{mocks.read.mockResolvedValue({observations:[observation()],activeEntities:[`player:${id}`],notes:["Coverage partial"],fetches:2,targets:1,elapsedMs:3});await mount(screen());expect(div.textContent).toContain("確認差分はありません");expect((await store.read()).alerts).toEqual([]);expect(div.textContent).toContain("リアルタイム・バックグラウンド通知ではありません");});
+  it("shows article records on demand without marking them as Watch differences", async () => {
+    const dataset = eventFixture();
+    mocks.events.mockClear().mockResolvedValue(dataset);
+    await mount(<WatchCenter league="NPB" services={services} favorites={[{
+      league: "NPB", kind: "player", entityId: eventPerson.playerId, addedAt: dataset.observedAt,
+    }]} ready />);
+    const before = data.get(PERSONAL_WATCH_KEY);
+    expect(mocks.events).not.toHaveBeenCalled();
+    const disclosure = div.querySelector<HTMLDetailsElement>(".npb-followed-event-records")!;
+    await import("../src/ui/npb-player-events");
+    await act(async () => { disclosure.open = true; disclosure.dispatchEvent(new Event("toggle")); });
+    expect(disclosure.textContent).toContain(eventPerson.name);
+    expect(mocks.events).toHaveBeenCalledTimes(1);
+    expect(mocks.read).toHaveBeenCalledTimes(1);
+    expect(div.textContent).toContain("0 未読");
+    expect(data.get(PERSONAL_WATCH_KEY)).toBe(before);
+  });
   it("shows Since Last Visit evidence, marks read and dismisses without losing dedup on reload",async()=>{await store.observe([observation()]);mocks.read.mockResolvedValue({observations:[observation(2)],activeEntities:[`player:${id}`],notes:[],fetches:2,targets:1,elapsedMs:3});await mount(screen());expect(div.textContent).toContain("1 未読");expect(div.textContent).toContain("数値が変化");expect(div.textContent).toContain("前回 1");expect(div.querySelector<HTMLAnchorElement>('.watch-alert a')?.href).toContain(game);await click("すべて既読");expect((await store.read()).alerts[0]?.read).toBe(true);await click("非表示");expect(div.querySelector('.watch-alert')).toBeNull();await click("データを確認");expect((await store.read()).alerts).toHaveLength(1);});
   it("does not advance observation state during offline start or a saved-response fallback",async()=>{await store.observe([observation()]);const before=data.get(PERSONAL_WATCH_KEY);mocks.online=false;await mount(screen());expect(mocks.read).not.toHaveBeenCalled();expect(data.get(PERSONAL_WATCH_KEY)).toBe(before);mocks.online=true;mocks.read.mockImplementation(async()=>{mocks.revision++;return{observations:[observation(3)],activeEntities:[`player:${id}`],notes:[],fetches:1,targets:1,elapsedMs:1};});await click("データを確認");expect(div.textContent).toContain("判定を保留");expect(data.get(PERSONAL_WATCH_KEY)).toBe(before);});
   it("allows an explicit Watch-only reset after corrupt storage",async()=>{data.set(PERSONAL_WATCH_KEY,"broken");data.set("baseball:favorites:v1","keep");await mount(screen());expect(div.querySelector('[role="alert"]')).not.toBeNull();await act(async()=>div.querySelector('.library-reset input')!.dispatchEvent(new MouseEvent("click",{bubbles:true})));await click("Watchのみリセット");expect((await store.read()).alerts).toEqual([]);expect(data.get("baseball:favorites:v1")).toBe("keep");});

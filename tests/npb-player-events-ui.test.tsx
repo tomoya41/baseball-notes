@@ -1,12 +1,13 @@
 // @vitest-environment jsdom
 import { act } from "react";
 import { createRoot } from "react-dom/client";
-import { MemoryRouter, useLocation } from "react-router-dom";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { afterEach, expect, it, vi } from "vitest";
 import { NpbPlayerEventsScreen } from "../src/ui/npb-player-events";
 import { NpbSeasonalHome } from "../src/ui/npb-seasonal-home";
+import { NpbFollowedEventRecords } from "../src/ui/npb-followed-event-records";
 import { readNpbPlayerEvents } from "../src/application/npb-player-events-reader";
-import { citation, eventFixture, eventPage, eventPerson, otherEventPerson } from "./fixtures/npb-player-events";
+import { citation, eventFixture, eventPage, eventPerson, otherEventPerson, retirement } from "./fixtures/npb-player-events";
 import { parseWikipediaPlayerEvents } from "../src/infrastructure/providers/wikipedia-npb-player-events";
 import type { Favorite } from "../src/domain/models";
 import { npbEventQuery } from "../src/domain/npb-event-query";
@@ -39,6 +40,64 @@ it("reads Favorites without mutating them and distinguishes no observed event fr
   const favorites: Favorite[] = [{ league: "NPB", kind: "player", entityId: eventPerson.playerId, addedAt: "2026-10-19T00:00:00Z" }];
   const baseline = JSON.stringify(favorites), f = await mount("?follow=1", favorites); try { expect(f.host.textContent).toContain("架空太郎"); expect(JSON.stringify(favorites)).toBe(baseline); } finally { await f.close(); }
   const empty = await mount("?follow=1"); try { expect(empty.host.textContent).toContain("フォローに関連する記事記載は未収録"); expect(empty.host.textContent).toContain("出来事がなかった"); } finally { await empty.close(); }
+});
+it("loads followed article records on demand and opens the exact licensed record", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const data = parseWikipediaPlayerEvents(eventPage([
+    retirement,
+    `** 北海道日本ハムファイターズの[[架空太郎]]が金銭トレードで中日ドラゴンズに移籍することを両球団が発表${citation}。`,
+    `** 阪神タイガースは、[[架空次郎]]の今季限りでの現役引退を発表${citation}。`,
+  ].join("\n")), "2026-10-19T00:00:00Z", [eventPerson, otherEventPerson], "a".repeat(64)).dataset;
+  const trade = data.events.find(e => e.kind === "trade")!;
+  const favorites: Favorite[] = [
+    { league: "NPB", kind: "team", entityId: "npb:team:dragons", addedAt: data.observedAt },
+    { league: "NPB", kind: "player", entityId: eventPerson.playerId, addedAt: data.observedAt },
+    { league: "MLB", kind: "player", entityId: otherEventPerson.playerId, addedAt: data.observedAt },
+  ];
+  vi.mocked(readNpbPlayerEvents).mockResolvedValue(data);
+  const host = document.createElement("div"), root = createRoot(host);
+  try {
+    await act(async () => root.render(<MemoryRouter initialEntries={["/NPB/my"]}><Routes>
+      <Route path="/NPB/my" element={<NpbFollowedEventRecords favorites={favorites} />} />
+      <Route path="/NPB/moves" element={<NpbPlayerEventsScreen favorites={favorites} />} />
+    </Routes><Location /></MemoryRouter>));
+    expect(readNpbPlayerEvents).not.toHaveBeenCalled();
+    const panel = host.querySelector("details")!;
+    await act(async () => { panel.open = true; panel.dispatchEvent(new Event("toggle")); });
+    expect(readNpbPlayerEvents).toHaveBeenCalledTimes(1);
+    const links = [...panel.querySelectorAll<HTMLAnchorElement>(".player-row")];
+    expect(links).toHaveLength(2);
+    expect(panel.textContent).not.toContain(otherEventPerson.name);
+    expect(panel.querySelector('a[href*="oldid=200"]')).not.toBeNull();
+    await act(async () => { panel.open = false; panel.dispatchEvent(new Event("toggle")); });
+    await act(async () => { panel.open = true; panel.dispatchEvent(new Event("toggle")); });
+    expect(readNpbPlayerEvents).toHaveBeenCalledTimes(1);
+    const link = links.find(a => a.textContent?.includes("トレード"))!;
+    const query = new URL(link.href, "https://example.test").search;
+    expect(npbEventQuery(new URLSearchParams(query))).toMatchObject({ event: trade.id, player: eventPerson.playerId });
+    expect(canonicalDeepLink(`baseballnotes://NPB/moves${query}`)).toBe(portableRoute("/NPB/moves", query));
+    await act(async () => link.click());
+    expect(host.querySelectorAll("article")).toHaveLength(1);
+    expect(host.querySelector("article h2")?.textContent).toBe("架空太郎 · トレード");
+    expect(host.querySelector<HTMLDetailsElement>("article details")?.open).toBe(true);
+    expect(host.querySelector('article a[href*="oldid=200"]')).not.toBeNull();
+    const clear = [...host.querySelectorAll<HTMLButtonElement>("button")].find(b => b.textContent === "この記録の指定を解除")!;
+    await act(async () => clear.click());
+    expect(host.querySelectorAll("article")).toHaveLength(2);
+    expect(readNpbPlayerEvents).toHaveBeenCalledTimes(2);
+  } finally { await act(async () => root.unmount()); }
+});
+it("holds unavailable record IDs without selecting a different record", async () => {
+  const f = await mount(`?player=${eventPerson.playerId}&event=npb:event:${"f".repeat(24)}`);
+  try {
+    expect(f.host.querySelector("article")).toBeNull();
+    expect(f.host.textContent).toContain("この条件の記事記載は未収録です");
+  } finally { await f.close(); }
+  const invalid = await mount("?event=another-kind-of-id");
+  try {
+    expect(readNpbPlayerEvents).toHaveBeenCalledTimes(1);
+    expect(invalid.host.textContent).toContain("絞り込み条件");
+  } finally { await invalid.close(); }
 });
 it("offers Retry after an acquisition error", async () => {
   const f = await mount("", [], true); try {
