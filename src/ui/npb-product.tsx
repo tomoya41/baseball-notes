@@ -105,7 +105,10 @@ export function NpbTeam({ services, hub = false, favorites = [], toggle, saving 
     <div className="hub-links"><Link to={`/NPB/team-compare?teams=${encodeURIComponent(team.teamId)}`}>球団比較へ追加 →</Link><Link to={`/NPB/season-compare?kind=team&entity=${encodeURIComponent(team.teamId)}`}>保存済み年度を比較 →</Link></div>{toggle && <div className="team-follow-action"><TeamFavorite league="NPB" teamId={team.teamId} name={team.name} favorites={favorites} toggle={toggle} saving={saving} /><span>球団をフォロー</span></div>}
     {hub && <>{stats && <details className="team-stat-details"><summary>チーム打撃・投球成績</summary><TeamMetrics batting={stats.batting} pitching={stats.pitching} /></details>}<NpbTeamActivity key={team.teamId} services={services} teamId={team.teamId} /><div className="hub-links"><Link to="/NPB/compare">選手比較 →</Link><Link to="/NPB/my">お気に入り →</Link></div></>}
     <LifecycleLinks teamId={team.teamId} />
-    <Link className="section-action" to={`/NPB/moves?team=${encodeURIComponent(team.teamId)}`}>この球団に関する選手の動き →</Link>
+    <nav className="hub-links" aria-label="この球団に関する選手の動き">
+      <Link to={`/NPB/moves?team=${encodeURIComponent(team.teamId)}`}>選手の動き →</Link>
+      <Link to={`/NPB/moves?team=${encodeURIComponent(team.teamId)}&kind=trade`}>トレードの加入・移籍 →</Link>
+    </nav>
     <details className="team-roster"><summary>保存済み所属のみ表示</summary><p className="inline-note">保存済みの所属情報。現在の登録公示を示すものではありません。</p><div className="row-list">{sortTeamPlayers(currentTeamPlayers(catalog,null,team.teamId),"all","number").map(p=><Link className="player-row" key={p.id} to={`/NPB/players/${p.id}`}><span className="player-row__body"><strong>{favorites.some(f=>f.league==="NPB"&&f.kind==="player"&&f.entityId===p.id)&&"★ "}{p.name}</strong>{p.position&&<small>{positionDefinitions[p.position as keyof typeof positionDefinitions]}</small>}</span><span aria-hidden="true">›</span></Link>)}</div></details>
   </div>;
 }

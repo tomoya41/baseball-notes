@@ -75,6 +75,43 @@ it("keeps topic links shareable without discarding player, club, name or Follow 
     expect(readNpbPlayerEvents).toHaveBeenCalledTimes(1);
   } finally { await f.close(); }
 });
+it("filters only explicit trade destinations and origins, retaining source and other filters", async () => {
+  const dataset = parseWikipediaPlayerEvents(eventPage(`** 北海道日本ハムファイターズの[[架空太郎]]が金銭トレードで中日ドラゴンズに移籍することを両球団が発表${citation}。`), "2026-10-19T00:00:00Z", [eventPerson], "a".repeat(64)).dataset;
+  const f = await mount("?kind=trade&team=npb:team:dragons&direction=in&q=架空&page=2", [], false, false, dataset);
+  try {
+    expect(f.host.querySelector("article h2")?.textContent).toBe("架空太郎 · トレード");
+    expect(f.host.querySelector('article a[href*="oldid=200"]')).not.toBeNull();
+    const directions = f.host.querySelector('nav[aria-label="中日のトレード方向"]')!;
+    expect(directions.querySelector('[aria-current="page"]')?.textContent).toBe("加入");
+    const out = directions.querySelector<HTMLAnchorElement>('a[href*="direction=out"]')!;
+    const share = new URL(out.getAttribute("href")!, "https://example.test").search;
+    expect(share).toContain("q=");
+    expect(share).not.toContain("page=");
+    expect(portableRoute("/NPB/moves", share)).toContain("direction=out");
+    expect(canonicalDeepLink(`baseballnotes://NPB/moves${share}`)).toContain("direction=out");
+    await act(async () => out.click());
+    expect(f.host.querySelector("article")).toBeNull();
+    expect(f.host.textContent).toContain("この条件の記事記載は未収録");
+    const club = f.host.querySelectorAll("select")[1]!;
+    await act(async () => { club.value = "npb:team:fighters"; club.dispatchEvent(new Event("change", { bubbles: true })); });
+    expect(f.host.querySelector("article h2")?.textContent).toBe("架空太郎 · トレード");
+    const renewal = f.host.querySelector<HTMLAnchorElement>('nav[aria-label="選手の動きの種類"] a[href*="kind=contract_renewal"]')!;
+    await act(async () => renewal.click());
+    expect(f.host.querySelector("[data-location]")?.textContent).not.toContain("direction=");
+    expect(f.host.textContent).toContain("契約更改の記録は未収録です");
+    expect(readNpbPlayerEvents).toHaveBeenCalledTimes(1);
+  } finally { await f.close(); }
+});
+it.each(["kind=trade&direction=in", "kind=release&team=npb:team:dragons&direction=out", "kind=trade&team=npb:team:dragons&direction=unknown"])(
+  "rejects an invalid trade direction without requesting the dataset: %s", async params => {
+    const f = await mount(`?${params}`);
+    try {
+      expect(npbEventQuery(new URLSearchParams(params)).valid).toBe(false);
+      expect(f.host.textContent).toContain("絞り込み条件");
+      expect(readNpbPlayerEvents).not.toHaveBeenCalled();
+    } finally { await f.close(); }
+  },
+);
 it("distinguishes uncollected renewals from no renewals and offers official club navigation without fetching news", async () => {
   const fetch = vi.fn(); vi.stubGlobal('fetch', fetch);
   const all = await mount('?kind=contract_renewal');
