@@ -103,7 +103,7 @@ export function parseWikipediaPlayerEvents(raw: unknown, observedAt: string, ide
     const releaseList = /^@(\w+)@は、(?:育成の)?(@(?:PLAYER|UNRESOLVED)@(?:、(?:育成の)?@(?:PLAYER|UNRESOLVED)@)*)(?:の([1-9]\d?)選手)?に自由契約とすることを通知したと発表$/.exec(normalized);
     // A bare name is an unresolved list position, never an identity lookup.
     // Count all positions before emitting any independently linked recipient.
-    const compoundNotice = noticeClause && /^@(\w+)@は、(.+)の([1-9]\d?)選手に対し、来季の契約を行わない旨を通知したこと$/.exec(normalized);
+    const compoundNotice = noticeClause ? /^@(\w+)@は、(.+)の([1-9]\d?)選手に対し、来季の契約を行わない旨を通知したこと$/.exec(normalized) : null;
     const noticeEntries = compoundNotice?.[2]?.split("、");
     const unlinkedEntries = noticeEntries?.filter(entry => !/^@(?:PLAYER|UNRESOLVED)@$/.test(entry)) ?? [];
     const compoundCountMatches = compoundNotice && noticeEntries && noticeEntries.length === Number(compoundNotice[3]) &&
