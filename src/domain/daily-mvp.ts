@@ -1,18 +1,30 @@
 import { scoreGameMvp, selectGameMvp, npbGameMvpInput } from "./game-mvp";
+import { dateInZone } from "./analysis-query";
 import type {NpbGameDetail} from './npb-game-detail';
 import type {GameDateIndex, GameIndexRow} from './npb-game-index';
+function completeGameSummary(index: GameDateIndex, summary: GameIndexRow) {
+ return summary.date===index.date&&summary.status==='final'&&summary.completeness==='complete'&&summary.battingAvailable&&summary.pitchingAvailable&&summary.detailAvailable&&summary.home.score!==null&&summary.away.score!==null;
+}
 function matchedGame(index:GameDateIndex,summary:GameIndexRow,details:readonly NpbGameDetail[]) {
  const matched=details.filter(d=>d.gameId===summary.gameId),game=matched[0];
- return summary.date===index.date&&summary.status==='final'&&summary.completeness==='complete'&&summary.battingAvailable&&summary.pitchingAvailable&&summary.detailAvailable&&summary.home.score!==null&&summary.away.score!==null&&matched.length===1&&game?.status==='final'&&game.completeness==='complete'&&game.date===index.date&&game.gameNumber===summary.gameNumber&&game.home.id===summary.home.id&&game.away.id===summary.away.id&&game.home.score===summary.home.score&&game.away.score===summary.away.score?game:null;
+ return completeGameSummary(index,summary)&&matched.length===1&&game?.status==='final'&&game.completeness==='complete'&&game.date===index.date&&game.gameNumber===summary.gameNumber&&game.home.id===summary.home.id&&game.away.id===summary.away.id&&game.home.score===summary.home.score&&game.away.score===summary.away.score?game:null;
+}
+function canReadSavedGames(index: GameDateIndex) {
+ return ['complete','partial'].includes(index.coverage)&&index.games.length<=12&&new Set(index.games.map(g=>g.gameId)).size===index.games.length;
 }
 /** One independently complete Game remains usable when other Games are uncollected. */
 export function savedGameMvpInputs(index:GameDateIndex,details:readonly NpbGameDetail[]) {
- if(!['complete','partial'].includes(index.coverage)||index.games.length>12||new Set(index.games.map(g=>g.gameId)).size!==index.games.length)return [];
+ if(!canReadSavedGames(index))return [];
  return index.games.flatMap(summary=>{
   const game=matchedGame(index,summary,details);if(!game)return [];
   const input=npbGameMvpInput(game);
   return selectGameMvp(input).status==='selected'?[{summary,input}]:[];
  });
+}
+/** Only link to finals with indexed player detail that this device could not match. */
+export function gameDetailsToCheck(index: GameDateIndex, details: readonly NpbGameDetail[], now = Date.now()) {
+ if (!canReadSavedGames(index) || index.date > dateInZone(now, "Asia/Tokyo")) return [];
+ return index.games.filter(game => completeGameSummary(index, game) && !matchedGame(index, game, details));
 }
 export type DailyMvpResult={status:'selected';players:{playerId:string;name:string;teamId:string;gameId:string;role:'batting'|'pitching';score:number;reason:string}[];games:number;date:string}|{status:'unavailable';reason:string};
 /** A transparent editorial reading of closed, saved game samples; never an official award. */

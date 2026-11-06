@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { savedGameMvpInputs, selectDailyMvp } from "../src/domain/daily-mvp";
+import { gameDetailsToCheck, savedGameMvpInputs, selectDailyMvp } from "../src/domain/daily-mvp";
 import { mvpFixture } from "./fixtures/daily-mvp";
 
 it("exposes only independently complete saved Games while day-wide selection remains held", () => {
@@ -48,4 +48,18 @@ it("does not select on failed/unknown/no-game dates, duplicated schedules or fut
   expect(savedGameMvpInputs({ ...index, games: Array(13).fill(index.games[0]!) }, [game])).toEqual([]);
   const date = "2099-09-25";
   expect(savedGameMvpInputs({ ...index, date, games: index.games.map(g => ({ ...g, date })) }, [{ ...game, date }])).toEqual([]);
+});
+
+it("offers a detail link only for a completed indexed box with no matching local data", () => {
+  const { game, index } = mvpFixture();
+  const row = index.games[0]!;
+  expect(gameDetailsToCheck(index, [])).toEqual([row]);
+  expect(gameDetailsToCheck(index, [game])).toEqual([]);
+  expect(gameDetailsToCheck(index, [{ ...game, home: { ...game.home, score: 4 } }])).toEqual([row]);
+  for (const ineligible of [
+    { ...row, completeness: "partial" as const }, { ...row, detailAvailable: false },
+    { ...row, status: "postponed" as const }, { ...row, away: { ...row.away, score: null } },
+  ]) expect(gameDetailsToCheck({ ...index, games: [ineligible] }, [])).toEqual([]);
+  expect(gameDetailsToCheck({ ...index, games: [row, row] }, [])).toEqual([]);
+  expect(gameDetailsToCheck(index, [], Date.parse("2026-09-24T14:59:59Z"))).toEqual([]);
 });
