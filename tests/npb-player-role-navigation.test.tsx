@@ -21,6 +21,9 @@ it.each(["P", "IF", null])("keeps the %s batting display policy consistent betwe
     for (const section of ["", "/stats"]) {
       await act(async () => root.render(<MemoryRouter key={section} initialEntries={[`/NPB/players/${playerId}${section}`]}><Routes><Route path="/NPB/players/:playerId/:section?" element={<NpbPlayer services={services} favorites={[]} saving={false} toggle={() => {}} />} /></Routes></MemoryRouter>));
       expect(element.querySelector('[data-testid="season-role"]')?.textContent).toBe(position === "P" ? "secondary batting" : "standard batting");
+      const role = position === "P" ? "pitching" : "batting";
+      const annual = `/NPB/players/${playerId}/seasons?season=2026&role=${role}`;
+      expect(element.querySelector(".player-fixed-scope")?.getAttribute("href")).toBe(annual);
     }
   } finally { await act(async () => root.unmount()); }
 });

@@ -1,5 +1,6 @@
 const keys = ["season", "competition", "period", "role", "battingView", "team", "minimum", "sample", "metric1", "op1", "value1", "metric2", "op2", "value2", "sort1", "dir1", "sort2", "dir2", "metrics", "recentPlayers", "recentMode", "player", "date", "asOfDate", "cohort", "peer", "age", "ageMode"];
 import { canonicalEntityRefSchema } from "./cross-league";
+import { npbComparisonOrigin } from "./npb-player-journey";
 import type { League } from "./models";
 export function viewConditions(params: URLSearchParams, includeName = true, league?: League): string {
   const clean = new URLSearchParams();
@@ -8,6 +9,10 @@ export function viewConditions(params: URLSearchParams, includeName = true, leag
   if(clean.get("cohort")!=="ageSeason"||!/^\d{1,2}$/.test(clean.get("age")??""))clean.delete("age");
   if(clean.get("cohort")!=="ageSeason"||!["season","collected"].includes(clean.get("ageMode")??""))clean.delete("ageMode");
   if(clean.has("peer")&&!canonicalEntityRefSchema.safeParse({league:"NPB",kind:"player",id:clean.get("peer")}).success)clean.delete("peer");
+  if (includeName && league !== "MLB") {
+    const origin = npbComparisonOrigin(params);
+    if (origin) clean.set("fromSeason", origin.season);
+  }
   // Local storage retains its legacy schema; public URLs additionally require
   // the route's league and canonical identities, never opaque/local IDs.
   if (league) {

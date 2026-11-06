@@ -15,7 +15,7 @@ export function NpbHistoricalCohort({manifest,season,repository}:{manifest:NpbHi
   const [params,setParams]=useSearchParams(),[attempt,setAttempt]=useState(0);
   const [result,setResult]=useState<{data:NpbHistoricalDataset;catalog:NpbCatalog}|null>(null),[failed,setFailed]=useState(false);
   const kind=params.get("cohort"),role=params.get("role")??"batting",referenceId=params.get("peer")??"";
-  const valid=(kind==="birthYear"||kind==="draftYear"||kind==="schoolYear")&&(role==="batting"||role==="pitching")&&(!params.has("competition")||params.get("competition")==="regular");
+  const valid=(kind==="birthYear"||kind==="draftYear"||kind==="schoolYear")&&(role==="batting"||role==="pitching")&&!params.has("stage")&&(!params.has("competition")||params.get("competition")==="regular");
   useEffect(()=>{if(!valid)return;let active=true;void Promise.all([readNpbHistoricalSeason(season,manifest),repository.catalog()]).then(([data,catalog])=>{if(active){setResult({data,catalog});setFailed(false);}}).catch(()=>{if(active)setFailed(true);});return()=>{active=false;};},[valid,season,manifest,repository,attempt]);
   const update=(key:string,value:string)=>setParams(previous=>{const next=new URLSearchParams(previous);next.set(key,value);if(["cohort","peer","role"].includes(key)){next.delete("recentPlayers");next.delete("page");}return next;});
   if(!valid)return <DataState kind="unsupported" title="指定した同期の条件・成績区分は未対応です" />;
