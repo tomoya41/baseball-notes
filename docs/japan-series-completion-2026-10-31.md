@@ -56,3 +56,10 @@ Rollbackはpin/UIのrevertで、旧URL・個人保存・旧APKの参照先は残
 総括は得点・イニングからの決定論的集計で、AI/APIを必要としない。
 公開・レビュー・Android証拠は対応PRへ記録する。Pixel/TalkBackは別Gate。
 追加月額費用¥0。
+
+## 2026-11-06 JST 検証記録
+
+- [PR #111](https://github.com/tomoya41/baseball-notes/pull/111) の最終コミット `ed0cd37` はレビュー指摘なし。全体テスト2,172件成功、既存スキップ1件。型検査・Lint・Web/Vercelビルド成功。
+- Android API 36は [標準](https://github.com/tomoya41/baseball-notes/actions/runs/42129686248)・[実測16 KB](https://github.com/tomoya41/baseball-notes/actions/runs/42129692848) ともに40件および再起動検証1件成功。360pxでライト・ダーク、100%・150%・200%の表示を確認した。Pixel実機とTalkBackは未実施。
+- [配信用成果物](https://github.com/tomoya41/baseball-notes/actions/runs/42132520943/artifacts/13464946231) を以前の配信物と照合し、既存65,730データファイルのハッシュ一致、新規v5のみ1件追加を確認した。
+- 初回の配信準備は公開済み試合データのHTTP 503で停止。再実行で保全は成功したが、[GitHub障害](https://www.githubstatus.com/incidents/pfbmpxxfq1cy) 中に作成された配信はタイムアウトし、同じコミットの配信状態が空になった。新しいコミットから同じ公開内容を検証・配信し、公開先のHTML・アプリ資産・v1–v5のデータを照合して切替を確認する。
