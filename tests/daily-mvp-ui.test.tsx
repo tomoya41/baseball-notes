@@ -13,6 +13,7 @@ it('keeps game selections lazy and distinct from a held day selection, with cano
   await act(async()=>host.querySelector('summary')!.click());await act(async()=>host.querySelector('details')!.dispatchEvent(new Event('toggle')));
   expect(host.textContent).toContain('この日の収録が未完了');expect(host.textContent).toContain('試合ごとのMVP（1試合）');
   expect(host.textContent).toContain('保存済みの選手成績／更新未確認');
+  expect(host.querySelector('.mvp-detail-links')).toBeNull();
   expect(host.querySelector('.game-mvp__player a')?.getAttribute('href')).toBe('/NPB/players/00000000-0000-4000-8000-000000000001');
   expect(host.querySelector('.saved-game-mvps a')?.getAttribute('href')).toContain(`games/${encodeURIComponent(game.gameId)}?date=${game.date}`);
   expect(readCachedMvpGames).toHaveBeenCalledTimes(1);expect(readCachedMvpGames).toHaveBeenCalledWith(day.games.map(g=>g.gameId),undefined);
@@ -27,6 +28,11 @@ it('does not manufacture a game selection when no complete player box is saved',
  const host=document.createElement('div'),root=createRoot(host);document.body.append(host);
  try{await act(async()=>root.render(<MemoryRouter><DailyMvp date={index.date} index={index}/></MemoryRouter>));await act(async()=>host.querySelector('summary')!.click());await act(async()=>host.querySelector('details')!.dispatchEvent(new Event('toggle')));
   expect(host.querySelector('.saved-game-mvps')).toBeNull();expect(host.querySelector('.game-mvp__player')).toBeNull();expect(host.textContent).toContain('選手成績未収録');
+  const detail = host.querySelector<HTMLDetailsElement>('.mvp-detail-links')!;
+  expect(detail.open).toBe(false);
+  expect(detail.querySelector('a')?.getAttribute('href')).toBe(`/NPB/games/${encodeURIComponent(index.games[0]!.gameId)}?date=${index.date}`);
+  await act(async()=>detail.querySelector('summary')!.click());
+  expect(readCachedMvpGames).toHaveBeenCalledTimes(1);
  }finally{await act(async()=>root.unmount());host.remove();}
 });
 it('withdraws the saved game selection while a same-date score correction is checked',async()=>{

@@ -683,6 +683,10 @@ public class ReleaseQualityTest {
             waitCondition("Saved-only NPB MVP check resolves","document.querySelector('.daily-mvp>details')?.open && !document.querySelector('.daily-mvp').innerText.includes('保存済みの試合別成績を確認中')");
             assertEquals("Expanding MVP sends no individual Game Detail/DB request",before,js("performance.getEntriesByType('resource').filter(e=>e.name.includes('/api/npb/game-detail')).length"));
             assertEquals("Uncollected player boxes never create a winner","0",js("document.querySelectorAll('.daily-mvp .game-mvp__player').length"));
+            waitCondition("Saved game index offers an exact date and Game link",
+                "!!document.querySelector('.mvp-detail-links a[href*=\"288fd963a60d44fe761b?date=2026-03-27\"]')");
+            js("(()=>{const d=document.querySelector('.mvp-detail-links');if(!d.open)d.querySelector('summary').click()})()");
+            assertEquals("Showing the links does not fetch any box scores",before,js("performance.getEntriesByType('resource').filter(e=>e.name.includes('/api/npb/game-detail')).length"));
             for(String theme:new String[]{"light","dark"}){
                 setThemeWithoutNavigation(theme,theme.equals("light")?"ライト":"ダーク");
                 assertEquals("Theme verification stays on this NPB date","#/NPB/schedule?date=2026-03-27",js("location.hash"));
