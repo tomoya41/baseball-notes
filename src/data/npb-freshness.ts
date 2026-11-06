@@ -4,6 +4,8 @@ import { npbLatestStandingsSchema } from "../domain/standings";
 
 export type FreshnessStatus = "fresh" | "stale" | "future_date" | "unreachable" | "invalid_payload";
 export type HealthStatus = "healthy" | "warning" | "unhealthy";
+export type CollectionStatus = "daily_collection_expected" | "calendar_skip_verified" |
+  "calendar_skip_unverified" | "calendar_review_required" | "scheduled_failure" | "unverified";
 
 export interface PublishedFreshness {
   status: FreshnessStatus;
@@ -48,12 +50,14 @@ export interface ScheduledActionHealth {
   url: string;
   inferredTargetDate: string;
   encryptedBackupArtifact: "present" | "missing" | "unavailable";
+  calendarSkipArtifact: "present" | "missing" | "unavailable";
 }
 
 export interface NpbDailyHealth {
   freshness: PublishedFreshness;
   ingestion: IngestionHealth | null;
   scheduledAction: ScheduledActionHealth | null;
+  collectionStatus: CollectionStatus;
   health: HealthStatus;
   likelyFault: "collector" | "publish" | "delivery" | "unknown" | null;
   warnings: string[];
@@ -157,23 +161,26 @@ export async function inspectLatestScheduledAction(repository: string, token?: s
     throw new Error("Invalid GitHub scheduled-run record");
   const artifactsResponse=await request(`${root}/actions/runs/${run.id}/artifacts?per_page=100`,
     {headers,signal:AbortSignal.timeout(10_000)});
-  let encryptedBackupArtifact:ScheduledActionHealth["encryptedBackupArtifact"]="unavailable";
+  const inferredTargetDate = expectedNpbEffectiveDate(new Date(run.run_started_at));
+  let encryptedBackupArtifact: ScheduledActionHealth["encryptedBackupArtifact"] = "unavailable";
+  let calendarSkipArtifact: ScheduledActionHealth["calendarSkipArtifact"] = "unavailable";
   if(artifactsResponse.ok) {
-    const payload=await artifactsResponse.json() as {artifacts?:unknown};
-    if(!Array.isArray(payload.artifacts)) throw new Error("Invalid GitHub artifact response");
-    encryptedBackupArtifact=payload.artifacts.some((item:unknown)=>{
+    const { artifacts } = await artifactsResponse.json() as {artifacts?:unknown};
+    if(!Array.isArray(artifacts)) throw new Error("Invalid GitHub artifact response");
+    const hasArtifact = (name: string) => artifacts.some((item: unknown) => {
       if(!item || typeof item!=="object") return false;
       const artifact=item as Record<string,unknown>;
-      return artifact.name===`npb-facts-encrypted-${run.id}` && artifact.expired===false;
-    }) ? "present" : "missing";
+      return artifact.name === name && artifact.expired === false;
+    });
+    encryptedBackupArtifact = hasArtifact(`npb-facts-encrypted-${run.id}`) ? "present" : "missing";
+    calendarSkipArtifact = hasArtifact(`npb-daily-calendar-skip-${inferredTargetDate}`) ? "present" : "missing";
   }
   return {runId:run.id,startedAt:run.run_started_at,conclusion:run.conclusion,
-    url:run.html_url,inferredTargetDate:expectedNpbEffectiveDate(new Date(run.run_started_at)),
-    encryptedBackupArtifact};
+    url:run.html_url,inferredTargetDate,encryptedBackupArtifact,calendarSkipArtifact};
 }
 
 export function evaluateNpbDailyHealth(freshness: PublishedFreshness, ingestion: IngestionHealth | null,
-  scheduledAction: ScheduledActionHealth | null = null): NpbDailyHealth {
+  scheduledAction: ScheduledActionHealth | null = null, collectionStatus: CollectionStatus = "unverified"): NpbDailyHealth {
   const warnings:string[]=[];
   if(freshness.status!=="fresh") warnings.push(`Published payload: ${freshness.status}`);
   if(!ingestion) warnings.push("Turso diagnostics unavailable");
@@ -181,7 +188,8 @@ export function evaluateNpbDailyHealth(freshness: PublishedFreshness, ingestion:
     if(ingestion.latestStandingsDate!==freshness.expectedEffectiveDate)
       warnings.push(`Turso standings date: ${ingestion.latestStandingsDate??"missing"}`);
     const day=ingestion.targetDayRun;
-    if(!day) warnings.push("Target Day ingestion run missing");
+    if(!day) warnings.push(collectionStatus === "calendar_skip_verified" ?
+      "No target Day run (verified outside-calendar skip)" : "Target Day ingestion run missing");
     else {
       if(day.dayStatus!=="complete" && day.dayStatus!=="no_games") warnings.push(`Day ingestion: ${day.dayStatus}`);
       if(day.operationalStatus!=="succeeded") warnings.push(`Day operation: ${day.operationalStatus}`);
@@ -195,13 +203,22 @@ export function evaluateNpbDailyHealth(freshness: PublishedFreshness, ingestion:
   if(scheduledAction?.inferredTargetDate===freshness.expectedEffectiveDate &&
     scheduledAction.conclusion!=="success")
     warnings.push(`Scheduled GitHub Action: ${scheduledAction.conclusion??"in progress"}`);
-  const likelyFault:NpbDailyHealth["likelyFault"] = freshness.status==="fresh" ? null :
+  let likelyFault:NpbDailyHealth["likelyFault"] = freshness.status==="fresh" ? null :
     freshness.status==="unreachable" || freshness.status==="invalid_payload" ? "delivery" :
     !ingestion ? "unknown" :
     ingestion.latestStandingsDate===freshness.expectedEffectiveDate ? "publish" : "collector";
+  if (collectionStatus === "calendar_skip_verified" && freshness.status === "stale" && likelyFault === "collector" &&
+    !ingestion?.targetDayRun) {
+    const saved = ingestion?.latestStandingsDate;
+    const published = freshness.publishedEffectiveDate;
+    // An intentional skip explains the absent daily update. A public lag
+    // behind the independently saved snapshot can still be a publish failure.
+    likelyFault = !saved || !published || published > saved ? "unknown" :
+      published < saved ? "publish" : null;
+  }
   const health:HealthStatus = freshness.status!=="fresh" ?
     (freshness.deadlinePassed ? "unhealthy" : "warning") : warnings.length ? "warning" : "healthy";
-  return {freshness,ingestion,scheduledAction,health,likelyFault,warnings};
+  return {freshness,ingestion,scheduledAction,collectionStatus,health,likelyFault,warnings};
 }
 
 // SPEC §42: retained snapshots provide context, never a stale-health exemption.

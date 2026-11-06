@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { parse } from "yaml";
 import { expect, test } from "vitest";
-type Workflow={on:{schedule?:{cron:string;timezone?:string}[]};concurrency?:{group:string};jobs:Record<string,{if?:string;steps:{if?:string;run?:string;uses?:string}[]}>};
+type Workflow={on:{schedule?:{cron:string;timezone?:string}[]};concurrency?:{group:string};jobs:Record<string,{if?:string;steps:{if?:string;run?:string;uses?:string;with?:Record<string,string>}[]}>};
 const read=(name:string)=>parse(readFileSync(`.github/workflows/${name}.yml`,"utf8")) as Workflow;
 test("all EOD/safety workflows are valid YAML and retain safety schedules",()=>{
   const watcher=read("npb-eod-watcher"),sync=read("npb-schedule-sync"),daily=read("daily-collector"),fresh=read("npb-freshness");
@@ -32,6 +32,15 @@ test("Daily safety-net publication regenerates player payloads after verified Fa
   expect(build).toContain("publish-npb-hot.ts --require-remote");
   expect(build.indexOf("generate-npb-season.ts")).toBeLessThan(build.indexOf("npm run build"));
   expect(build).toContain("else\n  npx tsx scripts/preserve-published-npb-hot.ts");
+});
+
+test("only the scheduled calendar skip uses a dated lifecycle artifact", () => {
+  const step = read("daily-collector").jobs.collect!.steps.find(step => step.with?.name?.includes("npb-daily-lifecycle"));
+  const name = step?.with?.name;
+  expect(name).toContain("github.event_name == 'schedule'");
+  expect(name).toContain("steps.safety.outputs.calendar_skip == 'true'");
+  expect(name).toContain("format('npb-daily-calendar-skip-{0}', steps.safety.outputs.target_date)");
+  expect(step?.with?.path).toBe(".data/eod");
 });
 
 test("formal HOT re-evaluation follows completed trusted Scheduled production, never a manual proof", () => {

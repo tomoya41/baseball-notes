@@ -7,7 +7,7 @@ import { checkPublishedNpbFreshness, diagnoseNpbIngestion, evaluateNpbDailyHealt
   expectedNpbEffectiveDate, freshnessDeadlinePassed, inspectLatestScheduledAction, failsRequiredNpbHealth,
   type DayRunHealth, type IngestionHealth, type PublishedFreshness } from "../src/data/npb-freshness";
 import type { NpbLatestStandings } from "../src/domain/standings";
-import { canRetainNpbSnapshot, planNpbCalendar, type inspectNpbCalendar } from "../src/data/npb-season-lifecycle";
+import { canRetainNpbSnapshot, diagnoseNpbCollection, planNpbCalendar, type inspectNpbCalendar } from "../src/data/npb-season-lifecycle";
 
 const fixture=readFileSync(fileURLToPath(new URL("./fixtures/nf3/standings.html",import.meta.url)),"utf8");
 const now=new Date("2026-09-26T03:17:00Z"); // 12:17 JST
@@ -43,8 +43,8 @@ describe("outside-calendar operational retention (not Current freshness or Gate 
   const f: PublishedFreshness = { ...fresh(), status: "stale", expectedEffectiveDate: "2026-10-13", publishedEffectiveDate: "2026-10-12" };
   const run = day({ targetDate: "2026-10-12", dayStatus: "no_games", finalGames: 0, completeGames: 0, backupStatus: "pending" });
   const i: IngestionHealth = { ...ingestion(run), targetDayRun: null, latestSuccessfulTargetDate: "2026-10-12", latestStandingsDate: "2026-10-12" };
-  const action = { runId: 1, startedAt: at, conclusion: "success", url: "https://example.test/run", inferredTargetDate: "2026-10-13", encryptedBackupArtifact: "missing" as const };
-  const lifecycle: Awaited<ReturnType<typeof inspectNpbCalendar>> = { calendar: planNpbCalendar("daily", "2026-10-13"), latestSavedGameDate: "2026-10-08", targetGames: 0, pendingSavedGames: 9, seasonEndConfirmed: false, metadataReviewRequired: true };
+  const action = { runId: 1, startedAt: at, conclusion: "success", url: "https://example.test/run", inferredTargetDate: "2026-10-13", encryptedBackupArtifact: "missing" as const, calendarSkipArtifact: "present" as const };
+  const lifecycle: Awaited<ReturnType<typeof inspectNpbCalendar>> = { calendar: planNpbCalendar("daily", "2026-10-13"), latestSavedGameDate: "2026-10-08", targetGames: 0, pendingSavedGames: 9, seasonEndConfirmed: false, metadataReviewRequired: false };
   it("recognizes an independently saved snapshot without changing stale, pending coverage or health", () => {
     expect(canRetainNpbSnapshot(f, i, action, lifecycle)).toBe(true);
     expect(evaluateNpbDailyHealth(f, i, action).health).toBe("unhealthy");
@@ -69,6 +69,33 @@ describe("outside-calendar operational retention (not Current freshness or Gate 
     expect(canRetainNpbSnapshot(f, i, { ...action, inferredTargetDate: "2026-10-12" }, lifecycle)).toBe(false);
     expect(canRetainNpbSnapshot(f, { ...i, latestDayRun: day({ targetDate: "2026-10-12", backupStatus: "failed" }) }, action, lifecycle)).toBe(false);
     expect(canRetainNpbSnapshot(f, i, action, { ...lifecycle, calendar: planNpbCalendar("daily", "2026-10-07") })).toBe(false);
+  });
+  it("reports a confirmed skip separately while preserving the required stale failure", () => {
+    const collection = diagnoseNpbCollection(f.expectedEffectiveDate, action, lifecycle);
+    expect(collection).toBe("calendar_skip_verified");
+    const summary = evaluateNpbDailyHealth(f, i, action, collection);
+    expect(summary).toMatchObject({ health: "unhealthy", likelyFault: null, freshness: { status: "stale" } });
+    expect(summary.warnings).toContain("No target Day run (verified outside-calendar skip)");
+    expect(failsRequiredNpbHealth(summary)).toBe(true);
+    expect(evaluateNpbDailyHealth({ ...f, publishedEffectiveDate: "2026-10-11" }, i, action, collection).likelyFault).toBe("publish");
+    for (const status of ["unreachable", "invalid_payload"] as const)
+      expect(evaluateNpbDailyHealth({ ...f, status }, i, action, collection).likelyFault).toBe("delivery");
+    expect(evaluateNpbDailyHealth(f, { ...i, targetDayRun: day({ operationalStatus: "failed" }) }, action, collection).likelyFault).toBe("collector");
+  });
+  it("requires evidence from the right run and a DB calendar without conflicting fixtures", () => {
+    const diagnose = (run: Parameters<typeof diagnoseNpbCollection>[1], db = lifecycle) =>
+      diagnoseNpbCollection(f.expectedEffectiveDate, run, db);
+    expect(diagnose(null)).toBe("calendar_skip_unverified");
+    expect(diagnose({ ...action, calendarSkipArtifact: "missing" })).toBe("calendar_skip_unverified");
+    expect(diagnose({ ...action, calendarSkipArtifact: "unavailable" })).toBe("calendar_skip_unverified");
+    expect(diagnose({ ...action, encryptedBackupArtifact: "present" })).toBe("calendar_skip_unverified");
+    expect(diagnose({ ...action, inferredTargetDate: "2026-10-12" })).toBe("calendar_skip_unverified");
+    expect(diagnose({ ...action, conclusion: null })).toBe("calendar_skip_unverified");
+    expect(diagnose({ ...action, conclusion: "failure" })).toBe("scheduled_failure");
+    expect(diagnose(action, { ...lifecycle, targetGames: 1 })).toBe("calendar_review_required");
+    expect(diagnose(action, { ...lifecycle, metadataReviewRequired: true })).toBe("calendar_review_required");
+    expect(diagnose(action, { ...lifecycle, calendar: planNpbCalendar("daily", "2026-10-08") })).toBe("daily_collection_expected");
+    expect(diagnoseNpbCollection(f.expectedEffectiveDate, action, null)).toBe("unverified");
   });
 });
 
@@ -120,7 +147,7 @@ describe("NPB daily health",()=>{
   });
   it("warns when the relevant scheduled encrypted artifact is missing",()=>{
     const action={runId:1,startedAt:at,conclusion:"success",url:"https://example.test/run",
-      inferredTargetDate:"2026-09-25",encryptedBackupArtifact:"missing" as const};
+      inferredTargetDate:"2026-09-25",encryptedBackupArtifact:"missing" as const,calendarSkipArtifact:"missing" as const};
     expect(evaluateNpbDailyHealth(fresh(),ingestion(),action).health).toBe("warning");
   });
   it("reads day-run metadata from SQLite without changing it",async()=>{
@@ -137,7 +164,20 @@ describe("NPB daily health",()=>{
       {artifacts:[{name:"npb-facts-encrypted-42",expired:false}]} :
       {workflow_runs:[{id:42,run_started_at:"2026-09-26T00:00:00Z",conclusion:"success",html_url:"https://example.test/42"}]}))) as typeof fetch;
     expect(await inspectLatestScheduledAction("owner/repo",undefined,request)).toMatchObject({runId:42,
-      inferredTargetDate:"2026-09-25",encryptedBackupArtifact:"present"});
+      inferredTargetDate:"2026-09-25",encryptedBackupArtifact:"present",calendarSkipArtifact:"missing"});
+  });
+  it.each([
+    ["npb-daily-calendar-skip-2026-09-25", false, "present"],
+    ["npb-daily-calendar-skip-2026-09-24", false, "missing"],
+    ["npb-daily-calendar-skip-2026-09-25", true, "missing"],
+    ["npb-daily-lifecycle", false, "missing"],
+  ] as const)("checks dated calendar skip artifact %s (expired: %s)", async (name, expired, expected) => {
+    const request: typeof fetch = async input => Response.json(String(input).includes("/artifacts?") ?
+      { artifacts: [{ name, expired }] } :
+      { workflow_runs: [{ id: 42, run_started_at: "2026-09-26T00:00:00Z", conclusion: "success", html_url: "https://example.test/42" }] });
+    expect(await inspectLatestScheduledAction("owner/repo", undefined, request)).toMatchObject({
+      encryptedBackupArtifact: "missing", calendarSkipArtifact: expected,
+    });
   });
   it("authenticates both scheduled-run and artifact evidence requests without exposing the token", async () => {
     const headers: string[] = [];

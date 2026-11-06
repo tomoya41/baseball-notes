@@ -11,8 +11,8 @@ describe("latest-only coordinated NPB publication", () => {
     expect(npbLatestPublicationDate("2026-09-30")).toBe("2026-09-30");
     expect(npbLatestPublicationDate("2026-09-30", null)).toBe("2026-09-30");
   });
-  it("accepts the actual latest date explicitly", () => {
-    expect(npbLatestPublicationDate("2026-09-30", "2026-09-30")).toBe("2026-09-30");
+  it.each(["2026-09-30", "2027-04-03"])("accepts the actual latest date %s explicitly", date => {
+    expect(npbLatestPublicationDate(date, date)).toBe(date);
   });
   it.each(["2026-09-29", "2026-10-01"])("rejects %s rather than relabeling current projections", date => {
     expect(() => npbLatestPublicationDate("2026-09-30", date)).toThrow(/historical replay is unsupported/);
