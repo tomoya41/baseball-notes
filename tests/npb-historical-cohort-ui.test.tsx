@@ -42,6 +42,23 @@ it("shows an explicit Japanese grade range and birthday, preserving calendar-yea
   expect(host.textContent).toContain("1999年生まれ");expect(host.textContent).not.toContain("2000-01-01生まれ");
  }finally{await close();}
 });
+it("shows the same draft year separately from year-end age and makes removal reversible", async()=>{
+ const {host,close}=await mount(`cohort=draftYear&peer=${cohortId(3)}&recentPlayers=${cohortId(2)},${cohortId(3)}&sort1=HR`);
+ try{
+  const result=host.querySelector('[aria-label="同期の成績比較"]')!;
+  const [unknown,known]=result.querySelectorAll(".comparison-bar");
+  expect(result.textContent).toContain("ドラフト同期 · 2018年指名");
+  expect(unknown!.textContent).toContain("2025年 · 年末年齢未確認");
+  expect(known!.textContent).toContain("2025年 · 年末25歳");
+  expect(known!.textContent).toContain("102打席");
+  expect(known!.querySelector(":scope > span")?.textContent).toBe("0");
+  await act(async()=>known!.querySelector("button")!.click());
+  expect(host.querySelectorAll(".comparison-bar")).toHaveLength(1);
+  await act(async()=>host.querySelector("button")!.click());
+  expect(host.querySelectorAll(".comparison-bar")).toHaveLength(2);
+  expect(host.querySelector<HTMLSelectElement>(".historical-comparison select")?.value).toBe("HR");
+ }finally{await close();}
+});
 it("keeps missing cohort fields unknown and fails metadata reads without silently showing all players",async()=>{
  const {host,close}=await mount(`cohort=birthYear&peer=${cohortId(2)}`);try{expect(host.textContent).toContain("同期条件は未確認");expect(host.querySelectorAll("article")).toHaveLength(0);}finally{await close();}
  const bad=await mount(`cohort=draftYear&peer=${cohortId(4)}`);try{expect(bad.host.textContent).toContain("同期条件は未確認");}finally{await bad.close();}
