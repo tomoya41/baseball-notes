@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { openDataClient, migrateData } from "../src/data/database";
 import { runNpbCollector, jstToday, addDays } from "../src/data/npb-collector";
 import { NpbRepository } from "../src/data/npb-repository";
+import { requireNpbRegularSeason } from "../src/data/npb-season-metadata";
 import { buildNpbStandingsPayload, writeNpbPayloadAtomically } from "../src/data/npb-payload";
 
 function option(name: string): string | null {
@@ -17,6 +18,7 @@ async function main(): Promise<void> {
   const dryRun = process.argv.includes("--dry-run");
   const offlineRaw = process.argv.includes("--offline-raw");
   if (!process.argv.includes("--fetch") && !offlineRaw) throw new Error("Pass --fetch or --offline-raw explicitly");
+  requireNpbRegularSeason(targetDate);
   const url = process.env.TURSO_DATABASE_URL ?? "file:.data/baseball.db";
   const remote = !url.startsWith("file:");
   if (process.argv.includes("--require-remote") && (!remote || !process.env.TURSO_AUTH_TOKEN))
