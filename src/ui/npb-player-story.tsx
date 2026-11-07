@@ -8,13 +8,16 @@ import { PlayerLifecycle } from "./npb-lifecycle";
 import { NpbPlayerEventHistory } from "./npb-player-event-history";
 import type { CohortRepository } from "./npb-historical-cohort";
 import {historicalBirthDate} from "../domain/npb-age-season";
+import { npbHistoricalComparisonLinks } from "../domain/npb-player-journey";
 
 /** Explicit expansion only. Metadata and annual observations are never promoted to a complete career. */
-export function NpbPlayerStory({ playerId, role, manifest, repository }: { playerId: string; role: "batting" | "pitching"; manifest: NpbHistoricalManifest | null; repository: CohortRepository }) {
+export function NpbPlayerStory({ playerId, role, manifest, repository, season }: { playerId: string; role: "batting" | "pitching"; manifest: NpbHistoricalManifest | null; repository: CohortRepository; season?: number }) {
   const [result, setResult] = useState<{ playerId: string; catalog: NpbCatalog } | null>(null), [failed, setFailed] = useState(false), [attempt, setAttempt] = useState(0);
   useEffect(() => { let active = true; void repository.catalog().then(catalog => { if (active) { setResult({ playerId, catalog }); setFailed(false); } }).catch(() => { if (active) setFailed(true); }); return () => { active = false; }; }, [playerId, repository, attempt]);
   const player = result?.playerId === playerId ? result.catalog.players.find(p => p.playerId === playerId) : null;
   const observed = manifest?.players.find(p => p.playerId === playerId), birthDate=manifest&&result?.playerId===playerId?historicalBirthDate(playerId,result.catalog,manifest).birthDate:player?.profile.birthDate??null, birthYear=birthDate?Number(birthDate.slice(0,4)):null;
+  const comparisonYear = season !== undefined && observed?.seasons.includes(season) ? season : observed?.seasons.at(-1);
+  const comparison = comparisonYear === undefined ? null : npbHistoricalComparisonLinks(playerId, role, comparisonYear, season ?? comparisonYear, birthYear);
   if (failed) return <><DataState kind="source-unavailable" title="選手経歴を取得できません" /><button onClick={() => { setFailed(false); setAttempt(n => n + 1); }}>経歴を再試行</button></>;
   if (result?.playerId !== playerId) return <LoadingSkeleton />;
   return <section aria-label="経歴と収録シーズンのつながり">
@@ -23,6 +26,6 @@ export function NpbPlayerStory({ playerId, role, manifest, repository }: { playe
     <NpbPlayerEventHistory playerId={playerId} />
     <h2>収録されたシーズンへ</h2><p className="inline-note">球団・成績は各年度のページで確認できます。抜けている年度は出場なしを意味しません。年齢はその年の12月31日時点です。</p>
     {!manifest ? <p>年度一覧が未確認のため、収録シーズンは表示できません。</p> : observed ? <div className="hub-links">{observed.seasons.slice().sort((a, b) => a - b).map(year => <Link key={year} to={`/NPB/players/${playerId}/seasons?season=${year}&role=${role}&story=1`}>{year}年{birthYear !== null && year >= birthYear ? ` · 年末${year - birthYear}歳` : ""}</Link>)}</div> : <p>この選手の過去年度成績は未収録です。</p>}
-    {birthYear !== null && <p><Link to={`/NPB/history?cohort=ageSeason&age=26&role=${role}&recentPlayers=${playerId}`}>同じ年齢のシーズンと見比べる →</Link></p>}
+    {comparison?.age != null && <p><Link to={comparison.sameAge}>{comparisonYear}年（年末{comparison.age}歳）と同じ年齢で比較 →</Link></p>}
   </section>;
 }
