@@ -1,6 +1,7 @@
 const keys = ["season", "competition", "period", "role", "battingView", "team", "minimum", "sample", "metric1", "op1", "value1", "metric2", "op2", "value2", "sort1", "dir1", "sort2", "dir2", "metrics", "recentPlayers", "recentMode", "player", "date", "asOfDate", "cohort", "peer", "age", "ageMode"];
 import { canonicalEntityRefSchema } from "./cross-league";
 import { npbComparisonOrigin } from "./npb-player-journey";
+import { clubYearPair, progressionMetrics } from "./npb-player-progression";
 import type { League } from "./models";
 export function viewConditions(params: URLSearchParams, includeName = true, league?: League): string {
   const clean = new URLSearchParams();
@@ -12,6 +13,16 @@ export function viewConditions(params: URLSearchParams, includeName = true, leag
   if (includeName && league !== "MLB") {
     const origin = npbComparisonOrigin(params);
     if (origin) clean.set("fromSeason", origin.season);
+    const pair = clubYearPair(params.get("clubYears"));
+    const years = params.get("years"), metric = params.get("trendMetric");
+    if (pair && years && /^20\d{2}(,20\d{2}){1,3}$/.test(years) &&
+      pair.split(",").every(year => years.split(",").includes(year)) && !clean.has("cohort") &&
+      (!params.has("competition") || params.get("competition") === "regular") && !params.has("stage") &&
+      canonicalEntityRefSchema.safeParse({ league: "NPB", kind: "player", id: clean.get("player") }).success) {
+      clean.set("years", years);
+      clean.set("clubYears", pair);
+      if (metric && progressionMetrics.some(key => key === metric)) clean.set("trendMetric", metric);
+    }
   }
   // Local storage retains its legacy schema; public URLs additionally require
   // the route's league and canonical identities, never opaque/local IDs.
