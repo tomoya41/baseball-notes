@@ -132,9 +132,9 @@ export function NpbPlayer({ services, favorites, toggle, saving }: { services: S
     <PlayerIdentity uniformNumber={product?.membership.uniformNumber ?? null} name={player.name} context={`NPB · ${directoryTeam?.shortName ?? identity?.teamName ?? "所属未確認"}`} detail={[directoryPlayer?.position ? positionDefinitions[directoryPlayer.position] : null, "保存済みの所属"].filter(Boolean).join(" · ")} visual={product?.visual.photo.usage === "allowed" ? <img className="profile-photo" src={product.visual.photo.url!} alt={player.name} /> : <LicensedPlayerPhoto playerId={player.id} season={2026} />} favorite={<FavoriteButton active={isFavorite} saving={saving} label={player.name} onClick={() => toggle({ league: "NPB", kind: "player", entityId: player.id })} />} />
     {gameLinks && <section className="game-player-context" aria-label="試合から選手を確認">
       <p>{gameLinks.scope}</p><nav aria-label="試合からの分析">
-        <Link to={seasonsTo}>この年度・区分の成績 →</Link>
-        {compareTo && <Link to={compareTo}>同年度で比較 →</Link>}
-        {postseasonVisit && <Link to={base}>公式戦の選手ページ →</Link>}
+        <Link to={seasonsTo}>年度・区分の成績</Link>
+        {compareTo && <Link to={compareTo}>同年度で比較</Link>}
+        {postseasonVisit && <Link to={base}>公式戦の選手ページ</Link>}
         <Link to={gameLinks.game}>試合詳細へ戻る</Link>
       </nav>
     </section>}
