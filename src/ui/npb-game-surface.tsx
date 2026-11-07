@@ -8,6 +8,7 @@ import type { NpbRecords } from "../domain/npb-records";
 import { DataState,LoadingSkeleton,PageHeading } from "./components";
 import { DateRibbon, ScoreboardRow } from "./design-system";
 import { TeamFavorite, type FavoriteActions } from "./team-favorite";
+import { InternationalGameEntry } from "./international-game-entry";
 const statusLabel={final:"試合終了",scheduled:"開始前",postponed:"延期",canceled:"中止",suspended:"中断",unknown:"状態未確認"};
 export function GameLinks({games}:{games:readonly GameIndexRow[]}){return <div className="scoreboard-list">{games.map(g=><ScoreboardRow key={g.gameId}
   to={`/NPB/games/${encodeURIComponent(g.gameId)}?date=${g.date}`} away={g.away.name} home={g.home.name} awayId={g.away.id} homeId={g.home.id} awayScore={g.away.score} homeScore={g.home.score}
@@ -31,6 +32,7 @@ export function NpbScheduleScreen({repository,favorites=[],toggle,saving=false}:
   const change=(next:string)=>{setState("loading");setPayload(null);setParams({date:next});};
   return <div className="screen game-schedule"><PageHeading eyebrow="NPB" title="日程・結果"/>
     <nav className="profile-tabs" aria-label="試合の種類"><Link to="/NPB/schedule" aria-current="page">公式戦</Link><Link to="/NPB/postseason">ポストシーズン</Link><Link to="/NPB/preseason">オープン戦 <span className="soon-badge">準備中</span></Link></nav>
+    <InternationalGameEntry/>
     {manifest&&date&&/^\d{4}-\d{2}-\d{2}$/.test(date)&&date>=manifest.from&&date<=manifest.to&&<DateRibbon date={date} min={manifest.from} max={manifest.to} onChange={change} />}
     {state==="loading"&&<LoadingSkeleton/>}{state==="error"&&<DataState kind="source-unavailable" title="日程を読み込めません"/>}
     {state==="ready"&&payload&&payload.date===date&&<GameDateView payload={payload}/>}
