@@ -1,0 +1,23 @@
+.club-year-change .club-year-delta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .2rem .75rem;
+  margin-block: .45rem;
+  padding: .35rem .5rem;
+  background: var(--brand-soft);
+}
+
+.club-year-delta strong {
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.club-year-breakdown {
+  border-top: 1px solid var(--color-border);
+}
+
+.club-year-breakdown summary {
+  min-height: var(--touch);
+}
