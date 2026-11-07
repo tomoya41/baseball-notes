@@ -3,6 +3,13 @@ import { comparisonDisplayExport, displayCsv, portableRoute, portableUrl, RETROS
 import { collectionSeasonCheckpoint, comparisonValue, metricNumber, previousYearDelta, selectedTeams, selectedYears, type ComparisonRow } from "../src/domain/product-comparison";
 import { canonicalDeepLink, parentNativeRoute } from "../src/domain/native-navigation";
 
+it("shares the Home view and a dated international entry without local information", () => {
+  expect(portableRoute("/NPB/home", "homeView=follow&homeSeason=winter&local=private")).toBe("/NPB/home?homeView=follow&homeSeason=winter");
+  expect(portableRoute("/NPB/schedule", "season=2026&date=2026-10-08&view=international&local=private"))
+    .toBe("/NPB/schedule?season=2026&date=2026-10-08&view=international");
+  expect(portableRoute("/NPB/schedule", "date=2026-09-31")).toBeNull();
+});
+
 it("shares and opens only a valid NPB team-player list with bounded public selection state",()=>{
   const path="/NPB/teams/npb%3Ateam%3Atigers/players",query="season=2025&role=pitching&sort=innings&q=%E6%9D%91&localSecret=never";
   const expected=`${path}?season=2025&role=pitching&sort=innings&q=%E6%9D%91`;

@@ -32,6 +32,12 @@ describe("canonical dated Game surface",()=>{
   });
   it("lists partial Game headers with safe canonical detail links",()=>{const text=html(<GameDateView payload={date([row()])}/>);
     expect(text).toContain("一部データ確認中");expect(text).toContain("npb%3Agame%3Aone");expect(text).toContain("ビジター DeNA 2、ホーム 阪神 1、試合終了");});
+  it("distinguishes scoreboard links from partial and complete player records",()=>{
+    const scoreOnly=row("score"), partial={...row("partial"),battingAvailable:true};
+    const complete={...row("complete"),completeness:"complete" as const,battingAvailable:true,pitchingAvailable:true};
+    const text=html(<GameDateView payload={date([scoreOnly,partial,complete])}/>);
+    for(const label of ["スコアのみ収録","個人成績は一部収録","出場選手・個人成績"])expect(text).toContain(label);
+  });
   it("distinguishes confirmed no-games from unavailable schedule",()=>{
     expect(html(<GameDateView payload={date([],"no_games")}/>)).toContain("試合なし");
     expect(html(<GameDateView payload={date([],"unknown")}/>)).toContain("確認できていません");});

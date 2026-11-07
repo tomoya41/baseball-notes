@@ -30,6 +30,19 @@ export function portableRoute(path: string, search = ""): string | null {
     const season=source.get("season")??"2027";if(!["2026","2027"].includes(season))return null;
     return `/NPB/season?season=${season}`;
   }
+  if (league === "NPB" && parts.length === 2 && ["home", "schedule"].includes(resource ?? "")) {
+    if (source.getAll("season").length > 1 || source.has("season") && source.get("season") !== "2026") return null;
+    if (source.get("season") === "2026") clean.set("season", "2026");
+    if (resource === "home") {
+      if (["standings", "follow"].includes(source.get("homeView") ?? "")) clean.set("homeView", source.get("homeView")!);
+      if (["spring", "regular", "autumn", "winter"].includes(source.get("homeSeason") ?? "")) clean.set("homeSeason", source.get("homeSeason")!);
+    } else {
+      if (source.has("date") && !z.iso.date().safeParse(source.get("date")).success) return null;
+      if (source.has("date")) clean.set("date", source.get("date")!);
+      if (source.get("view") === "international") clean.set("view", "international");
+    }
+    return `${path}${clean.size ? `?${clean}` : ""}`;
+  }
   if(["weekly","monthly"].includes(resource??"")&&parts.length===2){
     const month=source.get("month");
     if(resource==="monthly"&&month!==null&&(!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)||!z.iso.date().safeParse(`${month}-01`).success))return null;

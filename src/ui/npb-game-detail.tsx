@@ -45,6 +45,7 @@ export function NpbGameDetailView({ payload, state, services, actions, selectedS
   if (state === "error" || !payload) return <div className="screen game-detail"><h1>試合詳細</h1>
     <DataState kind="source-unavailable" title="試合データを取得できませんでした" /><a className="text-link" href="#/NPB/schedule">日程・結果へ戻る</a></div>;
   const hasBox = payload.status === "final";
+  const hasPlayerRows = [payload.batting.away, payload.batting.home, payload.pitching.away, payload.pitching.home].some(rows => rows.length > 0);
   const renderTeam = (side: "away" | "home") => {
       const team = payload[side], batting = payload.batting[side], pitching = payload.pitching[side];
       return <section className="game-detail__team" key={side} aria-label={`${side === "away" ? "ビジター" : "ホーム"} ${team.shortName}のボックススコア`}>
@@ -66,9 +67,9 @@ export function NpbGameDetailView({ payload, state, services, actions, selectedS
   return <div className="screen game-detail">
     <GameHeading title={`${formatDate(payload.date, true)}の試合`} date={payload.date} context={`NPB · 公式戦${payload.gameNumber > 1 ? ` · 第${payload.gameNumber}試合` : ""}`} backTo={`/NPB/schedule?date=${payload.date}`} />
     <ScoreHero away={payload.away.shortName} home={payload.home.shortName} awayId={payload.away.id} homeId={payload.home.id} awayScore={payload.away.score} homeScore={payload.home.score} status={statusName[payload.status]} />
+    {hasBox && <GameJumpNav boxLabel={hasPlayerRows ? "選手成績" : "成績の収録状況"} />}
     {hasBox && <GameMvp input={npbGameMvpInput(payload)}/>}
     <InningScoreboard away={{name:payload.away.shortName,runs:payload.away.score,hits:payload.completeness==="complete"?payload.away.totals.hits:null}} home={{name:payload.home.shortName,runs:payload.home.score,hits:payload.completeness==="complete"?payload.home.totals.hits:null}}/>
-    {hasBox && <GameJumpNav />}
     {payload.status === "scheduled" && services && <NpbGamePreview game={payload} services={services} favorites={actions?.favorites ?? []} />}
     {hasBox && <GameRecap league="NPB" complete={payload.completeness === "complete"} favorites={actions?.favorites ?? []} batting={[...payload.batting.away, ...payload.batting.home]} pitching={[...payload.pitching.away, ...payload.pitching.home].map(p => ({ ...p, outs: p.outsRecorded, so: p.strikeouts }))} />}
     {actions && <details className="game-team-disclosure"><summary>球団情報・フォロー</summary><GameTeamLinks league="NPB" teams={[payload.away, payload.home]} {...actions} /></details>}
