@@ -28,6 +28,7 @@ import { NpbHistoricalCohort, type CohortRepository } from "./npb-historical-coh
 import { NpbAgeSeason } from "./npb-age-season";
 import { NpbPlayerStory } from "./npb-player-story";
 import { npbComparisonOrigin, npbHistoricalComparisonLinks } from "../domain/npb-player-journey";
+import { npbGamePlayerContext, npbGamePlayerLinks } from "../domain/npb-game-player-journey";
 
 const teams:Record<string,string>={giants:"巨人",tigers:"阪神",dragons:"中日",carp:"広島",swallows:"ヤクルト",baystars:"DeNA",hawks:"ソフトバンク",fighters:"日本ハム",lions:"西武",marines:"ロッテ",eagles:"楽天",buffaloes:"オリックス"};
 const teamName=(id:string)=>teams[id.split(":").at(-1)!]??"球団未確認";
@@ -46,6 +47,7 @@ export function NpbPlayerSeasons({repository,profileRepository,favorites=[],togg
 }&Partial<FavoriteActions>) {
   const {playerId}=useParams(),[params,setParams]=useRosterSearchParams();
   const location=useLocation(),rosterBack=teamPlayerReturnPath(location.state);
+  const gameContext=npbGamePlayerContext(params), gameLinks=gameContext&&playerId?npbGamePlayerLinks(playerId,gameContext):null;
   const [pastOpen,setPastOpen]=useState(false);
   const [manifest,setManifest]=useState<NpbHistoricalManifest|null>(null),[failed,setFailed]=useState(false),[attempt,setAttempt]=useState(0);
   const [directoryPlayer,setDirectoryPlayer]=useState<NpbDirectoryPlayer|null>(null),[directoryState,setDirectoryState]=useState<"loading"|"ready"|"error">("loading");
@@ -60,7 +62,7 @@ export function NpbPlayerSeasons({repository,profileRepository,favorites=[],togg
   const supported=season==="2026"?!!directoryPlayer:!!player?.seasons.some(y=>String(y)===season);
   const regular=competition==="regular"&&!stage;
   const validScope=regular||competition==="postseason"&&admitted.some(s=>s.stage===stage);
-  const update=(key:string,value:string)=>setParams(previous=>{const p=new URLSearchParams(previous);p.set(key,value);if(key==="season"){p.delete("years");if(![...admittedNpbPostseasonScopes,...admittedCsScopes].some(s=>s.playerId===playerId&&String(s.season)===value&&s.stage===p.get("stage"))){p.set("competition","regular");p.delete("stage");}}return p;});
+  const update=(key:string,value:string)=>setParams(previous=>{const p=new URLSearchParams(previous);p.set(key,value);if(key==="season"){for(const field of ["years","game","date","boxSide"])p.delete(field);if(![...admittedNpbPostseasonScopes,...admittedCsScopes].some(s=>s.playerId===playerId&&String(s.season)===value&&s.stage===p.get("stage"))){p.set("competition","regular");p.delete("stage");}}return p;});
   const currentLink=!!directoryPlayer;
   const name = player?.name ?? directoryPlayer?.displayName;
   const birthDate = player?.identityScope ? player.birthDate : directoryPlayer?.birthDate;
@@ -69,9 +71,11 @@ export function NpbPlayerSeasons({repository,profileRepository,favorites=[],togg
   if(manifest&&!player&&directoryState==="ready"&&!directoryPlayer)return <DataState kind="no-data" title="収録されていない選手IDです" action="選手を探す" to="/NPB/search" />;
   return <div className="screen historical-player-screen npb-history-experience">{rosterBack&&<Link className="back-link" to={rosterBack}>← 球団の選手一覧</Link>}<PlayerIdentity context="NPB · 年度別・シリーズ別成績" name={name??"選手の年度別成績"} favorite={name&&toggle?<FavoriteButton active={favorites.some(f=>f.league==="NPB"&&f.kind==="player"&&f.entityId===playerId)} saving={saving} label={name} onClick={()=>toggle({league:"NPB",kind:"player",entityId:playerId!})}/>:null} visual={<LicensedPlayerPhoto playerId={playerId!} season={Number(season)} />} />
     <PlayerHonors league="NPB" playerId={playerId!}/>
-    {currentLink&&<Link to={`/NPB/players/${playerId}`}>2026年の選手ページへ</Link>}
+    {gameLinks ? <nav className="history-paths" aria-label="試合から開いた年度成績"><Link to={gameLinks.profile}>← 元の選手プロフィール</Link>
+      {gameLinks.compare && <Link to={gameLinks.compare}>同年度で比較 →</Link>}<Link to={gameLinks.game}>試合詳細へ戻る</Link></nav> :
+      currentLink&&<Link to={`/NPB/players/${playerId}`}>2026年の選手ページへ</Link>}
     <div className="explorer-filter-grid"><label>年度<select value={season} aria-label="選手成績の年度" onChange={e=>update("season",e.target.value)}>{currentLink&&<option value="2026">2026年 · 保存済み</option>}{player?.seasons.slice().reverse().map(y=><option key={y} value={y}>{y}年 · 一部収録</option>)}{!supported&&<option value={season}>{!player?.identityScope&&directoryState==="loading"?"情報を確認中":"未収録の年度"}</option>}</select></label>
-      <label>試合区分<select value={validScope?(regular?"regular":stage!):"unavailable"} aria-label="選手成績の試合区分" onChange={e=>setParams(previous=>{const p=new URLSearchParams(previous);if(e.target.value==="regular"){p.set("competition","regular");p.delete("stage");}else{p.set("competition","postseason");p.set("stage",e.target.value);}p.delete("years");return p;})}><option value="regular">公式戦</option>{!validScope&&<option value="unavailable">指定の試合区分は未収録</option>}{(["preseason","npb_cs_first","npb_cs_final","japan_series"] as const).map(key=>{const available=admitted.some(s=>s.stage===key);return <option key={key} value={key} disabled={!available}>{npbCompetitionLabels[key]}{!available&&" · 未収録"}</option>;})}</select></label>
+      <label>試合区分<select value={validScope?(regular?"regular":stage!):"unavailable"} aria-label="選手成績の試合区分" onChange={e=>setParams(previous=>{const p=new URLSearchParams(previous);if(e.target.value==="regular"){p.set("competition","regular");p.delete("stage");}else{p.set("competition","postseason");p.set("stage",e.target.value);}for(const field of ["years","game","date","boxSide"])p.delete(field);return p;})}><option value="regular">公式戦</option>{!validScope&&<option value="unavailable">指定の試合区分は未収録</option>}{(["preseason","npb_cs_first","npb_cs_final","japan_series"] as const).map(key=>{const available=admitted.some(s=>s.stage===key);return <option key={key} value={key} disabled={!available}>{npbCompetitionLabels[key]}{!available&&" · 未収録"}</option>;})}</select></label>
       <label>成績<select value={validRole?role:"unsupported"} onChange={e=>update("role",e.target.value)}>{!validRole&&<option value="unsupported" disabled>未対応の成績区分</option>}<option value="batting">打撃（投手打撃を含む）</option><option value="pitching">投球</option></select></label></div>
     {profileRepository&&supported&&validRole&&regular&&<details className="explorer-tools" open={params.get("story")==="1"} onToggle={e=>{const open=e.currentTarget.open;if(open!==(params.get("story")==="1"))setParams(previous=>{const next=new URLSearchParams(previous);if(open)next.set("story","1");else next.delete("story");return next;});}}><summary>選手の歩み · 経歴と収録シーズン</summary>{params.get("story")==="1"&&<NpbPlayerStory playerId={playerId!} role={role} manifest={manifest} repository={profileRepository} season={Number(season)} />}</details>}
     {failed&&season==="2026"&&<p className="inline-note">過去年度の一覧は取得できません。2026年の成績は独立した保存データです。<button onClick={()=>{setFailed(false);setAttempt(a=>a+1);}}>過去年度の一覧を再試行</button></p>}

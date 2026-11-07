@@ -3,6 +3,7 @@ import { portableRoute } from "./product-sharing";
 import { z } from "zod";
 import japanPin from "../data/npb-japan-series-release.json";
 import { needsNpbSeasonEntry } from "./npb-season-entry";
+import { npbGamePlayerContext, npbGamePlayerLinks } from "./npb-game-player-journey";
 export function canonicalDeepLink(input: string): string | null {
   try {
     const customScheme = /^baseballnotes:/i.test(input);
@@ -44,12 +45,16 @@ export function canonicalDeepLink(input: string): string | null {
     if (teamPlayers) return portableRoute(`${canonicalEntityPath(parsed.data)}/players`, sourceParams.toString());
     if(league==="NPB"&&kind==="game"&&(sourceParams.get("competition")==="postseason"||japanPin.gameIds.includes(parsed.data.id)))return portableRoute(canonicalEntityPath(parsed.data),sourceParams.toString());
     if(child === "seasons")return portableRoute(`${canonicalEntityPath(parsed.data)}/seasons`,sourceParams.toString());
+    if (league === "NPB" && kind === "player" && npbGamePlayerContext(sourceParams)) {
+      return portableRoute(`${canonicalEntityPath(parsed.data)}${child ? `/${child}` : ""}`, sourceParams.toString());
+    }
     const params = new URLSearchParams();
     for (const key of ["season", "date", "asOfDate"]) {
       const value = sourceParams.get(key); if (!value) continue;
       if (key === "season" ? /^20\d{2}$/.test(value) : /^20\d{2}-/.test(value) && z.iso.date().safeParse(value).success) params.set(key, value);
     }
     if (league === "MLB" && sourceParams.get("competition") === "postseason") params.set("competition", "postseason");
+    if (league === "NPB" && kind === "game" && (sourceParams.get("boxSide") === "home" || sourceParams.get("boxSide") === "away")) params.set("boxSide", sourceParams.get("boxSide")!);
     return `${canonicalEntityPath(parsed.data)}${child ? `/${child}` : ""}${params.size ? `?${params}` : ""}`;
   } catch { return null; }
 }
@@ -68,6 +73,15 @@ export function parentNativeRoute(path: string): string | null {
   }
   if (league === "NPB" && segments[1] === "teams" && segments[3] === "players") return `/NPB/teams/${segments[2]}`;
   if(league==="NPB"&&segments[1]==="talent"&&segments[2]==="2026")return "/NPB/talent";
+  const gameContext = league === "NPB" ? npbGamePlayerContext(source) : null;
+  if (gameContext && (segments[1] === "players" || segments[1] === "compare")) {
+    const player = segments[1] === "players" ? segments[2] : source.get("player");
+    if (player && canonicalEntityRefSchema.safeParse({ league, kind: "player", id: player }).success) {
+      const links = npbGamePlayerLinks(player, gameContext);
+      if (segments[1] === "compare" && gameContext.stage === "regular") return links.annual;
+      if (segments[1] === "players") return segments[3] ? links.profile : links.game;
+    }
+  }
   if(league==="NPB"&&segments[1]==="games"){
     try{if(japanPin.gameIds.includes(decodeURIComponent(segments[2]??"")))return "/NPB/postseason?season=2026&stage=japan_series";}catch{/* Invalid encoding follows the safe generic parent. */}
   }
