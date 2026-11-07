@@ -1,10 +1,8 @@
-import { readinessReasonLabel } from "../presentation/baseball-language";
 import { DailyMvp } from "./daily-mvp";
 import { useEffect,useState } from "react";
 import { Link,useSearchParams } from "react-router-dom";
 import type { GameSurfaceReader } from "../application/game-surface";
 import { type GameDateIndex,type GameManifest,type GameIndexRow } from "../domain/npb-game-index";
-import type { NpbRecords } from "../domain/npb-records";
 import { DataState,LoadingSkeleton,PageHeading } from "./components";
 import { DateRibbon, ScoreboardRow } from "./design-system";
 import { TeamFavorite, type FavoriteActions } from "./team-favorite";
@@ -38,18 +36,4 @@ export function NpbScheduleScreen({repository,favorites=[],toggle,saving=false}:
     {state==="ready"&&payload&&payload.date===date&&<GameDateView payload={payload}/>}
     {state==="ready"&&payload&&payload.date===date&&toggle&&<details><summary>この日の球団をフォロー</summary><div className="row-list">{[...new Map(payload.games.flatMap(g=>[g.away,g.home]).map(t=>[t.id,t])).values()].map(t=><div className="surface-favorite" key={t.id}><Link className="player-row" to={`/NPB/teams/${encodeURIComponent(t.id)}`}>{t.name}</Link><TeamFavorite league="NPB" teamId={t.id} name={t.name} favorites={favorites} toggle={toggle} saving={saving}/></div>)}</div></details>}
   </div>;
-}
-export function RecordsView({payload}:{payload:NpbRecords}){return <><p>2026シーズン · 保存済み成績 · データ基準日 {payload.effectiveDate}</p>
-  {payload.readiness!=="ready"?<><DataState kind="unsupported" title="2026年シーズン集計を確認中" detail="確認が完了したカテゴリから表示します。"/>
-    <details className="advanced-disclosure"><summary>集計状態の詳細</summary><p>収録状況: {payload.coverage === "complete" ? "収録完了" : "確認中"} · 規定到達の判定: {payload.qualifierStatus === "verified" ? "確認済み" : "確認中"}</p>
-      <ul>{payload.reasons.map(r=><li key={r}>{readinessReasonLabel(r)}</li>)}</ul></details></>:
-    payload.categories.map(c=><section key={`${c.role}:${c.metric}`}><h2>{c.role==="batting"?"打撃":"投球"} · {c.metric}</h2>
-      {c.rows.length?<ol className="row-list">{c.rows.map(r=><li key={r.playerId}><Link className="surface-record" to={`/NPB/players/${encodeURIComponent(r.playerId)}`}>
-        <span>{r.rank}位 {r.displayName}</span><strong>{r.value}</strong></Link></li>)}</ol>:<p>表示できる記録はありません</p>}</section>)}
-</>;}
-export function NpbRecordsScreen({repository}:{repository:GameSurfaceReader}){
-  const [payload,setPayload]=useState<NpbRecords|null>(null),[error,setError]=useState(false);
-  useEffect(()=>{let active=true;void repository.records().then(v=>{if(active)setPayload(v);}).catch(()=>{if(active)setError(true);});return()=>{active=false;};},[repository]);
-  return <div className="screen"><PageHeading eyebrow="NPB" title="シーズン記録"/><nav className="profile-tabs" aria-label="記録の種類"><Link to="/NPB/records" aria-current="page">シーズン成績</Link><Link to="/NPB/milestones">達成記録</Link><Link to="/NPB/awards">タイトル・表彰</Link><Link to="/NPB/history?season=2025">過去の成績（一部）</Link></nav>{error?<DataState kind="source-unavailable" title="記録データを読み込めません"/>:
-    payload?<RecordsView payload={payload}/>:<LoadingSkeleton/>}</div>;
 }

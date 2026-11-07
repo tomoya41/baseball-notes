@@ -1,29 +1,27 @@
 import {HonorsScreen} from "./player-honors";
 import { lazy, Suspense } from "react";
-import { Link, Navigate, Route, Routes, useLocation, useSearchParams } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation, useSearchParams } from "react-router-dom";
 import type { Services } from "../app/services";
 import type { Favorite } from "../domain/models";
 import { NpbHome, NpbTeam } from "./npb-product";
 import { NpbPlayer } from "./npb-player";
 import { NpbPlayerSearch } from "./npb-player-search";
-import { NpbScheduleScreen, NpbRecordsScreen } from "./npb-game-surface";
-import { NpbSavedPlayers } from "./npb-my";
+import { NpbScheduleScreen } from "./npb-game-surface";
+import { NpbRecordsScreen } from "./npb-records-screen";
+import { NpbMyScreen } from "./npb-my-screen";
 import { ExploreScreen, FutureFeatureScreen } from "./future-surfaces";
 import { NpbMilestonesScreen } from "./npb-milestones";
 import { PostseasonUnavailable } from "./postseason";
 import { NpbPlayerCompare } from "./player-compare";
 import { NpbTeams } from "./team-hub";
-import { NpbPersonalDashboard } from "./daily-dashboard";
 import { NpbDataExplorer } from "./data-explorer";
 import { NpbSeasonExplorer } from "./season-explorer";
 import { NpbDiscovery } from "./discovery";
 import { StatGlossary } from "./stat-glossary";
-import { MyLibrary } from "./personal-library";
 import { NpbTeamCompare, SeasonCompare } from "./team-season-compare";
 import { NpbLifecycleExplorer } from "./npb-lifecycle";
 import { needsNpbSeasonEntry } from "../domain/npb-season-entry";
 import { NpbSeasonEntry } from "./npb-season-entry";
-import { NpbFollowedEventRecords } from "./npb-followed-event-records";
 const NpbCsScreen = lazy(()=>import("./npb-cs").then(m=>({default:m.NpbCsScreen})));
 const NpbPostseasonScreen = lazy(()=>import("./npb-postseason").then(m=>({default:m.NpbPostseasonScreen})));
 const NpbPlayerEventsScreen = lazy(()=>import("./npb-player-events").then(m=>({default:m.NpbPlayerEventsScreen})));
@@ -77,15 +75,7 @@ export function NpbRoutes({ services, favorites, toggle, saving }: { services: S
     <Route path="awards" element={<HonorsScreen league="NPB"/>}/>
     <Route path="records" element={<NpbRecordsScreen repository={services.gameSurface} />} />
     <Route path="ranking" element={<Navigate to="/NPB/records" replace />} />
-    <Route path="my" element={<div className="screen">
-      <header><p className="eyebrow">NPB / My</p><h1>My</h1></header>
-      <NpbFollowedEventRecords favorites={favorites} />
-      {favorites.some(f => f.league === "NPB") ? <>
-        <NpbPersonalDashboard services={services} favorites={favorites} toggle={toggle} saving={saving} />
-        <NpbSavedPlayers heading={false} repository={services.directory} favorites={favorites} toggle={toggle} saving={saving} />
-      </> : <section className="my-start"><p>選手・球団をフォローすると、ここで成績や変化を追えます。</p><div className="hub-links"><Link to="/NPB/search">選手を探す →</Link><Link to="/NPB/teams">球団を探す →</Link><Link to="/NPB/moves">選手の動き →</Link></div></section>}
-      <MyLibrary league="NPB" />
-    </div>} />
+    <Route path="my" element={<NpbMyScreen services={services} favorites={favorites} toggle={toggle} saving={saving} />} />
     <Route path="favorites" element={<Navigate to="/NPB/my" replace />} />
     <Route path="players" element={<Navigate to="/NPB/search" replace />} />
     <Route path="*" element={<Navigate to="/NPB/home" replace />} />
