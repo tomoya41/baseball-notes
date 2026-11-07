@@ -236,6 +236,7 @@
   background: var(--color-surface);
   border-top: 1px solid var(--color-border);
   border-left: 3px solid var(--brand);
+  color: var(--color-text);
 }
 
 .npb-compare-experience .compare-selection > div:nth-child(even) {
@@ -251,6 +252,7 @@
 .npb-compare-experience .compare-selection a {
   display: flex;
   align-items: center;
+  color: var(--color-text);
   overflow-wrap: anywhere;
 }
 
