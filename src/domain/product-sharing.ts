@@ -12,6 +12,7 @@ import japanPin from "../data/npb-japan-series-release.json";
 import { draftEventQuery } from "./npb-draft-query";
 import { needsNpbSeasonEntry } from "./npb-season-entry";
 import { isHonorRecipientId } from "./honor-discovery";
+import { npbGamePlayerContext, npbGamePlayerSearch } from "./npb-game-player-journey";
 
 export const PUBLIC_APP_URL = "https://tomoya41.github.io/baseball-notes/";
 // Local IDs and unknown keys never travel through a shareable URL.
@@ -81,6 +82,7 @@ export function portableRoute(path: string, search = ""): string | null {
     if(source.has("competition")&&source.get("competition")!=="postseason"||stage==="japan_series"&&!isJapan||isJapan&&stage!==null&&stage!=="japan_series")return null;
     if(parts.length!==3||!canonicalEntityRefSchema.safeParse({league,kind:"game",id:decodeSafe(parts[2]!)}).success||source.has("season")&&source.get("season")!=="2026"||source.has("stage")&&!["npb_cs_first","npb_cs_final","japan_series"].includes(source.get("stage")!))return null;
     clean.set("competition","postseason");if(isJapan)clean.set("stage","japan_series");else if(stage)clean.set("stage",stage);clean.set("season","2026");
+    if (source.get("boxSide") === "home" || source.get("boxSide") === "away") clean.set("boxSide", source.get("boxSide")!);
     return `${path}?${clean}`;
   }
   if (league === "NPB" && parts.length === 2 && ["cs", "postseason"].includes(resource ?? "")) {
@@ -156,6 +158,16 @@ export function portableRoute(path: string, search = ""): string | null {
   if(resource==="players"&&["7","14","30"].includes(source.get("period")??""))clean.set("period",source.get("period")!);
   for (const k of ["season", "date", "asOfDate"]) { const v = source.get(k); if (v && (k === "season" ? /^20\d{2}$/.test(v) : /^20\d{2}-/.test(v) && z.iso.date().safeParse(v).success)) clean.set(k, v); }
   if (source.get("competition") === "postseason") clean.set("competition", "postseason");
+  if (league === "NPB" && resource === "games" && (source.get("boxSide") === "home" || source.get("boxSide") === "away")) clean.set("boxSide", source.get("boxSide")!);
+  if (league === "NPB" && (resource === "players" || resource === "compare")) {
+    const context = npbGamePlayerContext(source), player = source.get("player");
+    const compareOrigin = resource === "compare" && context?.stage === "regular" &&
+      canonicalEntityRefSchema.safeParse({ league, kind: "player", id: player }).success;
+    if (context && (resource === "players" || compareOrigin)) {
+      npbGamePlayerSearch(context).forEach((value, key) => clean.set(key, value));
+      if (compareOrigin) clean.set("player", player!);
+    }
+  }
   return `${path}${clean.size ? `?${clean}` : ""}`;
 }
 function decodeSafe(value: string) { try { return decodeURIComponent(value); } catch { return ""; } }
