@@ -23,6 +23,23 @@ it("shows each year's sample, preserves a missing-year gap and excludes sub-thre
     expect(div.querySelectorAll('.progression-segment')).toHaveLength(0); // Grid lines never fabricate a missing year's trend.
     expect(div.querySelectorAll('.progression-value')[1]?.textContent).toBe('—');
     expect(div.querySelector('.progression-best')?.textContent).toContain("収録内最小値2025年 0.30");
+    expect(div.querySelector('.progression-delta')?.textContent).toContain("—連続する前年の収録が必要");
+  } finally { await act(async () => root.unmount()); vi.unstubAllGlobals(); }
+});
+
+it("shows the difference between consecutive seasons in baseball innings", async () => {
+  const rows = [25, 31].map((outsRecorded, i) => npbHistoricalRowSchema.parse({
+    playerId: "00000000-0000-4000-8000-000000000001", season: 2024 + i, teamId: "npb:team:tigers", role: "pitching",
+    metrics: { ...Object.fromEntries(historicalPitchingKeys.map(k => [k, null])), outsRecorded },
+  }));
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const div = document.createElement("div"), root = createRoot(div);
+  try {
+    await act(async () => root.render(<MemoryRouter initialEntries={["/?trendMetric=outsRecorded"]}>
+      <NpbPlayerProgression rows={rows} years={[2024, 2025]} teamName={() => "架空球団"} />
+    </MemoryRouter>));
+    expect(div.querySelector('.progression-summary')?.textContent).toContain("最新収録 · 2025年10.1");
+    expect(div.querySelector('.progression-delta')?.textContent).toContain("前年との差 · 2024年比+2.0回");
   } finally { await act(async () => root.unmount()); vi.unstubAllGlobals(); }
 });
 
