@@ -7,6 +7,7 @@ import { MetricLabel } from "./components";
 import { NpbClubComparison } from "./npb-club-comparison";
 import { CollectedRecordWatch } from "./npb-collected-records";
 import { npbHistoricalComparisonLinks } from "../domain/npb-player-journey";
+import "./npb-player-experience.css";
 
 export function NpbPlayerProgression({ rows, years, teamName, comparison }: {
   rows: NpbHistoricalRow[]; years: number[]; teamName: (id: string) => string;
@@ -17,6 +18,10 @@ export function NpbPlayerProgression({ rows, years, teamName, comparison }: {
   const options: ProgressionMetric[] = role === "batting" ? ["OPS", "AVG", "HR", "H", "RBI", "PA", "G"] : ["ERA", "SO", "outsRecorded", "G", "WHIP", "K9", "BB9"];
   const raw = params.get("trendMetric"), metric = options.includes(raw as ProgressionMetric) ? raw as ProgressionMetric : options[0]!;
   const points = historicalProgression(rows, years), best = bestObservedSeasons(points, metric);
+  const latest = points.filter(point => point.metrics[metric] != null).at(-1);
+  const previous = latest && points.find(point => point.season === latest.season - 1);
+  const latestValue = latest?.metrics[metric] ?? null, previousValue = previous?.metrics[metric] ?? null;
+  const delta = latestValue !== null && previousValue !== null ? latestValue - previousValue : null;
   const finite = points.flatMap(p => p.metrics[metric] == null ? [] : [p.metrics[metric]!]);
   const countMetric = ["HR", "H", "RBI", "PA", "G", "SO", "outsRecorded"].includes(metric);
   const peak = Math.max(0, ...finite), max = peak === 0 ? 1 : countMetric ? Math.ceil(peak * 1.12) : Math.ceil(peak * 1.12 * 10) / 10;
@@ -29,6 +34,14 @@ export function NpbPlayerProgression({ rows, years, teamName, comparison }: {
     <div className="progression-heading"><h3>成績の変化</h3>
     <label>推移指標<select value={metric} onChange={e => setParams(previous => { const next = new URLSearchParams(previous); next.set("trendMetric", e.target.value); return next; })}>{options.filter(k => progressionMetrics.includes(k)).map(k => <option key={k} value={k}>{k === "outsRecorded" ? "投球回" : k}</option>)}</select></label>
     </div><p className="progression-scope"><MetricLabel metric={metric} label={label} /> · 一部収録</p>
+    <div className="progression-summary" aria-label="最新収録年と前年の変化">
+      <div><span>最新収録{latest ? ` · ${latest.season}年` : ""}</span><strong>{comparisonValue(metric, latestValue)}</strong></div>
+      <div className="progression-delta"><span>前年との差{latest && previousValue !== null ? ` · ${latest.season - 1}年比` : ""}</span>
+        <strong>{delta === null ? "—" : `${delta > 0 ? "+" : delta < 0 ? "−" : "±"}${comparisonValue(metric, Math.abs(delta))}${metric === "outsRecorded" ? "回" : ""}`}</strong>
+        {delta === null && <small>連続する前年の収録が必要</small>}
+      </div>
+      <p className="progression-best"><strong>収録内{["ERA", "WHIP", "BB9"].includes(metric) ? "最小" : "最高"}値</strong><span>{best.length ? best.map(p => `${p.season}年 ${comparisonValue(metric, p.metrics[metric]!)}`).join(" / ") : "母数不足または未収録"}</span></p>
+    </div>
     <figure className="progression-chart"><svg viewBox="0 0 336 188" role="img" aria-label={`${label}の年度推移。縦軸は0から。正確な値・球団・母数は下の年度一覧で確認できます`}>
       {ticks.map(t=><g key={t} className="progression-axis"><line x1="64" y1={y(t)} x2="304" y2={y(t)} /><text x="44" y={y(t)+4} textAnchor="end">{comparisonValue(metric,t)}</text></g>)}
       {points.map((p, i) => { const v = p.metrics[metric], previous = points[i - 1], pv = previous?.metrics[metric]; return <g key={p.season}>
@@ -37,9 +50,8 @@ export function NpbPlayerProgression({ rows, years, teamName, comparison }: {
         <text className="progression-value" x={x(p.season)} y={v==null?132:y(v)-12} textAnchor="middle">{comparisonValue(metric,v??null)}</text>
         <text className="progression-year" x={x(p.season)} y="176" textAnchor="middle">{p.season}</text>
       </g>; })}
-    </svg><figcaption>{years.slice().sort((a,b)=>a-b).join(" / ")}年 · 収録分</figcaption></figure>
+    </svg><figcaption>{years.slice().sort((a,b)=>a-b).join(" / ")}年 · 収録分。未収録の年度は線で結びません。</figcaption></figure>
     <dl className="explorer-values progression-year-values">{points.map(p => <div key={p.season}><dt><span>{p.season}年</span><small> · {p.teams.length ? p.teams.map(teamName).join(" / ") : "未収録"}</small></dt><dd>{comparisonValue(metric, p.metrics[metric] ?? null)}<small>{p.sample == null ? "母数未収録" : role === "batting" ? `${p.sample}打席` : `${comparisonValue("outsRecorded", p.sample)}回`}</small></dd></div>)}</dl>
-    <p className="progression-best"><strong>収録内{["ERA", "WHIP", "BB9"].includes(metric) ? "最小" : "最高"}値</strong><span>{best.length ? best.map(p => `${p.season}年 ${comparisonValue(metric, p.metrics[metric]!)}`).join(" / ") : "母数不足または未収録"}</span></p>
     <details className="progression-method"><summary>集計条件</summary><p>{["AVG", "OPS"].includes(metric) ? "率指標の最高値は収録100打席以上が対象。" : ["ERA", "WHIP", "K9", "BB9"].includes(metric) ? "率指標の最高・最小値は収録30投球回以上が対象。" : ""}公式の規定資格や完全な年度成績ではありません。未収録は「—」。欠損年度は線でつなぎません。{metric==="outsRecorded"&&"投球回の高さはアウト数に比例します。"}</p></details>
     <NpbClubComparison rows={rows} years={years} metric={metric} teamName={teamName} />
     <CollectedRecordWatch rows={rows.filter(r=>years.includes(r.season))} />
