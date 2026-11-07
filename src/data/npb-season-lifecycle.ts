@@ -1,7 +1,7 @@
 import { addDays } from "./npb-collector";
 import { findNpbRegularSeason } from "./npb-season-metadata";
 import type { DataClient } from "./database";
-import type { PublishedFreshness, IngestionHealth, ScheduledActionHealth } from "./npb-freshness";
+import type { CollectionStatus, PublishedFreshness, IngestionHealth, ScheduledActionHealth } from "./npb-freshness";
 import { npbGameFactCountsJoins } from "./npb-game-fact-counts";
 
 export type ScheduleMode = "season" | "monthly" | "weekly" | "daily";
@@ -67,6 +67,18 @@ export async function planNpbWatchCalendar(client:DataClient,date:string) {
   if(!calendar.skip)return calendar;
   const rows=await client.execute({sql:"SELECT COUNT(*) AS count FROM npb_games WHERE game_date=?",args:[date]});
   return planNpbCalendar("daily",date,Number(rows.rows[0]?.count??0));
+}
+
+export function diagnoseNpbCollection(targetDate: string, action: ScheduledActionHealth | null,
+  lifecycle: Awaited<ReturnType<typeof inspectNpbCalendar>> | null): CollectionStatus {
+  const targetAction = action?.inferredTargetDate === targetDate ? action : null;
+  if (targetAction?.conclusion && targetAction.conclusion !== "success") return "scheduled_failure";
+  if (!lifecycle) return "unverified";
+  if (!lifecycle.calendar.skip) return "daily_collection_expected";
+  if (lifecycle.targetGames !== 0 || lifecycle.metadataReviewRequired) return "calendar_review_required";
+  return lifecycle.calendar.date === targetDate && targetAction?.conclusion === "success" &&
+    targetAction.calendarSkipArtifact === "present" && targetAction.encryptedBackupArtifact === "missing" ?
+    "calendar_skip_verified" : "calendar_skip_unverified";
 }
 
 // Operational retention is distinct from Current freshness and complete season coverage.

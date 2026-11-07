@@ -71,10 +71,11 @@ try {
     let skip=Boolean(published);
     for(const game of games)if(!["final","postponed","canceled"].includes(game.status)||
       (game.status==="final"&&!await currentGameComplete(repo,game)))skip=false;
-    const calendar=planNpbCalendar("daily",date,skip?0:games.length);
+    const calendar=planNpbCalendar("daily",date,games.length);
     skip ||= calendar.skip;
     result={skip,date,calendar};
-    if(process.env.GITHUB_OUTPUT)await writeFile(process.env.GITHUB_OUTPUT,`skip=${skip}\ntarget_date=${date}\n`,{flag:"a"});
+    if(process.env.GITHUB_OUTPUT)await writeFile(process.env.GITHUB_OUTPUT,
+      `skip=${skip}\ntarget_date=${date}\ncalendar_skip=${calendar.skip}\n`,{flag:"a"});
   } else if(action==="sync") {
     const mode=option("--range")??"daily";
     if(!["season","monthly","weekly","daily"].includes(mode))throw Error("Invalid range mode");
