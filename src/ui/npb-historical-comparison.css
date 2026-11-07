@@ -5,6 +5,11 @@
   overflow-wrap: anywhere;
 }
 
+.npb-season-comparison .comparison-years label,
+.npb-season-comparison .explorer-filter-grid select {
+  min-height: var(--touch);
+}
+
 .historical-comparison {
   margin-block: .75rem;
   padding: .65rem .75rem;
