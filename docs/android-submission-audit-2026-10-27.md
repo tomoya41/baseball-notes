@@ -58,6 +58,8 @@ PR初回CIは`invalid_apk_metadata`で停止し、エミュレーターは未実
 
 ## 16KBページサイズの静的監査
 
+2026-11-07の追加検証では、Android CIで公式bundletoolの版とSHA-256を固定し、release AABが `PAGE_ALIGNMENT_16K` を要求することも確認する。APKの既存 `zipalign` と署名検証に加えた、バンドル設定の読み取り専用検査。Playが生成したAPKの検査、16KB環境での実行、所有者署名での端末更新はそれぞれ別の証拠とする。[Android公式のバンドル配置確認](https://developer.android.com/guide/practices/page-sizes#use-bundletool)
+
 [Run 40441073968](https://github.com/tomoya41/baseball-notes/actions/runs/40441073968)の実APKには、DataStore 1.1.7の`libdatastore_shared_counter.so`が4 ABI分同梱されている。debug APKのapksigner検証は成功。debug / unsigned release APKとも、公式SDK36 `zipalign -c -P 16 4`はPASSし、全ライブラリのELF `LOAD` alignmentは16,384だった。「native libraryなし」という旧版の結果を今回へ流用しない。
 
 64bitのRELRO末尾は16KB剰余8,192だが、これだけで非互換とは判定しない。[公式ガイドの独立LOAD例外](https://developer.android.com/guide/practices/page-sizes)と実ELF配置を照合した。arm64のRELRO `0x51c0–0x6000`は対応するRW LOAD `0x51c0–0x5428`を全て覆い、後続の`.bss`は別LOAD `0x9428–0x9429`。16KBに丸めた読取専用範囲`0x4000–0x8000`と重ならない。x86_64もRW LOAD `0x4f20–0x5148`全体がRELRO `0x4f20–0x6000`内にあり、後続の書込データがない。静的配置上、懸念したRELROと書込データの同一ページ競合は見つからなかった。
