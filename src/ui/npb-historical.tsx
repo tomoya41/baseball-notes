@@ -71,6 +71,9 @@ export function NpbPlayerSeasons({repository,profileRepository,favorites=[],togg
   if(manifest&&!player&&directoryState==="ready"&&!directoryPlayer)return <DataState kind="no-data" title="収録されていない選手IDです" action="選手を探す" to="/NPB/search" />;
   return <div className="screen historical-player-screen npb-history-experience">{rosterBack&&<Link className="back-link" to={rosterBack}>← 球団の選手一覧</Link>}<PlayerIdentity context="NPB · 年度別・シリーズ別成績" name={name??"選手の年度別成績"} favorite={name&&toggle?<FavoriteButton active={favorites.some(f=>f.league==="NPB"&&f.kind==="player"&&f.entityId===playerId)} saving={saving} label={name} onClick={()=>toggle({league:"NPB",kind:"player",entityId:playerId!})}/>:null} visual={<LicensedPlayerPhoto playerId={playerId!} season={Number(season)} />} />
     <PlayerHonors league="NPB" playerId={playerId!}/>
+    {currentLink && player && regular && validRole && supported && <Link className="text-link" to={`/NPB/season-compare?${new URLSearchParams({
+      kind: "player", entity: playerId!, role, ...(season === "2026" ? {} : { years: `${season},2026` }),
+    })}`}>2026年と過去年を見比べる →</Link>}
     {gameLinks ? <nav className="history-paths" aria-label="試合から開いた年度成績"><Link to={gameLinks.profile}>← 元の選手プロフィール</Link>
       {gameLinks.compare && <Link to={gameLinks.compare}>同年度で比較 →</Link>}<Link to={gameLinks.game}>試合詳細へ戻る</Link></nav> :
       currentLink&&<Link to={`/NPB/players/${playerId}`}>2026年の選手ページへ</Link>}
