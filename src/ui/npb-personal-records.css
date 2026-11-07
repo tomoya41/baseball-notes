@@ -20,6 +20,10 @@
 .my-content-section { scroll-margin-top: 18px; margin: 22px 0; }
 .my-content-section:focus { outline: none; }
 .my-content-section:focus-visible { outline: 2px solid var(--brand); outline-offset: 4px; }
+.my-analysis-resume ul { margin: .25rem 0 0; padding: 0; list-style: none; }
+.my-analysis-resume li { border-inline-start: 2px solid var(--brand); padding-inline: .5rem; }
+.my-analysis-resume .player-row { min-height: var(--touch); overflow-wrap: anywhere; }
+.my-analysis-resume .player-row__body { min-width: 0; }
 .personal-section-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 10px; }
 .personal-section-heading h2 { margin: 0; font-size: 1rem; font-weight: 800; }
 .personal-section-heading > a { min-height: 44px; display: inline-flex; align-items: center; font-size: .75rem; font-weight: 700; }
