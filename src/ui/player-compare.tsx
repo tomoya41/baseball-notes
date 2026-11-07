@@ -44,7 +44,7 @@ function NpbComparisonSummary({ rows, role }: { rows: ComparisonRow[]; role: "ba
   const difference = rows.length === 2 && first !== null && second !== null ? first - second : null;
   return <section className="npb-compare-summary" aria-label="主な成績と母数の比較">
     <div className="player-snapshot-heading"><h2>{role === "batting" ? "打撃" : "投球"}を見比べる</h2><span>同じ条件の収録分</span></div>
-    <ComparisonBars rows={rows} metric={metric} />
+    {rows.some(row => metricNumber(row.metrics, metric) !== null) && <ComparisonBars rows={rows} metric={metric} />}
     <dl className="npb-compare-samples">{rows.map(row => <div key={row.id}><dt>{row.name}</dt>
       <dd>{comparisonValue(sample, metricNumber(row.metrics, sample))}<small>{role === "batting" ? "打席" : "投球回"}</small></dd>
     </div>)}</dl>
