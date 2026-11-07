@@ -22,6 +22,9 @@ import { useHistoricalCompetition } from "./historical-competition-context";
 import { DataState, LoadingSkeleton, MetricLabel, PageHeading } from "./components";
 import { DisplayExportButton } from "./product-sharing";
 import { comparisonDisplayExport } from "../domain/product-sharing";
+import { comparisonValue, metricNumber, type ComparisonRow } from "../domain/product-comparison";
+import { ComparisonBars } from "./comparison-bars";
+import "./npb-player-experience.css";
 
 export type ComparePlayer = { id: string; name: string; batting: boolean; pitching: boolean; seasons?: number[];battingRole?:BattingDisplayRole|undefined };
 export type HistoricalProductProfile = { player: { id: string; name: string; seasons: number[] }; batting: DatedBatter[]; pitching: DatedPitcher[] };
@@ -34,6 +37,22 @@ function metricValue(key: string, m: CompareMetrics[string] | undefined) {
   if (!m || m.value === null) return "—";
   if (key === "outsRecorded") return `${Math.floor(m.value / 3)}.${m.value % 3}`;
   return m.value.toFixed(["AVG", "OBP", "SLG", "OPS"].includes(key) ? 3 : ["ERA", "K9"].includes(key) ? 2 : 0);
+}
+function NpbComparisonSummary({ rows, role }: { rows: ComparisonRow[]; role: "batting" | "pitching" }) {
+  const metric = role === "batting" ? "OPS" : "ERA", sample = role === "batting" ? "PA" : "outsRecorded";
+  const first = metricNumber(rows[0]?.metrics, metric), second = metricNumber(rows[1]?.metrics, metric);
+  const difference = rows.length === 2 && first !== null && second !== null ? first - second : null;
+  return <section className="npb-compare-summary" aria-label="主な成績と母数の比較">
+    <div className="player-snapshot-heading"><h2>{role === "batting" ? "打撃" : "投球"}を見比べる</h2><span>同じ条件の収録分</span></div>
+    <ComparisonBars rows={rows} metric={metric} />
+    <dl className="npb-compare-samples">{rows.map(row => <div key={row.id}><dt>{row.name}</dt>
+      <dd>{comparisonValue(sample, metricNumber(row.metrics, sample))}<small>{role === "batting" ? "打席" : "投球回"}</small></dd>
+    </div>)}</dl>
+    {rows.length === 2 && <p className="npb-compare-difference"><span>{rows[0]!.name} − {rows[1]!.name}</span>
+      <strong>{metric}の差 {difference === null ? "—" : `${difference > 0 ? "+" : difference < 0 ? "−" : "±"}${comparisonValue(metric, Math.abs(difference))}`}</strong>
+    </p>}
+    <p className="inline-note">一部収録の成績を含みます。母数と対象期間を合わせて確認できます。</p>
+  </section>;
 }
 export function CompareWorkspace({ league, players, teams, seasons, loader, advanced = false, competition = "regular" }: { league: League; players: ComparePlayer[]; teams: { id: string; name: string }[]; seasons: number[]; loader: Loader; advanced?: boolean; competition?: string }) {
   const [params, setParams] = useSearchParams(), [query, setQuery] = useState("");
@@ -62,13 +81,18 @@ export function CompareWorkspace({ league, players, teams, seasons, loader, adva
   const paMode = condition.includes(":") || condition === "bvp";
   const keys = paMode ? ["PA", "AB", "H", "2B", "3B", "HR", "BB", "HBP", "SO", "SH", "SF", "AVG", "OBP", "SLG", "OPS"] : role === "batting" ? compareBattingKeys : comparePitchingKeys.map(k => league === "NPB" && k === "appearances" ? "G" : k);
   if (!supportedSeason) return <div className="screen"><PageHeading eyebrow={league} title="選手比較" /><DataState kind="unsupported" title={league === "MLB" && season === 2026 ? "2026年の試合結果・選手成績は未対応" : "指定のシーズンは未収録です"} action="収録済みの比較へ" to={`/${league}/compare`} /></div>;
-  return <div className="screen compare-screen"><header className="compare-heading"><Link className="back-link" to={`/${league}/search${competition === "postseason" ? `?competition=postseason&season=${season}` : ""}`}>← 選手一覧</Link><PageHeading eyebrow={`${league} · ${competition === "postseason" ? "POSTSEASON" : "REGULAR SEASON"}`} title="選手比較" /></header>
+  return <div className={`screen compare-screen${league === "NPB" ? " npb-compare-experience" : ""}`}><header className="compare-heading"><Link className="back-link" to={`/${league}/search${competition === "postseason" ? `?competition=postseason&season=${season}` : ""}`}>← 選手一覧</Link><PageHeading eyebrow={`${league} · ${competition === "postseason" ? "POSTSEASON" : "REGULAR SEASON"}`} title="選手比較" /></header>
     <div className="segmented" aria-label="比較する成績">{(["batting", "pitching"] as const).map(r => <button key={r} aria-pressed={role === r} onClick={() => update({ role: r, condition: "season", against: "" })}>{r === "batting" ? "打撃" : "投球"}</button>)}</div>
     <div className="compare-selection">{ids.map(id => <div key={id}><Link to={`/${league}/players/${encodeURIComponent(id)}?season=${season}${competition === "postseason" ? "&competition=postseason" : ""}`}>{players.find(p => p.id === id)?.name ?? "未収録選手"}</Link><button type="button" aria-label={`${players.find(p => p.id === id)?.name ?? "選手"}を比較から削除`} onClick={() => update({ players: ids.filter(p => p !== id).join(",") })}>×</button></div>)}</div>
     <p className="compare-scope">{season}年 · {conditionLabels[condition] ?? condition.replace("d", "日")}{condition !== "season" && !paMode ? ` · ${league === "NPB" ? condition.endsWith("d") ? "" : "直近30日" : period === "season" ? "シーズン" : `直近${period.replace("d", "日")}`}` : ""}</p>
     {state.key !== key && ids.length > 0 ? <LoadingSkeleton /> : mismatch ? <DataState kind="source-unavailable" title="集計の基準日が揃っていません。更新後に再確認してください" /> : ids.length > 0 && <section className="compare-results" aria-label="比較結果">
       {dates.size > 0 && <p className="inline-note">{[...dates][0]}まで</p>}
       {loaded.map((r, i) => r.status === "error" || r.value.notice ? <p className="data-notice" key={ids[i]}>{players.find(p => p.id === ids[i])?.name ?? "選手"}：{r.status === "error" ? "読み込みに失敗しました" : r.value.notice}</p> : null)}
+      {league === "NPB" && ids.length >= 2 && <NpbComparisonSummary role={role} rows={loaded.map((row, index) => ({
+        id: ids[index]!, name: players.find(player => player.id === ids[index])?.name ?? "選手", season,
+        date: row.status === "ready" ? row.value.date : "", coverage: row.status === "ready" ? row.value.coverage ?? "unknown" : "unavailable",
+        metrics: row.status === "ready" ? row.value.metrics : null,
+      }))} />}
       <div className={`mlb-stat-scroll compare-table${ids.length === 2 ? " compare-table--duel" : ""}`} tabIndex={0} role="region" aria-label="選手比較表"><StatTable><thead><tr><th>成績</th>{ids.map(id => <th key={id}>{players.find(p => p.id === id)?.name ?? "未収録"}</th>)}</tr></thead><tbody>{keys.map(k => <tr key={k}><th scope="row"><MetricLabel metric={k} label={k === "outsRecorded" ? "IP" : k === "K9" ? "K/9" : k} /></th>{ids.map((id, i) => { const r = loaded[i], m = r?.status === "ready" ? r.value.metrics?.[k] : undefined; return <td key={id}>{metricValue(k, m)}{m?.status === "partial" && <small>一部</small>}</td>; })}</tr>)}</tbody></StatTable></div>
       <details className="compare-explanation"><summary>数値の見方・表示中の成績を書き出す</summary><p className="inline-note">規定到達者のランキングではありません。打席・登板数も合わせて確認してください。取得できない値は「—」。同じ記録種類・条件の保存済み成績を比較します。</p>
       {dates.size === 1 && <DisplayExportButton data={comparisonDisplayExport(league, `${season} ${competition} ${role} ${condition} ${period}`, [...dates][0]!, keys, ids.map((id, i) => { const row = loaded[i]; return { name: players.find(p => p.id === id)?.name ?? id, metrics: row?.status === "ready" ? row.value.metrics : null, coverage: row?.status === "ready" ? row.value.coverage ?? "unknown" : "unavailable" }; }))} />}</details>
@@ -96,7 +120,7 @@ export function NpbPlayerCompare({ services }: { services: Services }) {
     const payload = await pending;
     if (!payload) return { id, metrics: null, date: directory!.effectiveDate, notice: "保存済み成績なし" };
     const section = kind === "season" ? (payload as PlayerRecentResponse)[c.role] : npbCompareSection(payload as PlayerAnalysisBundle, c.role, c.condition, c.opponent, c.battingOrder);
-    return { id, metrics: section?.metrics ?? null, date: section?.to ?? payload.asOfDate, notice: !section ? "この条件の記録なし" : section.coverage.status !== "complete" ? "一部データ確認中・保存済み記録から集計" : null };
+    return { id, metrics: section?.metrics ?? null, date: section?.to ?? payload.asOfDate, coverage: section?.coverage.status ?? "unavailable", notice: !section ? "この条件の記録なし" : section.coverage.status !== "complete" ? "一部データ確認中・保存済み記録から集計" : null };
   }, [cache, services, directory]);
   if (error) return <DataState kind="source-unavailable" title="比較用の選手一覧を読み込めません" />;
   if (!directory) return <LoadingSkeleton />;
