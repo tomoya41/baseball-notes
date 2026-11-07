@@ -104,9 +104,22 @@ describe("NPB Game Detail", () => {
     expect(html).toContain("5.2回");
     expect(html).toContain("0.0回");
     expect(html).toContain("四死");
-    expect(html).toContain(`href="/NPB/players/${players[1]}"`);
+    expect(html).toContain(`href="/NPB/players/${players[1]}?game=`);
+    expect(html).toContain("role=batting&amp;boxSide=home&amp;competition=regular");
+    expect(html).toContain("role=pitching&amp;boxSide=home&amp;competition=regular");
     expect(html).toContain("詳しい打撃成績");
     expect(html).not.toContain("WHIP");
+  });
+  it("shows verified participation with missing numbers and keeps score-only games free of player links", async () => {
+    const payload = (await new NpbGameDetailRepository(await fixture()).find(gameId))!.payload;
+    const row = payload.batting.home[0]!;
+    payload.batting = { away: [], home: [{ ...row, pa: null, ab: null, hits: null, homeRuns: null, rbi: null, runs: null, doubles: null, triples: null, walks: null, hbp: null, sacrificeHits: null, sacrificeFlies: null, strikeouts: null, stolenBases: null, caughtStealing: null }] };
+    payload.pitching = { away: [], home: [] };
+    expect(renderToStaticMarkup(<NpbGameDetailView payload={payload} state="ready" />)).toContain("出場確認 · 個人成績の数値は未収録");
+    payload.batting.home = [];
+    const scoreOnly = renderToStaticMarkup(<NpbGameDetailView payload={payload} state="ready" />);
+    expect(scoreOnly).toContain("スコアのみ収録");
+    expect(scoreOnly).not.toContain('class="game-player-link"');
   });
 
   it("reflects a corrected Fact on the next read and rejects invalid/mismatched HTTP payload", async () => {

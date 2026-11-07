@@ -670,8 +670,11 @@ public class ReleaseQualityTest {
         screenshot("npb-cs-game-detail-360");
         fontScaleAndRecreate(2.0f);waitText("森下翔太");waitViewport(360);
         assertEquals("CS detail remains within the viewport at 200 percent","true",js("document.documentElement.scrollWidth<=innerWidth"));screenshot("npb-cs-game-detail-font-20");
-        js("Array.from(document.querySelectorAll('a')).find(a=>a.textContent==='森下翔太').click()");waitText("2026年 · CS ファイナル");
-        assertTrue("Player link retains postseason/role",js("location.hash").contains("competition=postseason&stage=npb_cs_final&role=batting"));
+        js("Array.from(document.querySelectorAll('.game-player-link')).find(a=>a.textContent==='森下翔太').click()");
+        waitCondition("CS participant opens their profile with the actual stage, year, role and side",
+            "document.querySelector('.game-player-context')?.innerText.includes('2026年 · CS ファイナル · 打撃') && new URLSearchParams(location.hash.split('?')[1]).get('boxSide')==='home'");
+        js("document.querySelector('.game-player-context a[href*=\"/seasons?\"]').click()");waitText("2026年 · CS ファイナル");
+        assertEquals("Annual link retains exact postseason role", "true", js("(()=>{const q=new URLSearchParams(location.hash.split('?')[1]);return q.get('competition')==='postseason' && q.get('stage')==='npb_cs_final' && q.get('role')==='batting'})()"));
     }
     @Test public void npbScheduleMvpKeepsUncollectedBoxesHeldWithoutDetailRequests() throws Exception {
         Intent link=new Intent(Intent.ACTION_VIEW,Uri.parse("baseballnotes://NPB/schedule?date=2026-03-27"));

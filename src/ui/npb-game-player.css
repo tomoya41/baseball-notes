@@ -1,0 +1,32 @@
+.game-player-link {
+  display: inline-flex;
+  align-items: center;
+  gap: .2rem;
+  min-height: var(--touch);
+  overflow-wrap: anywhere;
+}
+
+.game-player-link svg { flex: 0 0 auto; color: var(--brand); }
+
+.game-player-context {
+  margin-block: .55rem;
+  padding: .5rem .65rem;
+  border-inline-start: 2px solid var(--brand);
+  background: var(--brand-soft);
+}
+
+.game-player-context p { margin: 0; overflow-wrap: anywhere; }
+
+.game-player-context nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 .75rem;
+}
+
+.game-player-context a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch);
+  overflow-wrap: anywhere;
+}
