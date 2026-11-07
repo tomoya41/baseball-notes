@@ -1,5 +1,5 @@
 import { addDays } from "./npb-collector";
-import { findNpbRegularSeason } from "./npb-season-metadata";
+import { requireNpbRegularSeason } from "./npb-season-metadata";
 import type { DataClient } from "./database";
 import type { CollectionStatus, PublishedFreshness, IngestionHealth, ScheduledActionHealth } from "./npb-freshness";
 import { npbGameFactCountsJoins } from "./npb-game-fact-counts";
@@ -8,10 +8,7 @@ export type ScheduleMode = "season" | "monthly" | "weekly" | "daily";
 // The reviewed calendar is an acquisition boundary, not proof that a season ended.
 // A skip never constitutes a no-game observation, Day completeness or Gate proof.
 export function planNpbCalendar(mode: ScheduleMode, date: string, savedGames = 0) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(Date.parse(date)) ||
-      new Date(date).toISOString().slice(0, 10) !== date) throw Error("Invalid schedule date");
-  const season = findNpbRegularSeason(date);
-  if (!season) throw Error("Season metadata unavailable; reviewed calendar required");
+  const season = requireNpbRegularSeason(date);
   const from = mode === "season" ? season.startDate : date;
   const to = mode === "season" ? season.endDate : mode === "monthly" ? addDays(date, 44) :
     mode === "weekly" ? addDays(date, 13) : date;
