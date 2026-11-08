@@ -64,3 +64,13 @@ Independent manual encrypted portable Backup drill [38546256329](https://github.
 Android [38545257406](https://github.com/tomoya41/baseball-notes/actions/runs/38545257406) built both packages and passed two instrumentation tests, cold-offline start and cached offline process restart, but **failed the final shell reconnect check**; not an overall PASS. Captured `dumpsys` shows active default108/Wi-Fi and its own capability VALIDATED, while the old `awk | grep -q` pipeline could SIGPIPE under `pipefail` on a long two-transport dump. Replaced that pipeline with one full-input AWK parser which matches the active default agent's capability, rejects merely validated secondary networks/listener requests and is exercised with short/long/offline synthetic diagnostic text. No network validation assertion, timeout or native app behavior is weakened. Final emulator replay is required after this harness fix.
 
 Final review/merge/public smoke evidence is appended after execution or linked from the final PR delivery report.
+
+## 2026-11-06 JST — 現行DBと公開データの再監査
+
+[本番の読取専用監査](https://github.com/tomoya41/baseball-notes/actions/runs/42216330489)では、899試合、打撃23,548行、投球7,142行を確認した。公式戦196日の内訳は complete 166日、no_games 25日、partial 5日。入力・証拠の破損検出は0件で、監査前後の保護対象8テーブルのハッシュは同一だった。鮮度チェックは期限後の stale で失敗し、整合性監査のステップは成功した。
+
+9月28日の3試合は[投入時のdry-run・scratch・再実行の記録](npb-controlled-recovery-2026-09-28.md)と、[公開の日別索引](https://tomoya41.github.io/baseball-notes/data/npb/games/dates/2026-09-28.json)で同じcanonical IDと complete を確認した。3件の試合詳細APIはいずれもHTTP 200。打撃/投球は順に18/12、34/9、28/9行で、3試合とも両軍の投球アウトは27ずつだった。[手動の暗号化バックアップ復元](https://github.com/tomoya41/baseball-notes/actions/runs/42217233085)では暗号文を復号して新規scratchに17テーブルを復元し、9月28日のロッテ―日本ハム戦の28打撃行・9投球行と complete をreadbackした。暗号化Artifactの保持期間は7日。
+
+残る6試合は4月9日、4月14日、5月3日、6月20日、9月9日（2試合）。公開の日別索引でも同じcanonical IDで partial、打撃・投球の詳細は未収録だった。保存済み検証で各試合の両軍の `pitchingOuts` だけが不合格で、採用済み終了証拠と保存済みFactは6試合ともなかった。上表の公式記録で雨天短縮を再確認した。既存scratchで集計したアウト数は投手Fact候補の合計なので、検証に必要な独立した終了証拠は依然不足している。本番DBへの書込みは0件。
+
+再開条件は、6試合の確定終了回・表裏・途中アウトと利用条件を独立した採用可能なSourceで確認できること。新証拠を得た時点で対象試合だけdry-runとscratch投入を再実施し、保護対象ハッシュ・投入後の検証手順と合わせて本番書込みの承認に回す。
