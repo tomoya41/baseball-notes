@@ -25,7 +25,7 @@ export function NpbMyScreen({ services, favorites, toggle, saving }: {
 
   return <div className="screen npb-my-screen">
     <header className="personal-records-heading my-heading">
-      <div><p className="eyebrow">NPB / My</p><h1>あなたのフォロー</h1><p>応援する選手の成績と歩みを、ここから。</p></div>
+      <div><p className="eyebrow">NPB / My</p><h1>フォローと保存</h1></div>
       <dl className="my-follow-counts"><div><dt>選手</dt><dd>{players.size}<small>人</small></dd></div><div><dt>球団</dt><dd>{teams.size}<small>球団</small></dd></div></dl>
     </header>
     <nav className="my-section-actions" aria-label="Myで見るもの">
