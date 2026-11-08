@@ -39,3 +39,23 @@ it("opens recent NPB views with their stored comparison and player context witho
     expect(set).not.toHaveBeenCalled();
   } finally { await act(async () => root.unmount()); }
 });
+
+it("reopens the exact regular-season comparison from the My shortcut", async () => {
+  const nowClock = () => now;
+  const data = new Map<string, string>();
+  const store = new PersonalLibrary({ get: async key => data.get(key) ?? null, set: async (key, value) => { data.set(key, value); } }, nowClock);
+  await store.saveView("年度別のOPS", "NPB", "history", new URLSearchParams({
+    seasonCompare: "1", player, role: "batting", years: "2025,2026", metric: "OPS", competition: "regular",
+  }));
+  const host = document.createElement("div"), root = createRoot(host);
+  try {
+    await act(async () => root.render(<MemoryRouter><PersonalLibraryProvider store={store}><NpbAnalysisResume /></PersonalLibraryProvider></MemoryRouter>));
+    const resume = host.querySelector(".my-analysis-resume li a")!;
+    expect(resume.textContent).toContain("2025年・2026年");
+    const target = new URL(resume.getAttribute("href")!, "https://example.test");
+    expect(target.pathname).toBe("/NPB/season-compare");
+    expect(Object.fromEntries(target.searchParams)).toEqual({
+      kind: "player", entity: player, role: "batting", years: "2025,2026", metric: "OPS", competition: "regular",
+    });
+  } finally { await act(async () => root.unmount()); }
+});

@@ -25,7 +25,7 @@ export function NpbMyScreen({ services, favorites, toggle, saving }: {
 
   return <div className="screen npb-my-screen">
     <header className="personal-records-heading my-heading">
-      <div><p className="eyebrow">NPB / My</p><h1>あなたのフォロー</h1><p>応援する選手の成績と歩みを、ここから。</p></div>
+      <div><p className="eyebrow">NPB / My</p><h1>フォローと保存</h1></div>
       <dl className="my-follow-counts"><div><dt>選手</dt><dd>{players.size}<small>人</small></dd></div><div><dt>球団</dt><dd>{teams.size}<small>球団</small></dd></div></dl>
     </header>
     <nav className="my-section-actions" aria-label="Myで見るもの">
@@ -47,7 +47,7 @@ export function NpbMyScreen({ services, favorites, toggle, saving }: {
       </section>
     </> : <><NpbAnalysisResume /><section className="my-start my-content-section" id="my-following" tabIndex={-1}>
       <h2>気になる選手・球団から始める</h2>
-      <p>プロフィールの★を押すと、成績や最近の記事記録をMyからたどれます。</p>
+      <p>★でフォローすると、成績や最近の動きをMyで確認できます。</p>
       <div className="my-start-links"><Link to="/NPB/search">選手を探す →</Link><Link to="/NPB/teams">球団を探す →</Link></div>
       <div id="my-recent" tabIndex={-1}><Link className="text-link" to="/NPB/moves">収録済みの選手の動きを見る →</Link></div>
     </section></>}

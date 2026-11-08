@@ -55,6 +55,7 @@ it("keeps My section navigation local and does not fetch profiles for the empty 
   const services = new Proxy({}, { get: reads }) as Services;
   function Address() { const location = useLocation(); return <output>{location.pathname + location.search}</output>; }
   await render(<><NpbMyScreen services={services} favorites={[]} toggle={() => {}} saving={false} /><Address /></>);
+  expect(div.querySelector("h1")?.textContent).toBe("フォローと保存");
   const scroll = vi.fn();
   div.querySelector<HTMLElement>("#my-library")!.scrollIntoView = scroll;
   await act(async () => [...div.querySelectorAll<HTMLButtonElement>(".my-section-actions button")].find(button => button.textContent === "保存・整理")!.click());
