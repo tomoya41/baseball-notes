@@ -13,7 +13,7 @@ import { DataState, LoadingSkeleton, MetricLabel, PageHeading } from "./componen
 import { DisplayExportButton } from "./product-sharing";
 import { useHistoricalStatic } from "./use-mlb-historical";
 import { matchesMlbPlayerName } from "../domain/mlb-japanese-display";
-import { readNpbExplorerSeason } from "../application/explorer-readers";
+import { NpbPlayerSeasonCompare } from "./npb-player-season-compare";
 
 import { ComparisonBars } from "./comparison-bars";
 
@@ -66,7 +66,15 @@ export function MlbTeamCompare({ manifest, favoriteTeams = [] }: { manifest: Exp
   const load = useCallback<Loader>(async (ids, year, view) => { const result = await boundedComparisonRead(ids, id => readMlbTeamComparison(id, manifest.teams.find(t => t.id === id)!.name, year, competition, view)); if (result.some(r => r.status === "rejected")) throw Error("Team load failed"); return result.flatMap(r => r.status === "fulfilled" ? [r.value] : []); }, [manifest, competition]);
   return <TeamWorkspace league="MLB" teams={manifest.teams} years={manifest.seasons.map(s => s.season)} load={load} competition={competition} favorites={favoriteTeams} />;
 }
-export function SeasonCompare({ league, manifest, services }: { league: League; manifest?: ExplorerManifest; services?: Services }) {
+export function SeasonCompare(props: { league: League; manifest?: ExplorerManifest; services?: Services }) {
+  const [params] = useSearchParams();
+  if (props.league === "NPB" && props.services && params.get("kind") !== "team") {
+    return <NpbPlayerSeasonCompare directory={props.services.directory} />;
+  }
+  return <ExistingSeasonCompare {...props} />;
+}
+
+function ExistingSeasonCompare({ league, manifest, services }: { league: League; manifest?: ExplorerManifest; services?: Services }) {
   const [params, setParams] = useSearchParams(), competition = useHistoricalCompetition(), kind = params.get("kind") === "team" ? "team" : "player", entity = params.get("entity") ?? "", role = params.get("role") === "pitching" ? "pitching" : "batting";
   const years = manifest?.seasons.map(s => s.season) ?? [2026], selected = selectedYears(params.get("years"), years), valid = canonicalEntityRefSchema.safeParse({ league, kind, id: entity }).success;
   const directory = useHistoricalStatic<{ players: { id: string; name: string }[] }>(league === "MLB" && kind === "player" ? "players/index.json" : null), [query, setQuery] = useState("");
@@ -79,9 +87,7 @@ export function SeasonCompare({ league, manifest, services }: { league: League; 
     const read = async (): Promise<ComparisonRow[]> => {
       const selected = selectedKey.split(",").map(Number);
       if (league === "NPB") {
-        if (kind === "team") return (await readNpbTeamComparison(services!)).filter(r => r.id === entity).map(r => ({ ...r, id: `${r.id}:${r.season}` }));
-        const payload = await readNpbExplorerSeason(2026), player = payload.players.find(p => p.playerId === entity); if (!player) throw Error("Player absent");
-        return [{ id: `${entity}:2026`, name: "2026年", season: 2026, date: payload.period.to, coverage: payload.coverage.status, metrics: player[role]?.metrics ?? null }];
+        return (await readNpbTeamComparison(services!)).filter(r => r.id === entity).map(r => ({ ...r, id: `${r.id}:${r.season}` }));
       }
       if (kind === "team") { const result = await boundedComparisonRead(selected.map(String), y => readMlbTeamComparison(entity, `${y}年`, Number(y), competition)); return result.map((r, i) => r.status === "fulfilled" ? { ...r.value, id: `${entity}:${selected[i]}` } : { id: `${entity}:${selected[i]}`, name: `${selected[i]}年`, season: selected[i]!, date: manifest!.seasons.find(s => s.season === selected[i])!.lastDate, coverage: "unavailable", metrics: null, notice: "この年度を取得できません" }); }
       const profile = await readHistoricalProduct<ExplorerProfile>(`${competition === "postseason" ? "postseason/" : ""}players/${entity.replaceAll(":", "_")}.json`); if (profile.player.id !== entity) throw Error("Player identity mismatch");
@@ -94,7 +100,7 @@ export function SeasonCompare({ league, manifest, services }: { league: League; 
   return <div className="screen"><PageHeading eyebrow={`${league} · ${competition === "postseason" ? "POSTSEASON" : "REGULAR SEASON"}`} title="保存済みシーズン比較" /><p className="inline-note">収録年度の比較です。Career・通算成績ではありません。率指標はPA／IP、2020年などの試合数の違いと合わせて確認してください。</p><div className="explorer-filter-grid"><label>対象<select value={kind} onChange={e => update("kind", e.target.value)}><option value="player">選手</option><option value="team">球団</option></select></label>{kind === "player" && <label>成績<select value={role} onChange={e => update("role", e.target.value)}><option value="batting">打撃</option><option value="pitching">投球</option></select></label>}<label>指標<select value={metric} onChange={e => update("metric", e.target.value)}>{keys.map(k => <option value={k} key={k}>{labels[k] ?? k}</option>)}</select></label></div>
     <details open={!entity}><summary>{name || "比較対象を選択"}</summary><label className="search-field"><span className="sr-only">シーズン比較の対象検索</span><input type="search" placeholder="名前で検索" value={query} onChange={e => setQuery(e.target.value)} /></label><div className="row-list">{names.filter(n => league === "MLB" && kind === "player" ? matchesMlbPlayerName(n.id, n.name, query) : n.name.includes(query)).slice(0, 12).map(n => <button className="player-row" key={n.id} onClick={() => update("entity", n.id)}>{n.name}</button>)}</div></details>
     <fieldset className="comparison-years"><legend>比較年度（最大6年）</legend>{years.map(y => <label key={y}><input type="checkbox" checked={selected.includes(y)} onChange={() => update("years", (selected.includes(y) ? selected.filter(s => s !== y) : [...selected, y]).join(","))} />{y}</label>)}</fieldset>
-    {years.length < 2 && <p className="data-notice">現在のNPBは2026年のみ収録。年度差は未対応です。</p>}{unsupported ? <DataState kind="unsupported" title="指定年度・集計対象は未収録です" /> : entity && !valid ? <DataState kind="unsupported" title="指定した選手・球団を確認できません" /> : valid && (errorKey === key ? <DataState kind="source-unavailable" title="シーズン比較を取得できません" /> : state?.key !== key ? <LoadingSkeleton /> : <><h2>{name}</h2><ComparisonResults league={league} rows={state.rows} keys={[...new Set([kind === "team" ? "G" : role === "batting" ? "PA" : "outsRecorded", metric, kind === "team" ? "runDifference" : role === "batting" ? "HR" : "SO"])]} metric={metric} scope={`${competition} 保存済み年度 ${selected.join("/")}`} yearMode /><div className="row-list">{selected.map(y => <Link key={y} className="player-row" to={`/${league}/${kind === "team" ? "teams" : "players"}/${encodeURIComponent(entity)}${kind === "player" ? "/stats" : ""}${scopeSuffix(y, competition)}`}>{y}年の保存済み成績 →</Link>)}</div></>)}
+    {league === "NPB" && <p className="data-notice">球団の公開集計は2026年の保存分です。</p>}{unsupported ? <DataState kind="unsupported" title="指定年度・集計対象は未収録です" /> : entity && !valid ? <DataState kind="unsupported" title="指定した選手・球団を確認できません" /> : valid && (errorKey === key ? <DataState kind="source-unavailable" title="シーズン比較を取得できません" /> : state?.key !== key ? <LoadingSkeleton /> : <><h2>{name}</h2><ComparisonResults league={league} rows={state.rows} keys={[...new Set([kind === "team" ? "G" : role === "batting" ? "PA" : "outsRecorded", metric, kind === "team" ? "runDifference" : role === "batting" ? "HR" : "SO"])]} metric={metric} scope={`${competition} 保存済み年度 ${selected.join("/")}`} yearMode /><div className="row-list">{selected.map(y => <Link key={y} className="player-row" to={`/${league}/${kind === "team" ? "teams" : "players"}/${encodeURIComponent(entity)}${kind === "player" ? "/stats" : ""}${scopeSuffix(y, competition)}`}>{y}年の保存済み成績 →</Link>)}</div></>)}
   </div>;
 }
 
