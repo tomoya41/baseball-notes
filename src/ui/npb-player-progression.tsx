@@ -6,8 +6,12 @@ import { comparisonValue } from "../domain/product-comparison";
 import { MetricLabel } from "./components";
 import { NpbClubComparison } from "./npb-club-comparison";
 import { CollectedRecordWatch } from "./npb-collected-records";
+import { npbHistoricalComparisonLinks } from "../domain/npb-player-journey";
 
-export function NpbPlayerProgression({ rows, years, teamName }: { rows: NpbHistoricalRow[]; years: number[]; teamName: (id: string) => string }) {
+export function NpbPlayerProgression({ rows, years, teamName, comparison }: {
+  rows: NpbHistoricalRow[]; years: number[]; teamName: (id: string) => string;
+  comparison?: ReturnType<typeof npbHistoricalComparisonLinks>;
+}) {
   const [params, setParams] = useRosterSearchParams();
   const role = rows[0]?.role ?? "batting";
   const options: ProgressionMetric[] = role === "batting" ? ["OPS", "AVG", "HR", "H", "RBI", "PA", "G"] : ["ERA", "SO", "outsRecorded", "G", "WHIP", "K9", "BB9"];
@@ -39,7 +43,7 @@ export function NpbPlayerProgression({ rows, years, teamName }: { rows: NpbHisto
     <details className="progression-method"><summary>集計条件</summary><p>{["AVG", "OPS"].includes(metric) ? "率指標の最高値は収録100打席以上が対象。" : ["ERA", "WHIP", "K9", "BB9"].includes(metric) ? "率指標の最高・最小値は収録30投球回以上が対象。" : ""}公式の規定資格や完全な年度成績ではありません。未収録は「—」。欠損年度は線でつなぎません。{metric==="outsRecorded"&&"投球回の高さはアウト数に比例します。"}</p></details>
     <NpbClubComparison rows={rows} years={years} metric={metric} teamName={teamName} />
     <CollectedRecordWatch rows={rows.filter(r=>years.includes(r.season))} />
-    <nav className="history-paths" aria-label="分析を続ける">{rows[0]&&<><Link aria-label="同学年・ドラフト同期の成績と比較" to={`/NPB/history?season=${Math.max(...rows.map(r=>r.season))}&role=${role}&cohort=schoolYear&peer=${rows[0].playerId}`}>同学年・同期</Link><Link aria-label="同じ年齢だったシーズンと比較" to={`/NPB/history?cohort=ageSeason&age=26&role=${role}&recentPlayers=${rows[0].playerId}`}>同年齢</Link></>}<Link to="/NPB/glossary?scope=historical">指標ガイド</Link></nav><details><summary>所属球団別の変化</summary><p>記録された球団別行を表示します。在籍期間や移籍日を推定せず、未収録球団の行を補いません。</p><dl className="explorer-values">{rows.slice().sort((a,b)=>a.season-b.season||a.teamId.localeCompare(b.teamId)).map(r=><div key={`${r.season}:${r.teamId}`}><dt>{r.season}年 · {teamName(r.teamId)}</dt><dd>{comparisonValue(metric, historicalProgression([r], [r.season])[0]?.metrics[metric] ?? null)}</dd></div>)}</dl></details>
+    <nav className="history-paths" aria-label="分析を続ける">{comparison&&<><Link to={comparison.school}>同学年・同期</Link><Link to={comparison.sameAge}>{comparison.age === null ? "年齢を選んで比較" : `同年齢（${comparison.age}歳）`}</Link></>}<Link to="/NPB/glossary?scope=historical">指標ガイド</Link></nav><details><summary>所属球団別の変化</summary><p>記録された球団別行を表示します。在籍期間や移籍日を推定せず、未収録球団の行を補いません。</p><dl className="explorer-values">{rows.slice().sort((a,b)=>a.season-b.season||a.teamId.localeCompare(b.teamId)).map(r=><div key={`${r.season}:${r.teamId}`}><dt>{r.season}年 · {teamName(r.teamId)}</dt><dd>{comparisonValue(metric, historicalProgression([r], [r.season])[0]?.metrics[metric] ?? null)}</dd></div>)}</dl></details>
     {observedClubChanges(points).length>0&&<details><summary>球団が異なる年度の成績差</summary><p>連続する収録年度で、それぞれ1球団の行がある場合の比較です。移籍日・移籍による効果や完全な在籍期間は判定しません。同年の複数球団や欠損年度を前後関係で並べません。</p>{observedClubChanges(points).map(({before,after})=>{
       const a=before.metrics[metric],b=after.metrics[metric],delta=a!=null&&b!=null?b-a:null;
       const sample=(p:typeof before)=>p.sample==null?"母数未収録":role==="batting"?`${p.sample}打席`:`${comparisonValue("outsRecorded",p.sample)}回`;

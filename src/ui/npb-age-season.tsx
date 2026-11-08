@@ -12,6 +12,7 @@ import { HistoricalCredits } from "./npb-historical-credits";
 import type { CohortRepository } from "./npb-historical-cohort";
 import { SaveViewButton } from "./personal-library";
 import { CollectedRecordWatch } from "./npb-collected-records";
+import { npbComparisonOrigin, npbHistoricalComparisonLinks } from "../domain/npb-player-journey";
 
 export function NpbAgeSeason({ manifest, repository }: { manifest: NpbHistoricalManifest; repository: CohortRepository }) {
   const [params, setParams] = useSearchParams(), query = ageSeasonQuery(params);
@@ -59,8 +60,12 @@ function AgeWorkspace({ manifest, catalog, params, update }: { manifest: NpbHist
   const comparison: ComparisonRow[] = observations.flatMap(p => p.metrics ? [{ id: p.playerId, name: collected?`${p.name} · ${Math.min(...p.rows.map(r=>r.season))}〜${Math.max(...p.rows.map(r=>r.season))}年の収録分`:`${p.name} · ${p.season}年`, season: collected?Math.max(...p.rows.map(r=>r.season)):p.season!, date: `${collected?Math.max(...p.rows.map(r=>r.season)):p.season}-12-31`, coverage: "partial", metrics: Object.fromEntries(Object.entries(p.metrics).map(([k, value]) => [k, { value, status: value === null ? "unavailable" : "partial" }])) }] : []);
   const candidates = manifest.players.filter(p => historicalBirthDate(p.playerId,catalog,manifest).birthDate !== null && !query.ids.includes(p.playerId) && (!search || normalizePlayerSearch(p.name).includes(normalizePlayerSearch(search))));
   const teamName = (id: string) => catalog.teams.find(t => t.teamId === id)?.shortName ?? "球団未確認";
+  const origin = npbComparisonOrigin(params), latest = Math.max(...manifest.seasons.map(s=>s.season));
+  const originYear = manifest.seasons.some(s => String(s.season) === origin?.season) ? Number(origin?.season) : latest;
+  const school = origin ? npbHistoricalComparisonLinks(origin.playerId, query.role, originYear, Number(origin.season), null).school :
+    `/NPB/history?season=${latest}&role=${query.role}&cohort=schoolYear${query.ids[0]?`&peer=${query.ids[0]}`:""}`;
   return <section className="historical-cohort" aria-label="同年齢の年度成績比較">
-    <p><Link to={`/NPB/history?season=${Math.max(...manifest.seasons.map(s=>s.season))}&role=${query.role}&cohort=schoolYear${query.ids[0]?`&peer=${query.ids[0]}`:""}`}>同学年の選手を同じ年度で比較 →</Link></p>
+    <p><Link to={school}>同学年の選手を同じ年度で比較 →</Link></p>
     <p className="data-notice">{collected?`各年度の12月31日時点で${query.age}歳となるシーズンまでの収録分を合計します。`:`各年度の12月31日時点で${query.age}歳となるシーズンを比較します。`}年齢到達日までの通算や完全なキャリアではありません。公式戦の収録分だけが対象です。</p>
     <div className="explorer-filter-grid"><label>比較する範囲<select value={query.mode} onChange={e=>update("ageMode",e.target.value)}><option value="season">その年齢のシーズン</option><option value="collected">その年齢のシーズンまでの収録分</option></select></label><form onSubmit={e => { e.preventDefault(); update("age", String(new FormData(e.currentTarget).get("age"))); }}><label>年末時点の年齢<input key={params.get("age") ?? "26"} name="age" type="number" min="0" max="99" step="1" required defaultValue={params.get("age") ?? "26"} /></label><button>年齢を適用</button></form><label>成績<select value={query.role} onChange={e => update("role", e.target.value)}><option value="batting">打撃（投手打撃を含む）</option><option value="pitching">投球</option></select></label></div>
     <p role="status">比較 {query.ids.length}/4人</p>

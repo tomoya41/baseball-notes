@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { SettingsStore } from "./ports";
 import type { League } from "../domain/models";
 import { viewConditions } from "../domain/portable-conditions";
+import { npbComparisonOrigin } from "../domain/npb-player-journey";
 import { mutatePersonalSettings, PERSONAL_KEYS } from "./personal-settings";
 export { viewConditions } from "../domain/portable-conditions";
 
@@ -36,6 +37,7 @@ export function activityFromRoute(path: string, search: string, now: number): Ac
   }
   const params = new URLSearchParams(search);
   // Activity never stores search text or Explorer cohorts; saving these requires an explicit Saved View.
+  if (parsedLeague.data === "NPB" && kind === "history" && npbComparisonOrigin(params)) params.delete("player");
   for(const key of ["recentPlayers","cohort","peer","age"])params.delete(key);
   return { league: parsedLeague.data, kind, entityId, conditions: viewConditions(params, false), visitedAt: now };
 }

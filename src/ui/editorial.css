@@ -171,6 +171,9 @@
 .progression-best { padding: 12px; border-left: 3px solid var(--brand); background: var(--brand-soft); font-size: .8125rem; }
 .progression-best span { display: block; margin-top: 4px; font-size: 1rem; font-weight: 750; }
 :root[data-large-font] .progression-year-values.explorer-values { grid-template-columns: repeat(auto-fit,minmax(min(100%,145px),1fr)); }
+:root[data-large-font] .historical-player-screen :is(.profile-content,.collected-record-watch) > .explorer-values {
+  grid-template-columns: repeat(auto-fit,minmax(min(100%,8rem),1fr));
+}
 .historical-player-screen>.explorer-filter-grid { margin-block: 12px; }
 .historical-player-screen>.explorer-filter-grid>label { min-width: 0; }
 .historical-player-screen>.explorer-filter-grid select { min-width: 0; width: 100%; }
