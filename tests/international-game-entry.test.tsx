@@ -26,7 +26,9 @@ it("opens real official tournament links alongside the domestic Games route with
     expect(entry.open).toBe(false);
     const domesticLink = container.querySelector('.scoreboard-list a')?.getAttribute("href");
     expect(domesticLink).toBe(`/NPB/games/${encodeURIComponent(index.games[0]!.gameId)}?date=${date}`);
-    await act(async () => { entry.open = true; });
+    const internationalButton = [...container.querySelectorAll("button")].find(button => button.textContent === "侍ジャパン")!;
+    await act(async () => internationalButton.click());
+    expect(entry.open).toBe(true);
     expect(entry.textContent).toContain("アプリ未収録");
     expect(entry.textContent).toContain("2026年11月12〜15日");
     expect(entry.querySelector('a[href$="#schedule"]')?.getAttribute("href")).toBe("https://www.japan-baseball.jp/jp/games/apbc2026/#schedule");

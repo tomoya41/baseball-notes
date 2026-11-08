@@ -1,7 +1,7 @@
 import { useId, useRef, useState, type ReactNode } from "react";
 
 type Side = "away" | "home";
-export function GameJumpNav() {
+export function GameJumpNav({ boxLabel = "選手成績" }: { boxLabel?: string } = {}) {
   const jump = (button: HTMLButtonElement, section: string) => {
     const target = button.closest(".game-detail")?.querySelector<HTMLElement>(`[data-game-section="${section}"]`);
     if (!target) return;
@@ -10,7 +10,7 @@ export function GameJumpNav() {
   };
   return <nav className="game-jump-nav" aria-label="試合内の移動">
     <button onClick={e => jump(e.currentTarget, "recap")}>試合概要</button>
-    <button onClick={e => jump(e.currentTarget, "box")}>選手成績</button>
+    <button onClick={e => jump(e.currentTarget, "box")}>{boxLabel}</button>
   </nav>;
 }
 

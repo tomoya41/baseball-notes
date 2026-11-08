@@ -23,6 +23,7 @@ Existing-screen corrections may reuse their established composition without a ne
 - `src/ui/styles.css`: theme tokens, reset, typography, shared controls, shell, dialog, semantic data states.
 - `src/ui/feature-layouts.css`: retained specialist layouts needed by existing Analysis, persistence, charts and product surfaces.
 - `src/ui/final-design.css`: dedicated Home / Player / Game / HOT / Records / analytical / personal compositions and responsive adaptations.
+- `src/ui/npb-experience.css`: NPB Home following cards, competition controls, and compact scoreboards. Uses the existing colour, typography, and touch target tokens.
 
 Import order is explicit in `src/main.tsx`. Avoid adding competing global reset/token blocks or anonymous overrides at file ends. Shared interaction rules belong to the foundation; a screen-specific composition belongs to the screen layer.
 
