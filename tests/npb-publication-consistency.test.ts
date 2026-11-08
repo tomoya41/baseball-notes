@@ -9,6 +9,7 @@ import { npbTeams } from "../src/data/npb-nf3";
 import supplement from "../src/data/npb-reviewed-profile-supplement.json";
 import { reviewedMeasurements } from "../src/data/npb-reviewed-measurements";
 import { buildNpbCatalog, buildNpbCapabilities } from "../src/application/npb-product-payload";
+import { projectNpbFreeProfiles } from "../src/application/npb-profile-projection";
 import { buildNpbSeasonMilestones } from "../src/application/npb-season-milestones";
 import { npbSeasonPayloadSchema, seasonBattingKeys } from "../src/application/npb-season-payload";
 import { validateNpbPublication, validateNpbPublishedGameDates } from "../src/application/npb-publication-consistency";
@@ -80,6 +81,16 @@ const run = (script: string, ...args: string[]) => execFileSync(process.execPath
   ["node_modules/tsx/dist/cli.mjs", `scripts/${script}.ts`, ...args], { encoding: "utf8", stdio: "pipe" });
 
 describe("coordinated NPB publication", () => {
+  it("retains a newer verified measurement observation when replaying the same values", () => {
+    const published = projectNpbFreeProfiles(family().directory);
+    const profile = published.catalog.players[0]!.profile;
+    expect(profile.heightCm).not.toBeNull();
+    profile.measurementsObservedAt = "2026-10-18T00:00:00.000Z";
+    profile.measurementsEffectiveDate = "2026-09-25";
+    const replay = projectNpbFreeProfiles(published.directory, published.catalog);
+    expect(replay.catalog.players[0]!.profile).toEqual(profile);
+  });
+
   it("rejects a different Team Season generation, period or set of canonical teams", () => {
     const p = family();
     expect(() => validateNpbPublication({ ...p, teamSeason: { ...p.teamSeason, generatedAt: "2026-10-01T02:00:00.000Z" } })).toThrow("Catalog/Team Season generation");
