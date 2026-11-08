@@ -1,3 +1,4 @@
+import { isDeepStrictEqual } from "node:util";
 import { readFile } from "node:fs/promises";
 import { npbPlayerDirectorySchema } from "../src/domain/npb-player-directory";
 import { buildNpbCapabilities } from "../src/application/npb-product-payload";
@@ -13,7 +14,11 @@ const projection = projectNpbFreeProfiles(npbPlayerDirectorySchema.parse(JSON.pa
 const catalog = projection.catalog;
 const capabilities = buildNpbCapabilities(catalog, baseline.season, baseline.hot.readiness);
 const milestones = buildNpbSeasonMilestones(baseline.season, catalog);
-await writeNpbProfileProjections(root, { ...baseline, directory: projection.directory, catalog, capabilities, milestones });
+if (!isDeepStrictEqual(catalog.teams, baseline.catalog.teams))
+  throw Error("Profile-only publication cannot change the Team Season input; use a coordinated Season publication");
+// The validated baseline supplies the unchanged Season, Coverage and exact aggregate rows.
+const teamSeason = { ...baseline.teamSeason, generatedAt: catalog.generatedAt };
+await writeNpbProfileProjections(root, { ...baseline, directory: projection.directory, catalog, capabilities, milestones, teamSeason });
 console.log(JSON.stringify({ effectiveDate: catalog.effectiveDate, players: catalog.players.length,
-  projections: ["Directory", "Catalog", "Capabilities", "Milestones"], profileConflicts: projection.conflicts,
+  projections: ["Directory", "Catalog", "Capabilities", "Milestones", "TeamSeason"], profileConflicts: projection.conflicts,
   canonicalWrites: 0, additionalQueries: 0, gates: "preserved" }));
