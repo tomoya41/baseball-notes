@@ -6,6 +6,8 @@
 
 新年度の実データを有効化するには、許諾されたSource、年度別calendar/competition、canonical照合、Coverage/公開条件、検証済みのsnapshotを別途レビューする。2026年のGateやnf3契約をコピーしない。バックエンドも未確認calendarをDB接続前に拒否する。
 
+2026-11-06 JST。NPBは11月4日に[2027年のセ・リーグ公式戦日程](https://npb.jp/news/detail/20261104_03.html)を発表した。アプリの取得・保存・表示用のSourceとしては未採用。シーズン比較への明示的な2027年指定も、既存の年度入口で受け止める。2026年へ戻る操作では選手・球団ID、比較年度、役割、指標を引き継ぐ。年度別の配信先を追加する際は、採用済みデータでcalendar・Coverage・HOT/RecordsのGateを検証する。
+
 ## 2026-10-26 棚卸し（DB readbackではない）
 
 公開済みDirectory/Catalogと現行immutable v8から既存の厳格auditを再実行した。Directory基準日は2026-10-12、Historical archive取得日は2026-10-17。
