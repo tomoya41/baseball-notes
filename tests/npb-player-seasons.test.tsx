@@ -3,12 +3,13 @@ import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach,beforeEach,describe,expect,it,vi } from "vitest";
 import { MemoryRouter,Route,Routes,useLocation } from "react-router-dom";
-import { NpbPlayerSeasons } from "../src/ui/npb-historical";
+import { NpbHistoricalHistory, NpbPlayerSeasons } from "../src/ui/npb-historical";
 import { readNpbHistoricalManifest,readNpbHistoricalSeason } from "../src/application/npb-historical-reader";
 import { readNpbPostseasonAggregates } from "../src/application/npb-competition-reader";
 import { canonicalDeepLink, parentNativeRoute } from "../src/domain/native-navigation";
 import { portableRoute } from "../src/domain/product-sharing";
 import { historicalPitchingKeys } from "../src/domain/npb-historical";
+import { activityFromRoute, viewConditions } from "../src/application/personal-library";
 vi.mock("../src/application/npb-historical-reader",()=>({readNpbHistoricalManifest:vi.fn(),readNpbHistoricalSeason:vi.fn()}));
 vi.mock("../src/application/npb-published-player",()=>({readPublishedPlayerStats:vi.fn(async()=>null)}));
 vi.mock("../src/application/npb-cs-reader",()=>({admittedCsScopes:[{playerId:"00000000-0000-4000-8000-000000000002",season:2026,stage:"npb_cs_final"}],readNpbCs:vi.fn(async()=>({rows:[],games:[],sources:[]}))}));
@@ -60,4 +61,36 @@ describe("NPB player year/competition entry",()=>{
   it("reloads exact scoped URLs, preserves source credits and does not silently show regular",async()=>{const {div,close}=await mount("?season=2025&role=pitching&competition=postseason&stage=npb_cs_final");try{expect(div.textContent).toContain("2025年 · CS ファイナル");expect(div.querySelector('a[href*="oldid=123"]')).not.toBeNull();expect(readNpbHistoricalSeason).not.toHaveBeenCalled();expect(readNpbPostseasonAggregates).toHaveBeenCalledTimes(1);expect(div.querySelector("dd")?.textContent).toBe("—");}finally{await close();}});
   it.each(["?season=2026&competition=preseason","?season=2025&competition=postseason&stage=japan_series","?season=bad"])("rejects unsupported %s without data fetch",async query=>{const {div,close}=await mount(query);try{expect(div.textContent).toContain("未収録");expect(readNpbHistoricalSeason).not.toHaveBeenCalled();expect(readNpbPostseasonAggregates).not.toHaveBeenCalled();}finally{await close();}});
   it("keeps year, role and competition in URL with a bounded initial regular read",async()=>{const {div,close}=await mount("?season=2025&role=pitching");try{expect(readNpbHistoricalSeason).toHaveBeenCalledTimes(1);const select=div.querySelector('select[aria-label="選手成績の試合区分"]') as HTMLSelectElement;await act(async()=>{select.value="npb_cs_final";select.dispatchEvent(new Event("change",{bubbles:true}));});expect(div.querySelector("output")?.textContent).toContain("competition=postseason&stage=npb_cs_final");expect(div.textContent).toContain("2025年 · CS ファイナル");}finally{await close();}});
+  it("preserves the selected pitcher season through cohort, sharing, and a direct return link", async () => {
+    directory.findLatestNpb.mockResolvedValue({players:[{playerId:id,displayName:metadata.name,birthDate:"1997-05-01"}]});
+    const host=document.createElement("div"); document.body.append(host);
+    const root=createRoot(host), toggle=vi.fn();
+    const original=`/NPB/players/${id}/seasons?season=2025&role=pitching`;
+    try {
+      await act(async()=>root.render(<MemoryRouter initialEntries={[original]}><Routes>
+        <Route path="/NPB/players/:playerId/seasons" element={<NpbPlayerSeasons repository={directory} toggle={toggle}/>}/>
+        <Route path="/NPB/history" element={<NpbHistoricalHistory current={null}/>}/>
+      </Routes></MemoryRouter>));
+      await act(async()=>host.querySelector<HTMLButtonElement>('button[aria-label$="お気に入りに追加"]')!.click());
+      expect(toggle).toHaveBeenCalledWith({league:"NPB",kind:"player",entityId:id});
+      const school=host.querySelector<HTMLAnchorElement>('a[href*="cohort=schoolYear"]')!;
+      const age=new URL(host.querySelector<HTMLAnchorElement>('a[href*="cohort=ageSeason"]')!.getAttribute("href")!,"https://example.test");
+      expect(age.searchParams.get("age")).toBe("28");
+      expect(new URL(school.getAttribute("href")!,"https://example.test").searchParams.get("recentPlayers")).toBe(id);
+      const schoolUrl=new URL(school.getAttribute("href")!,"https://example.test");
+      expect(portableRoute(schoolUrl.pathname, schoolUrl.search+"&stage=npb_cs_final")).toBeNull();
+      expect(portableRoute(age.pathname,age.search)).toContain("fromSeason=2025");
+      expect(new URLSearchParams(viewConditions(age.searchParams)).get("fromSeason")).toBe("2025");
+      expect(activityFromRoute(age.pathname, age.search, 0)?.conditions).not.toContain(id);
+      const invalid=new URLSearchParams(age.search);
+      invalid.append("fromSeason","2024");
+      expect(portableRoute(age.pathname,invalid.toString())).not.toContain("fromSeason=");
+      await act(async()=>school.click());
+      const back=host.querySelector<HTMLAnchorElement>("a.back-link");
+      expect(back?.getAttribute("href")).toBe(original);
+      expect(back?.textContent).toContain("2025年成績");
+      await act(async()=>back!.click());
+      expect(host.textContent).toContain("2025年の投球成績");
+    } finally { await act(async()=>root.unmount()); host.remove(); }
+  });
 });

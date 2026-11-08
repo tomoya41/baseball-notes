@@ -22,10 +22,13 @@ it("connects licensed school/draft/history to recorded years without estimating 
   f.manifest.players[0]!.seasons=[2023,2025];
   const repository={catalog:vi.fn().mockResolvedValue(f.catalog)},host=document.createElement("div"),root=createRoot(host);
   try{
-    await act(async()=>root.render(<MemoryRouter><NpbPlayerStory playerId={cohortId(0)} role="pitching" manifest={f.manifest} repository={repository}/></MemoryRouter>));
+    await act(async()=>root.render(<MemoryRouter><NpbPlayerStory playerId={cohortId(0)} role="pitching" manifest={f.manifest} repository={repository} season={2023}/></MemoryRouter>));
     expect(host.textContent).toContain("架空高校");expect(host.textContent).toContain("2017年 ドラフト");expect(host.textContent).toContain("年末26歳");
     const seasons=[...host.querySelectorAll('a[href*="story=1"]')].map(e=>e.getAttribute("href"));
     expect(seasons).toEqual([`/NPB/players/${cohortId(0)}/seasons?season=2023&role=pitching&story=1`,`/NPB/players/${cohortId(0)}/seasons?season=2025&role=pitching&story=1`]);
+    const ageLink = new URL(host.querySelector('a[href*="cohort=ageSeason"]')!.getAttribute("href")!, "https://example.test");
+    expect(ageLink.searchParams.get("fromSeason")).toBe("2023");
+    expect(Number(ageLink.searchParams.get("age"))).toBe(2023-Number(p.profile.birthDate!.slice(0,4)));
     expect(host.querySelector('a[href="https://example.com/identity/0"]')).not.toBeNull();
     expect(host.textContent).not.toContain("2017年入団");expect(host.textContent).toContain("完全なキャリアや現在の登録");
     expect(repository.catalog).toHaveBeenCalledTimes(1);
