@@ -217,7 +217,7 @@ describe("coordinated NPB publication", () => {
     p.directory.effectiveDate = date;
     p.directory.generatedAt = "2026-09-27T00:00:00.000Z";
     p.season.effectiveDate = date; p.season.period.to = date;
-    p.teamSeason.effectiveDate = date; p.teamSeason.period.to = date;
+    p.teamSeason.effectiveDate = date; p.teamSeason.period.to = date; p.teamSeason.generatedAt = p.directory.generatedAt;
     p.standings.effectiveDate = p.standings.throughDate = date;
     for (const row of p.standings.standings) row.date = date;
     p.gameManifest.effectiveDate = date; p.gameRecent.effectiveDate = date; p.records.effectiveDate = date;
@@ -319,6 +319,11 @@ describe("coordinated NPB publication", () => {
       const refreshed = Buffer.from(JSON.stringify({ ...p.teamSeason, generatedAt: "2026-10-01T02:00:00.000Z" }));
       expect(() => verifyNpbPublicationHash(hashes, path, refreshed)).toThrow(/staged artifact/);
       await writeFile(join(root, "data/npb", path), refreshed);
+      await expect(npbPublicationHashes(root)).rejects.toThrow("Catalog/Team Season generation");
+      await writeFile(join(root, "data/npb", path), old);
+      const input = join(root, "directory.json");
+      await writeFile(input, JSON.stringify({ ...p.directory, generatedAt: "2026-10-01T02:00:00.000Z" }));
+      run("refresh-npb-profile-projections", input, root);
       const next = await npbPublicationHashes(root);
       expect(() => verifyNpbPublicationHash(next, path, refreshed)).not.toThrow();
       expect(() => verifyNpbPublicationHash(next, path, old)).toThrow(/staged artifact/);

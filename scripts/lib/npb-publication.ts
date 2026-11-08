@@ -58,8 +58,8 @@ export async function writeNpbProfileProjections(root: string, input: Parameters
   await readNpbPublication(root);
 }
 
-export async function npbPublicationHashes(root: string) {
-  const p = await readNpbPublication(root);
+export async function npbPublicationHashes(root: string, repairedPair?: Parameters<typeof readNpbPublication>[1]) {
+  const p = await readNpbPublication(root, repairedPair);
   const paths = ["players/latest.json", "catalog/latest.json", "capabilities.json", "season/2026/latest.json",
     "hot/latest.json", "teams/season/2026/latest.json", "records/2026/latest.json", "games/manifest.json", "games/recent.json", "standings/npb/latest.json"];
   if (p.milestones) paths.push(`milestones/${p.season.season}/latest.json`);

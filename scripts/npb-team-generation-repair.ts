@@ -11,7 +11,7 @@ import { readNpbTeamSeason } from "../src/data/npb-team-season-repository";
 import { npbCatalogSchema, npbTeamSeasonSchema, type NpbTeamSeason } from "../src/domain/npb-product-contract";
 import { npbPlayerDirectorySchema } from "../src/domain/npb-player-directory";
 import { npbSeasonPayloadSchema } from "../src/application/npb-season-payload";
-import { readNpbPublication } from "./lib/npb-publication";
+import { npbPublicationHashes } from "./lib/npb-publication";
 
 const paths = { directory: "players/latest.json", catalog: "catalog/latest.json", capabilities: "capabilities.json",
   season: "season/2026/latest.json", hot: "hot/latest.json", teamSeason: "teams/season/2026/latest.json",
@@ -84,9 +84,9 @@ async function apply(bundle: string, root: string) {
       !isDeepStrictEqual(nextCatalog, npbCatalogSchema.parse(JSON.parse(priorCatalog!))) ||
       !sameTeamSnapshot(nextTeam, oldTeam))
     throw Error("Team repair does not preserve the published profile or statistical content");
-  await readNpbPublication(root, { catalog: nextCatalog, teamSeason: nextTeam });
+  await npbPublicationHashes(root, { catalog: nextCatalog, teamSeason: nextTeam });
   await Promise.all([writeFile(at(paths.catalog), catalog!), writeFile(at(paths.teamSeason), teamSeason!)]);
-  await readNpbPublication(root);
+  await npbPublicationHashes(root);
   console.log(json(report));
 }
 
