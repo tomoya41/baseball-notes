@@ -25,7 +25,13 @@ it("compares different years at the same year-end age, recomputes split-team rat
     expect(readNpbHistoricalSeason).toHaveBeenCalledTimes(2);expect(f.repository.catalog).toHaveBeenCalledTimes(1);
     expect(f.host.textContent).toContain("2025年 · 年末26歳");expect(f.host.textContent).toContain("2024年 · 年末26歳");
     expect(f.host.textContent).toContain("114");expect(f.host.textContent).toContain("102");
-    expect(f.host.querySelector('[aria-label="同年齢の比較結果"]')).not.toBeNull();
+    const comparison=f.host.querySelector('[aria-label="同年齢の比較結果"]')!;
+    const [first, second]=comparison.querySelectorAll(".comparison-bar");
+    expect(first!.textContent).toContain("114打席");
+    expect(first!.textContent).toContain("阪神 / ソフトバンク");
+    expect(second!.textContent).toContain("102打席");
+    expect(first!.textContent).toContain("球団別行の一部収録");
+    expect(first!.querySelector(`a[href="/NPB/players/${cohortId(0)}"]`)).not.toBeNull();
     expect(f.host.querySelector('a[href*="oldid=100"]')).not.toBeNull();expect(f.host.querySelector('a[href="https://example.com/identity/0"]')).not.toBeNull();
     const metric=f.host.querySelector('[aria-label="同年齢の比較結果"] select') as HTMLSelectElement;
     await act(async()=>{metric.value="AVG";metric.dispatchEvent(new Event("change",{bubbles:true}));});
@@ -52,7 +58,18 @@ it("does not fetch unadmitted years or unknown birthdays and rejects other compe
 it("shares one annual read and preserves unknown DOB, missing role and zero-outs metrics without invented rates",async()=>{
   const f=await mount(`&role=pitching&recentPlayers=${cohortId(0)},${cohortId(2)},${cohortId(6)}`);try{
     expect(readNpbHistoricalSeason).toHaveBeenCalledTimes(1);expect(f.host.textContent).toContain("生年月日が未確認");expect(f.host.textContent).toContain("この役割の成績は未収録");
-    const values=Array.from(f.host.querySelectorAll("dd")).map(e=>e.textContent);expect(values).toContain("0.0");expect(values).toContain("—");expect(f.host.textContent).not.toMatch(/NaN|Infinity/);
+    const cards=f.host.querySelectorAll(".comparison-bar"), zero=cards[2]!;
+    expect(cards[0]!.textContent).toContain("この役割の成績は未収録");
+    expect(cards[1]!.textContent).toContain("生年月日が未確認");
+    expect(zero.textContent).toContain("0.0回");
+    expect(zero.textContent).toContain("投球アウトが0のため算出できません");
+    expect(zero.querySelector(":scope > span")?.textContent).toBe("—");
+    expect(zero.querySelector(".comparison-bar__track span")).toBeNull();
+    const select=f.host.querySelector<HTMLSelectElement>(".historical-comparison select")!;
+    await act(async()=>{select.value="SO";select.dispatchEvent(new Event("change",{bubbles:true}));});
+    expect(zero.querySelector(":scope > span")?.textContent).toBe("0");
+    expect(zero.querySelector(".comparison-bar__track span")).not.toBeNull();
+    expect(f.host.textContent).not.toMatch(/NaN|Infinity/);
   }finally{await f.close();}
 });
 it("bounds discovery to 30 candidates and removes the picker at four selections",async()=>{
