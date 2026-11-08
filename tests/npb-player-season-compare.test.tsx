@@ -42,10 +42,14 @@ it("compares archived club rows and the saved 2026 series without merging source
     const [archive, saved] = f.host.querySelectorAll(".comparison-bar");
     expect(archive!.textContent).toContain("114打席");
     expect(archive!.textContent).toContain("阪神 / ソフトバンク");
-    expect(archive!.textContent).toContain("過去の公式戦 · 球団別行の一部収録");
-    expect(archive!.querySelector('a[href*="oldid=100"]')).not.toBeNull();
+    expect(archive!.textContent).toContain("公式戦・一部の球団別成績");
+    const sources = f.host.querySelector<HTMLDetailsElement>(".season-comparison-sources")!;
+    expect(sources.open).toBe(false);
+    expect(sources.querySelector('a[href*="oldid=100"]')).not.toBeNull();
+    expect(sources.querySelector('a[href="https://nf3.sakura.ne.jp/"]')).not.toBeNull();
+    expect(f.host.querySelectorAll(".season-comparison-sources")).toHaveLength(1);
     expect(saved!.textContent).toContain("2026-03-27〜2026-10-12");
-    expect(saved!.textContent).toContain("球団別内訳は未収録");
+    expect(saved!.textContent).toContain("球団別の内訳は未収録");
     expect(saved!.textContent).toContain("15打席");
     expect(saved!.querySelector(":scope > span")?.textContent).toBe("0");
     const annual = new URL(saved!.querySelector("a")!.getAttribute("href")!, "https://example.test");
@@ -58,15 +62,15 @@ it("compares archived club rows and the saved 2026 series without merging source
 it("distinguishes an unrecorded year from a failed annual read and keeps the independent saved row", async () => {
   const missing = await mount("years=2024,2026");
   try {
-    expect(missing.host.textContent).toContain("この年度・役割の成績は未収録");
+    expect(missing.host.textContent).toContain("この年の打撃成績は未収録");
     expect(readNpbHistoricalSeason).not.toHaveBeenCalled();
   } finally { await missing.close(); }
   vi.mocked(readNpbHistoricalSeason).mockRejectedValueOnce(Error("offline"));
   const failed = await mount("years=2025,2026");
   try {
-    expect(failed.host.textContent).toContain("この年度の成績を取得できません");
+    expect(failed.host.textContent).toContain("この年の成績を読み込めませんでした");
     expect(failed.host.textContent).toContain("15打席");
-    const retry = [...failed.host.querySelectorAll("button")].find(button => button.textContent === "比較データを再試行")!;
+    const retry = [...failed.host.querySelectorAll("button")].find(button => button.textContent === "もう一度読み込む")!;
     await act(async () => retry.click());
     expect(failed.host.textContent).toContain("114打席");
   } finally { await failed.close(); }
@@ -75,7 +79,7 @@ it("distinguishes an unrecorded year from a failed annual read and keeps the ind
 it.each(["years=2027", "season=2027", "competition=postseason", "stage=npb_cs_final"])("holds unsupported scopes before fetching %s", async search => {
   const f = await mount(search);
   try {
-    expect(f.host.textContent).toContain("指定年度・試合区分は未収録");
+    expect(f.host.textContent).toContain("指定の年度や試合区分の成績は未収録");
     expect(f.findLatestNpb).not.toHaveBeenCalled();
     expect(readNpbHistoricalManifest).not.toHaveBeenCalled();
     expect(readPublishedPlayerStats).not.toHaveBeenCalled();
