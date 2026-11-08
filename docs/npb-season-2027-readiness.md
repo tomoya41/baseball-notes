@@ -19,6 +19,14 @@
 - CSは12試合・179集計行。残る257観測は本人照合不足。明示リンク5人（フランミル・レイエス、ダーウィンゾン・ヘルナンデス、藤森海斗、アンダーソン・セベリーノ、ホセ・ルイーズ）にも独立bridgeが不足し、その他は省略名を根拠なく伝播できない。新たな独立証拠なしに再importしない。
 - 未完了6試合は新しい終了証拠がないため復元0。Currentの最新canonical状態・Backup・Scheduled成功をこの静的auditから認定しない。
 
+## 公式発表とアプリ収録の境界（2026-11-07確認）
+
+セ・パ公式戦の2027年3月26日開幕予定と、11月4日のセ・リーグ公式戦・交流戦の発表を既存の年度入口で案内する。公式サイトで確認できる日程と、アプリへの採用、結果・成績の取得は別の状態。[年間行事予定](https://npb.jp/event/2027/)・[日程一覧](https://npb.jp/games/2027/)・[セ・リーグ発表](https://npb.jp/news/detail/20261104_03.html)・[交流戦発表](https://npb.jp/news/detail/20261104_02.html)
+
+- 未承認年度では公式リンクのみ表示する。日程表、開始時刻、予告先発を取り込まない。手動の収集・日次収集・日次dry-runも、予定収集と同じ承認済み年度をDB初期化前に確認する。Historical Backfillは既存の2026年限定を維持する。
+- 承認後は、年度と競技区分ごとに収集範囲、providerの年度識別、追加・延期・変更の証拠、Game/Fact/Dayの完全性を検証する。calendarの承認・一部日程・初回Factは、それぞれ単独ではCoverage、HOT、公式ランキングの公開根拠にならない。
+- `npb-collector.ts`、`npb-day-collector.ts`、`npb-eod.ts` のnf3経路は確認済み2026年に限定。新年度のprovider採用後に年度引数を検証してから経路を拡張する。`generate-npb-season.ts`、`generate-npb-game-surface.ts`、`npb-records.ts` の2026固定の配信先・schemaは既存snapshot用に維持し、2027のProjectionは年度別pin・readbackとセットで追加する。
+
 ## Source / AI / owner gate
 
 2026-10-26に [Retrosheet CSV配布](https://www.retrosheet.org/downloads/csvdownloads.html) と [利用条件](https://www.retrosheet.org/notice.txt) を再確認。条件付き再利用は可能だが、掲載された処理済みデータの上限は2025年で2026 Currentを供給しない。[MLBAM notice](https://gdx.mlb.com/components/copyright.txt) は現在の大量取得・再配信用途の根拠にならず、既存2026 Gateを維持する。Wikipediaの別記事を参照できても、全season/playerの収録許諾・同一性・完全性を代替しない。
