@@ -4,6 +4,12 @@ export const progressionMetrics = ["AVG", "OPS", "HR", "H", "RBI", "PA", "G", "E
 export type ProgressionMetric = typeof progressionMetrics[number];
 export type SeasonObservation = { season: number; teams: string[]; metrics: Record<string, number | null>; sample: number | null };
 
+export function clubYearPair(value: string | null): string | null {
+  if (!value || !/^20\d{2},20\d{2}$/.test(value)) return null;
+  const [before, after] = value.split(",").map(Number);
+  return after === before! + 1 ? value : null;
+}
+
 function observedMetrics(rows: readonly NpbHistoricalRow[]) {
   const metrics = sumHistoricalRows(rows).metrics, outs = metrics.outsRecorded;
   if (rows[0]!.role === "pitching") {

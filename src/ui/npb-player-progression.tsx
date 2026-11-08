@@ -1,17 +1,19 @@
 import { useRosterSearchParams } from "./use-roster-search-params";
 import { RosterContextLink as Link } from "./roster-navigation";
-import { bestObservedSeasons, historicalProgression, observedClubChanges, progressionMetrics, type ProgressionMetric } from "../domain/npb-player-progression";
+import { bestObservedSeasons, clubYearPair, historicalProgression, progressionMetrics, type ProgressionMetric } from "../domain/npb-player-progression";
 import type { NpbHistoricalRow } from "../domain/npb-historical";
 import { comparisonValue } from "../domain/product-comparison";
 import { MetricLabel } from "./components";
 import { NpbClubComparison } from "./npb-club-comparison";
+import { NpbClubYearChange } from "./npb-club-year-change";
 import { CollectedRecordWatch } from "./npb-collected-records";
 import { npbHistoricalComparisonLinks } from "../domain/npb-player-journey";
 import "./npb-player-experience.css";
 
-export function NpbPlayerProgression({ rows, years, teamName, comparison }: {
+export function NpbPlayerProgression({ rows, years, teamName, comparison, observedAt }: {
   rows: NpbHistoricalRow[]; years: number[]; teamName: (id: string) => string;
   comparison?: ReturnType<typeof npbHistoricalComparisonLinks>;
+  observedAt?: string;
 }) {
   const [params, setParams] = useRosterSearchParams();
   const role = rows[0]?.role ?? "batting";
@@ -53,13 +55,10 @@ export function NpbPlayerProgression({ rows, years, teamName, comparison }: {
     </svg><figcaption>{years.slice().sort((a,b)=>a-b).join(" / ")}年 · 収録分。未収録の年度は線で結びません。</figcaption></figure>
     <dl className="explorer-values progression-year-values">{points.map(p => <div key={p.season}><dt><span>{p.season}年</span><small> · {p.teams.length ? p.teams.map(teamName).join(" / ") : "未収録"}</small></dt><dd>{comparisonValue(metric, p.metrics[metric] ?? null)}<small>{p.sample == null ? "母数未収録" : role === "batting" ? `${p.sample}打席` : `${comparisonValue("outsRecorded", p.sample)}回`}</small></dd></div>)}</dl>
     <details className="progression-method"><summary>集計条件</summary><p>{["AVG", "OPS"].includes(metric) ? "率指標の最高値は収録100打席以上が対象。" : ["ERA", "WHIP", "K9", "BB9"].includes(metric) ? "率指標の最高・最小値は収録30投球回以上が対象。" : ""}公式の規定資格や完全な年度成績ではありません。未収録は「—」。欠損年度は線でつなぎません。{metric==="outsRecorded"&&"投球回の高さはアウト数に比例します。"}</p></details>
+    <NpbClubYearChange points={points} rows={rows} metric={metric} label={label} teamName={teamName} observedAt={observedAt}
+      selectedPair={clubYearPair(params.get("clubYears"))} setPair={pair => setParams(previous => { const next = new URLSearchParams(previous); next.set("clubYears", pair); next.set("years", years.join(",")); return next; })} />
     <NpbClubComparison rows={rows} years={years} metric={metric} teamName={teamName} />
     <CollectedRecordWatch rows={rows.filter(r=>years.includes(r.season))} />
     <nav className="history-paths" aria-label="分析を続ける">{comparison&&<><Link to={comparison.school}>同学年・同期</Link><Link to={comparison.sameAge}>{comparison.age === null ? "年齢を選んで比較" : `同年齢（${comparison.age}歳）`}</Link></>}<Link to="/NPB/glossary?scope=historical">指標ガイド</Link></nav><details><summary>所属球団別の変化</summary><p>記録された球団別行を表示します。在籍期間や移籍日を推定せず、未収録球団の行を補いません。</p><dl className="explorer-values">{rows.slice().sort((a,b)=>a.season-b.season||a.teamId.localeCompare(b.teamId)).map(r=><div key={`${r.season}:${r.teamId}`}><dt>{r.season}年 · {teamName(r.teamId)}</dt><dd>{comparisonValue(metric, historicalProgression([r], [r.season])[0]?.metrics[metric] ?? null)}</dd></div>)}</dl></details>
-    {observedClubChanges(points).length>0&&<details><summary>球団が異なる年度の成績差</summary><p>連続する収録年度で、それぞれ1球団の行がある場合の比較です。移籍日・移籍による効果や完全な在籍期間は判定しません。同年の複数球団や欠損年度を前後関係で並べません。</p>{observedClubChanges(points).map(({before,after})=>{
-      const a=before.metrics[metric],b=after.metrics[metric],delta=a!=null&&b!=null?b-a:null;
-      const sample=(p:typeof before)=>p.sample==null?"母数未収録":role==="batting"?`${p.sample}打席`:`${comparisonValue("outsRecorded",p.sample)}回`;
-      return <section key={after.season}><h4>{before.season}年 {teamName(before.teams[0]!)} → {after.season}年 {teamName(after.teams[0]!)}</h4><dl className="explorer-values"><div><dt>{before.season}年</dt><dd>{comparisonValue(metric,a??null)}<small> · {sample(before)}</small></dd></div><div><dt>{after.season}年</dt><dd>{comparisonValue(metric,b??null)}<small> · {sample(after)}</small></dd></div><div><dt>{label}の差</dt><dd>{delta===null?"比較不能":`${delta>0?"+":delta<0?"−":"±"}${comparisonValue(metric,Math.abs(delta))}`}</dd></div></dl></section>;
-    })}</details>}
   </section>;
 }
