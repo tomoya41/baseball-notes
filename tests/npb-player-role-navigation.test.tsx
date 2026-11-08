@@ -24,6 +24,8 @@ it.each(["P", "IF", null])("keeps the %s batting display policy consistent betwe
       const role = position === "P" ? "pitching" : "batting";
       const annual = `/NPB/players/${playerId}/seasons?season=2026&role=${role}`;
       expect(element.querySelector(".player-fixed-scope")?.getAttribute("href")).toBe(annual);
+      if (!section) expect(element.querySelector('[aria-label="ほかの選手と比較"]')?.getAttribute("href"))
+        .toBe(`/NPB/compare?players=${playerId}&role=${role}`);
     }
   } finally { await act(async () => root.unmount()); }
 });
