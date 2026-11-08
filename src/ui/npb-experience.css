@@ -1,0 +1,97 @@
+/* Shared NPB Home and Games composition. Uses the app's light/dark and data-state tokens. */
+.home-hub .home-controls {
+  border: 1px solid var(--color-border);
+  border-top: 3px solid var(--brand);
+  background: linear-gradient(125deg, var(--brand-soft), var(--color-surface) 73%);
+  border-radius: var(--radius-lg);
+  padding: .65rem .75rem .35rem;
+}
+.home-hub .home-mode-nav { margin-block-start: .35rem; }
+.home-hub .home-mode-nav button { min-height: var(--touch); }
+.home-following { margin-block: .75rem; }
+.home-following .section-header { margin-block-end: .35rem; }
+.home-following-players { display: grid; gap: .35rem; }
+.home-following-player {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: .4rem;
+  padding: .2rem .55rem;
+  border-inline-start: 3px solid var(--chart-secondary);
+  border-block-end: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+.home-following-player a { display: grid; align-content: center; min-height: var(--touch); min-width: 0; overflow-wrap: anywhere; }
+.home-following-player strong { color: var(--color-text); font-size: .9375rem; }
+.home-following-player small, .home-primary-actions small, .home-international-link small { color: var(--color-muted); font-size: var(--type-caption); }
+.home-following-player .home-following-action { display: inline-flex; align-items: center; gap: .2rem; padding-inline: .45rem; font-size: .8125rem; font-weight: 700; }
+.home-following-teams { display: flex; flex-wrap: wrap; column-gap: .65rem; }
+.home-following-teams a { display: inline-flex; align-items: center; min-height: var(--touch); gap: .35rem; overflow-wrap: anywhere; }
+.home-primary-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .35rem; }
+.home-primary-actions a {
+  display: grid;
+  align-content: center;
+  min-height: var(--touch);
+  padding: .4rem .45rem;
+  border-block-start: 2px solid var(--brand);
+  background: var(--color-surface);
+  overflow-wrap: anywhere;
+}
+.home-primary-actions strong { color: var(--color-text); }
+.home-season-heading { margin-block: 1.05rem .4rem; }
+.home-season-heading h2 { margin: .1rem 0 0; font-size: 1.125rem; }
+.home-international-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: .3rem .6rem;
+  min-height: var(--touch);
+  margin-block: .55rem;
+  padding: .45rem .55rem;
+  border-inline-start: 3px solid var(--brand);
+  background: var(--brand-soft);
+  font-size: .8125rem;
+}
+.home-international-link > span:first-child { display: grid; }
+.home-international-link strong { color: var(--color-text); }
+
+.game-schedule .game-competition-nav { display: flex; flex-wrap: wrap; gap: .3rem; margin-block: .45rem; }
+.game-competition-nav > :is(a, button) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--touch);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: .35rem .55rem;
+  font-weight: 700;
+}
+.game-competition-nav > [aria-current="page"], .game-competition-nav > [aria-expanded="true"] { color: var(--brand); border-color: var(--brand); background: var(--brand-soft); }
+.game-schedule [data-international-entry]:not([open]) { display: none; }
+.game-schedule [data-international-entry] summary { min-height: var(--touch); align-content: center; }
+.game-collection-scope { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: .2rem .45rem; margin-block: .35rem; color: var(--color-muted); font-size: var(--type-caption); }
+.game-collection-scope a { display: inline-flex; align-items: center; min-height: var(--touch); }
+.scoreboard-row:has(.scoreboard-detail) {
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: .25rem .65rem;
+  padding: .4rem .65rem;
+  border-inline-start: 3px solid var(--brand);
+  background: var(--color-surface);
+  font-variant-numeric: tabular-nums;
+}
+.scoreboard-row:has(.scoreboard-detail) .scoreboard-match { grid-column: 1; grid-row: 1; min-width: 0; }
+.scoreboard-row:has(.scoreboard-detail) .scoreboard-side { min-width: 0; grid-template-columns: minmax(0, 1fr) minmax(1ch, auto); gap: .4rem; }
+.scoreboard-row:has(.scoreboard-detail) .scoreboard-club { min-width: 0; overflow-wrap: anywhere; }
+.scoreboard-row:has(.scoreboard-detail) .scoreboard-side > strong { font-size: 1.35rem; line-height: 1; }
+.scoreboard-row:has(.scoreboard-detail) .scoreboard-center { grid-column: 2; grid-row: 1; align-items: end; border: 0; border-inline-start: 1px solid var(--color-border); padding: 0 0 0 .5rem; text-align: end; }
+.scoreboard-center .scoreboard-status { padding: .12rem .3rem; border-radius: var(--radius-sm); background: var(--brand-soft); color: var(--color-text); }
+.scoreboard-detail { grid-column: 1 / -1; padding-block-start: .25rem; border-block-start: 1px solid var(--color-border); color: var(--brand); font-size: var(--type-caption); font-weight: 700; }
+.game-detail .game-jump-nav { margin-block: .4rem; }
+.game-detail .game-jump-nav button { min-height: var(--touch); }
+
+:root[data-large-font] .home-primary-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+:root[data-large-font] .home-following-player { grid-template-columns: minmax(0, 1fr); }
+:root[data-large-font] .home-following-player .home-following-action { padding-inline: 0; }
+:root[data-large-font] .scoreboard-row:has(.scoreboard-detail) { grid-template-columns: minmax(0, 1fr); }
+:root[data-large-font] .scoreboard-row:has(.scoreboard-detail) .scoreboard-center { grid-column: 1; grid-row: 2; flex-flow: row wrap; justify-content: start; align-items: center; border: 0; padding: 0; text-align: start; }

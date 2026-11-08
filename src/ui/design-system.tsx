@@ -52,15 +52,17 @@ function ClubName({ name }: { name: string }) {
   if (divider <= 0 || divider === name.length - 1) return <span>{name}</span>;
   return <span className="club-name"><span className="club-context">{name.slice(0,divider)}<span className="sr-only">・</span></span><span>{name.slice(divider + 1)}</span></span>;
 }
-export function ScoreboardRow({ to, away, home, awayId, homeId, awayScore, homeScore, status, date, gameNumber, partial = false }: {
+export function ScoreboardRow({ to, away, home, awayId, homeId, awayScore, homeScore, status, date, gameNumber, partial = false, detailLabel }: {
   to: string; away: string; home: string; awayScore: number | null; homeScore: number | null;
   awayId?: string | undefined; homeId?: string | undefined;
   status: string; date?: string; gameNumber?: number | undefined; partial?: boolean;
+  detailLabel?: string;
 }) {
   const known = awayScore !== null && homeScore !== null;
-  return <Link className="scoreboard-row" to={to} aria-label={`${date ? `${date}、` : ""}ビジター ${away} ${awayScore ?? "得点未確認"}、ホーム ${home} ${homeScore ?? "得点未確認"}、${status}${gameNumber ? `、第${gameNumber}試合` : ""}${partial ? "、一部データ確認中" : ""}`}>
+  return <Link className="scoreboard-row" to={to} aria-label={`${date ? `${date}、` : ""}ビジター ${away} ${awayScore ?? "得点未確認"}、ホーム ${home} ${homeScore ?? "得点未確認"}、${status}${gameNumber ? `、第${gameNumber}試合` : ""}${partial ? "、一部データ確認中" : ""}${detailLabel ? `、${detailLabel}` : ""}`}>
     <span className="scoreboard-match"><span className={`scoreboard-side${known && awayScore > homeScore ? " scoreboard-winner" : ""}`}><span className="scoreboard-club"><small>ビジター</small><ClubIdentity teamId={awayId}><ClubName name={away} /></ClubIdentity></span><strong>{awayScore ?? "—"}</strong></span><span className={`scoreboard-side${known && homeScore > awayScore ? " scoreboard-winner" : ""}`}><span className="scoreboard-club"><small>ホーム</small><ClubIdentity teamId={homeId}><ClubName name={home} /></ClubIdentity></span><strong>{homeScore ?? "—"}</strong></span></span>
-    <span className="scoreboard-center">{date && <small>{date}</small>}<span>{status}</span>{gameNumber !== undefined && gameNumber > 0 && <small>第{gameNumber}試合</small>}{partial && <small className="scoreboard-partial">一部データ確認中</small>}<ChevronRight size={16} aria-hidden="true" /></span>
+    <span className="scoreboard-center">{date && <small>{date}</small>}<span className="scoreboard-status">{status}</span>{gameNumber !== undefined && gameNumber > 0 && <small>第{gameNumber}試合</small>}{partial && <small className="scoreboard-partial">一部データ確認中</small>}<ChevronRight size={16} aria-hidden="true" /></span>
+    {detailLabel && <span className="scoreboard-detail">{detailLabel}<span aria-hidden="true"> →</span></span>}
   </Link>;
 }
 export function HomeModeNav({ modes, active, onChange }: { modes: readonly { id: string; label: string }[]; active: string; onChange: (id: string) => void }) {
