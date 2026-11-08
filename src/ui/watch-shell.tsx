@@ -17,5 +17,8 @@ export function PersonalWatchProvider({ store, children }: { store: PersonalWatc
 export function WatchSummary({ league }: { league: League }) {
   const ctx = useContext(PersonalWatchContext), items = ctx?.state?.alerts.filter(a => !a.dismissed && !a.read && a.observation.league === league) ?? [];
   const weight = { high: 0, normal: 1, low: 2 }, summary = [...items].sort((a,b)=>weight[a.priority]-weight[b.priority] || b.createdAt-a.createdAt);
-  return <section className="watch-summary" aria-label="前回確認時からの変化"><div className="list-heading"><Link to={`/${league}/watch-center`}><strong>フォローの変化</strong> <span className="watch-count">{items.length} 未読</span></Link><Link to={`/${league}/watch-center`}>見る →</Link></div>{summary.slice(0,2).map(a => <Link className="watch-summary-item" key={a.id} to={a.observation.path}>{a.observation.name}<small>{a.title} · {a.observation.effectiveDate}</small></Link>)}</section>;
+  return <section className="watch-summary" aria-label="前回確認時からの変化"><div className="list-heading"><Link to={`/${league}/watch-center`}><strong>フォローの変化</strong> {ctx?.state && <span className="watch-count">{items.length} 未読</span>}</Link><Link to={`/${league}/watch-center`}>見る →</Link></div>
+    {ctx?.error ? <p role="status" className="inline-note">Watchの保存情報を読み込めません。</p> : !ctx?.state ? <p role="status" className="inline-note">Watchの保存情報を読み込み中です。</p> : ctx.state.checkedAt === null ? <p className="inline-note">データの確認はまだです。開くと確認を始めます。</p> : !items.length ? <p className="inline-note">保存済みの確認差分に未読はありません。</p> : null}
+    {summary.slice(0,2).map(a => <Link className="watch-summary-item" key={a.id} to={a.observation.path}>{a.observation.name}<small>{a.title} · {a.observation.effectiveDate}</small></Link>)}
+  </section>;
 }

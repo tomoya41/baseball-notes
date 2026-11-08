@@ -3,7 +3,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter } from "react-router-dom";
 import { gameDateIndexSchema,orderGames,shiftGameDate,type GameIndexRow } from "../src/domain/npb-game-index";
 import { recordsSchema } from "../src/domain/npb-records";
-import { GameDateView,RecordsView } from "../src/ui/npb-game-surface";
+import { GameDateView } from "../src/ui/npb-game-surface";
+import { RecordsView } from "../src/ui/npb-records-screen";
 import { StaticGameSurfaceRepository } from "../src/infrastructure/providers/static-game-surface-repository";
 import { Favorites } from "../src/application/favorites";
 import { migrateData,openDataClient,type DataClient } from "../src/data/database";
@@ -73,7 +74,7 @@ describe("Records capability",()=>{
     expect(()=>recordsSchema.parse({...p,categories:records(true).categories})).toThrow();});
   it("requires complete coverage and verified qualifiers",()=>{expect(()=>recordsSchema.parse({...records(true),coverage:"partial"})).toThrow();
     expect(()=>recordsSchema.parse({...records(true),qualifierStatus:"pending"})).toThrow();});
-  it("renders ready canonical records without a UI change",()=>{const text=html(<RecordsView payload={records(true)}/>);
+  it("renders ready records with their canonical player URL",()=>{const text=html(<RecordsView payload={records(true)}/>);
     expect(text).toContain("実選手");expect(text).toContain("/NPB/players/canonical");expect(text).not.toContain("確認中");});
 });
 describe("local canonical Favorites",()=>{
