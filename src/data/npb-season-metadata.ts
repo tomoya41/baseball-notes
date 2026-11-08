@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { npbSeasonMetadataSchema, type NpbSeasonMetadata } from "../domain/npb-season";
 
 // Manually verified calendar facts. These dates are metadata, never downloaded by the collector.
@@ -13,6 +14,16 @@ export const npbRegularSeasons: readonly NpbSeasonMetadata[] = [npbSeasonMetadat
 })];
 
 export function findNpbRegularSeason(asOfDate: string): NpbSeasonMetadata | null {
-  const candidates = npbRegularSeasons.filter((value) => value.season === Number(asOfDate.slice(0, 4)));
+  const candidates = npbRegularSeasons.filter((value) => value.competitionType === "regular" &&
+    value.season === Number(asOfDate.slice(0, 4)));
   return candidates.at(-1) ?? null;
+}
+
+const scheduleDateSchema = z.iso.date();
+
+export function requireNpbRegularSeason(date: string): NpbSeasonMetadata {
+  if (!scheduleDateSchema.safeParse(date).success) throw new Error("Invalid schedule date");
+  const season = findNpbRegularSeason(date);
+  if (!season) throw new Error("Season metadata unavailable; reviewed calendar required");
+  return season;
 }

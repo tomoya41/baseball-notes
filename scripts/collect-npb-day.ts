@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { backupSizeBytes, exportNpbBackup, restoreNpbBackup, verifyRestoredNpbRepository } from "../src/data/npb-backup";
 import { migrateData, openDataClient } from "../src/data/database";
 import { previousJstDate, recordDayBackup, runNpbDayFacts } from "../src/data/npb-day-collector";
+import { requireNpbRegularSeason } from "../src/data/npb-season-metadata";
 
 const args=new Set(process.argv.slice(2));
 const value=(key:string)=>[...args].find((arg)=>arg.startsWith(`${key}=`))?.slice(key.length+1);
@@ -16,6 +17,7 @@ const trigger=value("--trigger")??"manual";
 if(trigger!=="manual" && trigger!=="scheduled" && trigger!=="repair") throw new Error("Invalid trigger");
 if(skipBackup && (!args.has("--reuse-local-raw") || trigger!=="manual"))
   throw new Error("Backup may be skipped only for a manual replay of captured Raw");
+requireNpbRegularSeason(targetDate);
 const url=process.env.TURSO_DATABASE_URL??"file:.data/baseball.db";
 if(args.has("--require-remote") && (url.startsWith("file:") || !process.env.TURSO_AUTH_TOKEN))
   throw new Error("Remote Turso URL and token required");
