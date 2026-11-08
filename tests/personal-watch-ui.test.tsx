@@ -9,6 +9,7 @@ import { PersonalLibrary } from "../src/application/personal-library";
 import { PersonalLibraryProvider } from "../src/ui/library-provider";
 import { WatchCenter } from "../src/ui/personal-watch";
 import { PersonalWatchProvider, WatchSummary } from "../src/ui/watch-shell";
+import { PersonalWatchContext } from "../src/ui/personal-watch-context";
 import { services } from "../src/app/services";
 import type { WatchObservation } from "../src/domain/personal-watch";
 import { eventFixture, eventPerson } from "./fixtures/npb-player-events";
@@ -26,6 +27,14 @@ const screen=()=> <WatchCenter league="NPB" services={services} favorites={[]} r
 const click=async(text:string)=>{const b=[...div.querySelectorAll("button")].find(b=>b.textContent===text)!;expect(b).toBeTruthy();await act(async()=>b.dispatchEvent(new MouseEvent("click",{bubbles:true})));};
 describe("Watch Center interaction",()=>{
   it("keeps Home summary local, links to Watch without any payload acquisition",async()=>{await mount(<WatchSummary league="NPB"/>);expect(mocks.read).not.toHaveBeenCalled();expect(div.textContent).toContain("0 未読");expect(div.querySelector("a")?.href).toContain("/NPB/watch-center");});
+  it("separates unread counts from loading, storage failure and an unchecked baseline",async()=>{
+    const context={state:null,error:"",store,run:vi.fn()};
+    await act(async()=>root.render(<MemoryRouter><PersonalWatchContext.Provider value={context}><WatchSummary league="NPB"/></PersonalWatchContext.Provider></MemoryRouter>));
+    expect(div.textContent).toContain("読み込み中");expect(div.textContent).not.toContain("0 未読");
+    await act(async()=>root.render(<MemoryRouter><PersonalWatchContext.Provider value={{...context,error:"storage failure"}}><WatchSummary league="NPB"/></PersonalWatchContext.Provider></MemoryRouter>));
+    expect(div.textContent).toContain("保存情報を読み込めません");expect(div.textContent).not.toContain("0 未読");
+    await mount(<WatchSummary league="NPB"/>);expect(div.textContent).toContain("0 未読");expect(div.textContent).toContain("データの確認はまだです");expect(mocks.read).not.toHaveBeenCalled();
+  });
   it("shows initial baseline/empty state rather than fabricated alerts",async()=>{mocks.read.mockResolvedValue({observations:[observation()],activeEntities:[`player:${id}`],notes:["Coverage partial"],fetches:2,targets:1,elapsedMs:3});await mount(screen());expect(div.textContent).toContain("確認差分はありません");expect((await store.read()).alerts).toEqual([]);expect(div.textContent).toContain("リアルタイム・バックグラウンド通知ではありません");});
   it("shows article records on demand without marking them as Watch differences", async () => {
     const dataset = eventFixture();
