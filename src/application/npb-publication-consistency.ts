@@ -38,7 +38,10 @@ export function validateNpbPublication(input: NpbPublicationInputs) {
   }
   for (const payload of [catalog, capabilities])
     requireEqual(payload.generatedAt, directory.generatedAt, "profile projection generation");
+  requireEqual(teamSeason.generatedAt, catalog.generatedAt, "Catalog/Team Season generation");
   requireEqual(teamSeason.season, season.season, "season identity");
+  requireEqual(teamSeason.period, season.period, "Team Season period");
+  requireEqual(teamSeason.teams.map(t => t.teamId).sort(), catalog.teams.map(t => t.teamId).sort(), "Team Season IDs");
   requireEqual(capabilities.coverage, season.coverage, "Capabilities Coverage");
   requireEqual(teamSeason.coverage, season.coverage, "Team Season Coverage");
   const teams = new Map(catalog.teams.map(t => [t.teamId, t]));
