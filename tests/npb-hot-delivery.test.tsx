@@ -61,12 +61,13 @@ describe("NPB HOT static Home delivery", () => {
     expect(html).not.toContain("打者A");
     expect(html).not.toContain("coverage_not_complete");
     expect(html).not.toContain("WHIP");
-    expect(html).toContain("対象期間の成績・出場数");
+    expect(html).toContain("対象期間の収録が未確認です");
+    expect(html).not.toContain("更新未確認");
   });
 
   it("keeps HOT closed when update or player information is unverified despite complete seven-day coverage",()=>{
     const payload:NpbHotPayload={...notReady,coverage:{...ready.coverage},readiness:{...notReady.readiness,reasons:["scheduled_production_evidence_pending","display_metadata_unavailable"]}};
-    const html=view(payload,"ready");expect(html).toContain("更新状況を確認できません");expect(html).toContain("表示情報を確認中");expect(html).not.toContain("揃うと表示");expect(html).not.toContain("打者A");
+    const html=view(payload,"ready");expect(html).toContain("定時収集・配信は未確認です");expect(html).toContain("表示情報を確認中");expect(html).not.toContain("揃うと表示");expect(html).not.toContain("打者A");
   });
 
   it("renders three compact ranked categories and canonical Player links when ready", () => {
@@ -87,8 +88,16 @@ describe("NPB HOT static Home delivery", () => {
     expect(view(null, "loading")).toContain("skeleton");
     expect(view(null, "error")).toContain("HOTデータを取得できませんでした");
     const stale = view(ready, "ready", new Date("2026-09-27T03:00:00Z"));
-    expect(stale).toContain("HOTデータを更新中です");
+    expect(stale).toContain("最新のHOT集計を確認できません");
+    expect(stale).toContain("更新未確認");
     expect(stale).not.toContain("打者A");
+    const staleClosed = view(notReady, "ready", new Date("2026-09-27T03:00:00Z"));
+    expect(staleClosed).toContain("更新未確認");
+    expect(staleClosed).toContain("HOTランキングは現在表示できません");
+    expect(staleClosed).not.toContain("打者A");
+    const future = view(ready, "ready", new Date("2026-09-25T03:00:00Z"));
+    expect(future).toContain("HOTデータの基準日を確認できません");
+    expect(future).not.toContain("打者A");
   });
 
   it("validates HTTP schema, uses the last successful cache, and never invents rankings", async () => {

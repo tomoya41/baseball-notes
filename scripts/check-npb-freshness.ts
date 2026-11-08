@@ -1,7 +1,7 @@
 import { openDataClient } from "../src/data/database";
 import { checkPublishedNpbFreshness, evaluateNpbDailyHealth,
   inspectLatestScheduledAction, failsRequiredNpbHealth } from "../src/data/npb-freshness";
-import { canRetainNpbSnapshot } from "../src/data/npb-season-lifecycle";
+import { canRetainNpbSnapshot, diagnoseNpbCollection } from "../src/data/npb-season-lifecycle";
 import { inspectNpbDatabaseDiagnostics } from "../src/data/npb-freshness-diagnostics";
 import { inspectReadSuspension,recordReadSuspension } from "./lib/npb-db-read-suspension";
 import { writeFile } from "node:fs/promises";
@@ -24,11 +24,25 @@ try {
   scheduledAction=await inspectLatestScheduledAction(process.env.GITHUB_REPOSITORY ?? "tomoya41/baseball-notes",
     process.env.GITHUB_TOKEN);
 } catch(error) { scheduledActionError=String(error); }
-const summary=evaluateNpbDailyHealth(freshness,ingestion,scheduledAction);
+const collectionStatus = diagnoseNpbCollection(freshness.expectedEffectiveDate, scheduledAction, lifecycle);
+const summary=evaluateNpbDailyHealth(freshness,ingestion,scheduledAction,collectionStatus);
 const retainedSnapshot=canRetainNpbSnapshot(freshness,ingestion,scheduledAction,lifecycle);
 process.stdout.write(`${JSON.stringify({...summary,ingestionError,scheduledActionError,lifecycle,lifecycleError,dbReadSuspension:suspension,
   retentionVerified:retainedSnapshot,
   operationMode:lifecycle?.calendar.skip ? "outside_reviewed_calendar" : "daily_freshness_required",
   lifecycleNote:retainedSnapshot ? "DB/public saved snapshot agreement verified; Current freshness and health failures still apply. Not no-game, confirmed season end or Scheduled proof." :
     lifecycle?.calendar.skip ? "Outside reviewed acquisition calendar; saved snapshot retention has not been verified. Current freshness and health failures still apply." : null},null,2)}\n`);
+if (process.env.GITHUB_STEP_SUMMARY) {
+  await writeFile(process.env.GITHUB_STEP_SUMMARY, [
+    "### NPB collection and public freshness",
+    "",
+    `- Collection: ${collectionStatus}`,
+    `- Public snapshot: ${freshness.status} (HTTP ${freshness.httpStatus ?? "unavailable"}, published ${freshness.publishedEffectiveDate ?? "unavailable"}, expected ${freshness.expectedEffectiveDate})`,
+    `- Likely fault: ${summary.likelyFault ?? "none identified"}`,
+    `- Scheduled encrypted backup artifact: ${scheduledAction?.encryptedBackupArtifact ?? "unavailable"}`,
+    `- Saved snapshot retention verified: ${retainedSnapshot}`,
+    `- Freshness health: ${summary.health}`,
+    "",
+  ].join("\n"), { flag: "a" });
+}
 if(process.argv.includes("--require-healthy") && failsRequiredNpbHealth(summary,Boolean(ingestionError || scheduledActionError || lifecycleError))) process.exitCode=1;
