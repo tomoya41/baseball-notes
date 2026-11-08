@@ -605,7 +605,8 @@ public class ReleaseQualityTest {
         waitText("比較 1/4人");
         js("document.querySelectorAll('.explorer-results input[type=checkbox]')[1].click()");
         waitText("比較 2/4人");
-        assertEquals("Comparison keeps its year and sample caveat", "true", js("!!document.querySelector('section[aria-label=\"同期の成績比較\"]') && document.body.innerText.includes('規定資格や優劣の判定ではありません')"));
+        assertEquals("Comparison explains the partial official-season scope and shows both years and samples", "true",
+            js("(()=>{const panel=document.querySelector('section[aria-label=\"同期の成績比較\"]');if(!panel)return false;const rows=[...panel.querySelectorAll('.comparison-bar')];return rows.length===2 && panel.innerText.includes('過去の公式戦') && panel.innerText.includes('収録範囲・母数は選手ごとに異なります') && rows.every(row=>row.innerText.includes('2025年') && row.innerText.includes('母数（投球回）') && row.innerText.includes('球団別行の一部収録'));})()"));
         String route=js("location.hash");screenshot("npb-cohort-360");
         fontScaleAndRecreate(2.0f);waitText("比較 2/4人");waitViewport(360);
         assertEquals("Recreation retains cohort and selected canonical IDs",route,js("location.hash"));
