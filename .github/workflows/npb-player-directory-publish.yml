@@ -19,8 +19,13 @@ on:
         description: Import only the four reviewed Wikidata identities before publication
         type: boolean
         default: false
+      team_generation_repair_run:
+        description: Approved stage-only backup run ID for an exact Catalog and Team Season repair; requires preserve-only
+        type: string
+        default: ""
 permissions:
   contents: read
+  actions: read
 env:
   PRESERVE_ONLY: ${{ github.event_name == 'push' || inputs.preserve_published_only == true }}
 concurrency:
@@ -44,6 +49,12 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      - name: Refuse incompatible Team Season repair inputs
+        if: github.event_name == 'workflow_dispatch' && inputs.team_generation_repair_run != ''
+        env:
+          PROFILE_ONLY: ${{ inputs.profile_projection_only }}
+          IMPORT_PROFILES: ${{ inputs.import_verified_profiles }}
+        run: test "$PRESERVE_ONLY" = true && test "$PROFILE_ONLY" != true && test "$IMPORT_PROFILES" != true
       - name: Require the active player-event version to be publicly readable before switching the app
         if: github.event_name == 'push'
         run: npx tsx scripts/verify-published-npb-player-events.ts --active-only
@@ -95,6 +106,20 @@ jobs:
             npx tsx scripts/refresh-npb-profile-projections.ts .data/publish/data/npb/players/latest.json dist
           fi
           npx tsx scripts/preserve-mlb-historical.ts dist/data/mlb
+      - name: Apply the reviewed Team Season pair to the complete staged site
+        if: github.event_name == 'workflow_dispatch' && inputs.team_generation_repair_run != ''
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TEAM_REPAIR_RUN: ${{ inputs.team_generation_repair_run }}
+        run: |
+          set -euo pipefail
+          test "$PRESERVE_ONLY" = true
+          [[ "$TEAM_REPAIR_RUN" =~ ^[1-9][0-9]{0,19}$ ]]
+          gh run view "$TEAM_REPAIR_RUN" --json workflowName,event,conclusion --jq \
+            'select(.workflowName == "NPB portable backup restore drill" and .event == "workflow_dispatch" and .conclusion == "success") | .conclusion' | grep -Fx success
+          gh run download "$TEAM_REPAIR_RUN" --repo "$GITHUB_REPOSITORY" -n npb-team-generation-repair --dir .data/team-generation-repair
+          npx tsx scripts/npb-team-generation-repair.ts apply .data/team-generation-repair dist
       - uses: actions/configure-pages@v5
       - name: Validate coordinated NPB projections before artifact upload
         id: publication
