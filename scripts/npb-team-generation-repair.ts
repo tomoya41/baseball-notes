@@ -74,7 +74,8 @@ async function apply(bundle: string, root: string) {
   const [catalog, teamSeason] = await Promise.all([names.catalog, names.teamSeason].map(name => readFile(join(bundle, name), "utf8")));
   const at = (path: string) => join(root, "data/npb", path);
   const [priorCatalog, priorTeam] = await Promise.all([paths.catalog, paths.teamSeason].map(path => readFile(at(path), "utf8")));
-  if (hash(catalog!) !== report.stagedHashes.catalog || hash(teamSeason!) !== report.stagedHashes.teamSeason ||
+  if (report.stagedHashes.catalog !== report.publishedHashes.catalog ||
+      hash(catalog!) !== report.stagedHashes.catalog || hash(teamSeason!) !== report.stagedHashes.teamSeason ||
       hash(priorCatalog!) !== report.publishedHashes.catalog || hash(priorTeam!) !== report.publishedHashes.teamSeason)
     throw Error("Team repair bundle or published input hash differs; re-stage before publication");
   const nextCatalog = npbCatalogSchema.parse(JSON.parse(catalog!)), nextTeam = npbTeamSeasonSchema.parse(JSON.parse(teamSeason!));
@@ -84,9 +85,11 @@ async function apply(bundle: string, root: string) {
       !isDeepStrictEqual(nextCatalog, npbCatalogSchema.parse(JSON.parse(priorCatalog!))) ||
       !sameTeamSnapshot(nextTeam, oldTeam))
     throw Error("Team repair does not preserve the published profile or statistical content");
-  await npbPublicationHashes(root, { catalog: nextCatalog, teamSeason: nextTeam });
+  const before = await npbPublicationHashes(root, { catalog: nextCatalog, teamSeason: nextTeam });
   await Promise.all([writeFile(at(paths.catalog), catalog!), writeFile(at(paths.teamSeason), teamSeason!)]);
-  await npbPublicationHashes(root);
+  const after = await npbPublicationHashes(root);
+  if (!isDeepStrictEqual(after, { ...before, [paths.teamSeason]: report.stagedHashes.teamSeason }))
+    throw Error("Staged repair changed an unrelated NPB projection");
   console.log(json(report));
 }
 

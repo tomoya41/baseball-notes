@@ -19,6 +19,10 @@ on:
         description: Import only the four reviewed Wikidata identities before publication
         type: boolean
         default: false
+      stage_only:
+        description: Rehearse a preserve-only release and retain evidence without deploying
+        type: boolean
+        default: false
       team_generation_repair_run:
         description: Approved stage-only backup run ID for an exact Catalog and Team Season repair; requires preserve-only
         type: string
@@ -33,7 +37,10 @@ concurrency:
   cancel-in-progress: false
 jobs:
   stage:
-    if: github.event.repository.private == false && github.ref == 'refs/heads/main'
+    if: >-
+      github.event.repository.private == false &&
+      (github.ref == 'refs/heads/main' ||
+        (github.event_name == 'workflow_dispatch' && inputs.stage_only && inputs.preserve_published_only))
     runs-on: ubuntu-latest
     timeout-minutes: 15
     outputs:
@@ -49,8 +56,8 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - name: Refuse incompatible Team Season repair inputs
-        if: github.event_name == 'workflow_dispatch' && inputs.team_generation_repair_run != ''
+      - name: Refuse incompatible preserve-only inputs
+        if: inputs.stage_only || (github.event_name == 'workflow_dispatch' && inputs.team_generation_repair_run != '')
         env:
           PROFILE_ONLY: ${{ inputs.profile_projection_only }}
           IMPORT_PROFILES: ${{ inputs.import_verified_profiles }}
@@ -59,19 +66,19 @@ jobs:
         if: github.event_name == 'push'
         run: npx tsx scripts/verify-published-npb-player-events.ts --active-only
       - name: Import reviewed Player Master v2 profiles
-        if: github.event_name == 'workflow_dispatch' && inputs.import_verified_profiles == true && inputs.profile_projection_only != true && inputs.preserve_published_only != true
+        if: github.event_name == 'workflow_dispatch' && inputs.import_verified_profiles == true && inputs.profile_projection_only != true && inputs.preserve_published_only != true && inputs.stage_only != true
         env:
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
         run: npx tsx scripts/import-npb-player-master-v2.ts --apply --confirmed-mapping
       - name: Generate validated Player Directory from read-only queries
-        if: github.event_name == 'workflow_dispatch' && inputs.profile_projection_only != true && inputs.preserve_published_only != true
+        if: github.event_name == 'workflow_dispatch' && inputs.profile_projection_only != true && inputs.preserve_published_only != true && inputs.stage_only != true
         env:
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
         run: npx tsx scripts/generate-npb-player-directory.ts --require-remote --payload-root=.data/publish
       - name: Stage current standings without source access
-        if: github.event_name == 'workflow_dispatch' && inputs.profile_projection_only != true && inputs.preserve_published_only != true
+        if: github.event_name == 'workflow_dispatch' && inputs.profile_projection_only != true && inputs.preserve_published_only != true && inputs.stage_only != true
         env:
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
@@ -129,7 +136,25 @@ jobs:
       - uses: actions/upload-pages-artifact@v4
         with:
           path: dist
+          retention-days: 7
+      - name: Write the rehearsal hash evidence
+        if: inputs.stage_only
+        env:
+          PROJECTION_HASHES: ${{ steps.publication.outputs.projection_hashes }}
+          APP_INDEX_SHA256: ${{ steps.publication.outputs.app_index_sha256 }}
+        run: |
+          mkdir -p .data/rehearsal
+          printf '%s\n' "$PROJECTION_HASHES" > .data/rehearsal/npb-hashes.json
+          printf '%s\n' "$APP_INDEX_SHA256" > .data/rehearsal/app-index.sha256
+      - uses: actions/upload-artifact@v4
+        if: inputs.stage_only
+        with:
+          name: npb-preserve-only-rehearsal
+          path: .data/rehearsal
+          retention-days: 7
+          if-no-files-found: error
   deploy:
+    if: github.ref == 'refs/heads/main' && inputs.stage_only != true
     needs: stage
     runs-on: ubuntu-latest
     permissions:

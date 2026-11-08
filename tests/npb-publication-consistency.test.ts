@@ -358,7 +358,7 @@ describe("coordinated NPB publication", () => {
 type Workflow = {
   on?: { push?: { branches: string[]; paths: string[] } };
   env?: Record<string, string>;
-  jobs: Record<string, { steps: { run?: string; uses?: string; if?: string; env?: Record<string, string> }[] }>;
+  jobs: Record<string, { if?: string; steps: { run?: string; uses?: string; if?: string; env?: Record<string, string> }[] }>;
 };
 const workflow = (name: string) => parse(readFileSync(`.github/workflows/${name}.yml`, "utf8")) as Workflow;
 describe("all Pages publication entry points", () => {
@@ -389,6 +389,18 @@ describe("all Pages publication entry points", () => {
     const readback = deploy.findIndex(s => s.run?.includes("verify-published-npb-player-events.ts"));
     expect(readback).toBeGreaterThan(deploy.findIndex(s => s.uses?.startsWith("actions/deploy-pages")));
     expect(deploy[readback]?.env?.EXPECTED_APP_INDEX_SHA256).toBe("${{ needs.stage.outputs.app_index_sha256 }}");
+  });
+  it("lets a branch rehearse a preserve-only release without reaching DB or deployment jobs", () => {
+    const { stage, deploy } = workflow("npb-player-directory-publish").jobs;
+    expect(stage!.if).toContain("github.event_name == 'workflow_dispatch' && inputs.stage_only && inputs.preserve_published_only");
+    expect(deploy!.if).toBe("github.ref == 'refs/heads/main' && inputs.stage_only != true");
+    for (const step of stage!.steps.filter(s => s.env?.TURSO_DATABASE_URL || s.env?.TURSO_AUTH_TOKEN))
+      expect(step.if).toContain("inputs.stage_only != true");
+    const steps = stage!.steps;
+    const guard = steps.findIndex(s => s.run?.includes('test "$PRESERVE_ONLY" = true && test'));
+    expect(steps[guard]?.if).toContain("inputs.stage_only ||");
+    expect(guard).toBeLessThan(steps.findIndex(s => s.run?.includes("npm run build")));
+    expect(steps.find(s => s.run?.includes("npb-hashes.json"))?.if).toBe("inputs.stage_only");
   });
   it("Historical-only delivery cannot access canonical DB or refresh the current generation",()=>{
     const steps=workflow("npb-player-directory-publish").jobs.stage!.steps;
