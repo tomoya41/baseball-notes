@@ -33,6 +33,7 @@ export async function readNpbTeamComparison(services: Services, view = "season")
   if (view === "season") return catalog.teams.map(t => {
     const stats = season.teams.find(s => s.teamId === t.teamId);
     return { id: t.teamId, name: t.name, season: season.season, date: season.period.to, coverage: season.coverage.status,
+      publication: { effectiveDate: season.effectiveDate, generatedAt: season.generatedAt, from: season.period.from },
       metrics: stats ? teamMetrics(stats, season.coverage.status) : null } satisfies ComparisonRow;
   });
   if (view !== "14") throw Error("NPB team split unavailable");

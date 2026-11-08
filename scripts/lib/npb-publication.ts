@@ -16,7 +16,7 @@ export async function preserveNpbPublicStandings(root: string, request: typeof f
   return { effectiveDate: payload.effectiveDate, canonicalWrites: 0 };
 }
 
-export async function readNpbPublication(root: string) {
+export async function readNpbPublication(root: string, repairedPair?: Pick<Parameters<typeof validateNpbPublication>[0], "catalog" | "teamSeason">) {
   const read = async (path: string) => JSON.parse(await readFile(join(root, "data/npb", path), "utf8")) as unknown;
   const [directory, catalog, capabilities, season, hot, teamSeason] = await Promise.all([
     read("players/latest.json"), read("catalog/latest.json"), read("capabilities.json"),
@@ -30,7 +30,7 @@ export async function readNpbPublication(root: string) {
     read("games/manifest.json"), read("games/recent.json"), read("records/2026/latest.json"),
   ]);
   const standings = JSON.parse(await readFile(join(root, "data/standings/npb/latest.json"), "utf8")) as unknown;
-  const publication = validateNpbPublication({ directory, catalog, capabilities, season, hot, teamSeason, milestones, gameManifest, gameRecent, records, standings });
+  const publication = validateNpbPublication({ directory, catalog, capabilities, season, hot, teamSeason, milestones, gameManifest, gameRecent, records, standings, ...repairedPair });
   const recent = await Promise.all(([7, 14, 30] as const).map(async days => {
     const raw = await read(`explorer/recent/${days}.json`).catch((e: NodeJS.ErrnoException) => { if (e.code !== "ENOENT") throw e; return null; });
     return raw;
@@ -47,6 +47,7 @@ export async function writeNpbProfileProjections(root: string, input: Parameters
   const p = validateNpbPublication(input);
   for (const [path, value] of Object.entries({ "players/latest.json": p.directory,
     "catalog/latest.json": p.catalog, "capabilities.json": p.capabilities,
+    [`teams/season/${p.season.season}/latest.json`]: p.teamSeason,
     [`milestones/${p.season.season}/latest.json`]: p.milestones })) {
     if (value === undefined) continue;
     const file = join(root, "data/npb", path);
@@ -57,8 +58,8 @@ export async function writeNpbProfileProjections(root: string, input: Parameters
   await readNpbPublication(root);
 }
 
-export async function npbPublicationHashes(root: string) {
-  const p = await readNpbPublication(root);
+export async function npbPublicationHashes(root: string, repairedPair?: Parameters<typeof readNpbPublication>[1]) {
+  const p = await readNpbPublication(root, repairedPair);
   const paths = ["players/latest.json", "catalog/latest.json", "capabilities.json", "season/2026/latest.json",
     "hot/latest.json", "teams/season/2026/latest.json", "records/2026/latest.json", "games/manifest.json", "games/recent.json", "standings/npb/latest.json"];
   if (p.milestones) paths.push(`milestones/${p.season.season}/latest.json`);
