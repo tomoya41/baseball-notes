@@ -31,6 +31,17 @@ export function projectNpbFreeProfiles(directory: NpbPlayerDirectory, savedCatal
   }
   const result = applyNpbProfileRegistry(legacy.directory, catalog, { ...registry,
     observedAt: [registry.observedAt,wikipedia.observedAt,curated.observedAt,assisted.observedAt].sort().at(-1)!, entries: [...registry.entries, ...wikipedia.entries, ...curated.entries, ...assisted.entries] });
+  for (const p of result.catalog.players) {
+    const prior = saved.get(p.playerId)?.profile;
+    const profile = p.profile;
+    if (prior?.measurementsObservedAt && prior.measurementsObservedAt > (profile.measurementsObservedAt ?? "") &&
+        prior.heightCm === profile.heightCm && prior.weightKg === profile.weightKg &&
+        (profile.heightCm !== null || profile.weightKg !== null)) {
+      // Keep the latest verified observation of these same measurements together with its effective date.
+      profile.measurementsObservedAt = prior.measurementsObservedAt;
+      profile.measurementsEffectiveDate = prior.measurementsEffectiveDate;
+    }
+  }
   // A verified bridge is useful even when every profile value remains unavailable/conflicted.
   const linked = new Set(identities.map(b => b.playerId));
   for (const p of result.catalog.players) if (linked.has(p.playerId)) p.profile.identityLinked = true;
