@@ -17,12 +17,21 @@ import { NpbPlayerSeasonCompare } from "./npb-player-season-compare";
 
 import { ComparisonBars } from "./comparison-bars";
 
-const labels: Record<string, string> = { G: "試合", W: "勝", L: "敗", T: "分", runsFor: "得点", runsAgainst: "失点", runDifference: "得失点差", outsRecorded: "IP", K9: "K/9" };
+const labels: Record<string, string> = { G: "試合", W: "勝", L: "敗", T: "分", runsFor: "得点", runsAgainst: "失点", runDifference: "得失点差", PA: "打席", outsRecorded: "投球回", K9: "奪三振率" };
 const scopeSuffix = (season: number, scope: string) => `?season=${season}${scope === "postseason" ? "&competition=postseason" : ""}`;
-function ComparisonResults({ league, rows, keys, metric, scope, yearMode = false }: { league: League; rows: ComparisonRow[]; keys: string[]; metric: string; scope: string; yearMode?: boolean }) {
-  const dates = new Set(rows.map(r => r.date));
+function ComparisonResults({ league, rows, keys: requestedKeys, metric, scope, yearMode = false }: { league: League; rows: ComparisonRow[]; keys: string[]; metric: string; scope: string; yearMode?: boolean }) {
+  const dates = new Set(rows.map(r => r.date)), publication = rows[0]?.publication;
+  const sample = publication ? ["AVG", "OPS"].includes(metric) ? "PA" : ["ERA", "K9"].includes(metric) ? "outsRecorded" : null : null;
+  const keys = sample && !requestedKeys.includes(sample) ? [...requestedKeys, sample] : requestedKeys;
   if (!yearMode && dates.size > 1) return <DataState kind="source-unavailable" title="比較の基準日が一致しません" />;
-  return <><ComparisonBars rows={rows} metric={metric} /><div className="comparison-results">{rows.map(r => <article className="comparison-summary" key={r.id}><h2>{r.name}</h2><p className="inline-note">{r.season} · {r.date}まで · {r.coverage === "complete" ? "収録済み" : "一部未確認"}</p>{r.notice && <p className="inline-note">{r.notice}</p>}<dl className="explorer-values">{keys.map(k => <div key={k}><dt><MetricLabel metric={k} label={labels[k] ?? k} /></dt><dd>{comparisonValue(k, metricNumber(r.metrics, k))}{r.metrics?.[k]?.status === "partial" && <small> 一部</small>}</dd></div>)}</dl>{yearMode && <p className="inline-note">前年差（{metric === "outsRecorded" ? "アウト数" : metric}）：{previousYearDelta(rows, r, metric) === null ? "—" : `${previousYearDelta(rows, r, metric)! >= 0 ? "+" : ""}${previousYearDelta(rows, r, metric)!.toFixed(["AVG", "OBP", "SLG", "OPS"].includes(metric) ? 3 : ["ERA", "K9"].includes(metric) ? 2 : 0)}`}</p>}</article>)}</div>
+  return <><ComparisonBars rows={rows} metric={metric} /><div className="comparison-results">{rows.map(r => <article className="comparison-summary" key={r.id}><h2>{r.name}</h2><p className="inline-note">{r.season} · {r.date}まで · {r.coverage === "complete" ? "収録済み" : publication && r.coverage === "partial" ? "一部収録" : "一部未確認"}</p>{r.notice && <p className="inline-note">{r.notice}</p>}<dl className="explorer-values">{keys.map(k => <div key={k}><dt><MetricLabel metric={k} label={labels[k] ?? k} /></dt><dd>{comparisonValue(k, metricNumber(r.metrics, k))}{r.metrics?.[k]?.status === "partial" && <small> 一部</small>}</dd></div>)}</dl>{yearMode && (!publication || rows.length > 1) && <p className="inline-note">前年差（{metric === "outsRecorded" ? "アウト数" : metric}）：{previousYearDelta(rows, r, metric) === null ? "—" : `${previousYearDelta(rows, r, metric)! >= 0 ? "+" : ""}${previousYearDelta(rows, r, metric)!.toFixed(["AVG", "OBP", "SLG", "OPS"].includes(metric) ? 3 : ["ERA", "K9"].includes(metric) ? 2 : 0)}`}</p>}</article>)}</div>
+    {publication && <details className="explorer-tools"><summary>データの詳細（基準日 {publication.effectiveDate}）</summary>
+      <p>収録期間 {publication.from}〜{rows[0]!.date}</p>
+      <p>公開データの生成日時 <time dateTime={publication.generatedAt}>{new Intl.DateTimeFormat("ja-JP", {
+        dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Tokyo",
+      }).format(new Date(publication.generatedAt))}（日本時間）</time></p>
+      <p>出典 <a href="https://nf3.sakura.ne.jp/" target="_blank" rel="noreferrer">nf3</a></p>
+    </details>}
     <DisplayExportButton data={{ league, scope, date: [...dates].sort().at(-1) ?? "", coverage: rows.every(r => r.coverage === "complete" && keys.every(k => metricNumber(r.metrics, k) !== null && r.metrics?.[k]?.status === "complete")) ? "complete" : "partial", columns: ["対象", "Season", "基準日", "Coverage", ...keys], rows: rows.map(r => [r.name, r.season, r.date, r.coverage, ...keys.map(k => metricNumber(r.metrics, k))]) }} />
   </>;
 }

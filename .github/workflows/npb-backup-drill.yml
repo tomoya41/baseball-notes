@@ -10,6 +10,10 @@ on:
         description: Inspect only two fixed canonical identity mappings on the verified October 17 retained backup; no Turso access
         type: boolean
         default: false
+      stage_team_generation:
+        description: Stage the public Catalog and Team Season pair from the fixed encrypted backup without Turso or Pages access
+        type: boolean
+        default: false
 permissions:
   contents: read
   actions: read
@@ -18,6 +22,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   drill:
+    if: ${{ !inputs.stage_team_generation }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -104,6 +109,44 @@ jobs:
         with:
           name: retained-identity-inspection
           path: .data/retained-identity/identity-report.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
+  stage-team-generation:
+    if: inputs.stage_team_generation && !inputs.retain_encrypted && !inputs.inspect_retained_identity
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Download the fixed encrypted restore evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh run download 42217233085 --repo "$GITHUB_REPOSITORY" -n npb-independent-encrypted-42217233085 --dir .data/team-repair-backup
+      - name: Restore a fresh scratch database
+        env:
+          NPB_BACKUP_ENCRYPTION_KEY: ${{ secrets.NPB_BACKUP_ENCRYPTION_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s  %s\n' '14a37967f9450a85294a7845f9f9ccd671b2b4ee22bb55659ea23397f15a080f' '.data/team-repair-backup/npb-independent-backup.tar.gz.enc' | sha256sum --check
+          npx tsx scripts/crypt-npb-backup.ts decrypt .data/team-repair-backup/npb-independent-backup.tar.gz.enc .data/team-repair-backup/restored.tar.gz
+          mkdir .data/team-repair-backup/export
+          tar -xzf .data/team-repair-backup/restored.tar.gz -C .data/team-repair-backup/export
+          npm run -s backup:npb:restore -- --from=.data/team-repair-backup/export --to=.data/team-repair-backup/scratch.db
+      - name: Replay and validate the two public projections
+        run: npx tsx scripts/npb-team-generation-repair.ts stage .data/team-repair-backup/scratch.db .data/team-generation-repair 14a37967f9450a85294a7845f9f9ccd671b2b4ee22bb55659ea23397f15a080f
+      - name: Retain only the verified public pair and hash report
+        uses: actions/upload-artifact@v4
+        with:
+          name: npb-team-generation-repair
+          path: .data/team-generation-repair/
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 7
