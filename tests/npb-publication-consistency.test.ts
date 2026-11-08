@@ -9,6 +9,7 @@ import { npbTeams } from "../src/data/npb-nf3";
 import supplement from "../src/data/npb-reviewed-profile-supplement.json";
 import { reviewedMeasurements } from "../src/data/npb-reviewed-measurements";
 import { buildNpbCatalog, buildNpbCapabilities } from "../src/application/npb-product-payload";
+import { projectNpbFreeProfiles } from "../src/application/npb-profile-projection";
 import { buildNpbSeasonMilestones } from "../src/application/npb-season-milestones";
 import { npbSeasonPayloadSchema, seasonBattingKeys } from "../src/application/npb-season-payload";
 import { validateNpbPublication, validateNpbPublishedGameDates } from "../src/application/npb-publication-consistency";
@@ -43,7 +44,9 @@ function family() {
   const catalog = buildNpbCatalog(directory, reviewedMeasurements);
   return { directory, catalog, season, hot, capabilities: buildNpbCapabilities(catalog, season, hot.readiness),
     teamSeason: { schemaVersion: 1, league: "NPB", season: 2026, competition: "regular", effectiveDate: date, generatedAt: at,
-      period: season.period, scope: "stored_final_games", coverage, teams: [] },
+      period: season.period, scope: "stored_final_games", coverage,
+      teams: catalog.teams.map(({ teamId }) => ({ teamId, G: 0, W: 0, L: 0, T: 0, runsFor: null, runsAgainst: null,
+        scoreStatus: "unavailable", gamesWithBattingFacts: 0, gamesWithPitchingFacts: 0, observedHomeVenues: [], batting: {}, pitching: {} })) },
     milestones: buildNpbSeasonMilestones(season, catalog),
     gameManifest: { schemaVersion: 1, league: "NPB", from: date, to: "2026-10-07", effectiveDate: date, generatedAt: at },
     gameRecent: { schemaVersion: 1, league: "NPB", effectiveDate: date, generatedAt: at, games: [] },
@@ -78,6 +81,24 @@ const run = (script: string, ...args: string[]) => execFileSync(process.execPath
   ["node_modules/tsx/dist/cli.mjs", `scripts/${script}.ts`, ...args], { encoding: "utf8", stdio: "pipe" });
 
 describe("coordinated NPB publication", () => {
+  it("retains a newer verified measurement observation when replaying the same values", () => {
+    const published = projectNpbFreeProfiles(family().directory);
+    const profile = published.catalog.players[0]!.profile;
+    expect(profile.heightCm).not.toBeNull();
+    profile.measurementsObservedAt = "2026-10-18T00:00:00.000Z";
+    profile.measurementsEffectiveDate = "2026-09-25";
+    const replay = projectNpbFreeProfiles(published.directory, published.catalog);
+    expect(replay.catalog.players[0]!.profile).toEqual(profile);
+  });
+
+  it("rejects a different Team Season generation, period or set of canonical teams", () => {
+    const p = family();
+    expect(() => validateNpbPublication({ ...p, teamSeason: { ...p.teamSeason, generatedAt: "2026-10-01T02:00:00.000Z" } })).toThrow("Catalog/Team Season generation");
+    expect(() => validateNpbPublication({ ...p, teamSeason: { ...p.teamSeason, period: { from: "2026-09-24", to: p.teamSeason.period.to } } })).toThrow("Team Season period");
+    expect(() => validateNpbPublication({ ...p, teamSeason: { ...p.teamSeason, teams: p.teamSeason.teams.slice(1) } })).toThrow("Team Season IDs");
+  });
+
+
   it("admits only bounded approved Recent paths in deployed HTTP verification", () => {
     expect(validNpbPublicationPaths(["players/latest.json", "explorer/recent/7.json", "explorer/recent/14.json", "explorer/recent/30.json"])).toBe(true);
     for (const path of ["explorer/recent/60.json", "../secret.json", "explorer/recent/7.json?url=private"])
@@ -196,7 +217,7 @@ describe("coordinated NPB publication", () => {
     p.directory.effectiveDate = date;
     p.directory.generatedAt = "2026-09-27T00:00:00.000Z";
     p.season.effectiveDate = date; p.season.period.to = date;
-    p.teamSeason.effectiveDate = date; p.teamSeason.period.to = date;
+    p.teamSeason.effectiveDate = date; p.teamSeason.period.to = date; p.teamSeason.generatedAt = p.directory.generatedAt;
     p.standings.effectiveDate = p.standings.throughDate = date;
     for (const row of p.standings.standings) row.date = date;
     p.gameManifest.effectiveDate = date; p.gameRecent.effectiveDate = date; p.records.effectiveDate = date;
@@ -260,7 +281,7 @@ describe("coordinated NPB publication", () => {
       const p = family(); await stage(root, p);
       const candidate = { ...p.directory, generatedAt: "2026-10-01T02:00:00.000Z" }, input = join(root, "candidate.json");
       await writeFile(input, JSON.stringify(candidate));
-      const immutablePaths = ["season/2026/latest.json", "hot/latest.json", "teams/season/2026/latest.json"];
+      const immutablePaths = ["season/2026/latest.json", "hot/latest.json"];
       const before = await Promise.all(immutablePaths.map(path => readFile(join(root, "data/npb", path), "utf8")));
       expect(run("refresh-npb-profile-projections", input, root)).toContain('"gates":"preserved"');
       const result = await readNpbPublication(root);
@@ -268,6 +289,7 @@ describe("coordinated NPB publication", () => {
       expect(result.catalog.players[0]!.profile.heightCm).toBe(190);
       expect(result.capabilities.data.heightCm!.known).toBe(1);
       expect(result.milestones!.generatedAt).toBe(candidate.generatedAt);
+      expect(result.teamSeason).toEqual({ ...p.teamSeason, generatedAt: candidate.generatedAt });
       expect(result.hot.readiness).toEqual(p.hot.readiness); expect(result.season.coverage).toEqual(p.season.coverage);
       expect(await Promise.all(immutablePaths.map(path => readFile(join(root, "data/npb", path), "utf8")))).toEqual(before);
       expect(run("verify-npb-publication", root)).toContain('"publication":"consistent"');
@@ -297,6 +319,11 @@ describe("coordinated NPB publication", () => {
       const refreshed = Buffer.from(JSON.stringify({ ...p.teamSeason, generatedAt: "2026-10-01T02:00:00.000Z" }));
       expect(() => verifyNpbPublicationHash(hashes, path, refreshed)).toThrow(/staged artifact/);
       await writeFile(join(root, "data/npb", path), refreshed);
+      await expect(npbPublicationHashes(root)).rejects.toThrow("Catalog/Team Season generation");
+      await writeFile(join(root, "data/npb", path), old);
+      const input = join(root, "directory.json");
+      await writeFile(input, JSON.stringify({ ...p.directory, generatedAt: "2026-10-01T02:00:00.000Z" }));
+      run("refresh-npb-profile-projections", input, root);
       const next = await npbPublicationHashes(root);
       expect(() => verifyNpbPublicationHash(next, path, refreshed)).not.toThrow();
       expect(() => verifyNpbPublicationHash(next, path, old)).toThrow(/staged artifact/);

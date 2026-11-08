@@ -11,6 +11,7 @@
   min-height: var(--touch);
 }
 
+.npb-season-comparison .library-save button,
 .npb-season-comparison .comparison-years label,
 .npb-season-comparison .explorer-filter-grid select {
   min-height: var(--touch);

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { Favorites } from "../src/application/favorites";
-import { PersonalLibrary } from "../src/application/personal-library";
+import { PersonalLibrary, savedViewPath } from "../src/application/personal-library";
 import { PersonalWatch } from "../src/application/personal-watch";
 import { PersonalBackup } from "../src/application/personal-backup";
 import { PERSONAL_KEYS as K, PERSONAL_JOURNAL_KEY as J, PersonalSettingsStore } from "../src/application/personal-settings";
@@ -28,6 +28,29 @@ async function signed(edit: (file: Record<string, unknown>) => void) {
 }
 const observation: WatchObservation = { key: "streak", league: "MLB", kind: "player", entityId: mlb.entityId, name: "選手", rule: "streak", season: 2025, competition: "regular", effectiveDate: "2025-09-28", generatedAt: null, eventDate: null, coverage: "complete", path: `/MLB/players/${mlb.entityId}`, metric: "安打", values: { value: 4, atLeast: "false" }, collectionOnly: false, observedAt: now };
 describe("portable personal backup", () => {
+  it("restores NPB annual comparisons without changing the version 1 format or legacy views", async () => {
+    const source = await populated(), target = setup();
+    const original = (await source.library.read()).views[0];
+    const selection = new URLSearchParams({ seasonCompare: "1", player: id, role: "pitching", years: "2026,2025", metric: "ERA", competition: "regular" });
+    await source.library.saveView("年度比較", "NPB", "history", selection);
+    const { text } = await source.backup.export();
+    expect(JSON.parse(text).version).toBe(1);
+    const preview = await target.backup.preview(text, "replace");
+    await target.backup.restore(preview.token);
+    const [saved, legacy] = (await target.library.read()).views;
+    const link = new URL(savedViewPath(saved!), "https://example.test");
+    expect(link.pathname).toBe("/NPB/season-compare");
+    expect(Object.fromEntries(link.searchParams)).toEqual({
+      kind: "player", entity: id, role: "pitching", years: "2025,2026", metric: "ERA", competition: "regular",
+    });
+    expect(legacy).toEqual(original);
+    for (const [key, value] of [["player", "unknown"], ["years", "2027"], ["metric", "OPS"], ["competition", "postseason"]]) {
+      const invalid = new URLSearchParams(selection);
+      invalid.set(key!, value!);
+      await expect(target.library.saveView("不正な比較", "NPB", "history", invalid)).rejects.toThrow("年度比較の条件");
+    }
+    expect((await target.library.read()).views).toHaveLength(2);
+  });
   it("round-trips selections into a different empty environment, preserving IDs, scopes and existing URLs", async () => {
     const source = await populated(), target = setup(), { text, filename } = await source.backup.export();
     expect(filename).toBe("baseball-notes-backup-2026-10-29.json");
