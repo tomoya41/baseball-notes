@@ -26,9 +26,8 @@ const reportSchema = z.strictObject({ result: z.literal("PASS"), effectiveDate: 
   previousTeamGeneratedAt: z.iso.datetime(), teams: z.literal(12), players: z.number().int().positive(),
   coverage: z.string(), backupSha256: hashSchema, publishedHashes: pair, stagedHashes: pair });
 
-function teamData(team: NpbTeamSeason) {
-  const { generatedAt, ...data } = team;
-  return data;
+function sameTeamSnapshot(a: NpbTeamSeason, b: NpbTeamSeason) {
+  return isDeepStrictEqual({ ...a, generatedAt: b.generatedAt }, b);
 }
 
 async function stage(database: string, destination: string, backupSha256: string) {
@@ -55,7 +54,7 @@ async function stage(database: string, destination: string, backupSha256: string
     await client.execute("PRAGMA query_only=ON");
     const coverage = await new NpbPeriodCoverageRepository(client).findPeriodCoverage({ ...season.period, timeZone: "Asia/Tokyo" });
     const teamSeason = await readNpbTeamSeason(client, profiles.catalog, coverage);
-    if (!isDeepStrictEqual(teamData(teamSeason), teamData(priorTeam)))
+    if (!sameTeamSnapshot(teamSeason, priorTeam))
       throw Error("Replayed Team Season rows, period or Coverage differ from the published projection");
     validateNpbPublication({ ...published, catalog: profiles.catalog, teamSeason });
     const catalogBody = json(profiles.catalog), teamBody = json(teamSeason);
@@ -83,7 +82,7 @@ async function apply(bundle: string, root: string) {
   if (nextCatalog.effectiveDate !== report.effectiveDate || nextCatalog.generatedAt !== report.generatedAt ||
       oldTeam.generatedAt !== report.previousTeamGeneratedAt || oldTeam.generatedAt === nextTeam.generatedAt ||
       !isDeepStrictEqual(nextCatalog, npbCatalogSchema.parse(JSON.parse(priorCatalog!))) ||
-      !isDeepStrictEqual(teamData(nextTeam), teamData(oldTeam)))
+      !sameTeamSnapshot(nextTeam, oldTeam))
     throw Error("Team repair does not preserve the published profile or statistical content");
   await readNpbPublication(root, { catalog: nextCatalog, teamSeason: nextTeam });
   await Promise.all([writeFile(at(paths.catalog), catalog!), writeFile(at(paths.teamSeason), teamSeason!)]);
