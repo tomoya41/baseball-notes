@@ -19,12 +19,10 @@ import { ComparisonBars } from "./comparison-bars";
 
 const labels: Record<string, string> = { G: "試合", W: "勝", L: "敗", T: "分", runsFor: "得点", runsAgainst: "失点", runDifference: "得失点差", PA: "打席", outsRecorded: "投球回", K9: "奪三振率" };
 const scopeSuffix = (season: number, scope: string) => `?season=${season}${scope === "postseason" ? "&competition=postseason" : ""}`;
-function ComparisonResults({ league, rows, keys, metric, scope, yearMode = false }: { league: League; rows: ComparisonRow[]; keys: string[]; metric: string; scope: string; yearMode?: boolean }) {
+function ComparisonResults({ league, rows, keys: requestedKeys, metric, scope, yearMode = false }: { league: League; rows: ComparisonRow[]; keys: string[]; metric: string; scope: string; yearMode?: boolean }) {
   const dates = new Set(rows.map(r => r.date)), publication = rows[0]?.publication;
-  if (publication) {
-    const sample = ["AVG", "OPS"].includes(metric) ? "PA" : ["ERA", "K9"].includes(metric) ? "outsRecorded" : null;
-    if (sample && !keys.includes(sample)) keys = [...keys, sample];
-  }
+  const sample = publication ? ["AVG", "OPS"].includes(metric) ? "PA" : ["ERA", "K9"].includes(metric) ? "outsRecorded" : null : null;
+  const keys = sample && !requestedKeys.includes(sample) ? [...requestedKeys, sample] : requestedKeys;
   if (!yearMode && dates.size > 1) return <DataState kind="source-unavailable" title="比較の基準日が一致しません" />;
   return <><ComparisonBars rows={rows} metric={metric} /><div className="comparison-results">{rows.map(r => <article className="comparison-summary" key={r.id}><h2>{r.name}</h2><p className="inline-note">{r.season} · {r.date}まで · {r.coverage === "complete" ? "収録済み" : publication && r.coverage === "partial" ? "一部収録" : "一部未確認"}</p>{r.notice && <p className="inline-note">{r.notice}</p>}<dl className="explorer-values">{keys.map(k => <div key={k}><dt><MetricLabel metric={k} label={labels[k] ?? k} /></dt><dd>{comparisonValue(k, metricNumber(r.metrics, k))}{r.metrics?.[k]?.status === "partial" && <small> 一部</small>}</dd></div>)}</dl>{yearMode && (!publication || rows.length > 1) && <p className="inline-note">前年差（{metric === "outsRecorded" ? "アウト数" : metric}）：{previousYearDelta(rows, r, metric) === null ? "—" : `${previousYearDelta(rows, r, metric)! >= 0 ? "+" : ""}${previousYearDelta(rows, r, metric)!.toFixed(["AVG", "OBP", "SLG", "OPS"].includes(metric) ? 3 : ["ERA", "K9"].includes(metric) ? 2 : 0)}`}</p>}</article>)}</div>
     {publication && <details className="explorer-tools"><summary>データの詳細（基準日 {publication.effectiveDate}）</summary>
