@@ -10,7 +10,8 @@ import type { League } from "../domain/models";
 import type { NpbPlayerDirectory } from "../domain/npb-player-directory";
 import { searchNpbPlayers } from "../domain/npb-player-directory";
 import { compareIds, compareBattingKeys, comparePitchingKeys, npbCompareSection, historicalCompareRoles, type CompareMetrics } from "../domain/player-compare";
-import { normalizePlayerSearch } from "../domain/cross-league";
+import { canonicalEntityRefSchema, normalizePlayerSearch } from "../domain/cross-league";
+import { npbGamePlayerContext, npbGamePlayerLinks } from "../domain/npb-game-player-journey";
 import { matchesMlbPlayerName } from "../domain/mlb-japanese-display";
 import { battingAggregate, pitchingAggregate, dateWindow, type DatedBatter, type DatedPitcher } from "../domain/mlb-historical-aggregate";
 import type { AdvancedPlayerPayload } from "../domain/mlb-pa-analysis";
@@ -60,6 +61,9 @@ export function CompareWorkspace({ league, players, teams, seasons, loader, adva
   // in the current competition directory, for selected players and BvP opponents.
   const ids = compareIds(league, params.get("players")).filter(id => players.some(p => p.id === id)), idsKey = ids.join(",");
   const role = params.get("role") === "pitching" ? "pitching" : "batting";
+  const gameContext = league === "NPB" ? npbGamePlayerContext(params) : null, origin = params.get("player");
+  const gameLinks = gameContext?.stage === "regular" && origin &&
+    canonicalEntityRefSchema.safeParse({ league, kind: "player", id: origin }).success ? npbGamePlayerLinks(origin, gameContext) : null;
   const season = params.has("season") ? Number(params.get("season")) : seasons.at(-1)!;
   const supportedSeason = seasons.includes(season);
   const period = league === "NPB" ? "30d" : ["season", "7d", "14d", "30d"].includes(params.get("period") ?? "") ? params.get("period")! : "season";
@@ -81,9 +85,9 @@ export function CompareWorkspace({ league, players, teams, seasons, loader, adva
   const paMode = condition.includes(":") || condition === "bvp";
   const keys = paMode ? ["PA", "AB", "H", "2B", "3B", "HR", "BB", "HBP", "SO", "SH", "SF", "AVG", "OBP", "SLG", "OPS"] : role === "batting" ? compareBattingKeys : comparePitchingKeys.map(k => league === "NPB" && k === "appearances" ? "G" : k);
   if (!supportedSeason) return <div className="screen"><PageHeading eyebrow={league} title="選手比較" /><DataState kind="unsupported" title={league === "MLB" && season === 2026 ? "2026年の試合結果・選手成績は未対応" : "指定のシーズンは未収録です"} action="収録済みの比較へ" to={`/${league}/compare`} /></div>;
-  return <div className={`screen compare-screen${league === "NPB" ? " npb-compare-experience" : ""}`}><header className="compare-heading"><Link className="back-link" to={`/${league}/search${competition === "postseason" ? `?competition=postseason&season=${season}` : ""}`}>← 選手一覧</Link><PageHeading eyebrow={`${league} · ${competition === "postseason" ? "POSTSEASON" : "REGULAR SEASON"}`} title="選手比較" /></header>
+  return <div className={`screen compare-screen${league === "NPB" ? " npb-compare-experience" : ""}`}><header className="compare-heading"><Link className="back-link" to={gameLinks?.annual ?? `/${league}/search${competition === "postseason" ? `?competition=postseason&season=${season}` : ""}`}>{gameLinks ? "← 元の選手の年度成績" : "← 選手一覧"}</Link><PageHeading eyebrow={`${league} · ${competition === "postseason" ? "POSTSEASON" : "REGULAR SEASON"}`} title="選手比較" /></header>
     <div className="segmented" aria-label="比較する成績">{(["batting", "pitching"] as const).map(r => <button key={r} aria-pressed={role === r} onClick={() => update({ role: r, condition: "season", against: "" })}>{r === "batting" ? "打撃" : "投球"}</button>)}</div>
-    <div className="compare-selection">{ids.map(id => <div key={id}><Link to={`/${league}/players/${encodeURIComponent(id)}?season=${season}${competition === "postseason" ? "&competition=postseason" : ""}`}>{players.find(p => p.id === id)?.name ?? "未収録選手"}</Link><button type="button" aria-label={`${players.find(p => p.id === id)?.name ?? "選手"}を比較から削除`} onClick={() => update({ players: ids.filter(p => p !== id).join(",") })}>×</button></div>)}</div>
+    <div className="compare-selection">{ids.map(id => <div key={id}><Link to={gameLinks && id === origin ? gameLinks.profile : `/${league}/players/${encodeURIComponent(id)}?season=${season}${competition === "postseason" ? "&competition=postseason" : ""}`}>{players.find(p => p.id === id)?.name ?? "未収録選手"}</Link><button type="button" aria-label={`${players.find(p => p.id === id)?.name ?? "選手"}を比較から削除`} onClick={() => update({ players: ids.filter(p => p !== id).join(",") })}>×</button></div>)}</div>
     <p className="compare-scope">{season}年 · {conditionLabels[condition] ?? condition.replace("d", "日")}{condition !== "season" && !paMode ? ` · ${league === "NPB" ? condition.endsWith("d") ? "" : "直近30日" : period === "season" ? "シーズン" : `直近${period.replace("d", "日")}`}` : ""}</p>
     {state.key !== key && ids.length > 0 ? <LoadingSkeleton /> : mismatch ? <DataState kind="source-unavailable" title="集計の基準日が揃っていません。更新後に再確認してください" /> : ids.length > 0 && <section className="compare-results" aria-label="比較結果">
       {dates.size > 0 && <p className="inline-note">{[...dates][0]}まで</p>}
@@ -111,9 +115,11 @@ export function CompareWorkspace({ league, players, teams, seasons, loader, adva
   </div>;
 }
 export function NpbPlayerCompare({ services }: { services: Services }) {
+  const [params] = useSearchParams();
+  const regular = (params.get("competition") ?? "regular") === "regular" && !params.has("stage");
   const [directory, setDirectory] = useState<NpbPlayerDirectory | null>(null), [error, setError] = useState(false);
   const [cache] = useState(() => new Map<string, Promise<PlayerAnalysisBundle | PlayerRecentResponse | null>>());
-  useEffect(() => { let active = true; void services.directory.findLatestNpb().then(p => { if (active) setDirectory(p); }).catch(() => { if (active) setError(true); }); return () => { active = false; }; }, [services]);
+  useEffect(() => { if (!regular) return; let active = true; void services.directory.findLatestNpb().then(p => { if (active) setDirectory(p); }).catch(() => { if (active) setError(true); }); return () => { active = false; }; }, [regular, services]);
   const loader = useCallback<Loader>(async (id, c) => {
     const kind = c.condition === "season" ? "season" : "bundle", key = `${id}:${kind}`;
     let pending = cache.get(key); if (!pending) { pending = kind === "season" ? services.recent.find(id, "season") : services.analysisBundle.find(id); cache.set(key, pending); void pending.catch(() => cache.delete(key)); }
@@ -122,6 +128,7 @@ export function NpbPlayerCompare({ services }: { services: Services }) {
     const section = kind === "season" ? (payload as PlayerRecentResponse)[c.role] : npbCompareSection(payload as PlayerAnalysisBundle, c.role, c.condition, c.opponent, c.battingOrder);
     return { id, metrics: section?.metrics ?? null, date: section?.to ?? payload.asOfDate, coverage: section?.coverage.status ?? "unavailable", notice: !section ? "この条件の記録なし" : section.coverage.status !== "complete" ? "一部データ確認中・保存済み記録から集計" : null };
   }, [cache, services, directory]);
+  if (!regular) return <DataState kind="unsupported" title="この試合区分の選手比較は未収録です" action="シリーズの収録成績を見る" to="/NPB/postseason" />;
   if (error) return <DataState kind="source-unavailable" title="比較用の選手一覧を読み込めません" />;
   if (!directory) return <LoadingSkeleton />;
   return <CompareWorkspace league="NPB" players={searchNpbPlayers(directory.players, "", {}).map(p => ({ id: p.playerId, name: p.displayName, batting: p.battingAvailable, pitching: p.pitchingAvailable,battingRole:battingDisplayRole(p.position?[p.position]:[]) }))} teams={directory.teams.map(t => ({ id: t.id, name: t.shortName }))} seasons={[Number(directory.effectiveDate.slice(0, 4))]} loader={loader} />;
