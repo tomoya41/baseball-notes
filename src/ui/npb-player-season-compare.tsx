@@ -106,7 +106,7 @@ export function NpbPlayerSeasonCompare({ directory }: { directory: Services["dir
               return <>
                 <dl className="historical-comparison-scope">
                   <div><dt>母数</dt><dd>{sample === null ? "未収録" : `${comparisonValue(sampleKey, sample)}${role === "batting" ? "打席" : "回"}`}</dd></div>
-                  <div><dt>収録範囲</dt><dd>{row.source.kind === "saved" ? `公式戦 ${row.source.from}〜${row.source.to} · ${row.source.coverage === "complete" ? "対象期間を収録" : row.source.coverage === "partial" ? "一部収録" : "収録範囲は未確認"}` : "公式戦・一部の球団別成績"}</dd></div>
+                  <div><dt>収録範囲</dt><dd>{row.source.kind === "saved" ? `公式戦 ${row.source.from}〜${row.source.to} · ${row.source.coverage === "complete" ? "対象期間を収録" : row.source.coverage === "partial" ? "一部収録" : "収録範囲は未確認"}` : "公式戦・球団別成績（一部収録）"}</dd></div>
                   <div><dt>対象球団</dt><dd>{row.source.kind === "archive" ? row.source.teams.map(npbTeamShortName).join(" / ") : "球団別の内訳は未収録"}</dd></div>
                   <div><dt>{saved ? "公開データの基準日" : "資料の確認日"}</dt><dd>{row.source.kind === "saved" ? row.source.effectiveDate : row.source.observedAt.slice(0, 10)}</dd></div>
                 </dl>

@@ -47,7 +47,7 @@ export function NpbMyScreen({ services, favorites, toggle, saving }: {
       </section>
     </> : <><NpbAnalysisResume /><section className="my-start my-content-section" id="my-following" tabIndex={-1}>
       <h2>気になる選手・球団から始める</h2>
-      <p>プロフィールの★を押すと、成績や最近の記事記録をMyからたどれます。</p>
+      <p>★でフォローすると、成績や最近の動きをMyで確認できます。</p>
       <div className="my-start-links"><Link to="/NPB/search">選手を探す →</Link><Link to="/NPB/teams">球団を探す →</Link></div>
       <div id="my-recent" tabIndex={-1}><Link className="text-link" to="/NPB/moves">収録済みの選手の動きを見る →</Link></div>
     </section></>}
