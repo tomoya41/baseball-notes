@@ -1,7 +1,7 @@
 import { canonicalEntityRefSchema } from "./cross-league";
 import { z } from "zod";
 import { compareIds } from "./player-compare";
-import { progressionMetrics } from "./npb-player-progression";
+import { clubYearPair, progressionMetrics } from "./npb-player-progression";
 import { ageSeasonQuery } from "./npb-age-season";
 import { metricNumber, selectedTeams } from "./product-comparison";
 import type { CompareMetrics } from "./player-compare";
@@ -114,6 +114,8 @@ export function portableRoute(path: string, search = ""): string | null {
     if(!["regular","preseason","postseason"].includes(competition)||
       (competition==="postseason"?!["npb_cs_first","npb_cs_final","japan_series"].includes(stage??""):stage!==null))return null;
     clean.set("competition",competition);if(stage)clean.set("stage",stage);
+    const pair = clubYearPair(source.get("clubYears"));
+    if (pair && competition === "regular" && pair.split(",").every(year => source.get("years")?.split(",").includes(year))) clean.set("clubYears", pair);
     if(progressionMetrics.some(k=>k===source.get("trendMetric")))clean.set("trendMetric",source.get("trendMetric")!);
     if(source.get("story")==="1")clean.set("story","1");
     if(["batting","pitching"].includes(source.get("role")??""))clean.set("role",source.get("role")!);
