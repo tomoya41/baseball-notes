@@ -42,7 +42,7 @@ it("compares archived club rows and the saved 2026 series without merging source
     const [archive, saved] = f.host.querySelectorAll(".comparison-bar");
     expect(archive!.textContent).toContain("114打席");
     expect(archive!.textContent).toContain("阪神 / ソフトバンク");
-    expect(archive!.textContent).toContain("公式戦・一部の球団別成績");
+    expect(archive!.textContent).toContain("公式戦・球団別成績（一部収録）");
     const sources = f.host.querySelector<HTMLDetailsElement>(".season-comparison-sources")!;
     expect(sources.open).toBe(false);
     expect(sources.querySelector('a[href*="oldid=100"]')).not.toBeNull();
