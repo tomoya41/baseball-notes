@@ -76,6 +76,7 @@
 .records-value { font-size: 1.375rem; font-weight: 850; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 :root[data-large-font] .my-heading { grid-template-columns: minmax(0,1fr); }
 :root[data-large-font] .my-follow-counts { gap: 24px; }
+:root[data-large-font] .my-section-actions button { padding-inline: 2px; }
 :root[data-large-font] .records-paths { grid-template-columns: minmax(0,1fr); }
 :root[data-large-font] .records-paths a { display: grid; grid-template-columns: minmax(0,1fr) auto; min-height: 64px; gap: 3px 10px; }
 :root[data-large-font] .records-paths small { grid-column: 1; }

@@ -1,10 +1,9 @@
 import { z } from "zod";
 import { favoriteSchema, type Favorite } from "../domain/models";
 import { canonicalEntityRefSchema } from "../domain/cross-league";
-import { viewConditions } from "../domain/portable-conditions";
 import { watchPreferencesSchema, type PersonalWatchState } from "../domain/personal-watch";
 import { Favorites } from "./favorites";
-import { PersonalLibrary, personalLibrarySchema, activityFromRoute, activityPath, type PersonalState } from "./personal-library";
+import { PersonalLibrary, personalLibrarySchema, savedViewConditions, activityFromRoute, activityPath, type PersonalState } from "./personal-library";
 import { PersonalWatch } from "./personal-watch";
 import { PERSONAL_KEYS, PersonalSettingsStore } from "./personal-settings";
 import type { SettingsStore } from "./ports";
@@ -32,7 +31,7 @@ function validateData(data: Data, now: number) {
   valid(data.favorites.every(f => Date.parse(f.addedAt) <= now + 300_000));
   for (const group of [data.library.views, data.library.collections]) valid(new Set(group.map(v => v.id)).size === group.length);
   for (const v of data.library.views) {
-    valid(v.savedAt >= 0 && v.savedAt <= now + 300_000 && viewConditions(new URLSearchParams(v.conditions)) === v.conditions);
+    valid(v.savedAt >= 0 && v.savedAt <= now + 300_000 && savedViewConditions(v.league, v.kind, new URLSearchParams(v.conditions)) === v.conditions);
   }
   for (const c of data.library.collections) {
     valid(c.updatedAt >= 0 && c.updatedAt <= now + 300_000);

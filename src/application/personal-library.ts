@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { SettingsStore } from "./ports";
 import type { League } from "../domain/models";
 import { viewConditions } from "../domain/portable-conditions";
+import { savedNpbSeasonComparison } from "../domain/npb-season-comparison";
 import { npbComparisonOrigin } from "../domain/npb-player-journey";
 import { mutatePersonalSettings, PERSONAL_KEYS } from "./personal-settings";
 export { viewConditions } from "../domain/portable-conditions";
@@ -45,7 +46,21 @@ export function activityFromRoute(path: string, search: string, now: number): Ac
 export function activityPath(item: Activity): string {
   return `/${item.league}/${item.kind === "series" ? "postseason/series" : item.kind}${item.entityId ? `/${encodeURIComponent(item.entityId)}` : ""}${item.conditions ? `?${item.conditions}` : ""}`;
 }
+export function savedViewConditions(league: League, kind: SavedView["kind"], params: URLSearchParams): string {
+  if (league === "NPB" && kind === "history" && params.has("seasonCompare"))
+    return savedNpbSeasonComparison(params)?.toString() ?? "";
+  return viewConditions(params);
+}
+
 export function savedViewPath(view: Pick<SavedView, "league" | "kind" | "conditions">): string {
+  const comparison = view.league === "NPB" && view.kind === "history" && savedNpbSeasonComparison(new URLSearchParams(view.conditions));
+  if (comparison) {
+    comparison.set("entity", comparison.get("player")!);
+    comparison.set("kind", "player");
+    comparison.delete("player");
+    comparison.delete("seasonCompare");
+    return `/NPB/season-compare?${comparison}`;
+  }
   return `/${view.league}/${view.kind}${view.conditions ? `?${view.conditions}` : ""}`;
 }
 export class PersonalLibrary {
@@ -59,7 +74,7 @@ export class PersonalLibrary {
     const result = schema.safeParse(value); if (!result.success) throw Error("保存データの形式を読み込めません。リセットまで保持します。");
     const data = result.data;
     return { ...data, activity: data.activity.filter(a => a.visitedAt <= this.now() && a.visitedAt >= this.now() - MAX_AGE).slice(0, 60),
-      views: data.views.map(v => ({ ...v, conditions: viewConditions(new URLSearchParams(v.conditions)) })),
+      views: data.views.map(v => ({ ...v, conditions: savedViewConditions(v.league, v.kind, new URLSearchParams(v.conditions)) })),
       collections: data.collections.map(c => ({ ...c, players: c.players.filter((p, i, all) => all.findIndex(x => x.league === p.league && x.playerId === p.playerId) === i) })) };
   }
   private change(update: (s: PersonalState) => PersonalState, reset = false): Promise<PersonalState> {
@@ -73,7 +88,9 @@ export class PersonalLibrary {
   visit(item: Activity) { return this.change(s => ({ ...s, activity: [item, ...s.activity.filter(a => !(a.league === item.league && a.kind === item.kind && a.entityId === item.entityId && a.conditions === item.conditions))].slice(0, 60) })); }
   clearActivity() { return this.change(s => ({ ...s, activity: [] })); }
   saveView(name: string, l: League, kind: "data" | "history", params: URLSearchParams) {
-    return this.change(s => { if (s.views.length >= 20) throw Error("保存した条件は20件までです。"); return { ...s, views: [viewSchema.parse({ id: this.uuid(), name, league: l, kind, conditions: viewConditions(params), savedAt: this.now() }), ...s.views] }; });
+    const conditions = savedViewConditions(l, kind, params);
+    if (params.has("seasonCompare") && !(l === "NPB" && kind === "history" && conditions)) return Promise.reject(Error("年度比較の条件を確認できません。"));
+    return this.change(s => { if (s.views.length >= 20) throw Error("保存した条件は20件までです。"); return { ...s, views: [viewSchema.parse({ id: this.uuid(), name, league: l, kind, conditions, savedAt: this.now() }), ...s.views] }; });
   }
   removeView(viewId: string) { return this.change(s => ({ ...s, views: s.views.filter(v => v.id !== viewId) })); }
   createCollection(name: string) { return this.change(s => { if (s.collections.length >= 20) throw Error("コレクションは20個までです。"); return { ...s, collections: [...s.collections, collectionSchema.parse({ id: this.uuid(), name, players: [], updatedAt: this.now() })] }; }); }
