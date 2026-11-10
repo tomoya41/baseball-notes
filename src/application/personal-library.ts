@@ -17,6 +17,7 @@ export const personalLibrarySchema = z.strictObject({ version: z.literal(1), vie
 const schema = personalLibrarySchema;
 export type PersonalState = z.infer<typeof schema>;
 export type Activity = PersonalState["activity"][number];
+type SavedView = PersonalState["views"][number];
 const empty = (): PersonalState => ({ version: 1, views: [], collections: [], activity: [] });
 export const PERSONAL_LIBRARY_KEY = PERSONAL_KEYS.library;
 const MAX_AGE = 90 * 86400000;
@@ -43,6 +44,9 @@ export function activityFromRoute(path: string, search: string, now: number): Ac
 }
 export function activityPath(item: Activity): string {
   return `/${item.league}/${item.kind === "series" ? "postseason/series" : item.kind}${item.entityId ? `/${encodeURIComponent(item.entityId)}` : ""}${item.conditions ? `?${item.conditions}` : ""}`;
+}
+export function savedViewPath(view: Pick<SavedView, "league" | "kind" | "conditions">): string {
+  return `/${view.league}/${view.kind}${view.conditions ? `?${view.conditions}` : ""}`;
 }
 export class PersonalLibrary {
   private queue: Promise<unknown> = Promise.resolve();
