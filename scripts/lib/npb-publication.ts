@@ -6,6 +6,19 @@ import { validateNpbPublication, validateNpbPublishedGameDates } from "../../src
 import { npbLatestStandingsSchema } from "../../src/domain/standings";
 import { validateNpbRecentFamily } from "../../src/application/npb-recent-explorer";
 
+const maxProjectionFiles = 410;
+export const requiredNpbProjectionPaths = ["players/latest.json", "catalog/latest.json", "capabilities.json", "season/2026/latest.json",
+  "hot/latest.json", "teams/season/2026/latest.json", "records/2026/latest.json", "games/manifest.json", "games/recent.json", "standings/npb/latest.json"] as const;
+
+export function npbPublicationGamePaths(manifest: Pick<ReturnType<typeof gameManifestSchema.parse>, "from" | "to">) {
+  const paths: string[] = [];
+  for (let date = manifest.from; date <= manifest.to; date = shiftGameDate(date, 1)) {
+    if (paths.length >= maxProjectionFiles - requiredNpbProjectionPaths.length) throw Error("NPB publication date range exceeds one season");
+    paths.push(`games/dates/${date}.json`);
+  }
+  return paths;
+}
+
 export async function preserveNpbPublicStandings(root: string, request: typeof fetch = fetch) {
   const response = await request(`https://tomoya41.github.io/baseball-notes/data/standings/npb/latest.json?v=${Date.now()}`,
     { cache: "no-store", signal: AbortSignal.timeout(15_000) });
@@ -60,15 +73,12 @@ export async function writeNpbProfileProjections(root: string, input: Parameters
 
 export async function npbPublicationHashes(root: string, repairedPair?: Parameters<typeof readNpbPublication>[1]) {
   const p = await readNpbPublication(root, repairedPair);
-  const paths = ["players/latest.json", "catalog/latest.json", "capabilities.json", "season/2026/latest.json",
-    "hot/latest.json", "teams/season/2026/latest.json", "records/2026/latest.json", "games/manifest.json", "games/recent.json", "standings/npb/latest.json"];
+  const paths: string[] = [...requiredNpbProjectionPaths];
   if (p.milestones) paths.push(`milestones/${p.season.season}/latest.json`);
   for (const recent of p.recentExplorer ?? []) paths.push(`explorer/recent/${recent.days}.json`);
   const manifest = gameManifestSchema.parse(p.gameManifest);
-  for (let date = manifest.from; date <= manifest.to; date = shiftGameDate(date, 1)) {
-    if (paths.length > 410) throw Error("NPB publication date range exceeds one season");
-    paths.push(`games/dates/${date}.json`);
-  }
+  paths.push(...npbPublicationGamePaths(manifest));
+  if (!validNpbPublicationPaths(paths)) throw Error("Invalid staged publication paths");
   return Object.fromEntries(await Promise.all(paths.map(async path => {
     const body = await readFile(path === "standings/npb/latest.json" ? join(root, "data", path) : join(root, "data/npb", path));
     if (path.startsWith("games/dates/")) {
@@ -88,5 +98,5 @@ export function verifyNpbPublicationHash(expected: unknown, path: string, body: 
     throw Error(`Published NPB projection differs from staged artifact: ${path}`);
 }
 export function validNpbPublicationPaths(paths: readonly string[]) {
-  return paths.length <= 410 && paths.every(path => /^(players\/latest|catalog\/latest|capabilities|season\/2026\/latest|hot\/latest|teams\/season\/2026\/latest|records\/2026\/latest|games\/manifest|games\/recent|milestones\/2026\/latest|standings\/npb\/latest|games\/dates\/\d{4}-\d{2}-\d{2}|explorer\/recent\/(7|14|30))\.json$/.test(path));
+  return paths.length <= maxProjectionFiles && paths.every(path => /^(players\/latest|catalog\/latest|capabilities|season\/2026\/latest|hot\/latest|teams\/season\/2026\/latest|records\/2026\/latest|games\/manifest|games\/recent|milestones\/2026\/latest|standings\/npb\/latest|games\/dates\/\d{4}-\d{2}-\d{2}|explorer\/recent\/(7|14|30))\.json$/.test(path));
 }

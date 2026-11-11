@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { readFileSync } from "node:fs";
 import { parse } from "yaml";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { npbTeams } from "../src/data/npb-nf3";
 import supplement from "../src/data/npb-reviewed-profile-supplement.json";
 import { reviewedMeasurements } from "../src/data/npb-reviewed-measurements";
@@ -22,6 +22,7 @@ import type { NpbPlayerDirectory } from "../src/domain/npb-player-directory";
 import hotFixture from "./fixtures/npb-hot-ready.json";
 import { npbRecentExplorerSchema } from "../src/application/npb-recent-explorer";
 import { validNpbPublicationPaths } from "../scripts/lib/npb-publication";
+import { verifyNpbPublicationReadback } from "../scripts/lib/npb-publication-readback";
 
 function family() {
   const at = "2026-09-26T00:00:00.000Z", date = "2026-09-25", playerId = supplement.players[2]!.playerId;
@@ -79,6 +80,71 @@ async function stage(root: string, p: ReturnType<typeof family>) {
 }
 const run = (script: string, ...args: string[]) => execFileSync(process.execPath,
   ["node_modules/tsx/dist/cli.mjs", `scripts/${script}.ts`, ...args], { encoding: "utf8", stdio: "pipe" });
+
+describe("NPB publication HTTP readback", () => {
+  const lateDay = "games/dates/2026-10-07.json";
+  const milestone = "milestones/2026/latest.json";
+
+  async function withReadback(runCase: (options: Parameters<typeof verifyNpbPublicationReadback>[0], respond: (path: string) => Promise<Response>) => Promise<void>) {
+    const root = await mkdtemp(join(tmpdir(), "npb-readback-"));
+    try {
+      const payload = family();
+      await stage(root, payload);
+      const hashes = await npbPublicationHashes(root);
+      const respond = async (path: string) => new Response(await readFile(join(root, "data",
+        path.startsWith("standings/") ? path : `npb/${path}`), "utf8"));
+      await runCase({ hashes, expectedGeneration: payload.directory.generatedAt, wait: async () => {} }, respond);
+    } finally { await rm(root, { recursive: true, force: true }); }
+  }
+
+  function mockRequests(respond: (path: string) => Promise<Response>, alter: (path: string) => Response | undefined = () => undefined) {
+    const counts = new Map<string, number>();
+    const request = vi.fn<typeof fetch>(async input => {
+      const path = new URL(String(input)).pathname.replace(/^\/baseball-notes\/data\/(?:npb\/)?/, "");
+      counts.set(path, (counts.get(path) ?? 0) + 1);
+      return alter(path) ?? respond(path);
+    });
+    return { request, counts };
+  }
+
+  it("requires hashes for unsampled date files in the published manifest", async () => withReadback(async (options, respond) => {
+    delete options.hashes![lateDay];
+    const { request, counts } = mockRequests(respond);
+    await expect(verifyNpbPublicationReadback({ ...options, request })).rejects.toThrow("game dates do not match");
+    expect(counts.has(lateDay)).toBe(false);
+  }));
+
+  it("retries a temporary late date error without re-fetching the healthy generation", async () => withReadback(async (options, respond) => {
+    const wait = vi.fn(async () => {});
+    const { request, counts } = mockRequests(respond, path => path === lateDay && counts.get(path) === 1
+      ? new Response(null, { status: 503 }) : undefined);
+    await expect(verifyNpbPublicationReadback({ ...options, request, wait })).resolves.toMatchObject({
+      verifiedFiles: Object.keys(options.hashes!).length,
+    });
+    expect(counts.get(lateDay)).toBe(2);
+    expect([...counts.entries()].filter(([path]) => path !== lateDay).every(([, count]) => count === 1)).toBe(true);
+    expect(wait.mock.calls).toEqual([[2_000]]);
+  }));
+
+  it("stops the readback on a retry-after response even if another file is propagating", async () => withReadback(async (options, respond) => {
+    const wait = vi.fn(async () => {});
+    const { request } = mockRequests(respond, path => path === "catalog/latest.json" ? new Response(null, { status: 404 })
+      : path === milestone ? new Response(null, { status: 503, headers: { "retry-after": "120" } }) : undefined);
+    await expect(verifyNpbPublicationReadback({ ...options, request, wait })).rejects.toThrow("HTTP 503: milestones");
+    expect(wait).not.toHaveBeenCalled();
+  }));
+
+  it("waits for a staged optional file to propagate before reporting success", async () => withReadback(async (options, respond) => {
+    const wait = vi.fn(async () => {});
+    const { request, counts } = mockRequests(respond, path => path === milestone && counts.get(path) === 1
+      ? new Response(null, { status: 404 }) : undefined);
+    await expect(verifyNpbPublicationReadback({ ...options, request, wait })).resolves.toMatchObject({
+      verifiedFiles: Object.keys(options.hashes!).length,
+    });
+    expect(counts.get(milestone)).toBe(2);
+    expect(wait.mock.calls).toEqual([[10_000]]);
+  }));
+});
 
 describe("coordinated NPB publication", () => {
   it("retains a newer verified measurement observation when replaying the same values", () => {
