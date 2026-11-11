@@ -25,6 +25,7 @@ export function canonicalDeepLink(input: string): string | null {
       uri.hash.startsWith("#/") ? uri.hash.slice(1) : uri.pathname.replace(/^\/baseball-notes/, "");
     const [portablePath, portableSearch] = route.split("?");
     if(needsNpbSeasonEntry(portablePath??"",new URLSearchParams(portableSearch??uri.search)))return portableRoute(portablePath!,portableSearch??uri.search);
+    if (portablePath === "/NPB/home") return portableRoute(portablePath, portableSearch ?? uri.search);
     if(portablePath === "/NPB/schedule") {
       const source = new URLSearchParams(portableSearch ?? uri.search);
       if(source.has("stage")||source.has("competition")&&source.get("competition")!=="regular")return null;

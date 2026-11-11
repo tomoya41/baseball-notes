@@ -22,6 +22,13 @@ describe("canonical native navigation", () => {
     expect(canonicalDeepLink(`baseballnotes://MLB/players/${encodeURIComponent(mlb)}/analysis?season=2025&date=2025-09-20&token=bad`))
       .toBe(`/MLB/players/${encodeURIComponent(mlb)}/analysis?season=2025&date=2025-09-20`);
   });
+  it.each(["baseballnotes://NPB/home", "https://tomoya41.github.io/baseball-notes/#/NPB/home"])(
+    "keeps only portable NPB Home selections from %s", uri => {
+      expect(canonicalDeepLink(`${uri}?homeSeason=autumn&homeView=follow&token=private`)).toBe("/NPB/home?homeView=follow&homeSeason=autumn");
+      expect(canonicalDeepLink(`${uri}?homeSeason=unknown&homeView=invalid`)).toBe("/NPB/home");
+      expect(canonicalDeepLink(`${uri}?season=2027&homeSeason=autumn`)).toBe("/NPB/season?season=2027");
+      expect(canonicalDeepLink(`${uri}/unknown?homeSeason=autumn`)).toBeNull();
+    });
   it("drops impossible calendar dates while retaining a valid leap day", () => {
     expect(canonicalDeepLink(`baseballnotes://MLB/players/${encodeURIComponent(mlb)}/analysis?season=2025&date=2025-02-30&asOfDate=2025-99-01`))
       .toBe(`/MLB/players/${encodeURIComponent(mlb)}/analysis?season=2025`);

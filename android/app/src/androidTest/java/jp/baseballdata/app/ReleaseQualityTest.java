@@ -756,6 +756,8 @@ public class ReleaseQualityTest {
         shell("input keyevent KEYCODE_BACK");waitText("日程・試合詳細");assertEquals("System Back returns to exact series",route,js("location.hash"));
     }
     private void openRecordedJapanHome() throws Exception {
+        waitCondition("Native Home keeps the selected autumn view",
+            "new URLSearchParams(location.hash.split('?')[1]).get('homeSeason')==='autumn'");
         waitCondition("Recorded series available independently of Home priority", "!!document.querySelector('[data-japan-home-archive]') || !!document.querySelector('.japan-home-result')");
         js("(()=>{const d=document.querySelector('[data-japan-home-archive]');if(d&&!d.open)d.querySelector('summary').click();})()");
         waitCondition("Exact recorded series result", "!!document.querySelector('.japan-home-result')");
