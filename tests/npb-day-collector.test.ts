@@ -1,6 +1,8 @@
-import { mkdtemp } from "node:fs/promises";
+import { execFile } from "node:child_process";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { promisify } from "node:util";
 import { afterEach, expect, test } from "vitest";
 import { gameCompletenessSchema } from "../src/domain/game-facts";
 import { migrateData, openDataClient, type DataClient } from "../src/data/database";
@@ -9,8 +11,8 @@ import type { NpbGameProofResult } from "../src/data/npb-game-collector";
 
 const clients:DataClient[]=[];
 afterEach(()=>{for(const client of clients.splice(0)) client.close();});
-async function database(statuses:string[]) {
-  const dir=await mkdtemp(join(tmpdir(),"npb-day-collector-"));
+async function database(statuses:string[], directory?:string) {
+  const dir=directory??await mkdtemp(join(tmpdir(),"npb-day-collector-"));
   const client=openDataClient(`file:${join(dir,"data.db")}`);clients.push(client);
   await migrateData(client);
   for(let i=0;i<statuses.length;i++) {
@@ -52,6 +54,22 @@ test("pending or unknown past Games cannot be mislabeled no_games or complete",a
   const result=await runNpbDayFacts(client,{targetDate:"2026-09-23",trigger:"manual",dryRun:true});
   expect(result).toMatchObject({status:"partial",scheduledGames:2,finalGames:0});
   expect(classifyDay([],2,0,true,0)).toBe("partial");
+});
+test("workflow backup output is emitted only after a terminal Day passes readback", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "npb-day-readback-"));
+  const client = await database(["postponed"], dir);
+  const output = join(dir, "github-output");
+  const verify = () => promisify(execFile)(process.execPath,
+    ["--import", import.meta.resolve("tsx"), "scripts/verify-npb-day.ts", "--date=2026-09-23", "--require-complete"],
+    { env: { ...process.env, GITHUB_OUTPUT: output, TURSO_DATABASE_URL: `file:${join(dir, "data.db")}`, TURSO_AUTH_TOKEN: "" } });
+  await verify();
+  expect(await readFile(output, "utf8")).toBe("final_games=0\n");
+  await rm(output);
+  for (const status of ["scheduled", "final"]) {
+    await client.execute({ sql: "UPDATE npb_games SET status=?", args: [status] });
+    await expect(verify()).rejects.toMatchObject({ code: 1 });
+    await expect(readFile(output, "utf8")).rejects.toMatchObject({ code: "ENOENT" });
+  }
 });
 test("one partial game or parser failure cannot mark day complete",async()=>{
   const client=await database(["final","final"]);

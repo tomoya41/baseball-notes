@@ -1,7 +1,8 @@
 import { openDataClient } from "../src/data/database";
-import { readFile } from "node:fs/promises";
+import { appendFile, readFile } from "node:fs/promises";
 import { NpbRepository } from "../src/data/npb-repository";
 import { previousJstDate } from "../src/data/npb-day-collector";
+import { isTerminalGame } from "../src/application/npb-eod-watcher";
 
 const date=process.argv.find((arg)=>arg.startsWith("--date="))?.slice(7)??previousJstDate();
 const url=process.env.TURSO_DATABASE_URL??"file:.data/baseball.db";
@@ -10,7 +11,8 @@ if(process.argv.includes("--require-remote") && (url.startsWith("file:")||!proce
 const client=openDataClient(url,process.env.TURSO_AUTH_TOKEN);
 try {
   const repo=new NpbRepository(client);
-  const games=(await repo.findGamesByDate(date)).filter((game)=>game.status==="final");
+  const scheduled=await repo.findGamesByDate(date);
+  const games=scheduled.filter((game)=>game.status==="final");
   const details=[];
   for(const game of games) {
     const [batting,pitching,report]=await Promise.all([
@@ -36,6 +38,12 @@ try {
     for(const table of tableNames) if(result.totals[table]!<baseline.totals[table]!)
       throw new Error(`Permanent table lost rows: ${table}`);
   }
-  if(process.argv.includes("--require-complete") && details.some((game)=>game.status!=="complete"||
-    game.batters!==game.expectedBatters||game.pitchers!==game.expectedPitchers)) process.exitCode=1;
+  if(process.argv.includes("--require-complete")) {
+    if(scheduled.some((game)=>!isTerminalGame(game)) ||
+      details.some((game)=>game.status!=="complete"||game.batters!==game.expectedBatters||game.pitchers!==game.expectedPitchers)) {
+      process.exitCode=1;
+    } else if(process.env.GITHUB_OUTPUT) {
+      await appendFile(process.env.GITHUB_OUTPUT, `final_games=${result.finalGames}\n`);
+    }
+  }
 } finally {client.close();}

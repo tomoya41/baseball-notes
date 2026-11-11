@@ -118,6 +118,7 @@ jobs:
           name: npb-eod-encrypted-backup
           path: .data/eod-backup.tar.gz.enc
           retention-days: 7
+          if-no-files-found: error
       - name: Build complete site once
         if: steps.watch.outputs.publish == 'true'
         run: |
