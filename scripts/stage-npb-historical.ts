@@ -10,6 +10,7 @@ import { assertHistoricalBridge } from "../src/infrastructure/providers/npb-hist
 import { stageNpbCompetition } from "./stage-npb-competition";
 import { stageNpbCs } from "./stage-npb-cs";
 import { stageNpbGameDateIndex } from "./stage-npb-game-date-index";
+import { fetchPinnedNpbReleaseAsset } from "./lib/fetch-pinned-npb-release-asset";
 
 const local=process.argv.find(a=>a.startsWith("--input="))?.slice(8), target=process.argv.find(a=>a.startsWith("--output="))?.slice(9) ?? "dist/data/npb/historical";
 const started=performance.now();
@@ -17,7 +18,8 @@ async function stage(pin:typeof release, destination:string, input?:string) {
 const cache=join(".data","npb-history-release",`${pin.sha256}.gz`);
 const saved=input?null:await readFile(cache).catch(()=>null);
 const validSaved=saved&&createHash("sha256").update(saved).digest("hex")===pin.sha256?saved:null;
-const response=input||validSaved ? null : await fetch(pin.assetUrl,{signal:AbortSignal.timeout(30000)});
+const download=input||validSaved ? null : await fetchPinnedNpbReleaseAsset(pin.assetUrl,30_000);
+const response=download?.response;
 if(response && !response.ok) throw Error(`Pinned NPB Historical release HTTP ${response.status}`);
 const bytes=input ? await readFile(input) : validSaved ?? Buffer.from(await response!.arrayBuffer());
 if(bytes.length>2_000_000 || createHash("sha256").update(bytes).digest("hex")!==pin.sha256) throw Error("NPB Historical release hash/size mismatch");
@@ -37,7 +39,7 @@ for(const season of [...new Set(dataset.rows.map(r=>r.season))].sort((a,b)=>a-b)
 const manifest=npbHistoricalManifestSchema.parse({schemaVersion:1,league:"NPB",competition:"regular",temporalScope:"historical",coverage:"partial",license:dataset.license,inputSha256:dataset.inputSha256,observedAt:dataset.observedAt,seasons,
   players:dataset.players.map(p=>({playerId:p.playerId,name:p.name,...(p.identityScope?{identityScope:p.identityScope}:{}),...(p.birthDate?{birthDate:p.birthDate}:{}),seasons:[...new Set(dataset.rows.filter(r=>r.playerId===p.playerId).map(r=>r.season))].sort((a,b)=>a-b)}))});
 await writeFile(join(destination,"manifest.json"),JSON.stringify(manifest));
-return {generation:pin.sha256,historicalFiles:seasons.length+1,archiveBytes:bytes.length,publicBytes:seasons.reduce((s,y)=>s+y.bytes,Buffer.byteLength(JSON.stringify(manifest))),maxPayload:Math.max(...seasons.map(s=>s.bytes)),generationMs:Math.round(performance.now()-started),canonicalWrites:0,sourceRequests:response?1:0};
+return {generation:pin.sha256,historicalFiles:seasons.length+1,archiveBytes:bytes.length,publicBytes:seasons.reduce((s,y)=>s+y.bytes,Buffer.byteLength(JSON.stringify(manifest))),maxPayload:Math.max(...seasons.map(s=>s.bytes)),generationMs:Math.round(performance.now()-started),canonicalWrites:0,sourceRequests:download?.requests??0};
 }
 const retained=await stage(legacy,target);
 for(const pin of retainedReleases) await stage(pin,join(target,pin.sha256));
