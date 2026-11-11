@@ -1,6 +1,6 @@
 import { canonicalEntityRefSchema } from "./cross-league";
 import { z } from "zod";
-import { compareIds } from "./player-compare";
+import { compareIds, npbPlayerComparisonConditions } from "./player-compare";
 import { clubYearPair, progressionMetrics } from "./npb-player-progression";
 import { ageSeasonQuery } from "./npb-age-season";
 import { metricNumber, selectedTeams } from "./product-comparison";
@@ -174,6 +174,27 @@ export function portableRoute(path: string, search = ""): string | null {
 }
 function decodeSafe(value: string) { try { return decodeURIComponent(value); } catch { return ""; } }
 export function portableUrl(path: string, search = "") { const route = portableRoute(path, search); return route ? `${PUBLIC_APP_URL}#${route}` : null; }
+
+export function savedNpbPlayerComparison(source: URLSearchParams): URLSearchParams | null {
+  const role = source.get("role"), condition = source.get("condition");
+  if (source.get("playerCompare") !== "1" || source.has("seasonCompare") || source.has("stage") ||
+    source.get("season") !== "2026" || source.get("competition") !== "regular" ||
+    (role !== "batting" && role !== "pitching") || !condition || !npbPlayerComparisonConditions(role).includes(condition) ||
+    compareIds("NPB", source.get("players")).length < 2) return null;
+  const route = portableRoute("/NPB/compare", source.toString());
+  if (!route?.startsWith("/NPB/compare?")) return null;
+  const conditions = new URLSearchParams(route.split("?")[1]);
+  if (condition === "opponent" && !conditions.has("opponent") || condition === "order" && !/^[1-9]$/.test(conditions.get("order") ?? "")) return null;
+  if (condition !== "opponent") conditions.delete("opponent");
+  if (condition !== "order") conditions.delete("order");
+  if (role === "pitching" || !["standard", "pitchers", "all"].includes(conditions.get("battingView") ?? "")) conditions.delete("battingView");
+  conditions.delete("period");
+  conditions.delete("asOfDate");
+  conditions.set("competition", "regular");
+  conditions.set("playerCompare", "1");
+  return conditions;
+}
+
 export type DisplayExport = { league: League; scope: string; date: string; coverage: string; columns: string[]; rows: (string | number | null)[][] };
 export function comparisonDisplayExport(league: League, scope: string, date: string, keys: string[], selections: { name: string; metrics: CompareMetrics | null; coverage: string }[]): DisplayExport {
   return { league, scope, date,
