@@ -20,7 +20,7 @@ export function NpbSeasonalHome({supporting=false,now}:{supporting?:boolean;now:
         </EditorialCover>
       </Link>;
     })}</div>
-    <nav className="offseason-home-links" aria-label="オフシーズンの選手情報"><Link to="/NPB/moves">移籍・退団・引退 <span aria-hidden="true">→</span></Link><Link to="/NPB/moves?kind=contract_renewal">契約更改 <span aria-hidden="true">→</span></Link></nav>
+    <nav className="offseason-home-links" aria-label="オフシーズンの選手情報"><Link to="/NPB/moves">FA・移籍など <span aria-hidden="true">→</span></Link><Link to="/NPB/moves?kind=contract_renewal">契約更改 <span aria-hidden="true">→</span></Link></nav>
     <details className="source-note seasonal-options"><summary>収録範囲</summary><p>{context.description}</p><p>{context.unavailable}</p><p className="inline-note">{context.date}（日本時間）の暦を使った案内です。実際の開催状況・公式日程・データ更新の証拠ではありません。</p><Link to="/NPB/moves">契約・移籍・引退の記事記載 →</Link></details>
   </section>;
 }
