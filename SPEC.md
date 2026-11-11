@@ -1,6 +1,6 @@
 # Baseball Notes — Product Specification
 
-Status: 完成版要件の統合基準（2026-10-28）。実装・収録・本番運用・正式リリースがすべて完了したという意味ではない。まず [§0 完成版の要件](#completion-baseline) を読む。機能別の詳細契約は後続節、実施順と確認済み範囲は [完成までの作業計画](docs/product-completion-plan.md) にまとめる。
+まず [§0 Web/PWA v1.0の要件](#completion-baseline) を読む。機能別の詳細契約は後続節、実施順と確認済み範囲は [完成までの作業計画](docs/product-completion-plan.md) にまとめる。
 
 Competition scope: Regular Season and Postseason are first-class, separate scopes. Absent legacy scope means Regular Season. Postseason has canonical Series, explicit rounds, rule advantages and independently admitted stats/analysis; its numbers never enter regular Season/Recent/Records/rankings. NPB CS Final advantage is not a played Game. Current/Historical availability depends on each league's verified source rights. See `docs/postseason.md`.
 
@@ -15,9 +15,9 @@ Honors can be explored by year or by independently identified source recipient, 
 
 ### 0.1 製品の軸と仕様の読み方
 
-**NPBに特化し、好きな選手の今・変化・歩みを一年を通して追える野球アプリ。** NPBの現役選手を中心に、試合、過去成績、比較、記録、ドラフト、移籍・退団・引退、契約更改をつなぐ。MLB Historicalは補助機能として既存データ・機能を維持する。一球速報は中心機能にしない。
+**好きな選手や球団を一年を通して追える、個人向けの野球データアプリ。** NPBを主対象とし、試合、過去成績、比較、記録、ドラフト、選手動向をつなぐ。MLB Historicalは補助機能として既存データ・機能を維持する。
 
-開発・情報設計・完成判定はNPBを最優先とする。当面はNPBのHOT・試合別MVPを実際のNPB成績で利用できる状態と、移籍・退団・戦力外・自由契約・引退・契約更改の出典付き実データを優先する。NPBの一部が外部制限中でも、他の独立したNPB開発を進める。単独のMLB新機能・収録拡張は、ユーザーが明示的に求めた場合を除き優先しない。共通処理の検証や既存MLBの回帰・保守は継続するが、MLBでの成功をNPBの実データ・母数・Coverage・本番証拠の代用にしない。
+公開版の重大不具合・データ不整合、NPBデータの正確性・収録範囲、既存導線、UI品質、追加機能の順で進める。外部条件を待つ間も、採用済みデータで改善できるNPBの作業を進める。共通処理と既存MLBの回帰・保守を継続する。
 
 初回起動・既定ホーム・主要な利用体験はNPBを基準とする。明示的なMLBのURL、保存済み情報、既存の収録範囲と権利Gateは維持する。この優先順位を理由にNPBの未収録データを生成したり、HOT/RankingやMVPの選考条件を緩和したりしない。
 
@@ -25,12 +25,23 @@ Honors can be explored by year or by independently identified source recipient, 
 
 ### 0.2 提供範囲と完了状態
 
-- **本体要件（R01–R12）**：完成版が提供する体験。データや所有者操作の不足で満たせない項目は未完了として残す。画面、型、workflow、fixtureがあるだけでは完了しない。
+- **v1.0必須**：Web/PWAで下表の7条件と§0.5を実証する。採用済みの試合・選手・年度・指標の範囲を表示し、利用者が試合や成績を調べ、比較して保存し、後日再開できる状態を検証する。
+- **v1.x拡張**：全選手・全年度の網羅、移籍・契約更改の収録拡大、背景Push、AI分析・高度な課金機能、Android正式配布を別の到達目標として追跡する。Androidの実機検証は継続する。
+- **外部条件待ち**：HOT・公式順位、未採用の2027年・国際大会データ、独立した本人照合や利用許諾が必要な記録は、必要証拠と再開条件を管理する。R01–R12とJ01–J07の詳細要件は保持し、各要件の提供範囲と未達部分を作業計画に記録する。
 - **条件付き拡張**：MLB Current、球種・計測・守備・走塁・捕手の詳細、網羅的な二軍/マイナー、全選手写真・公式ロゴ。Source・粒度・identity・権利が確認できた範囲から採用する。機能を構想から削除せず、本体と別に提供可否を記録する。
 - **任意の強化**：生成AIの候補選択・短い説明。統計、検索、比較、記録、通知の根拠処理はAIなしで成立させる。クラウド同期・アカウント必須化も本体の前提にしない。
 - 各リリースはLeague / season / competition / stage / 対象選手・試合 / 指標 / 更新時点 / Coverage / Sourceを宣言する。古い一部収録データを最新Current、収録分合計を完全通算、収録内順位を公式・歴代ランキングと呼ばない。
-- 部分収録でも根拠付きの表示・比較は可能。ただし、完全性を必要とするランキング・記録達成・対象日全体の選考は、その個別条件を満たすまで公開しない。本体の不足を「条件付き拡張」へ黙って移して完成扱いにしない。
-- Web/PWA公開、機能の完成、継続運用の確認、Android正式リリースは別の判定。未解決の必須要件がある段階では、実際に満たした対象範囲のみを公開・報告する。
+- 部分収録でも根拠付きの表示・比較は可能。完全性を必要とするランキング・記録達成・対象日全体の選考は、個別の公開条件を満たした範囲で提供する。Web/PWAとAndroid正式リリースはそれぞれの受け入れ証拠で判定する。
+
+| v1.0の領域 | 完成条件 |
+|---|---|
+| 試合 | NPB公式戦の結果・スコア・収録済み個人成績を一覧と詳細で調べられる。 |
+| 選手 | プロフィール・年度別成績・推移・球団履歴を一貫した導線で確認できる。 |
+| 比較 | 選手間・年度間・同学年・同年齢・ドラフト同期・球団別の比較が、母数・期間・出典を保って正しく動く。 |
+| 記録・発見 | 収録済みの記録・表彰・ドラフト・選手動向を探せる。 |
+| My | Favorites、保存した比較、アプリ内Watch、バックアップ・復元を使える。 |
+| デザイン | Home・Games・Players・Records・Myの5画面が統一され、スマートフォンで快適に操作できる。 |
+| 公開・運用 | Web/PWAが安定公開され、データ更新の状態確認と障害時の復旧が機能する。 |
 
 ### 0.3 完成版の機能要件
 
@@ -65,13 +76,24 @@ Honors can be explored by year or by independently identified source recipient, 
 
 J05は発生済みの段階だけを扱い、後続段階は別の実在選手の事例でも検証できる。2026年指名選手が引退するまで完成を待つ設計にはせず、将来の入団・FA・引退や、保存していない事前予想は作らない。J06のWatch数値baseline・統計を含む本文にはSourceのexport条件を適用する。可搬にできない場合は個人設定・参照ID・既読状態等の許される範囲を移行し、baselineを再確立する。復元直後の初回観測を新たな活躍・達成として通知しない。
 
-### 0.5 完成・公開の判定
+### 0.5 Web/PWA v1.0の受け入れ
+
+| 指標 | 合格条件 |
+|---|---|
+| 主要導線 | v1.0提供範囲のJ01–J07を採用データで通し、定義したE2Eシナリオがすべて成功する。 |
+| 自動テスト | 対象版の必須CIがすべて成功し、未説明の失敗が0件。 |
+| スマホ表示 | 幅360px・390px、Light/Dark、文字100%・150%・200%の各組み合わせで、主要5画面の重大な崩れが0件。 |
+| 操作領域 | 主要操作のタップ領域が44px以上。 |
+| データ整合性 | 公開世代、canonical ID、母数の重大不整合が0件。 |
+| 保存・復元 | 既存バックアップとの互換性を別のWeb環境で確認し、保存内容の損失が0件。 |
+| 更新運用 | 正常更新・正常スキップ・失敗・staleを個別に確認し、公開データとアプリの復旧を検証する。 |
+| 公開品質 | 本番HTTP、実画面、旧URL、PWA更新を確認する。 |
 
 1. **機能**：対象R/Jごとに、実際の導線、採用範囲、未対応範囲、関連テスト、実画面の証拠を記録する。公開URL・型・画面の存在だけを完了根拠にしない。
 2. **データ**：Source条件、本人照合、Coverage、統計検証、採用version/hashを確認する。独立した対象母集団がない場合にcompleteを宣言しない。公開前後で既存immutableデータ・ID・参照・保存形式を照合する。
-3. **運用**：既存Production Gateが要求する実Scheduled・バックアップ/復元・readbackの証拠を確認する。DB制限中は最後の検証済み公開データを扱い、制限回避・無制限リトライをしない。期限到来や静的公開成功をDB復旧と呼ばない。
+3. **運用**：Web/PWAで提供するデータの更新・バックアップ/復元・readbackを検証し、既存Production Gateの個別条件を確認する。DB制限中は最後の検証済み公開データを扱う。DBの復旧判定には実Scheduledと実DBの証拠を要求する。
 4. **UI/端末**：通常サイズの実画面と文字拡大を別々に評価する。機能テストだけで見た目を合格にしない。エミュレーター、Pixel、TalkBack、署名付き更新を別に記録し、未実施は未実施のまま残す。
-5. **配布**：Web/PWA公開済み、Android engineering-ready、実機確認済み、正式署名/ストア提出可能、正式公開済みを分離する。所有者操作が残る段階ではストア提出可能・全体完成と報告しない。
+5. **配布**：Web/PWA v1.0は上表と実公開の証拠で判定する。Androidは実機、非破壊の署名付き更新、TalkBack、App Links、所有者承認とPlay Consoleの手続きを別の到達目標として判定する。
 
 各項目の状態は「未着手 / 実装・接続中 / 検証待ち / 外部依存で保留 / 宣言した範囲で完了」で管理し、保留には不足証拠と再開条件を付ける。条件付き拡張の不採用と、本体要件の未完了は別に記録する。古い棚卸しの完成率やPASSを新しい版へ流用しない。
 
@@ -87,7 +109,7 @@ J05は発生済みの段階だけを扱い、後続段階は別の実在選手�
 
 ## 1. Product vision
 
-Create an Android-smartphone-first baseball data application for NPB and MLB fans, distributed through Web/PWA and the maintained native Android foundation. Prioritize NPB active-player context and year-round discovery; retain MLB Historical and legitimately richer MLB capabilities. The current completion baseline is §0, not the initial Phase 0 task description.
+Create a smartphone-first baseball data application for NPB and MLB fans. Web/PWA is the v1.0 distribution target, with the maintained Android foundation supporting a separate release milestone. Prioritize NPB active-player context and year-round discovery while retaining MLB Historical. The current completion baseline is §0.
 
 The product should answer questions such as:
 
@@ -128,7 +150,7 @@ Example:
 
 ## 3. Hard constraints
 
-1. Android smartphone app first.
+1. Smartphone-first design, with Web/PWA as the v1.0 release target.
 2. Preserve both NPB and MLB support; prioritize NPB active-player completion and retain MLB Historical without artificial feature parity.
 3. Additional recurring monthly operating cost must remain ¥0 unless explicitly approved later.
 4. Use only data sources whose use is compatible with the intended application.
