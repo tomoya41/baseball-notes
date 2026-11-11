@@ -33,6 +33,33 @@ it("shows source confidence, exact player/team links and accessible per-record e
     expect(f.host.textContent).toContain("この条件の記事記載は未収録です"); expect(f.host.querySelector("[data-location]")?.textContent).toContain("kind=trade"); expect(readNpbPlayerEvents).toHaveBeenCalledTimes(1);
   } finally { await f.close(); }
 });
+it("opens the 2026 official FA notice from the FA topic without adding official rows", async () => {
+  const view = await mount();
+  try {
+    expect(view.host.querySelector(".event-official-link")).toBeNull();
+    const topic = view.host.querySelector<HTMLAnchorElement>('nav[aria-label="選手の動きの種類"] a[href*="kind=fa_declaration"]')!;
+    await act(async () => topic.click());
+    expect(topic.getAttribute("aria-current")).toBe("page");
+    const official = view.host.querySelector<HTMLAnchorElement>(".event-official-link")!;
+    expect(official.href).toBe("https://npb.jp/announcement/2026/fa_filed.html");
+    expect(official.target).toBe("_blank");
+    expect(official.rel).toContain("noreferrer");
+    expect(view.host.querySelectorAll(".explorer-result")).toHaveLength(0);
+    expect(view.host.textContent).toContain("この条件の記事記載は未収録です");
+    expect(readNpbPlayerEvents).toHaveBeenCalledOnce();
+  } finally { await view.close(); }
+});
+
+it("keeps the official FA destination available when article loading fails and scoped to 2026", async () => {
+  const failed = await mount("?season=2026&kind=fa_declaration", [], true);
+  try {
+    expect(failed.host.textContent).toContain("選手の動きを読み込めません");
+    expect(failed.host.querySelector(".event-official-link")).not.toBeNull();
+  } finally { await failed.close(); }
+  const unsupported = await mount("?season=2027&kind=fa_declaration");
+  try { expect(unsupported.host.querySelector(".event-official-link")).toBeNull(); }
+  finally { await unsupported.close(); }
+});
 it("keeps each record's exact article revision after an offseason append", async () => {
   const previous = eventFixture();
   const candidate = parseWikipediaPlayerEvents(
