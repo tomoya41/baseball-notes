@@ -138,6 +138,17 @@ describe("NPB Team independent Season loading", () => {
     expect([...container.querySelectorAll(".metric-tile__value")].map(e => e.textContent)).toEqual(["1", "0", "1"]);
     expect(container.querySelector('[role="alert"]')).toBeNull();
   });
+  it.each([{ generatedAt: "2026-09-29T23:00:00Z" }, { effectiveDate: "2026-09-30" }])(
+    "keeps the roster and links while withholding Season stats from a different generation (%j)", async mismatch => {
+      await mountTeam(async url => Response.json(String(url).includes("catalog/") ? catalog : { ...season, ...mismatch }));
+      expect(container.querySelector("h1")?.textContent).toBe("阪神タイガース");
+      expect(container.querySelector(`a[href='/NPB/players/${id}']`)?.textContent).toContain("保存済み選手");
+      expect(container.querySelector('a[href="/NPB/team-compare?teams=npb%3Ateam%3Atigers"]')).not.toBeNull();
+      expect(container.querySelector('[role="alert"]')?.textContent).toBe("球団成績の更新を確認できません");
+      expect(container.querySelector(".team-record")).toBeNull();
+      expect(container.querySelector(".team-secondary-stats")).toBeNull();
+    }
+  );
   it("retains the publication generation but labels the earlier team aggregate cutoff", async () => {
     const observed="2026-10-10";
     await mountTeam(async url => Response.json(String(url).includes("catalog/") ? {...catalog,effectiveDate:observed} : {...season,effectiveDate:observed}));
