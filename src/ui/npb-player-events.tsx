@@ -86,12 +86,11 @@ export function NpbPlayerEventsScreen({ favorites = [] }: { favorites?: Favorite
     (!follow || isFollowedNpbEvent(e, favorites))
   ) ?? [];
   const page = Math.min(Number(requestedPage), Math.max(1, Math.ceil(matching.length / 15))), visible = matching.slice((page - 1) * 15, page * 15);
-  return <div className="screen"><PageHeading eyebrow="NPB · 2026年" title="選手の動き" detail="FA・移籍・退団・引退などを調べる。" />
-    <p className="data-notice">Wikipedia記事の一部収録です。公式発表の直接確認・現在の所属や登録の認定ではありません。</p>
+  return <div className="screen"><PageHeading eyebrow="NPB · 2026年" title="選手の動き" />
     {valid && <nav className="event-topics" aria-label="選手の動きの種類">{([["","すべて"],["fa_declaration","FA宣言"],["contract_renewal","契約更改"],["trade","トレード"],["nonrenewal_notice","戦力外"],["release","自由契約"],["retirement_announcement","引退"]] as const).map(([value,label])=><Link key={value} to={`?${eventFilter(params,"kind",value)}`} aria-current={(kind??"")===value?"page":undefined}>{label}</Link>)}</nav>}
     {valid && kind === "fa_declaration" && <a className="section-action event-official-link" href="https://npb.jp/announcement/2026/fa_filed.html" target="_blank" rel="noreferrer">2026年のFA宣言選手をNPB公式で確認 <span aria-hidden="true">↗</span></a>}
     {!valid ? <DataState kind="unsupported" title="年度・選手・球団・絞り込み条件を確認してください" /> : failed ? <><DataState kind="source-unavailable" title="選手の動きを読み込めません" /><button type="button" onClick={retry}>再試行</button></> : !dataset ? <LoadingSkeleton /> : <>
-      <p className="inline-note">{dataset.events.length}件・{dataset.players.length}選手 · 原記事取得 {new Date(dataset.observedAt).toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo" })}</p>
+      <p className="inline-note">Wikipediaの記事から一部収録 · {dataset.events.length}件・{dataset.players.length}選手 · 原記事取得 {new Date(dataset.observedAt).toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo" })}</p>
       {event && <button type="button" className="text-button" onClick={() => change("event", "")}>この記録の指定を解除</button>}
       {team && kind === "trade" && <nav className="event-topics event-directions" aria-label={`${clubName(team)}のトレード方向`}>
         <strong>{clubName(team)}</strong>

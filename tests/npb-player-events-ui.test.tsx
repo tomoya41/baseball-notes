@@ -26,7 +26,7 @@ async function mount(query = "", favorites: Favorite[] = [], failed = false, hom
 }
 it("shows source confidence, exact player/team links and accessible per-record evidence without official certification", async () => {
   const f = await mount(); try {
-    expect(f.host.textContent).toContain("選手の動き"); expect(f.host.textContent).toContain("公式発表の直接確認"); expect(f.host.textContent).toContain("今季限り");
+    expect(f.host.textContent).toContain("選手の動き"); expect(f.host.textContent).toContain("Wikipediaの記事から一部収録"); expect(f.host.textContent).toContain("今季限り");
     expect(f.host.querySelector(`a[href="/NPB/players/${eventPerson.playerId}"]`)).not.toBeNull(); expect(f.host.querySelector('a[href*="oldid=200"]')).not.toBeNull();
     expect(f.host.textContent).toContain("CC BY-SA 4.0"); expect(f.host.textContent).not.toContain("現在所属：阪神");
     const select = f.host.querySelector("select")!; await act(async () => { select.value = "trade"; select.dispatchEvent(new Event("change", { bubbles: true })); });
