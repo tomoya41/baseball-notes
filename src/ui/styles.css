@@ -338,7 +338,7 @@ details[open]>summary {
 }
 
 :root[data-large-font] .league-switch a {
-  min-width: calc(42px * var(--android-font-scale,1));
+  min-width: calc(var(--touch) * var(--android-font-scale,1));
 }
 
 .league-switch {
@@ -354,8 +354,8 @@ details[open]>summary {
 .league-switch a {
   display: grid;
   place-items: center;
-  min-width: 42px;
-  min-height: 40px;
+  min-width: var(--touch);
+  min-height: var(--touch);
   font-size: .8125rem;
   font-weight: 750;
   border-radius: 5px;
