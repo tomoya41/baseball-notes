@@ -3,7 +3,7 @@ import { z } from "zod";
 import { compareIds, npbPlayerComparisonConditions } from "./player-compare";
 import { clubYearPair, progressionMetrics } from "./npb-player-progression";
 import { ageSeasonQuery } from "./npb-age-season";
-import { metricNumber, selectedTeams } from "./product-comparison";
+import { metricNumber, npbTeamComparisonKeys, npbTeamComparisonViews, selectedTeams } from "./product-comparison";
 import type { CompareMetrics } from "./player-compare";
 import { viewConditions } from "./portable-conditions";
 import type { League } from "./models";
@@ -177,7 +177,7 @@ export function portableUrl(path: string, search = "") { const route = portableR
 
 export function savedNpbPlayerComparison(source: URLSearchParams): URLSearchParams | null {
   const role = source.get("role"), condition = source.get("condition");
-  if (source.get("playerCompare") !== "1" || source.has("seasonCompare") || source.has("stage") ||
+  if (source.get("playerCompare") !== "1" || source.has("seasonCompare") || source.has("teamCompare") || source.has("stage") ||
     source.get("season") !== "2026" || source.get("competition") !== "regular" ||
     (role !== "batting" && role !== "pitching") || !condition || !npbPlayerComparisonConditions(role).includes(condition) ||
     compareIds("NPB", source.get("players")).length < 2) return null;
@@ -193,6 +193,16 @@ export function savedNpbPlayerComparison(source: URLSearchParams): URLSearchPara
   conditions.set("competition", "regular");
   conditions.set("playerCompare", "1");
   return conditions;
+}
+
+export function savedNpbTeamComparison(source: URLSearchParams): URLSearchParams | null {
+  const view = source.get("view"), metric = source.get("metric"), rawTeams = source.get("teams");
+  const teams = selectedTeams("NPB", rawTeams);
+  if (source.get("teamCompare") !== "1" || source.has("playerCompare") || source.has("seasonCompare") || source.has("stage") ||
+      source.get("season") !== "2026" || source.get("competition") !== "regular" ||
+      !view || !npbTeamComparisonViews.includes(view) || !metric || !npbTeamComparisonKeys(view).includes(metric) ||
+      teams.length < 2 || teams.length !== rawTeams?.split(",").length) return null;
+  return new URLSearchParams({ teamCompare: "1", teams: teams.join(","), season: "2026", competition: "regular", view, metric });
 }
 
 export type DisplayExport = { league: League; scope: string; date: string; coverage: string; columns: string[]; rows: (string | number | null)[][] };
