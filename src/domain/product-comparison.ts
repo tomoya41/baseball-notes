@@ -4,7 +4,12 @@ import type { CompareMetrics } from "./player-compare";
 import { seasonCheckpointSteps, seasonCheckpointLabels } from "./npb-season-milestones";
 
 export type ComparisonRow = { id: string; name: string; season: number; date: string; coverage: string; metrics: CompareMetrics | null; notice?: string; publication?: { effectiveDate: string; generatedAt: string; from: string } };
-export const teamComparisonKeys = ["G", "W", "L", "T", "runsFor", "runsAgainst", "runDifference", "PA", "H", "HR", "AVG", "OPS", "outsRecorded", "SO", "ERA", "K9"];
+const teamResultKeys = ["G", "W", "L", "T", "runsFor", "runsAgainst", "runDifference"];
+export const teamComparisonKeys = [...teamResultKeys, "PA", "H", "HR", "AVG", "OPS", "outsRecorded", "SO", "ERA", "K9"];
+export const npbTeamComparisonViews = ["season", "14"];
+export function npbTeamComparisonKeys(view: string) {
+  return view === "14" ? teamResultKeys : teamComparisonKeys;
+}
 export function selectedTeams(league: League, raw: string | null) {
   return [...new Set((raw ?? "").split(",").filter(id => canonicalEntityRefSchema.safeParse({ league, kind: "team", id }).success))].slice(0, 4);
 }

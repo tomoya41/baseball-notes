@@ -4,7 +4,7 @@ import type { Services } from "../app/services";
 import type { League } from "../domain/models";
 import { canonicalEntityRefSchema } from "../domain/cross-league";
 import { boundedComparisonRead, readMlbTeamComparison, readNpbTeamComparison } from "../application/product-comparison";
-import { comparisonValue, metricNumber, previousYearDelta, selectedTeams, selectedYears, teamComparisonKeys, type ComparisonRow } from "../domain/product-comparison";
+import { comparisonValue, metricNumber, npbTeamComparisonKeys, npbTeamComparisonViews, previousYearDelta, selectedTeams, selectedYears, teamComparisonKeys, type ComparisonRow } from "../domain/product-comparison";
 import { readHistoricalProduct } from "../app/historical-products";
 import type { ExplorerManifest, ExplorerProfile } from "./data-explorer";
 import { compareBattingKeys, comparePitchingKeys } from "../domain/player-compare";
@@ -14,8 +14,9 @@ import { DisplayExportButton } from "./product-sharing";
 import { useHistoricalStatic } from "./use-mlb-historical";
 import { matchesMlbPlayerName } from "../domain/mlb-japanese-display";
 import { NpbPlayerSeasonCompare } from "./npb-player-season-compare";
-
+import { SaveViewButton } from "./personal-library";
 import { ComparisonBars } from "./comparison-bars";
+import "./npb-player-experience.css";
 
 const labels: Record<string, string> = { G: "試合", W: "勝", L: "敗", T: "分", runsFor: "得点", runsAgainst: "失点", runDifference: "得失点差", PA: "打席", outsRecorded: "投球回", K9: "奪三振率" };
 const scopeSuffix = (season: number, scope: string) => `?season=${season}${scope === "postseason" ? "&competition=postseason" : ""}`;
@@ -38,27 +39,38 @@ function ComparisonResults({ league, rows, keys: requestedKeys, metric, scope, y
 type Loader = (ids: string[], season: number, view: string) => Promise<ComparisonRow[]>;
 function TeamWorkspace({ league, teams, years, load, competition = "regular", favorites = [] }: { league: League; teams: { id: string; name: string }[]; years: number[]; load: Loader; competition?: string; favorites?: string[] }) {
   const [params, setParams] = useSearchParams(), ids = selectedTeams(league, params.get("teams")), year = Number(params.get("season") ?? years.at(-1));
-  const choices = league === "MLB" ? ["season", "7", "14", "30", "home", "away"] : ["season", "14"], view = params.get("view") ?? "season";
+  const choices = league === "MLB" ? ["season", "7", "14", "30", "home", "away"] : npbTeamComparisonViews, view = params.get("view") ?? "season";
   const idsKey = ids.join(","), key = `${idsKey}:${year}:${view}:${competition}`, [state, setState] = useState<{ key: string; rows: ComparisonRow[]; error: boolean } | null>(null), [query, setQuery] = useState("");
   const known = ids.every(id => teams.some(t => t.id === id)), supported = years.includes(year) && choices.includes(view) && !(league === "NPB" && params.get("competition") === "postseason");
   useEffect(() => { if (!supported || !known || !idsKey) return; let active = true; void load(idsKey.split(","), year, view).then(rows => { if (active) setState({ key, rows, error: false }); }).catch(() => { if (active) setState({ key, rows: [], error: true }); }); return () => { active = false; }; }, [load, key, idsKey, year, view, supported, known]);
   const update = (k: string, v: string) => setParams(p => { const next = new URLSearchParams(p); if (v) next.set(k, v); else next.delete(k); return next; });
-  const displayKeys = league === "NPB" && view === "14" ? teamComparisonKeys.slice(0, 7) : teamComparisonKeys;
+  const displayKeys = league === "NPB" ? npbTeamComparisonKeys(view) : teamComparisonKeys;
   const metric = displayKeys.includes(params.get("metric") ?? "") ? params.get("metric")! : "runDifference";
+  const saveParams = league === "NPB" && year === 2026 && ids.length >= 2
+    ? new URLSearchParams({ teamCompare: "1", teams: idsKey, season: String(year), competition, view, metric }) : null;
   const rows = state?.key === key ? state.rows : [], candidates = teams.filter(t => !ids.includes(t.id) && t.name.toLocaleLowerCase().includes(query.toLocaleLowerCase())).sort((a, b) => Number(favorites.includes(b.id)) - Number(favorites.includes(a.id))).slice(0, 12);
-  return <div className="screen"><PageHeading eyebrow={`${league} · ${competition === "postseason" ? "POSTSEASON" : "REGULAR SEASON"}`} title="球団比較" /><p className="inline-note">2〜4球団の保存済み成績を比較。公式順位ではありません。</p>{!supported || !known ? <DataState kind="unsupported" title="指定の年度・条件・球団は未対応です" /> : <>
+  return <div className={`screen${league === "NPB" ? " compare-screen npb-compare-experience" : ""}`}><PageHeading eyebrow={`${league} · ${competition === "postseason" ? "POSTSEASON" : "REGULAR SEASON"}`} title="球団比較" /><p className="inline-note">2〜4球団の保存済み成績を比較。公式順位ではありません。</p>{!supported || !known ? <DataState kind="unsupported" title="指定の年度・条件・球団は未対応です" /> : <>
     <div className="compare-selection">{ids.map(id => <div key={id}><Link to={`/${league}/teams/${encodeURIComponent(id)}${scopeSuffix(year, competition)}`}>{teams.find(t => t.id === id)!.name}</Link><button aria-label={`${teams.find(t => t.id === id)!.name}を球団比較から外す`} onClick={() => update("teams", ids.filter(t => t !== id).join(","))}>×</button></div>)}</div>
     {ids.length < 4 && <details open={ids.length < 2}><summary>球団を追加（{ids.length}/4）</summary><label className="search-field"><span className="sr-only">比較する球団</span><input type="search" placeholder="球団名で検索" value={query} onChange={e => setQuery(e.target.value)} /></label><div className="row-list">{candidates.map(t => <button className="player-row" key={t.id} onClick={() => { update("teams", [...ids, t.id].join(",")); setQuery(""); }}>{favorites.includes(t.id) && "★ "}{t.name} ＋</button>)}</div></details>}
     <details open={ids.length < 2}><summary>期間・指標を変更 · {year}年</summary><div className="explorer-filter-grid"><label>シーズン<select value={year} onChange={e => update("season", e.target.value)}>{years.map(y => <option key={y}>{y}</option>)}</select></label><label>集計条件<select value={view} onChange={e => update("view", e.target.value)}>{choices.map(v => <option key={v} value={v}>{v === "season" ? "シーズン" : v === "home" ? "ホーム" : v === "away" ? "アウェー" : `直近${v}日${league === "NPB" ? "・試合結果" : ""}`}</option>)}</select></label><label>比較グラフ<select value={metric} onChange={e => update("metric", e.target.value)}>{displayKeys.map(k => <option key={k} value={k}>{labels[k] ?? k}</option>)}</select></label></div></details>
+    {saveParams && <SaveViewButton key={saveParams.toString()} league="NPB" kind="history" params={saveParams} placeholder="例：阪神と巨人の比較" />}
     {league === "MLB" && <p className="inline-note">Recentは選択年度・集計対象の最終保存日が基準です。現在の成績ではありません。</p>}
     {ids.length < 2 && <p className="data-notice">比較する球団を2〜4つ選んでください。</p>}{ids.length > 0 && (state?.key !== key ? <LoadingSkeleton /> : state.error ? <DataState kind="source-unavailable" title="球団比較を読み込めません" /> : <ComparisonResults league={league} rows={rows} keys={displayKeys} metric={metric} scope={`${year} ${competition} Team ${view}`} />)}
-    <Link to={`/${league}/teams${scopeSuffix(year, competition)}`}>球団一覧 →</Link>
+    <Link className={league === "NPB" ? "section-action" : undefined} to={`/${league}/teams${scopeSuffix(year, competition)}`}>球団一覧 →</Link>
   </>}</div>;
 }
 export function NpbTeamCompare({ services, favoriteTeams = [] }: { services: Services; favoriteTeams?: string[] }) {
   const [catalog, setCatalog] = useState<{ teams: { id: string; name: string }[]; years: number[] } | null>(null), [error, setError] = useState(false);
   useEffect(() => { let active = true; void services.product.catalog().then(p => { if (active) setCatalog({ teams: p.teams.map(t => ({ id: t.teamId, name: t.name })), years: [Number(p.effectiveDate.slice(0, 4))] }); }).catch(() => { if (active) setError(true); }); return () => { active = false; }; }, [services]);
-  const load = useCallback<Loader>(async (ids, year, view) => { const rows = await readNpbTeamComparison(services, view); if (rows.some(r => r.season !== year)) throw Error("Season mismatch"); return ids.map(id => rows.find(r => r.id === id)!); }, [services]);
+  const load = useCallback<Loader>(async (ids, year, view) => {
+    const rows = await readNpbTeamComparison(services, view);
+    if (rows.some(r => r.season !== year)) throw Error("Season mismatch");
+    return ids.map(id => {
+      const row = rows.find(r => r.id === id);
+      if (!row) throw Error("Selected team is missing from the projection");
+      return row;
+    });
+  }, [services]);
   return error ? <DataState kind="source-unavailable" title="球団一覧を読み込めません" /> : !catalog ? <LoadingSkeleton /> : <TeamWorkspace league="NPB" {...catalog} load={load} favorites={favoriteTeams} />;
 }
 export function MlbTeamCompare({ manifest, favoriteTeams = [] }: { manifest: ExplorerManifest; favoriteTeams?: string[] }) {

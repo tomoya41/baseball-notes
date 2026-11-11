@@ -7,7 +7,8 @@ import { PersonalLibrary, PERSONAL_LIBRARY_KEY } from "../src/application/person
 
 import { PersonalLibraryProvider } from "../src/ui/library-provider";
 import { CollectionDashboard } from "../src/ui/collection-dashboard";
-import { MlbTeamCompare, SeasonCompare } from "../src/ui/team-season-compare";
+import { MlbTeamCompare, NpbTeamCompare, SeasonCompare } from "../src/ui/team-season-compare";
+import { NpbAnalysisResume } from "../src/ui/personal-library";
 import { services } from "../src/app/services";
 import { HistoricalCompetitionContext } from "../src/ui/historical-competition-context";
 const mocks = vi.hoisted(() => ({ historical: vi.fn(), season: vi.fn(), recent: vi.fn(), npbTeam: vi.fn(), mlbTeam: vi.fn(), staticHistorical: vi.fn() }));
@@ -58,6 +59,26 @@ describe("comparison and collection scope", () => {
     mocks.mlbTeam.mockResolvedValue({ id: team, name: "球団", season: 2025, date: "2025-09-28", coverage: "complete", metrics: { G: metric(3) } });
     await mount(<HistoricalCompetitionContext.Provider value="postseason"><MlbTeamCompare manifest={manifest} /></HistoricalCompetitionContext.Provider>, `/MLB/team-compare?teams=${encodeURIComponent(team)}&season=2025&competition=postseason&view=14`);
     expect(mocks.mlbTeam).toHaveBeenCalledWith(team, "球団", 2025, "postseason", "14"); expect(div.textContent).toContain("POSTSEASON");
+  });
+  it("can save the selected NPB clubs even if their current projection is missing a club", async () => {
+    const ids = ["npb:team:tigers", "npb:team:giants"];
+    vi.mocked(services.product.catalog).mockResolvedValue({ effectiveDate: "2026-10-12", teams: ids.map((teamId, i) => ({ teamId, name: ["阪神", "巨人"][i] })) } as never);
+    mocks.npbTeam.mockResolvedValue([{ id: ids[0], name: "阪神", season: 2026, date: "2026-10-08", coverage: "partial", metrics: null }]);
+    await mount(<><NpbTeamCompare services={services} /><NpbAnalysisResume /></>, `/NPB/team-compare?teams=${ids.join(",")}&view=14&metric=OPS`);
+    expect(div.textContent).toContain("球団比較を読み込めません");
+    await act(async () => div.querySelector<HTMLButtonElement>(".library-save button")!.click());
+    const name = div.querySelector<HTMLInputElement>(".library-save input")!;
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(name, "阪神と巨人");
+      name.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await act(async () => div.querySelector(".library-save form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })));
+    const link = div.querySelector<HTMLAnchorElement>(".my-analysis-resume .player-row")!;
+    expect(link.textContent).toContain("球団比較 · 2026年 · 直近14日");
+    expect(link.textContent).toContain("阪神と巨人");
+    expect(Object.fromEntries(new URL(link.href).searchParams)).toEqual({
+      teams: ids.join(","), season: "2026", competition: "regular", view: "14", metric: "runDifference",
+    });
   });
   it("uses one NPB bulk projection for a bounded 12-player dashboard and preserves local Favorites", async () => {
     const c = (await store.createCollection("候補")).collections[0]!; for (let n = 1; n <= 13; n++) await store.setPlayer(c.id, { league: "NPB", playerId: uuid(n) }, true);

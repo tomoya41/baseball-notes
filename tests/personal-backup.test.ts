@@ -28,6 +28,32 @@ async function signed(edit: (file: Record<string, unknown>) => void) {
 }
 const observation: WatchObservation = { key: "streak", league: "MLB", kind: "player", entityId: mlb.entityId, name: "選手", rule: "streak", season: 2025, competition: "regular", effectiveDate: "2025-09-28", generatedAt: null, eventDate: null, coverage: "complete", path: `/MLB/players/${mlb.entityId}`, metric: "安打", values: { value: 4, atLeast: "false" }, collectionOnly: false, observedAt: now };
 describe("portable personal backup", () => {
+  it("restores NPB team comparisons for both supported periods without changing legacy views", async () => {
+    const source = await populated(), target = setup();
+    const legacy = (await source.library.read()).views[0];
+    const base = { teams: "npb:team:tigers,npb:team:giants", season: "2026", competition: "regular" };
+    const season = { ...base, view: "season", metric: "OPS" }, recent = { ...base, view: "14", metric: "runDifference" };
+    for (const selection of [season, recent]) {
+      await source.library.saveView("球団比較", "NPB", "history", new URLSearchParams({ ...selection, teamCompare: "1", q: "private" }));
+    }
+    const { text } = await source.backup.export();
+    expect(JSON.parse(text).version).toBe(1);
+    expect(text).not.toContain("private");
+    await target.backup.restore((await target.backup.preview(text, "replace")).token);
+    const [recentSaved, seasonSaved, restoredLegacy] = (await target.library.read()).views;
+    for (const [saved, filters] of [[recentSaved, recent], [seasonSaved, season]] as const) {
+      const reopened = new URL(savedViewPath(saved!), "https://example.test");
+      expect(reopened.pathname).toBe("/NPB/team-compare");
+      expect(Object.fromEntries(reopened.searchParams)).toEqual(filters);
+    }
+    expect(restoredLegacy).toEqual(legacy);
+    for (const selection of [{ season: "2027" }, { competition: "postseason" }, { metric: "OPS" },
+      { teams: "npb:team:tigers,npb:team:tigers" }, { teams: "npb:team:tigers,local" }, { playerCompare: "1" }]) {
+      const invalid = new URLSearchParams({ ...recent, ...selection, teamCompare: "1" });
+      await expect(target.library.saveView("不正な比較", "NPB", "history", invalid)).rejects.toThrow("球団比較の条件");
+    }
+  });
+
   it("restores same-year NPB player comparisons with the original filter and legacy views", async () => {
     const source = await populated(), target = setup();
     const legacy = (await source.library.read()).views[0];
