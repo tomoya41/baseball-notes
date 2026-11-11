@@ -96,14 +96,13 @@ jobs:
         if: steps.safety.outputs.skip != 'true' && (github.event_name == 'schedule' || inputs.mode == 'ingest')
         shell: bash
         env:
-          TARGET_DATE: ${{ inputs.target_date }}
+          TARGET_DATE: ${{ steps.safety.outputs.target_date }}
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}
           NPB_NF3_ENABLED: ${{ vars.NPB_NF3_ENABLED }}
         run: |
-          args=()
-          if [[ -n "$TARGET_DATE" ]]; then args+=(--date "$TARGET_DATE"); fi
+          args=(--date "${TARGET_DATE:?Missing verified target date}")
           npm run collector:npb -- --fetch --require-remote --payload-root .data/publish "${args[@]}"
           npm run -s verify:npb:remote -- --payload-root .data/publish "${args[@]}" > .data/remote-before.json
           if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
@@ -113,40 +112,42 @@ jobs:
           fi
           cat .data/remote-before.json
       - name: Collect all final Games for the preceding JST day
+        id: day
         if: steps.safety.outputs.skip != 'true' && vars.NPB_DAY_FACTS_ENABLED == 'true' && (github.event_name == 'schedule' || inputs.mode == 'ingest')
         shell: bash
         env:
-          TARGET_DATE: ${{ inputs.target_date }}
+          TARGET_DATE: ${{ steps.safety.outputs.target_date }}
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}
           NPB_NF3_ENABLED: ${{ vars.NPB_NF3_ENABLED }}
         run: |
-          args=()
-          if [[ -n "$TARGET_DATE" ]]; then args+=(--date="$TARGET_DATE"); fi
+          args=(--date="${TARGET_DATE:?Missing verified target date}")
           trigger=manual
           if [[ "$GITHUB_EVENT_NAME" == "schedule" ]]; then trigger=scheduled; fi
           npm run collector:npb:day -- --fetch --require-remote --trigger="$trigger" --backup-root=.data/day-backup "${args[@]}"
           npm run verify:npb:day -- --require-remote --require-complete "${args[@]}"
-      - name: Encrypt and upload short-retention Fact backup
-        if: steps.safety.outputs.skip != 'true' && vars.NPB_DAY_FACTS_ENABLED == 'true' && (github.event_name == 'schedule' || inputs.mode == 'ingest')
+      - name: Encrypt and verify the Fact backup before staging
+        if: steps.safety.outputs.skip != 'true' && vars.NPB_DAY_FACTS_ENABLED == 'true' && (github.event_name == 'schedule' || inputs.mode == 'ingest') && steps.day.outputs.final_games != '0'
         shell: bash
         env:
           NPB_BACKUP_ENCRYPTION_KEY: ${{ secrets.NPB_BACKUP_ENCRYPTION_KEY }}
+          FINAL_GAMES: ${{ steps.day.outputs.final_games }}
         run: |
-          if [[ -d .data/day-backup/export ]]; then
-            tar -C .data/day-backup -czf .data/npb-backup.tar.gz export
-            npx tsx scripts/crypt-npb-backup.ts encrypt .data/npb-backup.tar.gz .data/npb-backup.tar.gz.enc
-            rm .data/npb-backup.tar.gz
-          fi
+          [[ "$FINAL_GAMES" =~ ^[1-9][0-9]*$ && -d .data/day-backup/export ]]
+          trap 'rm -f .data/npb-backup.tar.gz .data/npb-backup.verified.tar.gz' EXIT
+          tar -C .data/day-backup -czf .data/npb-backup.tar.gz export
+          npx tsx scripts/crypt-npb-backup.ts encrypt .data/npb-backup.tar.gz .data/npb-backup.tar.gz.enc
+          npx tsx scripts/crypt-npb-backup.ts decrypt .data/npb-backup.tar.gz.enc .data/npb-backup.verified.tar.gz
+          cmp .data/npb-backup.tar.gz .data/npb-backup.verified.tar.gz
       - name: Store encrypted Fact backup for seven days
-        if: steps.safety.outputs.skip != 'true' && vars.NPB_DAY_FACTS_ENABLED == 'true' && (github.event_name == 'schedule' || inputs.mode == 'ingest')
+        if: steps.safety.outputs.skip != 'true' && vars.NPB_DAY_FACTS_ENABLED == 'true' && (github.event_name == 'schedule' || inputs.mode == 'ingest') && steps.day.outputs.final_games != '0'
         uses: actions/upload-artifact@v4
         with:
           name: npb-facts-encrypted-${{ github.run_id }}
           path: .data/npb-backup.tar.gz.enc
           retention-days: 7
-          if-no-files-found: ignore
+          if-no-files-found: error
       - name: Republish from verified remote data without source access
         if: github.event_name == 'workflow_dispatch' && inputs.mode == 'publish'
         shell: bash
@@ -163,14 +164,14 @@ jobs:
         if: steps.safety.outputs.skip != 'true' && (github.event_name == 'schedule' || inputs.mode == 'ingest' || inputs.mode == 'publish')
         shell: bash
         env:
-          TARGET_DATE: ${{ inputs.target_date }}
+          TARGET_DATE: ${{ steps.safety.outputs.target_date }}
           NPB_MODE: ${{ inputs.mode }}
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           if [[ "$GITHUB_EVENT_NAME" == "schedule" || "$NPB_MODE" == "ingest" ]]; then
-            date_jst="${TARGET_DATE:-$(TZ=Asia/Tokyo date -d yesterday +%F)}"
+            date_jst="${TARGET_DATE:?Missing verified target date}"
             npx tsx scripts/generate-npb-season.ts --date="$date_jst" --payload-root=.data/publish
             # This run is not completed proof. The read-only Season workflow
             # re-evaluates HOT after this scheduled workflow succeeds.

@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { parse } from "yaml";
 import { expect, test } from "vitest";
-type Workflow={on:{schedule?:{cron:string;timezone?:string}[]};concurrency?:{group:string};jobs:Record<string,{if?:string;steps:{if?:string;run?:string;uses?:string;with?:Record<string,string>}[]}>};
+type Workflow={on:{schedule?:{cron:string;timezone?:string}[]};concurrency?:{group:string};jobs:Record<string,{if?:string;steps:{id?:string;if?:string;run?:string;uses?:string;env?:Record<string,string>;with?:Record<string,string>}[]}>};
 const read=(name:string)=>parse(readFileSync(`.github/workflows/${name}.yml`,"utf8")) as Workflow;
 test("all EOD/safety workflows are valid YAML and retain safety schedules",()=>{
   const watcher=read("npb-eod-watcher"),sync=read("npb-schedule-sync"),daily=read("daily-collector"),fresh=read("npb-freshness");
@@ -32,6 +32,26 @@ test("Daily safety-net publication regenerates player payloads after verified Fa
   expect(build).toContain("publish-npb-hot.ts --require-remote");
   expect(build.indexOf("generate-npb-season.ts")).toBeLessThan(build.indexOf("npm run build"));
   expect(build).toContain("else\n  npx tsx scripts/preserve-published-npb-hot.ts");
+});
+
+test("a game-day publication requires an authenticated encrypted backup to be uploaded first", () => {
+  const steps = read("daily-collector").jobs.collect!.steps;
+  const day = steps.find(step => step.id === "day")!;
+  const encrypt = steps.find(step => step.run?.includes("cmp .data/npb-backup.tar.gz"))!;
+  const upload = steps.find(step => step.with?.path === ".data/npb-backup.tar.gz.enc")!;
+  expect(day.run).toContain("verify:npb:day -- --require-remote --require-complete");
+  expect(day.env?.TARGET_DATE).toBe("${{ steps.safety.outputs.target_date }}");
+  expect(encrypt.if).toContain("steps.day.outputs.final_games != '0'");
+  expect(encrypt.env?.FINAL_GAMES).toBe("${{ steps.day.outputs.final_games }}");
+  expect(encrypt.run).toContain('[[ "$FINAL_GAMES" =~ ^[1-9][0-9]*$ && -d .data/day-backup/export ]]');
+  expect(encrypt.run).toContain("crypt-npb-backup.ts decrypt");
+  expect(upload.if).toBe(encrypt.if);
+  expect(upload.with?.["if-no-files-found"]).toBe("error");
+  expect(steps.indexOf(day)).toBeLessThan(steps.indexOf(encrypt));
+  expect(steps.indexOf(encrypt)).toBeLessThan(steps.indexOf(upload));
+  expect(steps.indexOf(upload)).toBeLessThan(steps.findIndex(step => step.uses?.startsWith("actions/upload-pages-artifact@")));
+  const watcherBackup = read("npb-eod-watcher").jobs.watch!.steps.find(step => step.with?.name === "npb-eod-encrypted-backup");
+  expect(watcherBackup?.with?.["if-no-files-found"]).toBe("error");
 });
 
 test("only the scheduled calendar skip uses a dated lifecycle artifact", () => {
