@@ -3,7 +3,7 @@ import { installPlatformRuntime, rememberNativeRoute } from "../src/app/platform
 import { resumableNativeRoute } from "../src/app/native-resume";
 
 const state = vi.hoisted(() => ({ platform: "android", saved: undefined as string | undefined,
-  launch: "baseballnotes://NPB/cs?season=2026&stage=npb_cs_final&role=pitching",
+  launch: "",
   unsupported: false, bootEvent: undefined as string | undefined,
   listener: undefined as undefined | ((event: { url: string }) => void) }));
 const consume = vi.hoisted(() => vi.fn(async () => {
@@ -26,6 +26,7 @@ vi.mock("../src/infrastructure/public-response-cache", () => ({ clearSavedRespon
 
 beforeEach(() => {
   vi.clearAllMocks(); state.platform = "android"; state.saved = undefined; state.unsupported = false;
+  state.launch = "baseballnotes://NPB/cs?season=2026&stage=npb_cs_final&role=pitching";
   state.bootEvent = undefined; state.listener = undefined;
   vi.stubGlobal("window", { location: { hash: "" }, addEventListener: vi.fn(), dispatchEvent: vi.fn() });
   vi.stubGlobal("document", { addEventListener: vi.fn() });
@@ -35,6 +36,11 @@ it("opens a validated cold launch without saved state", async () => {
   await installPlatformRuntime();
   expect(window.location.hash).toContain("#/NPB/cs?");
   expect(window.location.hash).toContain("stage=npb_cs_final");
+});
+it("opens the selected NPB Home season from a cold native launch", async () => {
+  state.launch = "baseballnotes://NPB/home?homeSeason=autumn";
+  await installPlatformRuntime();
+  expect(window.location.hash).toBe("#/NPB/home?homeSeason=autumn");
 });
 it("resumes the selected route and accepts the first genuine matching external link after bootstrap", async () => {
   state.saved = "/NPB/players/6bf4b271-e16c-43f9-9142-8c7ca7de9887/seasons?season=2026&competition=postseason&stage=npb_cs_final&role=pitching";
