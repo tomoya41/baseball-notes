@@ -5,6 +5,7 @@ import { gunzipSync } from "node:zlib";
 import pin from "../src/data/npb-draft-final-release.json";
 import { finalDraftForecastSchema } from "../src/domain/npb-draft-final";
 import { verifyFinalDraftWindow } from "./npb-draft-final-window";
+import { fetchPinnedNpbReleaseAsset } from "./lib/fetch-pinned-npb-release-asset";
 
 const hash = (bytes: Uint8Array) => createHash("sha256").update(bytes).digest("hex");
 export function assertFinalDraftArchive(compressed: Uint8Array, localBody: Uint8Array, expected: { sha256: string; bodySha256: string; bytes: number }) {
@@ -23,7 +24,7 @@ export async function stageNpbFinalDraft(root: string) {
   const cache = join(".data/npb-draft-final-release", `${pin.sha256}.gz`);
   let compressed = await readFile(cache).catch(() => null);
   if (!compressed || hash(compressed) !== pin.sha256) {
-    const response = await fetch(pin.assetUrl, { signal: AbortSignal.timeout(15000) });
+    const { response } = await fetchPinnedNpbReleaseAsset(pin.assetUrl, 15_000);
     if (!response.ok || !response.body) throw Error(`Final archive HTTP ${response.status}`);
     const reader = response.body.getReader(), chunks: Uint8Array[] = []; let bytes = 0;
     try { for (;;) { const part = await reader.read(); if (part.done) break; bytes += part.value.length; if (bytes > 50000) throw Error("Final archive byte budget exceeded"); chunks.push(part.value); } }
