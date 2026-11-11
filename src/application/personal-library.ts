@@ -3,6 +3,7 @@ import type { SettingsStore } from "./ports";
 import type { League } from "../domain/models";
 import { viewConditions } from "../domain/portable-conditions";
 import { savedNpbSeasonComparison } from "../domain/npb-season-comparison";
+import { savedNpbPlayerComparison } from "../domain/product-sharing";
 import { npbComparisonOrigin } from "../domain/npb-player-journey";
 import { mutatePersonalSettings, PERSONAL_KEYS } from "./personal-settings";
 export { viewConditions } from "../domain/portable-conditions";
@@ -47,13 +48,21 @@ export function activityPath(item: Activity): string {
   return `/${item.league}/${item.kind === "series" ? "postseason/series" : item.kind}${item.entityId ? `/${encodeURIComponent(item.entityId)}` : ""}${item.conditions ? `?${item.conditions}` : ""}`;
 }
 export function savedViewConditions(league: League, kind: SavedView["kind"], params: URLSearchParams): string {
+  if (params.has("playerCompare"))
+    return league === "NPB" && kind === "history" ? savedNpbPlayerComparison(params)?.toString() ?? "" : "";
   if (league === "NPB" && kind === "history" && params.has("seasonCompare"))
     return savedNpbSeasonComparison(params)?.toString() ?? "";
   return viewConditions(params);
 }
 
 export function savedViewPath(view: Pick<SavedView, "league" | "kind" | "conditions">): string {
-  const comparison = view.league === "NPB" && view.kind === "history" && savedNpbSeasonComparison(new URLSearchParams(view.conditions));
+  const params = new URLSearchParams(view.conditions);
+  const playerComparison = view.league === "NPB" && view.kind === "history" && savedNpbPlayerComparison(params);
+  if (playerComparison) {
+    playerComparison.delete("playerCompare");
+    return `/NPB/compare?${playerComparison}`;
+  }
+  const comparison = view.league === "NPB" && view.kind === "history" && savedNpbSeasonComparison(params);
   if (comparison) {
     comparison.set("entity", comparison.get("player")!);
     comparison.set("kind", "player");
@@ -89,6 +98,7 @@ export class PersonalLibrary {
   clearActivity() { return this.change(s => ({ ...s, activity: [] })); }
   saveView(name: string, l: League, kind: "data" | "history", params: URLSearchParams) {
     const conditions = savedViewConditions(l, kind, params);
+    if (params.has("playerCompare") && !conditions) return Promise.reject(Error("選手比較の条件を確認できません。"));
     if (params.has("seasonCompare") && !(l === "NPB" && kind === "history" && conditions)) return Promise.reject(Error("年度比較の条件を確認できません。"));
     return this.change(s => { if (s.views.length >= 20) throw Error("保存した条件は20件までです。"); return { ...s, views: [viewSchema.parse({ id: this.uuid(), name, league: l, kind, conditions, savedAt: this.now() }), ...s.views] }; });
   }

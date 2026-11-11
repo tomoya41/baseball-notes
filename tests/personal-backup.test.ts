@@ -28,6 +28,31 @@ async function signed(edit: (file: Record<string, unknown>) => void) {
 }
 const observation: WatchObservation = { key: "streak", league: "MLB", kind: "player", entityId: mlb.entityId, name: "選手", rule: "streak", season: 2025, competition: "regular", effectiveDate: "2025-09-28", generatedAt: null, eventDate: null, coverage: "complete", path: `/MLB/players/${mlb.entityId}`, metric: "安打", values: { value: 4, atLeast: "false" }, collectionOnly: false, observedAt: now };
 describe("portable personal backup", () => {
+  it("restores same-year NPB player comparisons with the original filter and legacy views", async () => {
+    const source = await populated(), target = setup();
+    const legacy = (await source.library.read()).views[0];
+    const filters = { players: `${id},${other}`, role: "pitching", season: "2026", competition: "regular",
+      condition: "opponent", opponent: "npb:team:tigers" };
+    const selection = new URLSearchParams({ ...filters, playerCompare: "1", token: "private", q: "private-search" });
+    await source.library.saveView("投球比較", "NPB", "history", selection);
+    const { text } = await source.backup.export();
+    expect(JSON.parse(text).version).toBe(1);
+    expect(text).not.toMatch(/private|token/);
+    const preview = await target.backup.preview(text, "replace");
+    await target.backup.restore(preview.token);
+    const [comparison, existing] = (await target.library.read()).views;
+    const reopened = new URL(savedViewPath(comparison!), "https://example.test");
+    expect(reopened.pathname).toBe("/NPB/compare");
+    expect(Object.fromEntries(reopened.searchParams)).toEqual(filters);
+    expect(existing).toEqual(legacy);
+    for (const [key, value] of [["players", id], ["condition", "order"], ["competition", "postseason"], ["opponent", "external"]]) {
+      const invalid = new URLSearchParams(selection);
+      invalid.set(key!, value!);
+      await expect(target.library.saveView("不正な比較", "NPB", "history", invalid)).rejects.toThrow("選手比較の条件");
+    }
+    expect((await target.library.read()).views).toHaveLength(2);
+  });
+
   it("restores NPB annual comparisons without changing the version 1 format or legacy views", async () => {
     const source = await populated(), target = setup();
     const original = (await source.library.read()).views[0];

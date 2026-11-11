@@ -11,6 +11,10 @@ export function historicalCompareRoles(positions: readonly string[]) {
 export function compareIds(league: League, raw: string | null): string[] {
   return [...new Set((raw ?? "").split(",").filter(id => canonicalEntityRefSchema.safeParse({ league, kind: "player", id }).success))].slice(0, 4);
 }
+export function npbPlayerComparisonConditions(role: "batting" | "pitching") {
+  return ["season", "7d", "14d", "30d", "home", "away", "opponent",
+    ...(role === "batting" ? ["order", "starter", "substitute"] : ["pitcher-starter", "reliever"])];
+}
 export function npbCompareSection(bundle: PlayerAnalysisBundle, role: "batting" | "pitching", condition: string, opponent: string, battingOrder = 1) {
   if (["7d", "14d", "30d"].includes(condition)) return bundle.comparison.status === "ready" ? bundle.comparison.payload.periods[condition as "7d" | "14d" | "30d"][role] : null;
   if (condition === "home" || condition === "away") return bundle.homeAway.status === "ready" && bundle.homeAway.payload.capability === "available" ? bundle.homeAway.payload[role][condition] : null;

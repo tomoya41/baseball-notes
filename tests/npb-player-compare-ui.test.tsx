@@ -4,10 +4,29 @@ import { createRoot } from "react-dom/client";
 import { MemoryRouter } from "react-router-dom";
 import { expect, it, vi } from "vitest";
 import { CompareWorkspace, type ComparePlayer } from "../src/ui/player-compare";
+import { PersonalLibraryProvider } from "../src/ui/library-provider";
+import { PersonalLibrary } from "../src/application/personal-library";
 
 const players: ComparePlayer[] = [1, 2].map(n => ({
   id: `00000000-0000-4000-8000-00000000000${n}`, name: `比較選手${n}`, batting: false, pitching: true,
 }));
+
+it("offers to save the two selected NPB players even if one stats request fails", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const host = document.createElement("div"), root = createRoot(host);
+  const store = new PersonalLibrary({ get: async () => null, set: async () => {} });
+  const loader = vi.fn(async () => { throw Error("unavailable"); });
+  try {
+    const playerIds = players.map(p => p.id).join(",");
+    await act(async () => root.render(<MemoryRouter initialEntries={[`/NPB/compare?players=${playerIds}&role=pitching`]}>
+      <PersonalLibraryProvider store={store}>
+        <CompareWorkspace league="NPB" players={players} teams={[]} seasons={[2026]} loader={loader} />
+      </PersonalLibraryProvider>
+    </MemoryRouter>));
+    expect(host.textContent).toContain("読み込みに失敗しました");
+    expect(host.querySelector(".library-save button")?.textContent).toBe("この条件を保存");
+  } finally { await act(async () => root.unmount()); vi.unstubAllGlobals(); }
+});
 
 it.each([
   { secondDate: "2026-10-12", secondEra: 2.5, expected: "ERAの差 +0.75" },

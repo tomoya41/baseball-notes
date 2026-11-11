@@ -9,7 +9,7 @@ import type { Services } from "../app/services";
 import type { League } from "../domain/models";
 import type { NpbPlayerDirectory } from "../domain/npb-player-directory";
 import { searchNpbPlayers } from "../domain/npb-player-directory";
-import { compareIds, compareBattingKeys, comparePitchingKeys, npbCompareSection, historicalCompareRoles, type CompareMetrics } from "../domain/player-compare";
+import { compareIds, compareBattingKeys, comparePitchingKeys, npbCompareSection, npbPlayerComparisonConditions, historicalCompareRoles, type CompareMetrics } from "../domain/player-compare";
 import { canonicalEntityRefSchema, normalizePlayerSearch } from "../domain/cross-league";
 import { npbGamePlayerContext, npbGamePlayerLinks } from "../domain/npb-game-player-journey";
 import { matchesMlbPlayerName } from "../domain/mlb-japanese-display";
@@ -22,9 +22,10 @@ import { useHistoricalDirectory } from "./use-mlb-historical";
 import { useHistoricalCompetition } from "./historical-competition-context";
 import { DataState, LoadingSkeleton, MetricLabel, PageHeading } from "./components";
 import { DisplayExportButton } from "./product-sharing";
-import { comparisonDisplayExport } from "../domain/product-sharing";
+import { comparisonDisplayExport, savedNpbPlayerComparison } from "../domain/product-sharing";
 import { comparisonValue, metricNumber, type ComparisonRow } from "../domain/product-comparison";
 import { ComparisonBars } from "./comparison-bars";
+import { SaveViewButton } from "./personal-library";
 import "./npb-player-experience.css";
 
 export type ComparePlayer = { id: string; name: string; batting: boolean; pitching: boolean; seasons?: number[];battingRole?:BattingDisplayRole|undefined };
@@ -67,7 +68,7 @@ export function CompareWorkspace({ league, players, teams, seasons, loader, adva
   const season = params.has("season") ? Number(params.get("season")) : seasons.at(-1)!;
   const supportedSeason = seasons.includes(season);
   const period = league === "NPB" ? "30d" : ["season", "7d", "14d", "30d"].includes(params.get("period") ?? "") ? params.get("period")! : "season";
-  const choices = ["season", ...(league === "NPB" ? ["7d", "14d", "30d"] : ["total"]), "home", "away", "opponent", ...(role === "batting" ? ["order", "starter", "substitute"] : ["pitcher-starter", "reliever"]), ...(advanced ? Object.keys(conditionLabels).filter(k => k.includes(":") || k === "bvp") : [])];
+  const choices = league === "NPB" ? npbPlayerComparisonConditions(role) : ["season", "total", "home", "away", "opponent", ...(role === "batting" ? ["order", "starter", "substitute"] : ["pitcher-starter", "reliever"]), ...(advanced ? Object.keys(conditionLabels).filter(k => k.includes(":") || k === "bvp") : [])];
   const condition = choices.includes(params.get("condition") ?? "") ? params.get("condition")! : "season";
   const opponent = teams.some(t => t.id === params.get("opponent")) ? params.get("opponent")! : teams[0]?.id ?? "";
   const advancedOpponent = compareIds("MLB", params.get("against")).find(id => players.some(p => p.id === id)) ?? "";
@@ -84,11 +85,16 @@ export function CompareWorkspace({ league, players, teams, seasons, loader, adva
   const mismatch = dates.size > 1;
   const paMode = condition.includes(":") || condition === "bvp";
   const keys = paMode ? ["PA", "AB", "H", "2B", "3B", "HR", "BB", "HBP", "SO", "SH", "SF", "AVG", "OBP", "SLG", "OPS"] : role === "batting" ? compareBattingKeys : comparePitchingKeys.map(k => league === "NPB" && k === "appearances" ? "G" : k);
+  const saveComparison = league === "NPB" && competition === "regular" && ids.length >= 2
+    ? new URLSearchParams({ ...Object.fromEntries(params), playerCompare: "1", players: idsKey,
+      season: String(season), competition, role, condition, opponent, order: String(battingOrder) }) : null;
+  const savedParams = saveComparison && savedNpbPlayerComparison(saveComparison);
   if (!supportedSeason) return <div className="screen"><PageHeading eyebrow={league} title="選手比較" /><DataState kind="unsupported" title={league === "MLB" && season === 2026 ? "2026年の試合結果・選手成績は未対応" : "指定のシーズンは未収録です"} action="収録済みの比較へ" to={`/${league}/compare`} /></div>;
   return <div className={`screen compare-screen${league === "NPB" ? " npb-compare-experience" : ""}`}><header className="compare-heading"><Link className="back-link" to={gameLinks?.annual ?? `/${league}/search${competition === "postseason" ? `?competition=postseason&season=${season}` : ""}`}>{gameLinks ? "← 元の選手の年度成績" : "← 選手一覧"}</Link><PageHeading eyebrow={`${league} · ${competition === "postseason" ? "POSTSEASON" : "REGULAR SEASON"}`} title="選手比較" /></header>
     <div className="segmented" aria-label="比較する成績">{(["batting", "pitching"] as const).map(r => <button key={r} aria-pressed={role === r} onClick={() => update({ role: r, condition: "season", against: "" })}>{r === "batting" ? "打撃" : "投球"}</button>)}</div>
     <div className="compare-selection">{ids.map(id => <div key={id}><Link to={gameLinks && id === origin ? gameLinks.profile : `/${league}/players/${encodeURIComponent(id)}?season=${season}${competition === "postseason" ? "&competition=postseason" : ""}`}>{players.find(p => p.id === id)?.name ?? "未収録選手"}</Link><button type="button" aria-label={`${players.find(p => p.id === id)?.name ?? "選手"}を比較から削除`} onClick={() => update({ players: ids.filter(p => p !== id).join(",") })}>×</button></div>)}</div>
     <p className="compare-scope">{season}年 · {conditionLabels[condition] ?? condition.replace("d", "日")}{condition !== "season" && !paMode ? ` · ${league === "NPB" ? condition.endsWith("d") ? "" : "直近30日" : period === "season" ? "シーズン" : `直近${period.replace("d", "日")}`}` : ""}</p>
+    {savedParams && <SaveViewButton key={savedParams.toString()} league="NPB" kind="history" params={savedParams} placeholder="例：2026年の打撃比較" />}
     {state.key !== key && ids.length > 0 ? <LoadingSkeleton /> : mismatch ? <DataState kind="source-unavailable" title="集計の基準日が揃っていません。更新後に再確認してください" /> : ids.length > 0 && <section className="compare-results" aria-label="比較結果">
       {dates.size > 0 && <p className="inline-note">{[...dates][0]}まで</p>}
       {loaded.map((r, i) => r.status === "error" || r.value.notice ? <p className="data-notice" key={ids[i]}>{players.find(p => p.id === ids[i])?.name ?? "選手"}：{r.status === "error" ? "読み込みに失敗しました" : r.value.notice}</p> : null)}
