@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import type { Services } from "../app/services";
 import type { Favorite } from "../domain/models";
-import type { NpbCatalog, NpbTeamSeason } from "../domain/npb-product-contract";
+import { matchesNpbTeamSeasonGeneration, type NpbCatalog, type NpbTeamSeason } from "../domain/npb-product-contract";
 import type { NpbLatestStandings } from "../domain/standings";
 import { positionDefinitions } from "../domain/baseball-terms";
 import { formatDate, formatGamesBehind, formatWinningPercentage } from "../presentation/formatters";
@@ -91,14 +91,22 @@ export function NpbProfileDetails({ player }: { player: NpbCatalog["players"][nu
 export function NpbTeam({ services, hub = false, favorites = [], toggle, saving = false }: { services: Services; hub?: boolean; favorites?: Favorite[]; toggle?: (target: Target) => void; saving?: boolean }) {
   const { teamId } = useParams();
   const [catalog, setCatalog] = useState<NpbCatalog | null>(null), [season, setSeason] = useState<NpbTeamSeason | null>(null), [error, setError] = useState(false);
-  const [seasonState, setSeasonState] = useState<"loading" | "ready" | "error">("loading");
+  const [seasonState, setSeasonState] = useState<"loading" | "ready" | "error" | "generation-mismatch">("loading");
   useEffect(() => {
     let active = true;
     void services.product.catalog().then(value => {
       if (!active) return;
       setCatalog(value); setSeason(null); setSeasonState("loading");
       return services.product.teamSeason(Number(value.effectiveDate.slice(0, 4)))
-        .then(stats => { if (active) { setSeason(stats); setSeasonState("ready"); } })
+        .then(stats => {
+          if (!active) return;
+          if (!matchesNpbTeamSeasonGeneration(value, stats)) {
+            setSeasonState("generation-mismatch");
+            return;
+          }
+          setSeason(stats);
+          setSeasonState("ready");
+        })
         .catch(() => { if (active) setSeasonState("error"); });
     }).catch(() => { if (active) setError(true); });
     return () => { active = false; };
@@ -110,7 +118,8 @@ export function NpbTeam({ services, hub = false, favorites = [], toggle, saving 
 
     <Link className="button button--secondary" to={`/NPB/teams/${encodeURIComponent(team.teamId)}/players`}>選手一覧 · 背番号・年度で探す →</Link><section className="surface-card"><h2>{season ? `${season.season}シーズン` : "シーズン成績"}</h2>
       {seasonState === "loading" ? <LoadingSkeleton /> : seasonState === "error" ?
-        <DataState kind="source-unavailable" title="シーズン成績を読み込めません" /> : season && stats ? <>
+        <DataState kind="source-unavailable" title="シーズン成績を読み込めません" /> : seasonState === "generation-mismatch" ?
+        <DataState kind="source-unavailable" title="球団成績の更新を確認できません" /> : season && stats ? <>
         <p className="inline-note">{season.period.to}までの保存済み試合 · {season.coverage.status === "complete" ? "確認済み" : "一部データ確認中"}</p>
         <TeamRecord wins={stats.W} losses={stats.L} ties={stats.T} /><div className="metric-grid team-secondary-stats">{[["試合", stats.G], ["得点", stats.runsFor], ["失点", stats.runsAgainst]].map(([label, value]) => <div className="metric-tile" key={label}><span className="metric-tile__label">{label}</span><strong className="metric-tile__value">{value ?? "—"}</strong></div>)}</div>
       </> : <DataState kind="no-data" title="保存済みのシーズン成績はありません" />}

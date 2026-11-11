@@ -2,6 +2,7 @@ import type { Services } from "../app/services";
 import { readHistoricalProduct } from "../app/historical-products";
 import { dateWindow } from "../domain/mlb-historical-aggregate";
 import { shiftGameDate } from "../domain/npb-game-index";
+import { matchesNpbTeamSeasonGeneration } from "../domain/npb-product-contract";
 import type { HistoricalTeamHub } from "../domain/team-hub";
 import type { CompareMetrics } from "../domain/player-compare";
 import type { ComparisonRow } from "../domain/product-comparison";
@@ -29,7 +30,7 @@ export async function readMlbTeamComparison(teamId: string, name: string, season
 }
 export async function readNpbTeamComparison(services: Services, view = "season") {
   const [catalog, season] = await Promise.all([services.product.catalog(), services.product.teamSeason(2026)]);
-  if (catalog.effectiveDate !== season.effectiveDate || catalog.generatedAt !== season.generatedAt) throw Error("Team projection generation differs");
+  if (!matchesNpbTeamSeasonGeneration(catalog, season)) throw Error("Team projection generation differs");
   if (view === "season") return catalog.teams.map(t => {
     const stats = season.teams.find(s => s.teamId === t.teamId);
     return { id: t.teamId, name: t.name, season: season.season, date: season.period.to, coverage: season.coverage.status,

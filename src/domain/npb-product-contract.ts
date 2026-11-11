@@ -82,6 +82,10 @@ export const npbTeamSeasonSchema = z.strictObject({ schemaVersion: z.literal(1),
 });
 export type NpbTeamSeason = z.infer<typeof npbTeamSeasonSchema>;
 
+export function matchesNpbTeamSeasonGeneration(catalog: NpbCatalog, season: NpbTeamSeason): boolean {
+  return catalog.effectiveDate === season.effectiveDate && catalog.generatedAt === season.generatedAt;
+}
+
 export const npbCapabilitiesSchema = z.strictObject({ schemaVersion: z.literal(1), league: z.literal("NPB"),
   effectiveDate: z.iso.date(), generatedAt: z.iso.datetime(), coverage: coverageSchema,
   data: z.record(z.string(), z.strictObject({ status: dataAvailabilitySchema, available: z.boolean(),
