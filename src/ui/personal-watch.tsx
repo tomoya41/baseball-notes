@@ -34,7 +34,7 @@ export function WatchCenter({ league, services, favorites, ready }: { league: Le
       const fresh = available.filter(row => watchFresh(row, row.observedAt));
       const hasStale = fresh.length < available.length;
       if (!fresh.length) {
-        setMessage(result.failedReads ? "データを取得できませんでした。前回の確認結果を表示しています。"
+        setMessage(result.failedReads ? "データを取得できませんでした。もう一度お試しください。"
           : hasStale ? "保存済みのデータが古いため、新しい変化は確認できません。"
             : "変化を確認できるデータがありません。確認範囲をご覧ください。");
         return;
