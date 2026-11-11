@@ -34,12 +34,13 @@ type Sources = Pick<Services, "directory" | "gameLog" | "gameSurface"> & {
   checkpoints: Services["product"]["seasonMilestones"]; recent: typeof readNpbRecentExplorer; historical: typeof readHistoricalProduct;
 };
 export const watchSources = (s: Pick<Services, "directory" | "gameLog" | "gameSurface" | "product">): Sources => ({ ...s, checkpoints: s.product.seasonMilestones.bind(s.product), recent: readNpbRecentExplorer, historical: readHistoricalProduct });
-export type WatchCheck = { observations: WatchObservation[]; activeEntities: string[]; notes: string[]; fetches: number; targets: number; elapsedMs: number };
+export type WatchCheck = { observations: WatchObservation[]; activeEntities: string[]; notes: string[]; fetches: number; failedReads: number; targets: number; elapsedMs: number };
 export async function readWatchObservations(league: League, favorites: readonly Favorite[], library: PersonalState, preferences: WatchPreferences, sources: Sources, now = Date.now()): Promise<WatchCheck> {
   const started = performance.now(), targets = watchTargets(league, favorites, library, preferences), observations: WatchObservation[] = [], notes: string[] = [];
   const activeEntities = [...targets.players.map(p=>`player:${p.id}`),...targets.teams.map(id=>`team:${id}`),...targets.views.map(v=>`view:${v.id}`)];
-  let fetches = 0;
-  const read = async <T>(work: () => Promise<T>): Promise<T | null> => { fetches++; try { return await work(); } catch { notes.push("一部のデータを取得できません。前回の確認状態を保持します。"); return null; } };
+  let fetches = 0, failedReads = 0;
+  const result = (): WatchCheck => ({ observations, activeEntities, notes: [...new Set(notes)], fetches, failedReads, targets: activeEntities.length, elapsedMs: performance.now() - started });
+  const read = async <T>(work: () => Promise<T>): Promise<T | null> => { fetches++; try { return await work(); } catch { failedReads++; notes.push("一部のデータを取得できません。前回の確認状態を保持します。"); return null; } };
   const add = (base: Omit<WatchObservation, "key" | "rule" | "metric" | "values">, rule: WatchObservation["rule"], metric: string, values: WatchObservation["values"], qualifier = "") => {
     observations.push({ ...base, rule, metric, values, key: `${base.league}:${base.kind}:${base.entityId}:${base.season}:${base.competition}:${rule}:${metric}:${qualifier}` });
   };
@@ -56,10 +57,10 @@ export async function readWatchObservations(league: League, favorites: readonly 
   };
   if (targets.omitted) notes.push(`上限により${targets.omitted}対象を今回は確認しません。選手12人・球団4・保存条件6まで。`);
   if (targets.unsupportedViews) notes.push(`${targets.unsupportedViews}保存条件はWatch未対応です。NPB 2026の全選手・Recent 7/14/30条件だけ検出します。保存条件から再検索できます。`);
-  if (!targets.players.length && !targets.teams.length && !targets.views.length) return { observations, activeEntities: [], notes, fetches, targets: 0, elapsedMs: performance.now() - started };
+  if (!activeEntities.length) return result();
   if (league === "NPB") {
     const directory = await read(() => sources.directory.findLatestNpb());
-    if (!directory) return { observations, activeEntities, notes, fetches, targets: targets.players.length + targets.teams.length + targets.views.length, elapsedMs: performance.now() - started };
+    if (!directory) return result();
     const season = Number(directory.effectiveDate.slice(0, 4));
     const windows = [...new Set([...(preferences.recent && targets.players.length ? [14] : []), ...targets.views.flatMap(v => { const p = new URLSearchParams(v.conditions); return v.kind === "data" && ["7", "14", "30"].includes(p.get("period") ?? "") ? [Number(p.get("period"))] : []; })])] as (7 | 14 | 30)[];
     const recentRows = new Map<number, Awaited<ReturnType<typeof readNpbRecentExplorer>>>();
@@ -68,6 +69,7 @@ export async function readWatchObservations(league: League, favorites: readonly 
     const seasonAligned = totals?.effectiveDate === directory.effectiveDate && totals?.generatedAt === directory.generatedAt;
     if (totals && (!seasonAligned || totals.coverage.status !== "complete")) notes.push("成績の基準日や収録範囲を確認できないため、記録の節目は判定できません。");
     const results = await boundedExplorerRead(targets.players.filter(p=>preferences.players || p.collectionMember).map(p => p.id), async id => { fetches++; return { id, log: await sources.gameLog.find(id, 10, 0) }; });
+    failedReads += results.failed.length;
     if (results.failed.length) notes.push(`${results.failed.length}選手の試合記録を取得できません。`);
     for (const target of targets.players) {
       const player = directory.players.find(p => p.playerId === target.id); if (!player) { notes.push("選手情報を確認できない場合は、変化を判定できません。"); continue; }
@@ -123,6 +125,7 @@ export async function readWatchObservations(league: League, favorites: readonly 
       const chronology = targets.players.length ? await read(() => sources.historical<HistoricalChronology>(`chronology/${season}.json`)) : null;
       const numbers = new Map(chronology?.games.map(g => [g.gameId, g.number]));
       const profiles = await boundedExplorerRead(targets.players.map(p => p.id), async id => { fetches++; return sources.historical<Profile>(`players/${id.replaceAll(":", "_")}.json`); });
+      failedReads += profiles.failed.length;
       if (profiles.failed.length) notes.push(`${profiles.failed.length}選手のHistoricalデータを取得できません。`);
       for (const target of targets.players) {
         const profile = profiles.values.find(p => p.player.id === target.id); if (!profile) continue;
@@ -160,6 +163,6 @@ export async function readWatchObservations(league: League, favorites: readonly 
     if (targets.views.length) notes.push("MLB Historicalの保存条件Watchは未対応です。保存条件から再検索できます。");
     notes.push("MLBはHistorical。現在の出来事ではなく、保存データの確認差分です。");
   }
-  return { observations, activeEntities, notes: [...new Set(notes)], fetches, targets: targets.players.length+targets.teams.length+targets.views.length, elapsedMs: performance.now()-started };
+  return result();
 }
 
