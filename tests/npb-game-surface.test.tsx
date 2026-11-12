@@ -21,6 +21,17 @@ const records=(ready=false)=>recordsSchema.parse({schemaVersion:1,league:"NPB",s
   readiness:ready?"ready":"not_ready",coverage:ready?"complete":"partial",qualifierStatus:"verified",reasons:ready?[]:["season_coverage_not_complete"],
   categories:[{role:"batting",metric:"HR",rows:ready?[{playerId:"canonical",displayName:"実選手",rank:1,value:20}]:[]}]});
 describe("canonical dated Game surface",()=>{
+  it("filters by the selected club without claiming partial coverage is complete", () => {
+    const other = { ...row("other"), home: { id: "npb:team:swallows", name: "ヤクルト", score: 1 }, away: { id: "npb:team:carp", name: "広島", score: 2 } };
+    const scoped = html(<GameDateView payload={date([row(), other])} team="npb:team:tigers" />);
+    expect(scoped).toContain("npb%3Agame%3Aone?date=2026-09-25&amp;team=npb%3Ateam%3Atigers");
+    expect(scoped).not.toContain("ヤクルト");
+    expect(scoped).toContain("一部データ確認中");
+    expect(scoped).not.toContain("この日のMVP");
+    const empty = html(<GameDateView payload={date([other])} team="npb:team:tigers" />);
+    expect(empty).toContain("この球団の収録試合はありません");
+    expect(empty).not.toContain("試合なし");
+  });
   it("offers a safe observation-day route after the regular-season boundary without widening Season coverage",async()=>{
     const client=openDataClient("file::memory:");
     try {await migrateData(client);

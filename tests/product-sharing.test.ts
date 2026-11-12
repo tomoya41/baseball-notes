@@ -10,6 +10,19 @@ it("shares the Home view and a dated international entry without local informati
   expect(portableRoute("/NPB/schedule", "date=2026-09-31")).toBeNull();
 });
 
+it("preserves a single canonical club on shared NPB schedules, games and returns", () => {
+  const query = "date=2026-10-08&team=npb%3Ateam%3Atigers";
+  const schedule = `/NPB/schedule?${query}`;
+  const game = "/NPB/games/npb%3Agame%3A49a69ad2efd3bf67d3e5";
+  expect(portableRoute("/NPB/schedule", query + "&local=private")).toBe(schedule);
+  expect(canonicalDeepLink(`baseballnotes://NPB/schedule?${query}`)).toBe(schedule);
+  expect(portableRoute(game, query)).toBe(`${game}?${query}`);
+  expect(canonicalDeepLink(`baseballnotes://NPB/games/npb%3Agame%3A49a69ad2efd3bf67d3e5?${query}`)).toBe(`${game}?${query}`);
+  expect(parentNativeRoute(`${game}?${query}`)).toBe(schedule);
+  expect(portableRoute("/NPB/schedule", query + "&team=npb%3Ateam%3Acarp")).toBe("/NPB/schedule?date=2026-10-08");
+  expect(portableRoute("/NPB/schedule", "team=local-id")).toBe("/NPB/schedule");
+});
+
 it("shares and opens only a valid NPB team-player list with bounded public selection state",()=>{
   const path="/NPB/teams/npb%3Ateam%3Atigers/players",query="season=2025&role=pitching&sort=innings&q=%E6%9D%91&localSecret=never";
   const expected=`${path}?season=2025&role=pitching&sort=innings&q=%E6%9D%91`;

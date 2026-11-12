@@ -4,6 +4,8 @@ import { Link,useSearchParams } from "react-router-dom";
 import { z } from "zod";
 import type { GameSurfaceReader } from "../application/game-surface";
 import { type GameDateIndex,type GameManifest,type GameIndexRow } from "../domain/npb-game-index";
+import { npbScheduleTeam } from "../domain/npb-game-navigation";
+import { npbTeamShortName } from "../presentation/npb-team-names";
 import { DataState,LoadingSkeleton,PageHeading } from "./components";
 import { DateRibbon, ScoreboardRow } from "./design-system";
 import { TeamFavorite, type FavoriteActions } from "./team-favorite";
@@ -17,19 +19,24 @@ function gameDetailLabel(game: GameIndexRow): string {
     return game.home.score === null && game.away.score === null ? "試合情報のみ収録" : "スコアのみ収録";
   return game.battingAvailable && game.pitchingAvailable && game.completeness === "complete" ? "出場選手・個人成績" : "個人成績は一部収録";
 }
-export function GameLinks({games}:{games:readonly GameIndexRow[]}){return <div className="scoreboard-list">{games.map(g=><ScoreboardRow key={g.gameId}
-  to={`/NPB/games/${encodeURIComponent(g.gameId)}?date=${g.date}`} away={g.away.name} home={g.home.name} awayId={g.away.id} homeId={g.home.id} awayScore={g.away.score} homeScore={g.home.score}
+export function GameLinks({games,team}:{games:readonly GameIndexRow[];team?:string | undefined}){return <div className="scoreboard-list">{games.map(g=><ScoreboardRow key={g.gameId}
+  to={`/NPB/games/${encodeURIComponent(g.gameId)}?${new URLSearchParams({date:g.date,...(team?{team}:{})})}`} away={g.away.name} home={g.home.name} awayId={g.away.id} homeId={g.home.id} awayScore={g.away.score} homeScore={g.home.score}
   date={g.date.slice(5).replace("-","/")} status={g.status === "scheduled" && g.scheduledTime ? `${g.scheduledTime} JST` : statusLabel[g.status]}
   gameNumber={g.gameNumber > 1 ? g.gameNumber : undefined} partial={g.status === "final" && g.completeness !== "complete"}
   detailLabel={gameDetailLabel(g)} />)}</div>;}
-export function GameDateView({payload}:{payload:GameDateIndex}){return <>
+export function GameDateView({payload,team}:{payload:GameDateIndex;team?:string | undefined}){
+  const games = team ? payload.games.filter(g => g.home.id === team || g.away.id === team) : payload.games;
+  return <>
   {(payload.coverage==="partial"||payload.coverage==="failed")&&<p role="status">一部データ確認中です。保存済みの試合を表示します。</p>}
-  {payload.games.length?<GameLinks games={payload.games}/>:<DataState kind="no-data"
-    title={payload.coverage==="no_games"?"試合なし":"この日の試合予定を確認できていません"}/>}
-  <DailyMvp key={payload.date} date={payload.date} index={payload}/>
+  {games.length?<GameLinks games={games} team={team}/>:<DataState kind="no-data"
+    title={payload.coverage==="no_games"?"試合なし":team?"この球団の収録試合はありません":"この日の試合予定を確認できていません"}/>}
+  {!team&&<DailyMvp key={payload.date} date={payload.date} index={payload}/>}
 </>;}
 export function NpbScheduleScreen({repository,favorites=[],toggle,saving=false}:{repository:GameSurfaceReader;favorites?:FavoriteActions["favorites"];toggle?:FavoriteActions["toggle"];saving?:boolean}){
   const [params,setParams]=useSearchParams(),dateParam=params.get("date");
+  const team = npbScheduleTeam(params);
+  const unfiltered = new URLSearchParams(params);
+  unfiltered.delete("team");
   const [manifest,setManifest]=useState<GameManifest|null>(null),[payload,setPayload]=useState<GameDateIndex|null>(null);
   const [state,setState]=useState<"loading"|"ready"|"error">("loading");
   const [attempt,setAttempt]=useState(0),[internationalOpen,setInternationalOpen]=useState(params.get("view")==="international");
@@ -45,10 +52,11 @@ export function NpbScheduleScreen({repository,favorites=[],toggle,saving=false}:
     <InternationalGameEntry expanded={internationalOpen} onToggle={setInternationalOpen}/>
     <p className="game-collection-scope">{manifest ? `${manifest.effectiveDate}までの保存済みデータ` : "保存済みの公式戦を確認"}<Link to="/NPB/preseason">オープン戦 · 未収録</Link></p>
     {manifest&&date&&!outsideRange&&<DateRibbon date={date} min={manifest.from} max={manifest.to} onChange={change} />}
+    {team&&<div className="game-collection-scope"><strong>{npbTeamShortName(team)}の試合</strong><Link to={`/NPB/schedule${unfiltered.size?`?${unfiltered}`:""}`}>すべての球団を表示</Link></div>}
     {outsideRange&&manifest?<><DataState kind="unsupported" title="指定日の試合は収録範囲外です"/><button className="button button--secondary" onClick={()=>change(manifest.effectiveDate)}>保存済みの日付へ</button></>:
       state==="error"?<><DataState kind="source-unavailable" title="日程を読み込めません"/><button className="button button--secondary" onClick={retry}>日程を再読み込み</button></>:
       (state==="loading"||payload?.date!==date)&&<LoadingSkeleton/>}
-    {state==="ready"&&payload&&payload.date===date&&<GameDateView payload={payload}/>}
-    {state==="ready"&&payload&&payload.date===date&&toggle&&<details><summary>この日の球団をフォロー</summary><div className="row-list">{[...new Map(payload.games.flatMap(g=>[g.away,g.home]).map(t=>[t.id,t])).values()].map(t=><div className="surface-favorite" key={t.id}><Link className="player-row" to={`/NPB/teams/${encodeURIComponent(t.id)}`}>{t.name}</Link><TeamFavorite league="NPB" teamId={t.id} name={t.name} favorites={favorites} toggle={toggle} saving={saving}/></div>)}</div></details>}
+    {state==="ready"&&payload&&payload.date===date&&<GameDateView payload={payload} team={team}/>}
+    {!team&&state==="ready"&&payload&&payload.date===date&&toggle&&<details><summary>この日の球団をフォロー</summary><div className="row-list">{[...new Map(payload.games.flatMap(g=>[g.away,g.home]).map(t=>[t.id,t])).values()].map(t=><div className="surface-favorite" key={t.id}><Link className="player-row" to={`/NPB/teams/${encodeURIComponent(t.id)}`}>{t.name}</Link><TeamFavorite league="NPB" teamId={t.id} name={t.name} favorites={favorites} toggle={toggle} saving={saving}/></div>)}</div></details>}
   </div>;
 }

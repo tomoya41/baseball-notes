@@ -7,6 +7,7 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { formatOuts } from "../domain/player-game-log";
 import type { NpbGameDetail } from "../domain/npb-game-detail";
+import { npbSchedulePath, npbScheduleTeam } from "../domain/npb-game-navigation";
 import { formatDate } from "../presentation/formatters";
 import { DataState, LoadingSkeleton, MetricLabel } from "./components";
 import { ScoreHero } from "./design-system";
@@ -39,12 +40,17 @@ const pitchingDetails = [{ key: "bf", label: "BF" }, { key: "hits", label: "被�
   { key: "runs", label: "失点" }, { key: "earnedRuns", label: "自責点" },
   { key: "pitchCount", label: "投球数" }, { key: "walksAndHitByPitch", label: "四死" }] as const;
 
-export function NpbGameDetailView({ payload, state, services, actions, selectedSide, onSideChange }: { payload: NpbGameDetail | null; state: DetailState; services?: Services; actions?: FavoriteActions; selectedSide?: "away" | "home"; onSideChange?: (side: "away" | "home") => void }) {
+export function NpbGameDetailView({ payload, state, services, actions, selectedSide, onSideChange, scheduleTeam, dateHint }: {
+  payload: NpbGameDetail | null; state: DetailState; services?: Services; actions?: FavoriteActions;
+  selectedSide?: "away" | "home"; onSideChange?: (side: "away" | "home") => void;
+  scheduleTeam?: string | undefined; dateHint?: string | undefined;
+}) {
   if (state === "loading") return <div className="screen game-detail" aria-label="試合詳細の読み込み中"><LoadingSkeleton /></div>;
   if (state === "missing") return <div className="screen game-detail"><h1>試合詳細</h1>
     <DataState kind="no-data" title="試合が見つかりません" /></div>;
   if (state === "error" || !payload) return <div className="screen game-detail"><h1>試合詳細</h1>
-    <DataState kind="source-unavailable" title="試合データを取得できませんでした" /><a className="text-link" href="#/NPB/schedule">日程・結果へ戻る</a></div>;
+    <DataState kind="source-unavailable" title="試合データを取得できませんでした" /><Link className="text-link" to={npbSchedulePath(dateHint,scheduleTeam)}>日程・結果へ戻る</Link></div>;
+  const originTeam = scheduleTeam === payload.home.id || scheduleTeam === payload.away.id ? scheduleTeam : undefined;
   const hasBox = payload.status === "final";
   const hasPlayerRows = [payload.batting.away, payload.batting.home, payload.pitching.away, payload.pitching.home].some(rows => rows.length > 0);
   const renderTeam = (side: "away" | "home") => {
@@ -55,24 +61,24 @@ export function NpbGameDetailView({ payload, state, services, actions, selectedS
           {value(team.totals.homeRuns)}本塁打 · PA {value(team.totals.pa)}
           {team.totals.paSource === "opponentBf" ? "（相手投手BFから確認）" : ""} · AB {value(team.totals.ab)}</p>
         <h3>打撃</h3>{batting.length ? <>
-          <div className="mlb-stat-scroll box-primary" tabIndex={0} role="region" aria-label={`${team.shortName}の打撃成績`}><StatTable><thead><tr><th>選手</th><th><MetricLabel metric="PA" /></th><th><MetricLabel metric="AB" /></th><th>H</th><th>HR</th><th>RBI</th></tr></thead><tbody>{batting.map(row => <tr key={`${row.playerId}:${row.teamId}`}><th scope="row"><NpbGamePlayerLink playerId={row.playerId} name={row.name} context={{ gameId: payload.gameId, date: payload.date, side, stage: "regular", role: "batting" }} recorded={[row.pa,row.ab,row.hits,row.homeRuns,row.rbi,...battingDetails.map(c=>row[c.key])].some(stat=>stat!==null)} /><small>{row.battingOrder === null ? "打順未確認" : `${row.battingOrder}番`} · {row.starter === true ? "先発" : row.starter === false ? "途中出場" : "出場形態未確認"}{row.pa === 0 && row.ab === 0 && " · 打席なし"}</small></th>{[row.pa,row.ab,row.hits,row.homeRuns,row.rbi].map((n,i) => <td key={i}>{value(n)}</td>)}</tr>)}</tbody></StatTable></div>
+          <div className="mlb-stat-scroll box-primary" tabIndex={0} role="region" aria-label={`${team.shortName}の打撃成績`}><StatTable><thead><tr><th>選手</th><th><MetricLabel metric="PA" /></th><th><MetricLabel metric="AB" /></th><th>H</th><th>HR</th><th>RBI</th></tr></thead><tbody>{batting.map(row => <tr key={`${row.playerId}:${row.teamId}`}><th scope="row"><NpbGamePlayerLink playerId={row.playerId} name={row.name} context={{ gameId: payload.gameId, date: payload.date, side, stage: "regular", role: "batting", scheduleTeam: originTeam }} recorded={[row.pa,row.ab,row.hits,row.homeRuns,row.rbi,...battingDetails.map(c=>row[c.key])].some(stat=>stat!==null)} /><small>{row.battingOrder === null ? "打順未確認" : `${row.battingOrder}番`} · {row.starter === true ? "先発" : row.starter === false ? "途中出場" : "出場形態未確認"}{row.pa === 0 && row.ab === 0 && " · 打席なし"}</small></th>{[row.pa,row.ab,row.hits,row.homeRuns,row.rbi].map((n,i) => <td key={i}>{value(n)}</td>)}</tr>)}</tbody></StatTable></div>
           <details><summary>詳しい打撃成績</summary><div className="mlb-stat-scroll" tabIndex={0} role="region" aria-label={`${team.shortName}の打撃詳細`}><StatTable><thead><tr><th>選手</th>{battingDetails.map(c => <th key={c.key}><MetricLabel metric={c.label} /></th>)}</tr></thead><tbody>{batting.map(row => <tr key={`${row.playerId}:${row.teamId}`}><th scope="row">{row.name}</th>{battingDetails.map(c => <td key={c.key}>{value(row[c.key])}</td>)}</tr>)}</tbody></StatTable></div></details>
         </> : <p className="game-detail__note">保存済み打撃成績はありません。</p>}
         <h3>投球</h3>{pitching.length ? <>
-          <div className="mlb-stat-scroll box-primary" tabIndex={0} role="region" aria-label={`${team.shortName}の投球成績`}><StatTable><thead><tr><th>選手</th><th><MetricLabel metric="IP" /></th><th>H</th><th>SO</th><th>R</th><th>ER</th></tr></thead><tbody>{pitching.map(row => <tr key={`${row.playerId}:${row.teamId}`}><th scope="row"><NpbGamePlayerLink playerId={row.playerId} name={row.name} context={{ gameId: payload.gameId, date: payload.date, side, stage: "regular", role: "pitching" }} recorded={[row.outsRecorded,...pitchingDetails.map(c=>row[c.key])].some(stat=>stat!==null)} /><small>{roleName[row.role]}{row.decision && row.decision !== "none" && ` · ${decisionName[row.decision]}`}</small></th><td>{formatOuts(row.outsRecorded)}回</td>{[row.hits,row.strikeouts,row.runs,row.earnedRuns].map((n,i) => <td key={i}>{value(n)}</td>)}</tr>)}</tbody></StatTable></div>
+          <div className="mlb-stat-scroll box-primary" tabIndex={0} role="region" aria-label={`${team.shortName}の投球成績`}><StatTable><thead><tr><th>選手</th><th><MetricLabel metric="IP" /></th><th>H</th><th>SO</th><th>R</th><th>ER</th></tr></thead><tbody>{pitching.map(row => <tr key={`${row.playerId}:${row.teamId}`}><th scope="row"><NpbGamePlayerLink playerId={row.playerId} name={row.name} context={{ gameId: payload.gameId, date: payload.date, side, stage: "regular", role: "pitching", scheduleTeam: originTeam }} recorded={[row.outsRecorded,...pitchingDetails.map(c=>row[c.key])].some(stat=>stat!==null)} /><small>{roleName[row.role]}{row.decision && row.decision !== "none" && ` · ${decisionName[row.decision]}`}</small></th><td>{formatOuts(row.outsRecorded)}回</td>{[row.hits,row.strikeouts,row.runs,row.earnedRuns].map((n,i) => <td key={i}>{value(n)}</td>)}</tr>)}</tbody></StatTable></div>
           <details><summary>詳しい投球成績</summary><div className="mlb-stat-scroll" tabIndex={0} role="region" aria-label={`${team.shortName}の投球詳細`}><StatTable><thead><tr><th>選手</th>{pitchingDetails.map(c => <th key={c.key}><MetricLabel metric={c.label} /></th>)}</tr></thead><tbody>{pitching.map(row => <tr key={`${row.playerId}:${row.teamId}`}><th scope="row">{row.name}</th>{pitchingDetails.map(c => <td key={c.key}>{value(row[c.key])}</td>)}</tr>)}</tbody></StatTable></div></details>
         </> : <p className="game-detail__note">保存済み投球成績はありません。</p>}
         <p className="game-detail__minor">同じ打順の交代順・救援投手の登板順は表示順から判断できません。</p>
       </section>;
   };
   return <div className="screen game-detail">
-    <GameHeading title={`${formatDate(payload.date, true)}の試合`} date={payload.date} context={`NPB · 公式戦${payload.gameNumber > 1 ? ` · 第${payload.gameNumber}試合` : ""}`} backTo={`/NPB/schedule?date=${payload.date}`} />
+    <GameHeading title={`${formatDate(payload.date, true)}の試合`} date={payload.date} context={`NPB · 公式戦${payload.gameNumber > 1 ? ` · 第${payload.gameNumber}試合` : ""}`} backTo={npbSchedulePath(payload.date,originTeam)} />
     <ScoreHero away={payload.away.shortName} home={payload.home.shortName} awayId={payload.away.id} homeId={payload.home.id} awayScore={payload.away.score} homeScore={payload.home.score} status={statusName[payload.status]} />
     {hasBox && <GameJumpNav boxLabel={hasPlayerRows ? "出場選手・成績" : "成績の収録状況"} />}
     {hasBox && <GameMvp input={npbGameMvpInput(payload)}/>}
     <InningScoreboard away={{name:payload.away.shortName,runs:payload.away.score,hits:payload.completeness==="complete"?payload.away.totals.hits:null}} home={{name:payload.home.shortName,runs:payload.home.score,hits:payload.completeness==="complete"?payload.home.totals.hits:null}}/>
     {payload.status === "scheduled" && services && <NpbGamePreview game={payload} services={services} favorites={actions?.favorites ?? []} />}
-    {hasBox && <GameRecap league="NPB" game={payload} complete={payload.completeness === "complete"} favorites={actions?.favorites ?? []} batting={[...payload.batting.away, ...payload.batting.home]} pitching={[...payload.pitching.away, ...payload.pitching.home].map(p => ({ ...p, outs: p.outsRecorded, so: p.strikeouts }))} />}
+    {hasBox && <GameRecap league="NPB" game={payload} scheduleTeam={originTeam} complete={payload.completeness === "complete"} favorites={actions?.favorites ?? []} batting={[...payload.batting.away, ...payload.batting.home]} pitching={[...payload.pitching.away, ...payload.pitching.home].map(p => ({ ...p, outs: p.outsRecorded, so: p.strikeouts }))} />}
     {actions && <details className="game-team-disclosure"><summary>球団情報・フォロー</summary><GameTeamLinks league="NPB" teams={[payload.away, payload.home]} {...actions} /></details>}
     {payload.status !== "final" && <p className="game-detail__note">{statusName[payload.status]}のため、試合別成績はありません。</p>}
     {hasBox && payload.completeness !== "complete" && <p className="game-detail__note" role="status">
@@ -92,10 +98,11 @@ export function NpbGameDetailScreen(props:GameScreenProps){
   if(params.has("competition")&&params.get("competition")!=="regular"||params.has("stage"))return <DataState kind="unsupported" title="公式戦の試合を指定してください" />;
   return <NpbRegularGameDetailScreen key={gameId} {...props} />;
 }
-export function PublishedGameSummaryView({ summary, retry }: { summary: PublishedGameSummary; retry: () => void }) {
+export function PublishedGameSummaryView({ summary, retry, scheduleTeam }: { summary: PublishedGameSummary; retry: () => void; scheduleTeam?: string | undefined }) {
   const { game } = summary;
+  const originTeam = scheduleTeam === game.home.id || scheduleTeam === game.away.id ? scheduleTeam : undefined;
   return <div className="screen game-detail">
-    <GameHeading title={`${formatDate(game.date, true)}の試合`} date={game.date} context={`NPB · 公式戦${game.gameNumber > 1 ? ` · 第${game.gameNumber}試合` : ""}`} backTo={`/NPB/schedule?date=${game.date}`} />
+    <GameHeading title={`${formatDate(game.date, true)}の試合`} date={game.date} context={`NPB · 公式戦${game.gameNumber > 1 ? ` · 第${game.gameNumber}試合` : ""}`} backTo={npbSchedulePath(game.date,originTeam)} />
     <ScoreHero away={game.away.name} home={game.home.name} awayId={game.away.id} homeId={game.home.id} awayScore={game.away.score} homeScore={game.home.score} status={statusName[game.status]} />
     <p className="game-detail__note" role="status">保存済みの結果 · 更新未確認</p>
     <InningScoreboard away={{name:game.away.name,runs:game.away.score}} home={{name:game.home.name,runs:game.home.score}}/>
@@ -118,6 +125,10 @@ function NpbRegularGameDetailScreen({ repository, summaryRepository, services, f
   const [summary, setSummary] = useState<PublishedGameSummary | null>(null);
   const [attempt, setAttempt] = useState(0);
   const dateHint = params.get("date") ?? undefined;
+  const scheduleTeam = npbScheduleTeam(params);
+  const boxSide = params.get("boxSide");
+  const selectedSide = boxSide === "home" || boxSide === "away" ? boxSide
+    : scheduleTeam && scheduleTeam === payload?.home.id ? "home" : "away";
   useEffect(() => {
     if (!gameId) return;
     let active = true;
@@ -131,7 +142,7 @@ function NpbRegularGameDetailScreen({ repository, summaryRepository, services, f
     return () => { active = false; };
   }, [gameId, repository, summaryRepository, dateHint, attempt]);
   const retry = () => { setSummary(null); setPayload(null); setState("loading"); setAttempt(a => a + 1); };
-  if (state === "error" && summary && summary.game.gameId === gameId) return <PublishedGameSummaryView summary={summary} retry={retry} />;
-  if (state === "error") return <><NpbGameDetailView payload={null} state="error" /><button className="text-button" onClick={retry}>試合詳細を再読み込み</button></>;
-  return <NpbGameDetailView payload={payload} state={state} selectedSide={params.get("boxSide") === "home" ? "home" : "away"} onSideChange={side => { const next=new URLSearchParams(params); next.set("boxSide",side); setParams(next,{preventScrollReset:true}); }} {...services ? { services } : {}} {...toggle ? { actions: { favorites, toggle, saving } } : {}} />;
+  if (state === "error" && summary && summary.game.gameId === gameId) return <PublishedGameSummaryView summary={summary} retry={retry} scheduleTeam={scheduleTeam} />;
+  if (state === "error") return <><NpbGameDetailView payload={null} state="error" scheduleTeam={scheduleTeam} dateHint={dateHint} /><button className="text-button" onClick={retry}>試合詳細を再読み込み</button></>;
+  return <NpbGameDetailView payload={payload} state={state} scheduleTeam={scheduleTeam} selectedSide={selectedSide} onSideChange={side => { const next=new URLSearchParams(params); next.set("boxSide",side); setParams(next,{preventScrollReset:true}); }} {...services ? { services } : {}} {...toggle ? { actions: { favorites, toggle, saving } } : {}} />;
 }

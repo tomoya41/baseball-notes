@@ -91,7 +91,9 @@ describe("NPB Game Detail", () => {
     expect(renderToStaticMarkup(<NpbGameDetailView payload={partial} state="ready" />)).toContain("一部の成績を取得できていません");
     expect(renderToStaticMarkup(<NpbGameDetailView payload={null} state="missing" />)).toContain("試合が見つかりません");
     expect(renderToStaticMarkup(<NpbGameDetailView payload={null} state="error" />)).toContain("取得できませんでした");
-    expect(renderToStaticMarkup(<NpbGameDetailView payload={null} state="error" />)).toContain('href="#/NPB/schedule"');
+    expect(renderToStaticMarkup(<NpbGameDetailView payload={null} state="error" />)).toContain('href="/NPB/schedule"');
+    expect(renderToStaticMarkup(<NpbGameDetailView payload={null} state="error" dateHint="2026-09-25" scheduleTeam="npb:team:tigers" />))
+      .toContain('href="/NPB/schedule?date=2026-09-25&amp;team=npb%3Ateam%3Atigers"');
     expect(renderToStaticMarkup(<NpbGameDetailView payload={null} state="loading" />)).toContain("skeleton");
   });
 

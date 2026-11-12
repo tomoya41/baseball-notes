@@ -10,6 +10,7 @@ import type { Services } from "../app/services";
 import type { Favorite } from "../domain/models";
 import type { GameIndexRow } from "../domain/npb-game-index";
 import { shiftGameDate } from "../domain/npb-game-index";
+import { npbSchedulePath } from "../domain/npb-game-navigation";
 import type { NpbLatestStandings } from "../domain/standings";
 import type { NpbCatalog } from "../domain/npb-product-contract";
 import type { HistoricalTeamHub } from "../domain/team-hub";
@@ -23,6 +24,7 @@ import { ScoreboardRow } from "./design-system";
 import { hasHistoricalPostseason, usePostseasonAvailability } from "./postseason-availability";
 import { TeamFavorite, type FavoriteActions } from "./team-favorite";
 import { TeamRecord } from "./signature";
+import { GameLinks } from "./npb-game-surface";
 
 export function TeamMetrics({ batting, pitching }: { batting: CompareMetrics; pitching: CompareMetrics }) {
   return <section className="stats-section"><h2>チームの主要成績</h2>{([["打撃", batting, ["PA", "H", "HR", "AVG", "OPS"]], ["投球", pitching, ["outsRecorded", "SO", "R", "ERA", "K9"]]] as const).map(([title, metrics, keys]) => <div key={title}><h3 className="stat-role-label">{title}</h3><div className="metric-grid">{keys.map(k => { const m = metrics[k]; return <div className="metric-tile" key={k}><MetricLabel metric={k} label={k === "outsRecorded" ? "IP" : k === "K9" ? "K/9" : k} /><strong className="metric-tile__value">{m?.value == null ? "—" : k === "outsRecorded" ? `${Math.floor(m.value / 3)}.${m.value % 3}` : m.value.toFixed(["AVG", "OPS"].includes(k) ? 3 : ["ERA", "K9"].includes(k) ? 2 : 0)}</strong>{m?.status === "partial" && <small>一部</small>}</div>; })}</div></div>)}</section>;
@@ -44,8 +46,9 @@ export function NpbTeamActivity({ services, teamId }: { services: Services; team
     if (active) { setError(""); setState({ key: teamId, from, to: m.to, incomplete: pages.some(p => !["complete", "no_games"].includes(p.coverage)), games: pages.flatMap(p => p.games).filter(g => [g.home.id, g.away.id].includes(teamId)).sort((a, b) => b.date.localeCompare(a.date) || b.gameNumber - a.gameNumber || a.gameId.localeCompare(b.gameId)) }); }
   }).catch(() => { if (active) setError(teamId); }); return () => { active = false; }; }, [services, teamId]);
   const rank = standings?.standings.find(r => r.teamId === teamId), visible = state?.key === teamId ? state : null;
+  const schedule = npbSchedulePath(visible?.games[0]?.date, teamId);
   return <>{rank && <section className="stats-section"><SectionHeader title="順位" to="/NPB/home" action="順位表" /><p className="team-standing"><strong>{rank.rank}<small>位</small></strong><span>{rank.wins}勝 {rank.losses}敗 {rank.ties}分<br />{standings!.throughDate}終了時点</span></p></section>}
-    <section className="home-section"><SectionHeader title="最近の試合" action="日程・結果" to="/NPB/schedule" />{errorKey === teamId ? <DataState kind="source-unavailable" title="最近の試合を読み込めません" /> : !visible ? <LoadingSkeleton /> : <><p className="inline-note">{visible.from}〜{visible.to}{visible.incomplete && " · 一部データ確認中"}</p>{visible.games.length ? <div className="scoreboard-list">{visible.games.map(g => <ScoreboardRow key={g.gameId} to={`/NPB/games/${encodeURIComponent(g.gameId)}`} away={g.away.name} home={g.home.name} awayId={g.away.id} homeId={g.home.id} awayScore={g.away.score} homeScore={g.home.score} date={g.date.slice(5)} status={g.status === "final" ? "終了" : g.status === "scheduled" ? "予定" : g.status === "postponed" ? "延期" : "状態確認中"} gameNumber={g.gameNumber} partial={g.completeness !== "complete"} />)}</div> : <p className="inline-note">この期間の保存済み試合はありません。</p>}</>}</section>
+    <section className="home-section"><SectionHeader title="最近の試合" action="日程・結果" to={schedule} />{errorKey === teamId ? <DataState kind="source-unavailable" title="最近の試合を読み込めません" /> : !visible ? <LoadingSkeleton /> : <><p className="inline-note">{visible.from}〜{visible.to}{visible.incomplete && " · 一部データ確認中"}</p>{visible.games.length ? <GameLinks games={visible.games} team={teamId} /> : <p className="inline-note">この期間の保存済み試合はありません。</p>}</>}</section>
     <Link className="text-link" to="/NPB/postseason">Postseasonの利用状況 →</Link></>;
 }
 export function MlbTeams({ manifest }: { manifest: HistoricalProductManifest }) {
