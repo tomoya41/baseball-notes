@@ -29,6 +29,11 @@ it("shows source confidence, exact player/team links and accessible per-record e
     expect(f.host.textContent).toContain("選手の動き"); expect(f.host.textContent).toContain("Wikipediaの記事から一部収録"); expect(f.host.textContent).toContain("今季限り");
     expect(f.host.querySelector(`a[href="/NPB/players/${eventPerson.playerId}"]`)).not.toBeNull(); expect(f.host.querySelector('a[href*="oldid=200"]')).not.toBeNull();
     expect(f.host.textContent).toContain("CC BY-SA 4.0"); expect(f.host.textContent).not.toContain("現在所属：阪神");
+    const scope = f.host.querySelector<HTMLDetailsElement>("details.source-note")!;
+    expect(scope.open).toBe(false);
+    await act(async () => scope.querySelector("summary")!.click());
+    expect(scope.open).toBe(true);
+    expect(scope.textContent).toContain("現在の所属・登録状況は、NPBや球団の公式発表でご確認ください。");
     const select = f.host.querySelector("select")!; await act(async () => { select.value = "trade"; select.dispatchEvent(new Event("change", { bubbles: true })); });
     expect(f.host.textContent).toContain("この条件の記事記載は未収録です"); expect(f.host.querySelector("[data-location]")?.textContent).toContain("kind=trade"); expect(readNpbPlayerEvents).toHaveBeenCalledTimes(1);
   } finally { await f.close(); }
