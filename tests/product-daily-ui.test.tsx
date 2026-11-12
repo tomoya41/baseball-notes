@@ -11,6 +11,7 @@ import { MlbHistoricalMy } from "../src/ui/mlb-historical";
 import { NpbGameDetailView } from "../src/ui/npb-game-detail";
 import { services } from "../src/app/services";
 import type { NpbGameDetail } from "../src/domain/npb-game-detail";
+import { npbGamePlayerContext } from "../src/domain/npb-game-player-journey";
 import type { GameDateIndex, GameIndexRow } from "../src/domain/npb-game-index";
 const staticValues = vi.hoisted(() => new Map<string, unknown>());
 vi.mock("../src/ui/use-mlb-historical", () => ({ useHistoricalDirectory: () => ({ status: "ready", value: staticValues.get("directory") ?? { players: [] } }), useHistoricalStatic: (path: string | null) => ({ status: staticValues.get(`status:${path}`) ?? (path && staticValues.has(path) ? "ready" : "missing"), value: path ? staticValues.get(path) ?? null : null }) }));
@@ -127,7 +128,20 @@ describe("daily product surfaces", () => {
     expect(container.textContent).not.toContain("今日は試合なし");
   });
   it("sends canonical team keys and retains accessible add/remove labels", async () => { await render(<GameTeamLinks league="NPB" teams={[home, away]} {...actions} />); const button = container.querySelector<HTMLButtonElement>(`[aria-label="阪神をお気に入りに追加"]`)!; await act(async () => button.click()); expect(actions.toggle).toHaveBeenCalledWith({ league: "NPB", kind: "team", entityId: home.id }); expect(container.querySelector(`a[href='/NPB/teams/${encodeURIComponent(home.id)}']`)).not.toBeNull(); });
-  it("includes a favorite with zero PA without inventing missing stats", async () => { const id = "00000000-0000-4000-8000-000000000001"; await render(<GameRecap league="NPB" batting={[{ playerId: id, name: "途中出場", teamId: home.id, pa: 0, hits: null, homeRuns: 0, rbi: null }]} pitching={[]} complete={false} favorites={[{ league: "NPB", kind: "player", entityId: id, addedAt: "2026-10-03T00:00:00Z" }]} />); expect([...container.querySelectorAll(".recap-metric-line > span")].map(e => e.textContent)).toEqual(["PA 0", "安打 —", "本塁打 0", "打点 —"]); expect(container.textContent).toContain("一部データ確認中"); expect(container.querySelector("details")?.textContent).toContain("選出の根拠"); });
+  it("includes a favorite with zero PA without inventing missing stats", async () => { const id = "00000000-0000-4000-8000-000000000001"; await render(<GameRecap league="NPB" game={game} batting={[{ playerId: id, name: "途中出場", teamId: home.id, pa: 0, hits: null, homeRuns: 0, rbi: null }]} pitching={[]} complete={false} favorites={[{ league: "NPB", kind: "player", entityId: id, addedAt: "2026-10-03T00:00:00Z" }]} />); expect([...container.querySelectorAll(".recap-metric-line > span")].map(e => e.textContent)).toEqual(["PA 0", "安打 —", "本塁打 0", "打点 —"]); expect(container.textContent).toContain("一部データ確認中"); expect(container.querySelector("details")?.textContent).toContain("選出の根拠"); });
+  it("preserves game, role and team side in NPB recap profile links", async () => {
+    const origin = { ...game, gameId: "npb:game:49a69ad2efd3bf67d3e5" };
+    const batter = { playerId: "00000000-0000-4000-8000-000000000001", name: "野手", teamId: home.id, hits: 2, homeRuns: 1, pa: 4, rbi: 2 };
+    const pitcher = { playerId: "00000000-0000-4000-8000-000000000002", name: "投手", teamId: away.id, outs: 18, runs: 0, so: 5 };
+    await render(<GameRecap league="NPB" game={origin} batting={[batter, { ...batter, playerId: "unresolved", name: "未照合の選手" }]} pitching={[pitcher]} complete />);
+    const links = [...container.querySelectorAll<HTMLAnchorElement>("a.daily-recap-row")];
+    expect(links.map(a => new URL(a.href).pathname)).toEqual([`/NPB/players/${batter.playerId}`, `/NPB/players/${pitcher.playerId}`]);
+    expect(links.map(a => npbGamePlayerContext(new URL(a.href).searchParams))).toEqual([
+      { gameId: origin.gameId, date: origin.date, role: "batting", side: "home", stage: "regular" },
+      { gameId: origin.gameId, date: origin.date, role: "pitching", side: "away", stage: "regular" },
+    ]);
+    expect(container.querySelector("div.daily-recap-row")?.textContent).toContain("未照合の選手");
+  });
   it("keeps historical recap navigation in the selected competition", async () => { await render(<GameRecap league="MLB" batting={[{ playerId: "mlb:player:one", name: "選手", teamId: "mlb:team:one", hits: 2, homeRuns: 1, pa: 4, rbi: 2 }]} pitching={[]} complete scope="?season=2025&competition=postseason" />); expect(container.querySelector(".daily-recap-row")?.getAttribute("href")).toBe("/MLB/players/mlb%3Aplayer%3Aone?season=2025&competition=postseason"); });
   it("does not expose Recap for scheduled games", async () => { await render(<NpbGameDetailView payload={game} state="ready" />); expect(container.textContent).not.toContain("この試合の主な数字"); expect(container.textContent).toContain("開始前"); });
   it("does not fabricate prior-season summaries using data after the game", async () => { const date = vi.fn(async (d: string): Promise<GameDateIndex> => ({ schemaVersion: 1, league: "NPB", date: d, generatedAt: manifest.generatedAt, coverage: "complete", games: d === row.date ? [row] : [] })); await render(<NpbGamePreview game={game} favorites={[]} services={{ ...services, product: { ...services.product, teamSeason: async () => ({ effectiveDate: "2026-10-04", period: {from:"2026-03-27",to:"2026-10-04"} }) as Awaited<ReturnType<typeof services.product.teamSeason>> } as unknown as typeof services.product, gameSurface: { ...services.gameSurface, manifest: async () => manifest, date } as unknown as typeof services.gameSurface }} />); expect(container.textContent).toContain("試合前時点のシーズン成績は未収録"); expect(container.textContent).toContain("1勝 / 1試合"); expect(date.mock.calls.every(([d]) => d < game.date)).toBe(true); expect(container.textContent).not.toContain("予告先発投手:"); });

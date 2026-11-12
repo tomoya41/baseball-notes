@@ -51,10 +51,12 @@ describe("result-first navigation",()=>{
     expect(document.querySelector("dialog")?.textContent).toContain("計算式");
   });
   it("keeps every selected recap and favorite available while making the default summary compact",async()=>{
-    const batting=Array.from({length:4},(_,i)=>({playerId:`p${i}`,teamId:"team",name:`選手${i}`,hits:4-i,homeRuns:1,rbi:1,pa:4}));
-    await render(<GameRecap league="NPB" batting={batting} pitching={[]} complete favorites={[{league:"NPB",kind:"player",entityId:"p3",addedAt:"2026-10-23T00:00:00Z"}]} />);
+    const batting=Array.from({length:4},(_,i)=>({playerId:`00000000-0000-4000-8000-00000000000${i}`,teamId:"npb:team:tigers",name:`選手${i}`,hits:4-i,homeRuns:1,rbi:1,pa:4}));
+    const origin = { gameId: "npb:game:49a69ad2efd3bf67d3e5", date: "2026-10-08", home: { id: "npb:team:tigers" }, away: { id: "npb:team:swallows" } };
+    const favorite = batting[3]!.playerId;
+    await render(<GameRecap league="NPB" game={origin} batting={batting} pitching={[]} complete favorites={[{league:"NPB",kind:"player",entityId:favorite,addedAt:"2026-10-23T00:00:00Z"}]} />);
     expect(host.querySelectorAll(".daily-recap-item")).toHaveLength(3);
-    expect(host.querySelector('a[href="/NPB/players/p3"]')).not.toBeNull();
+    expect(host.querySelector(`a[href^="/NPB/players/${favorite}?"]`)).not.toBeNull();
     const expand=[...host.querySelectorAll("button")].find(b=>b.textContent==="活躍選手をすべて見る")!;
     await act(async()=>expand.click());expect(host.querySelectorAll(".daily-recap-item")).toHaveLength(4);
   });

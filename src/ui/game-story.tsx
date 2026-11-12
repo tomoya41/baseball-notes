@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import type { Services } from "../app/services";
 import type { League } from "../domain/models";
@@ -6,6 +6,8 @@ import type { NpbGameDetail } from "../domain/npb-game-detail";
 import type { NpbTeamSeason } from "../domain/npb-product-contract";
 import type { GameIndexRow } from "../domain/npb-game-index";
 import type { PostseasonHub } from "../domain/competition";
+import { canonicalEntityRefSchema } from "../domain/cross-league";
+import { npbGamePlayerLinks, type NpbGamePlayerContext } from "../domain/npb-game-player-journey";
 import { shiftGameDate } from "../domain/npb-game-index";
 import { recapNumbers, seriesAfterGame, type RecapBatter, type RecapPitcher } from "../domain/product-daily";
 import { LoadingSkeleton, SectionHeader, MetricLabel } from "./components";
@@ -14,7 +16,18 @@ import { GameLinks } from "./npb-game-surface";
 import { useHistoricalStatic } from "./use-mlb-historical";
 
 const n = (v: number | null) => v ?? "—";
-export function GameRecap({ league, batting, pitching, complete, scope = "", favorites = [] }: { league: League; batting: RecapBatter[]; pitching: RecapPitcher[]; complete: boolean; scope?: string; favorites?: FavoriteActions["favorites"] }) {
+type GameRecapProps = {
+  batting: RecapBatter[];
+  pitching: RecapPitcher[];
+  complete: boolean;
+  favorites?: FavoriteActions["favorites"];
+} & (
+  | { league: "MLB"; scope?: string }
+  | { league: "NPB"; game: Pick<NpbGameDetail, "gameId" | "date"> & { home: { id: string }; away: { id: string } } }
+);
+
+export function GameRecap(props: GameRecapProps) {
+  const { league, batting, pitching, complete, favorites = [] } = props;
   const [expanded, setExpanded] = useState(false);
   const highlighted = recapNumbers(batting, pitching);
   const ids = new Set(favorites.filter(f => f.kind === "player" && f.league === league).map(f => f.entityId));
@@ -23,9 +36,24 @@ export function GameRecap({ league, batting, pitching, complete, scope = "", fav
   const visibleBatters = expanded ? batters : batters.filter((p,i)=>i<2 || ids.has(p.playerId));
   const visiblePitchers = expanded ? pitchers : pitchers.filter((p,i)=>i<1 || ids.has(p.playerId));
   const more = batters.length > visibleBatters.length || pitchers.length > visiblePitchers.length;
+  const playerHeading = (p: Pick<RecapBatter, "playerId" | "teamId">, role: NpbGamePlayerContext["role"], children: ReactNode) => {
+    if (props.league === "MLB") return <Link className="daily-recap-row" to={`/MLB/players/${encodeURIComponent(p.playerId)}${props.scope ?? ""}`}>{children}</Link>;
+    const { game } = props;
+    const side = p.teamId === game.home.id ? "home" : p.teamId === game.away.id ? "away" : null;
+    if (!side || !canonicalEntityRefSchema.safeParse({ league: "NPB", kind: "player", id: p.playerId }).success)
+      return <div className="daily-recap-row">{children}</div>;
+    const { profile } = npbGamePlayerLinks(p.playerId, { gameId: game.gameId, date: game.date, side, stage: "regular", role });
+    return <Link className="daily-recap-row" to={profile}>{children}</Link>;
+  };
   return <section className="home-section game-recap" data-game-section="recap" tabIndex={-1}><SectionHeader title="この試合の主な数字" />{!complete && <p className="inline-note">一部データ確認中 · 保存済みの成績のみ</p>}
-    {batters.length > 0 && <><h3>打撃</h3><div className="row-list">{visibleBatters.map(p => <div className="daily-recap-item" key={`${p.playerId}:${p.teamId}`}><Link className="daily-recap-row" to={`/${league}/players/${encodeURIComponent(p.playerId)}${scope}`}><span className="recap-player-line"><strong>{ids.has(p.playerId) && "★ "}{p.name}</strong><b>{p.homeRuns != null && p.homeRuns > 0 ? `${p.homeRuns} HR` : p.hits != null ? `${p.hits} 安打` : "—"}</b></span></Link><div className="recap-metric-line"><span><MetricLabel metric="PA" /> {n(p.pa)}</span><span>安打 {n(p.hits)}</span><span>本塁打 {n(p.homeRuns)}</span><span><MetricLabel metric="RBI" label="打点" /> {n(p.rbi)}</span></div></div>)}</div></>}
-    {pitchers.length > 0 && <><h3>投球</h3><div className="row-list">{visiblePitchers.map(p => <div className="daily-recap-item" key={`${p.playerId}:${p.teamId}`}><Link className="daily-recap-row" to={`/${league}/players/${encodeURIComponent(p.playerId)}${scope}`}><strong>{ids.has(p.playerId) && "★ "}{p.name}</strong></Link><div className="recap-metric-line"><span><MetricLabel metric="IP" /> {p.outs === null ? "—" : `${Math.floor(p.outs / 3)}.${p.outs % 3}`}</span><span>失点 {n(p.runs)}</span><span>奪三振 {n(p.so)}</span></div></div>)}</div></>}
+    {batters.length > 0 && <><h3>打撃</h3><div className="row-list">{visibleBatters.map(p => <div className="daily-recap-item" key={`${p.playerId}:${p.teamId}`}>
+      {playerHeading(p, "batting", <span className="recap-player-line"><strong>{ids.has(p.playerId) && "★ "}{p.name}</strong><b>{p.homeRuns != null && p.homeRuns > 0 ? `${p.homeRuns} HR` : p.hits != null ? `${p.hits} 安打` : "—"}</b></span>)}
+      <div className="recap-metric-line"><span><MetricLabel metric="PA" /> {n(p.pa)}</span><span>安打 {n(p.hits)}</span><span>本塁打 {n(p.homeRuns)}</span><span><MetricLabel metric="RBI" label="打点" /> {n(p.rbi)}</span></div>
+    </div>)}</div></>}
+    {pitchers.length > 0 && <><h3>投球</h3><div className="row-list">{visiblePitchers.map(p => <div className="daily-recap-item" key={`${p.playerId}:${p.teamId}`}>
+      {playerHeading(p, "pitching", <strong>{ids.has(p.playerId) && "★ "}{p.name}</strong>)}
+      <div className="recap-metric-line"><span><MetricLabel metric="IP" /> {p.outs === null ? "—" : `${Math.floor(p.outs / 3)}.${p.outs % 3}`}</span><span>失点 {n(p.runs)}</span><span>奪三振 {n(p.so)}</span></div>
+    </div>)}</div></>}
     {!batters.length && !pitchers.length && <p className="inline-note">この条件で表示できる成績はありません。確認済みの項目はボックススコアへ。</p>}
     {(more || expanded) && <button className="text-button" aria-expanded={expanded} onClick={()=>setExpanded(v=>!v)}>{expanded ? "コンパクトに表示" : "活躍選手をすべて見る"}</button>}
     <details><summary>選出の根拠</summary><p>打撃は2安打以上または本塁打。投球は6回以上・失点1以下、または1回以上・失点0。お気に入り選手は条件によらず表示。打撃は本塁打・安打数、投球は投球回数の順に表示します。勝因・敗因の判定ではありません。</p></details>
