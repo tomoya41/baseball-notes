@@ -72,7 +72,7 @@ export function NpbGameDetailView({ payload, state, services, actions, selectedS
     {hasBox && <GameMvp input={npbGameMvpInput(payload)}/>}
     <InningScoreboard away={{name:payload.away.shortName,runs:payload.away.score,hits:payload.completeness==="complete"?payload.away.totals.hits:null}} home={{name:payload.home.shortName,runs:payload.home.score,hits:payload.completeness==="complete"?payload.home.totals.hits:null}}/>
     {payload.status === "scheduled" && services && <NpbGamePreview game={payload} services={services} favorites={actions?.favorites ?? []} />}
-    {hasBox && <GameRecap league="NPB" complete={payload.completeness === "complete"} favorites={actions?.favorites ?? []} batting={[...payload.batting.away, ...payload.batting.home]} pitching={[...payload.pitching.away, ...payload.pitching.home].map(p => ({ ...p, outs: p.outsRecorded, so: p.strikeouts }))} />}
+    {hasBox && <GameRecap league="NPB" game={payload} complete={payload.completeness === "complete"} favorites={actions?.favorites ?? []} batting={[...payload.batting.away, ...payload.batting.home]} pitching={[...payload.pitching.away, ...payload.pitching.home].map(p => ({ ...p, outs: p.outsRecorded, so: p.strikeouts }))} />}
     {actions && <details className="game-team-disclosure"><summary>球団情報・フォロー</summary><GameTeamLinks league="NPB" teams={[payload.away, payload.home]} {...actions} /></details>}
     {payload.status !== "final" && <p className="game-detail__note">{statusName[payload.status]}のため、試合別成績はありません。</p>}
     {hasBox && payload.completeness !== "complete" && <p className="game-detail__note" role="status">
