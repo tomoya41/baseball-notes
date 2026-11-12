@@ -14,10 +14,16 @@ it("shows official notices separately from app collection and preserves the 2026
       <Routes><Route path="/NPB/*" element={<NpbSeasonEntry/>}/></Routes>
     </MemoryRouter>));
     const notice = container.querySelector('[aria-labelledby="npb-official-schedule"]');
-    expect(notice?.textContent).toContain("公式発表済み");
+    expect(notice?.textContent).toContain("セ・パ公式戦と交流戦の日程が発表されました");
     expect(notice?.textContent).toContain("2027年3月26日開幕予定");
-    expect([...notice!.querySelectorAll("a")].map(a => a.href)).toEqual([
-      "https://npb.jp/games/2027/", "https://npb.jp/news/detail/20261104_03.html", "https://npb.jp/news/detail/20261104_02.html",
+    expect([...notice!.querySelectorAll<HTMLAnchorElement>(":scope > .hub-links a")].map(a => a.href)).toEqual(["https://npb.jp/games/2027/"]);
+    const sources = notice!.querySelector("details")!;
+    expect(sources.open).toBe(false);
+    expect(sources.textContent).toContain("パ・リーグは11月10日");
+    expect([...sources.querySelectorAll("a")].map(a => a.href)).toEqual([
+      "https://npb.jp/news/detail/20261104_03.html",
+      "https://npb.jp/news/detail/20261110_01.html",
+      "https://npb.jp/news/detail/20261104_02.html",
     ]);
     expect(container.textContent).toContain("アプリに日程は未登録");
     expect(container.textContent).toContain("試合結果・選手成績も未取得");
