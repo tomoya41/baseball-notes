@@ -4,6 +4,7 @@ import { z } from "zod";
 import japanPin from "../data/npb-japan-series-release.json";
 import { needsNpbSeasonEntry } from "./npb-season-entry";
 import { npbGamePlayerContext, npbGamePlayerLinks } from "./npb-game-player-journey";
+import { npbSchedulePath, npbScheduleTeam } from "./npb-game-navigation";
 export function canonicalDeepLink(input: string): string | null {
   try {
     const customScheme = /^baseballnotes:/i.test(input);
@@ -31,7 +32,7 @@ export function canonicalDeepLink(input: string): string | null {
       if(source.has("stage")||source.has("competition")&&source.get("competition")!=="regular")return null;
       const date=source.get("date");
       if(date!==null&&!z.iso.date().safeParse(date).success)return null;
-      return `/NPB/schedule${date ? `?date=${date}` : ""}`;
+      return npbSchedulePath(date ?? undefined, npbScheduleTeam(source));
     }
     const expanded = ["awards", "data", "history", "compare", "team-compare", "season-compare", "postseason", "matchup", "milestones", "form", "cs", "moves", "weekly", "monthly", "season"].includes(portablePath?.split("/")[2] ?? "");
     if (expanded || portablePath === "/NPB/talent/2026") return portableRoute(portablePath!, portableSearch ?? uri.search);
@@ -55,7 +56,11 @@ export function canonicalDeepLink(input: string): string | null {
       if (key === "season" ? /^20\d{2}$/.test(value) : /^20\d{2}-/.test(value) && z.iso.date().safeParse(value).success) params.set(key, value);
     }
     if (league === "MLB" && sourceParams.get("competition") === "postseason") params.set("competition", "postseason");
-    if (league === "NPB" && kind === "game" && (sourceParams.get("boxSide") === "home" || sourceParams.get("boxSide") === "away")) params.set("boxSide", sourceParams.get("boxSide")!);
+    if (league === "NPB" && kind === "game") {
+      if (sourceParams.get("boxSide") === "home" || sourceParams.get("boxSide") === "away") params.set("boxSide", sourceParams.get("boxSide")!);
+      const team = npbScheduleTeam(sourceParams);
+      if (team && !sourceParams.has("stage") && (!sourceParams.has("competition") || sourceParams.get("competition") === "regular")) params.set("team", team);
+    }
     return `${canonicalEntityPath(parsed.data)}${child ? `/${child}` : ""}${params.size ? `?${params}` : ""}`;
   } catch { return null; }
 }
@@ -92,7 +97,7 @@ export function parentNativeRoute(path: string): string | null {
   }
   if(league==="NPB"&&segments[1]==="games"&&(!source.has("competition")||source.get("competition")==="regular")&&!source.has("stage")){
     const date=source.get("date");
-    if(date&&z.iso.date().safeParse(date).success)return `/NPB/schedule?date=${date}`;
+    if(date&&z.iso.date().safeParse(date).success)return npbSchedulePath(date,npbScheduleTeam(source));
   }
   if(league==="NPB"&&segments[1]==="players"&&segments[3]==="seasons") {
     if (source.get("season") === "2026") {

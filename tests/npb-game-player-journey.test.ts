@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { canonicalDeepLink, parentNativeRoute } from "../src/domain/native-navigation";
 import { npbGamePlayerContext, npbGamePlayerLinks, npbGamePlayerSearch } from "../src/domain/npb-game-player-journey";
-import { portableRoute } from "../src/domain/product-sharing";
+import { portableRoute, savedNpbPlayerComparison } from "../src/domain/product-sharing";
 
 const player = "00000000-0000-4000-8000-000000000001";
 const origin = { gameId: "npb:game:0123456789abcdefabcd", date: "2026-10-08", side: "home", stage: "regular", role: "pitching" } as const;
@@ -19,6 +19,21 @@ describe("NPB game to player analysis", () => {
     expect(parentNativeRoute(links.annual)).toBe(links.profile);
     expect(parentNativeRoute(links.compare!)).toBe(links.annual);
     expect(portableRoute("/NPB/compare",query(links.compare!).toString())).toContain(`player=${player}`);
+  });
+
+  it("keeps the originating club through a saved comparison and the route back to its schedule", () => {
+    const scoped = { ...origin, scheduleTeam: "npb:team:tigers" };
+    const links = npbGamePlayerLinks(player, scoped);
+    const params = query(links.compare!);
+    params.set("players", `${player},00000000-0000-4000-8000-000000000002`);
+    params.set("playerCompare", "1");
+    params.set("condition", "season");
+    const saved = savedNpbPlayerComparison(params);
+    expect(saved && npbGamePlayerContext(saved)).toEqual(scoped);
+    expect(parentNativeRoute(`/NPB/compare?${saved}`)).toBe(links.annual);
+    expect(parentNativeRoute(links.annual)).toBe(links.profile);
+    expect(parentNativeRoute(links.profile)).toBe(links.game);
+    expect(parentNativeRoute(links.game)).toBe("/NPB/schedule?date=2026-10-08&team=npb%3Ateam%3Atigers");
   });
 
   it("preserves CS stage without generating an official-season comparison", () => {

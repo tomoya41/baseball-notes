@@ -23,7 +23,7 @@ type GameRecapProps = {
   favorites?: FavoriteActions["favorites"];
 } & (
   | { league: "MLB"; scope?: string }
-  | { league: "NPB"; game: Pick<NpbGameDetail, "gameId" | "date"> & { home: { id: string }; away: { id: string } } }
+  | { league: "NPB"; game: Pick<NpbGameDetail, "gameId" | "date"> & { home: { id: string }; away: { id: string } }; scheduleTeam?: string | undefined }
 );
 
 export function GameRecap(props: GameRecapProps) {
@@ -42,7 +42,7 @@ export function GameRecap(props: GameRecapProps) {
     const side = p.teamId === game.home.id ? "home" : p.teamId === game.away.id ? "away" : null;
     if (!side || !canonicalEntityRefSchema.safeParse({ league: "NPB", kind: "player", id: p.playerId }).success)
       return <div className="daily-recap-row">{children}</div>;
-    const { profile } = npbGamePlayerLinks(p.playerId, { gameId: game.gameId, date: game.date, side, stage: "regular", role });
+    const { profile } = npbGamePlayerLinks(p.playerId, { gameId: game.gameId, date: game.date, side, stage: "regular", role, scheduleTeam: props.scheduleTeam });
     return <Link className="daily-recap-row" to={profile}>{children}</Link>;
   };
   return <section className="home-section game-recap" data-game-section="recap" tabIndex={-1}><SectionHeader title="この試合の主な数字" />{!complete && <p className="inline-note">一部データ確認中 · 保存済みの成績のみ</p>}

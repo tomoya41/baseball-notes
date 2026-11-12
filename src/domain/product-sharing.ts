@@ -13,6 +13,7 @@ import { draftEventQuery } from "./npb-draft-query";
 import { needsNpbSeasonEntry } from "./npb-season-entry";
 import { isHonorRecipientId } from "./honor-discovery";
 import { npbGamePlayerContext, npbGamePlayerSearch } from "./npb-game-player-journey";
+import { npbScheduleTeam } from "./npb-game-navigation";
 
 export const PUBLIC_APP_URL = "https://tomoya41.github.io/baseball-notes/";
 // Local IDs and unknown keys never travel through a shareable URL.
@@ -40,6 +41,8 @@ export function portableRoute(path: string, search = ""): string | null {
     } else {
       if (source.has("date") && !z.iso.date().safeParse(source.get("date")).success) return null;
       if (source.has("date")) clean.set("date", source.get("date")!);
+      const team = npbScheduleTeam(source);
+      if (team) clean.set("team", team);
       if (source.get("view") === "international") clean.set("view", "international");
     }
     return `${path}${clean.size ? `?${clean}` : ""}`;
@@ -160,7 +163,11 @@ export function portableRoute(path: string, search = ""): string | null {
   if(resource==="players"&&["7","14","30"].includes(source.get("period")??""))clean.set("period",source.get("period")!);
   for (const k of ["season", "date", "asOfDate"]) { const v = source.get(k); if (v && (k === "season" ? /^20\d{2}$/.test(v) : /^20\d{2}-/.test(v) && z.iso.date().safeParse(v).success)) clean.set(k, v); }
   if (source.get("competition") === "postseason") clean.set("competition", "postseason");
-  if (league === "NPB" && resource === "games" && (source.get("boxSide") === "home" || source.get("boxSide") === "away")) clean.set("boxSide", source.get("boxSide")!);
+  if (league === "NPB" && resource === "games") {
+    if (source.get("boxSide") === "home" || source.get("boxSide") === "away") clean.set("boxSide", source.get("boxSide")!);
+    const team = npbScheduleTeam(source);
+    if (team && !source.has("stage") && (!source.has("competition") || source.get("competition") === "regular")) clean.set("team", team);
+  }
   if (league === "NPB" && (resource === "players" || resource === "compare")) {
     const context = npbGamePlayerContext(source), player = source.get("player");
     const compareOrigin = resource === "compare" && context?.stage === "regular" &&
