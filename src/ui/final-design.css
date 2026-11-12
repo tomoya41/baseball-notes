@@ -1019,6 +1019,7 @@
 
 .date-ribbon-heading {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
@@ -1026,7 +1027,8 @@
 }
 
 .date-ribbon-heading input {
-  width: 145px;
+  width: 9.0625rem;
+  max-width: 100%;
   font-size: .8125rem;
 }
 
