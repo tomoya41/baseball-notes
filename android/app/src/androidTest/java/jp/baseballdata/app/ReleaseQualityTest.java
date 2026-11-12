@@ -949,7 +949,11 @@ public class ReleaseQualityTest {
         link.setClassName("com.tomoya41.baseballnotes", "jp.baseballdata.app.MainActivity");
         scenario = ActivityScenario.launch(link); waitText("杉浦稔大"); waitText("金銭トレードの記載");
         assertEquals("Events retain exact licensed source", "true", js("!!document.querySelector('a[href*=\"oldid=" + NPB_RETAINED_EVENT_SOURCE_REVISION + "\"]')"));
-        assertEquals("Events do not certify current membership", "true", js("document.body.innerText.includes('現在の所属や登録の認定ではありません')"));
+        assertEquals("Source scope starts collapsed", "false", js("document.querySelector('details.source-note').open"));
+        js("document.querySelector('details.source-note > summary').click()");
+        assertEquals("Source scope directs current membership checks to official announcements", "true",
+                js("document.querySelector('details.source-note[open]').innerText.includes('現在の所属・登録状況は、NPBや球団の公式発表でご確認ください。')"));
+        js("document.querySelector('details.source-note > summary').click()");
         screenshot("npb-player-events-360");
         fontScaleAndRecreate(2.0f); waitText("金銭トレードの記載"); waitViewport(360);
         assertEquals("Events fit at 200 percent", "true", js("document.documentElement.scrollWidth<=innerWidth")); screenshot("npb-player-events-font-20");
