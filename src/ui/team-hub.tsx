@@ -7,6 +7,7 @@ import { StatTable } from "./stat-table";
 import { useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import type { Services } from "../app/services";
+import { readGameDateForManifest } from "../application/game-surface";
 import type { Favorite } from "../domain/models";
 import type { GameIndexRow } from "../domain/npb-game-index";
 import { shiftGameDate } from "../domain/npb-game-index";
@@ -42,7 +43,11 @@ export function NpbTeamActivity({ services, teamId }: { services: Services; team
     const from = shiftGameDate(m.to, -13) > m.from ? shiftGameDate(m.to, -13) : m.from;
     const dates: string[] = []; for (let d = from; d <= m.to; d = shiftGameDate(d, 1)) dates.push(d);
     // Public date indexes only, not Game/player details. Bounded 14 requests, independent of roster size.
-    const pages = []; for (const date of dates) pages.push(await services.gameSurface.date(date));
+    const pages = [];
+    for (const date of dates) {
+      if (!active) return;
+      pages.push(await readGameDateForManifest(services.gameSurface,m,date));
+    }
     if (active) { setError(""); setState({ key: teamId, from, to: m.to, incomplete: pages.some(p => !["complete", "no_games"].includes(p.coverage)), games: pages.flatMap(p => p.games).filter(g => [g.home.id, g.away.id].includes(teamId)).sort((a, b) => b.date.localeCompare(a.date) || b.gameNumber - a.gameNumber || a.gameId.localeCompare(b.gameId)) }); }
   }).catch(() => { if (active) setError(teamId); }); return () => { active = false; }; }, [services, teamId]);
   const rank = standings?.standings.find(r => r.teamId === teamId), visible = state?.key === teamId ? state : null;

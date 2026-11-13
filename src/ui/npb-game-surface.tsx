@@ -2,7 +2,7 @@ import { DailyMvp } from "./daily-mvp";
 import { useEffect,useState } from "react";
 import { Link,useSearchParams } from "react-router-dom";
 import { z } from "zod";
-import type { GameSurfaceReader } from "../application/game-surface";
+import { readGameDateForManifest, type GameSurfaceReader } from "../application/game-surface";
 import { type GameDateIndex,type GameManifest,type GameIndexRow } from "../domain/npb-game-index";
 import { npbScheduleTeam } from "../domain/npb-game-navigation";
 import { npbTeamShortName } from "../presentation/npb-team-names";
@@ -37,14 +37,15 @@ export function NpbScheduleScreen({repository,favorites=[],toggle,saving=false}:
   const team = npbScheduleTeam(params);
   const unfiltered = new URLSearchParams(params);
   unfiltered.delete("team");
-  const [manifest,setManifest]=useState<GameManifest|null>(null),[payload,setPayload]=useState<GameDateIndex|null>(null);
+  const [manifest,setManifest]=useState<GameManifest|null>(null),[loadedDay,setPayload]=useState<GameDateIndex|null>(null);
   const [state,setState]=useState<"loading"|"ready"|"error">("loading");
   const [attempt,setAttempt]=useState(0),[internationalOpen,setInternationalOpen]=useState(params.get("view")==="international");
   const date=dateParam??manifest?.effectiveDate;
+  const payload = loadedDay && loadedDay.generatedAt === manifest?.generatedAt ? loadedDay : null;
   const outsideRange = Boolean(manifest && date && (!dateSchema.safeParse(date).success || date < manifest.from || date > manifest.to));
   useEffect(()=>{let active=true;void repository.manifest().then(v=>{if(active)setManifest(v);}).catch(()=>{if(active)setState("error");});return()=>{active=false;};},[repository,attempt]);
   useEffect(()=>{if(!date||!manifest||outsideRange)return;let active=true;
-    void repository.date(date).then(v=>{if(active){setPayload(v);setState("ready");}}).catch(()=>{if(active)setState("error");});return()=>{active=false;};},[date,manifest,outsideRange,repository]);
+    void readGameDateForManifest(repository,manifest,date).then(v=>{if(active){setPayload(v);setState("ready");}}).catch(()=>{if(active)setState("error");});return()=>{active=false;};},[date,manifest,outsideRange,repository]);
   const change=(next:string)=>{if(next===date)return;setState("loading");setPayload(null);setParams(previous=>{const nextParams=new URLSearchParams(previous);nextParams.set("date",next);return nextParams;});};
   const retry=()=>{setManifest(null);setPayload(null);setState("loading");setAttempt(value=>value+1);};
   return <div className="screen game-schedule"><PageHeading eyebrow="NPB" title="日程・結果"/>

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { z } from "zod";
 import { Link, useSearchParams } from "react-router-dom";
 import type { Services } from "../app/services";
+import { readGameDateForManifest } from "../application/game-surface";
 import type { NpbPlayerDirectory } from "../domain/npb-player-directory";
 import { normalizePlayerSearch } from "../domain/npb-player-directory";
 import type { GameDateIndex, GameManifest } from "../domain/npb-game-index";
@@ -43,6 +44,7 @@ export function NpbDiscovery({ services }: { services: Services }) {
   const [dates, setDates] = useState<{ date: string; value: GameDateIndex | null; error: boolean } | null>(null);
   const date = params.get("date") ?? manifest?.effectiveDate ?? "";
   const validDate = !!manifest && date >= manifest.from && date <= manifest.to && z.iso.date().safeParse(date).success;
+  const day = dates?.date === date && (dates.error || dates.value?.generatedAt === manifest?.generatedAt) ? dates : null;
   useEffect(() => {
     if (!supported) return;
     let active = true;
@@ -50,10 +52,17 @@ export function NpbDiscovery({ services }: { services: Services }) {
     if (kind === "game") void services.gameSurface.manifest().then(value => { if (active) { setManifest(value); setFailedKind(null); } }).catch(() => { if (active) setFailedKind(kind); });
     return () => { active = false; };
   }, [services, kind, supported]);
-  useEffect(() => { if (!supported || kind !== "game" || !validDate) return; let active = true; void services.gameSurface.date(date).then(value => { if (active) setDates({ date, value, error: false }); }).catch(() => { if (active) setDates({ date, value: null, error: true }); }); return () => { active = false; }; }, [kind, validDate, date, services, supported]);
+  useEffect(() => {
+    if (!supported || kind !== "game" || !validDate || !manifest) return;
+    let active = true;
+    void readGameDateForManifest(services.gameSurface,manifest,date)
+      .then(value => { if (active) setDates({ date, value, error: false }); })
+      .catch(() => { if (active) setDates({ date, value: null, error: true }); });
+    return () => { active = false; };
+  }, [kind, validDate, date, manifest, services, supported]);
   if (kind === "series" || kind === "game" && params.get("competition") === "postseason") return <NpbPostseasonDiscovery kind={kind} />;
   if (!supported) return <div className="screen"><PageHeading eyebrow="NPB" title="探す" /><DiscoveryNavigation league="NPB" /><DataState kind="unsupported" title="指定のシーズン・シリーズでは検索できません" action="収録済みのシリーズ" to="/NPB/postseason" /></div>;
-  return <div className="screen"><PageHeading eyebrow="NPB" title="探す" /><DiscoveryNavigation league="NPB" />{failedKind === kind ? <DataState kind="source-unavailable" title="検索用データを取得できません" /> : (kind === "team" ? !directory : !manifest) ? <LoadingSkeleton /> : <>{kind === "game" && manifest && <label>保存済み試合日<input type="date" value={date} min={manifest.from} max={manifest.to} onChange={e => setParams(previous => { const next = new URLSearchParams(previous); next.set("date", e.target.value); return next; })} /></label>}{kind === "game" && (!validDate ? <DataState kind="unsupported" title="指定日は保存済み範囲外です" /> : dates?.date !== date ? <LoadingSkeleton /> : dates.error ? <DataState kind="source-unavailable" title="指定日の試合情報を取得できません" /> : dates.value?.coverage === "no_games" ? <p>確認済み · 試合なし</p> : dates.value?.coverage !== "complete" && <p className="inline-note">この日のデータは一部確認中です。</p>)}{kind !== "game" || (validDate && dates?.date === date && dates.value) ? <DiscoveryList league="NPB" scope="" teams={directory?.teams.map(t => ({ id: t.id, name: t.name })) ?? []} games={dates?.value?.games.map(g => ({ id: g.gameId, home: g.home.name, away: g.away.name, homeScore: g.home.score, awayScore: g.away.score, state: g.status }))} /> : null}</>}</div>;
+  return <div className="screen"><PageHeading eyebrow="NPB" title="探す" /><DiscoveryNavigation league="NPB" />{failedKind === kind ? <DataState kind="source-unavailable" title="検索用データを取得できません" /> : (kind === "team" ? !directory : !manifest) ? <LoadingSkeleton /> : <>{kind === "game" && manifest && <label>保存済み試合日<input type="date" value={date} min={manifest.from} max={manifest.to} onChange={e => setParams(previous => { const next = new URLSearchParams(previous); next.set("date", e.target.value); return next; })} /></label>}{kind === "game" && (!validDate ? <DataState kind="unsupported" title="指定日は保存済み範囲外です" /> : !day ? <LoadingSkeleton /> : day.error ? <DataState kind="source-unavailable" title="指定日の試合情報を取得できません" /> : day.value?.coverage === "no_games" ? <p>確認済み · 試合なし</p> : day.value?.coverage !== "complete" && <p className="inline-note">この日のデータは一部確認中です。</p>)}{kind !== "game" || (validDate && day?.value) ? <DiscoveryList league="NPB" scope="" teams={directory?.teams.map(t => ({ id: t.id, name: t.name })) ?? []} games={day?.value?.games.map(g => ({ id: g.gameId, home: g.home.name, away: g.away.name, homeScore: g.home.score, awayScore: g.away.score, state: g.status }))} /> : null}</>}</div>;
 }
 function NpbPostseasonDiscovery({ kind }: { kind: "series" | "game" }) {
   const [params] = useSearchParams(), [series,setSeries]=useState<NpbPostseasonSeries|null>(null), [cs,setCs]=useState<NpbCsDataset|null>(null), [japan,setJapan]=useState<NpbJapanSeries|null>(null),[japanFailed,setJapanFailed]=useState(false), [failed,setFailed]=useState(false), [attempt,setAttempt]=useState(0);
