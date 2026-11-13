@@ -30,7 +30,7 @@ function day(overrides:Partial<DayRunHealth>={}):DayRunHealth {
     batterRows:180,pitcherRows:60,backupStatus:"exported",finishedAt:at,...overrides};
 }
 function ingestion(run:DayRunHealth|null=day()):IngestionHealth {
-  return {latestScheduledRun:run,latestDayRun:run,targetDayRun:run,
+  return {latestScheduledRun:run,latestDayRun:run,savedSnapshotDayRun:run,targetDayRun:run,
     latestSuccessfulTargetDate:run?.targetDate??null,latestStandingsDate:"2026-09-25"};
 }
 function fresh():PublishedFreshness {
@@ -51,6 +51,11 @@ describe("outside-calendar operational retention (not Current freshness or Gate 
     expect(failsRequiredNpbHealth(evaluateNpbDailyHealth(f, i, action))).toBe(true);
     expect(f.status).toBe("stale"); expect(lifecycle.pendingSavedGames).toBe(9);
   });
+  it("uses the Day for the saved snapshot when an older repair ran more recently", () => {
+    const afterRepair = { ...i, latestDayRun: day({ targetDate: "2026-09-28", trigger: "repair" }) };
+    expect(canRetainNpbSnapshot(f, afterRepair, action, lifecycle)).toBe(true);
+    expect(canRetainNpbSnapshot(f, { ...afterRepair, savedSnapshotDayRun: null }, action, lifecycle)).toBe(false);
+  });
   it.each(["fresh", "future_date", "unreachable", "invalid_payload"] as const)("never waives %s checks", status => {
     expect(canRetainNpbSnapshot({ ...f, status }, i, action, lifecycle)).toBe(false);
   });
@@ -61,13 +66,14 @@ describe("outside-calendar operational retention (not Current freshness or Gate 
     expect(canRetainNpbSnapshot({ ...f, publishedEffectiveDate: "2026-10-11" }, i, action, lifecycle)).toBe(false);
     expect(canRetainNpbSnapshot(f, i, action, { ...lifecycle, targetGames: 1 })).toBe(false);
     expect(canRetainNpbSnapshot(f, i, action, { ...lifecycle, latestSavedGameDate: "2026-10-14" })).toBe(false);
-    expect(canRetainNpbSnapshot(f, { ...i, latestDayRun: { ...run, dayStatus: "partial", partialGames: 1 } }, action, lifecycle)).toBe(false);
-    expect(canRetainNpbSnapshot(f, { ...i, latestDayRun: { ...run, targetDate: "2026-10-13", operationalStatus: "failed" } }, action, lifecycle)).toBe(false);
+    expect(canRetainNpbSnapshot(f, { ...i, savedSnapshotDayRun: { ...run, dayStatus: "partial", partialGames: 1 } }, action, lifecycle)).toBe(false);
+    expect(canRetainNpbSnapshot(f, { ...i, savedSnapshotDayRun: { ...run, targetDate: "2026-10-13", operationalStatus: "failed" } }, action, lifecycle)).toBe(false);
   });
   it("does not waive collection/backup/delivery failures or change in-season checks", () => {
     expect(canRetainNpbSnapshot(f, i, { ...action, conclusion: "failure" }, lifecycle)).toBe(false);
     expect(canRetainNpbSnapshot(f, i, { ...action, inferredTargetDate: "2026-10-12" }, lifecycle)).toBe(false);
-    expect(canRetainNpbSnapshot(f, { ...i, latestDayRun: day({ targetDate: "2026-10-12", backupStatus: "failed" }) }, action, lifecycle)).toBe(false);
+    expect(canRetainNpbSnapshot(f, i, { ...action, calendarSkipArtifact: "missing" }, lifecycle)).toBe(false);
+    expect(canRetainNpbSnapshot(f, { ...i, savedSnapshotDayRun: day({ targetDate: "2026-10-12", backupStatus: "failed" }) }, action, lifecycle)).toBe(false);
     expect(canRetainNpbSnapshot(f, i, action, { ...lifecycle, calendar: planNpbCalendar("daily", "2026-10-07") })).toBe(false);
   });
   it("reports a confirmed skip separately while preserving the required stale failure", () => {
@@ -158,6 +164,29 @@ describe("NPB daily health",()=>{
     expect(result.targetDayRun).toMatchObject({trigger:"scheduled",dayStatus:"complete",batterRows:180,pitcherRows:60});
     expect(result.latestSuccessfulTargetDate).toBe("2026-09-25");
     expect(result.latestStandingsDate).toBeNull();
+    expect(result.savedSnapshotDayRun).toBeNull();
+  });
+  it("reads the latest attempt for the saved standings date independently of backfills and the target day", async () => {
+    const client = openDataClient("file::memory:");
+    clients.push(client);
+    await migrateData(client);
+    await client.execute({sql:"INSERT INTO standings_daily VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+      args:["2026-10-12",2026,"NPB","Central","npb:team:tigers",1,10,2,0,12,0.833,0,0,"nf3",at,at]});
+    const insertDay = async (id: string, date: string, trigger: string, finishedAt: string, operationalStatus: string) =>
+      client.execute({sql:"INSERT INTO npb_day_runs VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        args:[id,date,trigger,finishedAt,finishedAt,"no_games",operationalStatus,0,0,0,0,0,0,0,0,0,0,"pending",null]});
+    expect(await diagnoseNpbIngestion(client,"2026-11-12")).toMatchObject({
+      latestStandingsDate:"2026-10-12",savedSnapshotDayRun:null,
+    });
+    await insertDay("saved","2026-10-12","scheduled","2026-10-13T00:00:00Z","succeeded");
+    await insertDay("repair","2026-09-28","repair","2026-10-14T00:00:00Z","succeeded");
+    expect(await diagnoseNpbIngestion(client,"2026-11-12")).toMatchObject({
+      latestDayRun:{runId:"repair"},savedSnapshotDayRun:{runId:"saved"},targetDayRun:null,latestSuccessfulTargetDate:"2026-10-12",
+    });
+    await insertDay("failed","2026-10-12","manual","2026-10-15T00:00:00Z","failed");
+    expect(await diagnoseNpbIngestion(client,"2026-11-12")).toMatchObject({
+      savedSnapshotDayRun:{runId:"failed",operationalStatus:"failed"},latestSuccessfulTargetDate:"2026-10-12",
+    });
   });
   it("finds the scheduled Action and its encrypted Artifact",async()=>{
     const request=(async(input:RequestInfo|URL)=>new Response(JSON.stringify(String(input).includes("/artifacts?") ?

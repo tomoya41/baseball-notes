@@ -84,12 +84,12 @@ export function canRetainNpbSnapshot(freshness: PublishedFreshness, ingestion: I
   action: ScheduledActionHealth | null, lifecycle: Awaited<ReturnType<typeof inspectNpbCalendar>> | null): boolean {
   if (!lifecycle?.calendar.skip || lifecycle.targetGames !== 0 || !ingestion || !action ||
       freshness.status !== "stale") return false;
-  const saved = ingestion.latestStandingsDate, day = ingestion.latestDayRun;
+  const saved = ingestion.latestStandingsDate, day = ingestion.savedSnapshotDayRun;
   if (!saved || saved < lifecycle.calendar.reviewedTo || saved > freshness.expectedEffectiveDate ||
       saved !== freshness.publishedEffectiveDate || ingestion.latestSuccessfulTargetDate !== saved ||
       !lifecycle.latestSavedGameDate || lifecycle.latestSavedGameDate > saved ||
       !day || day.targetDate !== saved || day.operationalStatus !== "succeeded" ||
       !["complete", "no_games"].includes(day.dayStatus) || day.partialGames !== 0 || day.failedGames !== 0 ||
       day.completeGames !== day.finalGames || (day.finalGames > 0 && day.backupStatus !== "exported")) return false;
-  return action.inferredTargetDate === freshness.expectedEffectiveDate && action.conclusion === "success";
+  return diagnoseNpbCollection(freshness.expectedEffectiveDate, action, lifecycle) === "calendar_skip_verified";
 }

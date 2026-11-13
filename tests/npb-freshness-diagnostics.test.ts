@@ -7,7 +7,7 @@ const date="2026-10-24";
 const freshness:PublishedFreshness={status:"stale",expectedEffectiveDate:date,publishedEffectiveDate:"2026-10-12",
   checkedAtUtc:"2026-10-25T08:28:00Z",checkedAtJst:"2026-10-25 17:28:00",deadlineHourJst:12,
   deadlinePassed:true,httpStatus:200,error:null};
-const saved={latestScheduledRun:null,latestDayRun:null,targetDayRun:null,latestSuccessfulTargetDate:null,latestStandingsDate:null};
+const saved={latestScheduledRun:null,latestDayRun:null,savedSnapshotDayRun:null,targetDayRun:null,latestSuccessfulTargetDate:null,latestStandingsDate:null};
 
 describe("bounded NPB database diagnostics",()=>{
   it("reports BLOCKED without secrets, retry or calendar queries, retaining independent stale health",async()=>{
