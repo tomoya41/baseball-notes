@@ -38,6 +38,7 @@ export interface DayRunHealth {
 export interface IngestionHealth {
   latestScheduledRun: DayRunHealth | null;
   latestDayRun: DayRunHealth | null;
+  savedSnapshotDayRun: DayRunHealth | null;
   targetDayRun: DayRunHealth | null;
   latestSuccessfulTargetDate: string | null;
   latestStandingsDate: string | null;
@@ -110,9 +111,9 @@ export async function checkPublishedNpbFreshness(url: string, options: {
   }
 }
 
-const dayRunSql = `SELECT run_id,target_date,trigger_kind,day_status,operational_status,final_games,
-  complete_games,partial_games,failed_games,batter_rows,pitcher_rows,backup_status,finished_at
-  FROM npb_day_runs`;
+const dayRunColumns = `run_id,target_date,trigger_kind,day_status,operational_status,final_games,
+  complete_games,partial_games,failed_games,batter_rows,pitcher_rows,backup_status,finished_at`;
+const dayRunSql = `SELECT ${dayRunColumns} FROM npb_day_runs`;
 
 function dayRun(row: Record<string, unknown> | undefined): DayRunHealth | null {
   if (!row) return null;
@@ -127,19 +128,28 @@ function dayRun(row: Record<string, unknown> | undefined): DayRunHealth | null {
 }
 
 export async function diagnoseNpbIngestion(client: DataClient, targetDate: string): Promise<IngestionHealth> {
-  const [scheduled,latest,target,successful,standings] = await Promise.all([
+  const [scheduled,latest,target,successful,snapshot] = await Promise.all([
     client.execute(`${dayRunSql} WHERE trigger_kind='scheduled' ORDER BY finished_at DESC LIMIT 1`),
     client.execute(`${dayRunSql} ORDER BY finished_at DESC LIMIT 1`),
     client.execute({sql:`${dayRunSql} WHERE target_date=? ORDER BY finished_at DESC LIMIT 1`,args:[targetDate]}),
     client.execute(`${dayRunSql} WHERE day_status IN ('complete','no_games') AND operational_status!='failed'
       ORDER BY target_date DESC,finished_at DESC LIMIT 1`),
-    client.execute("SELECT MAX(snapshot_date) AS date FROM standings_daily WHERE league='NPB'"),
+    client.execute(`WITH saved AS (
+      SELECT MAX(snapshot_date) AS snapshot_date FROM standings_daily WHERE league='NPB'
+    )
+    SELECT saved.snapshot_date,${dayRunColumns} FROM saved
+    LEFT JOIN npb_day_runs ON run_id=(
+      SELECT run_id FROM npb_day_runs WHERE target_date=saved.snapshot_date
+      ORDER BY finished_at DESC,run_id DESC LIMIT 1
+    )`),
   ]);
+  const saved = snapshot.rows[0];
   return {
     latestScheduledRun:dayRun(scheduled.rows[0]),latestDayRun:dayRun(latest.rows[0]),
+    savedSnapshotDayRun:saved?.run_id == null ? null : dayRun(saved),
     targetDayRun:dayRun(target.rows[0]),
     latestSuccessfulTargetDate:successful.rows[0]?.target_date === undefined ? null : String(successful.rows[0].target_date),
-    latestStandingsDate:standings.rows[0]?.date == null ? null : String(standings.rows[0].date),
+    latestStandingsDate:saved?.snapshot_date == null ? null : String(saved.snapshot_date),
   };
 }
 
