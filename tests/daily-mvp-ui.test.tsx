@@ -3,6 +3,38 @@ import {act} from 'react';import {createRoot} from 'react-dom/client';import {Me
 import {DailyMvp} from '../src/ui/daily-mvp';import {readCachedMvpGames} from '../src/application/daily-mvp';import {mvpFixture} from './fixtures/daily-mvp';import type {NpbGameDetail} from '../src/domain/npb-game-detail';
 vi.mock('../src/application/daily-mvp',()=>({readCachedMvpGames:vi.fn()}));
 afterEach(()=>{vi.clearAllMocks();vi.unstubAllGlobals();});
+it.each([false, true])('checks the day generation on game detail before using saved boxes (same generation: %s)', async matches => {
+  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
+  const { game, index } = mvpFixture();
+  const repository = {
+    manifest: vi.fn(async () => ({ schemaVersion: 1 as const, league: 'NPB' as const,
+      from: index.date, to: index.date, effectiveDate: index.date, generatedAt: index.generatedAt })),
+    date: vi.fn(async () => ({ ...index, generatedAt: matches ? index.generatedAt : '2026-09-01T00:00:00Z' })),
+    recent: vi.fn(), records: vi.fn(),
+  };
+  vi.mocked(readCachedMvpGames).mockResolvedValue([game]);
+  const host = document.createElement('div'), root = createRoot(host);
+  document.body.append(host);
+  try {
+    await act(async () => root.render(<MemoryRouter><DailyMvp date={index.date} current={game} repository={repository} /></MemoryRouter>));
+    expect(repository.manifest).not.toHaveBeenCalled();
+    await act(async () => host.querySelector('summary')!.click());
+    await act(async () => host.querySelector('details')!.dispatchEvent(new Event('toggle')));
+    expect(repository.manifest).toHaveBeenCalledTimes(1);
+    expect(repository.date).toHaveBeenCalledExactlyOnceWith(index.date);
+    if (matches) {
+      expect(readCachedMvpGames).toHaveBeenCalledExactlyOnceWith([game.gameId], game);
+      expect(host.textContent).toContain('架空打者0');
+    } else {
+      expect(readCachedMvpGames).not.toHaveBeenCalled();
+      expect(host.textContent).toContain('この日の試合別成績を確認できません');
+      expect(host.querySelector('.saved-game-mvps')).toBeNull();
+    }
+  } finally {
+    await act(async () => root.unmount());
+    host.remove();
+  }
+});
 it('keeps game selections lazy and distinct from a held day selection, with canonical Game/player links',async()=>{
  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);const {game,index}=mvpFixture();
  const day={...index,coverage:'partial' as const,games:[...index.games,{...index.games[0]!,gameId:'npb:game:bbbbbbbbbbbbbbbbbbbb',completeness:'partial' as const}]};

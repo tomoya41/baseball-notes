@@ -97,6 +97,37 @@ describe("daily product surfaces", () => {
     expect(container.textContent).not.toContain("シーズン成績は未収録");
     expect(container.textContent).toContain("1勝 / 1試合");
   });
+  it.each([false, true])("keeps mixed-generation results out of the preview (same generation: %s)", async matches => {
+    const date = async (d: string): Promise<GameDateIndex> => ({
+      schemaVersion: 1, league: "NPB", date: d,
+      generatedAt: matches ? manifest.generatedAt : "2026-10-02T00:00:00Z", coverage: "complete", games: [row],
+    });
+    await render(<NpbGamePreview game={game} favorites={[]} services={{ ...services,
+      product: { ...services.product, teamSeason: async () => null } as unknown as typeof services.product,
+      gameSurface: { ...services.gameSurface, manifest: async () => manifest, date } as unknown as typeof services.gameSurface,
+    }} />);
+    if (matches) {
+      expect(container.textContent).toContain("1勝 / 1試合");
+      expect(container.textContent).toContain("この期間の直接対戦");
+    } else {
+      expect(container.textContent).toContain("一部の日付の結果を読み込めません");
+      expect(container.textContent).toContain("結果未確認");
+      expect(container.textContent).not.toContain(" / 0試合");
+      expect(container.textContent).not.toContain("この期間の直接対戦");
+      expect(container.querySelector(".scoreboard-row")).toBeNull();
+    }
+  });
+  it("shows zero games when the entire preview window confirms there were no games", async () => {
+    const date = async (d: string): Promise<GameDateIndex> => ({
+      schemaVersion: 1, league: "NPB", date: d, generatedAt: manifest.generatedAt, coverage: "no_games", games: [],
+    });
+    await render(<NpbGamePreview game={game} favorites={[]} services={{ ...services,
+      product: { ...services.product, teamSeason: async () => null } as unknown as typeof services.product,
+      gameSurface: { ...services.gameSurface, manifest: async () => ({ ...manifest, from: "2026-09-19" }), date } as unknown as typeof services.gameSurface,
+    }} />);
+    expect(container.textContent?.match(/0勝 \/ 0試合/g)).toHaveLength(2);
+    expect(container.textContent).not.toContain("結果未確認");
+  });
   it.each([["loading", "この試合終了時のシリーズ"], ["error", "Series情報を読み込めません"], ["missing", "この年のSeries情報は未収録"]])("shows explicit %s Series state", async (status, text) => {
     staticValues.set("status:postseason/hub/2025.json", status);
     await render(<PostseasonGameContext season={2025} gameId="one" names={id => id} />);
