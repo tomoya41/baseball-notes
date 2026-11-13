@@ -88,6 +88,20 @@ describe("outside-calendar operational retention (not Current freshness or Gate 
       expect(evaluateNpbDailyHealth({ ...f, status }, i, action, collection).likelyFault).toBe("delivery");
     expect(evaluateNpbDailyHealth(f, { ...i, targetDayRun: day({ operationalStatus: "failed" }) }, action, collection).likelyFault).toBe("collector");
   });
+  it("keeps a delayed outside-calendar attempt inconclusive without waiving stale or hiding publication lag", () => {
+    const olderAction = { ...action, inferredTargetDate: "2026-10-12" };
+    const collection = diagnoseNpbCollection(f.expectedEffectiveDate, olderAction, lifecycle);
+    const summary = evaluateNpbDailyHealth(f, i, olderAction, collection);
+    expect(summary).toMatchObject({ collectionStatus: "calendar_skip_unverified", likelyFault: "unknown",
+      health: "unhealthy", freshness: { status: "stale" } });
+    expect(summary.warnings).toContain("Outside-calendar skip not verified for the target date");
+    expect(failsRequiredNpbHealth(summary)).toBe(true);
+    expect(canRetainNpbSnapshot(f, i, olderAction, lifecycle)).toBe(false);
+    expect(evaluateNpbDailyHealth({ ...f, publishedEffectiveDate: "2026-10-11" }, i, olderAction, collection).likelyFault).toBe("publish");
+    const failedAction = { ...action, conclusion: "failure" };
+    expect(evaluateNpbDailyHealth(f, i, failedAction, diagnoseNpbCollection(f.expectedEffectiveDate, failedAction, lifecycle)))
+      .toMatchObject({ collectionStatus: "scheduled_failure", likelyFault: "collector", health: "unhealthy" });
+  });
   it("requires evidence from the right run and a DB calendar without conflicting fixtures", () => {
     const diagnose = (run: Parameters<typeof diagnoseNpbCollection>[1], db = lifecycle) =>
       diagnoseNpbCollection(f.expectedEffectiveDate, run, db);

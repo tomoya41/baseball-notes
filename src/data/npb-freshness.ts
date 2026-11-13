@@ -202,7 +202,8 @@ export function evaluateNpbDailyHealth(freshness: PublishedFreshness, ingestion:
       warnings.push(`Turso standings date: ${ingestion.latestStandingsDate??"missing"}`);
     const day=ingestion.targetDayRun;
     if(!day) warnings.push(collectionStatus === "calendar_skip_verified" ?
-      "No target Day run (verified outside-calendar skip)" : "Target Day ingestion run missing");
+      "No target Day run (verified outside-calendar skip)" : collectionStatus === "calendar_skip_unverified" ?
+        "Outside-calendar skip not verified for the target date" : "Target Day ingestion run missing");
     else {
       if(day.dayStatus!=="complete" && day.dayStatus!=="no_games") warnings.push(`Day ingestion: ${day.dayStatus}`);
       if(day.operationalStatus!=="succeeded") warnings.push(`Day operation: ${day.operationalStatus}`);
@@ -220,14 +221,14 @@ export function evaluateNpbDailyHealth(freshness: PublishedFreshness, ingestion:
     freshness.status==="unreachable" || freshness.status==="invalid_payload" ? "delivery" :
     !ingestion ? "unknown" :
     ingestion.latestStandingsDate===freshness.expectedEffectiveDate ? "publish" : "collector";
-  if (collectionStatus === "calendar_skip_verified" && freshness.status === "stale" && likelyFault === "collector" &&
-    !ingestion?.targetDayRun) {
+  if ((collectionStatus === "calendar_skip_verified" || collectionStatus === "calendar_skip_unverified") &&
+    freshness.status === "stale" && likelyFault === "collector" && !ingestion?.targetDayRun) {
     const saved = ingestion?.latestStandingsDate;
     const published = freshness.publishedEffectiveDate;
-    // An intentional skip explains the absent daily update. A public lag
-    // behind the independently saved snapshot can still be a publish failure.
+    // An absent attempt is inconclusive outside the reviewed calendar.
+    // A public lag behind the independently saved snapshot still indicates delivery lag.
     likelyFault = !saved || !published || published > saved ? "unknown" :
-      published < saved ? "publish" : null;
+      published < saved ? "publish" : collectionStatus === "calendar_skip_verified" ? null : "unknown";
   }
   const health:HealthStatus = freshness.status!=="fresh" ?
     (freshness.deadlinePassed ? "unhealthy" : "warning") : warnings.length ? "warning" : "healthy";
