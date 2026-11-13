@@ -8,3 +8,10 @@ export interface GameSurfaceReader {
   recent():Promise<{games:GameIndexRow[];effectiveDate:string}>;
   records():Promise<NpbRecords>;
 }
+
+export async function readGameDateForManifest(reader: Pick<GameSurfaceReader, "date">, manifest: GameManifest,
+  date: string): Promise<GameDateIndex> {
+  const day = await reader.date(date);
+  if (day.date !== date || day.generatedAt !== manifest.generatedAt) throw Error("Game date publication generation differs");
+  return day;
+}

@@ -315,10 +315,14 @@ describe("discovery and glossary", () => {
   });
   it("distinguishes no-games from unknown dates and retains partial-game links", async () => {
     const { deps } = seedNpb();
-    const surface = { manifest: async () => ({ from: "2026-10-03", to: "2026-10-03", effectiveDate: "2026-10-03" }), date: async (): Promise<GameDateIndex> => ({ schemaVersion: 1, league: "NPB", date: "2026-10-03", generatedAt: "2026-10-04T00:00:00Z", coverage: "no_games", games: [] }) } as unknown as typeof services.gameSurface;
+    const surface = { manifest: async () => ({ from: "2026-10-03", to: "2026-10-03", effectiveDate: "2026-10-03", generatedAt: "2026-10-04T00:00:00Z" }), date: async (): Promise<GameDateIndex> => ({ schemaVersion: 1, league: "NPB", date: "2026-10-03", generatedAt: "2026-10-04T00:00:00Z", coverage: "no_games", games: [] }) } as unknown as typeof services.gameSurface;
     await mount(<NpbDiscovery services={{ ...deps, gameSurface: surface }} />, "/NPB/search?kind=game"); expect(container.textContent).toContain("確認済み · 試合なし");
     surface.date = async () => ({ schemaVersion: 1, league: "NPB", date: "2026-10-03", generatedAt: "2026-10-04T00:00:00Z", coverage: "unknown", games: [] });
     await mount(<NpbDiscovery services={{ ...deps, gameSurface: surface }} />, "/NPB/search?kind=game"); expect(container.textContent).not.toContain("確認済み · 試合なし"); expect(container.textContent).toContain("一部確認中");
+    surface.date = async () => ({ schemaVersion: 1, league: "NPB", date: "2026-10-03", generatedAt: "2026-10-03T00:00:00Z", coverage: "no_games", games: [] });
+    await mount(<NpbDiscovery services={{ ...deps, gameSurface: surface }} />, "/NPB/search?kind=game");
+    expect(container.textContent).toContain("指定日の試合情報を取得できません");
+    expect(container.textContent).not.toContain("試合なし");
   });
   it("refuses historical game data from another date", async () => {
     staticValues.set("schedule/2025/2025-09-28.json", { season: 2025, date: "2024-09-28", games: [] });
