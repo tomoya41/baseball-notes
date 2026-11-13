@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import type { Services } from "../app/services";
+import { readGameDateForManifest } from "../application/game-surface";
 import type { League } from "../domain/models";
 import type { NpbGameDetail } from "../domain/npb-game-detail";
 import type { NpbTeamSeason } from "../domain/npb-product-contract";
@@ -63,7 +64,8 @@ export function GameTeamLinks({ league, teams, scope = "", ...actions }: Favorit
   return <div className="row-list match-team-links">{teams.map(t => <div className="surface-favorite" key={t.id}><Link className="player-row" to={`/${league}/teams/${encodeURIComponent(t.id)}${scope}`}><strong>{t.name}</strong><span>球団ページ →</span></Link><TeamFavorite league={league} teamId={t.id} name={t.name} {...actions} /></div>)}</div>;
 }
 export function NpbGamePreview({ game, services, favorites }: { game: NpbGameDetail; services: Services; favorites: FavoriteActions["favorites"] }) {
-  const [value, setValue] = useState<{ id: string; season: NpbTeamSeason | null; seasonError: boolean; games: GameIndexRow[]; incomplete: boolean } | null>(null), [error, setError] = useState("");
+  const [value, setValue] = useState<{ id: string; season: NpbTeamSeason | null; seasonError: boolean;
+    games: GameIndexRow[]; incomplete: boolean; failedDates: number } | null>(null), [error, setError] = useState("");
   useEffect(() => { let active = true; void (async () => {
     const manifest = await services.gameSurface.manifest();
     const until = [shiftGameDate(game.date, -1), manifest.effectiveDate].sort()[0]!;
@@ -71,23 +73,35 @@ export function NpbGamePreview({ game, services, favorites }: { game: NpbGameDet
     const season = await services.product.teamSeason(Number(game.date.slice(0, 4))).catch(() => { seasonError = true; return null; });
     const windowFrom = shiftGameDate(game.date, -14), windowTo = shiftGameDate(game.date, -1);
     const from = [windowFrom, manifest.from].sort().at(-1)!;
-    const dates: string[] = [], games: GameIndexRow[] = []; let incomplete = until < windowTo || manifest.from > windowFrom || manifest.to < windowTo;
+    const dates: string[] = [], games: GameIndexRow[] = [];
+    let incomplete = until < windowTo || manifest.from > windowFrom || manifest.to < windowTo;
     for (let d = from; d <= until && d <= manifest.to; d = shiftGameDate(d, 1)) dates.push(d);
-    const results = await Promise.allSettled(dates.map(d => services.gameSurface.date(d)));
-    results.forEach((result, index) => {
-      if (result.status !== "fulfilled" || result.value.date !== dates[index]) { incomplete = true; return; }
+    const results = await Promise.allSettled(dates.map(d => readGameDateForManifest(services.gameSurface, manifest, d)));
+    let failedDates = 0;
+    for (const result of results) {
+      if (result.status === "rejected") { failedDates++; continue; }
       const page = result.value;
       incomplete ||= !["complete", "no_games"].includes(page.coverage);
       games.push(...page.games.filter(g => g.status === "final" && g.date < game.date));
-    });
-    return { id: game.gameId, season: season && season.period.to <= until ? season : null, seasonError, games, incomplete };
+    }
+    return { id: game.gameId, season: season && season.period.to <= until ? season : null, seasonError, games, incomplete, failedDates };
   })().then(v => { if (active) setValue(v); }).catch(() => { if (active) setError(game.gameId); }); return () => { active = false; }; }, [game.gameId, game.date, services]);
   const data = value?.id === game.gameId ? value : null;
   const opponents = data?.games.filter(g => [g.home.id, g.away.id].includes(game.home.id) && [g.home.id, g.away.id].includes(game.away.id)).sort((a, b) => b.date.localeCompare(a.date) || b.gameNumber - a.gameNumber) ?? [];
   return <section className="home-section game-preview"><SectionHeader title="試合前の見どころ" /><p className="inline-note">保存済みの試合前データ。予告先発・出場選手の予測は行いません。</p>
     {error === game.gameId ? <p>プレビューを読み込めません。球団ページから確認できます。</p> : !data ? <LoadingSkeleton /> : <>
       {data.season ? <><p className="inline-note">{data.season.period.to}まで · {data.season.coverage.status === "complete" ? "確認済み" : "保存済み分"}</p><div className="preview-team-grid">{[game.away, game.home].map(t => { const s = data.season!.teams.find(v => v.teamId === t.id); return <div key={t.id}><Link to={`/NPB/teams/${encodeURIComponent(t.id)}`}>{t.shortName}</Link><strong>{s ? `${s.W}勝 ${s.L}敗 ${s.T}分` : "成績未確認"}</strong><small>得点 {s?.runsFor ?? "—"} / 失点 {s?.runsAgainst ?? "—"}</small></div>; })}</div></> : <p className="inline-note" role={data.seasonError ? "status" : undefined}>{data.seasonError ? "球団のシーズン成績を読み込めません。試合結果は読み込めた範囲を表示しています。" : "試合前時点のシーズン成績は未収録です。"}</p>}
-      <h3>直近14日間の結果</h3>{data.incomplete && <p className="inline-note">一部データ確認中。未収録試合は含みません。</p>}<div className="preview-team-grid">{[game.away, game.home].map(t => { const rows = data.games.filter(g => [g.home.id, g.away.id].includes(t.id)); const scored = rows.filter(g => g.home.score !== null && g.away.score !== null); const wins = scored.filter(g => g.home.id === t.id ? g.home.score! > g.away.score! : g.away.score! > g.home.score!).length; return <div key={t.id}><span>{t.shortName}</span><strong>{wins}勝 / {scored.length}試合</strong>{rows.length !== scored.length && <small>スコア未確認あり</small>}</div>; })}</div>
+      <h3>直近14日間の結果</h3>
+      {data.failedDates > 0 ? <p className="inline-note" role="status">一部の日付の結果を読み込めません。</p> :
+        data.incomplete && <p className="inline-note">一部データ確認中。収録済みの結果を表示しています。</p>}
+      <div className="preview-team-grid">{[game.away, game.home].map(t => {
+        const rows = data.games.filter(g => [g.home.id, g.away.id].includes(t.id));
+        const scored = rows.filter(g => g.home.score !== null && g.away.score !== null);
+        const wins = scored.filter(g => g.home.id === t.id ? g.home.score! > g.away.score! : g.away.score! > g.home.score!).length;
+        const unconfirmed = scored.length === 0 && (data.incomplete || data.failedDates > 0 || rows.length > 0);
+        return <div key={t.id}><span>{t.shortName}</span><strong>{unconfirmed ? "結果未確認" : `${wins}勝 / ${scored.length}試合`}</strong>
+          {rows.length !== scored.length && <small>スコア未確認あり</small>}</div>;
+      })}</div>
       {opponents.length > 0 && <><h3>この期間の直接対戦</h3><GameLinks games={opponents.slice(0, 3)} /></>}
     </>}
     {favorites.some(f => f.kind === "player" && f.league === "NPB") && <Link className="text-link" to="/NPB/my">フォロー選手の直近成績・推移 →</Link>}

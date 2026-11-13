@@ -4,14 +4,15 @@ import type {GameDateIndex} from '../domain/npb-game-index';
 import type {NpbGameDetail} from '../domain/npb-game-detail';
 import {selectDailyMvp,savedGameMvpInputs,gameDetailsToCheck,type DailyMvpResult} from '../domain/daily-mvp';
 import {readCachedMvpGames} from '../application/daily-mvp';
-import type {GameSurfaceReader} from '../application/game-surface';
+import {readGameDateForManifest,type GameSurfaceReader} from '../application/game-surface';
 import {LicensedPlayerPhoto} from './licensed-player-photo';
 import {GameMvp} from './game-mvp';
 export function UnavailableDailyMvp({reason='選手成績未収録のため、選出していません。'}:{reason?:string}){return <section className="daily-mvp"><h2>この日のMVP <small>アプリ独自選出</small></h2><p>{reason}</p><p className="inline-note">公式表彰とは異なります。</p></section>;}
 export function DailyMvp({date,index,repository,current}:{date:string;index?:GameDateIndex;repository?:GameSurfaceReader|undefined;current?:NpbGameDetail}){
  const [open,setOpen]=useState(false),[snapshot,setSnapshot]=useState<{date:string;index:GameDateIndex|undefined;current:NpbGameDetail|undefined;value:DailyMvpResult;games:ReturnType<typeof savedGameMvpInputs>;toCheck:ReturnType<typeof gameDetailsToCheck>}|null>(null);
  useEffect(()=>{if(!open)return;let active=true;void(async()=>{
-  const day=index??await repository?.date(date);if(!day||day.date!==date)throw Error('Day unavailable');
+  const day = index ?? (repository && await readGameDateForManifest(repository, await repository.manifest(), date));
+  if (!day || day.date !== date) throw Error('Day unavailable');
   const details=await readCachedMvpGames(day.games.filter(g=>g.status==='final').map(g=>g.gameId),current);
   return {value:selectDailyMvp(day,details),games:savedGameMvpInputs(day,details),toCheck:gameDetailsToCheck(day,details)};
  })().then(r=>{if(active)setSnapshot({date,index,current,...r});}).catch(()=>{if(active)setSnapshot({date,index,current,value:{status:'unavailable',reason:'この日の試合別成績を確認できません。'},games:[],toCheck:[]});});return()=>{active=false;};},[open,date,index,repository,current]);
