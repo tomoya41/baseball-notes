@@ -1,7 +1,7 @@
 import { describe,expect,it,vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter } from "react-router-dom";
-import { gameDateIndexSchema,orderGames,shiftGameDate,type GameIndexRow } from "../src/domain/npb-game-index";
+import { gameDateIndexSchema,orderGames,shiftGameDate,type GameDateIndex,type GameIndexRow } from "../src/domain/npb-game-index";
 import { recordsSchema } from "../src/domain/npb-records";
 import { GameDateView } from "../src/ui/npb-game-surface";
 import { RecordsView } from "../src/ui/npb-records-screen";
@@ -14,7 +14,7 @@ const row=(id="one",status:GameIndexRow["status"]="final",number=1):GameIndexRow
   status,scheduledTime:"18:00",home:{id:"npb:team:tigers",name:"阪神",score:status==="final"?1:null},
   away:{id:"npb:team:baystars",name:"DeNA",score:status==="final"?2:null},completeness:status==="final"?"partial":null,
   battingAvailable:false,pitchingAvailable:false,detailAvailable:true});
-const date=(games:GameIndexRow[],coverage:"complete"|"partial"|"no_games"|"unknown"="partial")=>gameDateIndexSchema.parse({schemaVersion:1,
+const date=(games:GameIndexRow[],coverage:GameDateIndex["coverage"]="partial")=>gameDateIndexSchema.parse({schemaVersion:1,
   league:"NPB",date:"2026-09-25",generatedAt:"2026-09-27T00:00:00Z",coverage,games});
 const html=(element:React.ReactNode)=>renderToStaticMarkup(<MemoryRouter>{element}</MemoryRouter>);
 const records=(ready=false)=>recordsSchema.parse({schemaVersion:1,league:"NPB",season:2026,effectiveDate:"2026-09-26",
@@ -26,11 +26,12 @@ describe("canonical dated Game surface",()=>{
     const scoped = html(<GameDateView payload={date([row(), other])} team="npb:team:tigers" />);
     expect(scoped).toContain("npb%3Agame%3Aone?date=2026-09-25&amp;team=npb%3Ateam%3Atigers");
     expect(scoped).not.toContain("ヤクルト");
-    expect(scoped).toContain("一部データ確認中");
+    expect(scoped).toContain("この日の試合データは一部収録です");
     expect(scoped).not.toContain("この日のMVP");
     const empty = html(<GameDateView payload={date([other])} team="npb:team:tigers" />);
-    expect(empty).toContain("この球団の収録試合はありません");
+    expect(empty).toContain("この球団の試合を確認できていません");
     expect(empty).not.toContain("試合なし");
+    expect(empty).not.toContain("一部収録です");
   });
   it("offers a safe observation-day route after the regular-season boundary without widening Season coverage",async()=>{
     const client=openDataClient("file::memory:");
@@ -43,7 +44,7 @@ describe("canonical dated Game surface",()=>{
     }finally{client.close();}
   });
   it("lists partial Game headers with safe canonical detail links",()=>{const text=html(<GameDateView payload={date([row()])}/>);
-    expect(text).toContain("一部データ確認中");expect(text).toContain("npb%3Agame%3Aone");expect(text).toContain("ビジター DeNA 2、ホーム 阪神 1、試合終了");});
+    expect(text).toContain("この日の試合データは一部収録です");expect(text).toContain("npb%3Agame%3Aone");expect(text).toContain("ビジター DeNA 2、ホーム 阪神 1、試合終了");});
   it("distinguishes scoreboard links from partial and complete player records",()=>{
     const scoreOnly=row("score"), partial={...row("partial"),battingAvailable:true};
     const complete={...row("complete"),completeness:"complete" as const,battingAvailable:true,pitchingAvailable:true};
@@ -53,6 +54,21 @@ describe("canonical dated Game surface",()=>{
   it("distinguishes confirmed no-games from unavailable schedule",()=>{
     expect(html(<GameDateView payload={date([],"no_games")}/>)).toContain("試合なし");
     expect(html(<GameDateView payload={date([],"unknown")}/>)).toContain("確認できていません");});
+  it("explains whether a filtered date is confirmed, missing or failed", () => {
+    const team = "npb:team:swallows";
+    expect(html(<GameDateView payload={date([row()], "complete")} team={team} />))
+      .toContain("この球団の収録試合はありません");
+    expect(html(<GameDateView payload={date([], "no_games")} team={team} />)).toContain("試合なし");
+    expect(html(<GameDateView payload={date([], "unknown")} team={team} />))
+      .toContain("この球団の試合を確認できていません");
+    const failed = html(<GameDateView payload={date([row()], "failed")} team={team} />);
+    expect(failed).toContain('role="alert"');
+    expect(failed).toContain("この日の試合データを取得できませんでした");
+    expect(failed).not.toContain("保存済みの試合を表示します");
+    const saved = html(<GameDateView payload={date([row()], "failed")} team="npb:team:tigers" />);
+    expect(saved).toContain("一部データを取得できなかったため、保存済みの試合を表示します");
+    expect(saved).toContain("npb%3Agame%3Aone");
+  });
   it("keeps doubleheaders with stable clock/game/id ordering",()=>{const rows=[row("b","scheduled",2),row("a","scheduled",1)];
     expect(orderGames(rows).map(g=>g.gameId)).toEqual(["npb:game:a","npb:game:b"]);expect(orderGames(rows)).toHaveLength(2);
     expect(html(<GameDateView payload={date(rows)}/>)).toContain("第2試合");});
