@@ -76,6 +76,27 @@ describe("Team Favorites preserve the existing v1 player store", () => {
   });
 });
 describe("daily data through the existing persistent cache", () => {
+  it("keeps the last matching date offline after rejecting a different publication generation", async () => {
+    const date = "2026-10-03";
+    const manifest = { schemaVersion: 1, league: "NPB", from: date, to: date,
+      effectiveDate: date, generatedAt: "2026-10-03T00:00:00Z" };
+    const result = page(date, [row("stored-final", date)], "complete");
+    let mismatched = false;
+    const request = vi.fn<typeof fetch>(async url => String(url).endsWith("/manifest.json")
+      ? Response.json(manifest)
+      : Response.json(mismatched ? { ...page(date, [], "no_games"), generatedAt: "2026-10-02T00:00:00Z" } : result));
+    const name = "npb-game-date-generation-offline";
+    const online = new StaticGameSurfaceRepository("https://coherence.test/", createPublicFetch(new PublicResponseStore(name), request, () => true));
+    const before = await readDailyDashboard(online, date);
+    expect(before.today.map(game => game.gameId)).toEqual(["npb:game:stored-final"]);
+    mismatched = true;
+    const conflict = await readDailyDashboard(online, date);
+    expect(conflict.todayState).toBe("unavailable");
+    expect(conflict.failedDates).toEqual([date]);
+    const offline = new StaticGameSurfaceRepository("https://coherence.test/", createPublicFetch(new PublicResponseStore(name), request, () => false));
+    expect(await readDailyDashboard(offline, date)).toEqual(before);
+    expect(request).toHaveBeenCalledTimes(4);
+  });
   it("restores validated dated indexes offline after repository/store restart", async () => {
     const name = "product-daily-persistent";
     const request = vi.fn<typeof fetch>(async url => String(url).endsWith("manifest.json") ? Response.json({ schemaVersion: 1, league: "NPB", from: "2026-10-02", to: "2026-10-03", effectiveDate: "2026-10-02", generatedAt: "2026-10-03T00:00:00Z" }) : String(url).includes("2026-10-02") ? Response.json(page("2026-10-02", [row("past", "2026-10-02")], "complete")) : Response.json(page("2026-10-03", [row("next", "2026-10-03", "scheduled")])));

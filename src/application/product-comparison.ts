@@ -6,6 +6,7 @@ import { matchesNpbTeamSeasonGeneration } from "../domain/npb-product-contract";
 import type { HistoricalTeamHub } from "../domain/team-hub";
 import type { CompareMetrics } from "../domain/player-compare";
 import type { ComparisonRow } from "../domain/product-comparison";
+import { readGameDateForManifest } from "./game-surface";
 
 export async function boundedComparisonRead<T>(keys: readonly string[], read: (key: string) => Promise<T>): Promise<PromiseSettledResult<T>[]> {
   if (keys.length > 14) throw Error("Bounded comparison required");
@@ -42,10 +43,10 @@ export async function readNpbTeamComparison(services: Services, view = "season")
   if (manifest.effectiveDate !== catalog.effectiveDate) throw Error("Team recent date differs");
   const { from, to } = dateWindow(catalog.effectiveDate, 14);
   const dates = Array.from({ length: 14 }, (_, i) => shiftGameDate(to, -i)).filter(d => d >= manifest.from);
-  const pages = await boundedComparisonRead(dates, d => services.gameSurface.date(d));
-  if (pages.some(p => p.status === "rejected")) throw Error("Recent team results incomplete");
+  const pages = await boundedComparisonRead(dates, d => readGameDateForManifest(services.gameSurface, manifest, d));
+  const failedPage = pages.find(page => page.status === "rejected");
+  if (failedPage) throw Error("Recent team results incomplete", { cause: failedPage.reason });
   const ready = pages.flatMap(p => p.status === "fulfilled" ? [p.value] : []);
-  if (ready.some(p => p.generatedAt !== manifest.generatedAt)) throw Error("Recent Game publication generation differs");
   const coverage = from >= manifest.from && ready.every(p => ["complete", "no_games"].includes(p.coverage)) ? "complete" : "partial";
   return catalog.teams.map(t => {
     const games = ready.flatMap(p => p.games).filter(g => g.status === "final" && [g.home.id, g.away.id].includes(t.teamId));

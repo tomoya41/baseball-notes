@@ -21,7 +21,7 @@ it.each([false, true])('checks the day generation on game detail before using sa
     await act(async () => host.querySelector('summary')!.click());
     await act(async () => host.querySelector('details')!.dispatchEvent(new Event('toggle')));
     expect(repository.manifest).toHaveBeenCalledTimes(1);
-    expect(repository.date).toHaveBeenCalledExactlyOnceWith(index.date);
+    expect(repository.date).toHaveBeenCalledExactlyOnceWith(index.date, index.generatedAt);
     if (matches) {
       expect(readCachedMvpGames).toHaveBeenCalledExactlyOnceWith([game.gameId], game);
       expect(host.textContent).toContain('架空打者0');

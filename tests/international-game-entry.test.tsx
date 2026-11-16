@@ -45,7 +45,7 @@ it("opens real official tournament links alongside the domestic Games route with
     expect(container.querySelector("output")?.textContent).toBe(currentUrl);
     expect(container.querySelector('.scoreboard-list a')?.getAttribute("href")).toBe(domesticLink);
     expect(repository.manifest).toHaveBeenCalledOnce();
-    expect(repository.date).toHaveBeenCalledExactlyOnceWith(date);
+    expect(repository.date).toHaveBeenCalledExactlyOnceWith(date, index.generatedAt);
     expect(repository.recent).not.toHaveBeenCalled();
     expect(repository.records).not.toHaveBeenCalled();
   } finally {
