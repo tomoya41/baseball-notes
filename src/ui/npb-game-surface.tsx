@@ -26,10 +26,17 @@ export function GameLinks({games,team}:{games:readonly GameIndexRow[];team?:stri
   detailLabel={gameDetailLabel(g)} />)}</div>;}
 export function GameDateView({payload,team}:{payload:GameDateIndex;team?:string | undefined}){
   const games = team ? payload.games.filter(g => g.home.id === team || g.away.id === team) : payload.games;
+  const failed = payload.coverage === "failed";
+  const emptyTitle = payload.coverage === "no_games" ? "試合なし"
+    : failed ? "この日の試合データを取得できませんでした"
+    : team && payload.coverage === "complete" ? "この球団の収録試合はありません"
+    : team ? "この球団の試合を確認できていません" : "この日の試合を確認できていません";
   return <>
-  {(payload.coverage==="partial"||payload.coverage==="failed")&&<p role="status">一部データ確認中です。保存済みの試合を表示します。</p>}
-  {games.length?<GameLinks games={games} team={team}/>:<DataState kind="no-data"
-    title={payload.coverage==="no_games"?"試合なし":team?"この球団の収録試合はありません":"この日の試合予定を確認できていません"}/>}
+  {games.length > 0 && (payload.coverage === "partial" || failed) && <p role="status">
+    {failed ? "一部データを取得できなかったため、保存済みの試合を表示します。" : "この日の試合データは一部収録です。"}
+  </p>}
+  {games.length ? <GameLinks games={games} team={team}/>
+    : <DataState kind={failed ? "source-unavailable" : "no-data"} title={emptyTitle}/>}
   {!team&&<DailyMvp key={payload.date} date={payload.date} index={payload}/>}
 </>;}
 export function NpbScheduleScreen({repository,favorites=[],toggle,saving=false}:{repository:GameSurfaceReader;favorites?:FavoriteActions["favorites"];toggle?:FavoriteActions["toggle"];saving?:boolean}){
