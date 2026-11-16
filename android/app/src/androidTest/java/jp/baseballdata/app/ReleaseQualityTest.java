@@ -810,7 +810,9 @@ public class ReleaseQualityTest {
     @Test public void contextualHomeUsesFreshRecordsAndHonorsSelectedViewAtAllFontSizes() throws Exception {
         scenario=ActivityScenario.launch(MainActivity.class);waitText("BASEBALL");
         js("location.hash='#/NPB/home'");settleContextualHome();waitViewport(360);
-        assertEquals("Verified bounded movement list", "3", js("String(document.querySelectorAll('[aria-label=\"注目の選手の動き\"] .player-row').length)"));
+        // Both clocks can prioritize movements, but they cover different record dates.
+        waitCondition("Three verified movement records in the test date window",
+            "document.querySelectorAll('[aria-label=\"注目の選手の動き\"] .player-row').length===3");
         // The movement lead may already be loaded when the test clock moves
         // from after November 8 into the series archive window.
         waitCondition("Recorded series archive has loaded", "!!document.querySelector('[data-japan-home-archive]')");
@@ -1265,6 +1267,23 @@ public class ReleaseQualityTest {
         assertEquals("Game result fits mobile viewport", "true", js("document.documentElement.scrollWidth<=innerWidth"));
         shell("input keyevent KEYCODE_BACK"); waitText("日程・結果");
         assertTrue("Back retains the selected schedule date", js("location.hash").contains("date=2026-10-08"));
+        for (float scale : new float[]{1.5f, 2.0f}) {
+            fontScaleAndRecreate(scale); waitViewport(360);
+            waitCondition("Schedule controls retain the selected date and native text scale",
+                "location.hash.includes('date=2026-10-08') && document.querySelectorAll('.game-competition-nav > *').length===3 && " +
+                "parseFloat(document.documentElement.style.getPropertyValue('--android-font-scale'))===" + scale);
+            assertEquals("Every competition label fits its own 44px tab on one line", "true", js("""
+                (()=>[...document.querySelectorAll('.game-competition-nav > *')].every(tab=>{
+                    const bounds=tab.getBoundingClientRect(), range=document.createRange();
+                    range.selectNodeContents(tab);
+                    const lines=[...range.getClientRects()];
+                    return bounds.width>=44 && bounds.height>=44 && lines.length===1
+                      && lines[0].left>=bounds.left-1 && lines[0].right<=bounds.right+1;
+                }))()
+                """));
+            assertEquals("Schedule remains within the WebView", "true", js("document.documentElement.scrollWidth<=innerWidth"));
+            screenshot("npb-schedule-competition-360-font-" + scale);
+        }
     }
     @Test public void nativePreferencesSurviveRestartAndFirebaseDisabled() throws Exception {
         String fixture = "{\"items\":[{\"league\":\"NPB\",\"kind\":\"player\",\"entityId\":\"canonical-player\"}]}";
