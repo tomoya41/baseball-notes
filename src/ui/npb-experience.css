@@ -56,16 +56,24 @@
 .home-international-link > span:first-child { display: grid; }
 .home-international-link strong { color: var(--color-text); }
 
-.game-schedule .game-competition-nav { display: flex; flex-wrap: wrap; gap: .3rem; margin-block: .45rem; }
+.game-competition-nav { display: flex; flex-wrap: wrap; gap: .3rem; margin-block: .45rem; }
 .game-competition-nav > :is(a, button) {
+  flex: 1 0 max-content;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: var(--touch);
+  min-block-size: var(--touch);
+  min-inline-size: var(--touch);
+  max-inline-size: 100%;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
-  padding: .35rem .55rem;
+  padding: .35em .3em;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: .875rem;
   font-weight: 700;
+  line-height: 1.35;
+  text-align: center;
 }
 .game-competition-nav > [aria-current="page"], .game-competition-nav > [aria-expanded="true"] { color: var(--brand); border-color: var(--brand); background: var(--brand-soft); }
 .game-schedule [data-international-entry]:not([open]) { display: none; }

@@ -49,7 +49,12 @@ export function NpbScheduleScreen({repository,favorites=[],toggle,saving=false}:
   const change=(next:string)=>{if(next===date)return;setState("loading");setPayload(null);setParams(previous=>{const nextParams=new URLSearchParams(previous);nextParams.set("date",next);return nextParams;});};
   const retry=()=>{setManifest(null);setPayload(null);setState("loading");setAttempt(value=>value+1);};
   return <div className="screen game-schedule"><PageHeading eyebrow="NPB" title="日程・結果"/>
-    <nav className="profile-tabs game-competition-nav" aria-label="試合の種類"><Link to="/NPB/schedule" aria-current="page">公式戦</Link><Link to="/NPB/postseason">ポストシーズン</Link><button type="button" aria-controls="international-game-entry" aria-expanded={internationalOpen} onClick={()=>setInternationalOpen(open=>!open)}>侍ジャパン</button></nav>
+    <nav className="game-competition-nav" aria-label="試合の種類">
+      <Link to="/NPB/schedule" aria-current="page">公式戦</Link>
+      <Link to="/NPB/postseason">ポストシーズン</Link>
+      <button type="button" aria-controls="international-game-entry" aria-expanded={internationalOpen}
+        onClick={() => setInternationalOpen(open => !open)}>侍ジャパン</button>
+    </nav>
     <InternationalGameEntry expanded={internationalOpen} onToggle={setInternationalOpen}/>
     <p className="game-collection-scope">{manifest ? `${manifest.effectiveDate}までの保存済みデータ` : "保存済みの公式戦を確認"}<Link to="/NPB/preseason">オープン戦 · 未収録</Link></p>
     {manifest&&date&&!outsideRange&&<DateRibbon date={date} min={manifest.from} max={manifest.to} onChange={change} />}
