@@ -5,6 +5,7 @@ import type { PersonalState } from "./personal-library";
 import { WATCH_LIMITS, watchFingerprint, type WatchObservation, type WatchPreferences } from "../domain/personal-watch";
 import { boundedExplorerRead, exploreRows, explorerInputErrors, explorerQuery, type ExplorerValues } from "../domain/data-explorer";
 import { readNpbRecentExplorer } from "./explorer-readers";
+import { readGameDateForManifest } from "./game-surface";
 import { readHistoricalProduct } from "../infrastructure/providers/historical-product-reader";
 import { battingAggregate, pitchingAggregate, dateWindow, type DatedBatter, type DatedPitcher } from "../domain/mlb-historical-aggregate";
 import { buildBattingTrends, buildPitchingTrends } from "../domain/player-trends";
@@ -92,12 +93,12 @@ export async function readWatchObservations(league: League, favorites: readonly 
       if (manifest && manifest.effectiveDate === directory.effectiveDate) {
         // Three existing date indexes, never a season-wide scan.
         const dates = [0, 1, 2].map(n => new Date(Date.parse(`${manifest.effectiveDate}T00:00:00Z`) - n * 86400_000).toISOString().slice(0, 10));
-        const pages = await Promise.all(dates.map(date => read(() => sources.gameSurface.date(date))));
-        const games = pages.filter(p => p && p.generatedAt === manifest.generatedAt).flatMap(p => p!.games);
+        const pages = await Promise.all(dates.map(date => read(() => readGameDateForManifest(sources.gameSurface, manifest, date))));
+        const games = pages.flatMap(p => p?.games ?? []);
         const today = new Date(now + 9 * 3600_000).toISOString().slice(0,10);
         const futureDates = [today, new Date(Date.parse(`${today}T00:00:00Z`) + 86400_000).toISOString().slice(0,10)].filter(d=>d<=manifest.to && d>=manifest.from);
-        const futurePages = await Promise.all(futureDates.map(d=>read(()=>sources.gameSurface.date(d))));
-        const planned = futurePages.filter(p=>p && p.generatedAt===manifest.generatedAt).flatMap(p=>p!.games);
+        const futurePages = await Promise.all(futureDates.map(date => read(() => readGameDateForManifest(sources.gameSurface, manifest, date))));
+        const planned = futurePages.flatMap(p => p?.games ?? []);
         for (const id of targets.teams) {
           const name = directory.teams.find(t => t.id === id)?.name; if (!name) continue;
           const g = games.filter(g => [g.home.id, g.away.id].includes(id) && g.status === "final").sort((a,c) => c.date.localeCompare(a.date) || c.gameNumber-a.gameNumber)[0];

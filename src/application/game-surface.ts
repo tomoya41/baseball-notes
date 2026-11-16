@@ -4,14 +4,14 @@ export type PublishedGameSummary = { game: GameIndexRow; generatedAt: string; co
 export interface GameSummaryReader { find(gameId: string, date?: string): Promise<PublishedGameSummary | null> }
 export interface GameSurfaceReader {
   manifest():Promise<GameManifest>;
-  date(date:string):Promise<GameDateIndex>;
+  date(date:string, expectedGeneratedAt?:string):Promise<GameDateIndex>;
   recent():Promise<{games:GameIndexRow[];effectiveDate:string}>;
   records():Promise<NpbRecords>;
 }
 
 export async function readGameDateForManifest(reader: Pick<GameSurfaceReader, "date">, manifest: GameManifest,
   date: string): Promise<GameDateIndex> {
-  const day = await reader.date(date);
+  const day = await reader.date(date, manifest.generatedAt);
   if (day.date !== date || day.generatedAt !== manifest.generatedAt) throw Error("Game date publication generation differs");
   return day;
 }
