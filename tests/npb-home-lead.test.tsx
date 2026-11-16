@@ -96,3 +96,26 @@ it("loads an independent lead when a scheduled series snapshot expires within th
   await render("2026-10-26T00:01:00Z");expect(host.querySelector("[data-home-focus]")?.getAttribute("data-home-focus")).toBe("moves");
   expect(readNpbJapanSeries).toHaveBeenCalledOnce();expect(readNpbPlayerEvents).toHaveBeenCalledOnce();
 });
+
+it("shows the existing movement lead while the archive loads after the clock enters the series window", async () => {
+  const records = events();
+  records.events[0]!.recordedDate = "2026-11-05";
+  vi.mocked(readNpbPlayerEvents).mockResolvedValue(records);
+  let finishSeries!: (value: Awaited<ReturnType<typeof readNpbJapanSeries>>) => void;
+  vi.mocked(readNpbJapanSeries).mockReturnValue(new Promise(resolve => { finishSeries = resolve; }));
+  const render = async (at: string) => act(async () => root.render(
+    <MemoryRouter><NpbHomeLead now={Date.parse(at)} requested={null} visible favorites={[]} /></MemoryRouter>
+  ));
+  await render("2026-11-14T03:00:00Z");
+  expect(host.querySelector('[data-home-focus="moves"]')).not.toBeNull();
+  expect(readNpbJapanSeries).not.toHaveBeenCalled();
+  await render("2026-11-06T03:00:00Z");
+  expect(host.querySelector('[data-home-focus="moves"]')).not.toBeNull();
+  expect(host.querySelector("[data-japan-home-archive]")).toBeNull();
+  await act(async () => finishSeries(series()));
+  const archive = host.querySelector<HTMLDetailsElement>("[data-japan-home-archive]");
+  expect(archive?.open).toBe(false);
+  expect(host.querySelector(".japan-home-result")).toBeNull();
+  expect(readNpbJapanSeries).toHaveBeenCalledOnce();
+  expect(readNpbPlayerEvents).toHaveBeenCalledOnce();
+});
