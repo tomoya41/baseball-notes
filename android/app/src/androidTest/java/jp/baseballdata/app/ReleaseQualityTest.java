@@ -811,7 +811,10 @@ public class ReleaseQualityTest {
         scenario=ActivityScenario.launch(MainActivity.class);waitText("BASEBALL");
         js("location.hash='#/NPB/home'");settleContextualHome();waitViewport(360);
         assertEquals("Verified bounded movement list", "3", js("String(document.querySelectorAll('[aria-label=\"注目の選手の動き\"] .player-row').length)"));
-        assertEquals("Stale series is an explicit closed archive", "true", js("!!document.querySelector('[data-japan-home-archive]') && !document.querySelector('[data-japan-home-archive]').open && !document.querySelector('.japan-home-result')"));
+        // The movement lead may already be loaded when the test clock moves
+        // from after November 8 into the series archive window.
+        waitCondition("Recorded series archive has loaded", "!!document.querySelector('[data-japan-home-archive]')");
+        assertEquals("Stale series is an explicit closed archive", "true", js("!document.querySelector('[data-japan-home-archive]').open && !document.querySelector('.japan-home-result')"));
         assertEquals("Regular results do not load into the offseason lead", "false", js("!!document.querySelector('.today-board')"));
         assertEquals("Licensed article record remains labeled and linked", "true", js("document.querySelector('[data-home-focus] .inline-note').textContent.includes('記事記録') && !!document.querySelector('[data-home-focus] a[href*=\"oldid=" + NPB_CURRENT_EVENT_SOURCE_REVISION + "\"]') && !!document.querySelector('[data-home-focus] a[href=\"https://creativecommons.org/licenses/by-sa/4.0/\"]')"));
         assertTrue("No invented contract renewals", js("document.querySelector('.home-context-links').innerText").contains("未収録"));
