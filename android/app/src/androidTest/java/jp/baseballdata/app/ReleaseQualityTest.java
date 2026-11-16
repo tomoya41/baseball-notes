@@ -810,7 +810,9 @@ public class ReleaseQualityTest {
     @Test public void contextualHomeUsesFreshRecordsAndHonorsSelectedViewAtAllFontSizes() throws Exception {
         scenario=ActivityScenario.launch(MainActivity.class);waitText("BASEBALL");
         js("location.hash='#/NPB/home'");settleContextualHome();waitViewport(360);
-        assertEquals("Verified bounded movement list", "3", js("String(document.querySelectorAll('[aria-label=\"注目の選手の動き\"] .player-row').length)"));
+        // Both clocks can prioritize movements, but they cover different record dates.
+        waitCondition("Three verified movement records in the test date window",
+            "document.querySelectorAll('[aria-label=\"注目の選手の動き\"] .player-row').length===3");
         // The movement lead may already be loaded when the test clock moves
         // from after November 8 into the series archive window.
         waitCondition("Recorded series archive has loaded", "!!document.querySelector('[data-japan-home-archive]')");
