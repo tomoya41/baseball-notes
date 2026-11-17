@@ -12,6 +12,10 @@ import pin from "../src/data/npb-game-date-index-release.json";
 import { createHash, webcrypto } from "node:crypto";
 import { createPublicFetch } from "../src/infrastructure/public-response-cache";
 import { mvpFixture } from "./fixtures/daily-mvp";
+import { matchesPublishedFinalGame, readPublishedFinalGame, type DeferGameAssetCache } from "../src/application/game-surface";
+import { services } from "../src/app/services";
+import { StaticGameSurfaceRepository } from "../src/infrastructure/providers/static-game-surface-repository";
+import { HttpNpbGameDetailRepository } from "../src/infrastructure/providers/http-npb-game-detail-repository";
 
 const gameId = "npb:game:49a69ad2efd3bf67d3e5";
 const index = {schemaVersion:1,league:"NPB",competition:"regular",effectiveDate:"2026-10-12",generatedAt:"2026-10-14T15:05:03.165Z",dates:{[gameId]:"2026-10-08"}};
@@ -91,6 +95,108 @@ it("checks ID/date independently and never substitutes another game's score", as
   await expect(new PublishedNpbGameSummaryRepository({ date: async () => ({ ...day, games: [] }) }, async () => index).find(gameId)).resolves.toBeNull();
   await expect(new PublishedNpbGameSummaryRepository({ date: async () => ({ ...day, games: [game, game] }) }, async () => index).find(gameId)).rejects.toThrow();
   await expect(repository.find("npb:series:123")).rejects.toThrow();
+});
+
+it("saves no assets when the published result belongs to another game or has no confirmed score", async () => {
+  const manifest = { schemaVersion: 1 as const, league: "NPB" as const, from: game.date, to: game.date,
+    effectiveDate: game.date, generatedAt: day.generatedAt };
+  const remember = vi.fn(async () => {});
+  const reader = {
+    manifest: async (defer?: DeferGameAssetCache) => { defer?.(remember); return manifest; },
+    date: async (_date: string, _generation?: string, defer?: DeferGameAssetCache) => {
+      defer?.(remember);
+      return day;
+    },
+  };
+  await expect(readPublishedFinalGame(reader, { ...game, gameNumber: 2 })).rejects.toThrow("identity mismatch");
+  await expect(readPublishedFinalGame(reader, { ...game, away: game.home, home: game.away })).rejects.toThrow("identity mismatch");
+  await expect(readPublishedFinalGame({ ...reader, date: async () => ({ ...day,
+    games: [{ ...game, away: { ...game.away, score: null } }],
+  }) }, game)).resolves.toBeNull();
+  expect(remember).not.toHaveBeenCalled();
+  await expect(readPublishedFinalGame(reader, game)).resolves.toEqual({ game, generatedAt: day.generatedAt, coverage: day.coverage });
+  expect(remember).toHaveBeenCalledTimes(2);
+});
+
+it("does not cache a queried game detail that conflicts with the confirmed score", async () => {
+  const { game: detail, index } = mvpFixture();
+  const published = index.games[0]!;
+  const stale = { ...detail, away: { ...detail.away, score: 0 } };
+  const request = vi.fn<typeof fetch>().mockResolvedValueOnce(Response.json(stale)).mockResolvedValueOnce(Response.json(detail));
+  const put = vi.fn();
+  const repository = new HttpNpbGameDetailRepository("https://example.test/", createPublicFetch({
+    get: async () => undefined, put, remove: async () => {},
+  }, request, () => true));
+  const matches = (value: typeof detail) => matchesPublishedFinalGame(published, value);
+  expect(await repository.find(detail.gameId, matches)).toEqual(stale);
+  expect(put).not.toHaveBeenCalled();
+  expect(await repository.find(detail.gameId, matches)).toEqual(detail);
+  expect(put).toHaveBeenCalledTimes(1);
+});
+
+it("advances an open pregame view on matching public results, preserving them through stale detail retries", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  let time = 0;
+  vi.spyOn(performance, "now").mockImplementation(() => time);
+  vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
+  const host = document.createElement("div"), root = createRoot(host);
+  const payload = mvpFixture().game;
+  const final = { ...payload, gameId, date: game.date, home: { ...payload.home, ...game.home }, away: { ...payload.away, ...game.away } };
+  const scheduled = { ...final, status: "scheduled" as const, completeness: null,
+    home: { ...final.home, score: null }, away: { ...final.away, score: null }, batting: { away: [], home: [] }, pitching: { away: [], home: [] } };
+  const find = vi.fn().mockResolvedValueOnce(scheduled).mockResolvedValueOnce(scheduled)
+    .mockResolvedValueOnce({ ...final, home: { ...final.home, score: 1 } }).mockRejectedValueOnce(Error("HTTP 503")).mockResolvedValue(final);
+  const summary = vi.fn();
+  const manifest = { schemaVersion: 1 as const, league: "NPB" as const, from: game.date, to: game.date,
+    effectiveDate: game.date, generatedAt: day.generatedAt };
+  const gameSurface = new StaticGameSurfaceRepository("https://example.test/");
+  const before = { ...manifest, effectiveDate: "2026-10-07" };
+  const read = vi.spyOn(gameSurface, "manifest").mockResolvedValueOnce(before).mockResolvedValueOnce(before).mockResolvedValue(manifest);
+  const date = vi.spyOn(gameSurface, "date").mockResolvedValue({ ...day, generatedAt: "2026-10-13T15:05:03.165Z" });
+  const refresh = () => act(async () => { time += 31_000; window.dispatchEvent(new Event("focus")); document.dispatchEvent(new Event("visibilitychange")); });
+  const score = () => host.querySelector(".score-hero")?.getAttribute("aria-label");
+  const retry = () => act(async () => host.querySelector<HTMLButtonElement>(".game-detail button.button--secondary")!.click());
+  const query = `date=${game.date}&team=npb%3Ateam%3Atigers&boxSide=home`;
+  try {
+    const deps = { ...services, gameSurface };
+    vi.spyOn(deps.product, "teamSeason").mockRejectedValue(Error("Team season unavailable"));
+    await act(async () => root.render(<MemoryRouter initialEntries={[`/NPB/games/${gameId}?${query}`]}><Routes>
+      <Route path="/NPB/games/:gameId" element={<NpbGameDetailScreen repository={{ find }} services={deps} summaryRepository={{ find: summary }} />} />
+    </Routes></MemoryRouter>));
+    expect(score()).toContain("開始前");
+    expect(read).toHaveBeenCalledTimes(2); // preview and initial result check
+    expect(date).not.toHaveBeenCalled();
+    await refresh();
+    expect(date).toHaveBeenCalledTimes(1);
+    expect(score()).toContain("開始前");
+    expect(host.textContent).toContain("試合結果の更新を確認できませんでした");
+    expect(host.textContent).not.toContain("公開結果を反映しました");
+
+    date.mockResolvedValue(day);
+    await refresh();
+    expect(score()).toBe("ヤクルト 4、阪神 0、試合終了");
+    expect(host.textContent).toContain("個人成績は未確認です");
+    expect(host.querySelectorAll('[aria-label*="ボックススコア"]')).toHaveLength(0);
+    expect(host.querySelector('a[aria-label="日程・結果に戻る"]')?.getAttribute("href"))
+      .toBe("#/NPB/schedule?date=2026-10-08&team=npb%3Ateam%3Atigers");
+    expect(find).toHaveBeenCalledTimes(1);
+
+    await retry();
+    expect(score()).toBe("ヤクルト 4、阪神 0、試合終了");
+    await retry();
+    expect(score()).toBe("ヤクルト 4、阪神 0、試合終了");
+    expect(host.textContent).not.toContain("架空打者");
+    await retry();
+    expect(score()).toBe("ヤクルト 4、阪神 0、試合終了");
+    expect(summary).not.toHaveBeenCalled();
+    await retry();
+    expect(score()).toContain("試合終了");
+    expect(host.textContent).toContain("架空打者");
+    expect(host.textContent).not.toContain("個人成績は未確認です");
+    await refresh();
+    expect(find).toHaveBeenCalledTimes(5);
+    expect(read).toHaveBeenCalledTimes(4);
+  } finally { await act(async () => root.unmount()); vi.unstubAllGlobals(); vi.restoreAllMocks(); }
 });
 
 it("renders real saved results on API failure, preserves nulls and offers recovery without claiming a Box Score", async () => {

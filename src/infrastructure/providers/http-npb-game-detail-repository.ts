@@ -5,7 +5,7 @@ export class HttpNpbGameDetailRepository {
   constructor(private readonly baseUrl: string,
     private readonly fetcher: typeof fetch = publicDataFetch) {}
 
-  async find(gameId: string): Promise<NpbGameDetail | null> {
+  async find(gameId: string, admitForCache?: (detail: NpbGameDetail) => boolean): Promise<NpbGameDetail | null> {
     const url = new URL("api/npb/game-detail", this.baseUrl.endsWith("/") ? this.baseUrl : `${this.baseUrl}/`);
     url.searchParams.set("gameId", gameId);
     const response = await this.fetcher(url, { headers: { Accept: "application/json" } });
@@ -13,7 +13,7 @@ export class HttpNpbGameDetailRepository {
     if (!response.ok) throw new Error(`Game Detail HTTP ${response.status}`);
     const result = npbGameDetailSchema.parse(await response.json());
     if (result.gameId !== gameId) throw new Error("Game Detail identity mismatch");
-    await rememberPublicResponse(response);
+    if (!admitForCache || admitForCache(result)) await rememberPublicResponse(response);
     return result;
   }
 }
