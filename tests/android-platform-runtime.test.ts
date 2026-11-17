@@ -5,7 +5,8 @@ import { resumableNativeRoute } from "../src/app/native-resume";
 const state = vi.hoisted(() => ({ platform: "android", saved: undefined as string | undefined,
   launch: "",
   unsupported: false, bootEvent: undefined as string | undefined,
-  listener: undefined as undefined | ((event: { url: string }) => void) }));
+  listener: undefined as undefined | ((event: { url: string }) => void),
+  activityListener: undefined as undefined | ((event: { isActive: boolean }) => Promise<void>) }));
 const consume = vi.hoisted(() => vi.fn(async () => {
   if (state.unsupported) throw Error("Plugin unavailable in an older APK");
   return { route: state.saved };
@@ -17,6 +18,7 @@ vi.mock("@capacitor/app", () => ({ App: {
   getLaunchUrl: vi.fn(async () => ({ url: state.launch })),
   addListener: vi.fn(async (name, callback) => {
     if (name === "appUrlOpen") { state.listener = callback; if (state.bootEvent) callback({ url: state.bootEvent }); }
+    if (name === "appStateChange") state.activityListener = callback;
   }),
 } }));
 vi.mock("@capacitor/network", () => ({ Network: { getStatus: async () => ({ connected: true }), addListener: vi.fn() } }));
@@ -27,7 +29,7 @@ vi.mock("../src/infrastructure/public-response-cache", () => ({ clearSavedRespon
 beforeEach(() => {
   vi.clearAllMocks(); state.platform = "android"; state.saved = undefined; state.unsupported = false;
   state.launch = "baseballnotes://NPB/cs?season=2026&stage=npb_cs_final&role=pitching";
-  state.bootEvent = undefined; state.listener = undefined;
+  state.bootEvent = undefined; state.listener = undefined; state.activityListener = undefined;
   vi.stubGlobal("window", { location: { hash: "" }, addEventListener: vi.fn(), dispatchEvent: vi.fn() });
   vi.stubGlobal("document", { addEventListener: vi.fn() });
 });
@@ -41,6 +43,15 @@ it("opens the selected NPB Home season from a cold native launch", async () => {
   state.launch = "baseballnotes://NPB/home?homeSeason=autumn";
   await installPlatformRuntime();
   expect(window.location.hash).toBe("#/NPB/home?homeSeason=autumn");
+});
+it("notifies active screens on Android foreground after the network state is known", async () => {
+  await installPlatformRuntime();
+  vi.mocked(window.dispatchEvent).mockClear();
+  await state.activityListener!({ isActive: false });
+  expect(window.dispatchEvent).not.toHaveBeenCalled();
+  await state.activityListener!({ isActive: true });
+  expect(vi.mocked(window.dispatchEvent).mock.calls.map(([event]) => event.type)).toEqual(["online", "baseball:foreground"]);
+  expect(window.location.hash).toContain("#/NPB/cs?");
 });
 it("resumes the selected route and accepts the first genuine matching external link after bootstrap", async () => {
   state.saved = "/NPB/players/6bf4b271-e16c-43f9-9142-8c7ca7de9887/seasons?season=2026&competition=postseason&stage=npb_cs_final&role=pitching";

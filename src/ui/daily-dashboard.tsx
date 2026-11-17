@@ -13,6 +13,7 @@ import { readDailyDashboard } from "../application/daily-dashboard";
 import { DataState, LoadingSkeleton, SectionHeader, MetricLabel } from "./components";
 import { GameLinks } from "./npb-game-surface";
 import { TeamFavorite, type FavoriteActions } from "./team-favorite";
+import { usePublicDataRevalidation } from "./use-public-data-revalidation";
 
 function useTokyoDate() {
   const [date, setDate] = useState(tokyoToday);
@@ -20,15 +21,16 @@ function useTokyoDate() {
   return date;
 }
 
-/** Home's single bounded feed replaces its manifest/lookaround request; no extra
- * Home request or provider/API call. Today/next-game browsing stays in Schedule. */
+/** Home reads only the bounded recent feed for this panel. */
 export function NpbSavedGames({ services, onEffectiveDate }: { services: Services; onEffectiveDate?: (date:string)=>void }) {
   const today=useTokyoDate();
+  const revision=usePublicDataRevalidation();
   const [data,setData]=useState<Awaited<ReturnType<Services["gameSurface"]["recent"]>>|null>(null),[error,setError]=useState(false);
-  useEffect(()=>{let active=true;void services.gameSurface.recent().then(value=>{if(active){setData(value);onEffectiveDate?.(value.effectiveDate);}}).catch(()=>{if(active)setError(true);});return()=>{active=false;};},[services,onEffectiveDate]);
+  useEffect(()=>{let active=true;void services.gameSurface.recent().then(value=>{if(active){setData(value);setError(false);onEffectiveDate?.(value.effectiveDate);}}).catch(()=>{if(active)setError(true);});return()=>{active=false;};},[services,onEffectiveDate,revision]);
   const games=data?.games.filter(g=>g.status==="final"&&g.date<=data.effectiveDate&&g.date<=today).slice(0,2)??[];
   return <section className="home-section today-board"><SectionHeader title="保存済みの試合" action="日程・結果" to="/NPB/schedule" />
-    {error?<DataState kind="source-unavailable" title="試合情報を読み込めません" action="日程・結果へ" to="/NPB/schedule" />:!data?<LoadingSkeleton />:<>
+    {!data?error?<DataState kind="source-unavailable" title="試合情報を読み込めません" action="日程・結果へ" to="/NPB/schedule" />:<LoadingSkeleton />:<>
+      {error&&<p className="inline-note" role="status">更新を確認できないため、保存済みの結果を表示しています。</p>}
       <p className="inline-note">{data.effectiveDate}までの保存済み結果</p>
       {games.length?<GameLinks games={games}/>:<p className="inline-note">表示できる保存済みの終了結果はありません。</p>}
       <details className="source-note"><summary>データの時点</summary><p>各試合の日付は結果に表示しています。今日の予定・現在の開催状況や、全試合の収録を示すものではありません。</p></details>

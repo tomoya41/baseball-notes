@@ -22,6 +22,7 @@ import { HomeDiscover, HomeSearchEntry, TeamRecord } from "./signature";
 import { NpbHomeLead } from "./npb-home-lead";
 import { npbSeasonalHome } from "../domain/npb-seasonal-home";
 import { NpbHomeFollowing } from "./npb-home-following";
+import { usePublicDataRevalidation } from "./use-public-data-revalidation";
 import "./npb-experience.css";
 
 type Target = Pick<Favorite, "kind" | "entityId" | "league">;
@@ -30,10 +31,12 @@ export function NpbStandings({ services, onEffectiveDate }: { services: Services
   const [error, setError] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [division, setDivision] = useState<"Central" | "Pacific">("Central");
-  useEffect(() => { let active = true; void services.standings.findLatestNpb().then(value => { if (active) { setPayload(value); setLoaded(true); if (value) onEffectiveDate?.(value.effectiveDate); } }).catch(() => { if (active) setError(true); }); return () => { active = false; }; }, [services, onEffectiveDate]);
+  const revision = usePublicDataRevalidation();
+  useEffect(() => { let active = true; void services.standings.findLatestNpb().then(value => { if (active) { setPayload(value); setLoaded(true); setError(false); if (value) onEffectiveDate?.(value.effectiveDate); } }).catch(() => { if (active) setError(true); }); return () => { active = false; }; }, [services, onEffectiveDate, revision]);
   return <section className="home-section standings-section"><SectionHeader title="ペナントレース" />
     <div className="segmented" role="group" aria-label="順位表のリーグ">{(["Central", "Pacific"] as const).map(value => <button key={value} aria-pressed={division === value} onClick={() => setDivision(value)}>{value === "Central" ? "セ・リーグ" : "パ・リーグ"}</button>)}</div>
-    {error ? <DataState kind="source-unavailable" title="順位表を読み込めません" /> : !payload ? loaded ? <DataState kind="no-data" title="保存済みの順位表はありません" /> : <LoadingSkeleton /> : <>
+    {!payload ? error ? <DataState kind="source-unavailable" title="順位表を読み込めません" /> : loaded ? <DataState kind="no-data" title="保存済みの順位表はありません" /> : <LoadingSkeleton /> : <>
+      {error && <p className="inline-note" role="status">更新を確認できないため、保存済みの順位表を表示しています。</p>}
       <p className="standings-asof">{formatDate(payload.throughDate, true)}終了時点</p>
       <div className="standings-scroll"><table className="standings-table"><thead><tr><th>順位</th><th>球団</th><th>勝–敗–分</th><th>勝率</th><th>差</th></tr></thead><tbody>
         {payload.standings.filter(row => row.competitionGroup === division).map(row => <tr key={row.teamId}><td>{row.rank}</td><th scope="row"><Link to={`/NPB/teams/${row.teamId}`}>{payload.teams[row.teamId]?.short ?? "球団"}</Link></th><td>{row.wins}–{row.losses}–{row.ties}</td><td>{formatWinningPercentage(row.pct)}</td><td>{formatGamesBehind(row.gamesBehindLeader, row.rank)}</td></tr>)}

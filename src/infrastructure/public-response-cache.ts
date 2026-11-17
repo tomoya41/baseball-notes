@@ -40,17 +40,17 @@ export class PublicResponseStore implements ResponseStore {
     }
   }
 }
-let stale = false;
+const fallbackUrls = new Set<string>();
+const failedUrls = new Set<string>();
 let fallbackRevision = 0;
-let needsRefresh = false;
 let nativeOnline: boolean | undefined;
 export function publicNetworkOnline() { return nativeOnline ?? (typeof navigator === "undefined" || navigator.onLine !== false); }
 export function setPublicNetworkOnline(online: boolean) { nativeOnline = online; }
-export function hasSavedResponseFallback() { return stale; }
+export function hasSavedResponseFallback() { return fallbackUrls.size > 0; }
 export function publicFallbackRevision() { return fallbackRevision; }
-export function needsPublicDataRefresh() { return needsRefresh || stale; }
-export function clearSavedResponseFallback() { stale = false; needsRefresh = false; }
-function indicateSaved() { stale = true; fallbackRevision++; if (typeof window !== "undefined") window.dispatchEvent(new Event("baseball:saved-data")); }
+export function needsPublicDataRefresh() { return failedUrls.size > 0; }
+export function clearSavedResponseFallback() { fallbackUrls.clear(); failedUrls.clear(); }
+function announceSavedState() { if (typeof window !== "undefined") window.dispatchEvent(new Event("baseball:saved-data")); }
 const candidates = new WeakMap<Response, () => Promise<void>>();
 export async function rememberPublicResponse(response: Response) { await candidates.get(response)?.().catch(() => undefined); }
 
@@ -69,13 +69,19 @@ export function createPublicFetch(store: ResponseStore, request: typeof fetch = 
           if (!online()) throw Error("Offline");
           const response = await request(input, { ...init, signal: init?.signal ?? AbortSignal.timeout(12000) });
           if (response.status >= 500 || response.status === 429) throw Error("Temporarily unavailable");
-          if (response.status === 404) await store.remove(url).catch(() => undefined);
+          if (response.status === 404) {
+            await store.remove(url).catch(() => undefined);
+            failedUrls.delete(url);
+            if (fallbackUrls.delete(url)) announceSavedState();
+          }
           return response;
         } catch (error) {
-          needsRefresh = true;
+          failedUrls.add(url);
           const saved = await store.get(url).catch(() => undefined);
           if (!saved) throw error;
-          indicateSaved();
+          fallbackUrls.add(url);
+          fallbackRevision++;
+          announceSavedState();
           return new Response(saved.body.slice(0), { headers: { "Content-Type": saved.contentType, "X-Baseball-Saved": "true" } });
         }
       })().finally(() => { pending.delete(url); });
@@ -85,8 +91,12 @@ export function createPublicFetch(store: ResponseStore, request: typeof fetch = 
     if (result.ok && !result.headers.has("X-Baseball-Saved")) {
       const copy = result.clone();
       // Repository calls commit only after schema AND identity validation.
-      candidates.set(result, async () => { const body = await copy.arrayBuffer(); await store.put({ url, body,
-        bytes: body.byteLength, contentType: copy.headers.get("Content-Type") ?? "application/json", savedAt: Date.now() }); });
+      candidates.set(result, async () => {
+        failedUrls.delete(url);
+        if (fallbackUrls.delete(url)) announceSavedState();
+        const body = await copy.arrayBuffer();
+        await store.put({ url, body, bytes: body.byteLength, contentType: copy.headers.get("Content-Type") ?? "application/json", savedAt: Date.now() });
+      });
     }
     return result;
   };
