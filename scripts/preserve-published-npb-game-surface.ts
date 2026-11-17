@@ -1,19 +1,18 @@
 import { mkdir,writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
-import { gameManifestSchema,gameDateIndexSchema,recentGamesSchema,shiftGameDate } from "../src/domain/npb-game-index";
+import { gameManifestSchema,recentGamesSchema } from "../src/domain/npb-game-index";
 import { recordsSchema } from "../src/domain/npb-records";
 import { npbCatalogSchema,npbCapabilitiesSchema,npbTeamSeasonSchema } from "../src/domain/npb-product-contract";
 import { npbSeasonMilestonesSchema } from "../src/domain/npb-season-milestones";
 import { fetchNpbPublicGameSurface } from "./lib/fetch-npb-public-game-surface";
+import { preserveNpbPublicGameDates } from "./lib/preserve-npb-public-game-dates";
 async function fetchJson(path:string){const r=await fetchNpbPublicGameSurface(path);
   if(!r.ok)throw Error(`Surface preservation HTTP ${r.status}: ${path}`);return r.json() as Promise<unknown>;}
 async function save(path:string,value:unknown){const p=`dist/data/npb/${path}`;await mkdir(dirname(p),{recursive:true});await writeFile(p,JSON.stringify(value));}
 const response=await fetchNpbPublicGameSurface("games/manifest.json");
 if(response.status===404){console.log("No prior Game surface to preserve");}
 else {if(!response.ok)throw Error("Game manifest preservation failed");const manifest=gameManifestSchema.parse(await response.json());
-  const dates:string[]=[];for(let d=manifest.from;d<=manifest.to;d=shiftGameDate(d,1))dates.push(d);
-  for(let i=0;i<dates.length;i+=8)await Promise.all(dates.slice(i,i+8).map(async date=>{
-    const path=`games/dates/${date}.json`;const p=gameDateIndexSchema.parse(await fetchJson(path));if(p.date!==date)throw Error("Dated payload mismatch");await save(path,p);}));
+  const dates=await preserveNpbPublicGameDates("dist/data/npb",manifest);
   await save("games/recent.json",recentGamesSchema.parse(await fetchJson("games/recent.json")));
   await save("records/2026/latest.json",recordsSchema.parse(await fetchJson("records/2026/latest.json")));
   // Additive contract rollout: old deployments have no catalog. Once present, preserve all three validated files.
@@ -35,5 +34,5 @@ else {if(!response.ok)throw Error("Game manifest preservation failed");const man
       await save(path,milestones);
     }
   }
-  await save("games/manifest.json",manifest);console.log(`Preserved ${dates.length} validated dated Game payloads`);
+  await save("games/manifest.json",manifest);console.log(`Preserved ${dates} validated dated Game payloads`);
 }
