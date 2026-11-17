@@ -1,6 +1,6 @@
 import { battingDisplayRole, battingView, includesBattingRole } from "../domain/player-display-role";
 import { BattingViewControl } from "./player-display-role";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { ChevronRight, Search } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { searchNpbPlayers, type NpbPlayerDirectory } from "../domain/npb-player-directory";
@@ -11,13 +11,12 @@ import { DiscoveryNavigation } from "./discovery";
 import { PlayerListTools } from "./signature";
 import { CollectionButton } from "./personal-library";
 import { LifecycleLinks } from "./npb-lifecycle";
+import { useNpbPlayerDirectory, type DirectoryReader, type DirectoryState } from "./use-npb-player-directory";
 
-type SearchState = "loading" | "ready" | "error";
 type Role = "all" | "batter" | "pitcher";
-type DirectoryReader = { findLatestNpb(): Promise<NpbPlayerDirectory> };
 
 export function NpbPlayerSearchView({ directory, state, query, onQueryChange, teamId, onTeamChange,
-  role, onRoleChange, favorites=[],toggle,saving=false }: { directory: NpbPlayerDirectory | null; state: SearchState;
+  role, onRoleChange, favorites=[],toggle,saving=false }: { directory: NpbPlayerDirectory | null; state: DirectoryState;
   favorites?:Favorite[]|undefined;toggle?:((target:Pick<Favorite,"kind"|"entityId"|"league">)=>void)|undefined;saving?:boolean|undefined;
   query: string; onQueryChange: (value: string) => void; teamId: string; onTeamChange: (value: string) => void;
   role: Role; onRoleChange: (value: Role) => void }) {
@@ -33,9 +32,9 @@ export function NpbPlayerSearchView({ directory, state, query, onQueryChange, te
     <PageHeading eyebrow="NPB" title="選手" />
     <DiscoveryNavigation league="NPB" />
 
-    {state === "loading" && <LoadingSkeleton />}
-    {state === "error" && <DataState kind="source-unavailable" title="選手一覧を取得できませんでした" />}
-    {state === "ready" && directory && <>
+    {!directory && (state === "error" ? <DataState kind="source-unavailable" title="選手一覧を取得できませんでした" /> : <LoadingSkeleton />)}
+    {directory && <>
+      {state === "error" && <p className="inline-note" role="status">更新を確認できないため、保存済みの選手一覧を表示しています。</p>}
       <label className="search-field"><Search size={20} aria-hidden="true" />
         <span className="sr-only">選手名を検索</span>
         <input type="search" placeholder="選手名を入力" value={query}
@@ -82,18 +81,11 @@ export function NpbPlayerSearchView({ directory, state, query, onQueryChange, te
 
 export function NpbPlayerSearch({ repository,favorites,toggle,saving }: { repository: DirectoryReader;
   favorites?:Favorite[]|undefined;toggle?:((target:Pick<Favorite,"kind"|"entityId"|"league">)=>void)|undefined;saving?:boolean|undefined }) {
-  const [directory, setDirectory] = useState<NpbPlayerDirectory | null>(null);
-  const [state, setState] = useState<SearchState>("loading");
+  const { directory, state } = useNpbPlayerDirectory(repository);
   const [params, setParams] = useSearchParams();
   const query = params.get("q") ?? "", teamId = params.get("team") ?? "";
   const role: Role = params.get("role") === "batter" ? "batter" : params.get("role") === "pitcher" ? "pitcher" : "all";
   const update = (key: string, value: string) => { const next = new URLSearchParams(params); if (value) next.set(key, value); else next.delete(key); setParams(next, { replace: true }); };
-  useEffect(() => {
-    let active = true;
-    void repository.findLatestNpb().then((value) => { if (active) { setDirectory(value); setState("ready"); } })
-      .catch(() => { if (active) setState("error"); });
-    return () => { active = false; };
-  }, [repository]);
   return <NpbPlayerSearchView directory={directory} state={state} query={query} onQueryChange={value => update("q", value)}
     teamId={teamId} onTeamChange={value => update("team", value)} role={role} onRoleChange={value => update("role", value)} favorites={favorites} toggle={toggle} saving={saving} />;
 }

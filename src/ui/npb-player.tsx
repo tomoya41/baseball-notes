@@ -9,7 +9,6 @@ import type { Favorite } from "../domain/models";
 import type { PlayerRecentResponse, RecentPeriod } from "../domain/player-recent";
 import type { PlayerGameLogResponse } from "../domain/player-game-log";
 import type { PlayerAnalysisBundle } from "../domain/player-analysis-bundle";
-import type { NpbDirectoryPlayer, NpbPlayerDirectory } from "../domain/npb-player-directory";
 import type { NpbCatalog } from "../domain/npb-product-contract";
 import { FavoriteButton, DataState, LoadingSkeleton } from "./components";
 import { CollectionButton } from "./personal-library";
@@ -29,6 +28,7 @@ import { npbGamePlayerContext, npbGamePlayerLinks } from "../domain/npb-game-pla
 import { PlayerGameLogView } from "./player-game-log";
 import { NpbPlayerTrends } from "./player-trends";
 import { NpbPlayerAnalysisScreen, NpbPlayerHomeAwaySection, NpbPlayerOpponentSection, NpbPlayerBattingOrderSection, NpbPlayerPitcherRoleSection, NpbPlayerBatterRoleSection } from "./npb-player-analysis";
+import { useNpbPlayerDirectory } from "./use-npb-player-directory";
 import "./npb-player-experience.css";
 import "./npb-game-player.css";
 export function NpbPlayer({ services, favorites, toggle, saving }: { services: Services; favorites: Favorite[]; toggle: (target: Pick<Favorite, "kind" | "entityId" | "league">) => void; saving: boolean }) {
@@ -37,15 +37,28 @@ export function NpbPlayer({ services, favorites, toggle, saving }: { services: S
   const gameContext = npbGamePlayerContext(new URLSearchParams(location.search));
   const postseasonVisit = gameContext !== null && gameContext.stage !== "regular";
   const canonical = !!playerId && /^[0-9a-f-]{36}$/i.test(playerId);
-  const [product, setProduct] = useState<NpbCatalog["players"][number] | null>(null);
-  useEffect(() => { if (!canonical || !playerId) return; let active = true; void services.product.player(playerId).then(p => { if (active) setProduct(p); }).catch(() => {}); return () => { active = false; }; }, [canonical, playerId, services]);
+  const { directory, state: directoryState, checkedRevision } = useNpbPlayerDirectory(services.directory, canonical);
+  const directoryPlayer = directory?.players.find(item => item.playerId === playerId);
+  const directoryTeam = directory?.teams.find(item => item.id === directoryPlayer?.teamId);
+  const profileKey = directory ? `${directory.effectiveDate}:${directory.generatedAt}` : "";
+  const directoryLoading = directoryState === "loading";
+  const [profile, setProfile] = useState<{ key: string; player: NpbCatalog["players"][number] | null; unavailable: boolean } | null>(null);
+  const profilePlayer = profile?.key === profileKey ? profile.player : null;
+  const product = profilePlayer && (!directory || (profilePlayer.displayName === directoryPlayer?.displayName &&
+    profilePlayer.membership.teamId === directoryPlayer.teamId)) ? profilePlayer : null;
+  useEffect(() => {
+    if (!canonical || !playerId || directoryLoading) return;
+    let active = true;
+    void services.product.player(playerId, directory ?? undefined).then(player => {
+      if (active) setProfile({ key: profileKey, player, unavailable: false });
+    }).catch(() => {
+      if (active) setProfile(previous => ({ key: profileKey, player: previous?.key === profileKey ? previous.player : null, unavailable: true }));
+    });
+    return () => { active = false; };
+  }, [canonical, checkedRevision, directory, directoryLoading, playerId, profileKey, services.product]);
   const [period, setPeriod] = useState<RecentPeriod>("7d");
   const [recent, setRecent] = useState<PlayerRecentResponse | null>(null);
   const [identity, setIdentity] = useState<PlayerRecentResponse["player"] | null>(null);
-  const [directoryPlayer, setDirectoryPlayer] = useState<NpbDirectoryPlayer | null>(null);
-  const [directoryTeam, setDirectoryTeam] = useState<NpbPlayerDirectory["teams"][number] | null>(null);
-  const [directoryTeams, setDirectoryTeams] = useState<NpbPlayerDirectory["teams"]>([]);
-  const [directoryState, setDirectoryState] = useState<"loading" | "ready" | "error">("loading");
   const [recentState, setRecentState] = useState<"loading" | "ready" | "missing" | "error">("loading");
   const [season, setSeason] = useState<PlayerRecentResponse | null>(null);
   const [seasonState, setSeasonState] = useState<"loading" | "ready" | "missing" | "error">("loading");
@@ -64,19 +77,6 @@ export function NpbPlayer({ services, favorites, toggle, saving }: { services: S
     }).catch(()=>{if(active)setSeasonState("error");});
     return ()=>{active=false;};
   },[canonical,playerId,postseasonVisit,recentCache,section,services]);
-  useEffect(() => {
-    if (!canonical || !playerId) return;
-    let active = true;
-    void services.directory.findLatestNpb().then((value) => {
-      if (!active) return;
-      const found = value.players.find((item) => item.playerId === playerId) ?? null;
-      setDirectoryPlayer(found);
-      setDirectoryTeam(value.teams.find((item) => item.id === found?.teamId) ?? null);
-      setDirectoryTeams(value.teams);
-      setDirectoryState("ready");
-    }).catch(() => { if (active) setDirectoryState("error"); });
-    return () => { active = false; };
-  }, [canonical, playerId, services]);
   useEffect(() => {
     if (postseasonVisit || !canonical || !playerId || section !== "analysis") return;
     let active = true;
@@ -125,11 +125,14 @@ export function NpbPlayer({ services, favorites, toggle, saving }: { services: S
   const seasonsTo = gameLinks?.annual ?? `${base}/seasons?season=2026&role=${seasonRole}`;
   const compareTo = gameLinks ? gameLinks.compare : `/NPB/compare?players=${encodeURIComponent(player.id)}&role=${seasonRole}`;
   const trendsTo = `${base}/trends${gameLinks?.search ?? ""}`;
+  const directoryTeams = directory?.teams ?? [];
   const gameLogTeams = new Map(directoryTeams.map(t => [t.id, t.shortName]));
   const seasonView = seasonState === "error" ? <PublishedPlayerFallback key={`${player.id}:season`} playerId={player.id} period="season" repository={services.directory} pitcherBatting={directoryPlayer?.position === "P"} /> : <PlayerSeasonView payload={season} state={seasonState} pitcherBatting={directoryPlayer?.position === "P"} />;
   const isFavorite = favorites.some(f => f.league === "NPB" && f.kind === "player" && f.entityId === player.id);
+  const affiliation = directory && directoryTeam ? `所属は${directory.effectiveDate}時点` : null;
   return <div className="screen player-screen npb-player-experience"><PlayerContextBar backTo={gameLinks?.game ?? rosterBack ?? "/NPB/search"} tools={<>{compareTo && <Link to={compareTo}>比較に追加</Link>}{!postseasonVisit && <Link to={trendsTo} aria-current={section === "trends" ? "page" : undefined}>推移・連続記録</Link>}<Link to={seasonsTo}>年度別・シリーズ別成績</Link>{!postseasonVisit && <Link to={`/NPB/season-compare?kind=player&entity=${encodeURIComponent(player.id)}&role=${seasonRole}`}>保存年度を比較</Link>}{directoryTeam && <Link to={`/NPB/teams/${encodeURIComponent(directoryTeam.id)}`}>球団を見る</Link>}<CollectionButton league="NPB" playerId={player.id} name={player.name} /></>}><Link className="player-fixed-scope" to={seasonsTo}>{gameLinks?.scope ?? "2026年 · 公式戦"} ▾</Link></PlayerContextBar>
-    <PlayerIdentity uniformNumber={product?.membership.uniformNumber ?? null} name={player.name} context={`NPB · ${directoryTeam?.shortName ?? identity?.teamName ?? "所属未確認"}`} detail={[directoryPlayer?.position ? positionDefinitions[directoryPlayer.position] : null, "保存済みの所属"].filter(Boolean).join(" · ")} visual={product?.visual.photo.usage === "allowed" ? <img className="profile-photo" src={product.visual.photo.url!} alt={player.name} /> : <LicensedPlayerPhoto playerId={player.id} season={2026} />} favorite={<FavoriteButton active={isFavorite} saving={saving} label={player.name} onClick={() => toggle({ league: "NPB", kind: "player", entityId: player.id })} />} />
+    <PlayerIdentity uniformNumber={directoryTeam ? product?.membership.uniformNumber ?? null : null} name={player.name} context={`NPB · ${directoryTeam?.shortName ?? (directory ? "所属未確認" : identity?.teamName ?? "所属未確認")}`} detail={[directoryPlayer?.position ? positionDefinitions[directoryPlayer.position] : null, affiliation].filter(Boolean).join(" · ")} visual={product?.visual.photo.usage === "allowed" ? <img className="profile-photo" src={product.visual.photo.url!} alt={player.name} /> : <LicensedPlayerPhoto playerId={player.id} season={2026} />} favorite={<FavoriteButton active={isFavorite} saving={saving} label={player.name} onClick={() => toggle({ league: "NPB", kind: "player", entityId: player.id })} />} />
+    {directoryState === "error" && directory && <p className="inline-note" role="status">更新を確認できないため、保存済みの選手情報を表示しています。</p>}
     {gameLinks && <section className="game-player-context" aria-label="試合から選手を確認">
       <p>{gameLinks.scope}</p><nav aria-label="試合からの分析">
         <Link to={seasonsTo}>年度・区分の成績</Link>
@@ -157,7 +160,7 @@ export function NpbPlayer({ services, favorites, toggle, saving }: { services: S
       <PlayerGameLogView payload={gameLog ? { ...gameLog, batting: gameLog.batting.slice(0, 3), pitching: gameLog.pitching.slice(0, 3) } : null} state={gameLogState} teams={gameLogTeams} /><Link className="button button--secondary" to={`${base}/game-log`}>すべての試合別成績を見る</Link></div>}
     {section === "stats" && !postseasonVisit && seasonView}
     {section === "game-log" && !postseasonVisit && <PlayerGameLogView payload={gameLog} state={gameLogState} teams={gameLogTeams} />}
-    {section === "more" && <>{product ? <><NpbProfileDetails player={product} /><PlayerLifecycle player={product} /></> : directoryPlayer ? <section className="surface-card"><h2>プロフィール</h2><NpbPlayerProfileFacts player={directoryPlayer} /></section> : <DataState kind="no-data" title="プロフィールを確認できません" />}<NpbPlayerEventHistory playerId={player.id} /><PlayerFutureLinks base={base} /></>}
+    {section === "more" && <>{profile?.key === profileKey && profile.unavailable && <p className="inline-note" role="status">詳しいプロフィールの更新を確認できません。</p>}{product ? <><NpbProfileDetails player={product} /><PlayerLifecycle player={product} /></> : directoryPlayer ? <section className="surface-card"><h2>プロフィール</h2><NpbPlayerProfileFacts player={directoryPlayer} /></section> : <DataState kind="no-data" title="プロフィールを確認できません" />}<NpbPlayerEventHistory playerId={player.id} /><PlayerFutureLinks base={base} /></>}
     {section === "analysis" && !postseasonVisit && <div className="profile-content profile-content--analysis">{canonical
       ? <><NpbPlayerAnalysisScreen payload={analysisBundle?.comparison.status === "ready" ? analysisBundle.comparison.payload : null}
           state={analysisState === "ready" ? analysisBundle?.comparison.status === "ready" ? "ready" : "error" : analysisState} />
