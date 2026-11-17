@@ -120,7 +120,7 @@ it("refreshes followed games in place and retains last confirmed results until t
   const host = document.createElement("div"), root = createRoot(host);
   document.body.append(host);
   const score = () => host.querySelector(".scoreboard-list a")?.getAttribute("aria-label");
-  const failure = "確認済みの日程・結果を表示しています";
+  const failure = "更新未確認。前回の日程・結果を表示しています";
   const tick = () => act(async () => { await vi.advanceTimersByTimeAsync(300_000); });
   try {
     await act(async () => root.render(<MemoryRouter><NpbToday services={deps} personal favorites={[
