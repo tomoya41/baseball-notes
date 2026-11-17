@@ -76,26 +76,39 @@ describe("Team Favorites preserve the existing v1 player store", () => {
   });
 });
 describe("daily data through the existing persistent cache", () => {
-  it("keeps the last matching date offline after rejecting a different publication generation", async () => {
+  it("keeps the prior manifest and dates offline until the new window matches", async () => {
     const date = "2026-10-03";
-    const manifest = { schemaVersion: 1, league: "NPB", from: date, to: date,
+    const adjacent = "2026-10-02";
+    const manifest = { schemaVersion: 1, league: "NPB", from: adjacent, to: date,
       effectiveDate: date, generatedAt: "2026-10-03T00:00:00Z" };
+    const updated = { ...manifest, generatedAt: "2026-10-04T00:00:00Z" };
     const result = page(date, [row("stored-final", date)], "complete");
-    let mismatched = false;
-    const request = vi.fn<typeof fetch>(async url => String(url).endsWith("/manifest.json")
-      ? Response.json(manifest)
-      : Response.json(mismatched ? { ...page(date, [], "no_games"), generatedAt: "2026-10-02T00:00:00Z" } : result));
+    let publication = manifest;
+    let currentDay = result;
+    const request = vi.fn<typeof fetch>(async url => {
+      if (String(url).endsWith("/manifest.json")) return Response.json(publication);
+      if (String(url).endsWith(`${adjacent}.json`)) return Response.json({ ...page(adjacent), generatedAt: publication.generatedAt });
+      return Response.json(currentDay);
+    });
     const name = "npb-game-date-generation-offline";
     const online = new StaticGameSurfaceRepository("https://coherence.test/", createPublicFetch(new PublicResponseStore(name), request, () => true));
     const before = await readDailyDashboard(online, date);
     expect(before.today.map(game => game.gameId)).toEqual(["npb:game:stored-final"]);
-    mismatched = true;
-    const conflict = await readDailyDashboard(online, date);
+    expect(await readDailyDashboard(online, date, before)).toBe(before);
+    expect(request).toHaveBeenCalledTimes(4);
+    publication = updated;
+    const conflict = await readDailyDashboard(online, date, before);
     expect(conflict.todayState).toBe("unavailable");
     expect(conflict.failedDates).toEqual([date]);
+    expect(conflict.pages.map(value => value.date)).toEqual([adjacent]);
     const offline = new StaticGameSurfaceRepository("https://coherence.test/", createPublicFetch(new PublicResponseStore(name), request, () => false));
     expect(await readDailyDashboard(offline, date)).toEqual(before);
-    expect(request).toHaveBeenCalledTimes(4);
+    currentDay = { ...result, generatedAt: updated.generatedAt };
+    const after = await readDailyDashboard(online, date, before);
+    expect(after.manifest).toEqual(updated);
+    expect(after.failedDates).toEqual([]);
+    expect(await readDailyDashboard(offline, date)).toEqual(after);
+    expect(request).toHaveBeenCalledTimes(10);
   });
   it("restores validated dated indexes offline after repository/store restart", async () => {
     const name = "product-daily-persistent";

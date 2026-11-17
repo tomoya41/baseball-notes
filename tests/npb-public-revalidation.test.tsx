@@ -4,9 +4,10 @@ import { createRoot } from "react-dom/client";
 import { MemoryRouter, useLocation } from "react-router-dom";
 import { afterEach, expect, it, vi } from "vitest";
 import { services } from "../src/app/services";
+import type { GameManifest } from "../src/domain/npb-game-index";
 import { createPublicFetch, clearSavedResponseFallback, hasSavedResponseFallback, type CachedResponse } from "../src/infrastructure/public-response-cache";
 import { StaticGameSurfaceRepository } from "../src/infrastructure/providers/static-game-surface-repository";
-import { NpbSavedGames } from "../src/ui/daily-dashboard";
+import { NpbSavedGames, NpbToday } from "../src/ui/daily-dashboard";
 import { NpbScheduleScreen } from "../src/ui/npb-game-surface";
 import { mvpFixture } from "./fixtures/daily-mvp";
 
@@ -98,6 +99,56 @@ it("checks the Home feed periodically only when visible and retains the dated re
     expect(recent).toHaveBeenCalledTimes(3);
     expect(host.textContent).not.toContain("更新を確認できないため");
     expect(setDate).toHaveBeenLastCalledWith("2026-10-01");
+  } finally {
+    await act(async () => root.unmount());
+    host.remove();
+  }
+});
+
+it("refreshes followed games in place and retains last confirmed results until the publication matches", async () => {
+  vi.useFakeTimers();
+  vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
+  const { index } = mvpFixture();
+  vi.setSystemTime(new Date(`${index.date}T03:00:00Z`));
+  const manifest: GameManifest = { schemaVersion: 1, league: "NPB", from: index.date, to: index.date,
+    effectiveDate: index.date, generatedAt: index.generatedAt };
+  const updated = { ...manifest, generatedAt: "2026-09-27T00:00:00Z" };
+  const gameSurface = new StaticGameSurfaceRepository("https://example.test/");
+  const readManifest = vi.spyOn(gameSurface, "manifest").mockResolvedValue(manifest);
+  const date = vi.spyOn(gameSurface, "date").mockResolvedValue(index);
+  const deps = { ...services, gameSurface };
+  const host = document.createElement("div"), root = createRoot(host);
+  document.body.append(host);
+  const score = () => host.querySelector(".scoreboard-list a")?.getAttribute("aria-label");
+  const failure = "更新未確認。前回の日程・結果を表示しています";
+  const tick = () => act(async () => { await vi.advanceTimersByTimeAsync(300_000); });
+  try {
+    await act(async () => root.render(<MemoryRouter><NpbToday services={deps} personal favorites={[
+      { league: "NPB", kind: "team", entityId: index.games[0]!.home.id, addedAt: "2026-09-25T00:00:00Z" },
+    ]} toggle={vi.fn()} saving={false}/></MemoryRouter>));
+    const initialScore = score();
+    expect(initialScore).toBeTruthy();
+    const details = host.querySelector<HTMLDetailsElement>(".daily-team-actions")!;
+    details.open = true;
+
+    await tick();
+    expect(readManifest).toHaveBeenCalledTimes(2);
+    expect(date).toHaveBeenCalledOnce();
+    expect(host.querySelector(".daily-team-actions")).toBe(details);
+
+    readManifest.mockResolvedValue(updated);
+    await tick();
+    expect(date).toHaveBeenCalledTimes(2);
+    expect(score()).toBe(initialScore);
+    expect(host.querySelector('[role="status"]')?.textContent).toContain(failure);
+
+    date.mockResolvedValue({ ...index, generatedAt: updated.generatedAt,
+      games: index.games.map(game => ({ ...game, home: { ...game.home, score: 12 } })) });
+    await tick();
+    expect(score()).toContain(" 12、");
+    expect(host.textContent).not.toContain(failure);
+    expect(host.querySelector(".daily-team-actions")).toBe(details);
+    expect(details.open).toBe(true);
   } finally {
     await act(async () => root.unmount());
     host.remove();
