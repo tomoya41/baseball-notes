@@ -23,12 +23,16 @@ export function publishedPlayerStats(payload: PublishedSnapshot, directory: NpbP
 
 export async function readPublishedPlayerStats(playerId: string, period: RecentPeriod, repository: DirectoryReader): Promise<PublishedPlayerStats | null> {
   if (period === "currentMonth") throw Error("No admitted monthly publication");
-  const directory = await repository.findLatestNpb();
+  return readPublishedPlayerStatsForDirectory(playerId, period, await repository.findLatestNpb());
+}
+
+export async function readPublishedPlayerStatsForDirectory(playerId: string, period: Exclude<RecentPeriod, "currentMonth">,
+  directory: NpbPlayerDirectory): Promise<PublishedPlayerStats | null> {
   if (!directory.players.some(p => p.playerId === playerId)) return null;
-  const key = `${period}:${directory.effectiveDate}`;
+  const key = `${period}:${directory.effectiveDate}:${directory.generatedAt}`;
   let task = pending.get(key);
   if (!task) {
-    task = (period === "season" ? readNpbExplorerSeason(2026) :
+    task = (period === "season" ? readNpbExplorerSeason(2026, undefined, directory) :
       readNpbRecentExplorer(Number(period.slice(0, -1)) as 7 | 14 | 30, directory))
       .finally(() => pending.delete(key));
     pending.set(key, task);

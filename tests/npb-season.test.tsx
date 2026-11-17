@@ -2,12 +2,14 @@ import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { PlayerPeriodBatchService } from "../src/application/player-period-batch";
 import { buildNpbSeasonPayload, npbSeasonPayloadSchema, seasonRankingReadModel } from "../src/application/npb-season-payload";
+import { readNpbExplorerSeason } from "../src/application/explorer-readers";
 import { playerGameBattingSchema, playerGamePitchingSchema } from "../src/domain/game-facts";
 import { aggregateBatting, aggregatePitching } from "../src/domain/player-period";
 import { findNpbRegularSeason } from "../src/data/npb-season-metadata";
 import { evaluatePeriodCoverage, periodDates } from "../src/domain/period-coverage";
 import type { NpbPlayerDirectory } from "../src/domain/npb-player-directory";
 import { PlayerSeasonView } from "../src/ui/player-season";
+import { createPublicFetch, type CachedResponse } from "../src/infrastructure/public-response-cache";
 
 const date="2026-09-26",at="2026-09-27T00:00:00.000Z";
 const common={gameId:"g",playerId:"dual",teamId:"t",opponentTeamId:"other",sourceKey:"nf3",sourceRecordId:"private",collectedAt:at};
@@ -34,6 +36,22 @@ describe("season read model",()=>{
     expect(payload.players[0]?.batting?.metrics).toEqual(buildNpbSeasonPayload(result,{...observed,effectiveDate:"2026-10-07"},at).players[0]?.batting?.metrics);
     expect(()=>buildNpbSeasonPayload(result,{...observed,effectiveDate:"2026-10-06"},at)).toThrow();
     expect(payload.readiness.status).toBe("not_ready");
+  });
+  it("retains the last matching season cache when the directory and projection disagree", async () => {
+    const observed = { ...directory, effectiveDate: "2026-10-10" };
+    const matching = buildNpbSeasonPayload(await batch(), observed, at);
+    let remote = matching;
+    const saved = new Map<string, CachedResponse>();
+    const request = createPublicFetch({ get: async url => saved.get(url), put: async row => { saved.set(row.url, row); },
+      remove: async url => { saved.delete(url); } }, async () => Response.json(remote), () => true);
+    expect(await readNpbExplorerSeason(2026, request, observed)).toEqual(matching);
+    const last = [...saved.values()][0];
+    expect(last).toBeDefined();
+    remote = { ...matching, effectiveDate: "2026-10-11" };
+    await expect(readNpbExplorerSeason(2026, request, observed)).rejects.toThrow("generation differs");
+    remote = { ...matching, players: matching.players.map(player => ({ ...player, displayName: "別の表示名" })) };
+    await expect(readNpbExplorerSeason(2026, request, observed)).rejects.toThrow("identity differs");
+    expect([...saved.values()]).toEqual([last]);
   });
   it("reuses existing rates and preserves both roles, coverage and samples",async()=>{
     const result=await batch(),payload=buildNpbSeasonPayload(result,directory,at);
