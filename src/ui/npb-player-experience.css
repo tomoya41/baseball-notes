@@ -104,6 +104,10 @@
   font-size: .75rem;
 }
 
+.player-snapshot time {
+  white-space: nowrap;
+}
+
 .player-snapshot .headline-stats dl {
   margin-bottom: 0;
 }
