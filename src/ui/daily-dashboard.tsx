@@ -1,5 +1,5 @@
 import { isHistoricalOnlyPlayer } from "../data/npb-historical-identity-index";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import type { Services } from "../app/services";
 import type { NpbCatalog } from "../domain/npb-product-contract";
@@ -39,15 +39,39 @@ export function NpbSavedGames({ services, onEffectiveDate }: { services: Service
 }
 export function NpbToday({ services, favorites, toggle, saving, personal = false, onEffectiveDate }: FavoriteActions & { services: Services; personal?: boolean; onEffectiveDate?: (date: string) => void }) {
   const today = useTokyoDate();
-  const [data, setData] = useState<{ today: string; value: Awaited<ReturnType<typeof readDailyDashboard>> } | null>(null), [error, setError] = useState("");
-  useEffect(() => { let active = true; void readDailyDashboard(services.gameSurface, today).then(value => { if (active) { setData({ today, value }); onEffectiveDate?.(value.manifest.effectiveDate); } }).catch(() => { if (active) setError(today); }); return () => { active = false; }; }, [services, today, onEffectiveDate]);
-  const value = data?.today === today ? data.value : null;
+  const revision = usePublicDataRevalidation();
+  const reader = services.gameSurface;
+  type Snapshot = { reader: typeof reader; today: string; value: Awaited<ReturnType<typeof readDailyDashboard>> };
+  const [data, setData] = useState<Snapshot | null>(null), [error, setError] = useState("");
+  const accepted = useRef<Snapshot | null>(null);
+  useEffect(() => {
+    let active = true;
+    const previous = accepted.current;
+    const current = previous?.reader === reader && previous.today === today ? previous.value : undefined;
+    void readDailyDashboard(reader, today, current).then(value => {
+      if (!active) return;
+      if (current?.pages.length && value.failedDates.length) {
+        setError(today);
+        return;
+      }
+      if (value !== current) {
+        const next = { reader, today, value };
+        accepted.current = next;
+        setData(next);
+        onEffectiveDate?.(value.manifest.effectiveDate);
+      }
+      setError("");
+    }).catch(() => { if (active) setError(today); });
+    return () => { active = false; };
+  }, [reader, today, onEffectiveDate, revision]);
+  const value = data?.reader === reader && data.today === today ? data.value : null;
   const teams = new Set(favorites.filter(f => f.kind === "team" && f.league === "NPB").map(f => f.entityId));
   const filter = (games: NonNullable<typeof value>["today"]) => personal ? games.filter(g => teams.has(g.home.id) || teams.has(g.away.id)) : games;
   const games = value ? filter(value.today) : [], next = value ? filter(value.next) : [], recent = value ? filter(value.recent) : [];
   const scheduleDate = value ? today < value.manifest.from ? value.manifest.from : today > value.manifest.to ? value.manifest.to : today : null;
   return <section className="home-section today-board"><SectionHeader title={personal ? "フォロー球団の試合" : "今日の試合"} action="日程・結果" to={scheduleDate ? `/NPB/schedule?date=${scheduleDate}` : "/NPB/schedule"} /><p className="inline-note">{today} · 日本時間{value && ` · 結果更新 ${value.manifest.effectiveDate}`}</p>
-    {error === today ? <DataState kind="source-unavailable" title="試合情報を読み込めません" /> : !value ? <LoadingSkeleton /> : <>
+    {!value ? error === today ? <DataState kind="source-unavailable" title="試合情報を読み込めません" /> : <LoadingSkeleton /> : <>
+      {error === today && <p className="inline-note" role="status">更新を確認できないため、確認済みの日程・結果を表示しています。</p>}
       {games.length ? <GameLinks games={games} /> : <p className="inline-note">{personal && !teams.size ? "球団をお気に入りに追加すると、試合がここに表示されます。" : personal && value.todayState === "games" ? "保存済みの今日の試合にフォロー球団はありません。" : value.todayState === "no_games" ? "今日は試合なし" : "今日の予定は未確認です。"}</p>}
       {value.failedDates.length > 0 && <p className="inline-note">一部の日程を読み込めません。次戦・結果は読み込めた範囲です。</p>}
       {value.incompleteDates.length > 0 && <p className="inline-note">一部の試合情報は未確定です。日程・結果は保存済みの範囲を表示しています。</p>}
