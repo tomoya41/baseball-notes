@@ -49,7 +49,11 @@ export async function installPlatformRuntime() {
   const network = (connected: boolean) => { setPublicNetworkOnline(connected); window.dispatchEvent(new Event(connected ? "online" : "offline")); };
   network((await Network.getStatus()).connected);
   await Network.addListener("networkStatusChange", event => network(event.connected));
-  await App.addListener("appStateChange", async event => { if (event.isActive) network((await Network.getStatus()).connected); });
+  await App.addListener("appStateChange", async event => {
+    if (!event.isActive) return;
+    network((await Network.getStatus()).connected);
+    window.dispatchEvent(new Event("baseball:foreground"));
+  });
   document.addEventListener("click", event => {
     const link = (event.target as Element | null)?.closest<HTMLAnchorElement>("a[href]");
     if (link && /^https?:/.test(link.getAttribute("href") ?? "")) { event.preventDefault(); void Browser.open({ url: link.href }); }
