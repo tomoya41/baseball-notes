@@ -19,7 +19,8 @@ import type { Services } from "../app/services";
 import { GameRecap, GameTeamLinks, NpbGamePreview } from "./game-story";
 import type { FavoriteActions } from "./team-favorite";
 import { admittedCsGameIds } from "../application/npb-cs-reader";
-import type { GameSummaryReader, PublishedGameSummary } from "../application/game-surface";
+import { matchesPublishedFinalGame, readPublishedFinalGame, type GameSummaryReader, type PublishedGameSummary } from "../application/game-surface";
+import { usePublicDataRevalidation } from "./use-public-data-revalidation";
 const CsGame=lazy(()=>import("./npb-cs").then(m=>({default:m.NpbCsGameDetail})));
 const JapanGame=lazy(()=>import("./npb-japan-series").then(m=>({default:m.NpbJapanSeriesScreen})));
 
@@ -40,10 +41,10 @@ const pitchingDetails = [{ key: "bf", label: "BF" }, { key: "hits", label: "被�
   { key: "runs", label: "失点" }, { key: "earnedRuns", label: "自責点" },
   { key: "pitchCount", label: "投球数" }, { key: "walksAndHitByPitch", label: "四死" }] as const;
 
-export function NpbGameDetailView({ payload, state, services, actions, selectedSide, onSideChange, scheduleTeam, dateHint }: {
+export function NpbGameDetailView({ payload, state, services, actions, selectedSide, onSideChange, scheduleTeam, dateHint, resultCheckFailed = false }: {
   payload: NpbGameDetail | null; state: DetailState; services?: Services; actions?: FavoriteActions;
   selectedSide?: "away" | "home"; onSideChange?: (side: "away" | "home") => void;
-  scheduleTeam?: string | undefined; dateHint?: string | undefined;
+  scheduleTeam?: string | undefined; dateHint?: string | undefined; resultCheckFailed?: boolean;
 }) {
   if (state === "loading") return <div className="screen game-detail" aria-label="試合詳細の読み込み中"><LoadingSkeleton /></div>;
   if (state === "missing") return <div className="screen game-detail"><h1>試合詳細</h1>
@@ -74,6 +75,7 @@ export function NpbGameDetailView({ payload, state, services, actions, selectedS
   return <div className="screen game-detail">
     <GameHeading title={`${formatDate(payload.date, true)}の試合`} date={payload.date} context={`NPB · 公式戦${payload.gameNumber > 1 ? ` · 第${payload.gameNumber}試合` : ""}`} backTo={npbSchedulePath(payload.date,originTeam)} />
     <ScoreHero away={payload.away.shortName} home={payload.home.shortName} awayId={payload.away.id} homeId={payload.home.id} awayScore={payload.away.score} homeScore={payload.home.score} status={statusName[payload.status]} />
+    {resultCheckFailed && <p className="game-detail__note" role="status">試合結果の更新を確認できませんでした。</p>}
     {hasBox && <GameJumpNav boxLabel={hasPlayerRows ? "出場選手・成績" : "成績の収録状況"} />}
     {hasBox && <GameMvp input={npbGameMvpInput(payload)}/>}
     <InningScoreboard away={{name:payload.away.shortName,runs:payload.away.score,hits:payload.completeness==="complete"?payload.away.totals.hits:null}} home={{name:payload.home.shortName,runs:payload.home.score,hits:payload.completeness==="complete"?payload.home.totals.hits:null}}/>
@@ -90,7 +92,7 @@ export function NpbGameDetailView({ payload, state, services, actions, selectedS
   </div>;
 }
 
-type GameScreenProps={ repository: { find(gameId: string): Promise<NpbGameDetail | null> }; summaryRepository?: GameSummaryReader; services?: Services; favorites?: FavoriteActions["favorites"]; toggle?: FavoriteActions["toggle"]; saving?: boolean };
+type GameScreenProps={ repository: { find(gameId: string, admitForCache?: (detail: NpbGameDetail) => boolean): Promise<NpbGameDetail | null> }; summaryRepository?: GameSummaryReader; services?: Services; favorites?: FavoriteActions["favorites"]; toggle?: FavoriteActions["toggle"]; saving?: boolean };
 export function NpbGameDetailScreen(props:GameScreenProps){
   const {gameId}=useParams(),[params]=useSearchParams();
   if(gameId&&japanPin.gameIds.includes(gameId)||params.get("competition")==="postseason"&&params.get("stage")==="japan_series")return <Suspense fallback={<LoadingSkeleton/>}><JapanGame key={gameId} gameDetail/></Suspense>;
@@ -98,18 +100,20 @@ export function NpbGameDetailScreen(props:GameScreenProps){
   if(params.has("competition")&&params.get("competition")!=="regular"||params.has("stage"))return <DataState kind="unsupported" title="公式戦の試合を指定してください" />;
   return <NpbRegularGameDetailScreen key={gameId} {...props} />;
 }
-export function PublishedGameSummaryView({ summary, retry, scheduleTeam }: { summary: PublishedGameSummary; retry: () => void; scheduleTeam?: string | undefined }) {
+export function PublishedGameSummaryView({ summary, retry, scheduleTeam, resultConfirmed = false, retrying = false }: {
+  summary: PublishedGameSummary; retry: () => void; scheduleTeam?: string | undefined; resultConfirmed?: boolean; retrying?: boolean;
+}) {
   const { game } = summary;
   const originTeam = scheduleTeam === game.home.id || scheduleTeam === game.away.id ? scheduleTeam : undefined;
   return <div className="screen game-detail">
     <GameHeading title={`${formatDate(game.date, true)}の試合`} date={game.date} context={`NPB · 公式戦${game.gameNumber > 1 ? ` · 第${game.gameNumber}試合` : ""}`} backTo={npbSchedulePath(game.date,originTeam)} />
     <ScoreHero away={game.away.name} home={game.home.name} awayId={game.away.id} homeId={game.home.id} awayScore={game.away.score} homeScore={game.home.score} status={statusName[game.status]} />
-    <p className="game-detail__note" role="status">保存済みの結果 · 更新未確認</p>
+    <p className="game-detail__note" role="status">{resultConfirmed ? "公開結果を反映しました" : "保存済みの結果 · 更新未確認"}</p>
     <InningScoreboard away={{name:game.away.name,runs:game.away.score}} home={{name:game.home.name,runs:game.home.score}}/>
     <UnavailableGameMvp reason="試合別の選手成績を取得できないため、選出していません。"/>
     <section className="home-section"><h2>選手成績</h2>
-      <p>{game.status === "final" ? "この試合の個人成績は現在取得できません。" : "個人成績の取得状況を確認できません。"}</p>
-      <button className="text-button" onClick={retry}>試合詳細を再読み込み</button>
+      <p>{resultConfirmed ? "個人成績は未確認です。" : game.status === "final" ? "この試合の個人成績は現在取得できません。" : "個人成績の取得状況を確認できません。"}</p>
+      <button className="button button--secondary" disabled={retrying} onClick={retry}>{retrying ? "試合詳細を確認中" : "試合詳細を再読み込み"}</button>
     </section>
     <nav className="row-list" aria-label="球団の選手を探す">{[game.away, game.home].map(team =>
       <Link className="player-row" key={team.id} to={`/NPB/teams/${encodeURIComponent(team.id)}/players?season=${game.date.slice(0, 4)}`}><strong>{team.name}</strong><span>球団の選手一覧 →</span></Link>)}</nav>
@@ -123,26 +127,46 @@ function NpbRegularGameDetailScreen({ repository, summaryRepository, services, f
   const [payload, setPayload] = useState<NpbGameDetail | null>(null);
   const [state, setState] = useState<DetailState>("loading");
   const [summary, setSummary] = useState<PublishedGameSummary | null>(null);
-  const [attempt, setAttempt] = useState(0);
+  const [confirmedResult, setConfirmedResult] = useState<PublishedGameSummary | null>(null);
+  const [resultCheckFailed, setResultCheckFailed] = useState(false);
+  const [attempt, setAttempt] = useState<{ result: PublishedGameSummary | null }>({ result: null });
   const dateHint = params.get("date") ?? undefined;
   const scheduleTeam = npbScheduleTeam(params);
   const boxSide = params.get("boxSide");
   const selectedSide = boxSide === "home" || boxSide === "away" ? boxSide
     : scheduleTeam && scheduleTeam === payload?.home.id ? "home" : "away";
+  const surface = services?.gameSurface;
+  const awaitingResult = Boolean(surface && state === "ready" && payload?.status === "scheduled" && !confirmedResult);
+  const revision = usePublicDataRevalidation(awaitingResult);
   useEffect(() => {
     if (!gameId) return;
     let active = true;
-    void repository.find(gameId).then((value) => {
+    const expected = attempt.result?.game;
+    const reading = expected ? repository.find(gameId, value => matchesPublishedFinalGame(expected, value)) : repository.find(gameId);
+    void reading.then((value) => {
       if (active) { setPayload(value); setState(value ? "ready" : "missing"); }
     }).catch(async () => {
       if (!active) return;
+      if (expected) { setState("error"); return; }
       const saved = await summaryRepository?.find(gameId, dateHint).catch(() => null);
       if (active) { setSummary(saved ?? null); setState("error"); }
     });
     return () => { active = false; };
   }, [gameId, repository, summaryRepository, dateHint, attempt]);
-  const retry = () => { setSummary(null); setPayload(null); setState("loading"); setAttempt(a => a + 1); };
+  useEffect(() => {
+    if (!surface || !awaitingResult || !payload) return;
+    let active = true;
+    void readPublishedFinalGame(surface, payload).then(result => {
+      if (!active) return;
+      setResultCheckFailed(false);
+      if (result) setConfirmedResult(result);
+    }).catch(() => { if (active) setResultCheckFailed(true); });
+    return () => { active = false; };
+  }, [awaitingResult, payload, revision, surface]);
+  const retry = () => { setSummary(null); setPayload(null); setState("loading"); setAttempt({ result: confirmedResult }); };
+  if (confirmedResult && (!payload || !matchesPublishedFinalGame(confirmedResult.game, payload)))
+    return <PublishedGameSummaryView summary={confirmedResult} retry={retry} scheduleTeam={scheduleTeam} resultConfirmed retrying={state === "loading"} />;
   if (state === "error" && summary && summary.game.gameId === gameId) return <PublishedGameSummaryView summary={summary} retry={retry} scheduleTeam={scheduleTeam} />;
   if (state === "error") return <><NpbGameDetailView payload={null} state="error" scheduleTeam={scheduleTeam} dateHint={dateHint} /><button className="text-button" onClick={retry}>試合詳細を再読み込み</button></>;
-  return <NpbGameDetailView payload={payload} state={state} scheduleTeam={scheduleTeam} selectedSide={selectedSide} onSideChange={side => { const next=new URLSearchParams(params); next.set("boxSide",side); setParams(next,{preventScrollReset:true}); }} {...services ? { services } : {}} {...toggle ? { actions: { favorites, toggle, saving } } : {}} />;
+  return <NpbGameDetailView payload={payload} state={state} scheduleTeam={scheduleTeam} resultCheckFailed={awaitingResult && resultCheckFailed} selectedSide={selectedSide} onSideChange={side => { const next=new URLSearchParams(params); next.set("boxSide",side); setParams(next,{preventScrollReset:true}); }} {...services ? { services } : {}} {...toggle ? { actions: { favorites, toggle, saving } } : {}} />;
 }
