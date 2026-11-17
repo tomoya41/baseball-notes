@@ -12,20 +12,40 @@ export class StaticNpbProductRepository {
     return { value: await response.json() as unknown, response };
   }
   catalog(): Promise<NpbCatalog> {
-    if (!this.pendingCatalog) this.pendingCatalog = (async () => {
+    if (this.pendingCatalog) return this.pendingCatalog;
+    const request = (async () => {
       const result = await this.read("catalog/latest.json");
       const catalog = npbCatalogSchema.parse(result.value);
       await rememberPublicResponse(result.response);
       return catalog;
-    })().catch(error => { this.pendingCatalog = null; throw error; });
-    return this.pendingCatalog;
+    })().catch(error => {
+      if (this.pendingCatalog === request) this.pendingCatalog = null;
+      throw error;
+    });
+    this.pendingCatalog = request;
+    return request;
   }
   // Explicit refresh on reconnect/foreground; no page reload and no per-Player network fan-out.
   invalidateCatalog() { this.pendingCatalog = null; }
-  async player(playerId: string) {
+  async player(playerId: string, publication?: Pick<NpbCatalog, "effectiveDate" | "generatedAt">) {
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(playerId))
       throw Error("Canonical Player ID required");
-    return (await this.catalog()).players.find(p => p.playerId === playerId) ?? null;
+    const cached = this.pendingCatalog;
+    let request = this.catalog();
+    let catalog = await request;
+    if (publication) {
+      const matches = () => catalog.effectiveDate === publication.effectiveDate && catalog.generatedAt === publication.generatedAt;
+      if (!matches() && cached) {
+        if (this.pendingCatalog === request) this.invalidateCatalog();
+        request = this.catalog();
+        catalog = await request;
+      }
+      if (!matches()) {
+        if (this.pendingCatalog === request) this.invalidateCatalog();
+        throw Error("Player profile and directory publication differ");
+      }
+    }
+    return catalog.players.find(p => p.playerId === playerId) ?? null;
   }
   async capabilities() {
     const result = await this.read("capabilities.json"), value = npbCapabilitiesSchema.parse(result.value);

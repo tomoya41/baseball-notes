@@ -1,29 +1,25 @@
-import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import type { Favorite } from "../domain/models";
-import type { NpbPlayerDirectory } from "../domain/npb-player-directory";
 import { positionDefinitions } from "../domain/baseball-terms";
 import { DataState, FavoriteButton, LoadingSkeleton, PageHeading } from "./components";
 import { Monogram } from "./design-system";
 import { historicalOnlyPlayers, historicalPlayerRoute } from "../data/npb-historical-identity-index";
+import { useNpbPlayerDirectory, type DirectoryReader } from "./use-npb-player-directory";
 import "./npb-personal-records.css";
 
 type Target = Pick<Favorite, "entityId" | "kind" | "league">;
 export function NpbSavedPlayers({ repository, favorites, toggle, saving, compact = false, heading = true }: {
-  repository: { findLatestNpb(): Promise<NpbPlayerDirectory> };
+  repository: DirectoryReader;
   favorites: Favorite[]; toggle: (target: Target) => void; saving: boolean; compact?: boolean; heading?: boolean;
 }) {
-  const [directory, setDirectory] = useState<NpbPlayerDirectory | null>(null), [error, setError] = useState(false);
-  useEffect(() => {
-    let active = true;
-    void repository.findLatestNpb().then(value => { if (active) { setDirectory(value); setError(false); } }).catch(() => { if (active) setError(true); });
-    return () => { active = false; };
-  }, [repository]);
   const ids = [...new Set(favorites.filter(item => item.league === "NPB" && item.kind === "player").map(item => item.entityId))];
   const visible = compact ? ids.slice(0, 2) : ids;
+  const { directory, state } = useNpbPlayerDirectory(repository, visible.some(id => !historicalOnlyPlayers.has(id)));
+  const error = state === "error";
 
   return <>
     {!compact && heading && <PageHeading eyebrow="NPB / My" title="お気に入り選手" detail="この端末に保存しています" />}
+    {error && directory && visible.length > 0 && <p className="inline-note" role="status">更新を確認できないため、保存済みの選手情報を表示しています。</p>}
     {!ids.length ? <DataState kind="no-data" title="お気に入りはまだありません" action="選手を探す" to="/NPB/search" /> : <div className="row-list saved-player-list">
       {visible.map(id => {
         const player = directory?.players.find(item => item.playerId === id), historical = historicalOnlyPlayers.get(id);

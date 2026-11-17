@@ -49,6 +49,22 @@ describe("Astra public product contracts", () => {
     await expect(repository.catalog()).rejects.toThrow(); expect(await repository.player(id)).not.toBeNull();
     expect(requests).toBe(2);
   });
+  it("rechecks a cached catalog against the directory and rejects an unpublished generation", async () => {
+    let requests = 0, remote = catalog();
+    const repository = new StaticNpbProductRepository("https://example.com/", async () => {
+      requests++;
+      return Response.json(remote);
+    });
+    await repository.player(id, directory);
+    await repository.player(id, directory);
+    expect(requests).toBe(1);
+    const next = { effectiveDate: "2026-10-01", generatedAt: "2026-10-02T00:00:00.000Z" };
+    await expect(repository.player(id, next)).rejects.toThrow(/publication differ/);
+    expect(requests).toBe(2);
+    remote = { ...remote, ...next };
+    expect(await repository.player(id, next)).toEqual(remote.players[0]);
+    expect(requests).toBe(3);
+  });
   it("keeps nullable fields, both roles, affiliation context and unavailable visuals", () => {
     const value = catalog(), p = value.players[0]!;
     expect(p.profile).toMatchObject({ heightCm: 180, weightKg: null, measurementsEffectiveDate: null, draftYear: null });

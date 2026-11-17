@@ -4,9 +4,10 @@ import { publicNetworkOnline } from "../app/mobile-services";
 const foregroundIntervalMs = 30_000;
 const visibleIntervalMs = 5 * 60_000;
 
-export function usePublicDataRevalidation() {
+export function usePublicDataRevalidation(enabled = true) {
   const [revision, setRevision] = useState(0);
   useEffect(() => {
+    if (!enabled) return;
     let lastCheck = performance.now();
     const check = () => {
       const now = performance.now();
@@ -24,6 +25,6 @@ export function usePublicDataRevalidation() {
       document.removeEventListener("visibilitychange", check);
       window.clearInterval(timer);
     };
-  }, []);
+  }, [enabled]);
   return revision;
 }
