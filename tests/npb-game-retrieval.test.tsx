@@ -12,7 +12,7 @@ import pin from "../src/data/npb-game-date-index-release.json";
 import { createHash, webcrypto } from "node:crypto";
 import { createPublicFetch } from "../src/infrastructure/public-response-cache";
 import { mvpFixture } from "./fixtures/daily-mvp";
-import { matchesPublishedFinalGame, readPublishedFinalGame, type DeferGameAssetCache } from "../src/application/game-surface";
+import { matchesPublishedGameOutcome, readPublishedGameOutcome, type DeferGameAssetCache } from "../src/application/game-surface";
 import { services } from "../src/app/services";
 import { StaticGameSurfaceRepository } from "../src/infrastructure/providers/static-game-surface-repository";
 import { HttpNpbGameDetailRepository } from "../src/infrastructure/providers/http-npb-game-detail-repository";
@@ -108,13 +108,13 @@ it("saves no assets when the published result belongs to another game or has no 
       return day;
     },
   };
-  await expect(readPublishedFinalGame(reader, { ...game, gameNumber: 2 })).rejects.toThrow("identity mismatch");
-  await expect(readPublishedFinalGame(reader, { ...game, away: game.home, home: game.away })).rejects.toThrow("identity mismatch");
-  await expect(readPublishedFinalGame({ ...reader, date: async () => ({ ...day,
+  await expect(readPublishedGameOutcome(reader, { ...game, gameNumber: 2 })).rejects.toThrow("identity mismatch");
+  await expect(readPublishedGameOutcome(reader, { ...game, away: game.home, home: game.away })).rejects.toThrow("identity mismatch");
+  await expect(readPublishedGameOutcome({ ...reader, date: async () => ({ ...day,
     games: [{ ...game, away: { ...game.away, score: null } }],
   }) }, game)).resolves.toBeNull();
   expect(remember).not.toHaveBeenCalled();
-  await expect(readPublishedFinalGame(reader, game)).resolves.toEqual({ game, generatedAt: day.generatedAt, coverage: day.coverage });
+  await expect(readPublishedGameOutcome(reader, game)).resolves.toEqual({ game, generatedAt: day.generatedAt, coverage: day.coverage });
   expect(remember).toHaveBeenCalledTimes(2);
 });
 
@@ -127,11 +127,82 @@ it("does not cache a queried game detail that conflicts with the confirmed score
   const repository = new HttpNpbGameDetailRepository("https://example.test/", createPublicFetch({
     get: async () => undefined, put, remove: async () => {},
   }, request, () => true));
-  const matches = (value: typeof detail) => matchesPublishedFinalGame(published, value);
+  const matches = (value: typeof detail) => matchesPublishedGameOutcome(published, value);
   expect(await repository.find(detail.gameId, matches)).toEqual(stale);
   expect(put).not.toHaveBeenCalled();
   expect(await repository.find(detail.gameId, matches)).toEqual(detail);
   expect(put).toHaveBeenCalledTimes(1);
+});
+
+it.each(["postponed", "canceled"] as const)("admits a published %s game without scores or player stats", async status => {
+  const row = { ...game, status, home: { ...game.home, score: null }, away: { ...game.away, score: null },
+    completeness: null, battingAvailable: false, pitchingAvailable: false };
+  const manifest = { schemaVersion: 1 as const, league: "NPB" as const, from: game.date, to: game.date,
+    effectiveDate: game.date, generatedAt: day.generatedAt };
+  const remember = vi.fn(async () => {});
+  const reader = { manifest: async () => manifest,
+    date: vi.fn(async (_date: string, _generation?: string, defer?: DeferGameAssetCache) => {
+      defer?.(remember);
+      return { ...day, games: [row] };
+    }) };
+  for (const invalid of [{ ...row, battingAvailable: true }, { ...row, home: { ...row.home, score: 0 } }]) {
+    await expect(readPublishedGameOutcome({ ...reader, date: async () => ({ ...day, games: [invalid] }) }, game)).resolves.toBeNull();
+  }
+  expect(await readPublishedGameOutcome(reader, game)).toEqual({ game: row, generatedAt: day.generatedAt, coverage: day.coverage });
+  expect(remember).toHaveBeenCalledOnce();
+  const original = mvpFixture().game;
+  const detail = { ...original, status, gameId, date: row.date, gameNumber: row.gameNumber,
+    home: { ...original.home, ...row.home }, away: { ...original.away, ...row.away }, batting: { home: [], away: [] }, pitching: { home: [], away: [] } };
+  expect(matchesPublishedGameOutcome(row, detail)).toBe(true);
+  expect(matchesPublishedGameOutcome(row, { ...detail, status: "scheduled" })).toBe(false);
+  expect(matchesPublishedGameOutcome(row, { ...detail, pitching: original.pitching, batting: original.batting })).toBe(false);
+});
+
+it("keeps the published postponement and empty scoreline when a retry still returns the pregame detail", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  let now = 0;
+  vi.spyOn(performance, "now").mockImplementation(() => now);
+  vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
+  const host = document.createElement("div"), root = createRoot(host);
+  const row = { ...game, status: "postponed" as const, battingAvailable: false, pitchingAvailable: false,
+    home: { ...game.home, score: null }, away: { ...game.away, score: null } };
+  const original = mvpFixture().game;
+  const scheduled = { ...original, gameId, date: row.date, gameNumber: row.gameNumber, status: "scheduled" as const,
+    home: { ...original.home, ...row.home }, away: { ...original.away, ...row.away },
+    batting: { home: [], away: [] }, pitching: { home: [], away: [] } };
+  const find = vi.fn().mockResolvedValue(scheduled);
+  const gameSurface = new StaticGameSurfaceRepository("https://example.test/");
+  vi.spyOn(gameSurface, "manifest").mockResolvedValue({ schemaVersion: 1, league: "NPB", from: row.date, to: row.date,
+    effectiveDate: row.date, generatedAt: day.generatedAt });
+  const readDay = vi.spyOn(gameSurface, "date").mockResolvedValue({ ...day, games: [row] });
+  vi.spyOn(services.product, "teamSeason").mockRejectedValue(Error("Team season unavailable"));
+  try {
+    await act(async () => root.render(<MemoryRouter initialEntries={[`/NPB/games/${gameId}?date=${row.date}`]}><Routes>
+      <Route path="/NPB/games/:gameId" element={<NpbGameDetailScreen repository={{ find }} services={{ ...services, gameSurface }} />} />
+    </Routes></MemoryRouter>));
+    expect(find).toHaveBeenCalledOnce();
+    expect(host.querySelector(".score-hero-status")?.textContent).toBe("延期");
+    expect(host.querySelectorAll(".score-hero b")).toHaveLength(2);
+    expect(Array.from(host.querySelectorAll(".score-hero b"), el => el.textContent)).toEqual(["—", "—"]);
+    await act(async () => host.querySelector<HTMLButtonElement>(".game-detail button.button--secondary")!.click());
+    expect(find).toHaveBeenCalledTimes(2);
+    expect(host.textContent).toContain("公開日程で延期を確認しました");
+    expect(host.querySelector(".game-preview, .game-box-score, .game-mvp")).toBeNull();
+    readDay.mockRejectedValueOnce(Error("HTTP 503"));
+    now += 31_000;
+    await act(async () => { window.dispatchEvent(new Event("focus")); });
+    expect(host.textContent).toContain("前回の日程を表示しています");
+    expect(host.querySelector(".score-hero-status")?.textContent).toBe("延期");
+    find.mockResolvedValue({ ...scheduled, status: "postponed" });
+    await act(async () => host.querySelector<HTMLButtonElement>(".game-detail button.button--secondary")!.click());
+    expect(host.querySelector(".score-hero-status")?.textContent).toBe("延期");
+    expect(host.querySelector(".inning-board")).toBeNull();
+    readDay.mockResolvedValue(day);
+    now += 31_000;
+    await act(async () => { window.dispatchEvent(new Event("focus")); });
+    expect(host.querySelector(".score-hero")?.getAttribute("aria-label")).toBe("ヤクルト 4、阪神 0、試合終了");
+    expect(find).toHaveBeenCalledTimes(3);
+  } finally { await act(async () => root.unmount()); vi.restoreAllMocks(); vi.unstubAllGlobals(); }
 });
 
 it("advances an open pregame view on matching public results, preserving them through stale detail retries", async () => {
