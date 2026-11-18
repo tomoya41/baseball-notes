@@ -78,7 +78,8 @@ export function NpbGameDetailView({ payload, state, services, actions, selectedS
     {resultCheckFailed && <p className="game-detail__note" role="status">試合結果の更新を確認できませんでした。</p>}
     {hasBox && <GameJumpNav boxLabel={hasPlayerRows ? "出場選手・成績" : "成績の収録状況"} />}
     {hasBox && <GameMvp input={npbGameMvpInput(payload)}/>}
-    <InningScoreboard away={{name:payload.away.shortName,runs:payload.away.score,hits:payload.completeness==="complete"?payload.away.totals.hits:null}} home={{name:payload.home.shortName,runs:payload.home.score,hits:payload.completeness==="complete"?payload.home.totals.hits:null}}/>
+    {payload.status !== "postponed" && payload.status !== "canceled" &&
+      <InningScoreboard away={{name:payload.away.shortName,runs:payload.away.score,hits:payload.completeness==="complete"?payload.away.totals.hits:null}} home={{name:payload.home.shortName,runs:payload.home.score,hits:payload.completeness==="complete"?payload.home.totals.hits:null}}/>}
     {payload.status === "scheduled" && services && <NpbGamePreview game={payload} services={services} favorites={actions?.favorites ?? []} />}
     {hasBox && <GameRecap league="NPB" game={payload} scheduleTeam={originTeam} complete={payload.completeness === "complete"} favorites={actions?.favorites ?? []} batting={[...payload.batting.away, ...payload.batting.home]} pitching={[...payload.pitching.away, ...payload.pitching.home].map(p => ({ ...p, outs: p.outsRecorded, so: p.strikeouts }))} />}
     {actions && <details className="game-team-disclosure"><summary>球団情報・フォロー</summary><GameTeamLinks league="NPB" teams={[payload.away, payload.home]} {...actions} /></details>}

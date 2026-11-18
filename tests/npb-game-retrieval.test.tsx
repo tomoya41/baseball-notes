@@ -193,11 +193,15 @@ it("keeps the published postponement and empty scoreline when a retry still retu
     await act(async () => { window.dispatchEvent(new Event("focus")); });
     expect(host.textContent).toContain("前回の日程を表示しています");
     expect(host.querySelector(".score-hero-status")?.textContent).toBe("延期");
+    find.mockResolvedValue({ ...scheduled, status: "postponed" });
+    await act(async () => host.querySelector<HTMLButtonElement>(".game-detail button.button--secondary")!.click());
+    expect(host.querySelector(".score-hero-status")?.textContent).toBe("延期");
+    expect(host.querySelector(".inning-board")).toBeNull();
     readDay.mockResolvedValue(day);
     now += 31_000;
     await act(async () => { window.dispatchEvent(new Event("focus")); });
     expect(host.querySelector(".score-hero")?.getAttribute("aria-label")).toBe("ヤクルト 4、阪神 0、試合終了");
-    expect(find).toHaveBeenCalledTimes(2);
+    expect(find).toHaveBeenCalledTimes(3);
   } finally { await act(async () => root.unmount()); vi.restoreAllMocks(); vi.unstubAllGlobals(); }
 });
 
