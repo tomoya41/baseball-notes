@@ -19,7 +19,7 @@ import type { Services } from "../app/services";
 import { GameRecap, GameTeamLinks, NpbGamePreview } from "./game-story";
 import type { FavoriteActions } from "./team-favorite";
 import { admittedCsGameIds } from "../application/npb-cs-reader";
-import { matchesPublishedFinalGame, readPublishedFinalGame, type GameSummaryReader, type PublishedGameSummary } from "../application/game-surface";
+import { matchesPublishedGameOutcome, readPublishedGameOutcome, type GameSummaryReader, type PublishedGameSummary } from "../application/game-surface";
 import { usePublicDataRevalidation } from "./use-public-data-revalidation";
 const CsGame=lazy(()=>import("./npb-cs").then(m=>({default:m.NpbCsGameDetail})));
 const JapanGame=lazy(()=>import("./npb-japan-series").then(m=>({default:m.NpbJapanSeriesScreen})));
@@ -100,25 +100,30 @@ export function NpbGameDetailScreen(props:GameScreenProps){
   if(params.has("competition")&&params.get("competition")!=="regular"||params.has("stage"))return <DataState kind="unsupported" title="公式戦の試合を指定してください" />;
   return <NpbRegularGameDetailScreen key={gameId} {...props} />;
 }
-export function PublishedGameSummaryView({ summary, retry, scheduleTeam, resultConfirmed = false, retrying = false }: {
-  summary: PublishedGameSummary; retry: () => void; scheduleTeam?: string | undefined; resultConfirmed?: boolean; retrying?: boolean;
+export function PublishedGameSummaryView({ summary, retry, scheduleTeam, resultConfirmed = false, retrying = false, refreshFailed = false }: {
+  summary: PublishedGameSummary; retry: () => void; scheduleTeam?: string | undefined; resultConfirmed?: boolean; retrying?: boolean; refreshFailed?: boolean;
 }) {
   const { game } = summary;
+  const unplayed = game.status === "postponed" || game.status === "canceled";
+  const statusMessage = unplayed ? (resultConfirmed ? `公開日程で${statusName[game.status]}を確認しました。` : "保存済みの日程 · 更新未確認")
+    : (resultConfirmed ? "公開結果を反映しました" : "保存済みの結果 · 更新未確認");
   const originTeam = scheduleTeam === game.home.id || scheduleTeam === game.away.id ? scheduleTeam : undefined;
   return <div className="screen game-detail">
     <GameHeading title={`${formatDate(game.date, true)}の試合`} date={game.date} context={`NPB · 公式戦${game.gameNumber > 1 ? ` · 第${game.gameNumber}試合` : ""}`} backTo={npbSchedulePath(game.date,originTeam)} />
     <ScoreHero away={game.away.name} home={game.home.name} awayId={game.away.id} homeId={game.home.id} awayScore={game.away.score} homeScore={game.home.score} status={statusName[game.status]} />
-    <p className="game-detail__note" role="status">{resultConfirmed ? "公開結果を反映しました" : "保存済みの結果 · 更新未確認"}</p>
-    <InningScoreboard away={{name:game.away.name,runs:game.away.score}} home={{name:game.home.name,runs:game.home.score}}/>
-    <UnavailableGameMvp reason="試合別の選手成績を取得できないため、選出していません。"/>
-    <section className="home-section"><h2>選手成績</h2>
-      <p>{resultConfirmed ? "個人成績は未確認です。" : game.status === "final" ? "この試合の個人成績は現在取得できません。" : "個人成績の取得状況を確認できません。"}</p>
+    <p className="game-detail__note" role="status">{refreshFailed ? "更新を確認できないため、前回の日程を表示しています。" : statusMessage}</p>
+    {!unplayed && <>
+      <InningScoreboard away={{name:game.away.name,runs:game.away.score}} home={{name:game.home.name,runs:game.home.score}}/>
+      <UnavailableGameMvp reason="試合別の選手成績を取得できないため、選出していません。"/>
+    </>}
+    <div className="home-section">
+      {!unplayed && <><h2>選手成績</h2><p>{resultConfirmed ? "個人成績は未確認です。" : game.status === "final" ? "この試合の個人成績は現在取得できません。" : "個人成績の取得状況を確認できません。"}</p></>}
       <button className="button button--secondary" disabled={retrying} onClick={retry}>{retrying ? "試合詳細を確認中" : "試合詳細を再読み込み"}</button>
-    </section>
+    </div>
     <nav className="row-list" aria-label="球団の選手を探す">{[game.away, game.home].map(team =>
       <Link className="player-row" key={team.id} to={`/NPB/teams/${encodeURIComponent(team.id)}/players?season=${game.date.slice(0, 4)}`}><strong>{team.name}</strong><span>球団の選手一覧 →</span></Link>)}</nav>
-    <details><summary>結果の保存時点</summary><p>{summary.generatedAt} · 日別の結果収録：{{complete:"収録済み",partial:"一部収録",failed:"取得失敗",no_games:"試合なし",unknown:"未確認"}[summary.coverage]}</p>
-      <p>個人成績・出場選手・イニング別得点はこの結果データに含まれていません。</p></details>
+    <details><summary>{unplayed ? "日程の保存時点" : "結果の保存時点"}</summary><p>{summary.generatedAt} · 日別の結果収録：{{complete:"収録済み",partial:"一部収録",failed:"取得失敗",no_games:"終了試合なし",unknown:"未確認"}[summary.coverage]}</p>
+      {!unplayed && <p>個人成績・出場選手・イニング別得点はこの結果データに含まれていません。</p>}</details>
   </div>;
 }
 function NpbRegularGameDetailScreen({ repository, summaryRepository, services, favorites = [], toggle, saving = false }:GameScreenProps) {
@@ -128,7 +133,7 @@ function NpbRegularGameDetailScreen({ repository, summaryRepository, services, f
   const [state, setState] = useState<DetailState>("loading");
   const [summary, setSummary] = useState<PublishedGameSummary | null>(null);
   const [confirmedResult, setConfirmedResult] = useState<PublishedGameSummary | null>(null);
-  const [resultCheckFailed, setResultCheckFailed] = useState(false);
+  const [resultCheck, setResultCheck] = useState<"pending" | "confirmed" | "failed">("pending");
   const [attempt, setAttempt] = useState<{ result: PublishedGameSummary | null }>({ result: null });
   const dateHint = params.get("date") ?? undefined;
   const scheduleTeam = npbScheduleTeam(params);
@@ -136,13 +141,16 @@ function NpbRegularGameDetailScreen({ repository, summaryRepository, services, f
   const selectedSide = boxSide === "home" || boxSide === "away" ? boxSide
     : scheduleTeam && scheduleTeam === payload?.home.id ? "home" : "away";
   const surface = services?.gameSurface;
-  const awaitingResult = Boolean(surface && state === "ready" && payload?.status === "scheduled" && !confirmedResult);
+  const observed = confirmedResult?.game ?? payload;
+  const awaitingResult = Boolean(surface && (observed?.status === "scheduled" || observed?.status === "postponed" || observed?.status === "canceled"));
+  const observedDate = observed?.date, observedNumber = observed?.gameNumber;
+  const awayId = observed?.away.id, homeId = observed?.home.id;
   const revision = usePublicDataRevalidation(awaitingResult);
   useEffect(() => {
     if (!gameId) return;
     let active = true;
     const expected = attempt.result?.game;
-    const reading = expected ? repository.find(gameId, value => matchesPublishedFinalGame(expected, value)) : repository.find(gameId);
+    const reading = expected ? repository.find(gameId, value => matchesPublishedGameOutcome(expected, value)) : repository.find(gameId);
     void reading.then((value) => {
       if (active) { setPayload(value); setState(value ? "ready" : "missing"); }
     }).catch(async () => {
@@ -154,19 +162,19 @@ function NpbRegularGameDetailScreen({ repository, summaryRepository, services, f
     return () => { active = false; };
   }, [gameId, repository, summaryRepository, dateHint, attempt]);
   useEffect(() => {
-    if (!surface || !awaitingResult || !payload) return;
+    if (!surface || !awaitingResult || !gameId || !observedDate || !observedNumber || !awayId || !homeId) return;
     let active = true;
-    void readPublishedFinalGame(surface, payload).then(result => {
+    void readPublishedGameOutcome(surface, { gameId, date: observedDate, gameNumber: observedNumber, away: { id: awayId }, home: { id: homeId } }).then(result => {
       if (!active) return;
-      setResultCheckFailed(false);
+      setResultCheck(result ? "confirmed" : "pending");
       if (result) setConfirmedResult(result);
-    }).catch(() => { if (active) setResultCheckFailed(true); });
+    }).catch(() => { if (active) setResultCheck("failed"); });
     return () => { active = false; };
-  }, [awaitingResult, payload, revision, surface]);
+  }, [awaitingResult, gameId, observedDate, observedNumber, awayId, homeId, revision, surface]);
   const retry = () => { setSummary(null); setPayload(null); setState("loading"); setAttempt({ result: confirmedResult }); };
-  if (confirmedResult && (!payload || !matchesPublishedFinalGame(confirmedResult.game, payload)))
-    return <PublishedGameSummaryView summary={confirmedResult} retry={retry} scheduleTeam={scheduleTeam} resultConfirmed retrying={state === "loading"} />;
+  if (confirmedResult && (!payload || !matchesPublishedGameOutcome(confirmedResult.game, payload)))
+    return <PublishedGameSummaryView summary={confirmedResult} retry={retry} scheduleTeam={scheduleTeam} resultConfirmed retrying={state === "loading"} refreshFailed={resultCheck !== "confirmed"} />;
   if (state === "error" && summary && summary.game.gameId === gameId) return <PublishedGameSummaryView summary={summary} retry={retry} scheduleTeam={scheduleTeam} />;
   if (state === "error") return <><NpbGameDetailView payload={null} state="error" scheduleTeam={scheduleTeam} dateHint={dateHint} /><button className="text-button" onClick={retry}>試合詳細を再読み込み</button></>;
-  return <NpbGameDetailView payload={payload} state={state} scheduleTeam={scheduleTeam} resultCheckFailed={awaitingResult && resultCheckFailed} selectedSide={selectedSide} onSideChange={side => { const next=new URLSearchParams(params); next.set("boxSide",side); setParams(next,{preventScrollReset:true}); }} {...services ? { services } : {}} {...toggle ? { actions: { favorites, toggle, saving } } : {}} />;
+  return <NpbGameDetailView payload={payload} state={state} scheduleTeam={scheduleTeam} resultCheckFailed={awaitingResult && resultCheck === "failed"} selectedSide={selectedSide} onSideChange={side => { const next=new URLSearchParams(params); next.set("boxSide",side); setParams(next,{preventScrollReset:true}); }} {...services ? { services } : {}} {...toggle ? { actions: { favorites, toggle, saving } } : {}} />;
 }

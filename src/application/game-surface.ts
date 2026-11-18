@@ -25,13 +25,20 @@ function sameNpbGame(a: GameIdentity, b: GameIdentity): boolean {
     a.away.id === b.away.id && a.home.id === b.home.id;
 }
 
-export function matchesPublishedFinalGame(game: GameIndexRow, detail: NpbGameDetail): boolean {
-  return game.status === "final" && game.away.score !== null && game.home.score !== null &&
-    detail.status === "final" && sameNpbGame(game, detail) &&
-    detail.away.score === game.away.score && detail.home.score === game.home.score;
+function hasPublishedOutcome(game: GameIndexRow): boolean {
+  if (game.status === "final") return game.away.score !== null && game.home.score !== null;
+  return (game.status === "postponed" || game.status === "canceled") &&
+    game.away.score === null && game.home.score === null && !game.battingAvailable && !game.pitchingAvailable;
 }
 
-export async function readPublishedFinalGame(reader: Pick<GameSurfaceReader, "manifest" | "date">,
+export function matchesPublishedGameOutcome(game: GameIndexRow, detail: NpbGameDetail): boolean {
+  if (!hasPublishedOutcome(game) || game.status !== detail.status || !sameNpbGame(game, detail) ||
+    detail.away.score !== game.away.score || detail.home.score !== game.home.score) return false;
+  return game.status === "final" || (detail.batting.home.length === 0 && detail.batting.away.length === 0 &&
+    detail.pitching.home.length === 0 && detail.pitching.away.length === 0);
+}
+
+export async function readPublishedGameOutcome(reader: Pick<GameSurfaceReader, "manifest" | "date">,
   expected: GameIdentity): Promise<PublishedGameSummary | null> {
   let rememberManifest: (() => Promise<void>) | undefined;
   const manifest = await reader.manifest(save => { rememberManifest = save; });
@@ -42,7 +49,7 @@ export async function readPublishedFinalGame(reader: Pick<GameSurfaceReader, "ma
   const game = day.games.find(candidate => candidate.gameId === expected.gameId);
   if (!game) return null;
   if (!sameNpbGame(game, expected)) throw Error("Published Game result identity mismatch");
-  if (game.status !== "final" || game.away.score === null || game.home.score === null) return null;
+  if (!hasPublishedOutcome(game)) return null;
   await Promise.all([rememberManifest?.(), rememberDay?.()]);
   return { game, generatedAt: day.generatedAt, coverage: day.coverage };
 }
