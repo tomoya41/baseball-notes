@@ -1,4 +1,5 @@
 import { internationalTournamentEvidenceSchema } from "../domain/international-competition";
+import { apbcSelections } from "./apbc-2026-selections";
 
 // Adapted from the English Wikipedia article revisions below, CC BY-SA 4.0.
 // Dates are local to the venue. Only final totals and confirmed team sides are admitted.
@@ -13,7 +14,7 @@ const tokyo = "Asia/Tokyo", taipei = "Asia/Taipei", miami = "America/New_York";
 type ResultRow = readonly [localDate: string, zone: string, round: keyof typeof internationalRoundNames,
   away: keyof typeof teams, awayRuns: number, home: keyof typeof teams, homeRuns: number, revision: number];
 
-function edition(tournamentId: string, rows: readonly ResultRow[]) {
+function edition(tournamentId: string, rows: readonly ResultRow[], selected: readonly { id: string; name: string }[] = []) {
   const revisions = [...new Set(rows.map(row => row[7]))];
   const sources = revisions.map(revision => ({ id: String(revision), sourceId: "enwiki", publisherId: "english-wikipedia",
     version: String(revision), url: `https://en.wikipedia.org/w/index.php?oldid=${revision}`, termsEvidenceUrl: resultLicense,
@@ -27,8 +28,14 @@ function edition(tournamentId: string, rows: readonly ResultRow[]) {
   }));
   const partial = { status: "partial", scope: { kind: "team", teamId: japan }, source: games[0]!.source };
   const empty = { status: "uncollected" };
+  const rosterRevision = "111791999";
+  if (selected.length) sources.push({ ...sources[0]!, id: rosterRevision, sourceId: "jawiki", publisherId: "japanese-wikipedia",
+    version: rosterRevision, url: `https://ja.wikipedia.org/w/index.php?oldid=${rosterRevision}`, verifiedAt: "2026-11-19T21:48:00Z" });
+  const participation = selected.map(player => ({ kind: "selected", competition: "international", tournamentId, teamId: japan,
+    playerId: player.id, date: "2026-10-07", source: { sourceRevisionId: rosterRevision, sourceRecordId: `代表選手/${player.name}` } }));
   return internationalTournamentEvidenceSchema.parse({ tournamentId, editionRevision: 1, sources, games,
-    identities: [], participation: [], corrections: [], coverage: { results: partial, schedule: empty, selections: empty,
+    identities: [], participation, corrections: [], coverage: { results: partial, schedule: empty,
+      selections: selected.length ? { ...partial, source: { sourceRevisionId: rosterRevision, sourceRecordId: "代表選手" } } : empty,
       registrations: empty, appearances: empty, playerStats: empty } });
 }
 
@@ -38,7 +45,7 @@ const editions = [
     ["2026-11-13", tokyo, "pool", "KOR", 5, "JPN", 9, 1385998229],
     ["2026-11-14", tokyo, "pool", "JPN", 16, "AUS", 1, 1385998229],
     ["2026-11-15", tokyo, "final", "KOR", 1, "JPN", 5, 1385998229],
-  ]),
+  ], apbcSelections),
   edition("international:tournament:wbc:2026", [
     ["2026-03-06", tokyo, "pool", "JPN", 13, "TPE", 0, 1370352167],
     ["2026-03-07", tokyo, "pool", "KOR", 6, "JPN", 8, 1370352167],

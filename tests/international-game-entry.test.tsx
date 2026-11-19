@@ -33,6 +33,9 @@ it("opens real official tournament links alongside the domestic Games route with
     expect(entry.open).toBe(true);
     expect(entry.textContent).toContain("日本代表の結果 · 4試合");
     expect(entry.textContent).toContain("韓国 1 − 5 日本");
+    expect(entry.textContent).toContain("代表に選ばれた選手 · 28人");
+    expect(entry.textContent).toContain("宗山塁");
+    expect(entry.querySelector('a[href*="/NPB/players/"]')).toBeNull();
     expect(entry.textContent).toContain("2026年11月12〜15日");
     expect(entry.querySelector('a[href$="#schedule"]')?.getAttribute("href")).toBe("https://www.japan-baseball.jp/jp/games/apbc2026/#schedule");
     expect(entry.querySelector('a[href$="player_jpn.html"]')?.textContent).toContain("公式選手一覧");
@@ -44,6 +47,7 @@ it("opens real official tournament links alongside the domestic Games route with
     expect(entry.querySelector(".hub-links a")?.getAttribute("href")).toBe("https://www.japan-baseball.jp/jp/team/topteam/2023/wbc/overview.html");
     expect(entry.querySelectorAll(".row-list li")).toHaveLength(7);
     expect(entry.textContent).toContain("アメリカ 2 − 3 日本");
+    expect(entry.textContent).not.toContain("宗山塁");
     expect(entry.querySelector("table")).toBeNull();
     expect(container.querySelector("output")?.textContent).toBe(currentUrl);
     expect(container.querySelector('.scoreboard-list a')?.getAttribute("href")).toBe(domesticLink);
