@@ -6,7 +6,7 @@ import { LicensedPlayerPhoto } from "./licensed-player-photo";
 import { PlayerIdentity } from "./signature";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
-import { teamPlayerReturnPath } from "../presentation/team-player-list";
+import { playerListReturnPath } from "../presentation/team-player-list";
 import { readNpbHistoricalManifest, readNpbHistoricalSeason } from "../application/npb-historical-reader";
 import { sumHistoricalRows, historicalBattingKeys, historicalPitchingKeys, type NpbHistoricalDataset, type NpbHistoricalManifest, type NpbHistoricalRow } from "../domain/npb-historical";
 import { normalizePlayerSearch } from "../domain/npb-player-directory";
@@ -46,7 +46,7 @@ export function NpbPlayerSeasons({repository,profileRepository,favorites=[],togg
   repository:{findLatestNpb():Promise<NpbPlayerDirectory>};profileRepository?:CohortRepository;
 }&Partial<FavoriteActions>) {
   const {playerId}=useParams(),[params,setParams]=useRosterSearchParams();
-  const location=useLocation(),rosterBack=teamPlayerReturnPath(location.state);
+  const location=useLocation(),rosterBack=playerListReturnPath(location.state);
   const gameContext=npbGamePlayerContext(params), gameLinks=gameContext&&playerId?npbGamePlayerLinks(playerId,gameContext):null;
   const [pastOpen,setPastOpen]=useState(false);
   const [manifest,setManifest]=useState<NpbHistoricalManifest|null>(null),[failed,setFailed]=useState(false),[attempt,setAttempt]=useState(0);

@@ -42,7 +42,9 @@ export function NpbHomeLead({ now, requested, favorites, visible }: { now: numbe
     {context.focus === "series" && series ? <JapanSeriesHomeContent data={series} now={now} embedded /> : context.focus === "moves" && events ? <section className="home-section" aria-label="注目の選手の動き">
       <SectionHeader title="選手の動き" action="すべて" to="/NPB/moves" />
       <ol className="row-list">{context.movements.map(({ event, player, followed }) => <li key={event.id}><Link className="player-row" to={`/NPB/moves?player=${event.playerId}`}><span className="player-row__body"><strong>{player.name}</strong><small>{playerEventLabels[event.kind]}{followed && " · フォロー"}</small></span><time dateTime={event.recordedDate}>{event.recordedDate.slice(5).replace("-", "/")}</time></Link></li>)}</ol>
-      <p className="inline-note">記事記録 · 一部収録 · <a href={events.source.url}>Wikipediaの執筆者</a> · <a href={events.source.licenseUrl}>CC BY-SA 4.0</a></p>
+      <details className="source-note"><summary>選手の動きは一部収録 · 出典</summary>
+        <p><a href={events.source.url}>Wikipediaの執筆者</a> · <a href={events.source.licenseUrl}>CC BY-SA 4.0</a></p>
+      </details>
       <nav className="home-context-links" aria-label="移籍と契約更改"><Link to="/NPB/moves?kind=trade"><strong>移籍・トレード</strong><small>収録された記載へ</small></Link><Link to="/NPB/moves?kind=contract_renewal"><strong>契約更改</strong><small>{events.events.some(e => e.kind === "contract_renewal") ? "収録された記載へ" : "未収録"}</small></Link></nav>
       <details className="home-tools"><summary>季節の特集</summary><NpbSeasonalHome supporting now={now}/></details>
     </section> : <><NpbSeasonalHome now={now}/>{failed && <p role="status" className="inline-note">選手の動きを読み込めません。<button onClick={() => { setFailed(false); setRetry(n => n + 1); }}>再試行</button></p>}</>}

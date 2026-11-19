@@ -3,7 +3,7 @@ import { RosterContextLink as Link } from "./roster-navigation";
 import { useEffect, useState } from "react";
 import { LicensedPlayerPhoto } from "./licensed-player-photo";
 import { Navigate, useLocation, useParams } from "react-router-dom";
-import { teamPlayerReturnPath } from "../presentation/team-player-list";
+import { playerListReturnPath } from "../presentation/team-player-list";
 import type { Services } from "../app/services";
 import type { Favorite } from "../domain/models";
 import type { PlayerRecentResponse, RecentPeriod } from "../domain/player-recent";
@@ -34,7 +34,7 @@ import "./npb-player-experience.css";
 import "./npb-game-player.css";
 export function NpbPlayer({ services, favorites, toggle, saving }: { services: Services; favorites: Favorite[]; toggle: (target: Pick<Favorite, "kind" | "entityId" | "league">) => void; saving: boolean }) {
   const { playerId, section } = useParams();
-  const location = useLocation(), rosterBack = teamPlayerReturnPath(location.state);
+  const location = useLocation(), rosterBack = playerListReturnPath(location.state);
   const gameContext = npbGamePlayerContext(new URLSearchParams(location.search));
   const postseasonVisit = gameContext !== null && gameContext.stage !== "regular";
   const canonical = !!playerId && /^[0-9a-f-]{36}$/i.test(playerId);
@@ -166,6 +166,14 @@ export function NpbPlayer({ services, favorites, toggle, saving }: { services: S
   });
   const isFavorite = favorites.some(f => f.league === "NPB" && f.kind === "player" && f.entityId === player.id);
   const affiliation = directory && directoryTeam ? `所属は${directory.effectiveDate}時点` : null;
+  const background = <section className="player-background" aria-label="経歴と保存した選手への移動">
+    <div className="player-snapshot-heading"><h2>選手の歩み</h2><Link to="/NPB/my">Myへ →</Link></div>
+    <nav className="player-background-links" aria-label="経歴と選手の動き">
+      {section !== "more" && <Link to={`${base}/more${gameLinks?.search ?? ""}`}>プロフィール・球歴<span>学校・ドラフト・所属の記録</span></Link>}
+      <Link to={`/NPB/moves?player=${player.id}`}>選手の動き<span>契約・移籍などの記録</span></Link>
+    </nav>
+    <PlayerHonors league="NPB" playerId={player.id}/>
+  </section>;
   return <div className="screen player-screen npb-player-experience"><PlayerContextBar backTo={gameLinks?.game ?? rosterBack ?? "/NPB/search"} tools={<>{compareTo && <Link to={compareTo}>比較に追加</Link>}{!postseasonVisit && <Link to={trendsTo} aria-current={section === "trends" ? "page" : undefined}>推移・連続記録</Link>}<Link to={seasonsTo}>年度別・シリーズ別成績</Link>{!postseasonVisit && <Link to={`/NPB/season-compare?kind=player&entity=${encodeURIComponent(player.id)}&role=${seasonRole}`}>保存年度を比較</Link>}{directoryTeam && <Link to={`/NPB/teams/${encodeURIComponent(directoryTeam.id)}`}>球団を見る</Link>}<CollectionButton league="NPB" playerId={player.id} name={player.name} /></>}><Link className="player-fixed-scope" to={seasonsTo}>{gameLinks?.scope ?? "2026年 · 公式戦"} ▾</Link></PlayerContextBar>
     <PlayerIdentity uniformNumber={directoryTeam ? product?.membership.uniformNumber ?? null : null} name={player.name} context={`NPB · ${directoryTeam?.shortName ?? (directory ? "所属未確認" : identity?.teamName ?? "所属未確認")}`} detail={[directoryPlayer?.position ? positionDefinitions[directoryPlayer.position] : null, affiliation].filter(Boolean).join(" · ")} visual={product?.visual.photo.usage === "allowed" ? <img className="profile-photo" src={product.visual.photo.url!} alt={player.name} /> : <LicensedPlayerPhoto playerId={player.id} season={2026} />} favorite={<FavoriteButton active={isFavorite} saving={saving} label={player.name} onClick={() => toggle({ league: "NPB", kind: "player", entityId: player.id })} />} />
     {directoryState === "error" && directory && <p className="inline-note" role="status">更新を確認できないため、保存済みの選手情報を表示しています。</p>}
@@ -180,18 +188,21 @@ export function NpbPlayer({ services, favorites, toggle, saving }: { services: S
     {!postseasonVisit && <PlayerTabs base={base} section={section} search={gameLinks?.search ?? ""} />}
     {!section && !postseasonVisit && <section className="player-snapshot" aria-label="主な成績と分析への入口">
       <div className="player-snapshot-heading"><h2>保存済みの主な成績</h2><span>2026年 · 公式戦</span></div>
-      {headlineStats.map((stats, i) => stats && (i === 1 || !pitcherBatting) ? <HeadlineStats key={i} title={`2026 ${i === 0 ? "打撃" : "投球"} · ${stats.to}まで`} partial={stats.partial} stats={(i === 0 ? ["OPS", "HR", "AVG"] : ["ERA", "outsRecorded", "SO"]).map(metric => ({ metric, label: metric === "outsRecorded" ? "投球回" : metric === "SO" ? "奪三振" : metric, value: formatRecentMetric(metric, stats.metrics[metric]) }))} /> : null)}
+      {headlineStats.map((stats, i) => {
+        if (!stats || (i === 0 && pitcherBatting)) return null;
+        const batting = i === 0;
+        const title = [batting ? "打撃" : "投球", `${stats.to}まで`];
+        if (batting && stats.metrics.PA?.status === "complete" && stats.metrics.PA.value != null)
+          title.push(`${formatRecentMetric("PA", stats.metrics.PA)}打席`);
+        const metrics = batting ? [["OPS", "OPS"], ["HR", "本塁打"], ["AVG", "打率"]] as const
+          : [["ERA", "防御率"], ["outsRecorded", "投球回"], ["SO", "奪三振"]] as const;
+        return <HeadlineStats key={i} title={title.join(" · ")} partial={stats.partial}
+          stats={metrics.map(([metric, label]) => ({ metric, label, value: formatRecentMetric(metric, stats.metrics[metric]) }))} />;
+      })}
       {publishedSeason && <p className="inline-note">公開基準日 <time dateTime={publishedSeason.effectiveDate}>{publishedSeason.effectiveDate}</time></p>}
       {!gameLinks && compareTo && <PlayerQuickActions compareTo={compareTo} trendsTo={trendsTo} historyTo={seasonsTo} />}
     </section>}
-    <section className="player-background" aria-label="経歴と保存した選手への移動">
-      <div className="player-snapshot-heading"><h2>選手の背景を知る</h2><Link to="/NPB/my">Myへ →</Link></div>
-      <nav className="player-background-links" aria-label="経歴と選手の動き">
-        <Link to={`${base}/more${gameLinks?.search ?? ""}`}>プロフィール・球歴<span>学校・ドラフト・所属の記録</span></Link>
-        <Link to={`/NPB/moves?player=${player.id}`}>選手の動き<span>出典付きの契約・移籍情報</span></Link>
-      </nav>
-      <PlayerHonors league="NPB" playerId={player.id}/>
-    </section>
+    {!section && background}
     {section === "trends" && !postseasonVisit && <NpbPlayerTrends services={services} playerId={player.id} />}
     {!section && !postseasonVisit && <div className="profile-content">{!hasSeason && seasonView}<PlayerRecentView period={period} onPeriodChange={next => { if (next === period) return; setRecentState("loading"); setPeriod(next); }} payload={recent} state={recentState} fallback={<PublishedPlayerFallback key={`${player.id}:${period}`} playerId={player.id} period={period} repository={services.directory} pitcherBatting={pitcherBatting} />} noFactKnown={directoryPlayer?.recentAvailable === false} pitcherBatting={pitcherBatting} />{hasSeason && <details className="profile-season-details"><summary>シーズン成績・収録状態</summary>{seasonView}</details>}
       <PlayerGameLogView payload={gameLog ? { ...gameLog, batting: gameLog.batting.slice(0, 3), pitching: gameLog.pitching.slice(0, 3) } : null} state={gameLogState} teams={gameLogTeams} /><Link className="button button--secondary" to={`${base}/game-log`}>すべての試合別成績を見る</Link></div>}
@@ -221,6 +232,7 @@ export function NpbPlayer({ services, favorites, toggle, saving }: { services: S
             state={analysisState === "ready" ? analysisBundle?.pitcherRole.status === "ready" ? "ready" : "error" : analysisState}
             pitchingAvailable={directoryPlayer?.pitchingAvailable} /></details></div>}</>
       : null}</div>}
+    {section && background}
   </div>;
 }
 

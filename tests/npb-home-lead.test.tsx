@@ -17,7 +17,7 @@ vi.mock("../src/application/npb-player-events-reader",()=>({readNpbPlayerEvents:
 vi.mock("../src/ui/daily-dashboard",()=>({NpbSavedGames:()=> <p data-saved-games>保存済み試合</p>,NpbToday:()=> <p>フォローの試合</p>,NpbPersonalDashboard:()=>null}));
 vi.mock("../src/ui/npb-my",()=>({NpbSavedPlayers:()=>null}));
 vi.mock("../src/ui/npb-hot",()=>({NpbHotSection:()=> <p>HOT未公開</p>}));
-vi.mock("../src/ui/signature",()=>({HomeDiscover:()=>null,HomeSearchEntry:()=> <p>選手を探す</p>,TeamRecord:()=>null}));
+vi.mock("../src/ui/signature",()=>({HomeDiscover:()=>null,TeamRecord:()=>null}));
 vi.mock("../src/ui/data-explorer",()=>({ExplorerLinks:()=>null}));
 
 const now = Date.parse("2026-10-30T03:00:00Z");
@@ -29,9 +29,19 @@ afterEach(async()=>{await act(async()=>root.unmount());host.remove();vi.restoreA
 const toggle=async(el:HTMLDetailsElement)=>act(async()=>{el.open=!el.open;el.dispatchEvent(new Event("toggle"));});
 const click=async(el:HTMLElement)=>act(async()=>el.click());
 const select=async(value:string)=>act(async()=>{const el=host.querySelector("select")!;el.value=value;el.dispatchEvent(new Event("change",{bubbles:true}));});
-function Location(){const l=useLocation();return <output>{l.search}</output>;}
+function Location(){const l=useLocation();return <output data-path={l.pathname}>{l.search}</output>;}
 const services={hot:{},standings:{findLatestNpb:async()=>null}} as unknown as Services;
 const home=(url="/NPB/home?season=2026")=><MemoryRouter initialEntries={[url]}><NpbHome services={services} favorites={[]} toggle={()=>{}} saving={false}/><Location/></MemoryRouter>;
+
+it.each([[" 森下 & 翔太 ", "森下 & 翔太"], ["　", null]])("opens the directory from Home with the submitted name %j", async (input, expected) => {
+  await act(async()=>root.render(home()));
+  const form = host.querySelector<HTMLFormElement>('form[role="search"]')!;
+  form.querySelector("input")!.value = input!;
+  await act(async()=>{ form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })); });
+  const address = host.querySelector("output")!;
+  expect(address.dataset.path).toBe("/NPB/search");
+  expect(new URLSearchParams(address.textContent ?? "").get("q")).toBe(expected);
+});
 
 it("uses bounded fresh records ahead of the archived series and lazily keeps regular results, source credits and destinations",async()=>{
   await act(async()=>root.render(home()));

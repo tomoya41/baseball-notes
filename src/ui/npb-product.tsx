@@ -2,7 +2,8 @@ import { formatThrowBat } from "../presentation/baseball-language";
 import { clubStyle } from "../presentation/club-style";
 import { currentTeamPlayers, sortTeamPlayers } from "../presentation/team-player-list";
 import { useEffect, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { ArrowLeftRight, CalendarDays, ChartColumn, Search } from "lucide-react";
 import type { Services } from "../app/services";
 import type { Favorite } from "../domain/models";
 import { matchesNpbTeamSeasonGeneration, type NpbCatalog, type NpbTeamSeason } from "../domain/npb-product-contract";
@@ -18,7 +19,7 @@ import { NpbToday, NpbSavedGames, NpbPersonalDashboard } from "./daily-dashboard
 import { TeamFavorite } from "./team-favorite";
 import { ExplorerLinks } from "./data-explorer";
 import { LifecycleLinks } from "./npb-lifecycle";
-import { HomeDiscover, HomeSearchEntry, TeamRecord } from "./signature";
+import { HomeDiscover, TeamRecord } from "./signature";
 import { NpbHomeLead } from "./npb-home-lead";
 import { npbSeasonalHome } from "../domain/npb-seasonal-home";
 import { NpbHomeFollowing } from "./npb-home-following";
@@ -48,6 +49,7 @@ export function NpbHome({ services, favorites, toggle, saving }: { services: Ser
   const [now,setNow] = useState(Date.now);
   useEffect(()=>{const tick=()=>setNow(Date.now());window.addEventListener("focus",tick);const timer=window.setInterval(tick,60000);return()=>{window.removeEventListener("focus",tick);window.clearInterval(timer);};},[]);
   const [params, setParams] = useSearchParams();
+  const navigate = useNavigate();
   const context = npbSeasonalHome(now, params.get("homeSeason"));
   const [savedOpen, setSavedOpen] = useState(false);
   const requestedView = params.get("homeView"), view = requestedView === "standings" || requestedView === "follow" ? requestedView : "scores";
@@ -60,19 +62,32 @@ export function NpbHome({ services, favorites, toggle, saving }: { services: Ser
   };
   const savedResults = <div className="home-main"><NpbSavedGames services={services} onEffectiveDate={setEffectiveDate} />{favorites.some(f=>f.league==="NPB"&&f.kind==="player")&&<div className="home-follow"><NpbPersonalDashboard services={services} favorites={favorites} toggle={toggle} saving={saving} compact /></div>}<Link className="section-action" to="/NPB/weekly?stage=regular">公式戦の週間レポート →</Link></div>;
   const following = <NpbHomeFollowing repository={services.directory} favorites={favorites}/>;
-  const shortcuts = <nav className="home-primary-actions" aria-label="野球データの入口"><Link to="/NPB/schedule"><strong>試合</strong><small>保存したスコア</small></Link><Link to="/NPB/compare"><strong>選手比較</strong><small>同じ条件で見る</small></Link><Link to="/NPB/moves"><strong>選手の動き</strong><small>出典付きの記録</small></Link></nav>;
+  const shortcuts = <nav className="home-primary-actions" aria-label="野球データの入口">
+    <Link to="/NPB/schedule"><CalendarDays aria-hidden="true" /><strong>日程・結果</strong></Link>
+    <Link to="/NPB/compare"><ChartColumn aria-hidden="true" /><strong>選手比較</strong></Link>
+    <Link to="/NPB/moves"><ArrowLeftRight aria-hidden="true" /><strong>移籍・契約</strong></Link>
+  </nav>;
   const international = context.date >= "2026-11-01" && context.date <= "2026-11-15" &&
     <Link className="home-international-link" to="/NPB/schedule?view=international"><span><small>侍ジャパン · 公式情報</small><strong>APBC 2026</strong></span><span>大会情報へ <span aria-hidden="true">→</span></span></Link>;
-  return <div className="screen home-screen home-hub"><div className="home-controls home-controls--contextual"><CompetitionHeader league="NPB" context={view !== "scores" || context.mode === "regular" ? effectiveDate ? `${effectiveDate.slice(0,4)}年 · 公式戦` : "公式戦" : "野球のいまを探す"}>
+  const seasonLabel = { spring: "開幕前", regular: "公式戦", autumn: "CS・ドラフト", winter: "オフシーズン" }[context.mode];
+  const regularLabel = effectiveDate ? `${effectiveDate.slice(0, 4)}年 · 公式戦` : "公式戦";
+  return <div className="screen home-screen home-hub"><div className="home-controls home-controls--contextual"><CompetitionHeader league="NPB" context={view === "scores" && context.mode !== "regular" ? seasonLabel : regularLabel}>
       <label className="competition-season"><span className="sr-only">ホームの表示内容</span><select aria-label="ホームの表示内容" value={context.manual ? context.mode : "auto"} onChange={e => { const next = new URLSearchParams(params); if(e.target.value === "auto")next.delete("homeSeason");else next.set("homeSeason", e.target.value);setParams(next); }}><option value="auto">自動</option><option value="spring">春・開幕前</option><option value="regular">公式戦</option><option value="autumn">CS・ドラフト</option><option value="winter">移籍・契約更改</option></select></label>
-    </CompetitionHeader><HomeModeNav active={view} onChange={changeView} modes={[{id:"scores",label:"トップ"},{id:"standings",label:"順位表"},{id:"follow",label:"フォロー"}]} /></div>
-    {view === "scores" && showFollowingFirst && <>{following}{shortcuts}
-      <div className="home-season-heading"><span className="eyebrow">{context.mode === "winter" ? "OFF SEASON" : context.mode === "autumn" ? "POSTSEASON & DRAFT" : context.mode === "spring" ? "SEASON PREVIEW" : "REGULAR SEASON"}</span><h2>{context.mode === "winter" ? "いま、たどりたい話題" : context.title}</h2></div>
-      {international}
-    </>}
+    </CompetitionHeader>
+    {view === "scores" && <form role="search" aria-label="NPB選手検索" className="home-player-search" onSubmit={event => {
+      event.preventDefault();
+      const query = String(new FormData(event.currentTarget).get("q") ?? "").trim();
+      navigate(query ? `/NPB/search?${new URLSearchParams({ q: query })}` : "/NPB/search");
+    }}>
+      <label><Search size={18} aria-hidden="true" /><span className="sr-only">選手名</span>
+        <input type="search" name="q" placeholder="選手名で探す" /></label>
+      <button type="submit">検索</button>
+    </form>}
+    <HomeModeNav active={view} onChange={changeView} modes={[{id:"scores",label:"トップ"},{id:"standings",label:"順位表"},{id:"follow",label:"フォロー"}]} /></div>
+    {view === "scores" && showFollowingFirst && <>{following}{shortcuts}{international}</>}
     <NpbHomeLead now={now} requested={params.get("homeSeason")} favorites={favorites} visible={view === "scores"}/>
     {view === "scores" && !showFollowingFirst && <>{shortcuts}{international}{following}</>}
-    {view === "scores" && <>{context.mode === "regular" ? savedResults : <details className="home-tools" onToggle={e=>setSavedOpen(e.currentTarget.open)}><summary>公式戦の保存済み結果</summary>{savedOpen && savedResults}</details>}<HomeSearchEntry league="NPB" /></>}
+    {view === "scores" && (context.mode === "regular" ? savedResults : <details className="home-tools" onToggle={e=>setSavedOpen(e.currentTarget.open)}><summary>公式戦の保存済み結果</summary>{savedOpen && savedResults}</details>)}
     {view === "standings" && <NpbStandings services={services} onEffectiveDate={setEffectiveDate} />}
     {view === "follow" && <><NpbToday services={services} favorites={favorites} toggle={toggle} saving={saving} personal /><NpbPersonalDashboard services={services} favorites={favorites} toggle={toggle} saving={saving} compact /><section className="home-section"><SectionHeader title="お気に入り選手" action="My" to="/NPB/my" /><NpbSavedPlayers repository={services.directory} favorites={favorites} toggle={toggle} saving={saving} compact /></section></>}
     <HomeDiscover league="NPB" />

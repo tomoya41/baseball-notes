@@ -8,7 +8,11 @@ export type TeamPlayer = { id: string; name: string; number: string | null; numb
 export type TeamPlayerRole = "all" | "batting" | "pitching";
 export type TeamPlayerSort = "number" | "games" | "innings" | "name";
 
-export function teamPlayerReturnPath(state: unknown): string | null {
+export function playerListReturnPath(state: unknown): string | null {
+  if (state && typeof state === "object" && "npbPlayerSearch" in state && typeof state.npbPlayerSearch === "string") {
+    const query = new URLSearchParams(state.npbPlayerSearch).toString();
+    return query ? `/NPB/search?${query}` : "/NPB/search";
+  }
   if (!state || typeof state !== "object" || !("teamPlayers" in state)) return null;
   const source = state.teamPlayers;
   if (!source || typeof source !== "object" || !("teamId" in source) || typeof source.teamId !== "string" || !/^npb:team:[a-z]+$/.test(source.teamId)) return null;

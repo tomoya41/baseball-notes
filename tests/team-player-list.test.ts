@@ -2,7 +2,7 @@ import { expect, it } from "vitest";
 import { rosterCatalog, rosterSeason } from "./fixtures/npb-team-players";
 
 
-import { currentTeamPlayers, historicalTeamPlayers, sortTeamPlayers, teamPlayerReturnPath, type TeamPlayer } from "../src/presentation/team-player-list";
+import { currentTeamPlayers, historicalTeamPlayers, sortTeamPlayers, playerListReturnPath, type TeamPlayer } from "../src/presentation/team-player-list";
 import { historicalBattingKeys, npbHistoricalRowSchema } from "../src/domain/npb-historical";
 
 const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12,"0")}`;
@@ -39,6 +39,11 @@ it("keeps past-year club rows separate from the latest roster and never lends a 
 });
 
 it("preserves the team's year, role, sort and search on the profile return path without external redirects",()=>{
-  expect(teamPlayerReturnPath({teamPlayers:{teamId,year:"2025",role:"pitching",sort:"innings",query:"山"}})).toBe("/NPB/teams/npb%3Ateam%3Atigers/players?season=2025&role=pitching&sort=innings&q=%E5%B1%B1");
-  expect(teamPlayerReturnPath({teamPlayers:{teamId:"https://evil.test/"}})).toBeNull();expect(teamPlayerReturnPath(null)).toBeNull();
+  expect(playerListReturnPath({teamPlayers:{teamId,year:"2025",role:"pitching",sort:"innings",query:"山"}})).toBe("/NPB/teams/npb%3Ateam%3Atigers/players?season=2025&role=pitching&sort=innings&q=%E5%B1%B1");
+  expect(playerListReturnPath({teamPlayers:{teamId:"https://evil.test/"}})).toBeNull();expect(playerListReturnPath(null)).toBeNull();
+});
+it("preserves directory search conditions in a local return path", () => {
+  const params = new URLSearchParams({ q: "森下", team: "npb:team:tigers", role: "batter" });
+  expect(playerListReturnPath({ npbPlayerSearch: params.toString() })).toBe(`/NPB/search?${params}`);
+  expect(playerListReturnPath({ npbPlayerSearch: "" })).toBe("/NPB/search");
 });

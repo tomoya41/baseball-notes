@@ -59,7 +59,7 @@ export function NpbPlayerSearchView({ directory, state, query, onQueryChange, te
       <div className="list-heading"><strong>{query || teamId || role !== "all" ? "検索結果" : "選手一覧"}</strong><span>{players.length}人</span></div>
       {players.length ? <div className="row-list">{players.slice(0, visibleLimit).map((player) =>
         <div className="surface-favorite search-player-row" key={player.playerId}><Link className="player-row npb-directory-row"
-          to={`/NPB/players/${encodeURIComponent(player.playerId)}`}>
+          to={`/NPB/players/${encodeURIComponent(player.playerId)}`} state={{ npbPlayerSearch: displayParams.toString() }}>
           <span className="player-row__body"><strong>{player.displayName}</strong>
             <small>{player.teamId ? teams.get(player.teamId) : "所属球団未登録"}
               {player.position ? ` · ${positionDefinitions[player.position]}` : ""}
