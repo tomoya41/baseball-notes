@@ -9,7 +9,7 @@ export const citedOffseasonEventTransformation = "Explicit dated first sentences
 
 export const playerEventLabels: Record<typeof playerEventKinds[number], string> = {
   trade: "トレード", signing: "契約発表", retirement_announcement: "引退発表", nonrenewal_notice: "戦力外通告", release: "自由契約",
-  registration_change: "支配下契約", fa_declaration: "FA宣言", posting_application: "ポスティング申請", draft_selection: "ドラフト指名", contract_renewal: "契約更改",
+  registration_change: "支配下契約", fa_declaration: "FA権行使の表明", posting_application: "ポスティング申請", draft_selection: "ドラフト指名", contract_renewal: "契約更改",
   departure: "退団発表", posting_permission: "ポスティング容認",
 };
 const team = z.string().regex(/^npb:team:(giants|tigers|dragons|carp|swallows|baystars|hawks|fighters|lions|marines|eagles|buffaloes)$/);

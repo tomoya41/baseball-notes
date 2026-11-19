@@ -1,10 +1,10 @@
 {
-  "assetUrl": "https://github.com/tomoya41/baseball-notes/releases/download/npb-events-wikipedia-20261106-v8/npb-player-events.json.gz",
-  "sha256": "0a83b9ca8460f89a50e785e600476d2d3af4ee5f5e638b323516466626d2cc97",
-  "bodySha256": "1c5cb83657e65fa164cd6a955f741187b8cdcfef53852595b3f16a8dc78bd615",
-  "bytes": 58447,
-  "events": 76,
-  "players": 76,
-  "sourceRevision": 111659037,
+  "assetUrl": "https://github.com/tomoya41/baseball-notes/releases/download/npb-events-wikipedia-20261111-v9/npb-player-events.json.gz",
+  "sha256": "746f53e7d6cc541f433ecfae92f38cc34cbdf5e7529ad3e2da1bd3202804bc3b",
+  "bodySha256": "dcd6864643d7b3408161be2c5099118fb168fd2732e14de0d4145a37ba90838d",
+  "bytes": 59526,
+  "events": 77,
+  "players": 77,
+  "sourceRevision": 111711882,
   "identityInputSha256": "b41363ba2155c42801d2d24d51af44e20c10481f24ca9fef79f6d41f9a3fd59f"
 }

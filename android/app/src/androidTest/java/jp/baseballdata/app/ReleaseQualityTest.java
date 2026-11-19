@@ -25,7 +25,7 @@ import static org.junit.Assert.*;
 @RunWith(AndroidJUnit4.class)
 public class ReleaseQualityTest {
     private static final String NPB_RETAINED_EVENT_SOURCE_REVISION = "111569587";
-    private static final String NPB_CURRENT_EVENT_SOURCE_REVISION = "111659037";
+    private static final String NPB_CURRENT_EVENT_SOURCE_REVISION = "111711882";
     private ActivityScenario<MainActivity> scenario;
     private String js(String expression) throws Exception {
         AtomicReference<String> value = new AtomicReference<>(); CountDownLatch latch = new CountDownLatch(1);
@@ -818,7 +818,7 @@ public class ReleaseQualityTest {
         waitCondition("Recorded series archive has loaded", "!!document.querySelector('[data-japan-home-archive]')");
         assertEquals("Stale series is an explicit closed archive", "true", js("!document.querySelector('[data-japan-home-archive]').open && !document.querySelector('.japan-home-result')"));
         assertEquals("Regular results do not load into the offseason lead", "false", js("!!document.querySelector('.today-board')"));
-        assertEquals("Licensed article record remains labeled and linked", "true", js("document.querySelector('[data-home-focus] .inline-note').textContent.includes('記事記録') && !!document.querySelector('[data-home-focus] a[href*=\"oldid=" + NPB_CURRENT_EVENT_SOURCE_REVISION + "\"]') && !!document.querySelector('[data-home-focus] a[href=\"https://creativecommons.org/licenses/by-sa/4.0/\"]')"));
+        assertEquals("Licensed article record remains labeled and linked", "true", js("document.querySelector('[data-home-focus] .source-note summary').textContent.includes('一部収録') && !!document.querySelector('[data-home-focus] a[href*=\"oldid=" + NPB_CURRENT_EVENT_SOURCE_REVISION + "\"]') && !!document.querySelector('[data-home-focus] a[href=\"https://creativecommons.org/licenses/by-sa/4.0/\"]')"));
         assertTrue("No invented contract renewals", js("document.querySelector('.home-context-links').innerText").contains("未収録"));
         for(float scale:new float[]{1.0f,1.5f,2.0f}) {
             fontScaleAndRecreate(scale);settleContextualHome();waitViewport(360);
@@ -1021,16 +1021,17 @@ public class ReleaseQualityTest {
     }
     @Test public void offseasonAppendKeepsNewRecordLinksAndCompactEvidence() throws Exception {
         String[][] observations = {
-            {"npb:event:09cd8a2512a42fc93a7bf22d", "a4d91a39-9764-409c-978a-d73d4af0deec", "中川圭太", "FA宣言", "2026-11-05"},
-            {"npb:event:5d66aad26532fe80b3a76812", "d7230086-ab0b-488b-a7cc-e57f164df9f4", "宋家豪", "退団発表", "2026-11-03"},
-            {"npb:event:f9f9a9e9021f2a17d1addb1c", "822e3e5d-b156-4208-925c-5f702da095c0", "宗佑磨", "FA宣言", "2026-11-03"},
-            {"npb:event:5ec6536e8ad7287d0b2978cd", "2ff53a45-253a-4a70-bab5-daef2f8042ef", "小島和哉", "FA宣言", "2026-11-02"},
-            {"npb:event:38b5ed60b30c5555f6968f84", "e894c7ec-cf2d-4000-98d4-4211c1a4b345", "伊藤大海", "ポスティング申請", "2026-11-01"},
-            {"npb:event:089b5e550a52e6f6f088a517", "a5262598-2466-4486-8e07-b4dfa518f140", "甲斐拓也", "トレード", "2026-10-30"},
-            {"npb:event:4c2feb8c87359e08d008f2eb", "ad5f7282-8dd8-4a15-bf5a-0dd8c5555722", "本田仁海", "引退発表", "2026-10-30"},
-            {"npb:event:83fb6d9a0f2cd6d10056df6f", "4c14e916-c8aa-4f16-b169-125496c77d9f", "中村祐太", "戦力外通告", "2026-10-30"},
-            {"npb:event:a3937275e25b5f7d6d173029", "ba9b1d16-6c1a-4643-827c-f37805162675", "平良海馬", "ポスティング容認", "2026-10-30"},
-            {"npb:event:998ec3bcc53f0771230aa261", "ace94b36-2619-4b1c-8775-8a1a4f8a99cb", "福谷浩司", "退団発表", "2026-10-20"}
+            {"npb:event:09cd8a2512a42fc93a7bf22d", "a4d91a39-9764-409c-978a-d73d4af0deec", "中川圭太", "FA権行使の表明", "2026-11-05", "111659037"},
+            {"npb:event:5d66aad26532fe80b3a76812", "d7230086-ab0b-488b-a7cc-e57f164df9f4", "宋家豪", "退団発表", "2026-11-03", "111659037"},
+            {"npb:event:f9f9a9e9021f2a17d1addb1c", "822e3e5d-b156-4208-925c-5f702da095c0", "宗佑磨", "FA権行使の表明", "2026-11-03", "111659037"},
+            {"npb:event:5ec6536e8ad7287d0b2978cd", "2ff53a45-253a-4a70-bab5-daef2f8042ef", "小島和哉", "FA権行使の表明", "2026-11-02", "111659037"},
+            {"npb:event:38b5ed60b30c5555f6968f84", "e894c7ec-cf2d-4000-98d4-4211c1a4b345", "伊藤大海", "ポスティング申請", "2026-11-01", "111659037"},
+            {"npb:event:089b5e550a52e6f6f088a517", "a5262598-2466-4486-8e07-b4dfa518f140", "甲斐拓也", "トレード", "2026-10-30", "111659037"},
+            {"npb:event:4c2feb8c87359e08d008f2eb", "ad5f7282-8dd8-4a15-bf5a-0dd8c5555722", "本田仁海", "引退発表", "2026-10-30", "111659037"},
+            {"npb:event:83fb6d9a0f2cd6d10056df6f", "4c14e916-c8aa-4f16-b169-125496c77d9f", "中村祐太", "戦力外通告", "2026-10-30", "111659037"},
+            {"npb:event:a3937275e25b5f7d6d173029", "ba9b1d16-6c1a-4643-827c-f37805162675", "平良海馬", "ポスティング容認", "2026-10-30", "111659037"},
+            {"npb:event:998ec3bcc53f0771230aa261", "ace94b36-2619-4b1c-8775-8a1a4f8a99cb", "福谷浩司", "退団発表", "2026-10-20", "111659037"},
+            {"npb:event:86471c4e232072684388112d", "7344da93-565d-4841-8f8f-d1a61ff4e0c4", "上林誠知", "FA権行使の表明", "2026-11-07", NPB_CURRENT_EVENT_SOURCE_REVISION}
         };
         String route = "/NPB/moves?player=" + observations[0][1] + "&event=" + observations[0][0];
         Intent link = new Intent(Intent.ACTION_VIEW, Uri.parse("baseballnotes:/" + route));
@@ -1042,7 +1043,7 @@ public class ReleaseQualityTest {
             assertEquals("The selected observation keeps its category, date, canonical link and exact new source", "true",
                 js("document.querySelectorAll('article.explorer-result').length===1 && (()=>{const row=document.querySelector('article.explorer-result');" +
                     "return row.querySelector('h2').textContent==='" + record[2] + " · " + record[3] + "' && row.innerText.includes('" + record[4] + "')" +
-                    "&& !!row.querySelector('a[href*=\"/NPB/players/" + record[1] + "\"]') && !!row.querySelector('details[open] a[href*=\"oldid=" + NPB_CURRENT_EVENT_SOURCE_REVISION + "\"]')})()"));
+                    "&& !!row.querySelector('a[href*=\"/NPB/players/" + record[1] + "\"]') && !!row.querySelector('details[open] a[href*=\"oldid=" + record[5] + "\"]')})()"));
         }
         js("location.hash='#" + route + "'");
         for (float scale : new float[]{1.0f, 1.5f, 2.0f}) {
