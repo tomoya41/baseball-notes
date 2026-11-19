@@ -6,14 +6,14 @@ import { expect, it, vi } from "vitest";
 import { PlayerTabs } from "../src/ui/design-system";
 import { PlayerQuickActions } from "../src/ui/signature";
 import { useRosterSearchParams } from "../src/ui/use-roster-search-params";
-import { teamPlayerReturnPath } from "../src/presentation/team-player-list";
+import { playerListReturnPath } from "../src/presentation/team-player-list";
 
 function Profile() {
   const location=useLocation(),[params,setParams]=useRosterSearchParams();
   return <><PlayerTabs base="/NPB/players/player" section={location.pathname.split('/')[4]} />
     <PlayerQuickActions compareTo="/NPB/compare" historyTo="/NPB/players/player/seasons" trendsTo="/NPB/players/player/trends"/>
     <button onClick={()=>setParams(p=>{p.set('season','2024');return p;},{replace:true})}>年度を変更</button>
-    <output>{teamPlayerReturnPath(location.state) ?? 'no roster'}|{location.pathname}|{params.get('season')}</output></>;
+    <output>{playerListReturnPath(location.state) ?? 'no roster'}|{location.pathname}|{params.get('season')}</output></>;
 }
 it("retains the roster context through actual profile tabs, quick actions and year/metric URL changes",async()=>{
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);const host=document.createElement('div'),root=createRoot(host);

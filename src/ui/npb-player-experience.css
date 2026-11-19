@@ -17,6 +17,22 @@
   content: "";
 }
 
+.npb-player-experience .player-identity {
+  --color-text: #fff;
+  --color-muted: #dfebf7;
+  --brand: #b7daff;
+  --brand-soft: #163753;
+  border-color: #29445b;
+  background: linear-gradient(92deg, #0a2139 12%, #112840e8 46%, #14283c73),
+    url("../assets/editorial/archive-v1.webp") center 54% / cover, #122940;
+}
+.npb-player-experience .player-identity .player-identity-top { padding-bottom: 0; }
+.npb-player-experience .player-identity .favorite-button {
+  background: #132b43;
+  border: 1px solid #6f8aa4;
+}
+.npb-player-experience .player-identity .favorite-button[aria-pressed=true] { color: #153451; background: #cfe7ff; }
+
 .npb-player-experience .player-identity .player-identity-top h1,
 .npb-history-experience .player-identity .player-identity-top h1 {
   margin-block: .25rem;
@@ -111,6 +127,11 @@
 .player-snapshot .headline-stats dl {
   margin-bottom: 0;
 }
+.player-snapshot .headline-stats dl > div:first-child {
+  padding-inline-start: .5rem;
+  border-inline-start: 3px solid var(--brand);
+}
+.player-snapshot .headline-stats dl > div:first-child dd { color: var(--brand); }
 
 .player-snapshot .headline-stats dd {
   font-size: 1.25rem;

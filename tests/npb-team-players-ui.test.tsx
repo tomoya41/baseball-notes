@@ -6,7 +6,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { NpbTeamPlayers } from "../src/ui/npb-team-players";
 import { rosterCatalog, rosterSeason } from "./fixtures/npb-team-players";
 import { services as defaults } from "../src/app/services";
-import { teamPlayerReturnPath } from "../src/presentation/team-player-list";
+import { playerListReturnPath } from "../src/presentation/team-player-list";
 import { StaticNpbProductRepository } from "../src/infrastructure/providers/static-npb-product-repository";
 const readSeason = vi.fn(), readManifest = vi.fn(), readHistory = vi.fn();
 vi.mock("../src/application/explorer-readers",()=>({readNpbExplorerSeason:(...args:unknown[])=>readSeason(...args)}));
@@ -15,7 +15,7 @@ let host: HTMLDivElement, root: Root;
 const catalog = vi.fn(async()=>rosterCatalog);
 const product=new StaticNpbProductRepository("https://example.test/",async()=>Response.json(rosterCatalog));
 product.catalog=catalog;
-function Destination(){const location=useLocation();return <output>{teamPlayerReturnPath(location.state)}</output>;}
+function Destination(){const location=useLocation();return <output>{playerListReturnPath(location.state)}</output>;}
 beforeEach(()=>{vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);host=document.createElement("div");document.body.append(host);root=createRoot(host);readSeason.mockReset().mockResolvedValue(rosterSeason);readHistory.mockReset();readManifest.mockReset().mockResolvedValue({seasons:[{season:2025}],players:[]});catalog.mockClear();});
 afterEach(async()=>{await act(async()=>root.unmount());host.remove();vi.unstubAllGlobals();});
 async function mount(query=""){await act(async()=>root.render(<MemoryRouter initialEntries={[`/NPB/teams/npb:team:tigers/players${query}`]}><Routes><Route path="/NPB/teams/:teamId/players" element={<NpbTeamPlayers services={{...defaults,product}}/>}/><Route path="/NPB/players/:playerId" element={<Destination/>}/></Routes></MemoryRouter>));}

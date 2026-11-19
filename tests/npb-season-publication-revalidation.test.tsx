@@ -18,7 +18,7 @@ const period = { from: "2026-03-27", to: "2026-10-08" };
 const summary = { dates: 196, complete: 166, partial: 5, failed: 0, unknown: 0, noGames: 25 };
 const coverage = { status: "partial", summary } as const;
 const metric = (value: number) => ({ value, status: "complete" as const, observedFacts: 1, factCount: 1 });
-const stats = (hr: number) => ({ HR: metric(hr), OPS: metric(0.925), AVG: metric(0.3) });
+const stats = (hr: number) => ({ HR: metric(hr), OPS: metric(0.925), AVG: metric(0.3), PA: metric(35) });
 const earlier: NpbPlayerDirectory = { schemaVersion: 2, league: "NPB", effectiveDate: "2026-10-11",
   generatedAt: "2026-10-12T00:00:00Z", teams: [{ id: identity.teamId, name: "阪神タイガース", shortName: "阪神" }],
   players: [{ ...identity, position: "OF", playerType: "fielder", birthDate: null, birthPlace: null,
@@ -57,6 +57,8 @@ it("only switches to a later verified season and never re-polls the results API"
       element={<NpbPlayer services={deps} favorites={[]} saving={false} toggle={() => {}}/>}/></Routes><Address/></MemoryRouter>));
     const homeRuns = () => host.querySelectorAll(".headline-stats dd")[1]?.textContent;
     expect(homeRuns()).toBe("3");
+    expect(host.querySelector(".headline-stats-context")?.textContent).toContain("35打席");
+    expect(host.querySelector(".headline-stats dl")?.textContent).toContain("本塁打");
     expect(readNpbExplorerSeason).not.toHaveBeenCalled();
 
     vi.mocked(readNpbExplorerSeason).mockResolvedValueOnce({ ...published, effectiveDate: earlier.effectiveDate });

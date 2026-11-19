@@ -1,4 +1,5 @@
 import { Link, useSearchParams } from "react-router-dom";
+import { ChevronRight } from "lucide-react";
 import { npbSeasonalHome } from "../domain/npb-seasonal-home";
 import { EditorialCover } from "./editorial-cover";
 
@@ -14,9 +15,14 @@ export function NpbSeasonalHome({supporting=false,now}:{supporting?:boolean;now:
     <div className="seasonal-stories">{context.links.map((link,index)=>{
       const kind=link.to.includes("talent")?"draft":link.to.includes("postseason")||link.to.includes("/cs")?"postseason":"archive";
       const series=link.to.includes("japan_series"),draft=link.to.includes("/2026?");
+      if (index > 0 && context.mode !== "autumn") {
+        return <Link key={link.to} to={link.to} className="seasonal-story-link">
+          <span>{link.label}</span><ChevronRight size={16} aria-hidden="true" />
+        </Link>;
+      }
       return <Link key={link.to} to={link.to} aria-label={link.label} className={index===0?"seasonal-story--lead":"seasonal-story--secondary"}>
-        <EditorialCover level={2} compact={supporting||index>0} kind={kind} eyebrow={series?"JAPAN SERIES · 2026":draft?"DRAFT · 2026":context.mode==="autumn"?"POSTSEASON · 2026":"BASEBALL NOTES"} title={index>0&&link.to.includes("/cs?")?"CSの試合・成績":labels[link.to]??link.label}>
-          {index===0&&!supporting&&<small>{series?"日程・試合詳細へ":draft?"指名結果と予想を見比べる":context.mode==="autumn"?"収録試合・選手成績へ":context.title}<span aria-hidden="true"> →</span></small>}
+        <EditorialCover level={2} compact={supporting||index>0} kind={kind} eyebrow={series?"JAPAN SERIES · 2026":draft?"DRAFT · 2026":context.mode==="autumn"?"POSTSEASON · 2026":context.title} title={index>0&&link.to.includes("/cs?")?"CSの試合・成績":labels[link.to]??link.label}>
+          {index===0&&!supporting&&context.mode==="autumn"&&<small>{series?"日程・試合詳細へ":draft?"指名結果と予想を見比べる":"収録試合・選手成績へ"}<span aria-hidden="true"> →</span></small>}
         </EditorialCover>
       </Link>;
     })}</div>
