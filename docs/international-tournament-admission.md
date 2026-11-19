@@ -11,6 +11,14 @@
 
 このPRの実大会情報は開催案内とリンク。試合表、登録名簿、画像、個人成績の収録は0件。侍ジャパンのサイト方針とMLBの使用条件には複製・再配布の制限がある。WBSCについてもアプリ収録を許可する条件を確認できていない。[侍ジャパンのサイト方針](https://www.japan-baseball.jp/jp/summary/sitepolicy/)・[MLB使用条件](https://www.mlb.com/official-information/terms-of-use)
 
+## 2026-11-20の結果収録
+
+APBC 2026の日本戦4試合、WBC 2023の7試合・2026の5試合、プレミア12 2024の9試合について、開催地の日付、ラウンド、ホーム・ビジター、確定得点を収録。APBC 2026は10月7日発表の選出28人も収録。日本語版Wikipediaの[版111791999](https://ja.wikipedia.org/w/index.php?oldid=111791999)の選手欄と公式代表一覧を照合し、監督・コーチを除外した。各選手の記事IDは大会側だけで使用する。登録・実出場・個人成績と今後の日程は未収録。
+
+英語版Wikipediaの版指定付き記事を公開MediaWiki APIから取得。WBCとAPBCは個別のイニング表と最終得点、プレミア12は試合別結果行と照合した。APBCの概要表には月の不一致があるため、試合別イニング表の日付と公式日程を照合した。版番号と試合の対応は `src/data/international-japan-results.ts` に保持する。日時欄に実際の開始時刻を推定して入れない。
+
+記事の数値を抽出・翻訳した結果データの取得・保存・加工・Web/Android表示・再配布には、著作者表示、原記事へのリンク、変更の明示と同一ライセンスを適用する。大会公式サイトは確認先として案内する。[Wikimedia利用規約 §7](https://foundation.wikimedia.org/wiki/Policy:Terms_of_Use#7._Licensing_of_Content)・[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)
+
 ## データ採用の再開条件
 
 - 大会ごとに取得、保存、加工、Web表示、Android表示、再配布を認める根拠とSourceの版を確認する。訂正時は旧版と出典を保持する。

@@ -1,9 +1,12 @@
 import { useState } from "react";
 import { internationalOfficialTournaments as tournaments } from "../data/international-official-links";
+import { internationalTeamNames, internationalRoundNames, japanResultsByTournament, resultLicense } from "../data/international-japan-results";
+import { apbcSelections } from "../data/apbc-2026-selections";
 
 export function InternationalGameEntry({ expanded, onToggle }: { expanded?: boolean; onToggle?: (open: boolean) => void } = {}) {
   const [id, setId] = useState(tournaments[0]!.id);
   const tournament = tournaments.find(item => item.id === id) ?? tournaments[0]!;
+  const edition = japanResultsByTournament.get(tournament.id);
 
   return <details className="advanced-disclosure" id="international-game-entry" data-international-entry open={expanded} onToggle={event => onToggle?.(event.currentTarget.open)}>
     <summary>侍ジャパン・国際試合</summary>
@@ -13,7 +16,23 @@ export function InternationalGameEntry({ expanded, onToggle }: { expanded?: bool
     <div aria-live="polite">
       <h2>{tournament.name}</h2>
       {tournament.summary && <p>{tournament.summary}</p>}
-      <p>アプリ未収録。日程・結果・代表選手は、公開されている公式情報で確認できます。</p>
+      {edition ? <section aria-label="日本代表の試合結果">
+        <h3>日本代表の結果 · {edition.games.length}試合</h3>
+        <p className="inline-note">日付は現地時間。{edition.participation.length ? "個人成績は未収録です。" : "代表選手・個人成績は未収録です。"}</p>
+        <ol className="row-list">{edition.games.map(game => <li key={game.id} className="player-row">
+          <span className="player-row__body"><small><time dateTime={game.localDate!}>{game.localDate}</time> · {internationalRoundNames[game.round]}</small>
+            <strong>{internationalTeamNames.get(game.awayTeamId!)} {game.result!.awayRuns} − {game.result!.homeRuns} {internationalTeamNames.get(game.homeTeamId!)}</strong></span>
+        </li>)}</ol>
+        {edition.participation.length > 0 && <details className="advanced-disclosure"><summary>代表に選ばれた選手 · {edition.participation.length}人</summary>
+          <p className="inline-note">10月7日発表。大会での登録・出場は未確認です。</p>
+          {["投手", "捕手", "内野手", "外野手"].map(position => <div key={position}><h4>{position}</h4>
+            <p>{apbcSelections.filter(player => player.position === position).map(player => player.name).join("、")}</p></div>)}
+        </details>}
+        <details className="source-note"><summary>収録範囲・出典</summary><p>日本戦の確定スコアを抜粋。左がビジター、右がホームです。
+          Wikipediaの執筆者による記録を抜粋・翻訳・整形し、<a href={resultLicense}>CC BY-SA 4.0</a>で提供しています。</p>
+          {edition.sources.map(source => <p key={source.id}><a href={source.url}>{source.sourceId === "jawiki" ? "日本語版の代表選手" : "英語版の試合結果"}（版 {source.version}）</a></p>)}
+        </details>
+      </section> : <p>アプリ未収録。日程・結果・代表選手は、公開されている公式情報で確認できます。</p>}
       <div className="hub-links">{tournament.links.map(link => <a key={link.url} href={link.url}
         target="_blank" rel="noopener noreferrer">{link.label} ↗</a>)}</div>
     </div>
