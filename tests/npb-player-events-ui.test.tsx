@@ -79,7 +79,7 @@ it("keeps each record's exact article revision after an offseason append", async
   const view = await mount("", [], false, false, data);
   try {
     const rows = [...view.host.querySelectorAll("article")];
-    const fa = rows.find(row => row.querySelector("h2")?.textContent?.includes("FA宣言"));
+    const fa = rows.find(row => row.querySelector("h2")?.textContent?.includes("FA権行使の表明"));
     const old = rows.find(row => row.querySelector("h2")?.textContent?.includes("引退発表"));
     expect(fa?.querySelector('a[href*="oldid=201"]')).not.toBeNull();
     expect(fa?.querySelector('a[href*="oldid=200"]')).toBeNull();
