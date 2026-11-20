@@ -424,7 +424,7 @@ describe("coordinated NPB publication", () => {
 type Workflow = {
   on?: { push?: { branches: string[]; paths: string[] } };
   env?: Record<string, string>;
-  jobs: Record<string, { if?: string; steps: { run?: string; uses?: string; if?: string; env?: Record<string, string> }[] }>;
+  jobs: Record<string, { if?: string; needs?: string | string[]; permissions?: Record<string, string>; steps: { run?: string; uses?: string; if?: string; env?: Record<string, string> }[] }>;
 };
 const workflow = (name: string) => parse(readFileSync(`.github/workflows/${name}.yml`, "utf8")) as Workflow;
 describe("all Pages publication entry points", () => {
@@ -452,9 +452,15 @@ describe("all Pages publication entry points", () => {
     expect(stage[preflight]?.if).toBe("github.event_name == 'push'");
     expect(preflight).toBeLessThan(stage.findIndex(s => s.run?.includes("npm run build")));
     expect(stage.some(s => s.run?.includes("sha256sum dist/index.html"))).toBe(true);
-    const readback = deploy.findIndex(s => s.run?.includes("verify-published-npb-player-events.ts"));
-    expect(readback).toBeGreaterThan(deploy.findIndex(s => s.uses?.startsWith("actions/deploy-pages")));
-    expect(deploy[readback]?.env?.EXPECTED_APP_INDEX_SHA256).toBe("${{ needs.stage.outputs.app_index_sha256 }}");
+    expect(deploy.at(-1)?.uses).toMatch(/^actions\/deploy-pages@/);
+    const readback = job.jobs.readback!;
+    expect(readback.needs).toEqual(["stage", "deploy"]);
+    expect(readback.if).toBeUndefined(); // Requires both jobs to succeed, including on a retry.
+    expect(readback.permissions).toEqual({ contents: "read" });
+    const events = readback.steps.find(s => s.run?.includes("verify-published-npb-player-events.ts"));
+    expect(events?.env?.EXPECTED_APP_INDEX_SHA256).toBe("${{ needs.stage.outputs.app_index_sha256 }}");
+    const directory = readback.steps.find(s => s.run?.includes("verify-published-npb-player-directory.ts"));
+    expect(directory?.env?.EXPECTED_GENERATED_AT).toBe("${{ needs.stage.outputs.generated_at }}");
   });
   it("lets a branch rehearse a preserve-only release without reaching DB or deployment jobs", () => {
     const { stage, deploy } = workflow("npb-player-directory-publish").jobs;
@@ -519,9 +525,9 @@ describe("all Pages publication entry points", () => {
     const stageName = name === "daily-collector" ? "collect" : name === "npb-eod-watcher" ? "watch" : "stage";
     expect(w.jobs[stageName]!.steps.find(s => s.run?.includes("verify-npb-publication.ts"))?.id).toBe("publication");
     expect(w.jobs[stageName]!.outputs?.projection_hashes).toBe("${{ steps.publication.outputs.projection_hashes }}");
-    expect(w.jobs.deploy!.steps.find(s => s.run?.includes("verify-published-npb-player-directory.ts"))?.env?.EXPECTED_PROJECTION_HASHES)
+    const steps = w.jobs[name === "npb-player-directory-publish" ? "readback" : "deploy"]!.steps;
+    expect(steps.find(s => s.run?.includes("verify-published-npb-player-directory.ts"))?.env?.EXPECTED_PROJECTION_HASHES)
       .toBe(`\${{ needs.${stageName}.outputs.projection_hashes }}`);
-    const steps = w.jobs.deploy!.steps;
     const check = steps.findIndex(s => s.run?.includes("verify-published-npb-player-directory.ts"));
     expect(check).toBeGreaterThan(steps.findIndex(s => s.run === "npm ci"));
     for (const operation of ["--action=mark-published", "send-eod-notifications.ts"])
