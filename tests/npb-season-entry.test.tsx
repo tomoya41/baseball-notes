@@ -32,7 +32,7 @@ it("actual future routes render no-data before reading any Current or Historical
  let reads=0;const services=new Proxy({},{get(){reads++;throw Error("Future view must not fetch saved 2026 data");}}) as Services;
  const container=document.createElement("div");document.body.append(container);const root=createRoot(container);
  try{
-  for(const page of ["schedule","monthly","players/id","moves","season-compare"]){
+  for(const page of ["schedule","monthly","players/id","moves","season-compare","milestones"]){
    await act(async()=>root.render(<MemoryRouter key={page} initialEntries={[`/NPB/${page}?season=2027`]}><Routes><Route path="/NPB/*" element={<NpbRoutes services={services} favorites={[]} saving={false} toggle={()=>{}}/>}/></Routes></MemoryRouter>));
    expect(container.textContent).toContain("2027年のデータは未収録");expect(container.textContent).toContain("日程は未登録");expect(container.textContent).not.toContain("0勝");
    expect(container.querySelector('a[href*="talent/2026"]')?.textContent).toContain("2026年ドラフト");expect(reads).toBe(0);
@@ -46,4 +46,14 @@ it("retains the saved player's comparison conditions when returning from 2027",(
  const path=savedNpbSnapshotRoute("/NPB/season-compare",params);
  expect(path).toBe(`/NPB/season-compare?season=2026&kind=player&entity=${id}&years=2026&role=batting&metric=OPS`);
  expect(params.get("season")).toBe("2027");
+});
+
+it("preserves the milestone year and player search in shared and native links", () => {
+  for (const year of [2025, 2026, 2027]) {
+    const path = "/NPB/milestones";
+    const params = new URLSearchParams({ season: String(year), tab: "0", q: "森下翔太" });
+    expect(portableRoute(path, `${params}&secret=omit`)).toBe(`${path}?${params}`);
+    expect(canonicalDeepLink(`baseballnotes://NPB/milestones?${params}`)).toBe(`${path}?${params}`);
+  }
+  expect(portableRoute("/NPB/milestones", "season=2025&season=2026")).toBeNull();
 });

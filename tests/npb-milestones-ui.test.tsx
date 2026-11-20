@@ -44,6 +44,15 @@ describe("Season milestone connection without changing the finished UI", () => {
     const fetcher = vi.fn(request()); await mount(fetcher, "/NPB/milestones?tab=1");
     expect(container.textContent).toContain("この条件のデータは未収録です"); expect(fetcher).not.toHaveBeenCalled();
   });
+  it("does not read current counts for a missing year and keeps the search on return", async () => {
+    const fetcher = vi.fn(request());
+    await mount(fetcher, "/NPB/milestones?season=2025&q=森下翔太");
+    expect(container.textContent).toContain("2025年のシーズンの節目は未収録");
+    expect(fetcher).not.toHaveBeenCalled();
+    const link = container.querySelector<HTMLAnchorElement>(".hub-links a")!;
+    expect(new URL(link.href).searchParams.get("q")).toBe("森下翔太");
+    expect(new URL(link.href).searchParams.get("season")).toBe("2026");
+  });
   it("shows an explicit unavailable state for legacy capability payloads", async () => {
     await mount(request({ disabled: true })); expect(container.textContent).toContain("シーズンの節目は現在表示できません");
     expect(container.textContent).not.toContain("保存済み選手");
