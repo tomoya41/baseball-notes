@@ -27,6 +27,16 @@ export function portableRoute(path: string, search = ""): string | null {
     if(recipient)clean.set("recipient",recipient);else if(view==="players")clean.set("view",view);
     if(year)clean.set("year",year);if(award)clean.set("award",award);if(source.has("q"))clean.set("q",source.get("q")!.slice(0,100));return `${path}${clean.size?`?${clean}`:""}`;
   }
+  if (path === "/NPB/milestones") {
+    const season = source.get("season"), tab = source.get("tab");
+    if (["season", "tab", "q"].some(key => source.getAll(key).length > 1)
+      || (season !== null && (!/^\d{4}$/.test(season) || Number(season) < 1936 || Number(season) > 2027))
+      || (tab !== null && tab !== "0" && tab !== "1")) return null;
+    if (season) clean.set("season", season);
+    if (tab) clean.set("tab", tab);
+    if (source.get("q")) clean.set("q", source.get("q")!.slice(0, 100));
+    return `${path}${clean.size ? `?${clean}` : ""}`;
+  }
   if(league==="NPB"&&needsNpbSeasonEntry(path,source))return source.get("season")==="2027"?"/NPB/season?season=2027":null;
   if(league==="NPB"&&resource==="season"&&parts.length===2){
     const season=source.get("season")??"2027";if(!["2026","2027"].includes(season))return null;

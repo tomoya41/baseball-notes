@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Search } from "lucide-react";
 import { normalizePlayerSearch } from "../domain/npb-player-directory";
+import { npbSeasonEntry, savedNpbSnapshotRoute } from "../domain/npb-season-entry";
 import { seasonCheckpointLabels, type NpbSeasonMilestones } from "../domain/npb-season-milestones";
 import type { NpbSeasonMilestonesReader } from "../application/npb-season-milestones";
 import { DataState, LoadingSkeleton, PageHeading } from "./components";
@@ -33,19 +34,27 @@ export function NpbMilestonesView({ payload, query, onQuery }: { payload: NpbSea
 }
 export function NpbMilestonesScreen({ repository }: { repository: NpbSeasonMilestonesReader }) {
   const [params, setParams] = useSearchParams(), career = params.get("tab") === "1", query = params.get("q") ?? "";
+  const year = params.get("season");
+  const supported = year === null || (/^\d{4}$/.test(year) && npbSeasonEntry(Number(year)).status === "saved_snapshot");
   const [payload, setPayload] = useState<NpbSeasonMilestones | null>(null), [state, setState] = useState<"loading" | "ready" | "error" | "unavailable">("loading");
   useEffect(() => {
-    if (career) return;
+    if (career || !supported) return;
     let active = true;
     void Promise.resolve().then(() => { if (active) setState("loading"); return repository.capabilities(); }).then(async capability => {
       if (!capability.data.seasonMilestones?.available) { if (active) setState("unavailable"); return; }
-      const value = await repository.seasonMilestones(Number(capability.effectiveDate.slice(0, 4)), capability);
+      const publishedYear = capability.effectiveDate.slice(0, 4);
+      if (year !== null && year !== publishedYear) { if (active) setState("unavailable"); return; }
+      const value = await repository.seasonMilestones(Number(publishedYear), capability);
       if (value.effectiveDate !== capability.effectiveDate || value.generatedAt !== capability.generatedAt)
         throw Error("Milestone publication generation mismatch");
       if (active) { setPayload(value); setState("ready"); }
     }).catch(() => { if (active) setState("error"); });
     return () => { active = false; };
-  }, [repository, career]);
+  }, [repository, career, supported, year]);
+  if (year !== null && !supported) return <div className="screen"><PageHeading eyebrow="NPB" title="達成記録" />
+    <DataState kind="no-data" title={/^\d{4}$/.test(year) ? `${year}年のシーズンの節目は未収録です` : "指定した年度を確認してください"} />
+    <div className="hub-links"><Link to={savedNpbSnapshotRoute("/NPB/milestones", params)}>2026年の保存データを見る →</Link></div>
+  </div>;
   if (career) return <FutureFeatureScreen feature="milestones" league="NPB" />;
   return <div className="screen"><Link className="back-link" to="/NPB/explore">← 野球をもっと知る</Link>
     <PageHeading eyebrow="NPB" title="達成記録" />
