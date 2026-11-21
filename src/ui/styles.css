@@ -381,7 +381,7 @@ details[open]>summary {
   margin: 0;
 }
 
-.share-link--compact>small,.share-link--compact>label {
+.share-link--compact > .share-link__feedback {
   position: absolute;
   right: 0;
   top: 100%;
@@ -393,8 +393,9 @@ details[open]>summary {
   box-shadow: var(--shadow-elevated);
 }
 
-.share-link--compact>label {
-  top: calc(100% + 48px);
+.share-link__feedback label {
+  display: block;
+  margin-top: .4rem;
 }
 
 .bottom-nav {
