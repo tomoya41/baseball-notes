@@ -2,7 +2,7 @@ name: Android beta build and release quality
 on:
   push:
     branches: [main, "codex/**"]
-    paths: ["android/**", "src/**", "scripts/prepare-android-web.ts", "scripts/scan-release-assets.ts", "scripts/verify-android-apk.ts", "scripts/lib/android-apk-verification.ts", "scripts/verify-android-bundle-alignment.mjs", "package*.json", "capacitor.config.ts", ".github/workflows/android-beta.yml"]
+    paths: ["android/**", "src/**", "scripts/prepare-android-web.ts", "scripts/android-emulator-smoke.sh", "scripts/test-android-emulator-smoke.sh", "scripts/scan-release-assets.ts", "scripts/verify-android-apk.ts", "scripts/lib/android-apk-verification.ts", "scripts/verify-android-bundle-alignment.mjs", "package*.json", "capacitor.config.ts", ".github/workflows/android-beta.yml"]
   pull_request:
   workflow_dispatch:
     inputs:

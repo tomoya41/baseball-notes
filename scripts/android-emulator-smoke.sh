@@ -2,9 +2,15 @@
 set -euo pipefail
 mkdir -p .data/android-emulator
 : > .data/android-emulator/app-pids.txt
+bounded_adb() {
+  timeout --kill-after=2s 5s adb "$@"
+}
+emulator_connected() {
+  [ "$(bounded_adb get-state 2>/dev/null)" = device ]
+}
 # A requested 16KB run must actually boot that kernel; the ordinary API number
 # or a compatibility-mode launch is not evidence of its memory page size.
-page_size="$(adb shell getconf PAGE_SIZE | tr -d '\r')"
+page_size="$(bounded_adb shell getconf PAGE_SIZE | tr -d '\r')"
 case "$page_size" in 4096|16384) ;; *) echo 'Unknown emulator memory page size' >&2; exit 1 ;; esac
 printf '%s\n' "$page_size" > .data/android-emulator/page-size.txt
 expected_page_size="${EXPECTED_ANDROID_PAGE_SIZE:-}"
@@ -14,22 +20,39 @@ if [ -n "$expected_page_size" ]; then
 fi
 native_counter_session="$(cat /proc/sys/kernel/random/uuid)"
 record_app_pid() {
-  adb shell pidof com.tomoya41.baseballnotes | tr -d '\r' >> .data/android-emulator/app-pids.txt || true
+  bounded_adb shell pidof com.tomoya41.baseballnotes | tr -d '\r' >> .data/android-emulator/app-pids.txt || true
+}
+diagnose_host() {
+  {
+    printf 'ADB state: '
+    bounded_adb get-state || true
+    bounded_adb devices -l || true
+    printf '\nRunner memory:\n'
+    grep -E '^(MemTotal|MemAvailable|SwapTotal|SwapFree):' /proc/meminfo
+    printf '\nADB and emulator processes:\n'
+    ps -eo pid,ppid,stat,rss,comm | awk 'NR==1 || $5 ~ /^(adb|emulator|qemu-system)/'
+    if [ -r /sys/fs/cgroup/memory.events ]; then
+      printf '\nCgroup memory events:\n'
+      cat /sys/fs/cgroup/memory.events
+    fi
+    printf '\nKernel memory and emulator termination messages (when accessible):\n'
+    timeout 5s dmesg --level=err,warn | grep -Ei 'out of memory|oom.kill|killed process|qemu|emulator' | tail -50
+  } > .data/android-emulator/host-at-failure.txt 2>&1
 }
 diagnose_16kb_failure() {
   # Only the disposable test emulator is inspected. Keep bounded logs belonging
   # to observed target PIDs/the target package, including its native tombstone.
   record_app_pid
-  adb shell dumpsys activity exit-info com.tomoya41.baseballnotes | head -c 32000 > .data/android-emulator/16kb-app-exit-info.txt
+  bounded_adb shell dumpsys activity exit-info com.tomoya41.baseballnotes | head -c 32000 > .data/android-emulator/16kb-app-exit-info.txt
   # A low-memory kill can occur before the first live-PID poll. Recover only
   # PIDs from this package's bounded exit records so its crash lines aren't lost.
   awk '/timestamp=/ { for (i=1;i<=NF;i++) if ($i ~ /^pid=[0-9]+$/) { sub(/^pid=/,"",$i); print $i } }' \
     .data/android-emulator/16kb-app-exit-info.txt >> .data/android-emulator/app-pids.txt
-  adb shell cat /proc/meminfo | grep -E '^(MemTotal|MemFree|MemAvailable|SwapTotal|SwapFree):' > .data/android-emulator/16kb-memory-at-failure.txt
-  adb shell dumpsys activity activities | grep -E 'com\.tomoya41\.baseballnotes|topResumedActivity|mResumedActivity' | head -c 16000 > .data/android-emulator/16kb-resumed-state.txt
-  adb shell dumpsys webviewupdate | grep -E 'Current WebView package|Preferred WebView package|Minimum targetSdkVersion|Multiprocess enabled' | head -c 4000 > .data/android-emulator/16kb-webview-provider.txt
-  adb logcat -b main -d -v threadtime -t 500 -s System.out:I | grep 'BASEBALL_PERF native_counter' | head -c 16000 > .data/android-emulator/native-16kb-performance.txt
-  adb logcat -b main -b system -b crash -d -v threadtime -t 1500 \
+  bounded_adb shell cat /proc/meminfo | grep -E '^(MemTotal|MemFree|MemAvailable|SwapTotal|SwapFree):' > .data/android-emulator/16kb-memory-at-failure.txt
+  bounded_adb shell dumpsys activity activities | grep -E 'com\.tomoya41\.baseballnotes|topResumedActivity|mResumedActivity' | head -c 16000 > .data/android-emulator/16kb-resumed-state.txt
+  bounded_adb shell dumpsys webviewupdate | grep -E 'Current WebView package|Preferred WebView package|Minimum targetSdkVersion|Multiprocess enabled' | head -c 4000 > .data/android-emulator/16kb-webview-provider.txt
+  bounded_adb logcat -b main -d -v threadtime -t 500 -s System.out:I | grep 'BASEBALL_PERF native_counter' | head -c 16000 > .data/android-emulator/native-16kb-performance.txt
+  bounded_adb logcat -b main -b system -b crash -d -v threadtime -t 1500 \
     'libc:V' 'DEBUG:V' 'AndroidRuntime:V' 'ActivityManager:V' 'ActivityTaskManager:V' 'chromium:V' 'WebViewLibraryLoader:V' '*:S' |
     awk 'FILENAME!="-" { for (i=1;i<=NF;i++) own[$i]=1; next }
       /Cmdline:|>>>/ { own_tombstone=index($0,"com.tomoya41.baseballnotes")>0 }
@@ -37,21 +60,39 @@ diagnose_16kb_failure() {
       /Tombstone written to:/ { own_tombstone=0 }' .data/android-emulator/app-pids.txt - |
     head -c 128000 > .data/android-emulator/16kb-target-crash-diagnostics.txt
 }
-if [ "$page_size" = 16384 ]; then
-  # ERR inheritance covers helper failures as well as the outer shell. Preserve
-  # the failure; diagnostics never turn a failed screen/native test into PASS.
-  set -E
-  trap 'failure_status=$?; trap - ERR; set +e; diagnose_16kb_failure; exit "$failure_status"' ERR
-fi
+# A host-side ADB connection can disappear even while the runner stays alive.
+# Save host evidence first. Guest-only diagnostics require a live transport.
+set -E
+trap 'failure_status=$?; trap - ERR; set +e; diagnose_host; if [ "$page_size" = 16384 ] && emulator_connected; then diagnose_16kb_failure; fi; exit "$failure_status"' ERR
+
+run_instrumentation() {
+  local target="$1" test_pid status=0
+  shift
+  adb shell am instrument -w "$@" \
+    -e expected_page_size "$page_size" \
+    com.tomoya41.baseballnotes.test/androidx.test.runner.AndroidJUnitRunner > "$target" &
+  test_pid=$!
+  while kill -0 "$test_pid" 2>/dev/null; do
+    if ! emulator_connected; then
+      kill -KILL "$test_pid" 2>/dev/null || true
+      break
+    fi
+    record_app_pid
+    sleep 1
+  done
+  wait "$test_pid" || status=$?
+  cat "$target"
+  if ! emulator_connected; then
+    echo "ADB no longer reports a connected emulator; see host-at-failure.txt and $target" >&2
+    return 1
+  fi
+
+  return "$status"
+}
 native_counter_check() {
   local phase="$1" session="$2" target="$3"
-  adb shell am instrument -w -e class jp.baseballdata.app.ReleaseQualityTest#nativeSharedCounterLoadsAndPersistsAtActualPageSize \
-    -e expected_page_size "$page_size" -e native_counter_session "$session" -e native_counter_phase "$phase" \
-    com.tomoya41.baseballnotes.test/androidx.test.runner.AndroidJUnitRunner > "$target" &
-  local native_test_pid=$!
-  while kill -0 "$native_test_pid" 2>/dev/null; do record_app_pid; sleep 1; done
-  wait "$native_test_pid"
-  cat "$target"
+  run_instrumentation "$target" -e class jp.baseballdata.app.ReleaseQualityTest#nativeSharedCounterLoadsAndPersistsAtActualPageSize \
+    -e native_counter_session "$session" -e native_counter_phase "$phase"
   grep -q 'OK (1 test)' "$target"
 }
 network_offline() {
@@ -124,11 +165,7 @@ adb shell am start -W -n com.tomoya41.baseballnotes/jp.baseballdata.app.MainActi
 record_app_pid
 # Instrumentation can restart the target process. Keep every observed app PID
 # so the crash check also covers a process which exited before the final read.
-adb shell am instrument -w -e expected_page_size "$page_size" -e native_counter_session "$native_counter_session" com.tomoya41.baseballnotes.test/androidx.test.runner.AndroidJUnitRunner > .data/android-emulator/instrumentation.txt &
-instrumentation_pid=$!
-while kill -0 "$instrumentation_pid" 2>/dev/null; do record_app_pid; sleep 1; done
-wait "$instrumentation_pid"
-cat .data/android-emulator/instrumentation.txt
+run_instrumentation .data/android-emulator/instrumentation.txt -e native_counter_session "$native_counter_session"
 adb logcat -d -s System.out:I > .data/android-emulator/performance.txt
 adb logcat -d -s Capacitor:V Capacitor/Console:V > .data/android-emulator/bridge.txt
 adb exec-out screencap -p > .data/android-emulator/instrumentation-screen.png
@@ -142,14 +179,7 @@ test "$screenshot_pull_status" -eq 0
 # The second invocation runs this one test only and cannot recreate a missing
 # session file or synthesize its expected value in Java.
 adb shell am force-stop com.tomoya41.baseballnotes
-adb shell am instrument -w -e class jp.baseballdata.app.ReleaseQualityTest#nativeSharedCounterLoadsAndPersistsAtActualPageSize \
-  -e expected_page_size "$page_size" -e native_counter_session "$native_counter_session" -e native_counter_phase reopen \
-  com.tomoya41.baseballnotes.test/androidx.test.runner.AndroidJUnitRunner > .data/android-emulator/native-counter-restart.txt &
-instrumentation_pid=$!
-while kill -0 "$instrumentation_pid" 2>/dev/null; do record_app_pid; sleep 1; done
-wait "$instrumentation_pid"
-cat .data/android-emulator/native-counter-restart.txt
-grep -q 'OK (1 test)' .data/android-emulator/native-counter-restart.txt
+native_counter_check reopen "$native_counter_session" .data/android-emulator/native-counter-restart.txt
 adb logcat -d -s System.out:I > .data/android-emulator/performance.txt
 network_offline
 adb shell am force-stop com.tomoya41.baseballnotes
