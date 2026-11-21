@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act } from "react";
 import { createRoot } from "react-dom/client";
-import { MemoryRouter, useLocation } from "react-router-dom";
+import { MemoryRouter, useLocation, useNavigate } from "react-router-dom";
 import { expect, it, vi } from "vitest";
 import { NpbScheduleScreen } from "../src/ui/npb-game-surface";
 import { NpbTeamActivity } from "../src/ui/team-hub";
@@ -16,7 +16,10 @@ it("opens real official tournament links alongside the domestic Games route with
     date: vi.fn(async () => index), recent: vi.fn(), records: vi.fn(),
   };
   const currentUrl = `/NPB/schedule?date=${date}&season=2026`;
-  function Address() { const location = useLocation(); return <output>{location.pathname + location.search}</output>; }
+  function Address() {
+    const location = useLocation(), navigate = useNavigate();
+    return <><output>{location.pathname + location.search}</output><button onClick={() => navigate(-1)}>Back</button></>;
+  }
   const container = document.createElement("div");
   document.body.append(container);
   const root = createRoot(container);
@@ -49,6 +52,14 @@ it("opens real official tournament links alongside the domestic Games route with
     expect(entry.textContent).toContain("アメリカ 2 − 3 日本");
     expect(entry.textContent).not.toContain("宗山塁");
     expect(entry.querySelector("table")).toBeNull();
+    expect(container.querySelector("output")?.textContent)
+      .toBe(`${currentUrl}&view=international&tournament=international%3Atournament%3Awbc%3A2023`);
+    const back = [...container.querySelectorAll("button")].find(button => button.textContent === "Back")!;
+    await act(async () => back.click());
+    expect(entry.open).toBe(true);
+    expect(select.value).toBe("international:tournament:apbc:2026");
+    await act(async () => back.click());
+    expect(entry.open).toBe(false);
     expect(container.querySelector("output")?.textContent).toBe(currentUrl);
     expect(container.querySelector('.scoreboard-list a')?.getAttribute("href")).toBe(domesticLink);
     expect(repository.manifest).toHaveBeenCalledOnce();

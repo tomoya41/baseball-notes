@@ -14,6 +14,7 @@ import { needsNpbSeasonEntry } from "./npb-season-entry";
 import { isHonorRecipientId } from "./honor-discovery";
 import { npbGamePlayerContext, npbGamePlayerSearch } from "./npb-game-player-journey";
 import { npbScheduleTeam } from "./npb-game-navigation";
+import { internationalTournamentIn } from "../data/international-official-links";
 
 export const PUBLIC_APP_URL = "https://tomoya41.github.io/baseball-notes/";
 // Local IDs and unknown keys never travel through a shareable URL.
@@ -53,7 +54,11 @@ export function portableRoute(path: string, search = ""): string | null {
       if (source.has("date")) clean.set("date", source.get("date")!);
       const team = npbScheduleTeam(source);
       if (team) clean.set("team", team);
-      if (source.get("view") === "international") clean.set("view", "international");
+      if (source.get("view") === "international") {
+        clean.set("view", "international");
+        const tournament = internationalTournamentIn(source);
+        if (tournament) clean.set("tournament", tournament.id);
+      }
     }
     return `${path}${clean.size ? `?${clean}` : ""}`;
   }

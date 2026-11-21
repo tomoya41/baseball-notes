@@ -30,6 +30,7 @@ export function canonicalDeepLink(input: string): string | null {
     if(portablePath === "/NPB/schedule") {
       const source = new URLSearchParams(portableSearch ?? uri.search);
       if(source.has("stage")||source.has("competition")&&source.get("competition")!=="regular")return null;
+      if (source.get("view") === "international") return portableRoute(portablePath, source.toString());
       const date=source.get("date");
       if(date!==null&&!z.iso.date().safeParse(date).success)return null;
       return npbSchedulePath(date ?? undefined, npbScheduleTeam(source));

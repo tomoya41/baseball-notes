@@ -33,3 +33,8 @@ export const internationalOfficialTournaments = internationalTournamentSchema.ar
     links: [{ label: "日本代表の公式大会ページ", url: "https://www.japan-baseball.jp/jp/games/nagoya2026/" }],
   },
 ]);
+
+export function internationalTournamentIn(params: URLSearchParams) {
+  const ids = params.getAll("tournament");
+  return ids.length === 1 ? internationalOfficialTournaments.find(tournament => tournament.id === ids[0]) : undefined;
+}
