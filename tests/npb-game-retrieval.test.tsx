@@ -97,6 +97,19 @@ it("checks ID/date independently and never substitutes another game's score", as
   await expect(repository.find("npb:series:123")).rejects.toThrow();
 });
 
+it("recovers a mismatched date hint via the admitted game-to-date index", async () => {
+  const hint = "2026-10-07";
+  const otherGame = { ...game, date: hint, gameId: "npb:game:bbbbbbbbbbbbbbbbbbbb" };
+  const date = vi.fn(async (requested: string) => requested === hint ? { ...day, date: hint, games: [otherGame] } : day);
+  const lookup = vi.fn(async () => index);
+  const repository = new PublishedNpbGameSummaryRepository({ date }, lookup);
+  await expect(repository.find(gameId, hint)).resolves.toEqual({ game, generatedAt: day.generatedAt, coverage: "complete" });
+  expect(date.mock.calls).toEqual([[hint], [game.date]]);
+  expect(lookup).toHaveBeenCalledOnce();
+  await repository.find(gameId, game.date);
+  expect(lookup).toHaveBeenCalledOnce();
+});
+
 it("saves no assets when the published result belongs to another game or has no confirmed score", async () => {
   const manifest = { schemaVersion: 1 as const, league: "NPB" as const, from: game.date, to: game.date,
     effectiveDate: game.date, generatedAt: day.generatedAt };
@@ -270,10 +283,12 @@ it("advances an open pregame view on matching public results, preserving them th
   } finally { await act(async () => root.unmount()); vi.unstubAllGlobals(); vi.restoreAllMocks(); }
 });
 
-it("renders real saved results on API failure, preserves nulls and offers recovery without claiming a Box Score", async () => {
+it("keeps a saved score through a pending and failed retry, then respects an authoritative 404", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   const host = document.createElement("div"), root = createRoot(host);
-  const find = vi.fn().mockRejectedValueOnce(Error("HTTP 503")).mockResolvedValue(null);
+  let failRetry!: (reason: Error) => void;
+  const pendingRetry = new Promise<null>((_resolve, reject) => { failRetry = reject; });
+  const find = vi.fn().mockRejectedValueOnce(Error("HTTP 503")).mockReturnValueOnce(pendingRetry).mockResolvedValue(null);
   const date = vi.fn(async () => ({ ...day, games: [{ ...game, home: { ...game.home, score: null } }] }));
   const summaryRepository = new PublishedNpbGameSummaryRepository({ date }, async () => index);
   try {
@@ -291,7 +306,15 @@ it("renders real saved results on API failure, preserves nulls and offers recove
     expect(find).toHaveBeenCalledTimes(1);
     await act(async () => host.querySelector<HTMLButtonElement>("button")!.click());
     expect(find).toHaveBeenCalledTimes(2);
-    expect(date).toHaveBeenCalledTimes(1); // authoritative 404 is not resurrected from a score index
+    expect(host.textContent).toContain("ヤクルト");
+    expect(host.querySelector<HTMLButtonElement>("button")?.disabled).toBe(true);
+    date.mockRejectedValueOnce(Error("Published result is also temporarily unavailable"));
+    await act(async () => failRetry(Error("HTTP 503 again")));
+    expect(host.textContent).toContain("ヤクルト");
+    expect(host.querySelector<HTMLButtonElement>("button")?.disabled).toBe(false);
+    await act(async () => host.querySelector<HTMLButtonElement>("button")!.click());
+    expect(find).toHaveBeenCalledTimes(3);
+    expect(date).toHaveBeenCalledTimes(2); // authoritative 404 is not resurrected from a score index
     expect(host.textContent).toContain("試合が見つかりません");
     expect(host.textContent).not.toContain("ヤクルト");
   } finally { await act(async () => root.unmount()); vi.unstubAllGlobals(); }
