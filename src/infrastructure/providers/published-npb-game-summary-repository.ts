@@ -9,13 +9,18 @@ export class PublishedNpbGameSummaryRepository implements GameSummaryReader {
   async find(gameId: string, date?: string): Promise<PublishedGameSummary | null> {
     gameIdSchema.parse(gameId);
     // A supplied date is a hint only. Identity is checked against the actual dated payload.
-    if (date !== undefined) z.iso.date().parse(date);
-    const indexedDate = date ?? gameDateLookupSchema.parse(await this.index()).dates[gameId];
-    if (!indexedDate) return null;
-    const day = gameDateIndexSchema.parse(await this.surface.date(indexedDate));
-    if (day.date !== indexedDate) throw Error("Saved Game date mismatch");
-    const matches = day.games.filter(g => g.gameId === gameId);
-    if (matches.length !== 1) return null;
-    return { game: matches[0]!, generatedAt: day.generatedAt, coverage: day.coverage };
+    if (date !== undefined) {
+      const hinted = await this.findOnDate(gameId, z.iso.date().parse(date));
+      if (hinted) return hinted;
+    }
+    const indexedDate = gameDateLookupSchema.parse(await this.index()).dates[gameId];
+    return indexedDate && indexedDate !== date ? this.findOnDate(gameId, indexedDate) : null;
+  }
+
+  private async findOnDate(gameId: string, date: string): Promise<PublishedGameSummary | null> {
+    const day = gameDateIndexSchema.parse(await this.surface.date(date));
+    if (day.date !== date) throw Error("Saved Game date mismatch");
+    const game = day.games.find(row => row.gameId === gameId);
+    return game ? { game, generatedAt: day.generatedAt, coverage: day.coverage } : null;
   }
 }
