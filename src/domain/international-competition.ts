@@ -191,7 +191,8 @@ export const internationalTournamentEvidenceSchema = z.strictObject({
       context.addIssue({ code: "custom", path: ["participation", index], message: "Participation requires a unique record, admitted evidence and, for an appearance, a played game" });
     participationIds.add(uniqueKey);
   }
-  const affiliatedPlayers = new Set(edition.participation.map(record => `${record.teamId}|${record.playerId}`));
+  const affiliatedPlayers = new Set(edition.participation.filter(record => record.kind !== "appeared")
+    .map(record => `${record.teamId}|${record.playerId}`));
   const highlightedGames = new Set<string>();
   const highlightsCoverage = edition.coverage.gameHighlights;
   if (highlightsCoverage.status === "uncollected" ? edition.gameHighlights.length !== 0 :

@@ -42,6 +42,7 @@ it("opens real official tournament links alongside the domestic Games route with
     expect(row?.textContent).toContain("勝利投手 髙橋宏斗");
     expect(entry.querySelector('.source-note a[href$="20261115_2/"]')).not.toBeNull();
     expect(entry.textContent).toContain("代表に選ばれた選手 · 28人");
+    expect(entry.textContent).toContain("出場を確認した選手 · 9人");
     expect(entry.textContent).toContain("宗山塁");
     expect(entry.querySelector('a[href*="/NPB/players/"]')).toBeNull();
     expect(entry.textContent).toContain("2026年11月12〜15日");
@@ -82,6 +83,12 @@ it("opens real official tournament links alongside the domestic Games route with
     }
     await openTournament("international:tournament:wbc:2026");
     expect(entry.textContent).toContain("代表に選ばれた選手 · 30人");
+    const confirmed = [...entry.querySelectorAll("details")].find(panel =>
+      panel.querySelector("summary")?.textContent === "出場を確認した選手 · 11人")!;
+    expect(confirmed.open).toBe(false);
+    const itoh = [...confirmed.querySelectorAll("li")].find(item => item.querySelector("strong")?.textContent === "伊藤大海");
+    expect(itoh?.textContent).toContain("3月14日");
+    expect(confirmed.textContent).toContain("本塁打や勝敗投手の記録で確認できた試合のみ");
     expect(entry.textContent).toContain("2月26日時点の発表");
     expect(entry.textContent).toContain("指名打者大谷翔平");
     expect(entry.textContent).toContain("森下翔太");
