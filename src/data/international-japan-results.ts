@@ -1,5 +1,6 @@
 import { internationalTournamentEvidenceSchema } from "../domain/international-competition";
 import { apbcSelections } from "./apbc-2026-selections";
+import { wbc2023JapanStats, wbc2023JapanStatsRevision } from "./wbc-2023-japan-stats";
 
 // Adapted from the English Wikipedia article revisions below, CC BY-SA 4.0.
 // Dates are local to the venue. Only final totals and confirmed team sides are admitted.
@@ -14,7 +15,8 @@ const tokyo = "Asia/Tokyo", taipei = "Asia/Taipei", miami = "America/New_York";
 type ResultRow = readonly [localDate: string, zone: string, round: keyof typeof internationalRoundNames,
   away: keyof typeof teams, awayRuns: number, home: keyof typeof teams, homeRuns: number, revision: number];
 
-function edition(tournamentId: string, rows: readonly ResultRow[], selected: readonly { id: string; name: string }[] = []) {
+function edition(tournamentId: string, rows: readonly ResultRow[], selected: readonly { id: string; name: string }[] = [],
+  stats: readonly (typeof wbc2023JapanStats)[number][] = []) {
   const revisions = [...new Set(rows.map(row => row[7]))];
   const sources = revisions.map(revision => ({ id: String(revision), sourceId: "enwiki", publisherId: "english-wikipedia",
     version: String(revision), url: `https://en.wikipedia.org/w/index.php?oldid=${revision}`, termsEvidenceUrl: resultLicense,
@@ -31,12 +33,18 @@ function edition(tournamentId: string, rows: readonly ResultRow[], selected: rea
   const rosterRevision = "111791999";
   if (selected.length) sources.push({ ...sources[0]!, id: rosterRevision, sourceId: "jawiki", publisherId: "japanese-wikipedia",
     version: rosterRevision, url: `https://ja.wikipedia.org/w/index.php?oldid=${rosterRevision}`, verifiedAt: "2026-11-19T21:48:00Z" });
+  if (stats.length) sources.push({ ...sources[0]!, id: wbc2023JapanStatsRevision, sourceId: "jawiki", publisherId: "japanese-wikipedia",
+    version: wbc2023JapanStatsRevision, url: `https://ja.wikipedia.org/w/index.php?oldid=${wbc2023JapanStatsRevision}`, verifiedAt: "2026-11-21T10:12:00Z" });
   const participation = selected.map(player => ({ kind: "selected", competition: "international", tournamentId, teamId: japan,
     playerId: player.id, date: "2026-10-07", source: { sourceRevisionId: rosterRevision, sourceRecordId: `代表選手/${player.name}` } }));
-  return internationalTournamentEvidenceSchema.parse({ tournamentId, editionRevision: 1, sources, games,
+  const playerStats = stats.map(({ pageId, ...row }) => ({ ...row, tournamentId, teamId: japan, competition: "international",
+    playerId: `international:player:jawiki:${pageId}`, source: { sourceRevisionId: wbc2023JapanStatsRevision,
+      sourceRecordId: `${row.role === "batting" ? "野手成績" : "投手成績"}/${row.name}` } }));
+  return internationalTournamentEvidenceSchema.parse({ tournamentId, editionRevision: stats.length ? 2 : 1, sources, games, playerStats,
     identities: [], participation, corrections: [], coverage: { results: partial, schedule: empty,
       selections: selected.length ? { ...partial, source: { sourceRevisionId: rosterRevision, sourceRecordId: "代表選手" } } : empty,
-      registrations: empty, appearances: empty, playerStats: empty } });
+      registrations: empty, appearances: empty, playerStats: stats.length
+        ? { ...partial, source: { sourceRevisionId: wbc2023JapanStatsRevision, sourceRecordId: "成績" } } : empty } });
 }
 
 const editions = [
@@ -61,7 +69,7 @@ const editions = [
     ["2023-03-16", tokyo, "quarterfinal", "ITA", 3, "JPN", 9, 1380479955],
     ["2023-03-20", miami, "semifinal", "MEX", 5, "JPN", 6, 1380479955],
     ["2023-03-21", miami, "final", "USA", 2, "JPN", 3, 1344369931],
-  ]),
+  ], [], wbc2023JapanStats),
   edition("international:tournament:premier12:2024", [
     ["2024-11-13", tokyo, "pool", "AUS", 3, "JPN", 9, 1378187154],
     ["2024-11-15", taipei, "pool", "KOR", 3, "JPN", 6, 1378187154],

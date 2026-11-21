@@ -48,9 +48,14 @@ it("opens real official tournament links alongside the domestic Games route with
       select.dispatchEvent(new Event("change", { bubbles: true }));
     });
     expect(entry.querySelector(".hub-links a")?.getAttribute("href")).toBe("https://www.japan-baseball.jp/jp/team/topteam/2023/wbc/overview.html");
-    expect(entry.querySelectorAll(".row-list li")).toHaveLength(7);
+    expect(entry.querySelectorAll("ol.row-list > li")).toHaveLength(7);
     expect(entry.textContent).toContain("アメリカ 2 − 3 日本");
     expect(entry.textContent).not.toContain("宗山塁");
+    expect(entry.textContent).toContain("打撃成績 · 16人");
+    expect(entry.textContent).toContain("投球成績 · 14人");
+    expect(entry.textContent).toContain("防御率 1.86 · 9回 2/3");
+    expect(entry.textContent).toContain("奪三振は未収録");
+    expect(entry.querySelector('.source-note a[href$="oldid=109739294"]')).not.toBeNull();
     expect(entry.querySelector("table")).toBeNull();
     expect(container.querySelector("output")?.textContent)
       .toBe(`${currentUrl}&view=international&tournament=international%3Atournament%3Awbc%3A2023`);
