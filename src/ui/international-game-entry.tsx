@@ -1,9 +1,8 @@
 import { internationalOfficialTournaments as tournaments } from "../data/international-official-links";
-import { internationalTeamNames, internationalRoundNames, japanResultsByTournament, resultLicense } from "../data/international-japan-results";
-import { apbcSelections } from "../data/apbc-2026-selections";
+import { internationalTeamNames, internationalRoundNames, japanResultsByTournament, japanSelectionsByTournament, resultLicense } from "../data/international-japan-results";
 import { wbc2023JapanStatsRevision, wbc2023JapanStatsVerification } from "../data/wbc-2023-japan-stats";
 import { metrics, ratio } from "../domain/metrics";
-import { formatMetric } from "../presentation/formatters";
+import { formatDate, formatMetric } from "../presentation/formatters";
 
 export function InternationalGameEntry({ expanded, onToggle, selected, onSelect }: {
   expanded: boolean;
@@ -13,6 +12,8 @@ export function InternationalGameEntry({ expanded, onToggle, selected, onSelect 
 }) {
   const tournament = selected ?? tournaments[0]!;
   const edition = japanResultsByTournament.get(tournament.id);
+  const roster = japanSelectionsByTournament.get(tournament.id);
+  const positions = new Set(roster?.players.map(player => player.position));
   const batting = edition?.playerStats.filter(row => row.role === "batting") ?? [];
   const pitching = edition?.playerStats.filter(row => row.role === "pitching") ?? [];
   const statsCoverage = edition?.coverage.playerStats;
@@ -51,10 +52,10 @@ export function InternationalGameEntry({ expanded, onToggle, selected, onSelect 
             </span>
           </li>)}</ul>
         </details>}
-        {edition.participation.length > 0 && <details className="advanced-disclosure"><summary>代表に選ばれた選手 · {edition.participation.length}人</summary>
-          <p className="inline-note">10月7日発表。大会での登録・出場は未確認です。</p>
-          {["投手", "捕手", "内野手", "外野手"].map(position => <div key={position}><h4>{position}</h4>
-            <p>{apbcSelections.filter(player => player.position === position).map(player => player.name).join("、")}</p></div>)}
+        {roster && edition.participation.length > 0 && <details className="advanced-disclosure"><summary>代表に選ばれた選手 · {edition.participation.length}人</summary>
+          <p className="inline-note">{formatDate(roster.announcedAsOf, true)}時点の発表。大会での登録・出場は未収録です。</p>
+          {[...positions].map(position => <div key={position}><h4>{position}</h4>
+            <p>{roster.players.filter(player => player.position === position).map(player => player.name).join("、")}</p></div>)}
         </details>}
         <details className="source-note"><summary>収録範囲・出典</summary><p>日本戦の確定スコアを抜粋。左がビジター、右がホームです。
           Wikipediaの執筆者による記録を抜粋・翻訳・整形し、<a href={resultLicense}>CC BY-SA 4.0</a>で提供しています。</p>

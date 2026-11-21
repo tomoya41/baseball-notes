@@ -67,6 +67,24 @@ it("opens real official tournament links alongside the domestic Games route with
     expect(entry.open).toBe(false);
     expect(container.querySelector("output")?.textContent).toBe(currentUrl);
     expect(container.querySelector('.scoreboard-list a')?.getAttribute("href")).toBe(domesticLink);
+    async function openTournament(id: string) {
+      await act(async () => internationalButton.click());
+      await act(async () => {
+        select.value = id;
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+    }
+    await openTournament("international:tournament:wbc:2026");
+    expect(entry.textContent).toContain("代表に選ばれた選手 · 30人");
+    expect(entry.textContent).toContain("2月26日時点の発表");
+    expect(entry.textContent).toContain("指名打者大谷翔平");
+    expect(entry.textContent).toContain("森下翔太");
+    expect(entry.textContent).not.toContain("松井裕樹");
+    await act(async () => internationalButton.click());
+    await openTournament("international:tournament:exhibition:2027:taipei");
+    expect(entry.textContent).toContain("2027年3月6・7日、台北ドームで開催予定。");
+    expect(entry.textContent).toContain("アプリ未収録");
+    expect(entry.querySelector('a[href$="20261118_1.html"]')).not.toBeNull();
     expect(repository.manifest).toHaveBeenCalledOnce();
     expect(repository.date).toHaveBeenCalledExactlyOnceWith(date, index.generatedAt, expect.any(Function));
     expect(repository.recent).not.toHaveBeenCalled();

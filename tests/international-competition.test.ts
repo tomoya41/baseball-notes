@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import { internationalOfficialTournaments } from "../src/data/international-official-links";
-import { japanResultsByTournament } from "../src/data/international-japan-results";
+import { japanResultsByTournament, japanSelectionsByTournament } from "../src/data/international-japan-results";
 import { savedGameMvpInputs } from "../src/domain/daily-mvp";
 import { playerGameBattingSchema, playerGamePitchingSchema } from "../src/domain/game-facts";
 import { internationalGameSchema, internationalParticipationSchema, internationalTournamentEvidenceSchema,
@@ -43,7 +43,7 @@ const bridge = {
 };
 
 it("keeps official links out of tournament data admission", () => {
-  expect(internationalOfficialTournaments.map(t => t.id)).toHaveLength(6);
+  expect(internationalOfficialTournaments.map(t => t.id)).toHaveLength(7);
   expect(internationalTournamentSchema.safeParse({ ...internationalOfficialTournaments[0], year: 2027 }).success).toBe(false);
   expect(internationalTournamentEvidenceSchema.safeParse(edition).success).toBe(true);
   const coverage = { ...edition.coverage, schedule: { status: "partial", scope: { kind: "tournament" }, source } };
@@ -192,4 +192,22 @@ it("admits separate WBC batting and pitching totals, with exact counts and missi
     { playerStats: [{ ...row, source: { ...row.source, sourceRevisionId: "unverified" } }] },
     { coverage: { ...wbc.coverage, playerStats: uncollected } },
   ]) expect(internationalTournamentEvidenceSchema.safeParse({ ...wbc, ...change }).success).toBe(false);
+});
+
+it("preserves the 2026 WBC selection snapshot without fabricating registration or appearance records", () => {
+  const id = "international:tournament:wbc:2026";
+  const wbc = japanResultsByTournament.get(id)!;
+  const roster = japanSelectionsByTournament.get(id)!;
+  expect(roster.players).toHaveLength(30);
+  expect(new Set(roster.players.map(player => player.id)).size).toBe(30);
+  expect(roster.players).toContainEqual(expect.objectContaining({ name: "金丸夢斗", date: "2026-02-26" }));
+  expect(roster.players).toContainEqual(expect.objectContaining({ name: "大谷翔平", position: "指名打者" }));
+  expect(roster.players.map(player => player.name)).not.toContain("松井裕樹");
+  expect(wbc.games).toHaveLength(5);
+  expect(wbc.participation.map(player => player.kind)).toEqual(Array(30).fill("selected"));
+  expect(wbc.coverage.registrations.status).toBe("uncollected");
+  expect(wbc.coverage.appearances.status).toBe("uncollected");
+  expect(wbc.playerStats).toEqual([]);
+  expect(wbc.identities).toEqual([]);
+  expect(japanResultsByTournament.has("international:tournament:exhibition:2027:taipei")).toBe(false);
 });
