@@ -1,6 +1,7 @@
 import { internationalOfficialTournaments as tournaments } from "../data/international-official-links";
 import { internationalTeamNames, internationalRoundNames, japanResultsByTournament, japanSelectionsByTournament, resultLicense } from "../data/international-japan-results";
 import { apbc2026OfficialBoxes } from "../data/apbc-2026-highlights";
+import { premier122024JapanStatsRevision, premier122024JapanStatsVerification } from "../data/premier12-2024-japan-stats";
 import { wbc2023JapanStatsRevision, wbc2023JapanStatsVerification } from "../data/wbc-2023-japan-stats";
 import { metrics, ratio } from "../domain/metrics";
 import { formatDate, formatMetric } from "../presentation/formatters";
@@ -82,6 +83,9 @@ export function InternationalGameEntry({ expanded, onToggle, selected, onSelect 
           {statsCoverage?.status === "partial" && <p>日本代表の大会通算成績から打撃・投球の一部指標を収録。試合ごとの出場記録は未収録です。
             {statsCoverage.source.sourceRevisionId === wbc2023JapanStatsRevision && <> WBC公式の
               <a href={wbc2023JapanStatsVerification.batting}>打撃成績</a>・<a href={wbc2023JapanStatsVerification.pitching}>投球成績</a>でも確認できます。</>}
+            {statsCoverage.source.sourceRevisionId === premier122024JapanStatsRevision && <> 照合先は
+              <a href={premier122024JapanStatsVerification.throughSuperRound}>決勝前のWBSC集計</a>と
+              <a href={premier122024JapanStatsVerification.final}>決勝の試合記録</a>です。</>}
           </p>}
           {edition.sources.map(source => <p key={source.id}><a href={source.url}>{
             statsCoverage?.status === "partial" && statsCoverage.source.sourceRevisionId === source.id ? "日本語版の大会通算成績" :
