@@ -37,3 +37,13 @@ Regular隔離59診断は、統計不整合50、分母不足1、未解釈数値3�
 2要求目のWikidata公式APIは`maxlag`で拒否（queryservice lag 905秒）。再試行や制限緩和をせず停止した。障害だけを理由に元データが誤りとは判断しない。次に進める条件は、日常更新で得られた確定source mapping等の新独立証拠であり、同じ略称照合や大量dry-runの反復ではない。Currentと重複するHistorical-only IDを作らない。
 
 今回の新規採用選手・成績・canonical writeは0。HOT/Ranking Gate、Coverage、既存immutable assetと保存情報を変更しない。外部取得は合計2要求、追加月額費用¥0。
+
+## 2026-11-22 JST — ネビンの2025年埼玉西武成績
+
+公開Directoryの740人のうち、Historical v8と接続済みは579人だった。ネビンは既存のcanonical IDに独立照合済みのNPB ID `53755150`・Wikidata `Q107031409` を持つ。収録元でも同じNPB IDへのリンクとWikidata IDを確認した。2025年埼玉西武の打撃行は、137試合、570打席、509打数、141安打、21本塁打、63打点、打率.277、OPS.794を含む。NPB公式の2025年埼玉西武打撃表と各構成値を照合した。収録データは固定版の表から抽出した。[固定版111731051](https://ja.wikipedia.org/w/index.php?oldid=111731051)・[NPB公式球団別成績](https://npb.jp/bis/2025/stats/idb1_l.html)・[NPBの選手ページ](https://npb.jp/bis/players/53755150.html)
+
+元の年度セルは `{{mlby|2025}}` だった。本人ID・出典版・球団・打撃の区分・行の全セルが確認済みの組み合わせで一致した場合だけ、この年度リンクをNPBの2025年として処理する。一般の他リーグ年度リンクは従来通り除外する。数値、母数、収録年度の上限は変更しない。
+
+既存のHistorical取込で1選手・1行を検証し、scratch DBの読戻しと2回投入時の冪等性を確認した。Historical v9は601人・3,525行。v8の3,524行と600人の本人IDは保持した。2025年は548行から549行になり、他年度の行数・収録範囲の `partial` は維持。Directoryと接続済みは580人、未収録は160人になった。v8の公開済み固定URL27件は、v9切替前にHTTP本文とSHA-256を照合して保持対象に追加した。
+
+v9の入力証跡はUTF-8で空白なしのJSONから算出したSHA-256。キー順は `baseRelease`、`baseArchive`、`reviewedAppendArchive`。値は順に `5cda8fb982f6e972ebadb887fb90ed66c9d79ae95be367ebe0fc32533d614181`、`d4946a34dd2c2c72bc10ee0a2bf0b2336690a705f51d38198d00bb35f9f9b092`、`b97529552fec9646a9a71b13e27348bdee248c37d766b01f409e6f475ddd78ba`。固定版の本文SHA-256は `720e8e6001cd29473cdb442815994840bca39be0eb6cabcf34e23b300837af0c`。配信用gzipのSHA-256は `d722f65df198a2857a916ca5e7afcd3c4e8416f63462d9de200d62c331ca243a`。

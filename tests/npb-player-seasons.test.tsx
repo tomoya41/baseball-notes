@@ -60,7 +60,22 @@ describe("NPB player year/competition entry",()=>{
   it("does not fetch historical stats for the Current entry or offer uncollected 2026 competitions",async()=>{const {div,close}=await mount("");try{expect(div.querySelector('a[href$="'+id+'"]')).not.toBeNull();expect(readNpbHistoricalSeason).not.toHaveBeenCalled();expect(readNpbPostseasonAggregates).not.toHaveBeenCalled();expect(div.querySelectorAll('select[aria-label="選手成績の試合区分"] option:disabled')).toHaveLength(4);}finally{await close();}});
   it("reloads exact scoped URLs, preserves source credits and does not silently show regular",async()=>{const {div,close}=await mount("?season=2025&role=pitching&competition=postseason&stage=npb_cs_final");try{expect(div.textContent).toContain("2025年 · CS ファイナル");expect(div.querySelector('a[href*="oldid=123"]')).not.toBeNull();expect(readNpbHistoricalSeason).not.toHaveBeenCalled();expect(readNpbPostseasonAggregates).toHaveBeenCalledTimes(1);expect(div.querySelector("dd")?.textContent).toBe("—");}finally{await close();}});
   it.each(["?season=2026&competition=preseason","?season=2025&competition=postseason&stage=japan_series","?season=bad"])("rejects unsupported %s without data fetch",async query=>{const {div,close}=await mount(query);try{expect(div.textContent).toContain("未収録");expect(readNpbHistoricalSeason).not.toHaveBeenCalled();expect(readNpbPostseasonAggregates).not.toHaveBeenCalled();}finally{await close();}});
-  it("keeps year, role and competition in URL with a bounded initial regular read",async()=>{const {div,close}=await mount("?season=2025&role=pitching");try{expect(readNpbHistoricalSeason).toHaveBeenCalledTimes(1);const select=div.querySelector('select[aria-label="選手成績の試合区分"]') as HTMLSelectElement;await act(async()=>{select.value="npb_cs_final";select.dispatchEvent(new Event("change",{bubbles:true}));});expect(div.querySelector("output")?.textContent).toContain("competition=postseason&stage=npb_cs_final");expect(div.textContent).toContain("2025年 · CS ファイナル");}finally{await close();}});
+  it("keeps annual comparison and player links distinct while preserving season, role and competition", async () => {
+    const {div,close}=await mount("?season=2025&role=pitching");
+    try {
+      expect(readNpbHistoricalSeason).toHaveBeenCalledTimes(1);
+      const nav = div.querySelector('nav[aria-label="年度別成績の関連リンク"]')!;
+      expect([...nav.querySelectorAll("a")].map(link => link.getAttribute("href"))).toEqual([
+        `/NPB/season-compare?kind=player&entity=${id}&role=pitching&years=2025%2C2026`,
+        `/NPB/players/${id}`,
+      ]);
+      const select=div.querySelector('select[aria-label="選手成績の試合区分"]') as HTMLSelectElement;
+      await act(async()=>{select.value="npb_cs_final";select.dispatchEvent(new Event("change",{bubbles:true}));});
+      expect(div.querySelector("output")?.textContent).toContain("competition=postseason&stage=npb_cs_final");
+      expect(div.textContent).toContain("2025年 · CS ファイナル");
+      expect(nav.querySelector('a[href*="season-compare"]')).toBeNull();
+    } finally {await close();}
+  });
   it("preserves the selected pitcher season through cohort, sharing, and a direct return link", async () => {
     directory.findLatestNpb.mockResolvedValue({players:[{playerId:id,displayName:metadata.name,birthDate:"1997-05-01"}]});
     const host=document.createElement("div"); document.body.append(host);

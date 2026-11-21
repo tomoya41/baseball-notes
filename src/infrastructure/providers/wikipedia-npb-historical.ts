@@ -90,7 +90,15 @@ export function parseWikipediaHistorical(raw: unknown, bridge: HistoricalBridge,
         // Non-NPB clubs and foreign-season markers are never imported, even in mixed tables.
         const team = teams[plain(grid[1] ?? "")];
         if (!team) continue;
-        if(/^\{\{(?:mlby|[kt]boy)\|/i.test(plain(yearText))) continue;
+        if(/^\{\{(?:mlby|[kt]boy)\|/i.test(plain(yearText))) {
+          // Nevin's reviewed 2025 Seibu row links to the MLB year by mistake (see npb-data-resolution-2026-10-27.md).
+          const reviewed = role === "batting" && team === "lions" && page.title === "タイラー・ネビン" &&
+            revision.revid === 111731051 && bridge.npbId === "53755150" && bridge.wikidataId === "Q107031409" &&
+            bridge.playerId === "cdd951ef-64f9-48ed-94d4-07114db82c42" && /\{\{NPB\|53755150\|/.test(visibleText) &&
+            createHash("sha256").update(JSON.stringify(grid)).digest("hex") === "21d5c091f87d93571ee4a13ea047e63ec6ae13c27f4e9e21d36276fe750edd64";
+          if (!reviewed) continue;
+          yearText = "2025";
+        }
         const year = /^\{\{by2\|(\d{4})\}\}$/i.exec(plain(yearText))?.[1] ?? /^(\d{4})$/.exec(plain(yearText))?.[1];
         if (!year) throw Error("Unsupported year cell");
         if (!years.includes(Number(year))) continue;

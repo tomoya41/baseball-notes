@@ -63,6 +63,28 @@ describe("NPB historical aggregate source adapter",()=>{
     const source=table(`|{{by2|2023}}\n|rowspan="2" style="text-align:center;"|[[阪神タイガース|阪神]]\n|${counts(metrics,historicalBattingKeys)}\n|-\n|{{by2|2025}}\n|${counts(metrics,historicalBattingKeys)}`);
     const result=parseWikipediaHistorical(page(source),bridge,[2023,2024,2025]);expect(result.rows.map(r=>[r.season,r.teamId])).toEqual([[2023,"npb:team:tigers"],[2025,"npb:team:tigers"]]);
   });
+  it("corrects only the reviewed year link on Nevin's 2025 Seibu row", () => {
+    // Excerpt of Wikipedia revision 111731051, CC BY-SA 4.0.
+    const participant = { playerId: "cdd951ef-64f9-48ed-94d4-07114db82c42", wikidataId: "Q107031409", npbId: "53755150" };
+    const official = "{{NPB|53755150|T.ネビン}}";
+    const source = (row: string, identity = official) => `${identity}\n${table(row)}`;
+    const row = "|{{mlby|2025}}\n|[[埼玉西武ライオンズ|西武]]\n|137||570||509||51||141||24||0||21||228||63||2||1||0||5||45||'''6'''||'''11'''||78||13||.277||.346||.448||.794";
+    const article = (content: string, revid = 111731051) => ({
+      title: "タイラー・ネビン", pageprops: { wikibase_item: participant.wikidataId },
+      revisions: [{ ...page(content).revisions[0]!, revid }],
+    });
+    const parse = (input: ReturnType<typeof article>, id = participant) => parseWikipediaHistorical(input, id, [2025]);
+    const verified = parse(article(source(row)));
+    expect(verified.issues).toEqual([]);
+    expect(verified.rows).toEqual([expect.objectContaining({
+      playerId: participant.playerId, season: 2025, teamId: "npb:team:lions", role: "batting",
+      metrics: expect.objectContaining({ PA: 570, AB: 509, H: 141, HR: 21, AVG: .277, OPS: .794 }),
+    })]);
+    expect(parse(article(source(row), 111731052)).rows).toEqual([]);
+    expect(parse(article(source(row.replace("||51||141", "||50||141")))).rows).toEqual([]);
+    expect(parse(article(source(row, ""))).rows).toEqual([]);
+    expect(parse(article(source(row)), { ...participant, playerId }).rows).toEqual([]);
+  });
   it("quarantines unsupported numeric templates instead of silently skipping a cell",()=>{
     const bad=counts(metrics,historicalBattingKeys).replace("10||43","{{0}}||43");
     const result=parseWikipediaHistorical(page(table(`|{{by2|2025}}\n|阪神\n|${bad}`)),bridge,[2025]);expect(result.rows).toEqual([]);expect(result.issues[0]?.reason).toBe("Unsupported numeric cell");
