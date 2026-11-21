@@ -212,6 +212,31 @@ it("preserves the 2026 WBC selection snapshot without fabricating registration o
   expect(japanResultsByTournament.has("international:tournament:exhibition:2027:taipei")).toBe(false);
 });
 
+it("admits Premier12 Japan totals with the final included and preserves the evidence scope", () => {
+  const premier = japanResultsByTournament.get("international:tournament:premier12:2024")!;
+  const batting = premier.playerStats.filter(row => row.role === "batting");
+  const pitching = premier.playerStats.filter(row => row.role === "pitching");
+  expect(premier.games).toHaveLength(9);
+  expect(premier.editionRevision).toBe(2);
+  expect(batting).toHaveLength(15);
+  expect(pitching).toHaveLength(13);
+  expect(batting.reduce((sum, row) => sum + row.atBats, 0)).toBe(302);
+  expect(batting.reduce((sum, row) => sum + row.hits, 0)).toBe(90);
+  expect(pitching.reduce((sum, row) => sum + row.outs, 0)).toBe(243);
+  expect(pitching.reduce((sum, row) => sum + (row.strikeouts ?? 0), 0)).toBe(113);
+  expect(batting.find(row => row.name === "森下翔太")).toMatchObject({
+    gamesPlayed: 9, atBats: 28, hits: 10, homeRuns: 1, runsBattedIn: 9, playerId: "international:player:jawiki:4037204",
+  });
+  expect(pitching.find(row => row.name === "藤平尚真")).toMatchObject({
+    gamesPlayed: 6, outs: 18, earnedRuns: 0, strikeouts: 12, playerId: "international:player:jawiki:3514754",
+  });
+  expect(premier.playerStats.every(row => row.source.sourceRevisionId === "111780580")).toBe(true);
+  expect(premier.coverage.playerStats).toMatchObject({ status: "partial", scope: { kind: "team", teamId: "international:team:jpn" } });
+  expect(premier.coverage.appearances.status).toBe("uncollected");
+  expect(premier.participation).toEqual([]);
+  expect(premier.identities).toEqual([]);
+});
+
 it("admits APBC home runs and winning pitchers independently of full player statistics", () => {
   const apbc = japanResultsByTournament.get(tournamentId)!;
   const highlights = apbc.gameHighlights;

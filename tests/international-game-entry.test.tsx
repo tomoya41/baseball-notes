@@ -87,6 +87,17 @@ it("opens real official tournament links alongside the domestic Games route with
     expect(entry.textContent).toContain("森下翔太");
     expect(entry.textContent).not.toContain("松井裕樹");
     await act(async () => internationalButton.click());
+    await openTournament("international:tournament:premier12:2024");
+    expect(entry.querySelectorAll("ol.row-list > li")).toHaveLength(9);
+    expect(entry.textContent).toContain("チャイニーズ・タイペイ 4 − 0 日本");
+    expect(entry.textContent).toContain("打撃成績 · 15人");
+    expect(entry.textContent).toContain("投球成績 · 13人");
+    expect(entry.textContent).toContain("打率 .357 · 28打数10安打");
+    expect(entry.textContent).toContain("6登板 · 12奪三振");
+    expect(entry.querySelector('.source-note a[href$="oldid=111780580"]')).not.toBeNull();
+    expect(entry.querySelector('.source-note a[href$="20241124_1/table.html"]')).not.toBeNull();
+    expect(entry.querySelector('a[href*="/NPB/players/"]')).toBeNull();
+    await act(async () => internationalButton.click());
     await openTournament("international:tournament:exhibition:2027:taipei");
     expect(entry.textContent).toContain("2027年3月6・7日、台北ドームで開催予定。");
     expect(entry.textContent).toContain("アプリ未収録");

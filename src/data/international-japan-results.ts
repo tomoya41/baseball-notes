@@ -1,6 +1,7 @@
 import { internationalTournamentEvidenceSchema } from "../domain/international-competition";
 import { apbcSelections } from "./apbc-2026-selections";
 import { apbc2026Highlights, apbc2026Mvp } from "./apbc-2026-highlights";
+import { premier122024JapanStats, premier122024JapanStatsRevision } from "./premier12-2024-japan-stats";
 import { wbc2023JapanStats, wbc2023JapanStatsRevision } from "./wbc-2023-japan-stats";
 import { wbc2026Selections } from "./wbc-2026-selections";
 
@@ -19,6 +20,11 @@ type ResultRow = readonly [localDate: string, zone: string, round: keyof typeof 
 
 type JapanSelection = { id: string; name: string; position: string; date: string };
 type JapanSelections = { revision: string; verifiedAt: string; announcedAsOf: string; players: readonly JapanSelection[] };
+type JapanStat = { pageId: number; name: string; gamesPlayed: number } & (
+  | { role: "batting"; atBats: number; hits: number; homeRuns: number; runsBattedIn: number }
+  | { role: "pitching"; outs: number; runsAllowed: number; earnedRuns: number; strikeouts: number | null }
+);
+type JapanStats = { revision: string; verifiedAt: string; players: readonly JapanStat[] };
 export const japanSelectionsByTournament = new Map<string, JapanSelections>([
   ["international:tournament:apbc:2026", { revision: "111791999", verifiedAt: "2026-11-19T21:48:00Z",
     announcedAsOf: "2026-10-07", players: apbcSelections.map(player => ({ ...player, date: "2026-10-07" })) }],
@@ -26,8 +32,7 @@ export const japanSelectionsByTournament = new Map<string, JapanSelections>([
     announcedAsOf: "2026-02-26", players: wbc2026Selections }],
 ]);
 
-function edition(tournamentId: string, rows: readonly ResultRow[],
-  stats: readonly (typeof wbc2023JapanStats)[number][] = []) {
+function edition(tournamentId: string, rows: readonly ResultRow[], stats?: JapanStats) {
   const revisions = [...new Set(rows.map(row => row[7]))];
   const sources = revisions.map(revision => ({ id: String(revision), sourceId: "enwiki", publisherId: "english-wikipedia",
     version: String(revision), url: `https://en.wikipedia.org/w/index.php?oldid=${revision}`, termsEvidenceUrl: resultLicense,
@@ -44,22 +49,22 @@ function edition(tournamentId: string, rows: readonly ResultRow[],
   const roster = japanSelectionsByTournament.get(tournamentId);
   if (roster) sources.push({ ...sources[0]!, id: roster.revision, sourceId: "jawiki", publisherId: "japanese-wikipedia",
     version: roster.revision, url: `https://ja.wikipedia.org/w/index.php?oldid=${roster.revision}`, verifiedAt: roster.verifiedAt });
-  if (stats.length) sources.push({ ...sources[0]!, id: wbc2023JapanStatsRevision, sourceId: "jawiki", publisherId: "japanese-wikipedia",
-    version: wbc2023JapanStatsRevision, url: `https://ja.wikipedia.org/w/index.php?oldid=${wbc2023JapanStatsRevision}`, verifiedAt: "2026-11-21T10:12:00Z" });
+  if (stats) sources.push({ ...sources[0]!, id: stats.revision, sourceId: "jawiki", publisherId: "japanese-wikipedia",
+    version: stats.revision, url: `https://ja.wikipedia.org/w/index.php?oldid=${stats.revision}`, verifiedAt: stats.verifiedAt });
   const participation = roster?.players.map(player => ({ kind: "selected", competition: "international", tournamentId, teamId: japan,
     playerId: player.id, date: player.date, source: { sourceRevisionId: roster.revision, sourceRecordId: `代表選手/${player.name}` } })) ?? [];
-  const playerStats = stats.map(({ pageId, ...row }) => ({ ...row, tournamentId, teamId: japan, competition: "international",
-    playerId: `international:player:jawiki:${pageId}`, source: { sourceRevisionId: wbc2023JapanStatsRevision,
-      sourceRecordId: `${row.role === "batting" ? "野手成績" : "投手成績"}/${row.name}` } }));
+  const playerStats = stats?.players.map(({ pageId, ...row }) => ({ ...row, tournamentId, teamId: japan,
+    competition: "international", playerId: `international:player:jawiki:${pageId}`, source: { sourceRevisionId: stats.revision,
+      sourceRecordId: `${row.role === "batting" ? "野手成績" : "投手成績"}/${row.name}` } })) ?? [];
   const apbc = tournamentId === "international:tournament:apbc:2026";
   return internationalTournamentEvidenceSchema.parse({ tournamentId,
-    editionRevision: stats.length || apbc || tournamentId === "international:tournament:wbc:2026" ? 2 : 1, sources, games, playerStats,
+    editionRevision: stats || apbc || tournamentId === "international:tournament:wbc:2026" ? 2 : 1, sources, games, playerStats,
     gameHighlights: apbc ? apbc2026Highlights : [], tournamentMvp: apbc ? apbc2026Mvp : undefined,
     identities: [], participation, corrections: [], coverage: { results: partial, schedule: empty,
       selections: roster ? { ...partial, source: { sourceRevisionId: roster.revision, sourceRecordId: "代表選手" } } : empty,
       registrations: empty, appearances: empty, gameHighlights: apbc ? { ...partial, source: apbc2026Highlights[0]!.source } : empty,
-      playerStats: stats.length
-        ? { ...partial, source: { sourceRevisionId: wbc2023JapanStatsRevision, sourceRecordId: "成績" } } : empty } });
+      playerStats: stats
+        ? { ...partial, source: { sourceRevisionId: stats.revision, sourceRecordId: "成績" } } : empty } });
 }
 
 const editions = [
@@ -84,7 +89,7 @@ const editions = [
     ["2023-03-16", tokyo, "quarterfinal", "ITA", 3, "JPN", 9, 1380479955],
     ["2023-03-20", miami, "semifinal", "MEX", 5, "JPN", 6, 1380479955],
     ["2023-03-21", miami, "final", "USA", 2, "JPN", 3, 1344369931],
-  ], wbc2023JapanStats),
+  ], { revision: wbc2023JapanStatsRevision, verifiedAt: "2026-11-21T10:12:00Z", players: wbc2023JapanStats }),
   edition("international:tournament:premier12:2024", [
     ["2024-11-13", tokyo, "pool", "AUS", 3, "JPN", 9, 1378187154],
     ["2024-11-15", taipei, "pool", "KOR", 3, "JPN", 6, 1378187154],
@@ -95,6 +100,6 @@ const editions = [
     ["2024-11-22", tokyo, "super_round", "VEN", 6, "JPN", 9, 1378187154],
     ["2024-11-23", tokyo, "super_round", "TPE", 6, "JPN", 9, 1378187154],
     ["2024-11-24", tokyo, "final", "TPE", 4, "JPN", 0, 1378187154],
-  ]),
+  ], { revision: premier122024JapanStatsRevision, verifiedAt: "2026-11-21T11:09:00Z", players: premier122024JapanStats }),
 ];
 export const japanResultsByTournament = new Map(editions.map(value => [value.tournamentId, value]));
