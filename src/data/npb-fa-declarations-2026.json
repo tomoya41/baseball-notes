@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "league": "NPB",
+  "season": 2026,
+  "announcementDate": "2026-11-10",
+  "negotiationStartDate": "2026-11-11",
+  "source": "NPB 2026年度フリーエージェント宣言選手公示（2026-11-10）",
+  "players": [
+    { "name": "森下暢仁", "teamId": "npb:team:carp", "team": "広島", "position": "投手", "faType": "domestic", "faTypeLabel": "国内FA" },
+    { "name": "床田寛樹", "teamId": "npb:team:carp", "team": "広島", "position": "投手", "faType": "domestic", "faTypeLabel": "国内FA" },
+    { "name": "坂倉将吾", "teamId": "npb:team:carp", "team": "広島", "position": "捕手", "faType": "domestic", "faTypeLabel": "国内FA" },
+    { "name": "太田光", "teamId": "npb:team:eagles", "team": "楽天", "position": "捕手", "faType": "domestic", "faTypeLabel": "国内FA" },
+    { "name": "小島和哉", "teamId": "npb:team:marines", "team": "ロッテ", "position": "投手", "faType": "domestic", "faTypeLabel": "国内FA" },
+    { "name": "宗佑磨", "teamId": "npb:team:buffaloes", "team": "オリックス", "position": "内野手", "faType": "domestic", "faTypeLabel": "国内FA" },
+    { "name": "中川圭太", "teamId": "npb:team:buffaloes", "team": "オリックス", "position": "内野手", "faType": "domestic", "faTypeLabel": "国内FA" },
+    { "name": "上林誠知", "teamId": "npb:team:dragons", "team": "中日", "position": "外野手", "faType": "domestic", "faTypeLabel": "国内FA" },
+    { "name": "髙橋光成", "teamId": "npb:team:lions", "team": "西武", "position": "投手", "faType": "overseas", "faTypeLabel": "海外FA" },
+    { "name": "戸柱恭孝", "teamId": "npb:team:baystars", "team": "DeNA", "position": "捕手", "faType": "overseas", "faTypeLabel": "海外FA" }
+  ]
+}
