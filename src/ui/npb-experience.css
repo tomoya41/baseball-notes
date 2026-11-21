@@ -98,6 +98,7 @@
 .game-competition-nav > [aria-current="page"], .game-competition-nav > [aria-expanded="true"] { color: var(--brand); border-color: var(--brand); background: var(--brand-soft); }
 .game-schedule [data-international-entry]:not([open]) { display: none; }
 .game-schedule [data-international-entry] summary { min-height: var(--touch); align-content: center; }
+.game-schedule [data-international-entry] .international-count { white-space: nowrap; }
 .game-collection-scope { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: .2rem .45rem; margin-block: .35rem; color: var(--color-muted); font-size: var(--type-caption); }
 .game-collection-scope a { display: inline-flex; align-items: center; min-height: var(--touch); }
 .scoreboard-row:has(.scoreboard-detail) {

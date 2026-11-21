@@ -41,7 +41,8 @@ export function InternationalGameEntry({ expanded, onToggle, selected, onSelect 
             <span className="player-row__body"><small><time dateTime={game.localDate!}>{game.localDate}</time> · {internationalRoundNames[game.round]}</small>
               <strong>{internationalTeamNames.get(game.awayTeamId!)} {game.result!.awayRuns} − {game.result!.homeRuns} {internationalTeamNames.get(game.homeTeamId!)}</strong>
               {detail && <>
-                <small>日本の本塁打 {detail.homeRuns.map(({ playerId, count }) => `${playerNames.get(playerId)} ${count}本`).join("、")}</small>
+                <small>日本の本塁打 {detail.homeRuns.map(({ playerId, count }, index) =>
+                  <span key={playerId}>{index > 0 && "、"}{playerNames.get(playerId)} <span className="international-count">{count}本</span></span>)}</small>
                 <small>勝利投手 {playerNames.get(detail.winningPitcherId)}</small>
               </>}
             </span>
