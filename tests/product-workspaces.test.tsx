@@ -1,12 +1,16 @@
 // @vitest-environment jsdom
 import { act, type ComponentProps } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, useLocation } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { CompareWorkspace, MlbPlayerCompare } from "../src/ui/player-compare";
+import { CompareWorkspace, MlbPlayerCompare, NpbPlayerCompare } from "../src/ui/player-compare";
+import type { Services } from "../src/app/services";
+import { readPublishedPlayerStatsForDirectory, type PublishedPlayerStats } from "../src/application/npb-published-player";
+import type { NpbPlayerDirectory } from "../src/domain/npb-player-directory";
 import { PlayerTrends } from "../src/ui/player-trends";
 import { compareBattingKeys } from "../src/domain/player-compare";
 vi.mock("../src/ui/product-sharing", () => ({ DisplayExportButton: ({ data }: { data: { coverage: string } }) => <output data-export-coverage>{data.coverage}</output> }));
+vi.mock("../src/application/npb-published-player", () => ({ readPublishedPlayerStatsForDirectory: vi.fn() }));
 const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
 const players = Array.from({ length: 5 }, (_, i) => ({ id: id(i + 1), name: `選手${i + 1}`, batting: true, pitching: true }));
 vi.mock("../src/ui/use-mlb-historical", () => ({ useHistoricalStatic: () => ({ status: "missing", value: null, retry: vi.fn() }), useHistoricalDirectory: () => ({ status: "ready", value: { players: [
@@ -19,6 +23,61 @@ let container: HTMLDivElement, root: Root;
 beforeEach(() => { vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true); container = document.createElement("div"); document.body.append(container); root = createRoot(container); loader.mockClear(); });
 afterEach(async () => { await act(async () => root.unmount()); container.remove(); vi.unstubAllGlobals(); });
 const render = async (path = `/NPB/compare?players=${id(1)},${id(2)}`, read: Loader = loader) => { await act(async () => root.render(<MemoryRouter initialEntries={[path]}><CompareWorkspace league="NPB" players={players} teams={[]} seasons={[2026]} loader={read} /></MemoryRouter>)); };
+describe("NPB comparison recovery", () => {
+  const directory: NpbPlayerDirectory = {
+    schemaVersion: 2, league: "NPB", effectiveDate: "2026-10-12", generatedAt: "2026-10-18T00:00:00Z", teams: [],
+    players: players.map(p => ({ playerId: p.id, displayName: p.name, battingAvailable: true, pitchingAvailable: true,
+      recentAvailable: true, teamId: null, position: null, playerType: null, birthDate: null, birthPlace: null,
+      nationality: null, bats: null, throws: null })),
+  };
+  const savedStats = (playerId: string): PublishedPlayerStats => {
+    const metric = { status: "complete" as const, observedFacts: 1, factCount: 1 };
+    return {
+      effectiveDate: directory.effectiveDate, generatedAt: "2026-10-14T00:00:00Z", period: { from: "2026-03-27", to: "2026-10-08" },
+      coverage: { status: "partial", summary: { dates: 2, complete: 1, noGames: 0, partial: 1, unknown: 0, failed: 0 } },
+      player: { playerId, displayName: players.find(p => p.id === playerId)!.name, teamId: null, pitching: null,
+        batting: { factCount: 1, metrics: { OPS: { ...metric, value: 0.8 }, PA: { ...metric, value: 10 } } } },
+    };
+  };
+  const published = vi.mocked(readPublishedPlayerStatsForDirectory);
+  const findLatestNpb = vi.fn(async () => directory);
+  const unavailable = () => vi.fn(async () => { throw Error("Analysis API unavailable"); });
+  const recent = unavailable(), analysisBundle = unavailable();
+  const services = { directory: { findLatestNpb }, recent: { find: recent }, analysisBundle: { find: analysisBundle } } as unknown as Services;
+  const path = (condition: string) => `/NPB/compare?players=${id(1)},${id(2)}&condition=${condition}&role=batting`;
+  const mount = async (condition: string) => {
+    function Address() { const location = useLocation(); return <output data-address>{location.pathname}{location.search}</output>; }
+    await act(async () => root.render(<MemoryRouter initialEntries={[path(condition)]}>
+      <NpbPlayerCompare services={services} /><Address />
+    </MemoryRouter>));
+  };
+  beforeEach(() => {
+    findLatestNpb.mockReset().mockResolvedValue(directory);
+    published.mockReset().mockImplementation(async id => savedStats(id));
+    recent.mockClear();
+    analysisBundle.mockClear();
+  });
+  it.each(["season", "7d", "14d", "30d"] as const)("reads the saved %s window with the analysis API unavailable", async condition => {
+    await mount(condition);
+    expect(published.mock.calls).toEqual([[id(1), condition, directory], [id(2), condition, directory]]);
+    expect(recent).not.toHaveBeenCalled();
+    expect(analysisBundle).not.toHaveBeenCalled();
+    expect(container.querySelector(".compare-results")?.textContent).toContain("0.800");
+  });
+  it("retries a failed directory and projection without losing the comparison", async () => {
+    findLatestNpb.mockRejectedValueOnce(Error("Directory unavailable"));
+    published.mockRejectedValueOnce(Error("Season unavailable")).mockRejectedValueOnce(Error("Season unavailable"));
+    await mount("season");
+    expect(container.textContent).toContain("比較用の選手一覧を読み込めません");
+    const retry = () => act(async () => [...container.querySelectorAll("button")].find(b => b.textContent === "比較データを再読み込み")!.click());
+    await retry();
+    expect(container.textContent).toContain("読み込みに失敗しました");
+    await retry();
+    expect(container.querySelector("[data-address]")?.textContent).toBe(path("season"));
+    expect(container.querySelector(".compare-results")?.textContent).toContain("2026-03-27〜2026-10-08");
+    expect(container.textContent).not.toContain("読み込みに失敗しました");
+  });
+});
 describe("comparison workspace", () => {
   it("puts the one semantic results table before secondary search/conditions without repeating a summary chart", async () => {
     await render();
