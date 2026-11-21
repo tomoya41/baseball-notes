@@ -5,6 +5,7 @@ import { z } from "zod";
 import { readGameDateForManifest, type GameSurfaceReader } from "../application/game-surface";
 import { type GameDateIndex,type GameManifest,type GameIndexRow } from "../domain/npb-game-index";
 import { npbScheduleTeam } from "../domain/npb-game-navigation";
+import { internationalTournamentIn } from "../data/international-official-links";
 import { npbTeamShortName } from "../presentation/npb-team-names";
 import { DataState,LoadingSkeleton,PageHeading } from "./components";
 import { DateRibbon, ScoreboardRow } from "./design-system";
@@ -50,7 +51,25 @@ export function NpbScheduleScreen({repository,favorites=[],toggle,saving=false}:
   unfiltered.delete("team");
   const [snapshot, setSnapshot] = useState<{ manifest: GameManifest; day: GameDateIndex | null } | null>(null);
   const [failure, setFailure] = useState<{ selection: string | null } | null>(null);
-  const [attempt,setAttempt]=useState(0),[internationalOpen,setInternationalOpen]=useState(params.get("view")==="international");
+  const [attempt,setAttempt]=useState(0);
+  const internationalOpen = params.get("view") === "international";
+  const internationalTournament = internationalOpen ? internationalTournamentIn(params) : undefined;
+  const setInternationalOpen = (open: boolean) => {
+    if (open === internationalOpen) return;
+    const next = new URLSearchParams(params);
+    if (open) next.set("view", "international");
+    else {
+      next.delete("view");
+      next.delete("tournament");
+    }
+    setParams(next);
+  };
+  const selectInternationalTournament = (id: string) => {
+    const next = new URLSearchParams(params);
+    next.set("view", "international");
+    next.set("tournament", id);
+    setParams(next);
+  };
   const revision = usePublicDataRevalidation();
   const manifestRequest = useRef<{
     repository: GameSurfaceReader; attempt: number; revision: number;
@@ -104,9 +123,10 @@ export function NpbScheduleScreen({repository,favorites=[],toggle,saving=false}:
       <Link to="/NPB/schedule" aria-current="page">公式戦</Link>
       <Link to="/NPB/postseason">ポストシーズン</Link>
       <button type="button" aria-controls="international-game-entry" aria-expanded={internationalOpen}
-        onClick={() => setInternationalOpen(open => !open)}>侍ジャパン</button>
+        onClick={() => setInternationalOpen(!internationalOpen)}>侍ジャパン</button>
     </nav>
-    <InternationalGameEntry expanded={internationalOpen} onToggle={setInternationalOpen}/>
+    <InternationalGameEntry expanded={internationalOpen} onToggle={setInternationalOpen}
+      selected={internationalTournament} onSelect={selectInternationalTournament}/>
     <p className="game-collection-scope">{manifest ? `${manifest.effectiveDate}までの保存済みデータ` : "保存済みの公式戦を確認"}<Link to="/NPB/preseason">オープン戦 · 未収録</Link></p>
     {manifest&&date&&!outsideRange&&<DateRibbon date={date} min={manifest.from} max={manifest.to} onChange={change} />}
     {team&&<div className="game-collection-scope"><strong>{npbTeamShortName(team)}の試合</strong><Link to={`/NPB/schedule${unfiltered.size?`?${unfiltered}`:""}`}>すべての球団を表示</Link></div>}

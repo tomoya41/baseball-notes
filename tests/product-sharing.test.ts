@@ -10,6 +10,17 @@ it("shares the Home view and a dated international entry without local informati
   expect(portableRoute("/NPB/schedule", "date=2026-09-31")).toBeNull();
 });
 
+it("preserves the selected Japan tournament in share links and Android deep links", () => {
+  const path = "/NPB/schedule";
+  const query = "date=2026-10-08&team=npb%3Ateam%3Atigers&view=international&tournament=international%3Atournament%3Awbc%3A2023";
+  expect(portableRoute(path, query + "&local=private")).toBe(`${path}?${query}`);
+  expect(canonicalDeepLink(`baseballnotes://NPB/schedule?${query}`)).toBe(`${path}?${query}`);
+  expect(portableRoute(path, "view=international&tournament=unknown")).toBe(`${path}?view=international`);
+  expect(portableRoute(path, "tournament=international:tournament:wbc:2023")).toBe(path);
+  expect(portableRoute(path, query + "&tournament=international:tournament:apbc:2026"))
+    .toBe(`${path}?${query.split("&tournament=")[0]}`);
+});
+
 it("preserves a single canonical club on shared NPB schedules, games and returns", () => {
   const query = "date=2026-10-08&team=npb%3Ateam%3Atigers";
   const schedule = `/NPB/schedule?${query}`;

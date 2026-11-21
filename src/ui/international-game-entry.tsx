@@ -1,16 +1,19 @@
-import { useState } from "react";
 import { internationalOfficialTournaments as tournaments } from "../data/international-official-links";
 import { internationalTeamNames, internationalRoundNames, japanResultsByTournament, resultLicense } from "../data/international-japan-results";
 import { apbcSelections } from "../data/apbc-2026-selections";
 
-export function InternationalGameEntry({ expanded, onToggle }: { expanded?: boolean; onToggle?: (open: boolean) => void } = {}) {
-  const [id, setId] = useState(tournaments[0]!.id);
-  const tournament = tournaments.find(item => item.id === id) ?? tournaments[0]!;
+export function InternationalGameEntry({ expanded, onToggle, selected, onSelect }: {
+  expanded: boolean;
+  onToggle: (open: boolean) => void;
+  selected: (typeof tournaments)[number] | undefined;
+  onSelect: (id: string) => void;
+}) {
+  const tournament = selected ?? tournaments[0]!;
   const edition = japanResultsByTournament.get(tournament.id);
 
-  return <details className="advanced-disclosure" id="international-game-entry" data-international-entry open={expanded} onToggle={event => onToggle?.(event.currentTarget.open)}>
+  return <details className="advanced-disclosure" id="international-game-entry" data-international-entry open={expanded} onToggle={event => onToggle(event.currentTarget.open)}>
     <summary>侍ジャパン・国際試合</summary>
-    <label className="weekly-stage">大会 <select value={tournament.id} onChange={event => setId(event.target.value)}>
+    <label className="weekly-stage">大会 <select value={tournament.id} onChange={event => onSelect(event.target.value)}>
       {tournaments.map(item => <option key={item.id} value={item.id}>{item.kind === "apbc" ? `APBC ${item.year}` : item.name}</option>)}
     </select></label>
     <div aria-live="polite">
