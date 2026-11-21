@@ -14,7 +14,10 @@ export const internationalOfficialTournaments = internationalTournamentSchema.ar
   },
   {
     competition: "international", id: "international:tournament:wbc:2026", kind: "wbc", year: 2026, name: "WBC 2026",
-    links: [{ label: "日本代表の公式大会ページ", url: "https://www.japan-baseball.jp/jp/games/wbc2026/" }],
+    links: [
+      { label: "日本代表の公式大会ページ", url: "https://www.japan-baseball.jp/jp/games/wbc2026/" },
+      { label: "日本代表の公式選手一覧", url: "https://www.japan-baseball.jp/jp/team/topteam/2026/wbc/player.html" },
+    ],
   },
   {
     competition: "international", id: "international:tournament:wbc:2023", kind: "wbc", year: 2023, name: "WBC 2023",
@@ -31,6 +34,11 @@ export const internationalOfficialTournaments = internationalTournamentSchema.ar
   {
     competition: "international", id: "international:tournament:exhibition:2026:nagoya", kind: "exhibition", year: 2026, name: "侍ジャパンシリーズ2026 名古屋",
     links: [{ label: "日本代表の公式大会ページ", url: "https://www.japan-baseball.jp/jp/games/nagoya2026/" }],
+  },
+  {
+    competition: "international", id: "international:tournament:exhibition:2027:taipei", kind: "exhibition", year: 2027, name: "2027年 台日交流試合",
+    summary: "2027年3月6・7日、台北ドームで開催予定。",
+    links: [{ label: "侍ジャパンの公式発表", url: "https://www.japan-baseball.jp/jp/news/press/20261118_1.html" }],
   },
 ]);
 
