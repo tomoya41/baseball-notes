@@ -52,7 +52,7 @@ function edition(tournamentId: string, rows: readonly ResultRow[], stats?: Japan
     version: roster.revision, url: `https://ja.wikipedia.org/w/index.php?oldid=${roster.revision}`, verifiedAt: roster.verifiedAt });
   if (stats) sources.push({ ...sources[0]!, id: stats.revision, sourceId: "jawiki", publisherId: "japanese-wikipedia",
     version: stats.revision, url: `https://ja.wikipedia.org/w/index.php?oldid=${stats.revision}`, verifiedAt: stats.verifiedAt });
-  const participation = roster?.players.map(player => ({ kind: "selected", competition: "international", tournamentId, teamId: japan,
+  const selections = roster?.players.map(player => ({ kind: "selected", competition: "international", tournamentId, teamId: japan,
     playerId: player.id, date: player.date, source: { sourceRevisionId: roster.revision, sourceRecordId: `代表選手/${player.name}` } })) ?? [];
   const playerStats = stats?.players.map(({ pageId, ...row }) => ({ ...row, tournamentId, teamId: japan,
     competition: "international", playerId: `international:player:jawiki:${pageId}`, source: { sourceRevisionId: stats.revision,
@@ -61,12 +61,22 @@ function edition(tournamentId: string, rows: readonly ResultRow[], stats?: Japan
   const wbc2026 = tournamentId === "international:tournament:wbc:2026";
   const gameHighlights = apbc ? apbc2026Highlights : wbc2026 ? wbc2026JapanHighlights : [];
   const highlightSource = gameHighlights[0]?.source;
+  const gameDates = new Map(games.map(game => [game.id, game.localDate]));
+  const appearances = gameHighlights.flatMap(highlight => {
+    // A scored home run or an official pitcher decision proves this game appearance.
+    const players = new Set(highlight.homeRuns.map(row => row.playerId));
+    if ("winningPitcherId" in highlight && highlight.winningPitcherId) players.add(highlight.winningPitcherId);
+    if ("losingPitcherId" in highlight && highlight.losingPitcherId) players.add(highlight.losingPitcherId);
+    return [...players].map(playerId => ({ kind: "appeared", competition: "international", tournamentId, teamId: japan,
+      playerId, gameId: highlight.gameId, date: gameDates.get(highlight.gameId), source: highlight.source }));
+  });
   return internationalTournamentEvidenceSchema.parse({ tournamentId,
-    editionRevision: wbc2026 ? 3 : stats || apbc ? 2 : 1, sources, games, playerStats,
+    editionRevision: wbc2026 ? 4 : apbc ? 3 : stats ? 2 : 1, sources, games, playerStats,
     gameHighlights, tournamentMvp: apbc ? apbc2026Mvp : undefined,
-    identities: [], participation, corrections: [], coverage: { results: partial, schedule: empty,
+    identities: [], participation: [...selections, ...appearances], corrections: [], coverage: { results: partial, schedule: empty,
       selections: roster ? { ...partial, source: { sourceRevisionId: roster.revision, sourceRecordId: "代表選手" } } : empty,
-      registrations: empty, appearances: empty, gameHighlights: highlightSource ? { ...partial, source: highlightSource } : empty,
+      registrations: empty, appearances: highlightSource ? { ...partial, source: highlightSource } : empty,
+      gameHighlights: highlightSource ? { ...partial, source: highlightSource } : empty,
       playerStats: stats
         ? { ...partial, source: { sourceRevisionId: stats.revision, sourceRecordId: "成績" } } : empty } });
 }

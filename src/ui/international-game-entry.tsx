@@ -24,6 +24,13 @@ export function InternationalGameEntry({ expanded, onToggle, selected, onSelect 
   const batting = edition?.playerStats.filter(row => row.role === "batting") ?? [];
   const pitching = edition?.playerStats.filter(row => row.role === "pitching") ?? [];
   const statsCoverage = edition?.coverage.playerStats;
+  const appearances = new Map<string, string[]>();
+  for (const record of edition?.participation ?? []) {
+    if (record.kind !== "appeared" || record.date === null) continue;
+    const dates = appearances.get(record.playerId) ?? [];
+    dates.push(record.date);
+    appearances.set(record.playerId, dates);
+  }
 
   return <details className="advanced-disclosure" id="international-game-entry" data-international-entry open={expanded} onToggle={event => onToggle(event.currentTarget.open)}>
     <summary>侍ジャパン・国際試合</summary>
@@ -71,11 +78,19 @@ export function InternationalGameEntry({ expanded, onToggle, selected, onSelect 
             </span>
           </li>)}</ul>
         </details>}
-        {roster && edition.participation.length > 0 && <details className="advanced-disclosure"><summary>代表に選ばれた選手 · {edition.participation.length}人</summary>
-          <p className="inline-note">{formatDate(roster.announcedAsOf, true)}時点の発表。{highlights.size
-            ? "登録名簿と全出場記録は未収録です。" : "大会での登録・出場は未収録です。"}</p>
+        {roster && <details className="advanced-disclosure"><summary>代表に選ばれた選手 · {roster.players.length}人</summary>
+          <p className="inline-note">{formatDate(roster.announcedAsOf, true)}時点の発表。登録名簿は未収録です。</p>
           {[...positions].map(position => <div key={position}><h4>{position}</h4>
             <p>{roster.players.filter(player => player.position === position).map(player => player.name).join("、")}</p></div>)}
+        </details>}
+        {appearances.size > 0 && <details className="advanced-disclosure">
+          <summary>出場を確認した選手 · {appearances.size}人</summary>
+          <p className="inline-note">本塁打や勝敗投手の記録で確認できた試合のみ。日付は現地時間です。</p>
+          <ul className="row-list">{[...appearances].map(([id, dates]) => <li key={id} className="player-row">
+            <span className="player-row__body"><strong>{playerNames.get(id)}</strong>
+              <small>{dates.map(date => formatDate(date, true)).join("、")}</small>
+            </span>
+          </li>)}</ul>
         </details>}
         <details className="source-note"><summary>収録範囲・出典</summary><p>日本戦の確定スコアを抜粋。左がビジター、右がホームです。
           Wikipediaの執筆者による記録を抜粋・翻訳・整形し、<a href={resultLicense}>CC BY-SA 4.0</a>で提供しています。</p>

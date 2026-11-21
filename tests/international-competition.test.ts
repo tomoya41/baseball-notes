@@ -194,7 +194,7 @@ it("admits separate WBC batting and pitching totals, with exact counts and missi
   ]) expect(internationalTournamentEvidenceSchema.safeParse({ ...wbc, ...change }).success).toBe(false);
 });
 
-it("preserves the 2026 WBC selection snapshot without fabricating registration or appearance records", () => {
+it("keeps the WBC selection snapshot separate from game appearances and registration", () => {
   const id = "international:tournament:wbc:2026";
   const wbc = japanResultsByTournament.get(id)!;
   const roster = japanSelectionsByTournament.get(id)!;
@@ -204,10 +204,11 @@ it("preserves the 2026 WBC selection snapshot without fabricating registration o
   expect(roster.players).toContainEqual(expect.objectContaining({ name: "大谷翔平", position: "指名打者" }));
   expect(roster.players.map(player => player.name)).not.toContain("松井裕樹");
   expect(wbc.games).toHaveLength(5);
-  expect(wbc.editionRevision).toBe(3);
-  expect(wbc.participation.map(player => player.kind)).toEqual(Array(30).fill("selected"));
+  expect(wbc.editionRevision).toBe(4);
+  expect(wbc.participation.filter(player => player.kind === "selected")).toHaveLength(30);
+  expect(wbc.participation.filter(player => player.kind === "registered")).toEqual([]);
   expect(wbc.coverage.registrations.status).toBe("uncollected");
-  expect(wbc.coverage.appearances.status).toBe("uncollected");
+  expect(wbc.coverage.appearances.status).toBe("partial");
   expect(wbc.playerStats).toEqual([]);
   expect(wbc.identities).toEqual([]);
   expect(japanResultsByTournament.has("international:tournament:exhibition:2027:taipei")).toBe(false);
@@ -225,7 +226,7 @@ it("admits WBC Japan home runs and only the pitcher decision supported by each f
   expect(wbc.games[4]).toMatchObject({ localDate: "2026-03-14", timeZone: "America/New_York", result: { homeRuns: 5, awayRuns: 8 } });
   expect(wbc.coverage.gameHighlights.status).toBe("partial");
   expect(wbc.coverage.playerStats.status).toBe("uncollected");
-  expect(wbc.coverage.appearances.status).toBe("uncollected");
+  expect(wbc.coverage.appearances.status).toBe("partial");
   for (const invalid of [
     { ...quarterfinal, losingPitcherId: undefined, winningPitcherId: quarterfinal.losingPitcherId },
     { ...quarterfinal, winningPitcherId: quarterfinal.losingPitcherId },
@@ -233,6 +234,25 @@ it("admits WBC Japan home runs and only the pitcher decision supported by each f
     { ...quarterfinal, losingPitcherId: undefined },
     { ...quarterfinal, gameId: wbc.games[0]!.id },
   ]) expect(internationalTournamentEvidenceSchema.safeParse({ ...wbc, gameHighlights: [invalid] }).success).toBe(false);
+});
+
+it.each([
+  ["international:tournament:apbc:2026", 9],
+  ["international:tournament:wbc:2026", 11],
+])("derives only game appearances supported by a home run or decision in %s", (id, playerCount) => {
+  const snapshot = japanResultsByTournament.get(id)!;
+  const appearances = snapshot.participation.filter(record => record.kind === "appeared");
+  expect(appearances).toHaveLength(14);
+  expect(new Set(appearances.map(row => row.playerId)).size).toBe(playerCount);
+  for (const row of appearances) {
+    const game = snapshot.games.find(game => game.id === row.gameId)!;
+    const highlights = snapshot.gameHighlights.find(record => record.gameId === row.gameId)!;
+    expect(row.date).toBe(game.localDate);
+    expect(row.source).toEqual(highlights.source);
+    expect([highlights.winningPitcherId, highlights.losingPitcherId, ...highlights.homeRuns.map(h => h.playerId)]).toContain(row.playerId);
+  }
+  // An appearance derived from highlights cannot establish roster identity for those same highlights.
+  expect(internationalTournamentEvidenceSchema.safeParse({ ...snapshot, participation: appearances }).success).toBe(false);
 });
 
 it("admits Premier12 Japan totals with the final included and preserves the evidence scope", () => {
@@ -268,7 +288,7 @@ it("admits APBC home runs and winning pitchers independently of full player stat
   expect(apbc.tournamentMvp?.playerId).toBe("international:player:jawiki:4980856");
   expect(apbc.coverage.gameHighlights.status).toBe("partial");
   expect(apbc.coverage.playerStats.status).toBe("uncollected");
-  expect(apbc.coverage.appearances.status).toBe("uncollected");
+  expect(apbc.coverage.appearances.status).toBe("partial");
   const pending = { ...apbc.games[0]!, status: "scheduled", result: null };
   const first = highlights[0]!;
   for (const change of [
