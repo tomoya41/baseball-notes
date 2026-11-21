@@ -78,3 +78,5 @@ npx tsx scripts/build-npb-japan-series.ts --archive=.data/japan-series/archive.j
 Pixel/TalkBackは接続環境がある場合だけ別QA。署名・保存データ削除・Play公開は行わない。追加月額費用¥0。
 
 10/21追補：[結果更新・開幕準備](draft-japan-opening-2026-10.md)で、日程専用モードを保ちながら明示的review付き結果更新、終了イニングの表示、旧APK向けretained asset保護を追加。個人成績のadmissionは別で、現在の公開7予定/結果0/成績未収録は不変。最新Scheduledログもread-blockedで、追加DB要求を行わず復旧後の既存手順を維持した。
+
+11/21追補：日本シリーズのシリーズ総括に4種類の表彰、6人を追加。[日本語版Wikipedia固定版111797100](https://ja.wikipedia.org/w/index.php?curid=5306035&oldid=111797100)を公開MediaWiki APIで取得し、[NPB公式表彰](https://npb.jp/nippons/2026/award.html)で賞と受賞者を照合した。応答SHA-256は `bb90a9a92a5685b71f52c061926d440635eb077bac2eca8aee5bc39b58b06c80`。シリーズの賞と受賞者名を抜粋・整形してCC BY-SA 4.0で収録。所属、日別MVP、選手の試合別成績はこの表彰記録の対象外。4試合の終了とシリーズ決着を確認できた場合に表示し、既存の試合データとimmutable assetの更新は不要。

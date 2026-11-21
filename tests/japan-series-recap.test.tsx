@@ -12,6 +12,7 @@ import { NpbJapanSeriesScreen } from "../src/ui/npb-japan-series";
 import { readNpbJapanSeries } from "../src/application/npb-japan-series-reader";
 import { readNpbCs } from "../src/application/npb-cs-reader";
 import { readNpbWeekly } from "../src/application/npb-weekly";
+import { japanSeries2026Awards } from "../src/data/npb-japan-series-awards";
 vi.mock("../src/application/npb-japan-series-reader",()=>({readNpbJapanSeries:vi.fn()}));
 vi.mock("../src/application/npb-cs-reader",()=>({readNpbCs:vi.fn(()=>new Promise(()=>{}))}));
 afterEach(()=>{vi.clearAllMocks();vi.unstubAllGlobals();});
@@ -25,7 +26,9 @@ it("counts all admitted finals, excludes unneeded dates and skips the unplayed b
   expect(JSON.stringify(d)).toBe(before);
   const html=renderToStaticMarkup(<MemoryRouter><JapanSeriesRecap data={d}/></MemoryRouter>);
   expect(html).toContain("4連勝で日本一");expect(html).toContain("4回裏の3得点で逆転");expect(html).toContain("6回裏に1点");expect(html).toContain("個人成績は未収録");
-  expect(html).not.toContain("先発");expect(html).not.toContain("MVP");expect(html).not.toContain("9回裏");
+  expect(html).not.toContain("先発");expect(html).not.toContain("9回裏");
+  const other = { ...d, series: { ...d.series, id: "npb:series:unrelated" } };
+  expect(renderToStaticMarkup(<MemoryRouter><JapanSeriesRecap data={other}/></MemoryRouter>)).not.toContain("MVP");
 });
 it("does not summarize an unfinished or gapped result set, or turn zero missing values into a championship",()=>{
   const d=closed();d.results.splice(1,1);expect(japanSeriesRecap(d)).toBeNull();
@@ -41,15 +44,21 @@ it("separates an all-series recap from weekly/monthly aggregates and leaves NPB 
   expect(month.summary.coverage).toBe("partial");expect(surface.manifest).not.toHaveBeenCalled();expect(surface.date).not.toHaveBeenCalled();
 });
 it("shows the recap and precise closed-game states on existing routes, without a future outlook or fabricated box score",async()=>{
-  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);vi.mocked(readNpbJapanSeries).mockResolvedValue(closed());
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);
+  const d = closed();
+  vi.mocked(readNpbJapanSeries).mockResolvedValue({ ...d, series: { ...d.series, id: japanSeries2026Awards.seriesId } });
   const host=document.createElement("div"),root=createRoot(host);document.body.append(host);
   try{
     await act(async()=>root.render(<MemoryRouter initialEntries={["/NPB/postseason?stage=japan_series"]}><Routes><Route path="/NPB/postseason" element={<NpbJapanSeriesScreen/>}/><Route path="/NPB/games/:gameId" element={<NpbJapanSeriesScreen gameDetail/>}/></Routes></MemoryRouter>));
     expect(host.querySelector(".series-recap")).not.toBeNull();expect(host.querySelectorAll('.scoreboard-row[aria-label$="開催不要"]')).toHaveLength(3);
+    expect(host.querySelector(".series-recap details")?.textContent).toContain("MVP 正木智也");
+    expect(host.querySelector(".series-recap details")?.textContent).toContain("杉山一樹、山本祐大、庄子雄大");
+    expect([...host.querySelectorAll("details a")].map(link => link.getAttribute("href"))).toContain(japanSeries2026Awards.revisionUrl);
     const csReads=vi.mocked(readNpbCs).mock.calls.length;
     const unneeded=host.querySelector<HTMLAnchorElement>('.scoreboard-row[aria-label$="開催不要"]')!;
     await act(async()=>unneeded.dispatchEvent(new MouseEvent("click",{bubbles:true,button:0,cancelable:true})));
     expect(host.textContent).toContain("開催不要となった試合");expect(host.textContent).toContain("当初予定");expect(host.querySelector("table")).toBeNull();expect(host.querySelector(".game-mvp")).toBeNull();
+    expect(host.textContent).not.toContain("正木智也");
     expect(host.textContent).not.toContain("まだ収録していません");expect(host.textContent).not.toContain("0–0");expect(readNpbCs).toHaveBeenCalledTimes(csReads);
   }finally{await act(async()=>root.unmount());host.remove();}
 });

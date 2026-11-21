@@ -75,13 +75,22 @@ const coverageScope = z.discriminatedUnion("kind", [
 ]);
 const coverageUnit = z.enum(["scheduled_game", "final_game", "selected_player", "registered_player", "player_game_appearance"]);
 const uncollected = z.strictObject({ status: z.literal("uncollected") });
+const partialCoverage = z.strictObject({ status: z.literal("partial"), scope: coverageScope, source: sourceReference });
 const coverage = z.discriminatedUnion("status", [
   uncollected,
-  z.strictObject({ status: z.literal("partial"), scope: coverageScope, source: sourceReference }),
+  partialCoverage,
   z.strictObject({ status: z.literal("complete"), scope: coverageScope, source: sourceReference,
     population: sourceReference.extend({ teamIds: z.array(teamId).min(1) }),
     unit: coverageUnit, expectedIds: z.array(label).min(1),
     expectedCount: z.number().int().positive(), collectedCount: z.number().int().positive() }),
+]);
+const playerStat = z.strictObject({
+  competition: z.literal("international"), tournamentId, teamId, playerId, name: label,
+  gamesPlayed: z.number().int().positive(), source: sourceReference,
+});
+const tournamentPlayerStat = z.discriminatedUnion("role", [
+  playerStat.extend({ role: z.literal("batting"), atBats: runs, hits: runs, homeRuns: runs, runsBattedIn: runs }),
+  playerStat.extend({ role: z.literal("pitching"), outs: runs, runsAllowed: runs, earnedRuns: runs, strikeouts: runs.nullable() }),
 ]);
 const personIdentifier = z.discriminatedUnion("method", [
   z.strictObject({ method: z.literal("shared_player_identifier"), authorityId: organizationId, value: label }),
@@ -114,8 +123,9 @@ export const internationalTournamentEvidenceSchema = z.strictObject({
   tournamentId, editionRevision: z.number().int().positive(),
   sources: z.array(sourceRevision), identities: z.array(identity),
   games: z.array(internationalGameSchema), participation: z.array(internationalParticipationSchema),
+  playerStats: z.array(tournamentPlayerStat).default([]),
   coverage: z.strictObject({ schedule: coverage, results: coverage, selections: coverage,
-    registrations: coverage, appearances: coverage, playerStats: uncollected }),
+    registrations: coverage, appearances: coverage, playerStats: z.discriminatedUnion("status", [uncollected, partialCoverage]) }),
   corrections: z.array(z.strictObject({
     supersedesRevision: z.number().int().positive(), recordedAt: z.iso.datetime(), reason: label, source: sourceReference,
   })),
@@ -140,6 +150,27 @@ export const internationalTournamentEvidenceSchema = z.strictObject({
   if (games.size !== edition.games.length || edition.games.some(g =>
     g.tournamentId !== edition.tournamentId || !approved.has(g.source.sourceRevisionId)))
     context.addIssue({ code: "custom", path: ["games"], message: "Games require unique IDs and admitted evidence for this tournament" });
+  const statsCoverage = edition.coverage.playerStats;
+  if (statsCoverage.status === "uncollected" ? edition.playerStats.length !== 0 :
+    !edition.playerStats.length || !approved.has(statsCoverage.source.sourceRevisionId))
+    context.addIssue({ code: "custom", path: ["coverage", "playerStats"], message: "Collected player stats require an admitted coverage source" });
+  const finalCounts = new Map<string, number>();
+  for (const game of edition.games) {
+    if (game.status !== "final") continue;
+    for (const team of [game.awayTeamId, game.homeTeamId]) {
+      if (team) finalCounts.set(team, (finalCounts.get(team) ?? 0) + 1);
+    }
+  }
+  const statKeys = new Set<string>();
+  for (const [index, row] of edition.playerStats.entries()) {
+    const key = `${row.teamId}|${row.playerId}|${row.role}`;
+    const invalid = row.role === "batting" ? row.homeRuns > row.hits || row.hits > row.atBats : row.earnedRuns > row.runsAllowed;
+    if (statKeys.has(key) || invalid || row.tournamentId !== edition.tournamentId || !approved.has(row.source.sourceRevisionId) ||
+      statsCoverage.status !== "partial" || !inScope(statsCoverage.scope, row.teamId) ||
+      row.gamesPlayed > (finalCounts.get(row.teamId) ?? 0))
+      context.addIssue({ code: "custom", path: ["playerStats", index], message: "Stats require valid counts, a unique role and admitted evidence in this tournament and scope" });
+    statKeys.add(key);
+  }
   const participationIds = new Set<string>();
   for (const [index, record] of edition.participation.entries()) {
     const game = record.kind === "appeared" ? games.get(record.gameId) : undefined;

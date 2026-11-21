@@ -1,5 +1,6 @@
 import { expect, it } from "vitest";
 import { internationalOfficialTournaments } from "../src/data/international-official-links";
+import { japanResultsByTournament } from "../src/data/international-japan-results";
 import { savedGameMvpInputs } from "../src/domain/daily-mvp";
 import { playerGameBattingSchema, playerGamePitchingSchema } from "../src/domain/game-facts";
 import { internationalGameSchema, internationalParticipationSchema, internationalTournamentEvidenceSchema,
@@ -164,4 +165,31 @@ it("keeps international games out of existing NPB scopes, indexes, domestic Fact
   expect(playerGamePitchingSchema.safeParse(selection).success).toBe(false);
   expect(savedGameMvpInputs(index, [domesticGame])).toHaveLength(1);
   expect(savedGameMvpInputs(index, [{ ...domesticGame, gameId: game.id }])).toEqual([]);
+});
+
+it("admits separate WBC batting and pitching totals, with exact counts and missing values preserved", () => {
+  const wbc = japanResultsByTournament.get("international:tournament:wbc:2023")!;
+  const batting = wbc.playerStats.filter(row => row.role === "batting");
+  const pitching = wbc.playerStats.filter(row => row.role === "pitching");
+  expect(batting).toHaveLength(16);
+  expect(pitching).toHaveLength(14);
+  expect(batting.reduce((totals, row) => [totals[0]! + row.atBats, totals[1]! + row.hits,
+    totals[2]! + row.homeRuns, totals[3]! + row.runsBattedIn], [0, 0, 0, 0])).toEqual([221, 66, 9, 55]);
+  expect(pitching.reduce((total, row) => total + row.outs, 0)).toBe(189);
+  expect(pitching.find(row => row.name === "髙橋宏斗")?.strikeouts).toBeNull();
+  expect(pitching.find(row => row.name === "大谷翔平")?.playerId).toBe(batting.find(row => row.name === "大谷翔平")?.playerId);
+  expect(wbc.participation).toEqual([]);
+  expect(wbc.identities).toEqual([]);
+  expect(wbc.coverage.appearances.status).toBe("uncollected");
+
+  const row = batting[0]!;
+  for (const change of [
+    { playerStats: [...wbc.playerStats, row] },
+    { playerStats: [{ ...row, gamesPlayed: 8 }] },
+    { playerStats: [{ ...row, hits: row.atBats + 1 }] },
+    { playerStats: [{ ...row, tournamentId }] },
+    { playerStats: [{ ...row, teamId: opponentId }] },
+    { playerStats: [{ ...row, source: { ...row.source, sourceRevisionId: "unverified" } }] },
+    { coverage: { ...wbc.coverage, playerStats: uncollected } },
+  ]) expect(internationalTournamentEvidenceSchema.safeParse({ ...wbc, ...change }).success).toBe(false);
 });

@@ -9,6 +9,7 @@ import { readNpbJapanSeries } from "../application/npb-japan-series-reader";
 import { assertJapanSeriesAdvancement,allJapanSeriesSources,japanResultSource,type NpbJapanSeries } from "../domain/npb-japan-series";
 import type { NpbPostseasonSeries } from "../domain/npb-postseason-series";
 import pin from "../data/npb-japan-series-release.json";
+import { japanSeries2026Awards } from "../data/npb-japan-series-awards";
 import { DataState, LoadingSkeleton } from "./components";
 import { ScoreboardRow,ScoreHero } from "./design-system";
 import { GameHeading } from "./signature";
@@ -33,7 +34,7 @@ function useJapan(valid:boolean){
 }
 function Sources({data,gameId}:{data:NpbJapanSeries;gameId?:string|undefined}){
   const own=gameId?japanResultSource(data,gameId):undefined,sources=own?[own]:allJapanSeriesSources(data);
-  return <details><summary>収録範囲・出典</summary><p>記事取得 {observedTime(data.observedAt)}（日本時間）{data.review&&` · 最終確認 ${observedTime(data.review.reviewedAt)}`}。リアルタイム更新ではありません。</p><p>Wikipediaの記事に記載された日程です。実際の開催・開始時刻・選手の出場を保証するものではありません。公式戦・CSとは別集計です。CSの勝数・アドバンテージは日本シリーズへ持ち越しません。</p>{sources.map(s=><p key={`${s.pageId}:${s.revision}`}><a href={`https://ja.wikipedia.org/w/index.php?curid=${s.pageId}&oldid=${s.revision}`}>Wikipedia「{s.title}」の執筆者 · 改版{s.revision}</a> · <a href={`https://ja.wikipedia.org/w/index.php?curid=${s.pageId}&action=history`}>執筆履歴</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a> · 原記事からの変更：日程・結果・球場の抜粋・表記整理</p>)}<a href="https://npb.jp/nippons/2026/">最新の開催情報を公式サイトで確認</a></details>;
+  return <details><summary>収録範囲・出典</summary><p>記事取得 {observedTime(data.observedAt)}（日本時間）{data.review&&` · 最終確認 ${observedTime(data.review.reviewedAt)}`}。リアルタイム更新ではありません。</p><p>Wikipediaの記事に記載された日程です。実際の開催・開始時刻・選手の出場を保証するものではありません。公式戦・CSとは別集計です。CSの勝数・アドバンテージは日本シリーズへ持ち越しません。</p>{sources.map(s=><p key={`${s.pageId}:${s.revision}`}><a href={`https://ja.wikipedia.org/w/index.php?curid=${s.pageId}&oldid=${s.revision}`}>Wikipedia「{s.title}」の執筆者 · 改版{s.revision}</a> · <a href={`https://ja.wikipedia.org/w/index.php?curid=${s.pageId}&action=history`}>執筆履歴</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a> · 原記事からの変更：日程・結果・球場の抜粋・表記整理</p>)}{!gameId && data.series.clinched && data.series.id === japanSeries2026Awards.seriesId && <p><a href={japanSeries2026Awards.revisionUrl}>Wikipediaの執筆者による表彰記録</a>（賞と受賞者を抜粋・表記整理、<a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>） · <a href={japanSeries2026Awards.officialUrl}>NPB公式の表彰結果</a></p>}<a href="https://npb.jp/nippons/2026/">日本シリーズの公式情報</a></details>;
 }
 function Unavailable({failed,retry}:{failed:boolean;retry:()=>void}){return failed?<><DataState kind="source-unavailable" title="日本シリーズ情報を取得できません"/><button onClick={retry}>再試行</button><Link to="/NPB/cs?season=2026">収録済みのCSへ →</Link></>:<LoadingSkeleton/>;}
 export function JapanSeriesEntry({cs}:{cs:NpbPostseasonSeries}){
