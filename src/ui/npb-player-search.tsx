@@ -16,10 +16,10 @@ import { useNpbPlayerDirectory, type DirectoryReader, type DirectoryState } from
 type Role = "all" | "batter" | "pitcher";
 
 export function NpbPlayerSearchView({ directory, state, query, onQueryChange, teamId, onTeamChange,
-  role, onRoleChange, favorites=[],toggle,saving=false }: { directory: NpbPlayerDirectory | null; state: DirectoryState;
+  role, onRoleChange, retry, retrying = false, favorites=[],toggle,saving=false }: { directory: NpbPlayerDirectory | null; state: DirectoryState;
   favorites?:Favorite[]|undefined;toggle?:((target:Pick<Favorite,"kind"|"entityId"|"league">)=>void)|undefined;saving?:boolean|undefined;
   query: string; onQueryChange: (value: string) => void; teamId: string; onTeamChange: (value: string) => void;
-  role: Role; onRoleChange: (value: Role) => void }) {
+  role: Role; onRoleChange: (value: Role) => void; retry?: () => void; retrying?: boolean }) {
   const [displayParams]=useSearchParams();
   const players = useMemo(() => directory ? searchNpbPlayers(directory.players, query,
     { teamId, role }).filter(p=>role!=="batter"||includesBattingRole(battingDisplayRole(p.position?[p.position]:[]),battingView(displayParams))) : [], [directory, query, teamId, role, displayParams]);
@@ -33,8 +33,13 @@ export function NpbPlayerSearchView({ directory, state, query, onQueryChange, te
     <DiscoveryNavigation league="NPB" />
 
     {!directory && (state === "error" ? <DataState kind="source-unavailable" title="選手一覧を取得できませんでした" /> : <LoadingSkeleton />)}
+    {state === "error" && <>
+      {directory && <p className="inline-note" role="status">更新を確認できないため、保存済みの選手一覧を表示しています。</p>}
+      {retry && <button type="button" className="button button--secondary" onClick={retry} disabled={retrying}>
+        {retrying ? "選手情報を確認中" : "選手情報を再読み込み"}
+      </button>}
+    </>}
     {directory && <>
-      {state === "error" && <p className="inline-note" role="status">更新を確認できないため、保存済みの選手一覧を表示しています。</p>}
       <label className="search-field"><Search size={20} aria-hidden="true" />
         <span className="sr-only">選手名を検索</span>
         <input type="search" placeholder="選手名を入力" value={query}
@@ -81,11 +86,11 @@ export function NpbPlayerSearchView({ directory, state, query, onQueryChange, te
 
 export function NpbPlayerSearch({ repository,favorites,toggle,saving }: { repository: DirectoryReader;
   favorites?:Favorite[]|undefined;toggle?:((target:Pick<Favorite,"kind"|"entityId"|"league">)=>void)|undefined;saving?:boolean|undefined }) {
-  const { directory, state } = useNpbPlayerDirectory(repository);
+  const { directory, state, retry, retrying } = useNpbPlayerDirectory(repository);
   const [params, setParams] = useSearchParams();
   const query = params.get("q") ?? "", teamId = params.get("team") ?? "";
   const role: Role = params.get("role") === "batter" ? "batter" : params.get("role") === "pitcher" ? "pitcher" : "all";
   const update = (key: string, value: string) => { const next = new URLSearchParams(params); if (value) next.set(key, value); else next.delete(key); setParams(next, { replace: true }); };
-  return <NpbPlayerSearchView directory={directory} state={state} query={query} onQueryChange={value => update("q", value)}
+  return <NpbPlayerSearchView directory={directory} state={state} retry={retry} retrying={retrying} query={query} onQueryChange={value => update("q", value)}
     teamId={teamId} onTeamChange={value => update("team", value)} role={role} onRoleChange={value => update("role", value)} favorites={favorites} toggle={toggle} saving={saving} />;
 }
