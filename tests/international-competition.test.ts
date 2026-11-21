@@ -204,12 +204,35 @@ it("preserves the 2026 WBC selection snapshot without fabricating registration o
   expect(roster.players).toContainEqual(expect.objectContaining({ name: "大谷翔平", position: "指名打者" }));
   expect(roster.players.map(player => player.name)).not.toContain("松井裕樹");
   expect(wbc.games).toHaveLength(5);
+  expect(wbc.editionRevision).toBe(3);
   expect(wbc.participation.map(player => player.kind)).toEqual(Array(30).fill("selected"));
   expect(wbc.coverage.registrations.status).toBe("uncollected");
   expect(wbc.coverage.appearances.status).toBe("uncollected");
   expect(wbc.playerStats).toEqual([]);
   expect(wbc.identities).toEqual([]);
   expect(japanResultsByTournament.has("international:tournament:exhibition:2027:taipei")).toBe(false);
+});
+
+it("admits WBC Japan home runs and only the pitcher decision supported by each final score", () => {
+  const wbc = japanResultsByTournament.get("international:tournament:wbc:2026")!;
+  const quarterfinal = wbc.gameHighlights[4]!;
+  expect(wbc.gameHighlights.map(row => row.homeRuns.reduce((sum, event) => sum + event.count, 0))).toEqual([1, 4, 1, 2, 2]);
+  expect(wbc.gameHighlights.slice(0, 4).map(row => row.winningPitcherId))
+    .toEqual([3610515, 3692477, 4463322, 4977707].map(id => `international:player:jawiki:${id}`));
+  expect(quarterfinal).toMatchObject({ losingPitcherId: "international:player:jawiki:4237529",
+    source: { sourceRevisionId: "1378823437" } });
+  expect(quarterfinal.winningPitcherId).toBeUndefined();
+  expect(wbc.games[4]).toMatchObject({ localDate: "2026-03-14", timeZone: "America/New_York", result: { homeRuns: 5, awayRuns: 8 } });
+  expect(wbc.coverage.gameHighlights.status).toBe("partial");
+  expect(wbc.coverage.playerStats.status).toBe("uncollected");
+  expect(wbc.coverage.appearances.status).toBe("uncollected");
+  for (const invalid of [
+    { ...quarterfinal, losingPitcherId: undefined, winningPitcherId: quarterfinal.losingPitcherId },
+    { ...quarterfinal, winningPitcherId: quarterfinal.losingPitcherId },
+    { ...quarterfinal, losingPitcherId: "international:player:unrecorded" },
+    { ...quarterfinal, losingPitcherId: undefined },
+    { ...quarterfinal, gameId: wbc.games[0]!.id },
+  ]) expect(internationalTournamentEvidenceSchema.safeParse({ ...wbc, gameHighlights: [invalid] }).success).toBe(false);
 });
 
 it("admits Premier12 Japan totals with the final included and preserves the evidence scope", () => {

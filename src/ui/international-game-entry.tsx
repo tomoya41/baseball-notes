@@ -3,6 +3,7 @@ import { internationalTeamNames, internationalRoundNames, japanResultsByTourname
 import { apbc2026OfficialBoxes } from "../data/apbc-2026-highlights";
 import { premier122024JapanStatsRevision, premier122024JapanStatsVerification } from "../data/premier12-2024-japan-stats";
 import { wbc2023JapanStatsRevision, wbc2023JapanStatsVerification } from "../data/wbc-2023-japan-stats";
+import { wbc2026OfficialBoxes } from "../data/wbc-2026-japan-highlights";
 import { metrics, ratio } from "../domain/metrics";
 import { formatDate, formatMetric } from "../presentation/formatters";
 
@@ -18,6 +19,8 @@ export function InternationalGameEntry({ expanded, onToggle, selected, onSelect 
   const positions = new Set(roster?.players.map(player => player.position));
   const playerNames = new Map(roster?.players.map(player => [player.id, player.name]));
   const highlights = new Map(edition?.gameHighlights.map(game => [game.gameId, game]));
+  const wbc2026 = tournament.kind === "wbc" && tournament.year === 2026;
+  const officialBoxes = wbc2026 ? wbc2026OfficialBoxes : tournament.kind === "apbc" ? apbc2026OfficialBoxes : undefined;
   const batting = edition?.playerStats.filter(row => row.role === "batting") ?? [];
   const pitching = edition?.playerStats.filter(row => row.role === "pitching") ?? [];
   const statsCoverage = edition?.coverage.playerStats;
@@ -34,7 +37,7 @@ export function InternationalGameEntry({ expanded, onToggle, selected, onSelect 
         <h3>日本代表の結果 · {edition.games.length}試合</h3>
         {edition.tournamentMvp && <p>大会MVP <strong>{playerNames.get(edition.tournamentMvp.playerId)}</strong></p>}
         <p className="inline-note">日付は現地時間。{edition.playerStats.length ? "成績は大会通算です。" :
-          highlights.size ? "試合ごとの本塁打と勝利投手を収録。" :
+          highlights.size ? `日本の本塁打と${wbc2026 ? "勝敗投手" : "勝利投手"}を収録。` :
           edition.participation.length ? "個人成績は未収録です。" : "代表選手・個人成績は未収録です。"}</p>
         <ol className="row-list">{edition.games.map(game => {
           const detail = highlights.get(game.id);
@@ -44,7 +47,8 @@ export function InternationalGameEntry({ expanded, onToggle, selected, onSelect 
               {detail && <>
                 <small>日本の本塁打 {detail.homeRuns.map(({ playerId, count }, index) =>
                   <span key={playerId}>{index > 0 && "、"}{playerNames.get(playerId)} <span className="international-count">{count}本</span></span>)}</small>
-                <small>勝利投手 {playerNames.get(detail.winningPitcherId)}</small>
+                {detail.winningPitcherId && <small>勝利投手 {playerNames.get(detail.winningPitcherId)}</small>}
+                {detail.losingPitcherId && <small>敗戦投手 {playerNames.get(detail.losingPitcherId)}</small>}
               </>}
             </span>
           </li>;
@@ -75,9 +79,9 @@ export function InternationalGameEntry({ expanded, onToggle, selected, onSelect 
         </details>}
         <details className="source-note"><summary>収録範囲・出典</summary><p>日本戦の確定スコアを抜粋。左がビジター、右がホームです。
           Wikipediaの執筆者による記録を抜粋・翻訳・整形し、<a href={resultLicense}>CC BY-SA 4.0</a>で提供しています。</p>
-          {tournament.kind === "apbc" && highlights.size > 0 && <>
-            <p>日本の本塁打と勝利投手、大会MVPを収録。大会通算の打撃・投球成績は未収録です。</p>
-            <div className="hub-links">{[...apbc2026OfficialBoxes].map(([date, url]) =>
+          {officialBoxes && highlights.size > 0 && <>
+            <p>大会通算の打撃・投球成績は未収録です。{wbc2026 && "準々決勝は現地3月14日、日本時間3月15日です。"}</p>
+            <div className="hub-links">{[...officialBoxes].map(([date, url]) =>
               <a key={date} href={url}>{formatDate(date, true)}の公式試合記録</a>)}</div>
           </>}
           {statsCoverage?.status === "partial" && <p>日本代表の大会通算成績から打撃・投球の一部指標を収録。試合ごとの出場記録は未収録です。

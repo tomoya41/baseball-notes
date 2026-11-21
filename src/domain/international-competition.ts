@@ -93,7 +93,7 @@ const tournamentPlayerStat = z.discriminatedUnion("role", [
   playerStat.extend({ role: z.literal("pitching"), outs: runs, runsAllowed: runs, earnedRuns: runs, strikeouts: runs.nullable() }),
 ]);
 const gameHighlights = z.strictObject({
-  gameId, teamId, source: sourceReference, winningPitcherId: playerId,
+  gameId, teamId, source: sourceReference, winningPitcherId: playerId.optional(), losingPitcherId: playerId.optional(),
   homeRuns: z.array(z.strictObject({ playerId, count: z.number().int().positive() })).min(1),
 });
 const tournamentMvp = z.strictObject({ teamId, playerId, source: sourceReference });
@@ -203,13 +203,15 @@ export const internationalTournamentEvidenceSchema = z.strictObject({
     const sides = game?.status === "final" && game.result && (game.homeTeamId === row.teamId
       ? [game.result.homeRuns, game.result.awayRuns] as const
       : game.awayTeamId === row.teamId ? [game.result.awayRuns, game.result.homeRuns] as const : null);
+    const decision = sides && (sides[0] > sides[1] && !row.losingPitcherId ? row.winningPitcherId :
+      sides[0] < sides[1] && !row.winningPitcherId ? row.losingPitcherId : undefined);
     const hitters = new Set(row.homeRuns.map(record => record.playerId));
-    if (!sides || sides[0] <= sides[1] || highlightedGames.has(row.gameId) ||
+    if (!sides || !decision || highlightedGames.has(row.gameId) ||
       highlightsCoverage.status !== "partial" || !inScope(highlightsCoverage.scope, row.teamId) ||
-      !approved.has(row.source.sourceRevisionId) || !affiliatedPlayers.has(`${row.teamId}|${row.winningPitcherId}`) ||
+      !approved.has(row.source.sourceRevisionId) || !affiliatedPlayers.has(`${row.teamId}|${decision}`) ||
       hitters.size !== row.homeRuns.length || row.homeRuns.reduce((count, record) => count + record.count, 0) > sides[0] ||
       row.homeRuns.some(record => !affiliatedPlayers.has(`${row.teamId}|${record.playerId}`))) {
-      context.addIssue({ code: "custom", path: ["gameHighlights", index], message: "Highlights require a final win, admitted evidence and valid player events for the winning team" });
+      context.addIssue({ code: "custom", path: ["gameHighlights", index], message: "Highlights require a final score, the matching pitcher decision and admitted evidence for the team's players" });
     }
     highlightedGames.add(row.gameId);
   }

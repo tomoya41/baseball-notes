@@ -47,6 +47,12 @@ APBC 2026の日本戦4試合、WBC 2023の7試合・2026の5試合、プレミ�
 
 大会別データ第2版で採用済み指標を追加し、日本戦9試合の結果を保持する。収録範囲は日本代表の大会通算の一部指標。選出・登録・試合ごとの出場は別管理とする。収録データは上記固定版から抜粋・整形し、CC BY-SA 4.0で提供する。
 
+## WBC 2026の試合別本塁打・勝敗投手
+
+日本戦5試合で、日本の本塁打10本と勝利投手4人・敗戦投手1人を照合した。準々決勝のベネズエラ戦は現地3月14日、日本時間3月15日。公式の投打成績へのリンクは日本時間の試合ページを使用する。[3月6日](https://www.japan-baseball.jp/jp/team/topteam/score/20260306_1/table.html)・[7日](https://www.japan-baseball.jp/jp/team/topteam/score/20260307_1/table.html)・[8日](https://www.japan-baseball.jp/jp/team/topteam/score/20260308_1/table.html)・[10日](https://www.japan-baseball.jp/jp/team/topteam/score/20260310_1/table.html)・[15日](https://www.japan-baseball.jp/jp/team/topteam/score/20260315_1/table.html)
+
+既存の英語版Wikipediaの試合別イニング表を出典とし、氏名と件数を抜粋・整形してCC BY-SA 4.0で提供。試合IDと5試合のスコア、代表選出30人の第2版の記録を保持し、試合別の記録を第3版で追加した。3月6日の日本の安打数は照合資料と差があり採用対象外。大会通算成績と全出場の網羅性、登録や国内の選手IDは別管理とする。[1次ラウンド固定版1370352167](https://en.wikipedia.org/w/index.php?oldid=1370352167)・[準々決勝固定版1378823437](https://en.wikipedia.org/w/index.php?oldid=1378823437)
+
 ## データ採用の再開条件
 
 - 大会ごとに取得、保存、加工、Web表示、Android表示、再配布を認める根拠とSourceの版を確認する。訂正時は旧版と出典を保持する。

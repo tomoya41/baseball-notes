@@ -86,6 +86,13 @@ it("opens real official tournament links alongside the domestic Games route with
     expect(entry.textContent).toContain("指名打者大谷翔平");
     expect(entry.textContent).toContain("森下翔太");
     expect(entry.textContent).not.toContain("松井裕樹");
+    const quarterfinal = entry.querySelector("ol.row-list > li:last-child");
+    expect(quarterfinal?.textContent).toContain("日本の本塁打 大谷翔平 1本、森下翔太 1本");
+    expect(quarterfinal?.textContent).toContain("敗戦投手 伊藤大海");
+    expect(quarterfinal?.textContent).not.toContain("勝利投手");
+    expect(entry.querySelector('.source-note a[href$="20260315_1/table.html"]')).not.toBeNull();
+    expect(entry.textContent).toContain("準々決勝は現地3月14日、日本時間3月15日です。");
+    expect(entry.querySelector('a[href*="/NPB/players/"]')).toBeNull();
     await act(async () => internationalButton.click());
     await openTournament("international:tournament:premier12:2024");
     expect(entry.querySelectorAll("ol.row-list > li")).toHaveLength(9);

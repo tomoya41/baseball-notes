@@ -3,6 +3,7 @@ import { apbcSelections } from "./apbc-2026-selections";
 import { apbc2026Highlights, apbc2026Mvp } from "./apbc-2026-highlights";
 import { premier122024JapanStats, premier122024JapanStatsRevision } from "./premier12-2024-japan-stats";
 import { wbc2023JapanStats, wbc2023JapanStatsRevision } from "./wbc-2023-japan-stats";
+import { wbc2026JapanHighlights } from "./wbc-2026-japan-highlights";
 import { wbc2026Selections } from "./wbc-2026-selections";
 
 // Adapted from the English Wikipedia article revisions below, CC BY-SA 4.0.
@@ -57,12 +58,15 @@ function edition(tournamentId: string, rows: readonly ResultRow[], stats?: Japan
     competition: "international", playerId: `international:player:jawiki:${pageId}`, source: { sourceRevisionId: stats.revision,
       sourceRecordId: `${row.role === "batting" ? "野手成績" : "投手成績"}/${row.name}` } })) ?? [];
   const apbc = tournamentId === "international:tournament:apbc:2026";
+  const wbc2026 = tournamentId === "international:tournament:wbc:2026";
+  const gameHighlights = apbc ? apbc2026Highlights : wbc2026 ? wbc2026JapanHighlights : [];
+  const highlightSource = gameHighlights[0]?.source;
   return internationalTournamentEvidenceSchema.parse({ tournamentId,
-    editionRevision: stats || apbc || tournamentId === "international:tournament:wbc:2026" ? 2 : 1, sources, games, playerStats,
-    gameHighlights: apbc ? apbc2026Highlights : [], tournamentMvp: apbc ? apbc2026Mvp : undefined,
+    editionRevision: wbc2026 ? 3 : stats || apbc ? 2 : 1, sources, games, playerStats,
+    gameHighlights, tournamentMvp: apbc ? apbc2026Mvp : undefined,
     identities: [], participation, corrections: [], coverage: { results: partial, schedule: empty,
       selections: roster ? { ...partial, source: { sourceRevisionId: roster.revision, sourceRecordId: "代表選手" } } : empty,
-      registrations: empty, appearances: empty, gameHighlights: apbc ? { ...partial, source: apbc2026Highlights[0]!.source } : empty,
+      registrations: empty, appearances: empty, gameHighlights: highlightSource ? { ...partial, source: highlightSource } : empty,
       playerStats: stats
         ? { ...partial, source: { sourceRevisionId: stats.revision, sourceRecordId: "成績" } } : empty } });
 }
