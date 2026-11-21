@@ -6,7 +6,7 @@ import { migrateData, openDataClient, type DataClient } from "../src/data/databa
 import { NpbGameDetailRepository } from "../src/data/npb-game-detail-repository";
 import { NpbRepository } from "../src/data/npb-repository";
 import { HttpNpbGameDetailRepository } from "../src/infrastructure/providers/http-npb-game-detail-repository";
-import { NpbGameDetailView } from "../src/ui/npb-game-detail";
+import { NpbGameDetailView, PublishedGameSummaryView } from "../src/ui/npb-game-detail";
 import { PlayerGameLogView } from "../src/ui/player-game-log";
 import { playerGameLogResponseSchema } from "../src/domain/player-game-log";
 
@@ -122,6 +122,30 @@ describe("NPB Game Detail", () => {
     const scoreOnly = renderToStaticMarkup(<NpbGameDetailView payload={payload} state="ready" />);
     expect(scoreOnly).toContain("スコアのみ収録");
     expect(scoreOnly).not.toContain('class="game-player-link"');
+  });
+
+  it("links a reviewed score-only game to the correct official box score after a detail failure", async () => {
+    const partial = (await new NpbGameDetailRepository(await fixture()).find(gameId))!.payload;
+    const id = "npb:game:2469292e18a73924f23c";
+    const date = "2026-04-09";
+    const official = "https://npb.jp/scores/2026/0409/t-s-03/box.html";
+    const payload = { ...partial, gameId: id, date, completeness: "partial" as const,
+      away: { ...partial.away, id: "npb:team:swallows", shortName: "ヤクルト", score: 0 },
+      home: { ...partial.home, score: 2 },
+      batting: { away: [], home: [] }, pitching: { away: [], home: [] } };
+    const game = { gameId: id, date, gameNumber: 1, scheduledTime: null, status: "final" as const,
+      away: { id: payload.away.id, name: "ヤクルト", score: 0 }, home: { id: payload.home.id, name: "阪神", score: 2 },
+      completeness: "partial" as const, battingAvailable: false, pitchingAvailable: false, detailAvailable: true };
+    const summary = { game, generatedAt: "2026-10-14T15:05:03.165Z", coverage: "partial" as const };
+    const saved = renderToStaticMarkup(<NpbGameDetailView payload={payload} state="ready" />);
+    const fallback = renderToStaticMarkup(<PublishedGameSummaryView summary={summary} retry={() => {}} />);
+    for (const html of [saved, fallback]) {
+      expect(html).toContain(`href="${official}"`);
+      expect(html).not.toContain('class="game-player-link"');
+    }
+    expect(renderToStaticMarkup(<NpbGameDetailView payload={{ ...payload, date: "2026-04-10" }} state="ready" />)).not.toContain(official);
+    const postponed = { ...summary, game: { ...game, status: "postponed" as const } };
+    expect(renderToStaticMarkup(<PublishedGameSummaryView summary={postponed} retry={() => {}} />)).not.toContain(official);
   });
 
   it("reflects a corrected Fact on the next read and rejects invalid/mismatched HTTP payload", async () => {

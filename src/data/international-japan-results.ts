@@ -1,5 +1,6 @@
 import { internationalTournamentEvidenceSchema } from "../domain/international-competition";
 import { apbcSelections } from "./apbc-2026-selections";
+import { apbc2026Highlights, apbc2026Mvp } from "./apbc-2026-highlights";
 import { wbc2023JapanStats, wbc2023JapanStatsRevision } from "./wbc-2023-japan-stats";
 import { wbc2026Selections } from "./wbc-2026-selections";
 
@@ -50,11 +51,14 @@ function edition(tournamentId: string, rows: readonly ResultRow[],
   const playerStats = stats.map(({ pageId, ...row }) => ({ ...row, tournamentId, teamId: japan, competition: "international",
     playerId: `international:player:jawiki:${pageId}`, source: { sourceRevisionId: wbc2023JapanStatsRevision,
       sourceRecordId: `${row.role === "batting" ? "野手成績" : "投手成績"}/${row.name}` } }));
+  const apbc = tournamentId === "international:tournament:apbc:2026";
   return internationalTournamentEvidenceSchema.parse({ tournamentId,
-    editionRevision: stats.length || tournamentId === "international:tournament:wbc:2026" ? 2 : 1, sources, games, playerStats,
+    editionRevision: stats.length || apbc || tournamentId === "international:tournament:wbc:2026" ? 2 : 1, sources, games, playerStats,
+    gameHighlights: apbc ? apbc2026Highlights : [], tournamentMvp: apbc ? apbc2026Mvp : undefined,
     identities: [], participation, corrections: [], coverage: { results: partial, schedule: empty,
       selections: roster ? { ...partial, source: { sourceRevisionId: roster.revision, sourceRecordId: "代表選手" } } : empty,
-      registrations: empty, appearances: empty, playerStats: stats.length
+      registrations: empty, appearances: empty, gameHighlights: apbc ? { ...partial, source: apbc2026Highlights[0]!.source } : empty,
+      playerStats: stats.length
         ? { ...partial, source: { sourceRevisionId: wbc2023JapanStatsRevision, sourceRecordId: "成績" } } : empty } });
 }
 

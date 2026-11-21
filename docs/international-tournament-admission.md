@@ -33,6 +33,12 @@ APBC 2026の日本戦4試合、WBC 2023の7試合・2026の5試合、プレミ�
 
 2027年3月6・7日の台日交流試合は、台北ドームでの開催予定を案内し、[侍ジャパンの11月18日発表](https://www.japan-baseball.jp/jp/news/press/20261118_1.html)へリンクする。日程や試合のデータは収録していない。
 
+## APBC 2026の本塁打・勝利投手と大会MVP
+
+[英語版Wikipediaの固定版1385998229](https://en.wikipedia.org/w/index.php?oldid=1385998229)の各試合欄・表彰欄を、[侍ジャパン大会公式](https://www.japan-baseball.jp/jp/games/apbc2026/)と[11月12日](https://www.japan-baseball.jp/jp/team/topteam/score/20261112_2/)・[13日](https://www.japan-baseball.jp/jp/team/topteam/score/20261113_2/)・[14日](https://www.japan-baseball.jp/jp/team/topteam/score/20261114_1/)・[15日](https://www.japan-baseball.jp/jp/team/topteam/score/20261115_2/)の確定記録で照合した。日本の本塁打は順に3・4・3・2本。勝利投手4人と大会MVPの宗山塁は、既存の大会内選手IDと照合した。11月14日のオーストラリア戦は7回で終了した試合。試合日は各試合欄と公式記録、先攻・後攻はイニング表で確認した。
+
+大会別データ第2版で本塁打・勝利投手・MVPを追加。日本戦4試合のスコアと選出28人は同じIDを維持する。確定した日本の勝利試合に収録範囲を限定し、相手の個人成績、大会通算の率、全選手の出場記録、NPBプロフィールとの本人照合は別管理とする。公式の試合記録は照合と閲覧案内に使用し、収録データは上記固定版から抜粋・翻訳・整形してCC BY-SA 4.0で提供する。
+
 ## データ採用の再開条件
 
 - 大会ごとに取得、保存、加工、Web表示、Android表示、再配布を認める根拠とSourceの版を確認する。訂正時は旧版と出典を保持する。

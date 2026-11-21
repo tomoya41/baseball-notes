@@ -1,5 +1,6 @@
 import { internationalOfficialTournaments as tournaments } from "../data/international-official-links";
 import { internationalTeamNames, internationalRoundNames, japanResultsByTournament, japanSelectionsByTournament, resultLicense } from "../data/international-japan-results";
+import { apbc2026OfficialBoxes } from "../data/apbc-2026-highlights";
 import { wbc2023JapanStatsRevision, wbc2023JapanStatsVerification } from "../data/wbc-2023-japan-stats";
 import { metrics, ratio } from "../domain/metrics";
 import { formatDate, formatMetric } from "../presentation/formatters";
@@ -14,6 +15,8 @@ export function InternationalGameEntry({ expanded, onToggle, selected, onSelect 
   const edition = japanResultsByTournament.get(tournament.id);
   const roster = japanSelectionsByTournament.get(tournament.id);
   const positions = new Set(roster?.players.map(player => player.position));
+  const playerNames = new Map(roster?.players.map(player => [player.id, player.name]));
+  const highlights = new Map(edition?.gameHighlights.map(game => [game.gameId, game]));
   const batting = edition?.playerStats.filter(row => row.role === "batting") ?? [];
   const pitching = edition?.playerStats.filter(row => row.role === "pitching") ?? [];
   const statsCoverage = edition?.coverage.playerStats;
@@ -28,12 +31,22 @@ export function InternationalGameEntry({ expanded, onToggle, selected, onSelect 
       {tournament.summary && <p>{tournament.summary}</p>}
       {edition ? <section aria-label="日本代表の試合結果">
         <h3>日本代表の結果 · {edition.games.length}試合</h3>
+        {edition.tournamentMvp && <p>大会MVP <strong>{playerNames.get(edition.tournamentMvp.playerId)}</strong></p>}
         <p className="inline-note">日付は現地時間。{edition.playerStats.length ? "成績は大会通算です。" :
+          highlights.size ? "試合ごとの本塁打と勝利投手を収録。" :
           edition.participation.length ? "個人成績は未収録です。" : "代表選手・個人成績は未収録です。"}</p>
-        <ol className="row-list">{edition.games.map(game => <li key={game.id} className="player-row">
-          <span className="player-row__body"><small><time dateTime={game.localDate!}>{game.localDate}</time> · {internationalRoundNames[game.round]}</small>
-            <strong>{internationalTeamNames.get(game.awayTeamId!)} {game.result!.awayRuns} − {game.result!.homeRuns} {internationalTeamNames.get(game.homeTeamId!)}</strong></span>
-        </li>)}</ol>
+        <ol className="row-list">{edition.games.map(game => {
+          const detail = highlights.get(game.id);
+          return <li key={game.id} className="player-row">
+            <span className="player-row__body"><small><time dateTime={game.localDate!}>{game.localDate}</time> · {internationalRoundNames[game.round]}</small>
+              <strong>{internationalTeamNames.get(game.awayTeamId!)} {game.result!.awayRuns} − {game.result!.homeRuns} {internationalTeamNames.get(game.homeTeamId!)}</strong>
+              {detail && <>
+                <small>日本の本塁打 {detail.homeRuns.map(({ playerId, count }) => `${playerNames.get(playerId)} ${count}本`).join("、")}</small>
+                <small>勝利投手 {playerNames.get(detail.winningPitcherId)}</small>
+              </>}
+            </span>
+          </li>;
+        })}</ol>
         {batting.length > 0 && <details className="advanced-disclosure">
           <summary>打撃成績 · {batting.length}人</summary>
           <ul className="row-list">{batting.map(row => <li key={row.playerId} className="player-row">
@@ -53,12 +66,18 @@ export function InternationalGameEntry({ expanded, onToggle, selected, onSelect 
           </li>)}</ul>
         </details>}
         {roster && edition.participation.length > 0 && <details className="advanced-disclosure"><summary>代表に選ばれた選手 · {edition.participation.length}人</summary>
-          <p className="inline-note">{formatDate(roster.announcedAsOf, true)}時点の発表。大会での登録・出場は未収録です。</p>
+          <p className="inline-note">{formatDate(roster.announcedAsOf, true)}時点の発表。{highlights.size
+            ? "登録名簿と全出場記録は未収録です。" : "大会での登録・出場は未収録です。"}</p>
           {[...positions].map(position => <div key={position}><h4>{position}</h4>
             <p>{roster.players.filter(player => player.position === position).map(player => player.name).join("、")}</p></div>)}
         </details>}
         <details className="source-note"><summary>収録範囲・出典</summary><p>日本戦の確定スコアを抜粋。左がビジター、右がホームです。
           Wikipediaの執筆者による記録を抜粋・翻訳・整形し、<a href={resultLicense}>CC BY-SA 4.0</a>で提供しています。</p>
+          {tournament.kind === "apbc" && highlights.size > 0 && <>
+            <p>日本の本塁打と勝利投手、大会MVPを収録。大会通算の打撃・投球成績は未収録です。</p>
+            <div className="hub-links">{[...apbc2026OfficialBoxes].map(([date, url]) =>
+              <a key={date} href={url}>{formatDate(date, true)}の公式試合記録</a>)}</div>
+          </>}
           {statsCoverage?.status === "partial" && <p>日本代表の大会通算成績から打撃・投球の一部指標を収録。試合ごとの出場記録は未収録です。
             {statsCoverage.source.sourceRevisionId === wbc2023JapanStatsRevision && <> WBC公式の
               <a href={wbc2023JapanStatsVerification.batting}>打撃成績</a>・<a href={wbc2023JapanStatsVerification.pitching}>投球成績</a>でも確認できます。</>}

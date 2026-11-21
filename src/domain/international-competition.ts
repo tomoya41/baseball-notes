@@ -92,6 +92,11 @@ const tournamentPlayerStat = z.discriminatedUnion("role", [
   playerStat.extend({ role: z.literal("batting"), atBats: runs, hits: runs, homeRuns: runs, runsBattedIn: runs }),
   playerStat.extend({ role: z.literal("pitching"), outs: runs, runsAllowed: runs, earnedRuns: runs, strikeouts: runs.nullable() }),
 ]);
+const gameHighlights = z.strictObject({
+  gameId, teamId, source: sourceReference, winningPitcherId: playerId,
+  homeRuns: z.array(z.strictObject({ playerId, count: z.number().int().positive() })).min(1),
+});
+const tournamentMvp = z.strictObject({ teamId, playerId, source: sourceReference });
 const personIdentifier = z.discriminatedUnion("method", [
   z.strictObject({ method: z.literal("shared_player_identifier"), authorityId: organizationId, value: label }),
   z.strictObject({ method: z.literal("birth_date_and_affiliation"), birthDate: z.iso.date(), affiliationId: label }),
@@ -124,8 +129,11 @@ export const internationalTournamentEvidenceSchema = z.strictObject({
   sources: z.array(sourceRevision), identities: z.array(identity),
   games: z.array(internationalGameSchema), participation: z.array(internationalParticipationSchema),
   playerStats: z.array(tournamentPlayerStat).default([]),
+  gameHighlights: z.array(gameHighlights).default([]),
+  tournamentMvp: tournamentMvp.optional(),
   coverage: z.strictObject({ schedule: coverage, results: coverage, selections: coverage,
-    registrations: coverage, appearances: coverage, playerStats: z.discriminatedUnion("status", [uncollected, partialCoverage]) }),
+    registrations: coverage, appearances: coverage, playerStats: z.discriminatedUnion("status", [uncollected, partialCoverage]),
+    gameHighlights: z.discriminatedUnion("status", [uncollected, partialCoverage]).default({ status: "uncollected" }) }),
   corrections: z.array(z.strictObject({
     supersedesRevision: z.number().int().positive(), recordedAt: z.iso.datetime(), reason: label, source: sourceReference,
   })),
@@ -182,6 +190,34 @@ export const internationalTournamentEvidenceSchema = z.strictObject({
     if (participationIds.has(uniqueKey) || invalidAppearance || record.tournamentId !== edition.tournamentId || !approved.has(record.source.sourceRevisionId))
       context.addIssue({ code: "custom", path: ["participation", index], message: "Participation requires a unique record, admitted evidence and, for an appearance, a played game" });
     participationIds.add(uniqueKey);
+  }
+  const affiliatedPlayers = new Set(edition.participation.map(record => `${record.teamId}|${record.playerId}`));
+  const highlightedGames = new Set<string>();
+  const highlightsCoverage = edition.coverage.gameHighlights;
+  if (highlightsCoverage.status === "uncollected" ? edition.gameHighlights.length !== 0 :
+    !edition.gameHighlights.length || !approved.has(highlightsCoverage.source.sourceRevisionId)) {
+    context.addIssue({ code: "custom", path: ["coverage", "gameHighlights"], message: "Collected highlights require an admitted coverage source" });
+  }
+  for (const [index, row] of edition.gameHighlights.entries()) {
+    const game = games.get(row.gameId);
+    const sides = game?.status === "final" && game.result && (game.homeTeamId === row.teamId
+      ? [game.result.homeRuns, game.result.awayRuns] as const
+      : game.awayTeamId === row.teamId ? [game.result.awayRuns, game.result.homeRuns] as const : null);
+    const hitters = new Set(row.homeRuns.map(record => record.playerId));
+    if (!sides || sides[0] <= sides[1] || highlightedGames.has(row.gameId) ||
+      highlightsCoverage.status !== "partial" || !inScope(highlightsCoverage.scope, row.teamId) ||
+      !approved.has(row.source.sourceRevisionId) || !affiliatedPlayers.has(`${row.teamId}|${row.winningPitcherId}`) ||
+      hitters.size !== row.homeRuns.length || row.homeRuns.reduce((count, record) => count + record.count, 0) > sides[0] ||
+      row.homeRuns.some(record => !affiliatedPlayers.has(`${row.teamId}|${record.playerId}`))) {
+      context.addIssue({ code: "custom", path: ["gameHighlights", index], message: "Highlights require a final win, admitted evidence and valid player events for the winning team" });
+    }
+    highlightedGames.add(row.gameId);
+  }
+  const mvp = edition.tournamentMvp;
+  if (mvp && (!approved.has(mvp.source.sourceRevisionId) ||
+    !affiliatedPlayers.has(`${mvp.teamId}|${mvp.playerId}`) || !edition.games.some(game =>
+      game.round === "final" && game.status === "final" && (game.homeTeamId === mvp.teamId || game.awayTeamId === mvp.teamId)))) {
+    context.addIssue({ code: "custom", path: ["tournamentMvp"], message: "Tournament MVP requires admitted evidence for a player on a finalist team" });
   }
   const coverageUnits = { schedule: "scheduled_game", results: "final_game", selections: "selected_player",
     registrations: "registered_player", appearances: "player_game_appearance" } as const;

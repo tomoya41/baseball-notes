@@ -15,6 +15,7 @@ import { GameHeading } from "./signature";
 import { GameBoxScore, GameJumpNav } from "./game-box-score";
 import { NpbGamePlayerLink } from "./npb-game-player-link";
 import japanPin from "../data/npb-japan-series-release.json";
+import { npbOfficialBoxLinks } from "../data/npb-official-box-links";
 import type { Services } from "../app/services";
 import { GameRecap, GameTeamLinks, NpbGamePreview } from "./game-story";
 import type { FavoriteActions } from "./team-favorite";
@@ -40,6 +41,11 @@ const pitchingDetails = [{ key: "bf", label: "BF" }, { key: "hits", label: "被�
   { key: "homeRuns", label: "被本塁打" }, { key: "strikeouts", label: "奪三振" },
   { key: "runs", label: "失点" }, { key: "earnedRuns", label: "自責点" },
   { key: "pitchCount", label: "投球数" }, { key: "walksAndHitByPitch", label: "四死" }] as const;
+
+function OfficialBoxLink({ gameId, date, status }: Pick<NpbGameDetail, "gameId" | "date" | "status">) {
+  const url = status === "final" ? npbOfficialBoxLinks.get(`${gameId}|${date}`) : undefined;
+  return url ? <a className="section-action" href={url} target="_blank" rel="noopener noreferrer">NPB公式の投打成績を開く ↗</a> : null;
+}
 
 export function NpbGameDetailView({ payload, state, services, actions, selectedSide, onSideChange, scheduleTeam, dateHint, resultCheckFailed = false }: {
   payload: NpbGameDetail | null; state: DetailState; services?: Services; actions?: FavoriteActions;
@@ -88,7 +94,10 @@ export function NpbGameDetailView({ payload, state, services, actions, selectedS
       {payload.completeness === "partial" || payload.completeness === "failed" ?
         "一部の成績を取得できていません。" : "この試合の成績収集完了を確認できていません。"}</p>}
     {hasBox && (hasPlayerRows ? <GameBoxScore away={{name:payload.away.shortName,content:renderTeam("away")}} home={{name:payload.home.shortName,content:renderTeam("home")}} {...selectedSide ? {selectedSide} : {}} {...onSideChange ? {onSideChange} : {}} /> :
-      <section className="game-box-score" data-game-section="box" tabIndex={-1}><h2>スコアのみ収録</h2><p>出場選手・個人成績は未収録です。</p></section>)}
+      <section className="game-box-score" data-game-section="box" tabIndex={-1}>
+        <h2>スコアのみ収録</h2><p>出場選手・個人成績は未収録です。</p>
+        <OfficialBoxLink gameId={payload.gameId} date={payload.date} status={payload.status} />
+      </section>)}
     {hasBox && <DailyMvp date={payload.date} current={payload} repository={services?.gameSurface}/>}
   </div>;
 }
@@ -120,6 +129,7 @@ export function PublishedGameSummaryView({ summary, retry, scheduleTeam, resultC
     </>}
     <div className="home-section">
       {!unplayed && <><h2>選手成績</h2><p>{resultConfirmed ? "個人成績は未確認です。" : game.status === "final" ? "この試合の個人成績は現在取得できません。" : "個人成績の取得状況を確認できません。"}</p></>}
+      <OfficialBoxLink gameId={game.gameId} date={game.date} status={game.status} />
       <button className="button button--secondary" disabled={retrying} onClick={retry}>{retrying ? "試合詳細を確認中" : "試合詳細を再読み込み"}</button>
     </div>
     <nav className="row-list" aria-label="球団の選手を探す">{[game.away, game.home].map(team =>
