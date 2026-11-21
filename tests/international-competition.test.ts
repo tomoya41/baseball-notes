@@ -211,3 +211,27 @@ it("preserves the 2026 WBC selection snapshot without fabricating registration o
   expect(wbc.identities).toEqual([]);
   expect(japanResultsByTournament.has("international:tournament:exhibition:2027:taipei")).toBe(false);
 });
+
+it("admits APBC home runs and winning pitchers independently of full player statistics", () => {
+  const apbc = japanResultsByTournament.get(tournamentId)!;
+  const highlights = apbc.gameHighlights;
+  expect(highlights.map(row => row.homeRuns.reduce((sum, event) => sum + event.count, 0))).toEqual([3, 4, 3, 2]);
+  expect(highlights.map(row => row.winningPitcherId)).toEqual([4977707, 4847158, 4847462, 4251765].map(pageId => `international:player:jawiki:${pageId}`));
+  expect(apbc.tournamentMvp?.playerId).toBe("international:player:jawiki:4980856");
+  expect(apbc.coverage.gameHighlights.status).toBe("partial");
+  expect(apbc.coverage.playerStats.status).toBe("uncollected");
+  expect(apbc.coverage.appearances.status).toBe("uncollected");
+  const pending = { ...apbc.games[0]!, status: "scheduled", result: null };
+  const first = highlights[0]!;
+  for (const change of [
+    { gameHighlights: [first, first] },
+    { coverage: { ...apbc.coverage, gameHighlights: uncollected } },
+    { gameHighlights: [{ ...first, source: { ...first.source, sourceRevisionId: "unknown" } }] },
+    { gameHighlights: [{ ...first, teamId: opponentId }] },
+    { gameHighlights: [{ ...first, winningPitcherId: "international:player:unknown" }] },
+    { gameHighlights: [{ ...first, homeRuns: [{ ...first.homeRuns[0]!, count: 6 }] }] },
+    { gameHighlights: [{ ...first, homeRuns: [first.homeRuns[0], first.homeRuns[0]] }] },
+    { games: [pending, ...apbc.games.slice(1)] },
+    { tournamentMvp: { ...apbc.tournamentMvp!, playerId: "international:player:unknown" } },
+  ]) expect(internationalTournamentEvidenceSchema.safeParse({ ...apbc, ...change }).success).toBe(false);
+});

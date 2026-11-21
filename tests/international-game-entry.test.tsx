@@ -36,6 +36,11 @@ it("opens real official tournament links alongside the domestic Games route with
     expect(entry.open).toBe(true);
     expect(entry.textContent).toContain("日本代表の結果 · 4試合");
     expect(entry.textContent).toContain("韓国 1 − 5 日本");
+    expect(entry.textContent).toContain("大会MVP 宗山塁");
+    const row = entry.querySelector("ol.row-list > li:last-child");
+    expect(row?.textContent).toContain("日本の本塁打 西川史礁 1本、正木智也 1本");
+    expect(row?.textContent).toContain("勝利投手 髙橋宏斗");
+    expect(entry.querySelector('.source-note a[href$="20261115_2/"]')).not.toBeNull();
     expect(entry.textContent).toContain("代表に選ばれた選手 · 28人");
     expect(entry.textContent).toContain("宗山塁");
     expect(entry.querySelector('a[href*="/NPB/players/"]')).toBeNull();
@@ -51,6 +56,7 @@ it("opens real official tournament links alongside the domestic Games route with
     expect(entry.querySelectorAll("ol.row-list > li")).toHaveLength(7);
     expect(entry.textContent).toContain("アメリカ 2 − 3 日本");
     expect(entry.textContent).not.toContain("宗山塁");
+    expect(entry.textContent).not.toContain("勝利投手");
     expect(entry.textContent).toContain("打撃成績 · 16人");
     expect(entry.textContent).toContain("投球成績 · 14人");
     expect(entry.textContent).toContain("防御率 1.86 · 9回 2/3");
