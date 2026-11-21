@@ -6,19 +6,23 @@ export type DirectoryReader = { findLatestNpb(): Promise<NpbPlayerDirectory> };
 export type DirectoryState = "loading" | "ready" | "error";
 
 export function useNpbPlayerDirectory(repository: DirectoryReader, enabled = true) {
-  const [result, setResult] = useState<{ directory: NpbPlayerDirectory | null; state: DirectoryState; checkedRevision: number }>({
-    directory: null, state: "loading", checkedRevision: 0,
-  });
   const revision = usePublicDataRevalidation(enabled);
+  const [attempt, setAttempt] = useState(0);
+  const [result, setResult] = useState<{ directory: NpbPlayerDirectory | null; state: DirectoryState; checkedRevision: number; completedAttempt: number }>({
+    directory: null, state: "loading", checkedRevision: 0, completedAttempt: 0,
+  });
 
   useEffect(() => {
     if (!enabled) return;
     let active = true;
     void repository.findLatestNpb().then(value => {
-      if (active) setResult({ directory: value, state: "ready", checkedRevision: revision });
-    }).catch(() => { if (active) setResult(previous => ({ ...previous, state: "error" })); });
+      if (active) setResult({ directory: value, state: "ready", checkedRevision: revision + attempt, completedAttempt: attempt });
+    }).catch(() => {
+      if (active) setResult(previous => ({ ...previous, state: "error", completedAttempt: attempt }));
+    });
     return () => { active = false; };
-  }, [repository, enabled, revision]);
+  }, [repository, enabled, revision, attempt]);
 
-  return result;
+  const { directory, state, checkedRevision, completedAttempt } = result;
+  return { directory, state, checkedRevision, retrying: completedAttempt !== attempt, retry: () => setAttempt(value => value + 1) };
 }
