@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import { internationalOfficialTournaments } from "../src/data/international-official-links";
-import { japanGameAppearances, japanResultsByTournament, japanSelectionsByTournament } from "../src/data/international-japan-results";
+import { japanGameAppearances, japanPlayerTournamentStats, japanResultsByTournament, japanSelectionsByTournament } from "../src/data/international-japan-results";
 import { apbc2026Batteries, apbc2026BatteryRevision } from "../src/data/apbc-2026-battery-appearances";
 import npbProfileIdentities from "../src/data/npb-free-profile-identities.json";
 import { savedGameMvpInputs } from "../src/domain/daily-mvp";
@@ -181,7 +181,8 @@ it("admits separate WBC batting and pitching totals, with exact counts and missi
   expect(pitching.find(row => row.name === "髙橋宏斗")?.strikeouts).toBeNull();
   expect(pitching.find(row => row.name === "大谷翔平")?.playerId).toBe(batting.find(row => row.name === "大谷翔平")?.playerId);
   expect(wbc.participation).toEqual([]);
-  expect(wbc.identities).toEqual([]);
+  expect(wbc.identities).toHaveLength(18);
+  expect(wbc.identities.some(row => row.playerId === "international:player:jawiki:5145471")).toBe(false);
   expect(wbc.coverage.appearances.status).toBe("uncollected");
 
   const row = batting[0]!;
@@ -282,7 +283,7 @@ it("admits Premier12 Japan totals with the final included and preserves the evid
   const batting = premier.playerStats.filter(row => row.role === "batting");
   const pitching = premier.playerStats.filter(row => row.role === "pitching");
   expect(premier.games).toHaveLength(9);
-  expect(premier.editionRevision).toBe(2);
+  expect(premier.editionRevision).toBe(3);
   expect(batting).toHaveLength(15);
   expect(pitching).toHaveLength(13);
   expect(batting.reduce((sum, row) => sum + row.atBats, 0)).toBe(302);
@@ -299,7 +300,29 @@ it("admits Premier12 Japan totals with the final included and preserves the evid
   expect(premier.coverage.playerStats).toMatchObject({ status: "partial", scope: { kind: "team", teamId: "international:team:jpn" } });
   expect(premier.coverage.appearances.status).toBe("uncollected");
   expect(premier.participation).toEqual([]);
-  expect(premier.identities).toEqual([]);
+  expect(premier.identities).toHaveLength(28);
+  expect(premier.corrections).toMatchObject([{ supersedesRevision: 2,
+    source: { sourceRevisionId: "111780580", sourceRecordId: "投手成績/清水達也 (投手)" } }]);
+  expect(premier.playerStats.some(row => row.playerId === "international:player:jawiki:3750787")).toBe(false);
+});
+
+it.each(["international:tournament:premier12:2024", "international:tournament:wbc:2023"])(
+  "connects admitted tournament totals in %s without inferring individual game appearances", id => {
+    const edition = japanResultsByTournament.get(id)!;
+    for (const identity of edition.identities) {
+      const stats = edition.playerStats.filter(row => row.playerId === identity.playerId);
+      expect(stats.length).toBeGreaterThan(0);
+      expect(japanPlayerTournamentStats(identity.canonicalPlayerId).filter(row => row.tournamentId === id)).toEqual(stats);
+      expect(japanGameAppearances(identity.canonicalPlayerId).some(row => row.tournamentId === id)).toBe(false);
+    }
+  },
+);
+
+it("keeps the corrected Shimizu identity tied to the verified pitcher and preserves his zero earned runs", () => {
+  const [stats] = japanPlayerTournamentStats("64c9071f-f9df-4227-afb5-faee4fc73d0d");
+  expect(stats).toMatchObject({ tournamentId: "international:tournament:premier12:2024",
+    playerId: "international:player:jawiki:3750723", role: "pitching", gamesPlayed: 4, outs: 12, earnedRuns: 0, strikeouts: 6 });
+  expect(japanPlayerTournamentStats("unknown-player")).toEqual([]);
 });
 
 it("admits APBC home runs and winning pitchers independently of full player statistics", () => {

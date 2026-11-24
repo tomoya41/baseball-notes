@@ -21,11 +21,12 @@ function InternationalPlayerRow({ name, npbPlayerId, children }: { name: string 
   </li>;
 }
 
-export function InternationalGameEntry({ expanded, onToggle, selected, onSelect }: {
+export function InternationalGameEntry({ expanded, onToggle, selected, onSelect, statRole }: {
   expanded: boolean;
   onToggle: (open: boolean) => void;
   selected: (typeof tournaments)[number] | undefined;
   onSelect: (id: string) => void;
+  statRole: "batting" | "pitching" | undefined;
 }) {
   const tournament = selected ?? tournaments[0]!;
   const edition = japanResultsByTournament.get(tournament.id);
@@ -92,23 +93,19 @@ export function InternationalGameEntry({ expanded, onToggle, selected, onSelect 
             </span>
           </li>;
         })}</ol>
-        {batting.length > 0 && <details className="advanced-disclosure">
+        {batting.length > 0 && <details className="advanced-disclosure" open={statRole === "batting"}>
           <summary>打撃成績 · {batting.length}人</summary>
-          <ul className="row-list">{batting.map(row => <li key={row.playerId} className="player-row">
-            <span className="player-row__body"><strong>{row.name}</strong>
+          <ul className="row-list">{batting.map(row => <InternationalPlayerRow key={row.playerId} name={row.name} npbPlayerId={npbPlayers.get(row.playerId)}>
               <small>打率 {formatMetric(ratio(row.hits, row.atBats), metrics.avg!)} · {row.atBats}打数{row.hits}安打</small>
               <small>{row.gamesPlayed}試合 · {row.homeRuns}本塁打 · {row.runsBattedIn}打点</small>
-            </span>
-          </li>)}</ul>
+          </InternationalPlayerRow>)}</ul>
         </details>}
-        {pitching.length > 0 && <details className="advanced-disclosure">
+        {pitching.length > 0 && <details className="advanced-disclosure" open={statRole === "pitching"}>
           <summary>投球成績 · {pitching.length}人</summary>
-          <ul className="row-list">{pitching.map(row => <li key={row.playerId} className="player-row">
-            <span className="player-row__body"><strong>{row.name}</strong>
+          <ul className="row-list">{pitching.map(row => <InternationalPlayerRow key={row.playerId} name={row.name} npbPlayerId={npbPlayers.get(row.playerId)}>
               <small>防御率 {formatMetric(ratio(row.earnedRuns * 27, row.outs), metrics.era!)} · {innings(row.outs)}</small>
               <small>{row.gamesPlayed}登板 · {row.strikeouts === null ? "奪三振は未収録" : `${row.strikeouts}奪三振`}</small>
-            </span>
-          </li>)}</ul>
+          </InternationalPlayerRow>)}</ul>
         </details>}
         {outings.size > 0 && <details className="advanced-disclosure">
           <summary>登板・投球回 · {outings.size}人</summary>

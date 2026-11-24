@@ -80,7 +80,9 @@ it("opens real official tournament links alongside the domestic Games route with
     expect(entry.textContent).not.toContain("宗山塁");
     expect(entry.textContent).not.toContain("勝利投手");
     expect(entry.textContent).not.toContain("登板・投球回");
-    expect(entry.querySelector('a[href*="/NPB/players/"]')).toBeNull();
+    const formerWbcLinks = [...entry.querySelectorAll('a[href*="/NPB/players/"]')];
+    expect(formerWbcLinks).toHaveLength(18);
+    expect(formerWbcLinks.some(link => link.textContent?.includes("大谷翔平"))).toBe(false);
     expect(entry.textContent).toContain("打撃成績 · 16人");
     expect(entry.textContent).toContain("投球成績 · 14人");
     expect(entry.textContent).toContain("防御率 1.86 · 9回 2/3");
@@ -140,7 +142,10 @@ it("opens real official tournament links alongside the domestic Games route with
     expect(entry.textContent).toContain("6登板 · 12奪三振");
     expect(entry.querySelector('.source-note a[href$="oldid=111780580"]')).not.toBeNull();
     expect(entry.querySelector('.source-note a[href$="20241124_1/table.html"]')).not.toBeNull();
-    expect(entry.querySelector('a[href*="/NPB/players/"]')).toBeNull();
+    const premierLinks = [...entry.querySelectorAll('a[href*="/NPB/players/"]')];
+    expect(premierLinks).toHaveLength(28);
+    expect(premierLinks.find(link => link.textContent?.includes("清水達也"))?.getAttribute("href"))
+      .toBe("/NPB/players/64c9071f-f9df-4227-afb5-faee4fc73d0d");
     await act(async () => internationalButton.click());
     await openTournament("international:tournament:exhibition:2027:taipei");
     expect(entry.textContent).toContain("2027年3月6・7日、台北ドームで開催予定。");

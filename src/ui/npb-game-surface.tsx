@@ -54,6 +54,7 @@ export function NpbScheduleScreen({repository,favorites=[],toggle,saving=false}:
   const [attempt,setAttempt]=useState(0);
   const internationalOpen = params.get("view") === "international";
   const internationalTournament = internationalOpen ? internationalTournamentIn(params) : undefined;
+  const statRole = params.get("statRole");
   const setInternationalOpen = (open: boolean) => {
     if (open === internationalOpen) return;
     const next = new URLSearchParams(params);
@@ -61,6 +62,7 @@ export function NpbScheduleScreen({repository,favorites=[],toggle,saving=false}:
     else {
       next.delete("view");
       next.delete("tournament");
+      next.delete("statRole");
     }
     setParams(next);
   };
@@ -68,6 +70,7 @@ export function NpbScheduleScreen({repository,favorites=[],toggle,saving=false}:
     const next = new URLSearchParams(params);
     next.set("view", "international");
     next.set("tournament", id);
+    next.delete("statRole");
     setParams(next);
   };
   const revision = usePublicDataRevalidation();
@@ -126,7 +129,8 @@ export function NpbScheduleScreen({repository,favorites=[],toggle,saving=false}:
         onClick={() => setInternationalOpen(!internationalOpen)}>侍ジャパン</button>
     </nav>
     <InternationalGameEntry expanded={internationalOpen} onToggle={setInternationalOpen}
-      selected={internationalTournament} onSelect={selectInternationalTournament}/>
+      selected={internationalTournament} onSelect={selectInternationalTournament}
+      statRole={internationalTournament && (statRole === "batting" || statRole === "pitching") ? statRole : undefined}/>
     <p className="game-collection-scope">{manifest ? `${manifest.effectiveDate}までの保存済みデータ` : "保存済みの公式戦を確認"}<Link to="/NPB/preseason">オープン戦 · 未収録</Link></p>
     {manifest&&date&&!outsideRange&&<DateRibbon date={date} min={manifest.from} max={manifest.to} onChange={change} />}
     {team&&<div className="game-collection-scope"><strong>{npbTeamShortName(team)}の試合</strong><Link to={`/NPB/schedule${unfiltered.size?`?${unfiltered}`:""}`}>すべての球団を表示</Link></div>}
