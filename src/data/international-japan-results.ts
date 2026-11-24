@@ -1,5 +1,6 @@
 import type { z } from "zod";
 import { internationalTournamentEvidenceSchema } from "../domain/international-competition";
+import { apbc2026BatteryAppearances, apbc2026BatteryRevision } from "./apbc-2026-battery-appearances";
 import { apbc2026Id, apbcIdentities, apbcIdentitySources } from "./apbc-2026-player-identities";
 import { apbcSelections } from "./apbc-2026-selections";
 import { apbc2026Highlights, apbc2026Mvp } from "./apbc-2026-highlights";
@@ -61,7 +62,10 @@ function edition(tournamentId: string, rows: readonly ResultRow[], stats?: Japan
     competition: "international", playerId: `international:player:jawiki:${pageId}`, source: { sourceRevisionId: stats.revision,
       sourceRecordId: `${row.role === "batting" ? "野手成績" : "投手成績"}/${row.name}` } })) ?? [];
   const apbc = tournamentId === apbc2026Id;
-  if (apbc) sources.push(...apbcIdentitySources);
+  if (apbc) sources.push(...apbcIdentitySources, {
+    ...sources[0]!, id: apbc2026BatteryRevision, sourceId: "jawiki", publisherId: "japanese-wikipedia",
+    version: apbc2026BatteryRevision, url: `https://ja.wikipedia.org/w/index.php?oldid=${apbc2026BatteryRevision}`, verifiedAt: "2026-11-24T12:27:00Z",
+  });
   const wbc2026 = tournamentId === "international:tournament:wbc:2026";
   const gameHighlights = apbc ? apbc2026Highlights : wbc2026 ? wbc2026JapanHighlights : [];
   const highlightSource = gameHighlights[0]?.source;
@@ -74,8 +78,12 @@ function edition(tournamentId: string, rows: readonly ResultRow[], stats?: Japan
     return [...players].map(playerId => ({ kind: "appeared", competition: "international", tournamentId, teamId: japan,
       playerId, gameId: highlight.gameId, date: gameDates.get(highlight.gameId), source: highlight.source }));
   });
+  if (apbc) {
+    const present = new Set(appearances.map(row => `${row.gameId}|${row.playerId}`));
+    appearances.push(...apbc2026BatteryAppearances.filter(row => !present.has(`${row.gameId}|${row.playerId}`)));
+  }
   return internationalTournamentEvidenceSchema.parse({ tournamentId,
-    editionRevision: wbc2026 || apbc ? 4 : stats ? 2 : 1, sources, games, playerStats,
+    editionRevision: apbc ? 5 : wbc2026 ? 4 : stats ? 2 : 1, sources, games, playerStats,
     gameHighlights, tournamentMvp: apbc ? apbc2026Mvp : undefined,
     identities: apbc ? apbcIdentities : [], participation: [...selections, ...appearances], corrections: [], coverage: { results: partial, schedule: empty,
       selections: roster ? { ...partial, source: { sourceRevisionId: roster.revision, sourceRecordId: "代表選手" } } : empty,

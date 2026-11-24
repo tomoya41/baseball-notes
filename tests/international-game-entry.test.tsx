@@ -42,8 +42,12 @@ it("opens real official tournament links alongside the domestic Games route with
     expect(row?.textContent).toContain("勝利投手 髙橋宏斗");
     expect(entry.querySelector('.source-note a[href$="20261115_2/"]')).not.toBeNull();
     expect(entry.textContent).toContain("代表に選ばれた選手 · 28人");
-    expect(entry.textContent).toContain("出場を確認した選手 · 9人");
+    expect(entry.textContent).toContain("出場を確認した選手 · 20人");
     expect(entry.textContent).toContain("宗山塁");
+    const appearanceSection = [...entry.querySelectorAll("details")].find(details =>
+      details.querySelector("summary")?.textContent?.startsWith("出場を確認した選手"));
+    expect(appearanceSection?.textContent).toContain("中森俊介");
+    expect(appearanceSection?.textContent).toContain("進藤勇也");
     const appearanceLinks = [...entry.querySelectorAll('a[href*="/NPB/players/"]')];
     expect(appearanceLinks).toHaveLength(9);
     expect(appearanceLinks.find(link => link.textContent?.includes("宗山塁"))?.getAttribute("href"))
