@@ -8,7 +8,7 @@ const decisions: Record<string, string> = { 勝: "勝利投手", 敗: "敗戦投
 export function JapanSeriesBoxScoreTables({ box }: { box: JapanSeriesBoxScore }) {
   const hasUncollected = box.teams.some(team =>
     team.batting.some(row => row.atBats === null) || team.pitching.some(row => row.strikeouts === null));
-  return <section className="box-primary" aria-labelledby="japan-box-score-title">
+  return <section className="box-primary japan-series-box-score" aria-labelledby="japan-box-score-title">
     <h2 id="japan-box-score-title">個人成績</h2>
     {hasUncollected && <p className="inline-note">「—」は、出典間で値が一致せず未収録の項目です。</p>}
     {box.teams.map(team => {
