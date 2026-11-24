@@ -307,11 +307,10 @@ it("admits APBC home runs and winning pitchers independently of full player stat
   ]) expect(internationalTournamentEvidenceSchema.safeParse({ ...apbc, ...change }).success).toBe(false);
 });
 
-it("links only the nine APBC confirmed participants to their existing NPB IDs with independent evidence", () => {
+it("links all twenty APBC confirmed participants to existing NPB IDs with independent evidence", () => {
   const apbc = japanResultsByTournament.get(tournamentId)!;
-  const appeared = new Set(apbc.participation.filter(row => row.kind === "appeared"
-    && row.source.sourceRevisionId !== apbc2026BatteryRevision).map(row => row.playerId));
-  expect(appeared.size).toBe(9);
+  const appeared = new Set(apbc.participation.filter(row => row.kind === "appeared").map(row => row.playerId));
+  expect(appeared.size).toBe(20);
   expect(new Set(apbc.identities.map(row => row.playerId))).toEqual(appeared);
   for (const row of apbc.identities) {
     expect(row.league).toBe("NPB");
@@ -327,9 +326,9 @@ it("links only the nine APBC confirmed participants to their existing NPB IDs wi
     expect(japanGameAppearances(row.canonicalPlayerId)).toEqual([{ tournamentId, confirmedGames:
       apbc.participation.filter(record => record.kind === "appeared" && record.playerId === row.playerId).length }]);
   }
-  // 武内夏暉's appearance has evidence but this release adds no NPB identity bridge for it.
-  expect(apbc.participation.map(row => [row.playerId, row.kind])).toContainEqual(["international:player:jawiki:4832529", "appeared"]);
-  expect(japanGameAppearances("6c571e31-d07d-4cb5-9c1c-a9ea83a653e5")).toEqual([]);
+  expect(japanGameAppearances("6c571e31-d07d-4cb5-9c1c-a9ea83a653e5")).toEqual([{ tournamentId, confirmedGames: 1 }]);
+  expect(apbc.participation.map(row => [row.playerId, row.kind])).toContainEqual(["international:player:jawiki:4989618", "selected"]);
+  expect(japanGameAppearances("fe036654-2cac-480e-b2ef-80f2cb2fb479")).toEqual([]);
   expect(apbc.playerStats).toEqual([]);
   expect(apbc.coverage.appearances.status).toBe("partial");
 });

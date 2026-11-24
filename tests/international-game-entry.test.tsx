@@ -49,9 +49,11 @@ it("opens real official tournament links alongside the domestic Games route with
     expect(appearanceSection?.textContent).toContain("中森俊介");
     expect(appearanceSection?.textContent).toContain("進藤勇也");
     const appearanceLinks = [...entry.querySelectorAll('a[href*="/NPB/players/"]')];
-    expect(appearanceLinks).toHaveLength(9);
+    expect(appearanceLinks).toHaveLength(20);
     expect(appearanceLinks.find(link => link.textContent?.includes("宗山塁"))?.getAttribute("href"))
       .toBe("/NPB/players/b6286dd6-cf1f-45b8-87e2-95433f8aadb0");
+    expect(appearanceLinks.find(link => link.textContent?.includes("武内夏暉"))?.getAttribute("href"))
+      .toBe("/NPB/players/6c571e31-d07d-4cb5-9c1c-a9ea83a653e5");
     expect(entry.querySelector('details.source-note details.source-note a[href*="chadwickbureau/register/tree/"]'))
       .not.toBeNull();
     expect(entry.textContent).toContain("2026年11月12〜15日");
