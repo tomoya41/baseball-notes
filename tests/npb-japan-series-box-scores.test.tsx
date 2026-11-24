@@ -1,9 +1,16 @@
 import { renderToStaticMarkup } from "react-dom/server";
+import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it } from "vitest";
 import release from "../src/data/npb-japan-series-box-scores.json";
-import { japanSeriesBoxScore, type JapanSeriesBoxScore } from "../src/data/npb-japan-series-box-scores";
-import { JapanSeriesBoxScoreTables } from "../src/ui/japan-series-box-score";
+import identities from "../src/data/npb-japan-series-player-links.json";
+import npbRegistry from "../src/data/npb-free-profile-identities.json";
+import { admittedJapanSeriesScopes, japanSeriesBoxScore, japanSeriesPlayerGames, japanSeriesPlayerId, type JapanSeriesBoxScore } from "../src/data/npb-japan-series-box-scores";
+import { JapanSeriesBoxScoreTables, JapanSeriesPlayerBoxScores } from "../src/ui/japan-series-box-score";
 import { japanCompletedFixture } from "./fixtures/npb-japan-completed";
+
+function renderBox(box: JapanSeriesBoxScore) {
+  return renderToStaticMarkup(<MemoryRouter><JapanSeriesBoxScoreTables box={box} /></MemoryRouter>);
+}
 
 describe("2026 Japan Series box score admission", () => {
   it("keeps team sides, observed pitching outs, and the two withheld fields", () => {
@@ -46,14 +53,54 @@ describe("2026 Japan Series box score admission", () => {
   });
 
   it("uses accessible team disclosures and displays a withheld value separately from zero", () => {
-    const second = renderToStaticMarkup(<JapanSeriesBoxScoreTables box={release.boxes[1]!}/>);
+    const second = renderBox(release.boxes[1]!);
     expect(second).toContain("<summary>ソフトバンクの打撃</summary>");
     expect(second).toContain("<summary>DeNAの投球</summary>");
     expect(second).toContain("出典間で値が一致せず未収録");
     expect(second).toMatch(/山本祐大[\s\S]*?stat-table-content">—<\/span>/);
     expect(second).toContain('stat-table-content">0</span>');
-    const third = renderToStaticMarkup(<JapanSeriesBoxScoreTables box={release.boxes[2]!}/>);
+    const third = renderBox(release.boxes[2]!);
     expect(third).toContain("勝利投手");
     expect(third).toMatch(/ショーン・レイノルズ[\s\S]*?stat-table-content">1\.0[\s\S]*?stat-table-content">—<\/span>/);
+  });
+
+  it("links the 53 independently verified players and preserves the unlinked performance rows", () => {
+    expect(identities.boxSourceSha256).toBe(release.source.contentSha256);
+    expect(admittedJapanSeriesScopes).toHaveLength(53);
+    for (const identity of identities.players) {
+      const registryRecord = npbRegistry.find(row => row.playerId === identity.playerId);
+      expect(registryRecord?.npbId).toBe(identity.npbId);
+      expect(registryRecord?.verificationStatus).toBe("source_verified");
+      expect(registryRecord?.chadwick?.uuid).toBe(identity.chadwickId);
+    }
+    const linked = release.boxes.map(game => game.teams.reduce((count, t) => count +
+      t.batting.filter(row => japanSeriesPlayerId(t.teamId, "batting", row.name)).length +
+      t.pitching.filter(row => japanSeriesPlayerId(t.teamId, "pitching", row.name)).length, 0));
+    expect(linked).toEqual([42, 43, 30, 29]);
+    expect(japanSeriesPlayerId("npb:team:hawks", "batting", "正木智也")).toBe("2b2a8d97-2a6e-441c-9a33-0d79d2a7d147");
+    expect(japanSeriesPlayerId("npb:team:baystars", "batting", "正木智也")).toBeUndefined();
+    expect(japanSeriesPlayerId("npb:team:baystars", "pitching", "ショーン・レイノルズ")).toBeUndefined();
+    expect(renderBox(release.boxes[1]!)).toContain("role=pitching&amp;boxSide=home&amp;competition=postseason&amp;stage=japan_series");
+  });
+
+  it("returns only reviewed game rows for the player's role and preserves series context on the way back", () => {
+    const data = japanCompletedFixture().build();
+    for (const box of release.boxes) {
+      const result = data.results.find(r => r.gameId === box.gameId)!;
+      const game = data.series.games.find(g => g.gameId === box.gameId)!;
+      result.evidenceSha256 = box.resultEvidenceSha256;
+      game.awayRuns = box.awayRuns;
+      game.homeRuns = box.homeRuns;
+    }
+    const playerId = "2b2a8d97-2a6e-441c-9a33-0d79d2a7d147";
+    const games = japanSeriesPlayerGames(data, playerId, "batting");
+    expect(games.map(game => [game.box.gameNumber, game.side])).toEqual([[1, "away"], [2, "away"], [3, "home"], [4, "home"]]);
+    expect(japanSeriesPlayerGames(data, playerId, "pitching")).toEqual([]);
+    const table = renderToStaticMarkup(<MemoryRouter><JapanSeriesPlayerBoxScores games={games} playerId={playerId}
+      role="batting" preferredGameId={release.boxes[3]!.gameId} /></MemoryRouter>);
+    expect(table).toContain("boxSide=home&amp;competition=postseason&amp;stage=japan_series&amp;season=2026&amp;role=batting");
+    expect(table).toMatch(/<a\b[^>]*aria-current="true"[^>]*>第4戦/);
+    data.results[0]!.evidenceSha256 = "0".repeat(64);
+    expect(japanSeriesPlayerGames(data, playerId, "batting")).toHaveLength(3);
   });
 });
