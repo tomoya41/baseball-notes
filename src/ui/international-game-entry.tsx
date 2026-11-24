@@ -12,7 +12,7 @@ import { formatDate, formatMetric } from "../presentation/formatters";
 
 const innings = (outs: number) => formatMetric(ratio(outs, 1), metrics.outs!);
 
-function InternationalPlayerRow({ name, npbPlayerId, children }: { name?: string; npbPlayerId?: string; children: ReactNode }) {
+function InternationalPlayerRow({ name, npbPlayerId, children }: { name: string | undefined; npbPlayerId: string | undefined; children: ReactNode }) {
   const player = <><strong>{name}</strong>{children}</>;
   return <li className="player-row">
     {npbPlayerId ? <Link className="player-row__body international-player-link" to={`/NPB/players/${npbPlayerId}`}>

@@ -54,7 +54,9 @@ it("opens real official tournament links alongside the domestic Games route with
     expect(pitchingSection.textContent).toContain("日本戦4試合 · チーム計34回");
     const pitcherLinks = [...pitchingSection.querySelectorAll("a")];
     expect(pitcherLinks).toHaveLength(13);
-    expect(pitcherLinks.find(link => link.textContent?.includes("中森俊介"))?.textContent).toContain("1登板 · 0回11月13日 0回（アウトなし）");
+    const zeroOutPitcher = pitcherLinks.find(link => link.textContent?.includes("中森俊介"));
+    expect([...zeroOutPitcher!.querySelectorAll("small")].map(node => node.textContent))
+      .toEqual(["1登板 · 0回", "11月13日 0回（アウトなし）"]);
     expect(pitcherLinks.find(link => link.textContent?.includes("森田駿哉"))?.textContent).toContain("2登板 · 2回");
     const appearanceLinks = [...appearanceSection!.querySelectorAll('a[href*="/NPB/players/"]')];
     expect(appearanceLinks).toHaveLength(20);
