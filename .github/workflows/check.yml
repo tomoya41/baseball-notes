@@ -24,6 +24,8 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
+      - name: Test Android emulator transport diagnostics
+        run: bash scripts/test-android-emulator-smoke.sh
       - run: npm ci
       - run: npm run check
         env:
