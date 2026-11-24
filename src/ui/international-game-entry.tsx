@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { internationalOfficialTournaments as tournaments } from "../data/international-official-links";
+import { apbc2026BatteryRevision } from "../data/apbc-2026-battery-appearances";
 import { internationalTeamNames, internationalRoundNames, japanResultsByTournament, japanSelectionsByTournament, resultLicense } from "../data/international-japan-results";
 import { apbc2026OfficialBoxes } from "../data/apbc-2026-highlights";
 import { premier122024JapanStatsRevision, premier122024JapanStatsVerification } from "../data/premier12-2024-japan-stats";
@@ -20,8 +21,9 @@ export function InternationalGameEntry({ expanded, onToggle, selected, onSelect 
   const positions = new Set(roster?.players.map(player => player.position));
   const playerNames = new Map(roster?.players.map(player => [player.id, player.name]));
   const highlights = new Map(edition?.gameHighlights.map(game => [game.gameId, game]));
+  const apbc = tournament.kind === "apbc";
   const wbc2026 = tournament.kind === "wbc" && tournament.year === 2026;
-  const officialBoxes = wbc2026 ? wbc2026OfficialBoxes : tournament.kind === "apbc" ? apbc2026OfficialBoxes : undefined;
+  const officialBoxes = wbc2026 ? wbc2026OfficialBoxes : apbc ? apbc2026OfficialBoxes : undefined;
   const batting = edition?.playerStats.filter(row => row.role === "batting") ?? [];
   const pitching = edition?.playerStats.filter(row => row.role === "pitching") ?? [];
   const statsCoverage = edition?.coverage.playerStats;
@@ -38,6 +40,7 @@ export function InternationalGameEntry({ expanded, onToggle, selected, onSelect 
     dates.push(record.date);
     appearances.set(record.playerId, dates);
   }
+  for (const dates of appearances.values()) dates.sort();
 
   return <details className="advanced-disclosure" id="international-game-entry" data-international-entry open={expanded} onToggle={event => onToggle(event.currentTarget.open)}>
     <summary>侍ジャパン・国際試合</summary>
@@ -92,7 +95,7 @@ export function InternationalGameEntry({ expanded, onToggle, selected, onSelect 
         </details>}
         {appearances.size > 0 && <details className="advanced-disclosure">
           <summary>出場を確認した選手 · {appearances.size}人</summary>
-          <p className="inline-note">本塁打や勝敗投手の記録で確認できた試合のみ。日付は現地時間です。</p>
+          <p className="inline-note">{apbc ? "本塁打・登板・捕手の記録" : "本塁打や勝敗投手の記録"}で確認できた試合のみ。日付は現地時間です。</p>
           <ul className="row-list">{[...appearances].map(([id, dates]) => {
             const canonicalPlayerId = npbPlayers.get(id);
             const player = <><strong>{playerNames.get(id)}</strong><small>{dates.map(date => formatDate(date, true)).join("、")}</small></>;
@@ -119,6 +122,7 @@ export function InternationalGameEntry({ expanded, onToggle, selected, onSelect 
           </p>}
           {sources?.map(source => <p key={source.id}><a href={source.url}>{
             statsCoverage?.status === "partial" && statsCoverage.source.sourceRevisionId === source.id ? "日本語版の大会通算成績" :
+              source.id === apbc2026BatteryRevision ? "日本語版の登板・捕手の記録" :
               source.sourceId === "jawiki" ? "日本語版の代表選手" : "英語版の試合結果"
           }（版 {source.version}）</a></p>)}
           {identitySources?.length ? <details className="source-note">

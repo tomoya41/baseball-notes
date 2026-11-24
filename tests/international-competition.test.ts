@@ -1,6 +1,7 @@
 import { expect, it } from "vitest";
 import { internationalOfficialTournaments } from "../src/data/international-official-links";
 import { japanGameAppearances, japanResultsByTournament, japanSelectionsByTournament } from "../src/data/international-japan-results";
+import { apbc2026Batteries, apbc2026BatteryRevision } from "../src/data/apbc-2026-battery-appearances";
 import npbProfileIdentities from "../src/data/npb-free-profile-identities.json";
 import { savedGameMvpInputs } from "../src/domain/daily-mvp";
 import { playerGameBattingSchema, playerGamePitchingSchema } from "../src/domain/game-facts";
@@ -240,9 +241,10 @@ it("admits WBC Japan home runs and only the pitcher decision supported by each f
 it.each([
   ["international:tournament:apbc:2026", 9],
   ["international:tournament:wbc:2026", 11],
-])("derives only game appearances supported by a home run or decision in %s", (id, playerCount) => {
+])("preserves game appearances supported by a home run or decision in %s", (id, playerCount) => {
   const snapshot = japanResultsByTournament.get(id)!;
-  const appearances = snapshot.participation.filter(record => record.kind === "appeared");
+  const appearances = snapshot.participation.filter(record => record.kind === "appeared")
+    .filter(record => record.source.sourceRevisionId !== apbc2026BatteryRevision);
   expect(appearances).toHaveLength(14);
   expect(new Set(appearances.map(row => row.playerId)).size).toBe(playerCount);
   for (const row of appearances) {
@@ -305,10 +307,10 @@ it("admits APBC home runs and winning pitchers independently of full player stat
   ]) expect(internationalTournamentEvidenceSchema.safeParse({ ...apbc, ...change }).success).toBe(false);
 });
 
-it("links only the nine APBC confirmed participants to their existing NPB IDs with independent evidence", () => {
+it("links all twenty APBC confirmed participants to existing NPB IDs with independent evidence", () => {
   const apbc = japanResultsByTournament.get(tournamentId)!;
   const appeared = new Set(apbc.participation.filter(row => row.kind === "appeared").map(row => row.playerId));
-  expect(appeared.size).toBe(9);
+  expect(appeared.size).toBe(20);
   expect(new Set(apbc.identities.map(row => row.playerId))).toEqual(appeared);
   for (const row of apbc.identities) {
     expect(row.league).toBe("NPB");
@@ -324,9 +326,38 @@ it("links only the nine APBC confirmed participants to their existing NPB IDs wi
     expect(japanGameAppearances(row.canonicalPlayerId)).toEqual([{ tournamentId, confirmedGames:
       apbc.participation.filter(record => record.kind === "appeared" && record.playerId === row.playerId).length }]);
   }
-  // 武内夏暉 has a confirmed selection in this edition and no admitted game appearance.
-  expect(apbc.participation.map(row => [row.playerId, row.kind])).toContainEqual(["international:player:jawiki:4832529", "selected"]);
-  expect(japanGameAppearances("6c571e31-d07d-4cb5-9c1c-a9ea83a653e5")).toEqual([]);
+  expect(japanGameAppearances("6c571e31-d07d-4cb5-9c1c-a9ea83a653e5")).toEqual([{ tournamentId, confirmedGames: 1 }]);
+  expect(apbc.participation.map(row => [row.playerId, row.kind])).toContainEqual(["international:player:jawiki:4989618", "selected"]);
+  expect(japanGameAppearances("fe036654-2cac-480e-b2ef-80f2cb2fb479")).toEqual([]);
   expect(apbc.playerStats).toEqual([]);
   expect(apbc.coverage.appearances.status).toBe("partial");
+});
+
+it("admits APBC pitching and catching appearances from four reviewed batteries without duplicating highlights", () => {
+  const apbc = japanResultsByTournament.get(tournamentId)!;
+  const appearances = apbc.participation.filter(row => row.kind === "appeared");
+  const additions = appearances.filter(row => row.source.sourceRevisionId === apbc2026BatteryRevision);
+  expect(appearances).toHaveLength(31);
+  expect(new Set(appearances.map(row => row.playerId)).size).toBe(20);
+  expect(additions).toHaveLength(17);
+  expect(new Set(appearances.map(row => `${row.gameId}|${row.playerId}`)).size).toBe(31);
+  expect(apbc2026Batteries.map(row => row.pitchers.length)).toEqual([3, 6, 4, 3]);
+  expect(apbc2026Batteries.map(row => row.catchers.length)).toEqual([2, 1, 2, 1]);
+  const roster = japanSelectionsByTournament.get(tournamentId)!.players;
+  for (const battery of apbc2026Batteries) {
+    const playerId = (pageId: number) => `international:player:jawiki:${pageId}`;
+    for (const [ids, position] of [[battery.pitchers, "投手"], [battery.catchers, "捕手"]] as const) {
+      for (const id of ids) {
+        expect(roster.find(row => row.id === playerId(id))?.position).toBe(position);
+        expect(appearances.some(row => row.playerId === playerId(id) && row.date === battery.date)).toBe(true);
+      }
+    }
+  }
+  // 中森俊介 entered on 11/13 and recorded no outs; that still counts as appearing.
+  expect(additions).toContainEqual(expect.objectContaining({
+    playerId: "international:player:jawiki:4274936", date: "2026-11-13",
+  }));
+  expect(apbc.coverage).toMatchObject({
+    appearances: { status: "partial" }, registrations: { status: "uncollected" }, playerStats: { status: "uncollected" },
+  });
 });

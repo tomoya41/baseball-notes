@@ -59,6 +59,10 @@ APBC 2026の日本戦4試合、WBC 2023の7試合・2026の5試合、プレミ�
 
 出場記録は日本代表の一部収録。全出場、登録、出場なしの判定、大会通算指標、NPB・MLB選手IDとの結合は別管理とする。既存の選出記録と試合結果を維持し、APBCは第3版、WBC 2026は第4版に更新した。
 
+APBCの第4版で、日本語版Wikipediaの選手記事とChadwick Registerの `key_npb`、既存Directoryの本人照合を通った9人をNPBプロフィールへ接続した。記事固定版、Chadwickのコミット、資料のハッシュはデータとともに保持する。
+
+第5版では[日本語版Wikipediaの固定版111828931](https://ja.wikipedia.org/w/index.php?oldid=111828931)から日本戦4試合の投手・捕手を抜粋した。侍ジャパン公式の各試合のバッテリー欄で照合し、日本側投手のアウトは日付順に27・27・21・27。11月14日は7回コールド、11月13日の中森俊介は0アウトで降板した登板も含む。同一試合・選手を統合して20人・31件となり、新たに出場が確認できた11人も同じ方法で本人照合し、合計20人をNPBプロフィールに接続した。代表選出28人とスコアを保持する。全打者・個人成績・登録は引き続き別管理とする。[11月12日](https://www.japan-baseball.jp/jp/team/topteam/score/20261112_2/)・[13日](https://www.japan-baseball.jp/jp/team/topteam/score/20261113_2/)・[14日](https://www.japan-baseball.jp/jp/team/topteam/score/20261114_1/)・[15日](https://www.japan-baseball.jp/jp/team/topteam/score/20261115_2/)
+
 ## データ採用の再開条件
 
 - 大会ごとに取得、保存、加工、Web表示、Android表示、再配布を認める根拠とSourceの版を確認する。訂正時は旧版と出典を保持する。

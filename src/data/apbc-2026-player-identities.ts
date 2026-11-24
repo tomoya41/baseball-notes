@@ -6,6 +6,7 @@ type Source = Edition["sources"][number];
 
 export const apbc2026Id = "international:tournament:apbc:2026";
 const reviewedAt = "2026-11-24T12:19:00Z";
+const batteriesReviewedAt = "2026-11-24T12:34:00Z";
 const wikiLicense = "https://creativecommons.org/licenses/by-sa/4.0/";
 const chadwickRevision = "ba48ce101349a2156c7a5420f54d13e8ef3a4256";
 const chadwickArchiveSha256 = "6938a20b2da4633348d3d6ce7e5bb62d17716d3bbe0382940395aa912d40a609";
@@ -42,6 +43,47 @@ const reviewedPlayers = [
     "710cd9d2-e9f0-4578-a506-7642a91a6a4b", "bc54f7e8b21f3af84d6fe91fe25fae7db3bc0b222992d1bed1873d02feaedae1"],
 ] as const;
 
+const reviewedBatteryPlayers = [
+  // 松本健吾
+  [4037049, 111782450, "03105159", "d9858b61-9279-452c-88f5-9f86da6f9508",
+    "df80bb95-4649-43db-b98f-c4f0ee5195e4", "87c181ca5bd68a471ed4ab47df5450824dc443afea23b61663b2cc472fbe17a7"],
+  // 中森俊介
+  [4274936, 111782477, "31635153", "4aa427af-2c24-4f42-aeef-dbaa932e2cb0",
+    "252d0578-2605-4a36-b31d-586208662513", "f1edf6c3251ef1c413ac255c6d34fa8f4b8c83b786fd78cbf8f8599ebff124fa"],
+  // 松尾汐恩
+  [4666647, 111782481, "21825157", "6149126a-d80f-42bf-899b-89b83c7f7516",
+    "82189ce2-d6a4-45d3-810b-19b25d73340f", "aaec22175d483a2b3bb8f1948c33e7147f67e5144d32d64f810e0caddaf149c2"],
+  // 武内夏暉
+  [4832529, 111782412, "51255159", "6c571e31-d07d-4cb5-9c1c-a9ea83a653e5",
+    "d4f1f342-f51a-4b2b-a14d-711a1af549c7", "2f02e0dcabff07adfb6002df1f9e9243246dee68e284420d4f4a23d42655acec"],
+  // 進藤勇也
+  [4847310, 111782491, "11015159", "8e8fcecf-182b-4649-b245-941a7533fc05",
+    "b8af6bbe-348c-4d00-85f8-9fb5e66f6d98", "6270e64d70420d92184a74994da7cc8c2c868045e66afb12d28ad194e0f04d40"],
+  // 石田裕太郎
+  [4859137, 111782409, "21125159", "b15a7a83-4735-4c80-803f-aed9cdf5ad01",
+    "d614a142-7bb2-4398-83e7-4dca288ae8eb", "178c57f5a1b025aae883450970cd145d9c44cc5d4ae857b43fdfcf2758cae574"],
+  // 吉田聖弥
+  [4993682, 111782398, "93395150", "e32fd9dc-8f4c-474e-9aa3-ef86927a1839",
+    "35c46446-bf42-4bb3-99c5-9de2757c8076", "e368052349c6cdda45c485c9109b2e5ea2bb6736dac0c2b44ca9ada8b922ef5d"],
+  // 篠原響
+  [4997978, 111782470, "61065150", "8f500d17-ab40-43ca-a77e-73bc35994e31",
+    "702859ee-1f46-4be3-bb6b-4c5a8fb48dfb", "dffaba17e37234802c8ffb5cc2a781f27c4c91786d80f165eed26cd5279ff53b"],
+  // 九谷瑠
+  [5144198, 111855641, "71775152", "8670686b-34c8-40d7-87db-ddddcbfd7d3a",
+    "62ced270-4d97-489f-98bd-93a503e43baa", "fa5490c1a16ca17b44fcd984c623cbebe7f5ead795559ba1d111e98ed6e438a0"],
+  // 鈴木豪太
+  [5161252, 111825019, "21025152", "457bd818-735c-4bd6-9dcd-c5c677b6d64a",
+    "7b15b81a-46a4-4878-b5d6-44ec03b177bb", "41410ee85a050b1611e711fc1ea84ff814e2ba9de242d401d0e784491b6962d7"],
+  // 竹丸和幸
+  [5169029, 111782402, "71275152", "0b28d983-d75c-49df-b4a4-ecd57ebba488",
+    "abb6ee75-a800-49f6-a673-a04e321f0986", "eba3a3195d15dc211b2d3dbf4ba74ec64ca1e3dae5ef4886be8e08ee48ca692a"],
+] as const;
+
+const identityReviews = [
+  ...reviewedPlayers.map(row => ({ row, reviewDate: reviewedAt })),
+  ...reviewedBatteryPlayers.map(row => ({ row, reviewDate: batteriesReviewedAt })),
+];
+
 const permissions = {
   acquisition: "approved", storage: "approved", transformation: "approved",
   webDisplay: "approved", androidDisplay: "approved", redistribution: "approved",
@@ -55,15 +97,15 @@ const chadwick: Source = {
 
 export const apbcIdentitySources: Source[] = [
   chadwick,
-  ...reviewedPlayers.map(([, revision]): Source => ({
+  ...identityReviews.map(({ row: [, revision], reviewDate }): Source => ({
     id: `jawiki:player:${revision}`, sourceId: "jawiki-player", publisherId: "japanese-wikipedia",
     version: String(revision), url: `https://ja.wikipedia.org/w/index.php?oldid=${revision}`, termsEvidenceUrl: wikiLicense,
-    verifiedAt: reviewedAt, permissions,
+    verifiedAt: reviewDate, permissions,
   })),
 ];
 
-export const apbcIdentities: Edition["identities"] = reviewedPlayers.map(
-  ([pageId, revision, npbId, canonicalPlayerId, chadwickId, wikiSha256]) => {
+export const apbcIdentities: Edition["identities"] = identityReviews.map(
+  ({ row: [pageId, revision, npbId, canonicalPlayerId, chadwickId, wikiSha256], reviewDate }) => {
     const playerId = `international:player:jawiki:${pageId}` as const;
     const identifier = { method: "shared_player_identifier", authorityId: "npb", value: npbId } as const;
     return {
@@ -74,7 +116,7 @@ export const apbcIdentities: Edition["identities"] = reviewedPlayers.map(
         canonical: { sourceRevisionId: chadwick.id, sourceRecordId: chadwickId, subjectId: canonicalPlayerId,
           publication: "original", documentSha256: chadwickArchiveSha256, identifier },
       },
-      review: { result: "verified", reviewer: "Baseball Notes", reviewedAt,
+      review: { result: "verified", reviewer: "Baseball Notes", reviewedAt: reviewDate,
         rationale: "The fixed player article and Chadwick key_npb identify a unique verified NPB Directory ID; key_uuid matches the existing bridge." },
     };
   },
