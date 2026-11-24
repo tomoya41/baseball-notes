@@ -206,14 +206,33 @@ it("keeps the WBC selection snapshot separate from game appearances and registra
   expect(roster.players).toContainEqual(expect.objectContaining({ name: "大谷翔平", position: "指名打者" }));
   expect(roster.players.map(player => player.name)).not.toContain("松井裕樹");
   expect(wbc.games).toHaveLength(5);
-  expect(wbc.editionRevision).toBe(4);
+  expect(wbc.editionRevision).toBe(5);
   expect(wbc.participation.filter(player => player.kind === "selected")).toHaveLength(30);
   expect(wbc.participation.filter(player => player.kind === "registered")).toEqual([]);
   expect(wbc.coverage.registrations.status).toBe("uncollected");
   expect(wbc.coverage.appearances.status).toBe("partial");
   expect(wbc.playerStats).toEqual([]);
-  expect(wbc.identities).toEqual([]);
+  expect(wbc.identities).toHaveLength(6);
   expect(japanResultsByTournament.has("international:tournament:exhibition:2027:taipei")).toBe(false);
+});
+
+it("links only six independently matched WBC 2026 participants to the existing NPB Directory", () => {
+  const id = "international:tournament:wbc:2026";
+  const edition = japanResultsByTournament.get(id)!;
+  const appeared = new Set(edition.participation.filter(row => row.kind === "appeared").map(row => row.playerId));
+  expect(appeared.size).toBe(11);
+  expect(edition.identities.map(row => row.playerId)).toEqual(
+    [3692477, 3700545, 4037204, 4237529, 4463322, 4977707].map(pageId => `international:player:jawiki:${pageId}`));
+  for (const row of edition.identities) {
+    expect(appeared.has(row.playerId)).toBe(true);
+    const existing = npbProfileIdentities.find(player => player.playerId === row.canonicalPlayerId);
+    expect(existing?.verificationStatus).toBe("source_verified");
+    expect(row.evidence.international.identifier).toMatchObject({ value: existing?.npbId });
+    expect(row.evidence.canonical.sourceRecordId).toBe(existing?.chadwick?.uuid);
+  }
+  expect(japanGameAppearances("7bbeda89-5b15-4e15-90d7-3c862c9a30b9")).toEqual([
+    { tournamentId, confirmedGames: 1 }, { tournamentId: id, confirmedGames: 1 },
+  ]);
 });
 
 it("admits WBC Japan home runs and only the pitcher decision supported by each final score", () => {
@@ -323,7 +342,7 @@ it("links all twenty APBC confirmed participants to existing NPB IDs with indepe
     const [first, second] = [row.evidence.international, row.evidence.canonical].map(
       evidence => apbc.sources.find(source => source.id === evidence.sourceRevisionId)?.publisherId);
     expect([first, second]).toEqual(["japanese-wikipedia", "chadwick-bureau"]);
-    expect(japanGameAppearances(row.canonicalPlayerId)).toEqual([{ tournamentId, confirmedGames:
+    expect(japanGameAppearances(row.canonicalPlayerId).filter(record => record.tournamentId === tournamentId)).toEqual([{ tournamentId, confirmedGames:
       apbc.participation.filter(record => record.kind === "appeared" && record.playerId === row.playerId).length }]);
   }
   expect(japanGameAppearances("6c571e31-d07d-4cb5-9c1c-a9ea83a653e5")).toEqual([{ tournamentId, confirmedGames: 1 }]);

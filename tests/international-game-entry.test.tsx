@@ -122,7 +122,14 @@ it("opens real official tournament links alongside the domestic Games route with
     expect(quarterfinal?.textContent).not.toContain("勝利投手");
     expect(entry.querySelector('.source-note a[href$="20260315_1/table.html"]')).not.toBeNull();
     expect(entry.textContent).toContain("準々決勝は現地3月14日、日本時間3月15日です。");
-    expect(entry.querySelector('a[href*="/NPB/players/"]')).toBeNull();
+    const wbcProfileLinks = [...entry.querySelectorAll('a[href*="/NPB/players/"]')];
+    expect(wbcProfileLinks).toHaveLength(6);
+    expect(wbcProfileLinks.find(link => link.textContent?.includes("森下翔太"))?.getAttribute("href"))
+      .toBe("/NPB/players/92a02594-a4f7-498c-bb83-8a41855b4645");
+    expect(wbcProfileLinks.find(link => link.textContent?.includes("伊藤大海"))?.getAttribute("href"))
+      .toBe("/NPB/players/e894c7ec-cf2d-4000-98d4-4211c1a4b345");
+    expect(wbcProfileLinks.some(link => link.textContent?.includes("大谷翔平"))).toBe(false);
+    expect(entry.textContent).toContain("出場を確認した選手 · 11人");
     await act(async () => internationalButton.click());
     await openTournament("international:tournament:premier12:2024");
     expect(entry.querySelectorAll("ol.row-list > li")).toHaveLength(9);

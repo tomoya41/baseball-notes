@@ -7,6 +7,7 @@ import { apbc2026Highlights, apbc2026Mvp } from "./apbc-2026-highlights";
 import { premier122024JapanStats, premier122024JapanStatsRevision } from "./premier12-2024-japan-stats";
 import { wbc2023JapanStats, wbc2023JapanStatsRevision } from "./wbc-2023-japan-stats";
 import { wbc2026JapanHighlights } from "./wbc-2026-japan-highlights";
+import { wbc2026IdentityEvidence } from "./wbc-2026-player-identities";
 import { wbc2026Selections } from "./wbc-2026-selections";
 
 // Adapted from the English Wikipedia article revisions below, CC BY-SA 4.0.
@@ -67,6 +68,7 @@ function edition(tournamentId: string, rows: readonly ResultRow[], stats?: Japan
     version: apbc2026BatteryRevision, url: `https://ja.wikipedia.org/w/index.php?oldid=${apbc2026BatteryRevision}`, verifiedAt: "2026-11-24T12:27:00Z",
   });
   const wbc2026 = tournamentId === "international:tournament:wbc:2026";
+  if (wbc2026) sources.push(...wbc2026IdentityEvidence.sources);
   const gameHighlights = apbc ? apbc2026Highlights : wbc2026 ? wbc2026JapanHighlights : [];
   const highlightSource = gameHighlights[0]?.source;
   const gameDates = new Map(games.map(game => [game.id, game.localDate]));
@@ -83,9 +85,10 @@ function edition(tournamentId: string, rows: readonly ResultRow[], stats?: Japan
     appearances.push(...apbc2026BatteryAppearances.filter(row => !present.has(`${row.gameId}|${row.playerId}`)));
   }
   return internationalTournamentEvidenceSchema.parse({ tournamentId,
-    editionRevision: apbc ? 6 : wbc2026 ? 4 : stats ? 2 : 1, sources, games, playerStats,
+    editionRevision: apbc ? 6 : wbc2026 ? 5 : stats ? 2 : 1, sources, games, playerStats,
     gameHighlights, gamePitching: apbc ? apbc2026GamePitching : [], tournamentMvp: apbc ? apbc2026Mvp : undefined,
-    identities: apbc ? apbcIdentities : [], participation: [...selections, ...appearances], corrections: [], coverage: { results: partial, schedule: empty,
+    identities: apbc ? apbcIdentities : wbc2026 ? wbc2026IdentityEvidence.identities : [],
+    participation: [...selections, ...appearances], corrections: [], coverage: { results: partial, schedule: empty,
       selections: roster ? { ...partial, source: { sourceRevisionId: roster.revision, sourceRecordId: "代表選手" } } : empty,
       registrations: empty, appearances: highlightSource ? { ...partial, source: highlightSource } : empty,
       gameHighlights: highlightSource ? { ...partial, source: highlightSource } : empty,
