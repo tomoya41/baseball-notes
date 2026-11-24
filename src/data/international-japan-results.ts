@@ -4,6 +4,7 @@ import { apbc2026BatteryAppearances, apbc2026BatteryRevision, apbc2026GamePitchi
 import { apbc2026Id, apbcIdentities, apbcIdentitySources } from "./apbc-2026-player-identities";
 import { apbcSelections } from "./apbc-2026-selections";
 import { apbc2026Highlights, apbc2026Mvp } from "./apbc-2026-highlights";
+import { premier122024IdentityEvidence, wbc2023IdentityEvidence } from "./historical-japan-player-identities";
 import { premier122024JapanStats, premier122024JapanStatsRevision } from "./premier12-2024-japan-stats";
 import { wbc2023JapanStats, wbc2023JapanStatsRevision } from "./wbc-2023-japan-stats";
 import { wbc2026JapanHighlights } from "./wbc-2026-japan-highlights";
@@ -14,6 +15,8 @@ import { wbc2026Selections } from "./wbc-2026-selections";
 // Dates are local to the venue. Only final totals and confirmed team sides are admitted.
 export const resultLicense = "https://creativecommons.org/licenses/by-sa/4.0/";
 const japan = "international:team:jpn";
+const premier122024Id = "international:tournament:premier12:2024";
+const wbc2023Id = "international:tournament:wbc:2023";
 const teams = { CHN: "中国", KOR: "韓国", CZE: "チェコ", AUS: "オーストラリア", ITA: "イタリア",
   MEX: "メキシコ", USA: "アメリカ", TPE: "チャイニーズ・タイペイ", VEN: "ベネズエラ", CUB: "キューバ", DOM: "ドミニカ共和国", JPN: "日本" };
 export const internationalTeamNames = new Map(Object.entries(teams).map(([code, name]) => [`international:team:${code.toLowerCase()}`, name]));
@@ -68,7 +71,15 @@ function edition(tournamentId: string, rows: readonly ResultRow[], stats?: Japan
     version: apbc2026BatteryRevision, url: `https://ja.wikipedia.org/w/index.php?oldid=${apbc2026BatteryRevision}`, verifiedAt: "2026-11-24T12:27:00Z",
   });
   const wbc2026 = tournamentId === "international:tournament:wbc:2026";
+  const historicalIdentity = tournamentId === premier122024Id ? premier122024IdentityEvidence
+    : tournamentId === wbc2023Id ? wbc2023IdentityEvidence : undefined;
   if (wbc2026) sources.push(...wbc2026IdentityEvidence.sources);
+  if (historicalIdentity) sources.push(...historicalIdentity.sources);
+  const corrections = tournamentId === premier122024Id ? [{
+    supersedesRevision: 2, recordedAt: "2026-11-24T23:39:40Z",
+    reason: "Corrected Tatsuya Shimizu’s tournament person ID to the pitcher’s article linked in the original results table (3750787 → 3750723). Statistics unchanged.",
+    source: { sourceRevisionId: premier122024JapanStatsRevision, sourceRecordId: "投手成績/清水達也 (投手)" },
+  }] : [];
   const gameHighlights = apbc ? apbc2026Highlights : wbc2026 ? wbc2026JapanHighlights : [];
   const highlightSource = gameHighlights[0]?.source;
   const gameDates = new Map(games.map(game => [game.id, game.localDate]));
@@ -85,10 +96,10 @@ function edition(tournamentId: string, rows: readonly ResultRow[], stats?: Japan
     appearances.push(...apbc2026BatteryAppearances.filter(row => !present.has(`${row.gameId}|${row.playerId}`)));
   }
   return internationalTournamentEvidenceSchema.parse({ tournamentId,
-    editionRevision: apbc ? 6 : wbc2026 ? 5 : stats ? 2 : 1, sources, games, playerStats,
+    editionRevision: apbc ? 6 : wbc2026 ? 5 : historicalIdentity ? 3 : stats ? 2 : 1, sources, games, playerStats,
     gameHighlights, gamePitching: apbc ? apbc2026GamePitching : [], tournamentMvp: apbc ? apbc2026Mvp : undefined,
-    identities: apbc ? apbcIdentities : wbc2026 ? wbc2026IdentityEvidence.identities : [],
-    participation: [...selections, ...appearances], corrections: [], coverage: { results: partial, schedule: empty,
+    identities: apbc ? apbcIdentities : wbc2026 ? wbc2026IdentityEvidence.identities : historicalIdentity?.identities ?? [],
+    participation: [...selections, ...appearances], corrections, coverage: { results: partial, schedule: empty,
       selections: roster ? { ...partial, source: { sourceRevisionId: roster.revision, sourceRecordId: "代表選手" } } : empty,
       registrations: empty, appearances: highlightSource ? { ...partial, source: highlightSource } : empty,
       gameHighlights: highlightSource ? { ...partial, source: highlightSource } : empty,
@@ -110,7 +121,7 @@ const editions = [
     ["2026-03-10", tokyo, "pool", "CZE", 0, "JPN", 9, 1370352167],
     ["2026-03-14", miami, "quarterfinal", "VEN", 8, "JPN", 5, 1378823437],
   ]),
-  edition("international:tournament:wbc:2023", [
+  edition(wbc2023Id, [
     ["2023-03-09", tokyo, "pool", "CHN", 1, "JPN", 8, 1377340894],
     ["2023-03-10", tokyo, "pool", "KOR", 4, "JPN", 13, 1377340894],
     ["2023-03-11", tokyo, "pool", "CZE", 2, "JPN", 10, 1377340894],
@@ -119,7 +130,7 @@ const editions = [
     ["2023-03-20", miami, "semifinal", "MEX", 5, "JPN", 6, 1380479955],
     ["2023-03-21", miami, "final", "USA", 2, "JPN", 3, 1344369931],
   ], { revision: wbc2023JapanStatsRevision, verifiedAt: "2026-11-21T10:12:00Z", players: wbc2023JapanStats }),
-  edition("international:tournament:premier12:2024", [
+  edition(premier122024Id, [
     ["2024-11-13", tokyo, "pool", "AUS", 3, "JPN", 9, 1378187154],
     ["2024-11-15", taipei, "pool", "KOR", 3, "JPN", 6, 1378187154],
     ["2024-11-16", taipei, "pool", "JPN", 3, "TPE", 1, 1378187154],
@@ -140,5 +151,12 @@ export function japanGameAppearances(canonicalPlayerId: string) {
     const gameIds = new Set(edition.participation.flatMap(row =>
       row.kind === "appeared" && row.playerId === identity.playerId ? [row.gameId] : []));
     return gameIds.size ? [{ tournamentId: edition.tournamentId, confirmedGames: gameIds.size }] : [];
+  });
+}
+
+export function japanPlayerTournamentStats(canonicalPlayerId: string) {
+  return editions.flatMap(edition => {
+    const identity = edition.identities.find(row => row.league === "NPB" && row.canonicalPlayerId === canonicalPlayerId);
+    return identity ? edition.playerStats.filter(row => row.playerId === identity.playerId && row.teamId === japan) : [];
   });
 }

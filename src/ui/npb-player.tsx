@@ -11,7 +11,7 @@ import type { PlayerGameLogResponse } from "../domain/player-game-log";
 import type { PlayerAnalysisBundle } from "../domain/player-analysis-bundle";
 import type { NpbCatalog } from "../domain/npb-product-contract";
 import { internationalOfficialTournaments } from "../data/international-official-links";
-import { japanGameAppearances } from "../data/international-japan-results";
+import { japanGameAppearances, japanPlayerTournamentStats } from "../data/international-japan-results";
 import { FavoriteButton, DataState, LoadingSkeleton } from "./components";
 import { CollectionButton } from "./personal-library";
 import { PlayerTabs } from "./design-system";
@@ -180,6 +180,14 @@ export function NpbPlayer({ services, favorites, toggle, saving }: { services: S
         const name = tournament.kind === "apbc" ? `APBC ${tournament.year}` : tournament.name;
         return <Link key={tournamentId} to={`/NPB/schedule?${params}`}>日本代表での出場
           <span>{name} · {confirmedGames}試合で出場を確認</span></Link>;
+      })}
+      {japanPlayerTournamentStats(player.id).map(row => {
+        const tournament = internationalOfficialTournaments.find(item => item.id === row.tournamentId);
+        if (!tournament) return null;
+        const params = new URLSearchParams({ season: "2026", view: "international", tournament: tournament.id, statRole: row.role });
+        const detail = row.role === "batting" ? `${row.gamesPlayed}試合 · ${row.atBats}打数${row.hits}安打` : `${row.gamesPlayed}登板`;
+        return <Link key={row.tournamentId + row.role} to={`/NPB/schedule?${params}`}>{tournament.name}
+          <span>日本代表の大会成績 · {detail}</span></Link>;
       })}
     </nav>
     <PlayerHonors league="NPB" playerId={player.id}/>
