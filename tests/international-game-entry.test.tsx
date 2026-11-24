@@ -44,7 +44,12 @@ it("opens real official tournament links alongside the domestic Games route with
     expect(entry.textContent).toContain("代表に選ばれた選手 · 28人");
     expect(entry.textContent).toContain("出場を確認した選手 · 9人");
     expect(entry.textContent).toContain("宗山塁");
-    expect(entry.querySelector('a[href*="/NPB/players/"]')).toBeNull();
+    const appearanceLinks = [...entry.querySelectorAll('a[href*="/NPB/players/"]')];
+    expect(appearanceLinks).toHaveLength(9);
+    expect(appearanceLinks.find(link => link.textContent?.includes("宗山塁"))?.getAttribute("href"))
+      .toBe("/NPB/players/b6286dd6-cf1f-45b8-87e2-95433f8aadb0");
+    expect(entry.querySelector('details.source-note details.source-note a[href*="chadwickbureau/register/tree/"]'))
+      .not.toBeNull();
     expect(entry.textContent).toContain("2026年11月12〜15日");
     expect(entry.querySelector('a[href$="#schedule"]')?.getAttribute("href")).toBe("https://www.japan-baseball.jp/jp/games/apbc2026/#schedule");
     expect(entry.querySelector('a[href$="player_jpn.html"]')?.textContent).toContain("公式選手一覧");
@@ -58,6 +63,7 @@ it("opens real official tournament links alongside the domestic Games route with
     expect(entry.textContent).toContain("アメリカ 2 − 3 日本");
     expect(entry.textContent).not.toContain("宗山塁");
     expect(entry.textContent).not.toContain("勝利投手");
+    expect(entry.querySelector('a[href*="/NPB/players/"]')).toBeNull();
     expect(entry.textContent).toContain("打撃成績 · 16人");
     expect(entry.textContent).toContain("投球成績 · 14人");
     expect(entry.textContent).toContain("防御率 1.86 · 9回 2/3");
