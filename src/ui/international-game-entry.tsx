@@ -26,7 +26,7 @@ export function InternationalGameEntry({ expanded, onToggle, selected, onSelect,
   onToggle: (open: boolean) => void;
   selected: (typeof tournaments)[number] | undefined;
   onSelect: (id: string) => void;
-  statRole?: "batting" | "pitching";
+  statRole: "batting" | "pitching" | undefined;
 }) {
   const tournament = selected ?? tournaments[0]!;
   const edition = japanResultsByTournament.get(tournament.id);
