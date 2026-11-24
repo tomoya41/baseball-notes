@@ -284,6 +284,20 @@
   white-space: normal;
 }
 
+.japan-series-box-score th[scope="row"] {
+  width: auto;
+  max-width: none;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.japan-series-box-score .stat-table-identity small {
+  display: block;
+  color: var(--color-muted);
+  font-size: .75em;
+  font-weight: 400;
+}
+
 .mlb-stat-scroll tbody th[scope="row"] {
   position: sticky;
   left: 0;
