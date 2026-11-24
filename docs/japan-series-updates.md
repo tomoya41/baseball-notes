@@ -27,3 +27,11 @@ Keep the direct official link and **未収録**, not “未発表”. New in-app
 Two dated informational portraits added: **東克樹 2018 / 周東佑京 2021**, with author, original revision, license, modifications, source hash and independent QID/NPB/canonical bridges in [the asset register](visual-assets-rights.md). They are reused by the existing exact-ID Player/Historical surfaces, without extra public requests, new roster/number claims or invented Game statistics. Official logos and app-owned identification rails stay unchanged. New optimized local assets total **36,574 B**; Home's existing three-player selection and its static request count stay unchanged. Existing personal stores, PR #73 fallback and Current/MLB/projection assets are untouched.
 
 Physical Pixel inventory is empty; physical operation, TalkBack and signature continuity remain separate **NOT RUN / unresolved**. No app uninstall/data clear/signing changes. Turso was not probed or bypassed; latest canonical integrity is not asserted. Additional monthly cost **¥0**. Validation and public delivery receipts are recorded in the PR; raw/private QA stays ignored. Rollback is a normal source/UI/portrait commit revert; all statistical pins/assets remain unchanged.
+
+## 2026-11-24 JST — 日本シリーズ全4試合の確認済み個人成績
+
+[日本語版Wikipediaの固定版111797100](https://ja.wikipedia.org/w/index.php?curid=5306035&oldid=111797100)（2026-11-16 22:29:24 UTC）の両球団の打撃・投球表を、[第1戦](https://npb.jp/bis/scores/nipponseries/boxscore2026_1.html)・[第2戦](https://npb.jp/bis/scores/nipponseries/boxscore2026_2.html)・[第3戦](https://npb.jp/bis/scores/nipponseries/boxscore2026_3.html)・[第4戦](https://npb.jp/bis/scores/nipponseries/boxscore2026_4.html)のNPB公式記録と照合した。固定版本文SHA-256は `e5526c7d0558e8ec5696223455f94452fde5a5ebed3c14fdf705092cfac5937d`。出場順と球団を保ち、公式の略称を固定版の選手名・掲載順と照合した。収録するデータは固定版から抜粋・表記整理し、CC BY-SA 4.0で配信する。公式ページは照合と閲覧案内に使用する。
+
+打撃117行（打数、安打、本塁打、打点）、投球44行（投球アウト、奪三振、自責点、記録された勝敗・セーブ・ホールド）を追加。第2戦・山本祐大の打数と第3戦・ショーン・レイノルズの奪三振は出典間で不一致のため `null` とした。第3戦・同投手の被安打にも差があり、被安打は表示項目に含めない。7本塁打と、延長・サヨナラ・裏を行わなかった回を含む8球団分の投球アウトを照合。0は確認した0のみ。出場が確認できる走者・守備交代も打撃表の記載順を維持した。
+
+個人成績の表示範囲は一致した日本シリーズの試合詳細のみ。確定試合ID・年度・球団順・既存の結果証拠hashを照合する。既存のイニング別得点、日程、試合・選手IDとimmutable JSONはそのまま保持。選手名は試合内の表示用で、本人照合を経たcanonical連携や公式戦・CS・大会通算の再集計は別工程。
