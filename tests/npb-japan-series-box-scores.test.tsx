@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import release from "../src/data/npb-japan-series-box-scores.json";
 import identities from "../src/data/npb-japan-series-player-links.json";
 import npbRegistry from "../src/data/npb-free-profile-identities.json";
+import { reviewedProfileBridges } from "../src/data/npb-reviewed-profile-bridges";
 import { admittedJapanSeriesScopes, japanSeriesBoxScore, japanSeriesPlayerGames, japanSeriesPlayerId, type JapanSeriesBoxScore } from "../src/data/npb-japan-series-box-scores";
 import { JapanSeriesBoxScoreTables, JapanSeriesPlayerBoxScores } from "../src/ui/japan-series-box-score";
 import { japanCompletedFixture } from "./fixtures/npb-japan-completed";
@@ -64,22 +65,27 @@ describe("2026 Japan Series box score admission", () => {
     expect(third).toMatch(/ショーン・レイノルズ[\s\S]*?stat-table-content">1\.0[\s\S]*?stat-table-content">—<\/span>/);
   });
 
-  it("links the 53 independently verified players and preserves the unlinked performance rows", () => {
+  it("links the 55 independently verified players and preserves the unlinked performance rows", () => {
     expect(identities.boxSourceSha256).toBe(release.source.contentSha256);
-    expect(admittedJapanSeriesScopes).toHaveLength(53);
+    expect(admittedJapanSeriesScopes).toHaveLength(55);
     for (const identity of identities.players) {
-      const registryRecord = npbRegistry.find(row => row.playerId === identity.playerId);
-      expect(registryRecord?.npbId).toBe(identity.npbId);
-      expect(registryRecord?.verificationStatus).toBe("source_verified");
-      expect(registryRecord?.chadwick?.uuid).toBe(identity.chadwickId);
+      if (identity.bridgeSource === "reviewed_nf3") {
+        expect(reviewedProfileBridges.find(row => row.playerId === identity.playerId)?.npbId).toBe(identity.npbId);
+      } else {
+        const registryRecord = npbRegistry.find(row => row.playerId === identity.playerId);
+        expect(registryRecord?.npbId).toBe(identity.npbId);
+        expect(registryRecord?.verificationStatus).toBe("source_verified");
+        expect(registryRecord?.chadwick?.uuid).toBe(identity.chadwickId);
+      }
     }
     const linked = release.boxes.map(game => game.teams.reduce((count, t) => count +
       t.batting.filter(row => japanSeriesPlayerId(t.teamId, "batting", row.name)).length +
       t.pitching.filter(row => japanSeriesPlayerId(t.teamId, "pitching", row.name)).length, 0));
-    expect(linked).toEqual([42, 43, 30, 29]);
+    expect(linked).toEqual([46, 45, 32, 30]);
     expect(japanSeriesPlayerId("npb:team:hawks", "batting", "正木智也")).toBe("2b2a8d97-2a6e-441c-9a33-0d79d2a7d147");
     expect(japanSeriesPlayerId("npb:team:baystars", "batting", "正木智也")).toBeUndefined();
-    expect(japanSeriesPlayerId("npb:team:baystars", "pitching", "ショーン・レイノルズ")).toBeUndefined();
+    expect(japanSeriesPlayerId("npb:team:baystars", "pitching", "ショーン・レイノルズ")).toBe("e88b4e3d-1c6c-4b81-9c7c-9af1e8e133f3");
+    expect(japanSeriesPlayerId("npb:team:baystars", "pitching", "ホセ・ルイーズ")).toBeUndefined();
     expect(renderBox(release.boxes[1]!)).toContain("role=pitching&amp;boxSide=home&amp;competition=postseason&amp;stage=japan_series");
   });
 
