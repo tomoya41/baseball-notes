@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import type { NpbJapanSeries } from "../domain/npb-japan-series";
+import { japanSeriesBoxScore } from "../data/npb-japan-series-box-scores";
 import { japanSeries2026Awards } from "../data/npb-japan-series-awards";
 import { japanSeriesRecap } from "../presentation/japan-series-recap";
 import { japanSeriesGameUrl } from "../presentation/japan-series-home";
@@ -21,6 +22,6 @@ export function JapanSeriesRecap({data}:{data:NpbJapanSeries}) {
         <div className="player-row__body"><dt>{award.name}</dt><dd>{award.recipients.join("、")}</dd></div>
       </div>)}</dl>
     </details>}
-    <p className="inline-note">全{r.games}試合の結果・イニング別得点から集計。個人成績は未収録です。</p>
+    <p className="inline-note">全{r.games}試合の結果・イニング別得点から集計。{data.results.some(result => japanSeriesBoxScore(data, result.gameId)) ? "打撃・投球成績は試合詳細で確認できます。" : "個人成績は未収録です。"}</p>
   </section>;
 }

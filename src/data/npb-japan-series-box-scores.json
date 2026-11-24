@@ -1,0 +1,269 @@
+{
+  "seriesId": "npb:series:fae89d8d-b1f8-5675-82e8-d9136be4f7c1",
+  "source": {
+    "pageId": 5306035,
+    "revision": 111797100,
+    "revisionAt": "2026-11-16T22:29:24Z",
+    "contentSha256": "e5526c7d0558e8ec5696223455f94452fde5a5ebed3c14fdf705092cfac5937d",
+    "license": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  "boxes": [
+    {
+      "gameId": "npb:game:9f6c547e7852f6c5a928",
+      "gameNumber": 1,
+      "date": "2026-10-24",
+      "awayRuns": 3,
+      "homeRuns": 1,
+      "resultEvidenceSha256": "5f0f184005ec6be517f78ad804300b41c2425a49b72f78a75ae70f7c67404268",
+      "teams": [
+        {
+          "teamId": "npb:team:hawks",
+          "batting": [
+            { "name": "正木智也", "atBats": 5, "hits": 2, "homeRuns": 0, "rbi": 0 },
+            { "name": "周東佑京", "atBats": 5, "hits": 1, "homeRuns": 0, "rbi": 0 },
+            { "name": "近藤健介", "atBats": 3, "hits": 1, "homeRuns": 0, "rbi": 0 },
+            { "name": "栗原陵矢", "atBats": 4, "hits": 1, "homeRuns": 0, "rbi": 0 },
+            { "name": "柳田悠岐", "atBats": 5, "hits": 1, "homeRuns": 0, "rbi": 0 },
+            { "name": "川村友斗", "atBats": 0, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "牧原大成", "atBats": 5, "hits": 1, "homeRuns": 0, "rbi": 0 },
+            { "name": "山本祐大", "atBats": 3, "hits": 2, "homeRuns": 0, "rbi": 0 },
+            { "name": "緒方理貢", "atBats": 0, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "杉山一樹", "atBats": 0, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "庄子雄大", "atBats": 5, "hits": 2, "homeRuns": 0, "rbi": 2 },
+            { "name": "上沢直之", "atBats": 3, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "松本裕樹", "atBats": 0, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "ダーウィンゾン・ヘルナンデス", "atBats": 0, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "山川穂高", "atBats": 1, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "ロベルト・オスナ", "atBats": 0, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "柳町達", "atBats": 0, "hits": 0, "homeRuns": 0, "rbi": 1 },
+            { "name": "海野隆司", "atBats": 0, "hits": 0, "homeRuns": 0, "rbi": 0 }
+          ],
+          "pitching": [
+            { "name": "上沢直之", "outs": 21, "strikeouts": 4, "earnedRuns": 0, "decision": null },
+            { "name": "松本裕樹", "outs": 3, "strikeouts": 2, "earnedRuns": 1, "decision": null },
+            { "name": "ダーウィンゾン・ヘルナンデス", "outs": 3, "strikeouts": 2, "earnedRuns": 0, "decision": "H" },
+            { "name": "ロベルト・オスナ", "outs": 3, "strikeouts": 1, "earnedRuns": 0, "decision": "勝" },
+            { "name": "杉山一樹", "outs": 3, "strikeouts": 1, "earnedRuns": 0, "decision": "S" }
+          ]
+        },
+        {
+          "teamId": "npb:team:baystars",
+          "batting": [
+            { "name": "度会隆輝", "atBats": 4, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "牧秀悟", "atBats": 4, "hits": 2, "homeRuns": 1, "rbi": 1 },
+            { "name": "佐野恵太", "atBats": 5, "hits": 1, "homeRuns": 0, "rbi": 0 },
+            { "name": "筒香嘉智", "atBats": 5, "hits": 2, "homeRuns": 0, "rbi": 0 },
+            { "name": "梶原昂希", "atBats": 5, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "三森大貴", "atBats": 4, "hits": 2, "homeRuns": 0, "rbi": 0 },
+            { "name": "林琢真", "atBats": 4, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "宮﨑敏郎", "atBats": 1, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "戸柱恭孝", "atBats": 4, "hits": 1, "homeRuns": 0, "rbi": 0 },
+            { "name": "神里和毅", "atBats": 0, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "古市尊", "atBats": 0, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "石田裕太郎", "atBats": 2, "hits": 1, "homeRuns": 0, "rbi": 0 },
+            { "name": "伊勢大夢", "atBats": 0, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "ホセ・ルイーズ", "atBats": 0, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "井上朋也", "atBats": 1, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "ショーン・レイノルズ", "atBats": 0, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "浜地真澄", "atBats": 0, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "柴田竜拓", "atBats": 0, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "岩田将貴", "atBats": 0, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "馬場皐輔", "atBats": 0, "hits": 0, "homeRuns": 0, "rbi": 0 }
+          ],
+          "pitching": [
+            { "name": "石田裕太郎", "outs": 20, "strikeouts": 5, "earnedRuns": 1, "decision": null },
+            { "name": "伊勢大夢", "outs": 1, "strikeouts": 0, "earnedRuns": 0, "decision": null },
+            { "name": "ホセ・ルイーズ", "outs": 3, "strikeouts": 1, "earnedRuns": 0, "decision": null },
+            { "name": "ショーン・レイノルズ", "outs": 3, "strikeouts": 2, "earnedRuns": 0, "decision": "H" },
+            { "name": "浜地真澄", "outs": 3, "strikeouts": 1, "earnedRuns": 0, "decision": "H" },
+            { "name": "岩田将貴", "outs": 1, "strikeouts": 1, "earnedRuns": 1, "decision": "敗" },
+            { "name": "馬場皐輔", "outs": 2, "strikeouts": 0, "earnedRuns": 1, "decision": null }
+          ]
+        }
+      ]
+    },
+    {
+      "gameId": "npb:game:8aabfefe82d76006b9a9",
+      "gameNumber": 2,
+      "date": "2026-10-25",
+      "awayRuns": 4,
+      "homeRuns": 3,
+      "resultEvidenceSha256": "3e290f5bfbe76386b44713c7377321c3554e5b0d3b099e7b708865e20eb165ab",
+      "teams": [
+        {
+          "teamId": "npb:team:hawks",
+          "batting": [
+            { "name": "正木智也", "atBats": 5, "hits": 1, "homeRuns": 1, "rbi": 1 },
+            { "name": "周東佑京", "atBats": 5, "hits": 2, "homeRuns": 0, "rbi": 0 },
+            { "name": "近藤健介", "atBats": 5, "hits": 1, "homeRuns": 0, "rbi": 0 },
+            { "name": "栗原陵矢", "atBats": 4, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "柳田悠岐", "atBats": 4, "hits": 1, "homeRuns": 0, "rbi": 0 },
+            { "name": "川村友斗", "atBats": 1, "hits": 1, "homeRuns": 1, "rbi": 1 },
+            { "name": "牧原大成", "atBats": 5, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "山本祐大", "atBats": null, "hits": 1, "homeRuns": 0, "rbi": 0 },
+            { "name": "庄子雄大", "atBats": 3, "hits": 1, "homeRuns": 0, "rbi": 1 },
+            { "name": "リバン・モイネロ", "atBats": 3, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "松本裕樹", "atBats": 0, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "鈴木豪太", "atBats": 0, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "山川穂高", "atBats": 1, "hits": 1, "homeRuns": 1, "rbi": 1 },
+            { "name": "ダーウィンゾン・ヘルナンデス", "atBats": 0, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "杉山一樹", "atBats": 0, "hits": 0, "homeRuns": 0, "rbi": 0 }
+          ],
+          "pitching": [
+            { "name": "リバン・モイネロ", "outs": 21, "strikeouts": 8, "earnedRuns": 0, "decision": null },
+            { "name": "松本裕樹", "outs": 1, "strikeouts": 0, "earnedRuns": 3, "decision": null },
+            { "name": "鈴木豪太", "outs": 2, "strikeouts": 2, "earnedRuns": 0, "decision": null },
+            { "name": "ダーウィンゾン・ヘルナンデス", "outs": 3, "strikeouts": 1, "earnedRuns": 0, "decision": "勝" },
+            { "name": "杉山一樹", "outs": 3, "strikeouts": 1, "earnedRuns": 0, "decision": "S" }
+          ]
+        },
+        {
+          "teamId": "npb:team:baystars",
+          "batting": [
+            { "name": "度会隆輝", "atBats": 4, "hits": 1, "homeRuns": 0, "rbi": 0 },
+            { "name": "牧秀悟", "atBats": 3, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "佐野恵太", "atBats": 5, "hits": 1, "homeRuns": 0, "rbi": 0 },
+            { "name": "筒香嘉智", "atBats": 5, "hits": 1, "homeRuns": 1, "rbi": 3 },
+            { "name": "松尾汐恩", "atBats": 4, "hits": 1, "homeRuns": 0, "rbi": 0 },
+            { "name": "井上朋也", "atBats": 4, "hits": 2, "homeRuns": 0, "rbi": 0 },
+            { "name": "ショーン・レイノルズ", "atBats": 0, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "伊勢大夢", "atBats": 0, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "勝又温史", "atBats": 1, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "成瀬脩人", "atBats": 5, "hits": 3, "homeRuns": 0, "rbi": 0 },
+            { "name": "蝦名達夫", "atBats": 3, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "宮﨑敏郎", "atBats": 1, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "尾形崇斗", "atBats": 1, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "岩田将貴", "atBats": 0, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "梶原昂希", "atBats": 1, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "中川虎大", "atBats": 0, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "吉野光樹", "atBats": 0, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "古市尊", "atBats": 1, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "若松尚輝", "atBats": 0, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "三森大貴", "atBats": 1, "hits": 1, "homeRuns": 0, "rbi": 0 }
+          ],
+          "pitching": [
+            { "name": "尾形崇斗", "outs": 13, "strikeouts": 6, "earnedRuns": 2, "decision": null },
+            { "name": "岩田将貴", "outs": 2, "strikeouts": 1, "earnedRuns": 0, "decision": null },
+            { "name": "中川虎大", "outs": 3, "strikeouts": 1, "earnedRuns": 0, "decision": null },
+            { "name": "吉野光樹", "outs": 3, "strikeouts": 1, "earnedRuns": 0, "decision": null },
+            { "name": "若松尚輝", "outs": 3, "strikeouts": 0, "earnedRuns": 0, "decision": null },
+            { "name": "ショーン・レイノルズ", "outs": 3, "strikeouts": 2, "earnedRuns": 1, "decision": null },
+            { "name": "伊勢大夢", "outs": 3, "strikeouts": 1, "earnedRuns": 1, "decision": "敗" }
+          ]
+        }
+      ]
+    },
+    {
+      "gameId": "npb:game:5fcadb011aedcfd894cb",
+      "gameNumber": 3,
+      "date": "2026-10-27",
+      "awayRuns": 1,
+      "homeRuns": 2,
+      "resultEvidenceSha256": "f14ada05bf7b3c3d05c1906501bb3fd0c2091e8f82635837acb0973eba054513",
+      "teams": [
+        {
+          "teamId": "npb:team:baystars",
+          "batting": [
+            { "name": "度会隆輝", "atBats": 5, "hits": 1, "homeRuns": 0, "rbi": 0 },
+            { "name": "牧秀悟", "atBats": 3, "hits": 1, "homeRuns": 0, "rbi": 0 },
+            { "name": "佐野恵太", "atBats": 4, "hits": 1, "homeRuns": 0, "rbi": 0 },
+            { "name": "筒香嘉智", "atBats": 4, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "宮﨑敏郎", "atBats": 4, "hits": 1, "homeRuns": 0, "rbi": 0 },
+            { "name": "三森大貴", "atBats": 4, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "井上朋也", "atBats": 3, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "神里和毅", "atBats": 0, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "蝦名達夫", "atBats": 0, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "古市尊", "atBats": 4, "hits": 3, "homeRuns": 0, "rbi": 1 },
+            { "name": "成瀬脩人", "atBats": 4, "hits": 0, "homeRuns": 0, "rbi": 0 }
+          ],
+          "pitching": [
+            { "name": "東克樹", "outs": 21, "strikeouts": 3, "earnedRuns": 0, "decision": null },
+            { "name": "吉野光樹", "outs": 2, "strikeouts": 0, "earnedRuns": 0, "decision": "H" },
+            { "name": "岩田将貴", "outs": 1, "strikeouts": 0, "earnedRuns": 0, "decision": "H" },
+            { "name": "ショーン・レイノルズ", "outs": 3, "strikeouts": null, "earnedRuns": 1, "decision": null },
+            { "name": "ホセ・ルイーズ", "outs": 1, "strikeouts": 0, "earnedRuns": 1, "decision": "敗" }
+          ]
+        },
+        {
+          "teamId": "npb:team:hawks",
+          "batting": [
+            { "name": "正木智也", "atBats": 3, "hits": 2, "homeRuns": 1, "rbi": 1 },
+            { "name": "周東佑京", "atBats": 3, "hits": 1, "homeRuns": 0, "rbi": 0 },
+            { "name": "近藤健介", "atBats": 4, "hits": 1, "homeRuns": 0, "rbi": 0 },
+            { "name": "栗原陵矢", "atBats": 4, "hits": 2, "homeRuns": 0, "rbi": 0 },
+            { "name": "イヒネ・イツア", "atBats": 0, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "川瀬晃", "atBats": 0, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "柳田悠岐", "atBats": 4, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "山川穂高", "atBats": 4, "hits": 1, "homeRuns": 0, "rbi": 0 },
+            { "name": "牧原大成", "atBats": 3, "hits": 3, "homeRuns": 0, "rbi": 1 },
+            { "name": "海野隆司", "atBats": 1, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "山本祐大", "atBats": 2, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "庄子雄大", "atBats": 4, "hits": 0, "homeRuns": 0, "rbi": 0 }
+          ],
+          "pitching": [
+            { "name": "松本晴", "outs": 18, "strikeouts": 5, "earnedRuns": 1, "decision": null },
+            { "name": "ロベルト・オスナ", "outs": 3, "strikeouts": 2, "earnedRuns": 0, "decision": null },
+            { "name": "津森宥紀", "outs": 3, "strikeouts": 0, "earnedRuns": 0, "decision": null },
+            { "name": "鈴木豪太", "outs": 3, "strikeouts": 0, "earnedRuns": 0, "decision": null },
+            { "name": "杉山一樹", "outs": 3, "strikeouts": 2, "earnedRuns": 0, "decision": "勝" }
+          ]
+        }
+      ]
+    },
+    {
+      "gameId": "npb:game:a7485a4ae336ed934ca5",
+      "gameNumber": 4,
+      "date": "2026-10-28",
+      "awayRuns": 2,
+      "homeRuns": 4,
+      "resultEvidenceSha256": "3713a405dbd23e3baa87a53837aff942703834b17f536836e6ea04f0ae617a8d",
+      "teams": [
+        {
+          "teamId": "npb:team:baystars",
+          "batting": [
+            { "name": "度会隆輝", "atBats": 3, "hits": 1, "homeRuns": 0, "rbi": 0 },
+            { "name": "牧秀悟", "atBats": 4, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "佐野恵太", "atBats": 4, "hits": 2, "homeRuns": 1, "rbi": 2 },
+            { "name": "宮﨑敏郎", "atBats": 4, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "筒香嘉智", "atBats": 3, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "松尾汐恩", "atBats": 4, "hits": 1, "homeRuns": 0, "rbi": 0 },
+            { "name": "三森大貴", "atBats": 3, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "井上朋也", "atBats": 2, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "林琢真", "atBats": 1, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "成瀬脩人", "atBats": 2, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "勝又温史", "atBats": 1, "hits": 0, "homeRuns": 0, "rbi": 0 }
+          ],
+          "pitching": [
+            { "name": "平良拳太郎", "outs": 12, "strikeouts": 4, "earnedRuns": 3, "decision": "敗" },
+            { "name": "片山皓心", "outs": 6, "strikeouts": 0, "earnedRuns": 1, "decision": null },
+            { "name": "吉野光樹", "outs": 3, "strikeouts": 1, "earnedRuns": 0, "decision": null },
+            { "name": "深沢鳳介", "outs": 3, "strikeouts": 1, "earnedRuns": 0, "decision": null }
+          ]
+        },
+        {
+          "teamId": "npb:team:hawks",
+          "batting": [
+            { "name": "正木智也", "atBats": 3, "hits": 2, "homeRuns": 0, "rbi": 0 },
+            { "name": "周東佑京", "atBats": 3, "hits": 1, "homeRuns": 0, "rbi": 0 },
+            { "name": "近藤健介", "atBats": 4, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "栗原陵矢", "atBats": 2, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "山本祐大", "atBats": 2, "hits": 1, "homeRuns": 0, "rbi": 3 },
+            { "name": "柳田悠岐", "atBats": 3, "hits": 1, "homeRuns": 0, "rbi": 1 },
+            { "name": "山川穂高", "atBats": 3, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "川村友斗", "atBats": 0, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "牧原大成", "atBats": 3, "hits": 0, "homeRuns": 0, "rbi": 0 },
+            { "name": "庄子雄大", "atBats": 3, "hits": 0, "homeRuns": 0, "rbi": 0 }
+          ],
+          "pitching": [
+            { "name": "前田悠伍", "outs": 14, "strikeouts": 4, "earnedRuns": 2, "decision": null },
+            { "name": "鈴木豪太", "outs": 1, "strikeouts": 0, "earnedRuns": 0, "decision": "H" },
+            { "name": "ダーウィンゾン・ヘルナンデス", "outs": 3, "strikeouts": 2, "earnedRuns": 0, "decision": "勝" },
+            { "name": "ロベルト・オスナ", "outs": 3, "strikeouts": 2, "earnedRuns": 0, "decision": "H" },
+            { "name": "松本裕樹", "outs": 3, "strikeouts": 1, "earnedRuns": 0, "decision": "H" },
+            { "name": "杉山一樹", "outs": 3, "strikeouts": 1, "earnedRuns": 0, "decision": "S" }
+          ]
+        }
+      ]
+    }
+  ]
+}
