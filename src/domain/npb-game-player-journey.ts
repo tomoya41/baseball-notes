@@ -43,6 +43,7 @@ export function npbGamePlayerLinks(playerId: string, context: NpbGamePlayerConte
     game.set("competition", "postseason");
     game.set("stage", context.stage);
     game.set("season", context.date.slice(0, 4));
+    if (context.stage === "japan_series") game.set("role", context.role);
   } else if (context.scheduleTeam) game.set("team", context.scheduleTeam);
   const base = `/NPB/players/${encodeURIComponent(playerId)}`;
   return {
