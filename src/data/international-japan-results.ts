@@ -1,6 +1,6 @@
 import type { z } from "zod";
 import { internationalTournamentEvidenceSchema } from "../domain/international-competition";
-import { apbc2026BatteryAppearances, apbc2026BatteryRevision } from "./apbc-2026-battery-appearances";
+import { apbc2026BatteryAppearances, apbc2026BatteryRevision, apbc2026GamePitching } from "./apbc-2026-battery-appearances";
 import { apbc2026Id, apbcIdentities, apbcIdentitySources } from "./apbc-2026-player-identities";
 import { apbcSelections } from "./apbc-2026-selections";
 import { apbc2026Highlights, apbc2026Mvp } from "./apbc-2026-highlights";
@@ -83,8 +83,8 @@ function edition(tournamentId: string, rows: readonly ResultRow[], stats?: Japan
     appearances.push(...apbc2026BatteryAppearances.filter(row => !present.has(`${row.gameId}|${row.playerId}`)));
   }
   return internationalTournamentEvidenceSchema.parse({ tournamentId,
-    editionRevision: apbc ? 5 : wbc2026 ? 4 : stats ? 2 : 1, sources, games, playerStats,
-    gameHighlights, tournamentMvp: apbc ? apbc2026Mvp : undefined,
+    editionRevision: apbc ? 6 : wbc2026 ? 4 : stats ? 2 : 1, sources, games, playerStats,
+    gameHighlights, gamePitching: apbc ? apbc2026GamePitching : [], tournamentMvp: apbc ? apbc2026Mvp : undefined,
     identities: apbc ? apbcIdentities : [], participation: [...selections, ...appearances], corrections: [], coverage: { results: partial, schedule: empty,
       selections: roster ? { ...partial, source: { sourceRevisionId: roster.revision, sourceRecordId: "代表選手" } } : empty,
       registrations: empty, appearances: highlightSource ? { ...partial, source: highlightSource } : empty,
