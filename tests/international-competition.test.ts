@@ -1,6 +1,7 @@
 import { expect, it } from "vitest";
 import { internationalOfficialTournaments } from "../src/data/international-official-links";
-import { japanResultsByTournament, japanSelectionsByTournament } from "../src/data/international-japan-results";
+import { japanGameAppearances, japanResultsByTournament, japanSelectionsByTournament } from "../src/data/international-japan-results";
+import npbProfileIdentities from "../src/data/npb-free-profile-identities.json";
 import { savedGameMvpInputs } from "../src/domain/daily-mvp";
 import { playerGameBattingSchema, playerGamePitchingSchema } from "../src/domain/game-facts";
 import { internationalGameSchema, internationalParticipationSchema, internationalTournamentEvidenceSchema,
@@ -302,4 +303,30 @@ it("admits APBC home runs and winning pitchers independently of full player stat
     { games: [pending, ...apbc.games.slice(1)] },
     { tournamentMvp: { ...apbc.tournamentMvp!, playerId: "international:player:unknown" } },
   ]) expect(internationalTournamentEvidenceSchema.safeParse({ ...apbc, ...change }).success).toBe(false);
+});
+
+it("links only the nine APBC confirmed participants to their existing NPB IDs with independent evidence", () => {
+  const apbc = japanResultsByTournament.get(tournamentId)!;
+  const appeared = new Set(apbc.participation.filter(row => row.kind === "appeared").map(row => row.playerId));
+  expect(appeared.size).toBe(9);
+  expect(new Set(apbc.identities.map(row => row.playerId))).toEqual(appeared);
+  for (const row of apbc.identities) {
+    expect(row.league).toBe("NPB");
+    const existing = npbProfileIdentities.find(player => player.playerId === row.canonicalPlayerId);
+    expect(existing?.verificationStatus).toBe("source_verified");
+    expect(row.evidence.canonical.identifier).toEqual({
+      method: "shared_player_identifier", authorityId: "npb", value: existing?.npbId,
+    });
+    expect(row.evidence.canonical.sourceRecordId).toBe(existing?.chadwick?.uuid);
+    const [first, second] = [row.evidence.international, row.evidence.canonical].map(
+      evidence => apbc.sources.find(source => source.id === evidence.sourceRevisionId)?.publisherId);
+    expect([first, second]).toEqual(["japanese-wikipedia", "chadwick-bureau"]);
+    expect(japanGameAppearances(row.canonicalPlayerId)).toEqual([{ tournamentId, confirmedGames:
+      apbc.participation.filter(record => record.kind === "appeared" && record.playerId === row.playerId).length }]);
+  }
+  // 武内夏暉 has a confirmed selection in this edition and no admitted game appearance.
+  expect(apbc.participation.map(row => [row.playerId, row.kind])).toContainEqual(["international:player:jawiki:4832529", "selected"]);
+  expect(japanGameAppearances("6c571e31-d07d-4cb5-9c1c-a9ea83a653e5")).toEqual([]);
+  expect(apbc.playerStats).toEqual([]);
+  expect(apbc.coverage.appearances.status).toBe("partial");
 });

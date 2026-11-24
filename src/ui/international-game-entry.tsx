@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { internationalOfficialTournaments as tournaments } from "../data/international-official-links";
 import { internationalTeamNames, internationalRoundNames, japanResultsByTournament, japanSelectionsByTournament, resultLicense } from "../data/international-japan-results";
 import { apbc2026OfficialBoxes } from "../data/apbc-2026-highlights";
@@ -24,6 +25,12 @@ export function InternationalGameEntry({ expanded, onToggle, selected, onSelect 
   const batting = edition?.playerStats.filter(row => row.role === "batting") ?? [];
   const pitching = edition?.playerStats.filter(row => row.role === "pitching") ?? [];
   const statsCoverage = edition?.coverage.playerStats;
+  const npbPlayers = new Map(edition?.identities.filter(row => row.league === "NPB")
+    .map(row => [row.playerId, row.canonicalPlayerId]));
+  const identitySourceIds = new Set(edition?.identities.flatMap(row =>
+    [row.evidence.international.sourceRevisionId, row.evidence.canonical.sourceRevisionId]));
+  const sources = edition?.sources.filter(source => !identitySourceIds.has(source.id));
+  const identitySources = edition?.sources.filter(source => identitySourceIds.has(source.id));
   const appearances = new Map<string, string[]>();
   for (const record of edition?.participation ?? []) {
     if (record.kind !== "appeared" || record.date === null) continue;
@@ -86,11 +93,15 @@ export function InternationalGameEntry({ expanded, onToggle, selected, onSelect 
         {appearances.size > 0 && <details className="advanced-disclosure">
           <summary>出場を確認した選手 · {appearances.size}人</summary>
           <p className="inline-note">本塁打や勝敗投手の記録で確認できた試合のみ。日付は現地時間です。</p>
-          <ul className="row-list">{[...appearances].map(([id, dates]) => <li key={id} className="player-row">
-            <span className="player-row__body"><strong>{playerNames.get(id)}</strong>
-              <small>{dates.map(date => formatDate(date, true)).join("、")}</small>
-            </span>
-          </li>)}</ul>
+          <ul className="row-list">{[...appearances].map(([id, dates]) => {
+            const canonicalPlayerId = npbPlayers.get(id);
+            const player = <><strong>{playerNames.get(id)}</strong><small>{dates.map(date => formatDate(date, true)).join("、")}</small></>;
+            return <li key={id} className="player-row">
+              {canonicalPlayerId ? <Link className="player-row__body international-player-link" to={`/NPB/players/${canonicalPlayerId}`}>
+                {player}<span className="international-player-link__arrow" aria-hidden="true">→</span>
+              </Link> : <span className="player-row__body">{player}</span>}
+            </li>;
+          })}</ul>
         </details>}
         <details className="source-note"><summary>収録範囲・出典</summary><p>日本戦の確定スコアを抜粋。左がビジター、右がホームです。
           Wikipediaの執筆者による記録を抜粋・翻訳・整形し、<a href={resultLicense}>CC BY-SA 4.0</a>で提供しています。</p>
@@ -106,10 +117,20 @@ export function InternationalGameEntry({ expanded, onToggle, selected, onSelect 
               <a href={premier122024JapanStatsVerification.throughSuperRound}>決勝前のWBSC集計</a>と
               <a href={premier122024JapanStatsVerification.final}>決勝の試合記録</a>です。</>}
           </p>}
-          {edition.sources.map(source => <p key={source.id}><a href={source.url}>{
+          {sources?.map(source => <p key={source.id}><a href={source.url}>{
             statsCoverage?.status === "partial" && statsCoverage.source.sourceRevisionId === source.id ? "日本語版の大会通算成績" :
               source.sourceId === "jawiki" ? "日本語版の代表選手" : "英語版の試合結果"
           }（版 {source.version}）</a></p>)}
+          {identitySources?.length ? <details className="source-note">
+            <summary>本人照合の出典</summary>
+            <p>日本語版Wikipediaの選手記事（<a href={resultLicense}>CC BY-SA 4.0</a>）と、
+              Chadwick Baseball Bureauの登録データで選手IDを照合しました。</p>
+            <ul>{identitySources.map(source => <li key={source.id}>
+              {source.sourceId === "chadwick-register" ? <>
+                <a href={source.url}>Chadwick Register</a>（<a href={source.termsEvidenceUrl}>ODC-BY 1.0</a>）
+              </> : <a href={source.url}>日本語版Wikipediaの選手記事（版 {source.version}）</a>}
+            </li>)}</ul>
+          </details> : null}
         </details>
       </section> : <p>アプリ未収録。日程・結果・代表選手は、公開されている公式情報で確認できます。</p>}
       <div className="hub-links">{tournament.links.map(link => <a key={link.url} href={link.url}

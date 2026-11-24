@@ -10,6 +10,8 @@ import type { PlayerRecentResponse, RecentPeriod } from "../domain/player-recent
 import type { PlayerGameLogResponse } from "../domain/player-game-log";
 import type { PlayerAnalysisBundle } from "../domain/player-analysis-bundle";
 import type { NpbCatalog } from "../domain/npb-product-contract";
+import { internationalOfficialTournaments } from "../data/international-official-links";
+import { japanGameAppearances } from "../data/international-japan-results";
 import { FavoriteButton, DataState, LoadingSkeleton } from "./components";
 import { CollectionButton } from "./personal-library";
 import { PlayerTabs } from "./design-system";
@@ -168,9 +170,17 @@ export function NpbPlayer({ services, favorites, toggle, saving }: { services: S
   const affiliation = directory && directoryTeam ? `所属は${directory.effectiveDate}時点` : null;
   const background = <section className="player-background" aria-label="経歴と保存した選手への移動">
     <div className="player-snapshot-heading"><h2>選手の歩み</h2><Link to="/NPB/my">Myへ →</Link></div>
-    <nav className="player-background-links" aria-label="経歴と選手の動き">
+    <nav className="player-background-links" aria-label="経歴と出場記録">
       {section !== "more" && <Link to={`${base}/more${gameLinks?.search ?? ""}`}>プロフィール・球歴<span>学校・ドラフト・所属の記録</span></Link>}
       <Link to={`/NPB/moves?player=${player.id}`}>選手の動き<span>契約・移籍などの記録</span></Link>
+      {japanGameAppearances(player.id).map(({ tournamentId, confirmedGames }) => {
+        const tournament = internationalOfficialTournaments.find(item => item.id === tournamentId);
+        if (!tournament) return null;
+        const params = new URLSearchParams({ season: "2026", view: "international", tournament: tournamentId });
+        const name = tournament.kind === "apbc" ? `APBC ${tournament.year}` : tournament.name;
+        return <Link key={tournamentId} to={`/NPB/schedule?${params}`}>日本代表での出場
+          <span>{name} · {confirmedGames}試合で出場を確認</span></Link>;
+      })}
     </nav>
     <PlayerHonors league="NPB" playerId={player.id}/>
   </section>;
