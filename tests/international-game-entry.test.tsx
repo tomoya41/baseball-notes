@@ -48,7 +48,15 @@ it("opens real official tournament links alongside the domestic Games route with
       details.querySelector("summary")?.textContent?.startsWith("出場を確認した選手"));
     expect(appearanceSection?.textContent).toContain("中森俊介");
     expect(appearanceSection?.textContent).toContain("進藤勇也");
-    const appearanceLinks = [...entry.querySelectorAll('a[href*="/NPB/players/"]')];
+    const pitchingSection = [...entry.querySelectorAll("details")].find(details =>
+      details.querySelector("summary")?.textContent === "登板・投球回 · 13人")!;
+    expect(pitchingSection.open).toBe(false);
+    expect(pitchingSection.textContent).toContain("日本戦4試合 · チーム計34回");
+    const pitcherLinks = [...pitchingSection.querySelectorAll("a")];
+    expect(pitcherLinks).toHaveLength(13);
+    expect(pitcherLinks.find(link => link.textContent?.includes("中森俊介"))?.textContent).toContain("1登板 · 0回11月13日 0回（アウトなし）");
+    expect(pitcherLinks.find(link => link.textContent?.includes("森田駿哉"))?.textContent).toContain("2登板 · 2回");
+    const appearanceLinks = [...appearanceSection!.querySelectorAll('a[href*="/NPB/players/"]')];
     expect(appearanceLinks).toHaveLength(20);
     expect(appearanceLinks.find(link => link.textContent?.includes("宗山塁"))?.getAttribute("href"))
       .toBe("/NPB/players/b6286dd6-cf1f-45b8-87e2-95433f8aadb0");
@@ -69,6 +77,7 @@ it("opens real official tournament links alongside the domestic Games route with
     expect(entry.textContent).toContain("アメリカ 2 − 3 日本");
     expect(entry.textContent).not.toContain("宗山塁");
     expect(entry.textContent).not.toContain("勝利投手");
+    expect(entry.textContent).not.toContain("登板・投球回");
     expect(entry.querySelector('a[href*="/NPB/players/"]')).toBeNull();
     expect(entry.textContent).toContain("打撃成績 · 16人");
     expect(entry.textContent).toContain("投球成績 · 14人");

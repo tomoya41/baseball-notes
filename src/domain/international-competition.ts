@@ -96,6 +96,11 @@ const gameHighlights = z.strictObject({
   gameId, teamId, source: sourceReference, winningPitcherId: playerId.optional(), losingPitcherId: playerId.optional(),
   homeRuns: z.array(z.strictObject({ playerId, count: z.number().int().positive() })).min(1),
 });
+const gamePitching = z.strictObject({
+  gameId, teamId, source: sourceReference,
+  teamOuts: runs, teamOutsSource: sourceReference,
+  pitchers: z.array(z.strictObject({ playerId, outs: runs })).min(1),
+});
 const tournamentMvp = z.strictObject({ teamId, playerId, source: sourceReference });
 const personIdentifier = z.discriminatedUnion("method", [
   z.strictObject({ method: z.literal("shared_player_identifier"), authorityId: organizationId, value: label }),
@@ -130,6 +135,7 @@ export const internationalTournamentEvidenceSchema = z.strictObject({
   games: z.array(internationalGameSchema), participation: z.array(internationalParticipationSchema),
   playerStats: z.array(tournamentPlayerStat).default([]),
   gameHighlights: z.array(gameHighlights).default([]),
+  gamePitching: z.array(gamePitching).default([]),
   tournamentMvp: tournamentMvp.optional(),
   coverage: z.strictObject({ schedule: coverage, results: coverage, selections: coverage,
     registrations: coverage, appearances: coverage, playerStats: z.discriminatedUnion("status", [uncollected, partialCoverage]),
@@ -193,6 +199,21 @@ export const internationalTournamentEvidenceSchema = z.strictObject({
   }
   const affiliatedPlayers = new Set(edition.participation.filter(record => record.kind !== "appeared")
     .map(record => `${record.teamId}|${record.playerId}`));
+  const pitchedGames = new Set<string>();
+  for (const [index, row] of edition.gamePitching.entries()) {
+    const game = games.get(row.gameId);
+    const key = `${row.gameId}|${row.teamId}`;
+    const pitcherIds = new Set(row.pitchers.map(pitcher => pitcher.playerId));
+    if (game?.status !== "final" || !game.localDate || (game.homeTeamId !== row.teamId && game.awayTeamId !== row.teamId) ||
+      pitchedGames.has(key) || !approved.has(row.source.sourceRevisionId) || !approved.has(row.teamOutsSource.sourceRevisionId) ||
+      (row.source.sourceRevisionId === row.teamOutsSource.sourceRevisionId && row.source.sourceRecordId === row.teamOutsSource.sourceRecordId) ||
+      pitcherIds.size !== row.pitchers.length || row.pitchers.reduce((sum, pitcher) => sum + pitcher.outs, 0) !== row.teamOuts ||
+      row.pitchers.some(pitcher => !participationIds.has(`appeared|${key}|${pitcher.playerId}`))) {
+      context.addIssue({ code: "custom", path: ["gamePitching", index],
+        message: "Game pitching requires verified appearances and pitching outs that match the separately sourced team total" });
+    }
+    pitchedGames.add(key);
+  }
   const highlightedGames = new Set<string>();
   const highlightsCoverage = edition.coverage.gameHighlights;
   if (highlightsCoverage.status === "uncollected" ? edition.gameHighlights.length !== 0 :

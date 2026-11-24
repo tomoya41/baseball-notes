@@ -346,7 +346,7 @@ it("admits APBC pitching and catching appearances from four reviewed batteries w
   const roster = japanSelectionsByTournament.get(tournamentId)!.players;
   for (const battery of apbc2026Batteries) {
     const playerId = (pageId: number) => `international:player:jawiki:${pageId}`;
-    for (const [ids, position] of [[battery.pitchers, "投手"], [battery.catchers, "捕手"]] as const) {
+    for (const [ids, position] of [[battery.pitchers.map(([id]) => id), "投手"], [battery.catchers, "捕手"]] as const) {
       for (const id of ids) {
         expect(roster.find(row => row.id === playerId(id))?.position).toBe(position);
         expect(appearances.some(row => row.playerId === playerId(id) && row.date === battery.date)).toBe(true);
@@ -360,4 +360,30 @@ it("admits APBC pitching and catching appearances from four reviewed batteries w
   expect(apbc.coverage).toMatchObject({
     appearances: { status: "partial" }, registrations: { status: "uncollected" }, playerStats: { status: "uncollected" },
   });
+});
+
+it("admits APBC innings for the four completed Japanese games, including a zero-out outing", () => {
+  const apbc = japanResultsByTournament.get(tournamentId)!;
+  expect(apbc.gamePitching.map(game => game.teamOuts)).toEqual([27, 27, 21, 27]);
+  expect(apbc.gamePitching.flatMap(game => game.pitchers)).toHaveLength(16);
+  expect(new Set(apbc.gamePitching.flatMap(game => game.pitchers.map(row => row.playerId))).size).toBe(13);
+  expect(apbc.gamePitching[1]!.pitchers).toContainEqual({ playerId: "international:player:jawiki:4274936", outs: 0 });
+  expect(apbc.gamePitching[2]!.pitchers).toContainEqual({ playerId: "international:player:jawiki:4832529", outs: 12 });
+  expect(apbc.coverage.playerStats.status).toBe("uncollected");
+  expect(apbc.coverage.appearances.status).toBe("partial");
+  for (const [id, edition] of japanResultsByTournament) {
+    if (id !== tournamentId) expect(edition.gamePitching).toEqual([]);
+  }
+  const game = apbc.gamePitching[0]!;
+  const pitcher = game.pitchers[0]!;
+  for (const gamePitching of [
+    [game, game],
+    [{ ...game, teamOuts: 26 }],
+    [{ ...game, teamOutsSource: game.source }],
+    [{ ...game, teamOutsSource: { ...game.teamOutsSource, sourceRevisionId: "unapproved" } }],
+    [{ ...game, pitchers: [pitcher, pitcher, ...game.pitchers.slice(1)], teamOuts: game.teamOuts + pitcher.outs }],
+    [{ ...game, pitchers: [{ ...pitcher, playerId: "international:player:jawiki:4832529" }, ...game.pitchers.slice(1)] }],
+    [{ ...game, pitchers: [{ ...pitcher, outs: null }, ...game.pitchers.slice(1)] }],
+    [{ ...game, teamId: "international:team:aus" }],
+  ]) expect(internationalTournamentEvidenceSchema.safeParse({ ...apbc, gamePitching }).success).toBe(false);
 });
