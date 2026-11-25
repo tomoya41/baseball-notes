@@ -6,6 +6,7 @@ import { internationalTeamNames, internationalRoundNames, japanResultsByTourname
 import { apbc2026OfficialBoxes } from "../data/apbc-2026-highlights";
 import { premier122024JapanStatsRevision, premier122024JapanStatsVerification } from "../data/premier12-2024-japan-stats";
 import { wbc2023JapanStatsRevision, wbc2023JapanStatsVerification } from "../data/wbc-2023-japan-stats";
+import { wbc2026LineupRevision } from "../data/wbc-2026-japan-lineups";
 import { wbc2026OfficialBoxes } from "../data/wbc-2026-japan-highlights";
 import { metrics, ratio } from "../domain/metrics";
 import { formatDate, formatMetric } from "../presentation/formatters";
@@ -124,7 +125,7 @@ export function InternationalGameEntry({ expanded, onToggle, selected, onSelect,
         </details>}
         {appearances.size > 0 && <details className="advanced-disclosure">
           <summary>出場を確認した選手 · {appearances.size}人</summary>
-          <p className="inline-note">{apbc ? "本塁打・登板・捕手の記録" : "本塁打や勝敗投手の記録"}で確認できた試合のみ。日付は現地時間です。</p>
+          <p className="inline-note">{apbc ? "本塁打・登板・捕手の記録" : "先発・バッテリー、本塁打・勝敗投手の記録"}で確認できた試合を掲載。日付は現地時間です。</p>
           <ul className="row-list">{[...appearances].map(([id, dates]) => <InternationalPlayerRow key={id}
             name={playerNames.get(id)} npbPlayerId={npbPlayers.get(id)}>
             <small>{dates.map(date => formatDate(date, true)).join("、")}</small>
@@ -148,6 +149,7 @@ export function InternationalGameEntry({ expanded, onToggle, selected, onSelect,
           {sources?.map(source => <p key={source.id}><a href={source.url}>{
             statsCoverage?.status === "partial" && statsCoverage.source.sourceRevisionId === source.id ? "日本語版の大会通算成績" :
               source.id === apbc2026BatteryRevision ? "日本語版の登板・投球回・捕手の記録" :
+              source.id === wbc2026LineupRevision ? "日本語版の代表選手・先発・バッテリー" :
               source.sourceId === "jawiki" ? "日本語版の代表選手" : "英語版の試合結果"
           }（版 {source.version}）</a></p>)}
           {identitySources?.length ? <details className="source-note">
