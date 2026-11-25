@@ -46,7 +46,7 @@ const bridge = {
 };
 
 it("keeps official links out of tournament data admission", () => {
-  expect(internationalOfficialTournaments.map(t => t.id)).toHaveLength(7);
+  expect(new Set(internationalOfficialTournaments.map(t => t.id)).size).toBe(internationalOfficialTournaments.length);
   expect(internationalTournamentSchema.safeParse({ ...internationalOfficialTournaments[0], year: 2027 }).success).toBe(false);
   expect(internationalTournamentEvidenceSchema.safeParse(edition).success).toBe(true);
   const coverage = { ...edition.coverage, schedule: { status: "partial", scope: { kind: "tournament" }, source } };
@@ -168,6 +168,30 @@ it("keeps international games out of existing NPB scopes, indexes, domestic Fact
   expect(playerGamePitchingSchema.safeParse(selection).success).toBe(false);
   expect(savedGameMvpInputs(index, [domesticGame])).toHaveLength(1);
   expect(savedGameMvpInputs(index, [{ ...domesticGame, gameId: game.id }])).toEqual([]);
+});
+
+it("admits the four APBC 2023 final results with venue dates, sides and no assumed starts or appearances", () => {
+  const apbc = japanResultsByTournament.get("international:tournament:apbc:2023")!;
+  expect(apbc.games.map(row => [row.localDate, row.awayTeamId, row.result?.awayRuns, row.homeTeamId, row.result?.homeRuns, row.round]))
+    .toEqual([
+      ["2023-11-16", "international:team:jpn", 4, "international:team:tpe", 0, "pool"],
+      ["2023-11-17", "international:team:kor", 1, "international:team:jpn", 2, "pool"],
+      ["2023-11-18", "international:team:jpn", 10, "international:team:aus", 0, "pool"],
+      ["2023-11-19", "international:team:kor", 3, "international:team:jpn", 4, "final"],
+    ]);
+  for (const row of apbc.games) {
+    expect(row).toMatchObject({ competition: "international", status: "final", scheduledAt: null, timeZone: "Asia/Tokyo",
+      source: { sourceRevisionId: "111760584" } });
+  }
+  expect(apbc.sources).toEqual([expect.objectContaining({
+    sourceId: "jawiki", url: "https://ja.wikipedia.org/w/index.php?oldid=111760584",
+  })]);
+  expect(apbc.coverage).toMatchObject({
+    results: { status: "partial", scope: { kind: "team", teamId: "international:team:jpn" } },
+    schedule: { status: "uncollected" }, appearances: { status: "uncollected" }, playerStats: { status: "uncollected" },
+  });
+  expect(apbc.participation).toEqual([]);
+  expect(apbc.identities).toEqual([]);
 });
 
 it("admits separate WBC batting and pitching totals, with exact counts and missing values preserved", () => {

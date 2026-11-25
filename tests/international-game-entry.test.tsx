@@ -106,6 +106,15 @@ it("opens real official tournament links alongside the domestic Games route with
         select.dispatchEvent(new Event("change", { bubbles: true }));
       });
     }
+    await openTournament("international:tournament:apbc:2023");
+    expect(entry.querySelectorAll("ol.row-list > li")).toHaveLength(4);
+    expect(entry.textContent).toContain("韓国 3 − 4 日本");
+    expect(entry.textContent).toContain("代表選手・個人成績は未収録");
+    expect(entry.querySelector('.source-note a[href$="oldid=111760584"]')?.textContent).toContain("日本語版の試合結果");
+    expect(entry.querySelector('.hub-links a[href$="/apbc2023/"]')).not.toBeNull();
+    expect(container.querySelector("output")?.textContent)
+      .toBe(`${currentUrl}&view=international&tournament=international%3Atournament%3Aapbc%3A2023`);
+    expect(container.querySelector('.scoreboard-list a')?.getAttribute("href")).toBe(domesticLink);
     await openTournament("international:tournament:wbc:2026");
     expect(entry.textContent).toContain("代表に選ばれた選手 · 30人");
     const confirmed = [...entry.querySelectorAll("details")].find(panel =>

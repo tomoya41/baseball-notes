@@ -13,6 +13,11 @@ export const internationalOfficialTournaments = internationalTournamentSchema.ar
     ],
   },
   {
+    competition: "international", id: "international:tournament:apbc:2023", kind: "apbc", year: 2023,
+    name: "アジアプロ野球チャンピオンシップ2023",
+    links: [{ label: "公式大会ページ", url: "https://www.japan-baseball.jp/jp/games/apbc2023/" }],
+  },
+  {
     competition: "international", id: "international:tournament:wbc:2026", kind: "wbc", year: 2026, name: "WBC 2026",
     links: [
       { label: "日本代表の公式大会ページ", url: "https://www.japan-baseball.jp/jp/games/wbc2026/" },
