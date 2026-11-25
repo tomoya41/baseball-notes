@@ -11,7 +11,7 @@ import { npbEventQuery } from "./npb-event-query";
 import japanPin from "../data/npb-japan-series-release.json";
 import { draftEventQuery } from "./npb-draft-query";
 import { needsNpbSeasonEntry } from "./npb-season-entry";
-import { isHonorRecipientId } from "./honor-discovery";
+import { isHonorRecipientId, isHonorYear } from "./honor-discovery";
 import { npbGamePlayerContext, npbGamePlayerSearch } from "./npb-game-player-journey";
 import { npbScheduleTeam } from "./npb-game-navigation";
 import { internationalTournamentIn } from "../data/international-official-links";
@@ -24,7 +24,7 @@ export function portableRoute(path: string, search = ""): string | null {
   const resource = parts[1], source = new URLSearchParams(search), clean = new URLSearchParams();
   if(resource==="awards"&&parts.length===2){
     const year=source.get("year"),award=source.get("award"),view=source.get("view"),recipient=source.get("recipient");
-    if(["year","award","view","recipient","q"].some(k=>source.getAll(k).length>1)||year!==null&&(!/^\d{4}$/.test(year)||Number(year)<(league==="NPB"?1936:1871)||Number(year)>2025)||award!==null&&!/^[a-z0-9_-]+$/.test(award)||view!==null&&!["years","players"].includes(view)||recipient!==null&&(!isHonorRecipientId(league,recipient)||view==="years"))return null;
+    if(["year","award","view","recipient","q"].some(k=>source.getAll(k).length>1)||year!==null&&(!/^\d{4}$/.test(year)||!isHonorYear(league,Number(year)))||award!==null&&!/^[a-z0-9_-]+$/.test(award)||view!==null&&!["years","players"].includes(view)||recipient!==null&&(!isHonorRecipientId(league,recipient)||view==="years"))return null;
     if(recipient)clean.set("recipient",recipient);else if(view==="players")clean.set("view",view);
     if(year)clean.set("year",year);if(award)clean.set("award",award);if(source.has("q"))clean.set("q",source.get("q")!.slice(0,100));return `${path}${clean.size?`?${clean}`:""}`;
   }

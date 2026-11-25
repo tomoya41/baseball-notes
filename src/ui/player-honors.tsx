@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { japaneseMlbPlayerName, matchesMlbPlayerName } from "../domain/mlb-japanese-display";
 import { contextReader } from "../application/baseball-context-reader";
 import { playerHonorBucket, honorProfilePath, type HonorsPage, type Honor, type HonorRecipient, type ContextManifest } from "../domain/player-honors";
-import { honorRecipientPath, isHonorRecipientId, type HonorCatalog, type HonorLeague } from "../domain/honor-discovery";
+import { honorRecipientPath, isHonorRecipientId, isHonorYear, type HonorCatalog, type HonorLeague } from "../domain/honor-discovery";
 import { DataState, LoadingSkeleton } from "./components";
 import "./player-honors.css";
 
@@ -17,7 +17,7 @@ const division = (v: string | null) => ({ CL: "セ・リーグ", PL: "パ・リ�
 const licenseUrl = (license: string) => ({ "CC-BY-SA-3.0": "https://creativecommons.org/licenses/by-sa/3.0/", "CC-BY-SA-4.0": "https://creativecommons.org/licenses/by-sa/4.0/", "CC0-1.0": "https://creativecommons.org/publicdomain/zero/1.0/", "ODC-BY-1.0": "https://opendatacommons.org/licenses/by/1-0/" })[license];
 
 function Sources({ page }: { page: HonorsPage }) {
-  return <details className="honors-sources"><summary>収録範囲・出典</summary><p>一部選手・表彰を収録。回数は収録分です。アプリ独自のMVP・ランキングとは別です。所属は受賞年度の記録で、受賞日の所属を断定するものではありません。年度成績が未収録でも受賞歴を表示します。</p>{page.sources.map(s => <p key={s.id}><a href={s.url}>{s.name}</a>{s.authorsUrl && <> · <a href={s.authorsUrl}>執筆履歴</a></>} · <a href={licenseUrl(s.license)}>{s.license}</a></p>)}<p>原データからの変更：年別一覧の抜粋、日本語表記、本人照合、所属年度の関連付け。各データ部分は表示のライセンスで再利用できます。SABR / Sean Lahman ©1996–2025。MLBの本人照合はChadwick Register（<a href="https://github.com/chadwickbureau/register">ODC-BY 1.0</a>）を使用しています。</p></details>;
+  return <details className="honors-sources"><summary>収録範囲・出典</summary><p>一部選手・表彰を収録。回数は収録分です。アプリ独自のMVP・ランキングとは別です。所属は受賞年度の記録で、受賞日の所属を断定するものではありません。年度成績が未収録でも受賞歴を表示します。</p>{page.records.some(row => row.league === "NPB" && row.year === 2026) && <p><a href="https://npb.jp/news/detail/20261125_01.html">NPB公式の受賞発表</a></p>}{page.sources.map(s => <p key={s.id}><a href={s.url}>{s.name}</a>{s.authorsUrl && <> · <a href={s.authorsUrl}>執筆履歴</a></>} · <a href={licenseUrl(s.license)}>{s.license}</a></p>)}<p>原データからの変更：年別一覧の抜粋、日本語表記、本人照合、所属年度の関連付け。各データ部分は表示のライセンスで再利用できます。SABR / Sean Lahman ©1996–2025。MLBの本人照合はChadwick Register（<a href="https://github.com/chadwickbureau/register">ODC-BY 1.0</a>）を使用しています。</p></details>;
 }
 
 function HonorList({ page, rows, league, selected = false }: { page: HonorsPage; rows: Honor[]; league: HonorLeague; selected?: boolean }) {
@@ -116,7 +116,7 @@ export function HonorsScreen({ league }: { league: HonorLeague }) {
   const [params, setParams] = useSearchParams(), [manifest, setManifest] = useState<ContextManifest | null>(null), [failed, setFailed] = useState(false), [attempt, setAttempt] = useState(0);
   const recipient = params.get("recipient"), view = params.get("view"), players = view === "players" || recipient !== null;
   const filters: Filters = { year: params.get("year") ?? (players ? "" : String(manifest?.years[league][0] ?? "")), award: params.get("award") ?? "", query: params.get("q") ?? "", limit: Math.min(5000, Math.max(30, Number(params.get("limit")) || 30)) };
-  const valid = !["year", "award", "view", "recipient", "q"].some(k => params.getAll(k).length > 1) && (view === null || view === "players" || view === "years") && !(recipient && view === "years") && (recipient === null || isHonorRecipientId(league, recipient)) && (!filters.year || /^\d{4}$/.test(filters.year) && Number(filters.year) >= (league === "NPB" ? 1936 : 1871) && Number(filters.year) <= 2025) && (!filters.award || /^[a-z0-9_-]+$/.test(filters.award)) && filters.query.length <= 100;
+  const valid = !["year", "award", "view", "recipient", "q"].some(k => params.getAll(k).length > 1) && (view === null || view === "players" || view === "years") && !(recipient && view === "years") && (recipient === null || isHonorRecipientId(league, recipient)) && (!filters.year || /^\d{4}$/.test(filters.year) && isHonorYear(league, Number(filters.year))) && (!filters.award || /^[a-z0-9_-]+$/.test(filters.award)) && filters.query.length <= 100;
   useEffect(() => { let active = true; void contextReader.manifest().then(m => { if (active) { setManifest(m); setFailed(false); } }).catch(() => { if (active) setFailed(true); }); return () => { active = false; }; }, [attempt]);
   const change: Change = (key, value) => setParams(p => { const n = new URLSearchParams(p); if (value) n.set(key, value); else n.delete(key); if (key !== "limit") n.delete("limit"); return n; });
   const mode = (next: "years" | "players") => setParams(p => { const n = new URLSearchParams(p); n.delete("recipient"); n.delete("limit"); if (next === "players") { n.set("view", "players"); n.delete("year"); } else n.delete("view"); return n; });

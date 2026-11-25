@@ -69,3 +69,13 @@ No v1 asset is replaced. v2 uses a new version/hash. The retained-pins list is f
 ### Reviewed v3 coverage correction
 
 Preserve the regular profile entry when the same MLB ID also has a postseason profile. Store regular seasons and postseason seasons separately; postseason-only profiles carry explicit scope. Award-year links request only a covered year, and Series MVP links use the collected postseason scope. All **413** linked MLB recipients were compared to both published directory indexes: exact regular/postseason year arrays and default scope agree, **0 mismatches**. All 105 inning projections remain unchanged. v1/v2 release assets remain immutable, neither was deployed to Pages; v3 is the sole active projection generation.
+
+## 2026年のNPB年次表彰
+
+11月25日発表のMVP・新人王とベストナイン（パ・リーグのベストDHを含む）を計23件、21人追加した。選出部門・受賞時の球団・リーグをNPBの公式発表と固定版で照合した。票数・候補、写真、記事本文、統計上の順位は取得・公開対象外。[NPB公式発表](https://npb.jp/news/detail/20261125_01.html)・[セ・リーグ](https://npb.jp/award/2026/cl.html)・[パ・リーグ](https://npb.jp/award/2026/pl.html)
+
+採用元は日本語版Wikipediaの[最優秀選手 第111898170版](https://ja.wikipedia.org/w/index.php?oldid=111898170)、[最優秀新人 第111897625版](https://ja.wikipedia.org/w/index.php?oldid=111897625)、[ベストナイン 第111899360版](https://ja.wikipedia.org/w/index.php?oldid=111899360)。著作者・改版・元のセルのハッシュを記録し、CC BY-SA 4.0に基づき受賞事実を抜粋・整形した。年をまたぐ表セルは受賞年の行と照合対象セルを両方固定した。
+
+選手記事のNPB ID、固定版のChadwick Register、既存本人照合台帳、公開Directoryが一致した20人を既存プロフィールに接続。フランミル・レイエスの受賞は大会一覧と選手別表彰歴に掲載し、成績ページへの接続は照合保留。保存済み2026年成績が確認できる選手にだけ2026年の成績への導線を付けた。
+
+v5のアーカイブ・本文・manifest・全投影のハッシュを確認してから、`scripts/append-npb-2026-honors.ts` で再現できるv6を作成した。入力は従来のv5と照合済み公開Directory（`.data/npb-awards-2026/directory.json`）。v5と以前の配信版は保持し、既存の表彰レコードとMLB・イニングスコアの投影を検証した。歴史資料のパーサーは2025年まで。2026年の追加分はレビュー済みの3部門に限定する。

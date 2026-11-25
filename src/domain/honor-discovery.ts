@@ -2,6 +2,13 @@ import { z } from "zod";
 import type { Honor, HonorRecipient } from "./player-honors";
 
 export type HonorLeague = "NPB" | "MLB";
+export const npbHonorsLastYear = 2026;
+export const mlbHonorsLastYear = 2025;
+
+export function isHonorYear(league: HonorLeague, year: number) {
+  return Number.isInteger(year) && year >= (league === "NPB" ? 1936 : 1871) &&
+    year <= (league === "NPB" ? npbHonorsLastYear : mlbHonorsLastYear);
+}
 export function isHonorRecipientId(league: HonorLeague, id: string) {
   return league === "NPB" ? /^npb:\d{6,12}$/.test(id) : /^lahman:[a-z0-9]{3,20}$/.test(id);
 }
@@ -19,14 +26,14 @@ export const honorCatalogSchema = z.strictObject({
   awards: z.array(award),
   players: z.array(z.strictObject({
     id: z.string(), name: z.string().min(1), identityStatus: z.enum(["verified", "unresolved"]),
-    playerId: z.string().nullable(), years: z.array(z.number().int().min(1871).max(2025)).min(1),
+    playerId: z.string().nullable(), years: z.array(z.number().int().min(1871).max(npbHonorsLastYear)).min(1),
     awardIds: z.array(z.string()).min(1), total: z.number().int().positive(),
   })).max(20_000),
 }).superRefine((d, c) => {
   const awards = new Set(d.awards.map(a => a.id));
   if (awards.size !== d.awards.length || new Set(d.players.map(p => p.id)).size !== d.players.length ||
       d.players.some(p => !isHonorRecipientId(d.league, p.id) || new Set(p.years).size !== p.years.length ||
-        p.years.some(y => d.league === "NPB" && y < 1936) ||
+        p.years.some(y => !isHonorYear(d.league, y)) ||
         new Set(p.awardIds).size !== p.awardIds.length || p.awardIds.some(id => !awards.has(id)) ||
         p.total < p.years.length || p.total < p.awardIds.length ||
         p.playerId !== null && (p.identityStatus !== "verified" ||
