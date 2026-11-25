@@ -79,3 +79,11 @@ Preserve the regular profile entry when the same MLB ID also has a postseason pr
 選手記事のNPB ID、固定版のChadwick Register、既存本人照合台帳、公開Directoryが一致した20人を既存プロフィールに接続。フランミル・レイエスの受賞は大会一覧と選手別表彰歴に掲載し、成績ページへの接続は照合保留。保存済み2026年成績が確認できる選手にだけ2026年の成績への導線を付けた。
 
 v5のアーカイブ・本文・manifest・全投影のハッシュを確認してから、`scripts/append-npb-2026-honors.ts` で再現できるv6を作成した。入力は従来のv5と照合済み公開Directory（`.data/npb-awards-2026/directory.json`）。v5と以前の配信版は保持し、既存の表彰レコードとMLB・イニングスコアの投影を検証した。歴史資料のパーサーは2025年まで。2026年の追加分はレビュー済みの3部門に限定する。
+
+### 三井ゴールデン・グラブ賞
+
+2026年のセ・パ各9件を追加した。[日本語版Wikipediaの固定版111796477](https://ja.wikipedia.org/w/index.php?oldid=111796477)の各リーグの2026年行から、年度・部門・氏名・受賞時の球団を抜粋してCC BY-SA 4.0で提供する。複数年度にまたがるセルは2026年の行と元のセルを固定し、[NPB公式の受賞一覧](https://npb.jp/award/2026/glove.html)と18件すべてを照合した。投票数・受賞者の写真・守備ランキングは収録対象外。
+
+18人の選手記事のNPB ID、Chadwick Registerを使った既存本人照合台帳、公開Directoryが一致した。受賞記録は既存の選手プロフィールと年度成績から確認できる。公式発表と二次資料へのリンクは「収録範囲・出典」から開ける。
+
+検証済みのv6を入力に `npx tsx scripts/append-npb-2026-honors.ts --golden-glove` でv7を生成する。既存2026年分23件、過年度の表彰記録、MLBとイニングスコアの投影を保持し、表彰は一部収録のままとする。

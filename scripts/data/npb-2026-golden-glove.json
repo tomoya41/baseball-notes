@@ -1,0 +1,55 @@
+{
+  "year": 2026,
+  "verifiedAt": "2026-11-25T12:15:01.966Z",
+  "sources": {
+    "npb_glove": {
+      "id": "wiki:97428:111796477",
+      "name": "Wikipedia「ゴールデングラブ賞」の執筆者",
+      "url": "https://ja.wikipedia.org/w/index.php?curid=97428&oldid=111796477",
+      "authorsUrl": "https://ja.wikipedia.org/w/index.php?curid=97428&action=history",
+      "license": "CC-BY-SA-4.0",
+      "sha256": "8be2fb00da30aa5f8b97ae109d46dd7138284d3a479ffe5586d3ae604b1e8666",
+      "revision": 111796477
+    }
+  },
+  "recipients": {
+    "11015138": {"name":"辰己涼介","articlePageId":3858956,"articleRevision":111774912,"articleSha256":"6a78c5fafd95d8bc8223a9dc9c348460da8b25e7045c260c02870f88bcb94845","binding":{"playerId":"33c7aba8-0aff-476b-8e1c-4159c878a167","wikidataId":"Q59134417","chadwickId":"0e3ee37d-8ca9-4bb2-8ac6-7a1141a404db","seasonAvailable":true}},
+    "11715153": {"name":"小川龍成","articlePageId":4289552,"articleRevision":111779901,"articleSha256":"e733093b246b5507b94979f6eb7a75d1c8d97205ee081ece54398528183528be","binding":{"playerId":"e3a6da3d-d85c-4dae-9c3d-ef48eb848aec","wikidataId":"Q105258584","chadwickId":"62aef4b7-4a47-4ea1-8534-7711767b1a58","seasonAvailable":true}},
+    "11815130": {"name":"宗佑磨","articlePageId":3105382,"articleRevision":111854064,"articleSha256":"775c4c87a4fe2e888c6e6f0b95cc0638627fb06dfa647a039c8f152d6dd6f276","binding":{"playerId":"822e3e5d-b156-4208-925c-5f702da095c0","wikidataId":"Q18818206","chadwickId":"8325e8c3-2569-455b-b221-15e63ec24bb6","seasonAvailable":true}},
+    "11915132": {"name":"坂本誠志郎","articlePageId":3327162,"articleRevision":111898244,"articleSha256":"3b742365b0eb7897708e58bedc25130a232e2509a03205a144d561dbba634b2a","binding":{"playerId":"2d760a27-b58a-47a5-80df-6b0aa3571ef5","wikidataId":"Q22118838","chadwickId":"edbd139e-656b-461d-b3b6-756d6e060caa","seasonAvailable":true}},
+    "21325134": {"name":"大山悠輔","articlePageId":3528442,"articleRevision":111898271,"articleSha256":"e5ce0dca0ab08d7716a838623f11a758fa00cb8cfdbdd793e570d57162e4bc11","binding":{"playerId":"3f3fa891-0eee-4fc2-b54d-bef80f8f9572","wikidataId":"Q28687821","chadwickId":"97eb84ac-a6b5-45b2-9d1a-59e50858769d","seasonAvailable":true}},
+    "21625135": {"name":"松本剛","articlePageId":2532251,"articleRevision":111827325,"articleSha256":"d6d96c4813d347119da089ae28db455a4c8fb7419c26c6fb77e0bbc8b4f8c799","binding":{"playerId":"866df134-7a63-40f5-92ba-221757097466","wikidataId":"Q11530918","chadwickId":"9231391e-05dd-45eb-9c9b-2606454fa6a1","seasonAvailable":true}},
+    "21925136": {"name":"周東佑京","articlePageId":3700545,"articleRevision":111897985,"articleSha256":"c2c80ff2bb498be74695ba0c7e38010935d407ae0ef664a34d2ef68e2dfed679","binding":{"playerId":"fe02470d-7c15-4c03-8a17-d6d339445ebe","wikidataId":"Q43426837","chadwickId":"a8e42bb7-47f9-4ef2-b1ab-e1f383b19550","seasonAvailable":true}},
+    "31035136": {"name":"平良海馬","articlePageId":3843351,"articleRevision":111898236,"articleSha256":"7050d81634dca1887939108c58ed2958ce1a3c6bacc0b656f24502064111add1","binding":{"playerId":"ba9b1d16-6c1a-4643-827c-f37805162675","wikidataId":"Q56886329","chadwickId":"627ae6e6-8a7b-438b-ad01-673ea98849e6","seasonAvailable":true}},
+    "31635138": {"name":"藤原恭大","articlePageId":3858954,"articleRevision":111730922,"articleSha256":"cc248eaccd9764d7810da47652e22965ff4af962627ad414ef3e78ea3567e19f","binding":{"playerId":"f2f6d5b2-603d-4952-9d1d-59a8f5b1eb75","wikidataId":"Q59134414","chadwickId":"6de77b99-016a-4c9c-a7f1-96f6218a65e4","seasonAvailable":true}},
+    "33535159": {"name":"度会隆輝","articlePageId":4637511,"articleRevision":111898379,"articleSha256":"fa75898d20f3cc91e64cc81ce07ba801ff081343968babe933077eced87460c9","binding":{"playerId":"b1cd976f-ee49-4db9-955f-d06423f7b1ce","wikidataId":"Q113567167","chadwickId":"7cf97bfe-d544-44d4-a461-6fea52b4930a","seasonAvailable":true}},
+    "41045153": {"name":"佐藤輝明","articlePageId":4237419,"articleRevision":111898302,"articleSha256":"7dbd2e1f1820e451e8c4d4f5f9c0f1577cd8c41057a7b860068b053ac610fc78","binding":{"playerId":"a1ca7cac-f9be-4993-a78c-bcd1e1ae3399","wikidataId":"Q102246661","chadwickId":"8fdcd710-2127-4b95-9bbe-678d87dc67ed","seasonAvailable":true}},
+    "41445153": {"name":"中野拓夢","articlePageId":4244362,"articleRevision":111765114,"articleSha256":"364d0e227531b83794b73be79045232eaa9fe71ffb314f8b87c42e715e278ee6","binding":{"playerId":"bf427baa-53be-488f-b388-4c5139fd3383","wikidataId":"Q102247137","chadwickId":"45bbf29d-05c5-4cf2-ab51-015694926f68","seasonAvailable":true}},
+    "41645139": {"name":"若月健矢","articlePageId":2959833,"articleRevision":111839744,"articleSha256":"7ce907e6db50bb51310574364d3decc4318b5a24a2b93e5cc14aad56c0c1b4a0","binding":{"playerId":"0849d339-1434-46b4-9382-a748c1c797a0","wikidataId":"Q17216222","chadwickId":"c95e5b8a-ad45-4520-961d-29e56ca0b701","seasonAvailable":true}},
+    "43145157": {"name":"森下翔太","articlePageId":4037204,"articleRevision":111898369,"articleSha256":"d020b6300ead00e842fb96b5a24ea7a848b624ee2bb0726f9c83338514820474","binding":{"playerId":"92a02594-a4f7-498c-bb83-8a41855b4645","wikidataId":"Q79808914","chadwickId":"7b61b097-9b73-4d41-93b9-af1a4464833e","seasonAvailable":true}},
+    "51155136": {"name":"東克樹","articlePageId":3733197,"articleRevision":111851800,"articleSha256":"88b779db02d1319b7eadc9a215f23c9867f56d5de22cf7ae96d56b2e27dd04d1","binding":{"playerId":"21a327b4-3924-422a-a1fc-d853e236a201","wikidataId":"Q48761258","chadwickId":"5eccf96b-3928-4232-8333-d253927d1a72","seasonAvailable":true}},
+    "53755150": {"name":"タイラー・ネビン","articlePageId":4614152,"articleRevision":111890973,"articleSha256":"47efbec727e6e2286cba13db2a34e63c46d00786e3fa5d4f47552131b12dc9f2","binding":{"playerId":"cdd951ef-64f9-48ed-94d4-07114db82c42","wikidataId":"Q107031409","chadwickId":"3c306280-f5c6-4903-82f0-b0550b02703d","seasonAvailable":true}},
+    "61165159": {"name":"泉口友汰","articlePageId":4849940,"articleRevision":111898321,"articleSha256":"fc6744ed87f78503816c37b13b9022e4660a3709b18ae882daab031278f62f03","binding":{"playerId":"2b12a74a-afc9-4c43-ae06-428ea91fa168","wikidataId":"Q123406056","chadwickId":"02201cf4-1283-46c2-ac92-7bbee5db7d52","seasonAvailable":true}},
+    "91995151": {"name":"紅林弘太郎","articlePageId":4029832,"articleRevision":111839506,"articleSha256":"8f500948da67901e0d35834b8bbbab0fedf0608bb7e12cfda7e71eaf4df709ea","binding":{"playerId":"be43afb9-ee5d-4dbb-a885-137771a0aa3f","wikidataId":"Q76284016","chadwickId":"7e717b3e-8a0c-452f-b7b7-adbfbe4ba117","seasonAvailable":true}}
+  },
+  "records": [
+    ["51155136","npb_glove","CL","baystars","投手部門","caecf7eece995edbe1129f6870869981e754a2fee01a209b6492f137a81e07af"],
+    ["11915132","npb_glove","CL","tigers","捕手部門","ea8ca4b9dd5276cd299d7d40093ef607034fb5ecd3bba404ae485cce6583815f"],
+    ["21325134","npb_glove","CL","tigers","一塁手部門","8a43f7468d9d453b013444e20921df2522236ae823d200c88b2e7103849c53de"],
+    ["41445153","npb_glove","CL","tigers","二塁手部門","598ce6f6098149551f6d24c16c9b7c91564e8ac6422f7ccde0c42f38de7c34f7"],
+    ["41045153","npb_glove","CL","tigers","三塁手部門","4b82abf7ee2ea9654f29d45c4207a7a6e37226a5f263a69221734df11ac056e3"],
+    ["61165159","npb_glove","CL","giants","遊撃手部門","089c5df3ea259487c1f173ebbe638bf909dab019d3b2e62838df4c413222a328"],
+    ["43145157","npb_glove","CL","tigers","外野手部門","016d537d6eca63b941804ca32ec552e01ec9e4719615975755488d2e502ffba6"],
+    ["33535159","npb_glove","CL","baystars","外野手部門","716ef4bebfd941c548ad991b4774c672baabde86e5bde8f9afc922b3c4f95d8b"],
+    ["21625135","npb_glove","CL","giants","外野手部門","97cd6f5ab3e88c6a232148a9fecebf1367432424a8ee3dde04e752762fb4a5a5"],
+    ["31035136","npb_glove","PL","lions","投手部門","e872553ac0d96dfbf9e37ea9cb26120f3cdc7aae826009a8602a3941276f13b4"],
+    ["41645139","npb_glove","PL","buffaloes","捕手部門","ca0b5e6c326f4f66204dbd452ad6d331a6d2b8c5d6278bb83310094a16f9189b"],
+    ["53755150","npb_glove","PL","lions","一塁手部門","59f5ef525c73e0309b97fe4b247b7695d58ad1df0957f508d4c72ecc3ba2f789"],
+    ["11715153","npb_glove","PL","marines","二塁手部門","7fbf869ce5f0d2e94a6f234048edd589bcef5498747ebc47ce9d75a7f9e09923"],
+    ["11815130","npb_glove","PL","buffaloes","三塁手部門","ffcc62dd4185de91344595bdbe92971449b1fece0bb8f359d400d0e73d6efa82"],
+    ["91995151","npb_glove","PL","buffaloes","遊撃手部門","05ca6a364e3b1782e29fd5a666dd2d452c2601a3c94f1ad36da68992dd0dedfc"],
+    ["31635138","npb_glove","PL","marines","外野手部門","503a64857858ca31ceae4d56214135625a1a32e05ef690f4823af46283d19f83"],
+    ["21925136","npb_glove","PL","hawks","外野手部門","bc6408ff9d19faacc51d1a0e35378fc4dfc97f8041c7a4a56d1356c1765292c4"],
+    ["11015138","npb_glove","PL","eagles","外野手部門","06d8e4b1f335aa6fe0b0e86d0117431ede3a8948237fc404213f9c1a6e47ab86"]
+  ]
+}
