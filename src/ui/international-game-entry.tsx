@@ -150,7 +150,8 @@ export function InternationalGameEntry({ expanded, onToggle, selected, onSelect,
             statsCoverage?.status === "partial" && statsCoverage.source.sourceRevisionId === source.id ? "日本語版の大会通算成績" :
               source.id === apbc2026BatteryRevision ? "日本語版の登板・投球回・捕手の記録" :
               source.id === wbc2026LineupRevision ? "日本語版の代表選手・先発・バッテリー" :
-              source.sourceId === "jawiki" ? "日本語版の代表選手" : "英語版の試合結果"
+              roster?.revision === source.id ? "日本語版の代表選手" :
+              source.sourceId === "jawiki" ? "日本語版の試合結果" : "英語版の試合結果"
           }（版 {source.version}）</a></p>)}
           {identitySources?.length ? <details className="source-note">
             <summary>本人照合の出典</summary>

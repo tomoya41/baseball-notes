@@ -12,10 +12,11 @@ import { wbc2026Id, wbc2026LineupAppearances, wbc2026LineupRevision } from "./wb
 import { wbc2026IdentityEvidence } from "./wbc-2026-player-identities";
 import { wbc2026Selections } from "./wbc-2026-selections";
 
-// Adapted from the English Wikipedia article revisions below, CC BY-SA 4.0.
+// Adapted from the Wikipedia article revisions below, CC BY-SA 4.0.
 // Dates are local to the venue. Only final totals and confirmed team sides are admitted.
 export const resultLicense = "https://creativecommons.org/licenses/by-sa/4.0/";
 const japan = "international:team:jpn";
+const apbc2023Id = "international:tournament:apbc:2023";
 const premier122024Id = "international:tournament:premier12:2024";
 const wbc2023Id = "international:tournament:wbc:2023";
 const teams = { CHN: "中国", KOR: "韓国", CZE: "チェコ", AUS: "オーストラリア", ITA: "イタリア",
@@ -43,10 +44,14 @@ export const japanSelectionsByTournament = new Map<string, JapanSelections>([
 
 function edition(tournamentId: string, rows: readonly ResultRow[], stats?: JapanStats) {
   const revisions = [...new Set(rows.map(row => row[7]))];
+  const resultSource = tournamentId === apbc2023Id
+    ? { sourceId: "jawiki", publisherId: "japanese-wikipedia", language: "ja", verifiedAt: "2026-11-25T04:54:00Z" }
+    : { sourceId: "enwiki", publisherId: "english-wikipedia", language: "en", verifiedAt: "2026-11-19T21:41:00Z" };
+  const { language, ...provenance } = resultSource;
   const sources: z.infer<typeof internationalTournamentEvidenceSchema>["sources"] = revisions.map(revision => ({
-    id: String(revision), sourceId: "enwiki", publisherId: "english-wikipedia",
-    version: String(revision), url: `https://en.wikipedia.org/w/index.php?oldid=${revision}`, termsEvidenceUrl: resultLicense,
-    verifiedAt: "2026-11-19T21:41:00Z", permissions: { acquisition: "approved", storage: "approved", transformation: "approved",
+    ...provenance, id: String(revision), version: String(revision), termsEvidenceUrl: resultLicense,
+    url: `https://${language}.wikipedia.org/w/index.php?oldid=${revision}`,
+    permissions: { acquisition: "approved", storage: "approved", transformation: "approved",
       webDisplay: "approved", androidDisplay: "approved", redistribution: "approved" } }));
   const games = rows.map(([localDate, timeZone, round, away, awayRuns, home, homeRuns, revision]) => ({
     competition: "international", tournamentId, id: `${tournamentId.replace(":tournament:", ":game:")}:${localDate}:${away.toLowerCase()}-${home.toLowerCase()}`,
@@ -114,6 +119,12 @@ const editions = [
     ["2026-11-13", tokyo, "pool", "KOR", 5, "JPN", 9, 1385998229],
     ["2026-11-14", tokyo, "pool", "JPN", 16, "AUS", 1, 1385998229],
     ["2026-11-15", tokyo, "final", "KOR", 1, "JPN", 5, 1385998229],
+  ]),
+  edition(apbc2023Id, [
+    ["2023-11-16", tokyo, "pool", "JPN", 4, "TPE", 0, 111760584],
+    ["2023-11-17", tokyo, "pool", "KOR", 1, "JPN", 2, 111760584],
+    ["2023-11-18", tokyo, "pool", "JPN", 10, "AUS", 0, 111760584],
+    ["2023-11-19", tokyo, "final", "KOR", 3, "JPN", 4, 111760584],
   ]),
   edition(wbc2026Id, [
     ["2026-03-06", tokyo, "pool", "JPN", 13, "TPE", 0, 1370352167],
