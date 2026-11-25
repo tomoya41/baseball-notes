@@ -23,9 +23,29 @@ const reviewedPlayers = [
 ] as const;
 const reviewDate = "2026-11-24T13:06:00Z";
 
+const additionalPlayers = [
+  // 若月健矢
+  [2959833, 111839744, "41645139", "0849d339-1434-46b4-9382-a748c1c797a0",
+    "c95e5b8a-ad45-4520-961d-29e56ca0b701", "7ce907e6db50bb51310574364d3decc4318b5a24a2b93e5cc14aad56c0c1b4a0"],
+  // 松本裕樹
+  [3103993, 111511176, "61665130", "87a6fa52-0973-4575-940d-b89bee5cdf13",
+    "653fa39f-5fc1-4041-ab58-28f10aec5889", "ef435b574739ca4d46fc90e45586c2eccd9c6378677427973b4ed56dc9dc8260"],
+  // 坂本誠志郎
+  [3327162, 111829561, "11915132", "2d760a27-b58a-47a5-80df-6b0aa3571ef5",
+    "edbd139e-656b-461d-b3b6-756d6e060caa", "24d2d849ceb5a34707e8b4a1254a6649e012fa5b026a31250083722578e98d7f"],
+  // 佐藤輝明
+  [4237419, 111892846, "41045153", "a1ca7cac-f9be-4993-a78c-bcd1e1ae3399",
+    "8fdcd710-2127-4b95-9bbe-678d87dc67ed", "ede0c6e43a8ffc95f0fff1b295081f0a21c82f1d9207e4298e128bee2c2c5372"],
+  // 曽谷龍平
+  [4667614, 111529791, "81985157", "feb0d3d8-adc6-4da3-91b8-bac1c5d12cac",
+    "14f69d0e-da65-41c4-a22c-43a1f98bab6f", "7d8575969ca46b1c03b6230b2c0ab1556de9fb795a683ca04680c82ab0eebdd5"],
+] as const;
+const additionalReviewDate = "2026-11-25T04:18:49Z";
+
 const reviewedEvidence = buildNpbInternationalIdentityEvidence([
   ...reviewedPlayers.map(row => ({ row, reviewDate })),
   kanemaruNpbIdentityReview,
+  ...additionalPlayers.map(row => ({ row, reviewDate: additionalReviewDate })),
 ]);
 
 // Reuse matches reviewed for other editions when their fixed Japanese article ID is on this roster.

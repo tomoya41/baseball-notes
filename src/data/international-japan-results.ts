@@ -97,7 +97,7 @@ function edition(tournamentId: string, rows: readonly ResultRow[], stats?: Japan
   appearances.push(...lineupAppearances.filter(row => !present.has(`${row.gameId}|${row.playerId}`)));
   const appearanceSource = wbc2026 ? { sourceRevisionId: wbc2026LineupRevision, sourceRecordId: "試合結果/先発・バッテリー" } : highlightSource;
   return internationalTournamentEvidenceSchema.parse({ tournamentId,
-    editionRevision: apbc ? 6 : wbc2026 ? 6 : historicalIdentity ? 3 : stats ? 2 : 1, sources, games, playerStats,
+    editionRevision: apbc ? 6 : wbc2026 ? 7 : historicalIdentity ? 3 : stats ? 2 : 1, sources, games, playerStats,
     gameHighlights, gamePitching: apbc ? apbc2026GamePitching : [], tournamentMvp: apbc ? apbc2026Mvp : undefined,
     identities: apbc ? apbcIdentities : wbc2026 ? wbc2026IdentityEvidence.identities : historicalIdentity?.identities ?? [],
     participation: [...selections, ...appearances], corrections, coverage: { results: partial, schedule: empty,

@@ -208,13 +208,13 @@ it("keeps the WBC selection snapshot separate from game appearances and registra
   expect(roster.players).toContainEqual(expect.objectContaining({ name: "大谷翔平", position: "指名打者" }));
   expect(roster.players.map(player => player.name)).not.toContain("松井裕樹");
   expect(wbc.games).toHaveLength(5);
-  expect(wbc.editionRevision).toBe(6);
+  expect(wbc.editionRevision).toBe(7);
   expect(wbc.participation.filter(player => player.kind === "selected")).toHaveLength(30);
   expect(wbc.participation.filter(player => player.kind === "registered")).toEqual([]);
   expect(wbc.coverage.registrations.status).toBe("uncollected");
   expect(wbc.coverage.appearances.status).toBe("partial");
   expect(wbc.playerStats).toEqual([]);
-  expect(wbc.identities).toHaveLength(17);
+  expect(wbc.identities).toHaveLength(22);
   expect(japanResultsByTournament.has("international:tournament:exhibition:2027:taipei")).toBe(false);
 });
 
@@ -224,8 +224,8 @@ it("links independently matched WBC 2026 participants to the existing NPB Direct
   const appeared = new Set(edition.participation.filter(row => row.kind === "appeared").map(row => row.playerId));
   expect(appeared.size).toBe(30);
   expect(new Set(edition.identities.map(row => row.playerId))).toEqual(new Set(
-    [1610194, 2231674, 2459898, 3514754, 3520387, 3692477, 3700545, 3858983, 4029818,
-      4037204, 4237529, 4240485, 4251765, 4463322, 4475539, 4490620, 4977707]
+    [1610194, 2231674, 2459898, 2959833, 3103993, 3327162, 3514754, 3520387, 3692477, 3700545, 3858983,
+      4029818, 4037204, 4237419, 4237529, 4240485, 4251765, 4463322, 4475539, 4490620, 4667614, 4977707]
       .map(pageId => `international:player:jawiki:${pageId}`),
   ));
   for (const row of edition.identities) {
@@ -238,6 +238,18 @@ it("links independently matched WBC 2026 participants to the existing NPB Direct
   expect(japanGameAppearances("7bbeda89-5b15-4e15-90d7-3c862c9a30b9")).toEqual([
     { tournamentId, confirmedGames: 1 }, { tournamentId: id, confirmedGames: 1 },
   ]);
+});
+
+it("reopens WBC from the five additional NPB profiles with the same dates as the tournament", () => {
+  const id = "international:tournament:wbc:2026";
+  const expected = [
+    ["0849d339-1434-46b4-9382-a748c1c797a0", 3], ["87a6fa52-0973-4575-940d-b89bee5cdf13", 1],
+    ["2d760a27-b58a-47a5-80df-6b0aa3571ef5", 2], ["a1ca7cac-f9be-4993-a78c-bcd1e1ae3399", 2],
+    ["feb0d3d8-adc6-4da3-91b8-bac1c5d12cac", 1],
+  ] as const;
+  for (const [playerId, confirmedGames] of expected) {
+    expect(japanGameAppearances(playerId)).toContainEqual({ tournamentId: id, confirmedGames });
+  }
 });
 
 it("combines the five WBC lineups and batteries with prior highlights while retaining the local game date", () => {
