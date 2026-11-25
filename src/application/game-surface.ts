@@ -1,3 +1,4 @@
+import { outsideReviewedNpbRegularCalendar } from "../data/npb-season-metadata";
 import type { GameDateIndex,GameManifest,GameIndexRow } from "../domain/npb-game-index";
 import type { NpbGameDetail } from "../domain/npb-game-detail";
 import type { NpbRecords } from "../domain/npb-records";
@@ -7,7 +8,7 @@ export type DeferGameAssetCache = (remember: () => Promise<void>) => void;
 export interface GameSurfaceReader {
   manifest(deferCache?:DeferGameAssetCache):Promise<GameManifest>;
   date(date:string, expectedGeneratedAt?:string, deferCache?:DeferGameAssetCache):Promise<GameDateIndex>;
-  recent():Promise<{games:GameIndexRow[];effectiveDate:string}>;
+  recent(deferCache?:DeferGameAssetCache):Promise<{games:GameIndexRow[];effectiveDate:string;generatedAt?:string}>;
   records():Promise<NpbRecords>;
 }
 
@@ -23,6 +24,29 @@ type GameIdentity = Pick<GameIndexRow, "gameId" | "date" | "gameNumber"> & { awa
 function sameNpbGame(a: GameIdentity, b: GameIdentity): boolean {
   return a.gameId === b.gameId && a.date === b.date && a.gameNumber === b.gameNumber &&
     a.away.id === b.away.id && a.home.id === b.home.id;
+}
+
+/** Recover a useful default from the same public generation when its observation
+ * day is outside the reviewed calendar and contains no admitted game rows. */
+export async function readLatestSavedResultDay(reader: Pick<GameSurfaceReader, "date" | "recent">,
+  manifest: GameManifest, day: GameDateIndex, deferCache: DeferGameAssetCache): Promise<GameDateIndex> {
+  if (day.coverage !== "unknown" || day.games.length > 0 || !outsideReviewedNpbRegularCalendar(day.date)) return day;
+  try {
+    const caching: (() => Promise<void>)[] = [];
+    const recent = await reader.recent(save => { caching.push(save); });
+    if (recent.generatedAt !== manifest.generatedAt || recent.effectiveDate !== manifest.effectiveDate) return day;
+    const latest = recent.games.filter(game => game.status === "final" && game.home.score !== null && game.away.score !== null &&
+      game.date >= manifest.from && game.date <= manifest.to && game.date < day.date)
+      .sort((a, b) => b.date.localeCompare(a.date))[0];
+    if (!latest) return day;
+    const results = await readGameDateForManifest(reader, manifest, latest.date, save => { caching.push(save); });
+    if (results.coverage === "failed" || !results.games.some(game => sameNpbGame(game, latest) && game.status === "final" &&
+      game.home.score === latest.home.score && game.away.score === latest.away.score)) return day;
+    caching.forEach(deferCache);
+    return results;
+  } catch {
+    return day;
+  }
 }
 
 function hasPublishedOutcome(game: GameIndexRow): boolean {

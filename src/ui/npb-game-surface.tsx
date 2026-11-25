@@ -2,8 +2,9 @@ import { DailyMvp } from "./daily-mvp";
 import { useEffect,useRef,useState } from "react";
 import { Link,useSearchParams } from "react-router-dom";
 import { z } from "zod";
-import { readGameDateForManifest, type GameSurfaceReader } from "../application/game-surface";
+import { readGameDateForManifest, readLatestSavedResultDay, type GameSurfaceReader } from "../application/game-surface";
 import { type GameDateIndex,type GameManifest,type GameIndexRow } from "../domain/npb-game-index";
+import { outsideReviewedNpbRegularCalendar } from "../data/npb-season-metadata";
 import { npbScheduleTeam } from "../domain/npb-game-navigation";
 import { internationalTournamentIn } from "../data/international-official-links";
 import { npbTeamShortName } from "../presentation/npb-team-names";
@@ -34,6 +35,7 @@ export function GameDateView({payload,team}:{payload:GameDateIndex;team?:string 
   const failed = payload.coverage === "failed";
   const emptyTitle = payload.coverage === "no_games" ? "試合なし"
     : failed ? "この日の試合データを取得できませんでした"
+    : payload.coverage === "unknown" && payload.games.length === 0 && outsideReviewedNpbRegularCalendar(payload.date) ? "公式戦の収集対象期間外です"
     : team && payload.coverage === "complete" ? "この球団の収録試合はありません"
     : team ? "この球団の試合を確認できていません" : "この日の試合を確認できていません";
   return <>
@@ -49,7 +51,7 @@ export function NpbScheduleScreen({repository,favorites=[],toggle,saving=false}:
   const team = npbScheduleTeam(params);
   const unfiltered = new URLSearchParams(params);
   unfiltered.delete("team");
-  const [snapshot, setSnapshot] = useState<{ manifest: GameManifest; day: GameDateIndex | null } | null>(null);
+  const [snapshot, setSnapshot] = useState<{ manifest: GameManifest; day: GameDateIndex | null; savedResultDay?: string } | null>(null);
   const [failure, setFailure] = useState<{ selection: string | null } | null>(null);
   const [attempt,setAttempt]=useState(0);
   const internationalOpen = params.get("view") === "international";
@@ -79,10 +81,12 @@ export function NpbScheduleScreen({repository,favorites=[],toggle,saving=false}:
     value: Promise<{ manifest: GameManifest; remember: (() => Promise<void>) | undefined }>;
   } | null>(null);
   const manifest = snapshot?.manifest;
-  const date = dateParam ?? manifest?.effectiveDate;
+  const savedResultDay = !team && dateParam === null ? snapshot?.savedResultDay : undefined;
+  const date = dateParam ?? savedResultDay ?? manifest?.effectiveDate;
   const payload = snapshot?.day && snapshot.day.date === date ? snapshot.day : null;
   const outsideRange = Boolean(manifest && date !== undefined && outsideGameRange(date, manifest));
   const failed = failure?.selection === dateParam;
+  const showSavedResultByDefault = dateParam === null && !team;
   useEffect(() => {
     let active = true;
     void (async () => {
@@ -99,13 +103,18 @@ export function NpbScheduleScreen({repository,favorites=[],toggle,saving=false}:
         nextManifest = staged.manifest;
         if (!active) return;
         const selectedDate = dateParam ?? nextManifest.effectiveDate;
-        let rememberDay: (() => Promise<void>) | undefined;
-        const day = outsideGameRange(selectedDate, nextManifest) ? null
-          : await readGameDateForManifest(repository, nextManifest, selectedDate, save => { rememberDay = save; });
+        const rememberDays: (() => Promise<void>)[] = [];
+        let day = outsideGameRange(selectedDate, nextManifest) ? null
+          : await readGameDateForManifest(repository, nextManifest, selectedDate, save => { rememberDays.push(save); });
         if (!active) return;
-        if (day) await Promise.all([staged.remember?.(), rememberDay?.()]);
+        if (day && showSavedResultByDefault) {
+          day = await readLatestSavedResultDay(repository, nextManifest, day, save => { rememberDays.push(save); });
+        }
+        if (!active) return;
+        if (day) await Promise.all([staged.remember?.(), ...rememberDays.map(save => save())]);
         if (active) {
-          setSnapshot({ manifest: nextManifest, day });
+          setSnapshot({ manifest: nextManifest, day,
+            ...(day && day.date !== selectedDate ? { savedResultDay: day.date } : {}) });
           setFailure(null);
         }
       } catch {
@@ -118,9 +127,13 @@ export function NpbScheduleScreen({repository,favorites=[],toggle,saving=false}:
       }
     })();
     return () => { active = false; };
-  }, [attempt, dateParam, repository, revision]);
+  }, [attempt, dateParam, repository, revision, showSavedResultByDefault]);
   const change=(next:string)=>{if(next===date)return;setParams(previous=>{const nextParams=new URLSearchParams(previous);nextParams.set("date",next);return nextParams;});};
   const retry=()=>setAttempt(value=>value+1);
+  const effectiveDateParams = new URLSearchParams(params);
+  if (manifest) effectiveDateParams.set("date", manifest.effectiveDate);
+  const undatedParams = new URLSearchParams(params);
+  undatedParams.delete("date");
   return <div className="screen game-schedule"><PageHeading eyebrow="NPB" title="日程・結果"/>
     <nav className="game-competition-nav" aria-label="試合の種類">
       <Link to="/NPB/schedule" aria-current="page">公式戦</Link>
@@ -131,11 +144,15 @@ export function NpbScheduleScreen({repository,favorites=[],toggle,saving=false}:
     <InternationalGameEntry expanded={internationalOpen} onToggle={setInternationalOpen}
       selected={internationalTournament} onSelect={selectInternationalTournament}
       statRole={internationalTournament && (statRole === "batting" || statRole === "pitching") ? statRole : undefined}/>
-    <p className="game-collection-scope">{manifest ? `${manifest.effectiveDate}までの保存済みデータ` : "保存済みの公式戦を確認"}<Link to="/NPB/preseason">オープン戦 · 未収録</Link></p>
+    <p className="game-collection-scope">{manifest ? <span>公開基準日 <time dateTime={manifest.effectiveDate}>{manifest.effectiveDate}</time></span> : "保存済みの公式戦を確認"}<Link to="/NPB/preseason">オープン戦 · 未収録</Link></p>
+    {savedResultDay && <p className="game-collection-scope"><span>直近の収録結果 <time dateTime={savedResultDay}>{savedResultDay}</time></span>
+      <Link to={`?${effectiveDateParams}`}>基準日の収録状況 →</Link></p>}
     {manifest&&date&&!outsideRange&&<DateRibbon date={date} min={manifest.from} max={manifest.to} onChange={change} />}
     {team&&<div className="game-collection-scope"><strong>{npbTeamShortName(team)}の試合</strong><Link to={`/NPB/schedule${unfiltered.size?`?${unfiltered}`:""}`}>すべての球団を表示</Link></div>}
-    {outsideRange&&manifest?<><DataState kind="unsupported" title="指定日の試合は収録範囲外です"/><button className="button button--secondary" onClick={()=>change(manifest.effectiveDate)}>保存済みの日付へ</button></>:
-      failed?<>{payload?<p className="inline-note" role="status">更新を確認できないため、保存済みの日程を表示しています。</p>:<DataState kind="source-unavailable" title="日程を読み込めません"/>}<button className="button button--secondary" onClick={retry}>日程を再読み込み</button></>:
+    {failed?<>{payload?<p className="inline-note" role="status">更新を確認できないため、保存済みの日程を表示しています。</p>:<DataState kind="source-unavailable" title="日程を読み込めません"/>}<button className="button button--secondary" onClick={retry}>日程を再読み込み</button></>:
+      outsideRange && manifest ? <><DataState kind="unsupported" title={date && outsideReviewedNpbRegularCalendar(date)
+        ? "公式戦の収集対象期間外です" : "指定日の試合は収録範囲外です"}/>
+        <Link className="button button--secondary" to={`?${undatedParams}`}>保存済みの日付へ</Link></> :
       !payload&&<LoadingSkeleton/>}
     {payload&&<GameDateView payload={payload} team={team}/>}
     {!team&&payload&&toggle&&<details><summary>この日の球団をフォロー</summary><div className="row-list">{[...new Map(payload.games.flatMap(g=>[g.away,g.home]).map(t=>[t.id,t])).values()].map(t=><div className="surface-favorite" key={t.id}><Link className="player-row" to={`/NPB/teams/${encodeURIComponent(t.id)}`}>{t.name}</Link><TeamFavorite league="NPB" teamId={t.id} name={t.name} favorites={favorites} toggle={toggle} saving={saving}/></div>)}</div></details>}
