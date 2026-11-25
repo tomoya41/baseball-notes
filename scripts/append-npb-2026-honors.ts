@@ -7,13 +7,19 @@ import retainedPins from "../src/data/baseball-context-retained-releases.json";
 import profileIdentities from "../src/data/npb-free-profile-identities.json";
 import annualReview from "./data/npb-2026-honors.json";
 import gloveReview from "./data/npb-2026-golden-glove.json";
+import seasonTitleReview from "./data/npb-2026-season-titles.json";
 import { buildHonorCatalog, honorRecipientBucket } from "../src/domain/honor-discovery";
 import { contextManifestSchema, honorsPageSchema, honorsSourceSchema, playerHonorBucket, type Honor, type HonorRecipient } from "../src/domain/player-honors";
 import { npbTeamShortName } from "../src/presentation/npb-team-names";
 
-const goldenGlove = process.argv.includes("--golden-glove");
+const batch = process.argv[2];
+if (batch !== undefined && batch !== "--golden-glove" && batch !== "--season-titles") throw Error("Unknown honors batch");
+const goldenGlove = batch === "--golden-glove";
+const seasonTitles = batch === "--season-titles";
 const output = ".data/npb-awards-2026";
-const baseSha = goldenGlove
+const baseSha = seasonTitles
+  ? "f46153d5625cee0f56a367cf1a5b0ce76ab5150ada640afd5d0ff8d6f6629bbf"
+  : goldenGlove
   ? "1f3c1c6a2279422740a713df9fe7dede4ff54c53beeee29cc69d5ff192add8e8"
   : "e6bd72ce02c1e22f7d4d69b051df97fe24a4474f6759222feb379f56583d7e12";
 const sha = (value: string | Uint8Array) => createHash("sha256").update(value).digest("hex");
@@ -31,7 +37,7 @@ const archiveSchema = z.strictObject({ schemaVersion: z.literal(1), files: z.rec
 const base = archiveSchema.parse(JSON.parse(baseBody.toString()));
 const manifest = contextManifestSchema.parse(base.files["manifest.json"]);
 const originalManifest = described(base.files["manifest.json"]);
-if (manifest.cutoff !== (goldenGlove ? 2026 : 2025) || originalManifest.sha256 !== basePin.manifestSha256 || originalManifest.bytes !== basePin.manifestBytes
+if (manifest.cutoff !== (batch ? 2026 : 2025) || originalManifest.sha256 !== basePin.manifestSha256 || originalManifest.bytes !== basePin.manifestBytes
   || Object.keys(base.files).length !== Object.keys(manifest.files).length + 1) throw Error("Original manifest mismatch");
 for (const [path, expected] of Object.entries(manifest.files)) {
   const actual = described(base.files[path]);
@@ -48,8 +54,21 @@ const published = new Map(directory.players.map(player => [player.playerId, play
 
 const hash = z.string().regex(/^[a-f0-9]{64}$/);
 const npbId = z.string().regex(/^\d{8}$/);
-const awardId = z.enum(["npb_mvp", "npb_roy", "npb_bestnine", "npb_glove"]);
+const titleNames = {
+  npb_avg: "首位打者賞", npb_h: "最多安打者賞", npb_hr: "最多本塁打者賞",
+  npb_rbi: "最多打点者賞", npb_obp: "最高出塁率者賞", npb_sb: "最多盗塁者賞",
+  npb_era: "最優秀防御率投手賞", npb_w: "最多勝利投手賞", npb_so: "最多三振奪取投手賞",
+  npb_wpct: "勝率第一位投手賞", npb_sv: "最多セーブ投手賞", npb_hold: "最優秀中継ぎ投手賞",
+};
+const awardNames = {
+  npb_mvp: "最優秀選手賞", npb_roy: "最優秀新人賞", npb_bestnine: "ベストナイン", npb_glove: "三井ゴールデン・グラブ賞",
+};
+const names = { ...awardNames, ...titleNames };
+const awardId = z.enum(Object.keys(names) as (keyof typeof names)[]);
 const position = z.enum(["投手部門", "捕手部門", "一塁手部門", "二塁手部門", "三塁手部門", "遊撃手部門", "外野手部門", "指名打者部門"]);
+const { source: titleSource, ...titleRecords } = seasonTitleReview;
+const seasonTitleIds = Object.keys(titleNames);
+const reviewedTitles = { ...titleRecords, sources: Object.fromEntries(seasonTitleIds.map(id => [id, titleSource])) };
 const admission = z.strictObject({
   year: z.literal(2026), verifiedAt: z.iso.datetime(), sources: z.partialRecord(awardId, honorsSourceSchema),
   recipients: z.record(npbId, z.strictObject({
@@ -57,8 +76,8 @@ const admission = z.strictObject({
     binding: z.strictObject({ playerId: z.uuid(), wikidataId: z.string().regex(/^Q\d+$/), chadwickId: z.uuid(), seasonAvailable: z.boolean() }).nullable(),
   })),
   records: z.array(z.tuple([npbId, awardId, z.enum(["CL", "PL"]), z.string(), position.nullable(), hash])),
-}).parse(goldenGlove ? gloveReview : annualReview);
-const categories = goldenGlove ? ["npb_glove"] : ["npb_mvp", "npb_roy", "npb_bestnine"];
+}).parse(seasonTitles ? reviewedTitles : goldenGlove ? gloveReview : annualReview);
+const categories = seasonTitles ? seasonTitleIds : goldenGlove ? ["npb_glove"] : ["npb_mvp", "npb_roy", "npb_bestnine"];
 const sourceIds = Object.keys(admission.sources);
 if (sourceIds.length !== categories.length || categories.some(id => !sourceIds.includes(id))
     || admission.records.some(row => !categories.includes(row[1]))) throw Error("Unexpected reviewed award category");
@@ -68,6 +87,18 @@ const teams = {
 };
 for (const division of ["CL", "PL"] as const) {
   const rows = admission.records.filter(row => row[2] === division);
+  if (rows.some(row => !teams[division].includes(row[3]))) throw Error(`Unexpected club in reviewed titles: ${division}`);
+  if (seasonTitles) {
+    const coWinners = new Map([["npb_w", 2], ["npb_sv", 3], ["npb_h", 2]]);
+    for (const id of seasonTitleIds) {
+      const winners = rows.filter(row => row[1] === id);
+      const count = division === "PL" ? coWinners.get(id) ?? 1 : 1;
+      if (winners.length !== count || new Set(winners.map(row => row[0])).size !== count || winners.some(row => row[4] !== null)) {
+        throw Error(`Incomplete or duplicate 2026 title: ${division} ${id}`);
+      }
+    }
+    continue;
+  }
   const expected = ["投手部門", "捕手部門", "一塁手部門", "二塁手部門", "三塁手部門", "遊撃手部門", "外野手部門", "外野手部門", "外野手部門"];
   if (!goldenGlove && division === "PL") expected.push("指名打者部門");
   const fielders = rows.filter(row => row[1] === (goldenGlove ? "npb_glove" : "npb_bestnine"));
@@ -75,7 +106,7 @@ for (const division of ["CL", "PL"] as const) {
   if (JSON.stringify(fielders.map(row => row[4])) !== JSON.stringify(expected) ||
       new Set(fielders.map(row => row[0])).size !== expected.length ||
       singles.some(id => rows.filter(row => row[1] === id && row[4] === null).length !== 1) ||
-      rows.length !== expected.length + singles.length || rows.some(row => !teams[division].includes(row[3]))) {
+      rows.length !== expected.length + singles.length) {
     throw Error(`Incomplete or duplicate reviewed award category: ${division}`);
   }
 }
@@ -85,7 +116,6 @@ const historical = Object.entries(base.files).filter(([path]) => path.startsWith
 const previousRecipients = new Map(historical.flatMap(page => page.recipients.map(recipient => [recipient.id, recipient])));
 const recipients = new Map(previousRecipients);
 const adopted: Honor[] = [];
-const names = { npb_mvp: "最優秀選手賞", npb_roy: "最優秀新人賞", npb_bestnine: "ベストナイン", npb_glove: "三井ゴールデン・グラブ賞" };
 for (const [id, record] of Object.entries(admission.recipients)) {
   const recipientId = `npb:${id}`;
   const old = previousRecipients.get(recipientId);
@@ -113,10 +143,11 @@ for (const [id, record] of Object.entries(admission.recipients)) {
     const teamId = `npb:team:${club}`;
     const awardSource = admission.sources[category];
     if (!awardSource) throw Error(`Missing award source: ${category}`);
+    const joint = seasonTitles ? admission.records.filter(row => row[1] === category && row[2] === division).length > 1 : null;
     recipient.counts[category] = (recipient.counts[category] ?? 0) + 1;
     adopted.push({ id: sha(`${recipientId}:${category}:${admission.year}:${slot ?? ""}`), recipientId, league: "NPB",
-      year: admission.year, division, awardId: category, name: names[category], sourceName: names[category], kind: "award",
-      position: slot, seasonTeams: [{ id: teamId, name: npbTeamShortName(teamId) }], joint: null,
+      year: admission.year, division, awardId: category, name: names[category], sourceName: names[category], kind: seasonTitles ? "title" : "award",
+      position: slot, seasonTeams: [{ id: teamId, name: npbTeamShortName(teamId) }], joint,
       sourceId: awardSource.id, evidenceSha256: proof, reportedCareerWins: null });
   }
   recipients.set(recipientId, recipient);
@@ -138,7 +169,7 @@ for (const row of adopted) {
   for (const path of paths) candidateBuckets.set(path, [...(candidateBuckets.get(path) ?? []), row]);
 }
 candidateBuckets.set(`honors/years/NPB/${admission.year}.json`, adopted);
-const newSources = Object.values(admission.sources);
+const newSources = [...new Map(Object.values(admission.sources).map(source => [source.id, source])).values()];
 const paths = [...new Set([...candidateBuckets.keys(), ...Object.keys(base.files).filter(path => /^honors\/(?:years|players|recipients)\/NPB\//.test(path))])];
 for (const path of paths) {
   const old = base.files[path] ? honorsPageSchema.parse(base.files[path]) : { schemaVersion: 1 as const, records: [], recipients: [], sources: [] };
@@ -162,7 +193,9 @@ for (const [path, value] of Object.entries(base.files)) {
 const projections = Object.fromEntries(Object.entries(files).filter(([path]) => path !== "manifest.json")
   .map(([path, value]) => [path, described(value)]));
 files["manifest.json"] = contextManifestSchema.parse({ ...manifest, observedAt: admission.verifiedAt, cutoff: admission.year,
-  attribution: goldenGlove
+  attribution: seasonTitles
+    ? manifest.attribution.replace("Golden Glove winners", "Golden Glove, and official league title winners")
+    : goldenGlove
     ? manifest.attribution.replace("Best Nine winners only", "Best Nine and Golden Glove winners")
     : manifest.attribution.replace(" or 2026 awards", "") + " The 2026 NPB supplement adds verified MVP, Rookie of the Year, and Best Nine winners only; data are partial.",
   years: { ...manifest.years, NPB: [admission.year, ...manifest.years.NPB.filter(year => year !== admission.year)] }, counts, files: projections });

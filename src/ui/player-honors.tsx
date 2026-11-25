@@ -17,7 +17,9 @@ const division = (v: string | null) => ({ CL: "セ・リーグ", PL: "パ・リ�
 const licenseUrl = (license: string) => ({ "CC-BY-SA-3.0": "https://creativecommons.org/licenses/by-sa/3.0/", "CC-BY-SA-4.0": "https://creativecommons.org/licenses/by-sa/4.0/", "CC0-1.0": "https://creativecommons.org/publicdomain/zero/1.0/", "ODC-BY-1.0": "https://opendatacommons.org/licenses/by/1-0/" })[license];
 
 function Sources({ page }: { page: HonorsPage }) {
-  const currentNpbAwards = new Set(page.records.filter(row => row.league === "NPB" && row.year === 2026).map(row => row.awardId));
+  const currentNpb = page.records.filter(row => row.league === "NPB" && row.year === 2026);
+  const currentNpbAwards = new Set(currentNpb.map(row => row.awardId));
+  const titleDivisions = new Set(currentNpb.filter(row => row.kind === "title").map(row => row.division));
   return <details className="honors-sources">
     <summary>収録範囲・出典</summary>
     <p>回数は収録分です。球団は受賞年度の記録です。年度成績が未収録の選手も、確認済みの表彰歴を表示します。</p>
@@ -25,6 +27,8 @@ function Sources({ page }: { page: HonorsPage }) {
       <p><a href="https://npb.jp/news/detail/20261125_01.html">NPB公式のMVP・新人王・ベストナイン</a></p>}
     {currentNpbAwards.has("npb_glove") &&
       <p><a href="https://npb.jp/award/2026/glove.html">NPB公式のゴールデン・グラブ賞</a></p>}
+    {titleDivisions.has("CL") && <p><a href="https://npb.jp/award/2026/cl.html">NPB公式のセ・リーグ表彰</a></p>}
+    {titleDivisions.has("PL") && <p><a href="https://npb.jp/award/2026/pl.html">NPB公式のパ・リーグ表彰</a></p>}
     {page.sources.map(s => <p key={s.id}><a href={s.url}>{s.name}</a>{s.authorsUrl && <> · <a href={s.authorsUrl}>執筆履歴</a></>} · <a href={licenseUrl(s.license)}>{s.license}</a></p>)}
     <p>年別一覧の抜粋、表記の整理、本人・受賞年度の照合を行いました。各データは表示のライセンスで再利用できます。SABR / Sean Lahman ©1996–2025。MLBの本人照合はChadwick Register（<a href="https://github.com/chadwickbureau/register">ODC-BY 1.0</a>）を使用しています。</p>
   </details>;

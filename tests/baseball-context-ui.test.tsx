@@ -18,21 +18,24 @@ it("distinguishes unplayed innings after a known shortened final from uncollecte
 it("requests no honors on profile load and labels missing collection separately from no awards",async()=>{vi.mocked(contextReader.honors).mockResolvedValue(null);const f=await mount(<PlayerHonors league="NPB" playerId="00000000-0000-4000-8000-000000000001"/>);try{expect(contextReader.honors).not.toHaveBeenCalled();await act(async()=>{const d=f.host.querySelector('details')!;d.open=true;d.dispatchEvent(new Event('toggle'));});expect(contextReader.honors).toHaveBeenCalledOnce();expect(f.host.textContent).toContain('未収録');expect(f.host.textContent).not.toContain('受賞なし');}finally{await f.close();}});
 it("supports award years outside statistical coverage in share/deep links and native Back",()=>{expect(portableRoute('/MLB/awards','year=1956&award=mlb_cy_young&secret=hidden')).toBe('/MLB/awards?year=1956&award=mlb_cy_young');expect(canonicalDeepLink('baseballnotes://NPB/awards?year=1999')).toBe('/NPB/awards?year=1999');expect(parentNativeRoute('/MLB/awards?year=1956')).toBe('/MLB/records');expect(canonicalDeepLink('baseballnotes://NPB/awards?year=2026')).toBe('/NPB/awards?year=2026');expect(portableRoute('/NPB/awards','year=2027')).toBeNull();});
 it.each([
-  ["npb_glove", "三井ゴールデン・グラブ賞", "https://npb.jp/award/2026/glove.html", "https://npb.jp/news/detail/20261125_01.html"],
-  ["npb_mvp", "最優秀選手賞", "https://npb.jp/news/detail/20261125_01.html", "https://npb.jp/award/2026/glove.html"],
-])("links to the correct official announcement for %s inside collapsed sources", async (awardId, name, official, unrelated) => {
+  ["npb_glove", "三井ゴールデン・グラブ賞", "award", "CL", "https://npb.jp/award/2026/glove.html", "https://npb.jp/news/detail/20261125_01.html"],
+  ["npb_mvp", "最優秀選手賞", "award", "CL", "https://npb.jp/news/detail/20261125_01.html", "https://npb.jp/award/2026/glove.html"],
+  ["npb_era", "最優秀防御率投手賞", "title", "CL", "https://npb.jp/award/2026/cl.html", "https://npb.jp/award/2026/pl.html"],
+  ["npb_sv", "最多セーブ投手賞", "title", "PL", "https://npb.jp/award/2026/pl.html", "https://npb.jp/award/2026/cl.html"],
+] as const)("links to the correct official announcement for %s inside collapsed sources", async (awardId, name, kind, division, official, unrelated) => {
   vi.mocked(contextReader.manifest).mockResolvedValue({schemaVersion:1,observedAt:"2026-11-25T12:15:01Z",cutoff:2026,coverage:"partial",attribution:"test",years:{NPB:[2026],MLB:[]},counts:{NPBRows:1},files:{}});
   const recipientId="npb:51155136";
   vi.mocked(contextReader.honors).mockResolvedValue({
     schemaVersion:1,
     recipients:[{id:recipientId,name:"東克樹",identityStatus:"unresolved",externalIds:{npb:"51155136"},links:[],counts:{[awardId]:1}}],
-    records:[{id:"a".repeat(64),recipientId,league:"NPB",year:2026,division:"CL",awardId,name,sourceName:name,
-      kind:"award",position:"投手部門",seasonTeams:[],joint:null,sourceId:"s",evidenceSha256:"b".repeat(64),reportedCareerWins:null}],
+    records:[{id:"a".repeat(64),recipientId,league:"NPB",year:2026,division,awardId,name,sourceName:name,
+      kind,position:kind==="award"?"投手部門":null,seasonTeams:[],joint:awardId==="npb_sv"?true:null,sourceId:"s",evidenceSha256:"b".repeat(64),reportedCareerWins:null}],
     sources:[{id:"s",url:"https://example.test/",name:"Fixture",license:"CC-BY-SA-4.0",sha256:"c".repeat(64)}],
   });
   const f=await mount(<HonorsScreen league="NPB"/>,"/NPB/awards?year=2026");
   try {
     expect(f.host.querySelector(".honors-list li")?.textContent).toContain(name);
+    if(awardId==="npb_sv") expect(f.host.querySelector(".honors-list li")?.textContent).toContain("同時受賞あり");
     const sources=f.host.querySelector<HTMLDetailsElement>("details.honors-sources")!;
     expect(sources.open).toBe(false);
     expect(Array.from(sources.querySelectorAll("a"), link => link.href)).toContain(official);
