@@ -1557,7 +1557,7 @@ public class ReleaseQualityTest {
         waitCondition("Only the reviewed 2024 position is displayed", "document.querySelectorAll('.honors-recipient .honors-list>li').length===1&&document.querySelector('.honors-recipient .honors-list').textContent.includes('三塁手部門')");
         assertEquals("Recovered awards do not overflow at 200 percent", "true", js("document.documentElement.scrollWidth<=innerWidth")); screenshot("npb-recovered-honors-360-dark-200");
         js("location.hash='#/NPB/awards?recipient=npb%3A71075151'"); waitText("佐藤都志也");
-        waitCondition("New honors-only admission uses the existing independently matched player", "document.querySelectorAll('.honors-recipient .honors-list>li').length===1&&document.querySelector('.honors-recipient .honors-list').textContent.includes('捕手部門')");
+        waitCondition("Both catcher awards use the existing independently matched player", "document.querySelectorAll('.honors-recipient .honors-list>li').length===2&&Array.from(document.querySelectorAll('.honors-recipient .honors-list>li')).every(r=>r.textContent.includes('捕手部門'))&&!!document.querySelector('.honors-recipient a[href*=2026]')");
         js("document.querySelector('.honors-recipient a[href*=\"/players/d7c6d2b7-52c0-4a01-9065-d9118a8c7acf/seasons?season=2024\"]').click()");
         waitCondition("Award-year statistics retain the original canonical ID and year", "location.hash.includes('/players/d7c6d2b7-52c0-4a01-9065-d9118a8c7acf/seasons?season=2024')");
         waitText("佐藤都志也"); shell("input keyevent KEYCODE_BACK"); waitCondition("Back returns to the original recipient, not Current", "location.hash.includes('recipient=npb%3A71075151')");

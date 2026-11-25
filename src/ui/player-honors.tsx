@@ -29,7 +29,7 @@ function HonorList({ page, rows, league, selected = false }: { page: HonorsPage;
       {!selected && <span><Link to={target ? honorProfilePath(target, row.year, row) : recipientLink}>{name}</Link>{p.identityStatus === "unresolved" && <small>本人照合保留</small>}</span>}
       <small>{row.seasonTeams.map(t => t.name).join(" / ") || "受賞年度の所属未収録"}{row.joint === true && " · 同時受賞あり"}{!selected && ` · 収録分${p.counts[row.awardId]}回`}</small>
       {league === "NPB" && target?.league === "NPB" && !target.seasons.includes(row.year) && <small>受賞年の年度成績は未収録</small>}
-      <div className="honors-row-links">{!selected && <Link to={recipientLink} aria-label={`${name}の表彰歴をすべて見る`}>表彰歴</Link>}{selected && target && <Link to={honorProfilePath(target, row.year, row)}>{target.league !== league ? `${target.league}の収録成績` : target.seasons.includes(row.year) || target.postseasonSeasons?.includes(row.year) ? "年度成績" : "収録年度の成績"}</Link>}<a className="honors-evidence" href={page.sources.find(s => s.id === row.sourceId)!.url}>出典</a></div>
+      <div className="honors-row-links">{!selected && <Link to={recipientLink} aria-label={`${name}の表彰歴をすべて見る`}>表彰歴</Link>}{selected && target && <Link to={honorProfilePath(target, row.year, row)}>{target.league !== league ? `${target.league}の収録成績` : target.seasons.includes(row.year) || target.postseasonSeasons?.includes(row.year) ? "年度成績" : "収録年度の成績"}</Link>}{(row.league !== "NPB" || row.year < 2026) && <a className="honors-evidence" href={page.sources.find(s => s.id === row.sourceId)!.url}>出典</a>}</div>
     </div></li>;
   })}</ol>;
 }

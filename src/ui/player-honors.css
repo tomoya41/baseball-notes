@@ -18,6 +18,11 @@
 .honors-view button { flex: 1; min-width: 0; min-height: var(--touch); font-size: .8125rem; }
 .honors-view button[aria-pressed="true"] { background: var(--brand); color: var(--on-brand); }
 .honors-row-links { display: flex; flex-wrap: wrap; gap: .8rem; font-size: .78rem; }
+.honors-year > a, .honors-result > span > a, .honors-row-links > a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch);
+}
 .honors-player-list { display: flex; flex-direction: column; }
 .honors-player-link { display: flex; justify-content: space-between; align-items: center; gap: .7rem; padding: .85rem 0; border-bottom: 1px solid var(--color-border); text-decoration: none; min-height: 48px; }
 .honors-player-link > span:first-child { min-width: 0; overflow-wrap: anywhere; display: flex; flex-direction: column; gap: .25rem; }
