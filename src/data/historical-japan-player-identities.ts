@@ -147,3 +147,30 @@ const evidenceFor = (pageIds: ReadonlySet<number>) => buildNpbInternationalIdent
 
 export const premier122024IdentityEvidence = evidenceFor(premier12PageIds);
 export const wbc2023IdentityEvidence = evidenceFor(wbcPageIds);
+
+const apbc2023PitcherReviews = [
+  // 田口麗斗
+  [2868818, 111567624, "41945139", "d1a2f152-f77d-4bc8-8f56-73c60e395458",
+    "ba836c36-68ad-4895-905a-478e4ab92669", "22ef77ee1e5d774e6d4a08ff8340f7fcbf40ad98732906bf94b82d6200501f5c"],
+  // 及川雅貴
+  [4012741, 111741508, "91795151", "363cf050-1a60-44a5-a24b-810e5444b3f9",
+    "21dcda64-454d-4997-bad6-d9b314bcf16f", "c473f7e2099fa17b90f35124f40f40cbf22a79d2d2a4b728b32fe5a63783bdab"],
+  // 桐敷拓馬
+  [4468993, 111837652, "01705155", "025a2fe7-0987-4e02-895c-4d98bdf1307c",
+    "e228a86f-d9ce-4fcc-a2c1-064285903c7a", "02b1a02e88d012c16b8f320154c278cc8b52e7118c238290970364512bf9183a"],
+  // 赤星優志
+  [4472177, 111848288, "51155155", "f725bf4e-3b00-43f7-8313-b42bcb4839e0",
+    "304ae91e-6f71-450d-b7fa-8e435ed8e7b1", "f356c5c1e05b859080acb880f2dac80a60bae55d97058f5c784c756630de41cf"],
+  // 佐藤隼輔
+  [4486288, 111470143, "41945155", "1b69744e-7375-4322-afee-1d688531daff",
+    "4891cfb3-0f25-490b-9f70-c55727bb0c0d", "924923f6a399eaaf14fa3bdeb4cdeacdacf4da3612224deccc7a1fb55672b321"],
+  // 吉村貢司郎
+  [4655368, 111424822, "53555157", "f06c2650-a255-48f6-a9c9-059d17bd560a",
+    "ce44fced-8167-48d8-8a8e-be9b1759bdb4", "c0aa2c1eb3f0e8a58768b52e0cc8f945d9d004facad91d63a8dff0c4ced4c88b"],
+] as const;
+
+const alreadyReviewedApbcPitchers = new Set([3750723, 4050017, 4236478, 4463322]);
+export const apbc2023IdentityEvidence = buildNpbInternationalIdentityEvidence([
+  ...reviewedPlayers.filter(([pageId]) => alreadyReviewedApbcPitchers.has(pageId)).map(row => ({ row, reviewDate })),
+  ...apbc2023PitcherReviews.map(row => ({ row, reviewDate: "2026-11-25T05:31:00Z" })),
+]);

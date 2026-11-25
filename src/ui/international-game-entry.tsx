@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { internationalOfficialTournaments as tournaments } from "../data/international-official-links";
+import { apbc2023Id, apbc2023OfficialBoxes, apbc2023PitcherNames, apbc2023Revision } from "../data/apbc-2023-pitching";
 import { apbc2026BatteryRevision } from "../data/apbc-2026-battery-appearances";
 import { internationalTeamNames, internationalRoundNames, japanResultsByTournament, japanSelectionsByTournament, resultLicense } from "../data/international-japan-results";
 import { apbc2026OfficialBoxes } from "../data/apbc-2026-highlights";
@@ -33,11 +34,12 @@ export function InternationalGameEntry({ expanded, onToggle, selected, onSelect,
   const edition = japanResultsByTournament.get(tournament.id);
   const roster = japanSelectionsByTournament.get(tournament.id);
   const positions = new Set(roster?.players.map(player => player.position));
-  const playerNames = new Map(roster?.players.map(player => [player.id, player.name]));
+  const apbc2023 = tournament.id === apbc2023Id;
+  const playerNames = apbc2023 ? apbc2023PitcherNames : new Map(roster?.players.map(player => [player.id, player.name]));
   const highlights = new Map(edition?.gameHighlights.map(game => [game.gameId, game]));
   const apbc = tournament.kind === "apbc";
   const wbc2026 = tournament.kind === "wbc" && tournament.year === 2026;
-  const officialBoxes = wbc2026 ? wbc2026OfficialBoxes : apbc ? apbc2026OfficialBoxes : undefined;
+  const officialBoxes = apbc2023 ? apbc2023OfficialBoxes : wbc2026 ? wbc2026OfficialBoxes : apbc ? apbc2026OfficialBoxes : undefined;
   const batting = edition?.playerStats.filter(row => row.role === "batting") ?? [];
   const pitching = edition?.playerStats.filter(row => row.role === "pitching") ?? [];
   const gamePitching = edition?.gamePitching.filter(row => row.teamId === "international:team:jpn") ?? [];
@@ -79,6 +81,7 @@ export function InternationalGameEntry({ expanded, onToggle, selected, onSelect,
         {edition.tournamentMvp && <p>大会MVP <strong>{playerNames.get(edition.tournamentMvp.playerId)}</strong></p>}
         <p className="inline-note">日付は現地時間。{edition.playerStats.length ? "成績は大会通算です。" :
           highlights.size ? `日本の本塁打と${wbc2026 ? "勝敗投手" : "勝利投手"}を収録。` :
+          outings.size ? "日本の登板と投球回を収録。" :
           edition.participation.length ? "個人成績は未収録です。" : "代表選手・個人成績は未収録です。"}</p>
         <ol className="row-list">{edition.games.map(game => {
           const detail = highlights.get(game.id);
@@ -123,7 +126,7 @@ export function InternationalGameEntry({ expanded, onToggle, selected, onSelect,
           {[...positions].map(position => <div key={position}><h4>{position}</h4>
             <p>{roster.players.filter(player => player.position === position).map(player => player.name).join("、")}</p></div>)}
         </details>}
-        {appearances.size > 0 && <details className="advanced-disclosure">
+        {!apbc2023 && appearances.size > 0 && <details className="advanced-disclosure">
           <summary>出場を確認した選手 · {appearances.size}人</summary>
           <p className="inline-note">{apbc ? "本塁打・登板・捕手の記録" : "先発・バッテリー、本塁打・勝敗投手の記録"}で確認できた試合を掲載。日付は現地時間です。</p>
           <ul className="row-list">{[...appearances].map(([id, dates]) => <InternationalPlayerRow key={id}
@@ -133,7 +136,7 @@ export function InternationalGameEntry({ expanded, onToggle, selected, onSelect,
         </details>}
         <details className="source-note"><summary>収録範囲・出典</summary><p>日本戦の確定スコアを抜粋。左がビジター、右がホームです。
           Wikipediaの執筆者による記録を抜粋・翻訳・整形し、<a href={resultLicense}>CC BY-SA 4.0</a>で提供しています。</p>
-          {officialBoxes && highlights.size > 0 && <>
+          {officialBoxes && (highlights.size > 0 || outings.size > 0) && <>
             <p>{outings.size ? "登板と投球回を収録。防御率や奪三振、打撃の大会通算成績は未収録です。" :
               "大会通算の打撃・投球成績は未収録です。"}{wbc2026 && "準々決勝は現地3月14日、日本時間3月15日です。"}</p>
             <div className="hub-links">{[...officialBoxes].map(([date, url]) =>
@@ -149,6 +152,7 @@ export function InternationalGameEntry({ expanded, onToggle, selected, onSelect,
           {sources?.map(source => <p key={source.id}><a href={source.url}>{
             statsCoverage?.status === "partial" && statsCoverage.source.sourceRevisionId === source.id ? "日本語版の大会通算成績" :
               source.id === apbc2026BatteryRevision ? "日本語版の登板・投球回・捕手の記録" :
+              source.id === String(apbc2023Revision) ? "日本語版の試合結果・投球回" :
               source.id === wbc2026LineupRevision ? "日本語版の代表選手・先発・バッテリー" :
               roster?.revision === source.id ? "日本語版の代表選手" :
               source.sourceId === "jawiki" ? "日本語版の試合結果" : "英語版の試合結果"
