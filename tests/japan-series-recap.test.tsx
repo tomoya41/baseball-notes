@@ -52,6 +52,7 @@ it("shows the recap and precise closed-game states on existing routes, without a
     await act(async()=>root.render(<MemoryRouter initialEntries={["/NPB/postseason?stage=japan_series"]}><Routes><Route path="/NPB/postseason" element={<NpbJapanSeriesScreen/>}/><Route path="/NPB/games/:gameId" element={<NpbJapanSeriesScreen gameDetail/>}/></Routes></MemoryRouter>));
     expect(host.querySelector(".series-recap")).not.toBeNull();expect(host.querySelectorAll('.scoreboard-row[aria-label$="開催不要"]')).toHaveLength(3);
     expect(host.querySelector(".series-recap details")?.textContent).toContain("MVP 正木智也");
+    expect(host.querySelector(".daily-mvp")).toBeNull();
     expect(host.querySelector(".series-recap details")?.textContent).toContain("杉山一樹、山本祐大、庄子雄大");
     expect([...host.querySelectorAll("details a")].map(link => link.getAttribute("href"))).toContain(japanSeries2026Awards.revisionUrl);
     const csReads=vi.mocked(readNpbCs).mock.calls.length;

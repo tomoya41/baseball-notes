@@ -1,5 +1,4 @@
 import { InningScoreboard } from "./inning-scoreboard";
-import { UnavailableDailyMvp } from "./daily-mvp";
 import { UnavailableGameMvp } from "./game-mvp";
 import { PostseasonSpotlight } from "./postseason-spotlight";
 import { EditorialCover } from "./editorial-cover";
@@ -63,7 +62,7 @@ export function NpbJapanSeriesScreen({gameDetail=false}:{gameDetail?:boolean}){
     {!valid?<DataState kind="unsupported" title="指定の年度・シリーズは未対応です"/>:!d?<Unavailable {...state}/>:gameDetail&&!g?<DataState kind="no-data" title="この試合は未収録です"/>:<>
       <p className="inline-note">収録時点 {observedTime(d.observedAt)}（日本時間）</p>
       {gameDetail&&g?<><GameHeading title={`第${g.gameNumber}戦 · ${name(g.awayTeamId)}対${name(g.homeTeamId)}`} date={g.date} context={`NPB · 日本シリーズ · 第${g.gameNumber}戦${notRequired?" · 当初予定":""}`} backTo={japanSeriesUrl}/><ScoreHero away={name(g.awayTeamId)} home={name(g.homeTeamId)} awayId={g.awayTeamId} homeId={g.homeTeamId} awayScore={g.awayRuns} homeScore={g.homeRuns} status={notRequired?"開催不要":statusLabel(g.status)}/><p>{d.venues[g.gameId]} · {notRequired?"当初の開催予定":g.scheduledAt?new Intl.DateTimeFormat("ja-JP",{hour:"2-digit",minute:"2-digit",timeZone:"Asia/Tokyo"}).format(new Date(g.scheduledAt)):"開始時刻は未収録"}</p>{g.gameNumber>=5&&!notRequired&&<p className="inline-note">4勝先取でシリーズ終了。開催条件を満たす場合の日程です。</p>}
-        {!notRequired&&<UnavailableGameMvp/>}
+        {!notRequired&&<UnavailableGameMvp reason="日本シリーズはアプリ独自MVPの選出対象外です。"/>}
         <InningScore data={d} gameId={g.gameId}/>{box ? <JapanSeriesBoxScoreTables key={g.gameId} box={box} selection={selection}
           onSelection={next=>setParams(previous=>{
             const query=new URLSearchParams(previous);
@@ -73,7 +72,6 @@ export function NpbJapanSeriesScreen({gameDetail=false}:{gameDetail?:boolean}){
           },{replace:true,preventScrollReset:true})} /> : <><h2>個人成績</h2><p className="data-notice">{notRequired?"シリーズ決着により開催不要となった試合です。日付・球場は当初予定で、試合結果・個人成績はありません。":g.status==="final"?"結果を収録しています。選手別の打撃・投球成績は未収録です。":"この試合の結果・打撃・投球成績はまだ収録していません。予定スコアの空欄は0点・試合終了を意味しません。"}</p></>}
       </>:<><h2>{d.series.teams.map(t=>name(t.teamId)).join(" vs ")}</h2><p>7試合制 · 4勝先取</p>{played?<div className="series-score">{d.series.teams.map(t=><div key={t.teamId}><span>{name(t.teamId)}</span><strong>{t.playedWins}</strong></div>)}</div>:<p className="data-notice">{beforeOpening?"取得時点で開幕前です。シリーズ勝敗・試合結果・選手成績は未収録です。":"試合結果が未収録のため、シリーズ勝敗は確認できません。出場なし・試合なしとは判定しません。"}</p>}
         <JapanSeriesRecap data={d}/><h2>日程・試合詳細</h2><p className="inline-note">{d.series.clinched?"シリーズは決着しました。開催不要の試合は当初予定を表示しています。":"予定日は変更される場合があります。第5戦以降は開催条件付き。開始時刻は未収録です。"}</p><div className="scoreboard-list">{d.series.games.map(row=><ScoreboardRow key={row.gameId} to={gameUrl(row.gameId)} away={name(row.awayTeamId)} home={name(row.homeTeamId)} awayId={row.awayTeamId} homeId={row.homeTeamId} awayScore={row.awayRuns} homeScore={row.homeRuns} date={row.date.slice(5)} status={`第${row.gameNumber}戦 · ${japanGameNotRequired(d,row)?"開催不要":row.status==="scheduled"?"予定":statusLabel(row.status)}`}/>)}</div></>}
-      {!gameDetail&&<UnavailableDailyMvp/>}
       {!gameDetail&&<PostseasonSpotlight scope={{teamIds:d.series.teams.map(t=>t.teamId)}} allowOutlook={!d.series.clinched&&d.series.games.some(g=>g.status==="scheduled"&&g.date>=new Intl.DateTimeFormat("sv-SE",{timeZone:"Asia/Tokyo"}).format(new Date()))}/>}
       <div className="hub-links">{gameDetail&&<Link to={japanSeriesUrl}>日本シリーズの日程へ →</Link>}<Link to="/NPB/postseason?season=2026">CSからの勝ち上がり →</Link><Link to="/NPB/cs?season=2026">CSの収録成績へ →</Link></div><Sources data={d} gameId={gameDetail?g?.gameId:undefined}/>
     </>}
