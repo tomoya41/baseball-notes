@@ -166,6 +166,68 @@ it("opens real official tournament links alongside the domestic Games route with
   }
 });
 
+function offSeasonSchedule() {
+  const { index } = mvpFixture();
+  const effective = "2026-10-12", lastGameDate = "2026-10-08";
+  const observation = { ...index, date: effective, coverage: "unknown" as const, games: [] };
+  const result = { ...index, date: lastGameDate, games: index.games.map(game => ({ ...game, date: lastGameDate })) };
+  const recent = { effectiveDate: effective, generatedAt: index.generatedAt, games: result.games };
+  const repository = {
+    manifest: vi.fn(async () => ({ schemaVersion: 1 as const, league: "NPB" as const, from: "2026-03-27",
+      to: effective, effectiveDate: effective, generatedAt: index.generatedAt })),
+    date: vi.fn(async (date: string) => date === lastGameDate ? result : observation),
+    recent: vi.fn(async () => recent), records: vi.fn(),
+  };
+  return { repository, observation, result, recent };
+}
+
+async function mountOffSeasonSchedule(repository: ReturnType<typeof offSeasonSchedule>["repository"], path: string) {
+  const host = document.createElement("div");
+  document.body.append(host);
+  const root = createRoot(host);
+  await act(async () => root.render(<MemoryRouter initialEntries={[path]}><NpbScheduleScreen repository={repository} /></MemoryRouter>));
+  return { host, unmount: async () => { await act(async () => root.unmount()); host.remove(); } };
+}
+
+it("opens the last confirmed result on the undated schedule and preserves the selected observation date", async () => {
+  const { repository } = offSeasonSchedule();
+  const { host, unmount } = await mountOffSeasonSchedule(repository, "/NPB/schedule?season=2026");
+  try {
+    expect(host.querySelector('input[aria-label="試合日"]')?.getAttribute("value")).toBe("2026-10-08");
+    expect(host.querySelector(".scoreboard-list a")?.getAttribute("href")).toContain("date=2026-10-08");
+    expect(host.textContent).toContain("公開基準日 2026-10-12");
+    expect(host.textContent).toContain("直近の収録結果 2026-10-08");
+    const observation = [...host.querySelectorAll("a")].find(link => link.textContent?.includes("基準日の収録状況"))!;
+    expect(observation.getAttribute("href")).toBe("/NPB/schedule?season=2026&date=2026-10-12");
+    await act(async () => observation.click());
+    expect(host.textContent).toContain("公式戦の収集対象期間外です");
+    expect(host.querySelector(".scoreboard-list a")).toBeNull();
+    expect(host.textContent).not.toContain("試合なし");
+    expect(repository.recent).toHaveBeenCalledOnce();
+  } finally { await unmount(); }
+});
+
+it.each(["recorded no-games", "failed Day", "different generation", "mismatched final score"])(
+  "does not replace the observation date when the fallback is inapplicable: %s", async reason => {
+    const { repository, observation, result, recent } = offSeasonSchedule();
+    if (reason === "recorded no-games") repository.date.mockResolvedValueOnce({ ...observation, coverage: "no_games" });
+    if (reason === "failed Day") repository.date.mockResolvedValueOnce({ ...observation, coverage: "failed" });
+    if (reason === "different generation") repository.recent.mockResolvedValueOnce({ ...recent, generatedAt: "2026-10-15T12:00:00Z" });
+    if (reason === "mismatched final score") repository.date.mockResolvedValueOnce(observation).mockResolvedValueOnce({
+      ...result, games: result.games.map(game => ({ ...game, away: { ...game.away, score: (game.away.score ?? 0) + 1 } })),
+    });
+    const { host, unmount } = await mountOffSeasonSchedule(repository, "/NPB/schedule");
+    try {
+      expect(host.querySelector('input[aria-label="試合日"]')?.getAttribute("value")).toBe("2026-10-12");
+      expect(host.querySelector(".scoreboard-list a")).toBeNull();
+      const reasonLabel = reason === "recorded no-games" ? "試合なし" : reason === "failed Day"
+        ? "この日の試合データを取得できませんでした" : "公式戦の収集対象期間外です";
+      expect(host.textContent).toContain(reasonLabel);
+      if (reason === "recorded no-games" || reason === "failed Day") expect(repository.recent).not.toHaveBeenCalled();
+    } finally { await unmount(); }
+  },
+);
+
 it("withholds mixed-generation schedules and reloads without dropping the club or date", async () => {
   const { index } = mvpFixture();
   const date = index.date;

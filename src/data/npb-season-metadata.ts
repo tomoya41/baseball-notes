@@ -21,6 +21,12 @@ export function findNpbRegularSeason(asOfDate: string): NpbSeasonMetadata | null
 
 const scheduleDateSchema = z.iso.date();
 
+export function outsideReviewedNpbRegularCalendar(date: string): boolean {
+  if (!scheduleDateSchema.safeParse(date).success) return false;
+  const season = findNpbRegularSeason(date);
+  return !!season && (date < season.startDate || date > season.endDate);
+}
+
 export function requireNpbRegularSeason(date: string): NpbSeasonMetadata {
   if (!scheduleDateSchema.safeParse(date).success) throw new Error("Invalid schedule date");
   const season = findNpbRegularSeason(date);

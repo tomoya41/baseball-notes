@@ -148,14 +148,26 @@ describe("daily product surfaces", () => {
     expect(container.querySelectorAll(".scoreboard-row")).toHaveLength(0);
     expect(container.textContent).not.toContain("この期間の直接対戦");
   });
-  it.each(["2026-09-01", "2026-11-01"])("keeps the Today schedule action inside saved dates when today is %s", async today => {
+  it.each(["2026-09-01", "2026-10-06"])("keeps the Today schedule action inside saved dates when today is %s", async today => {
     vi.setSystemTime(new Date(`${today}T00:00:00Z`));
     const date = vi.fn(async (d: string): Promise<GameDateIndex> => ({ schemaVersion: 1, league: "NPB", date: d, generatedAt: manifest.generatedAt, coverage: "unknown", games: [] }));
     await render(<NpbToday {...actions} services={{ ...services, gameSurface: { ...services.gameSurface, manifest: async () => manifest, date } as unknown as typeof services.gameSurface }} />);
     const action = [...container.querySelectorAll("a")].find(a => a.textContent === "日程・結果")!;
     expect(action.getAttribute("href")).toBe(`/NPB/schedule?date=${today < manifest.from ? manifest.from : manifest.to}`);
-    expect(date).not.toHaveBeenCalled();
+    expect(date.mock.calls.map(([requestedDate]) => requestedDate)).toEqual(
+      today < manifest.from ? [] : ["2026-10-02", "2026-10-03", "2026-10-04"],
+    );
     expect(container.textContent).toContain("今日の予定は未確認");
+    expect(container.textContent).not.toContain("今日は試合なし");
+  });
+  it("opens the latest saved schedule from Today outside the reviewed calendar", async () => {
+    vi.setSystemTime(new Date("2026-11-01T00:00:00Z"));
+    const date = vi.fn();
+    await render(<NpbToday {...actions} services={{ ...services, gameSurface: { ...services.gameSurface, manifest: async () => manifest, date } as unknown as typeof services.gameSurface }} />);
+    const action = [...container.querySelectorAll("a")].find(a => a.textContent === "日程・結果")!;
+    expect(action.getAttribute("href")).toBe("/NPB/schedule");
+    expect(date).not.toHaveBeenCalled();
+    expect(container.textContent).toContain("今日は公式戦の収集対象期間外です。");
     expect(container.textContent).not.toContain("今日は試合なし");
   });
   it("sends canonical team keys and retains accessible add/remove labels", async () => { await render(<GameTeamLinks league="NPB" teams={[home, away]} {...actions} />); const button = container.querySelector<HTMLButtonElement>(`[aria-label="阪神をお気に入りに追加"]`)!; await act(async () => button.click()); expect(actions.toggle).toHaveBeenCalledWith({ league: "NPB", kind: "team", entityId: home.id }); expect(container.querySelector(`a[href='/NPB/teams/${encodeURIComponent(home.id)}']`)).not.toBeNull(); });

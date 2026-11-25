@@ -1,3 +1,4 @@
+import { outsideReviewedNpbRegularCalendar } from "../data/npb-season-metadata";
 import { isHistoricalOnlyPlayer } from "../data/npb-historical-identity-index";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
@@ -68,11 +69,15 @@ export function NpbToday({ services, favorites, toggle, saving, personal = false
   const teams = new Set(favorites.filter(f => f.kind === "team" && f.league === "NPB").map(f => f.entityId));
   const filter = (games: NonNullable<typeof value>["today"]) => personal ? games.filter(g => teams.has(g.home.id) || teams.has(g.away.id)) : games;
   const games = value ? filter(value.today) : [], next = value ? filter(value.next) : [], recent = value ? filter(value.recent) : [];
-  const scheduleDate = value ? today < value.manifest.from ? value.manifest.from : today > value.manifest.to ? value.manifest.to : today : null;
+  const beyondPublishedDates = value && (today < value.manifest.from || today > value.manifest.to);
+  const outsideCalendar = beyondPublishedDates && outsideReviewedNpbRegularCalendar(today);
+  const scheduleDate = value && !outsideCalendar
+    ? [value.manifest.from, today, value.manifest.to].sort()[1]
+    : null;
   return <section className="home-section today-board"><SectionHeader title={personal ? "フォロー球団の試合" : "今日の試合"} action="日程・結果" to={scheduleDate ? `/NPB/schedule?date=${scheduleDate}` : "/NPB/schedule"} /><p className="inline-note">{today} · 日本時間{value && <> · 公開基準日 <time dateTime={value.manifest.effectiveDate}>{value.manifest.effectiveDate}</time></>}</p>
     {!value ? error === today ? <DataState kind="source-unavailable" title="試合情報を読み込めません" /> : <LoadingSkeleton /> : <>
       {error === today && <p className="inline-note" role="status">更新未確認。前回の日程・結果を表示しています。</p>}
-      {games.length ? <GameLinks games={games} /> : <p className="inline-note">{personal && !teams.size ? "球団をお気に入りに追加すると、試合がここに表示されます。" : personal && value.todayState === "games" ? "保存済みの今日の試合にフォロー球団はありません。" : value.todayState === "no_games" ? "今日は試合なし" : "今日の予定は未確認です。"}</p>}
+      {games.length ? <GameLinks games={games} /> : <p className="inline-note">{personal && !teams.size ? "球団をお気に入りに追加すると、試合がここに表示されます。" : personal && value.todayState === "games" ? "保存済みの今日の試合にフォロー球団はありません。" : value.todayState === "no_games" ? "今日は試合なし" : outsideCalendar ? "今日は公式戦の収集対象期間外です。" : "今日の予定は未確認です。"}</p>}
       {value.failedDates.length > 0 && <p className="inline-note">一部の日程を読み込めません。次戦・結果は読み込めた範囲です。</p>}
       {value.incompleteDates.length > 0 && <p className="inline-note">一部の試合情報は未確定です。日程・結果は保存済みの範囲を表示しています。</p>}
       {next.length > 0 && <><h3>次の試合</h3><GameLinks games={next.slice(0, personal ? 3 : 2)} /></>}

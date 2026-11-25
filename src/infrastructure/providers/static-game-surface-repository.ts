@@ -24,6 +24,6 @@ export class StaticGameSurfaceRepository {
     await cacheGameAsset(response,deferCache);
     return day;
   }
-  async recent(){const r=await this.read("games/recent.json");const p=recentGamesSchema.parse(r.value);await rememberPublicResponse(r.response);return p;}
+  async recent(deferCache?:DeferGameAssetCache){const r=await this.read("games/recent.json");const p=recentGamesSchema.parse(r.value);await cacheGameAsset(r.response,deferCache);return p;}
   async records(){const r=await this.read("records/2026/latest.json");const p=recordsSchema.parse(r.value);await rememberPublicResponse(r.response);return p;}
 }
