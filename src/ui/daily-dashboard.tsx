@@ -69,8 +69,11 @@ export function NpbToday({ services, favorites, toggle, saving, personal = false
   const teams = new Set(favorites.filter(f => f.kind === "team" && f.league === "NPB").map(f => f.entityId));
   const filter = (games: NonNullable<typeof value>["today"]) => personal ? games.filter(g => teams.has(g.home.id) || teams.has(g.away.id)) : games;
   const games = value ? filter(value.today) : [], next = value ? filter(value.next) : [], recent = value ? filter(value.recent) : [];
-  const scheduleDate = value && today >= value.manifest.from && today <= value.manifest.to ? today : null;
-  const outsideCalendar = value && !scheduleDate && outsideReviewedNpbRegularCalendar(today);
+  const beyondPublishedDates = value && (today < value.manifest.from || today > value.manifest.to);
+  const outsideCalendar = beyondPublishedDates && outsideReviewedNpbRegularCalendar(today);
+  const scheduleDate = value && !outsideCalendar
+    ? [value.manifest.from, today, value.manifest.to].sort()[1]
+    : null;
   return <section className="home-section today-board"><SectionHeader title={personal ? "フォロー球団の試合" : "今日の試合"} action="日程・結果" to={scheduleDate ? `/NPB/schedule?date=${scheduleDate}` : "/NPB/schedule"} /><p className="inline-note">{today} · 日本時間{value && <> · 公開基準日 <time dateTime={value.manifest.effectiveDate}>{value.manifest.effectiveDate}</time></>}</p>
     {!value ? error === today ? <DataState kind="source-unavailable" title="試合情報を読み込めません" /> : <LoadingSkeleton /> : <>
       {error === today && <p className="inline-note" role="status">更新未確認。前回の日程・結果を表示しています。</p>}
