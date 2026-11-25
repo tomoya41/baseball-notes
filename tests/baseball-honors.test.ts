@@ -1,7 +1,9 @@
 import {expect,it} from "vitest";
+import {honorCatalogSchema} from "../src/domain/honor-discovery";
+import {portableRoute} from "../src/domain/product-sharing";
 import {parseNpbHonors} from "../src/infrastructure/providers/wikipedia-npb-honors";
 import {matchLahmanIdentity,parseLahmanHonors,mergeMlbHonorProfiles} from "../src/infrastructure/providers/lahman-honors";
-import {honorsPageSchema,contextManifestSchema,honorProfilePath,type HonorRecipient} from "../src/domain/player-honors";
+import {honorSchema,honorsPageSchema,contextManifestSchema,honorProfilePath,type HonorRecipient} from "../src/domain/player-honors";
 const parse=(text:string)=>parseNpbHonors(text,"npb:123","wiki:1:2");
 it("extracts explicit annual titles, nested positions and ranges, retaining raw excerpt hashes",()=>{
  const a=parse('=== タイトル ===\n* [[首位打者 (日本プロ野球)|首位打者]]：2回（2023年、2024年）<ref>2026年</ref>\n=== 表彰 ===\n* [[ベストナイン (日本プロ野球)|ベストナイン]]：3回\n** 外野手部門：2回（2022年 - 2023年）\n** 指名打者部門：1回（2024年）');
@@ -25,3 +27,22 @@ it("opens collected award-year stats and explicit pitching awards without inferr
 it("opens collected Series MVPs in Postseason, and never requests uncovered Series statistics",()=>{const link={league:"MLB" as const,playerId:"mlb:player:00000000-0000-4000-8000-000000000001",seasons:[2024],postseasonSeasons:[2024]},award={awardId:"mlb_ws_mvp",position:null};expect(honorProfilePath(link,2024,award)).toContain("?season=2024&competition=postseason");expect(honorProfilePath(link,2003,award)).not.toContain("competition");expect(honorProfilePath(link,2024,{...award,awardId:"mlb_mvp"})).not.toContain("postseason");});
 
 it("preserves regular coverage separately from postseason and routes postseason-only profiles explicitly",()=>{const id="mlb:player:00000000-0000-4000-8000-000000000001",other="mlb:player:00000000-0000-4000-8000-000000000002",p=mergeMlbHonorProfiles([{id,seasons:[2019,2024]}],[{id,seasons:[2024]},{id:other,seasons:[2024]}]);const regular={...p.get(id)!,league:"MLB" as const,playerId:id};expect(regular.seasons).toEqual([2019,2024]);expect(honorProfilePath(regular,2019,{awardId:"mlb_mvp",position:null})).toContain("?season=2019");expect(honorProfilePath(regular,2024,{awardId:"mlb_ws_mvp",position:null})).toContain("?season=2024&competition=postseason");expect(honorProfilePath({...p.get(other)!,league:"MLB",playerId:other},2024)).toContain("competition=postseason");});
+
+it("allows the reviewed 2026 NPB award year while retaining archival and MLB limits", () => {
+  const fixture = parse('=== 表彰 ===\n* [[最優秀選手 (日本プロ野球)]]：1回（2025年）').rows[0]!;
+  expect(honorSchema.safeParse({ ...fixture, year: 2026 }).success).toBe(true);
+  expect(honorSchema.safeParse({ ...fixture, year: 2026, league: "MLB" }).success).toBe(false);
+  expect(honorSchema.safeParse({ ...fixture, year: 2027 }).success).toBe(false);
+  const catalog = { schemaVersion: 1, league: "NPB", coverage: "partial",
+    awards: [{ id: "npb_mvp", name: "最優秀選手賞" }], players: [{ id: "npb:41045153", name: "選手",
+      identityStatus: "verified", playerId: null, years: [2026], awardIds: ["npb_mvp"], total: 1 }] };
+  expect(honorCatalogSchema.safeParse(catalog).success).toBe(true);
+  expect(honorCatalogSchema.safeParse({ ...catalog, league: "MLB", players: [{ ...catalog.players[0], id: "lahman:abc" }] }).success).toBe(false);
+  const manifest = { schemaVersion: 1, observedAt: "2026-11-25T11:44:00Z", cutoff: 2026,
+    coverage: "partial", attribution: "Fixture", years: { NPB: [2026], MLB: [2025] }, counts: {}, files: {} };
+  expect(contextManifestSchema.safeParse(manifest).success).toBe(true);
+  expect(contextManifestSchema.safeParse({ ...manifest, cutoff: 2025 }).success).toBe(false);
+  expect(contextManifestSchema.safeParse({ ...manifest, years: { NPB: [2026], MLB: [2026] } }).success).toBe(false);
+  expect(portableRoute("/NPB/awards", "?year=2026&award=npb_mvp")).toBe("/NPB/awards?year=2026&award=npb_mvp");
+  expect(portableRoute("/MLB/awards", "?year=2026")).toBeNull();
+});
