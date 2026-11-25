@@ -8,22 +8,50 @@ import { readableMetric, type ExplorerRow } from "../domain/data-explorer";
 import { readNpbExplorerSeason, readNpbRecentExplorer } from "../application/explorer-readers";
 import { DataState, LoadingSkeleton, MetricLabel, PageHeading } from "./components";
 import { Monogram } from "./design-system";
+import { npbTeamShortName } from "./npb-team-names";
+import { draftEntrySource, verifiedDraftEntry } from "../data/npb-verified-draft-entry";
+import { formatDate } from "../presentation/formatters";
 
 export function LifecycleLinks({ teamId, active }: {teamId?:string;active?:string}) {
   const suffix = teamId ? `&team=${encodeURIComponent(teamId)}` : "";
   return <nav className="explorer-links" aria-label="選手経歴を探す"><Link aria-current={active === "draft" ? "page" : undefined} to={`/NPB/talent?view=draft${suffix}`}>ドラフト</Link><Link aria-current={active === "young" ? "page" : undefined} to={`/NPB/talent?view=young${suffix}`}>若手選手</Link><Link aria-current={active === "school" ? "page" : undefined} to={`/NPB/talent?view=school${suffix}`}>出身校</Link><Link to="/NPB/talent/2026?view=results&forecast=final">2026特集</Link></nav>;
 }
 export function ProfileCredits({ player }: {player:LifecyclePlayer}) {
-  return <details className="advanced-disclosure"><summary>プロフィールの出典・利用条件</summary><p>公開masterに採用済みの情報だけを使用しています。未確認・競合中の候補は補完しません。</p>{player.profile.credits?.map((c,i) => <p key={i}><a href={c.url} target="_blank" rel="noreferrer">{c.name}</a> · <a href={c.licenseUrl} target="_blank" rel="noreferrer">利用条件</a><small> · {c.fields.join(" / ")} · 構造化・加工済み</small></p>)}<Link to="/MLB/sources">Data Sources / Attribution →</Link></details>;
+  const entry = verifiedDraftEntry(player.playerId);
+  return <details className="advanced-disclosure"><summary>プロフィールの出典・利用条件</summary><p>確認できた範囲の記録を掲載しています。</p>{player.profile.credits?.map((c,i) => <p key={i}><a href={c.url} target="_blank" rel="noreferrer">{c.name}</a> · <a href={c.licenseUrl} target="_blank" rel="noreferrer">利用条件</a><small> · {c.fields.join(" / ")} · 構造化・加工済み</small></p>)}
+    {entry && <div>
+      <p>入団は最初の所属シーズンで表示します。初出場は一軍公式戦の日付です。</p>
+      <p>Wikipediaの執筆者による<a href={`https://ja.wikipedia.org/w/index.php?curid=${draftEntrySource.pageId}&oldid=${draftEntrySource.revision}`}>指名・入団の記録</a>と
+        <a href={`https://ja.wikipedia.org/w/index.php?oldid=${entry.profileRevision}`}>選手記事の初出場記録</a>を抜粋・整形（<a href={draftEntrySource.licenseUrl}>CC BY-SA 4.0</a>）。</p>
+      <p><a href={`https://draft.npb.jp/draft/${draftEntrySource.draftYear}/draftlist_${entry.draftClubCode}.html`}>NPBの指名結果</a> ·
+        <a href={entry.entryVerification}>新入団の発表</a> ·
+        <a href={`https://npb.jp/scores/${entry.debut.date.slice(0, 4)}/${entry.debut.date.slice(5).replace("-", "")}/${entry.debut.officialBox}/box.html`}>初出場の公式試合記録</a></p>
+    </div>}
+    <Link to="/MLB/sources">Data Sources / Attribution →</Link></details>;
 }
 export function PlayerLifecycle({ player, effectiveDate, storyLink=true }: {player:LifecyclePlayer;effectiveDate?:string;storyLink?:boolean}) {
   const f=player.profile, schools=playerSchools(player), date=effectiveDate ?? f.ageAsOfDate;
+  const entry = verifiedDraftEntry(player.playerId);
+  const draftYear = entry ? draftEntrySource.draftYear : f.draftYear;
   // Initial view only. Both roles remain selectable; this never classifies past seasons or two-way status.
   const storyRole=f.position==="P"||player.pitchingAvailable&&!player.battingAvailable?"pitching":"batting";
   return <section className="player-lifecycle" aria-labelledby="lifecycle-title"><h2 id="lifecycle-title">選手経歴</h2><details className="advanced-disclosure"><summary>経歴の補足</summary><p>確認済みの部分履歴です。完全なCareer・在籍期間・現在の登録を示しません。指名年から入団年・NPB初出場年を推定しません。</p></details>
     <ol className="lifecycle-timeline">
       {!!schools.length && <li><h3>学校・アマチュア球歴</h3>{schools.map(name => <Link key={name} to={`/NPB/talent?view=school&school=${encodeURIComponent(name)}`}>{name}</Link>)}</li>}
-      {f.draftYear !== null && <li><h3>{f.draftYear}年 ドラフト</h3><p>{f.draftRound ?? "順位不明"} · {f.draftType === "regular" ? "通常指名" : f.draftType === "developmental" ? "育成指名" : "区分不明"} · {f.draftTeamName ?? "指名球団不明"}</p><Link to={`/NPB/talent?year=${f.draftYear}`}>{f.draftYear}年 ドラフト同期 →</Link></li>}
+      {draftYear !== null && <li><h3>{draftYear}年 ドラフト</h3>
+        <p>{entry ? `支配下1位 · ${npbTeamShortName(entry.teamId)}` : `${f.draftRound ?? "順位不明"} · ${f.draftType === "regular" ? "通常指名" : f.draftType === "developmental" ? "育成指名" : "区分不明"} · ${f.draftTeamName ?? "指名球団不明"}`}</p>
+        {entry && <p>指名時の所属 · {entry.affiliationAtDraft}</p>}
+        <Link to={`/NPB/talent?year=${draftYear}`}>{draftYear}年 ドラフト同期 →</Link>
+      </li>}
+      {entry && <>
+        <li><h3>{draftEntrySource.firstSeason}年シーズンに入団</h3><p>{npbTeamShortName(entry.teamId)}</p></li>
+        <li><h3>一軍公式戦の初出場</h3><p><time dateTime={entry.debut.date}>{formatDate(entry.debut.date)}</time></p>
+          <div className="hub-links">
+            <Link to={`/NPB/games/${encodeURIComponent(entry.debut.gameId)}?date=${entry.debut.date}&boxSide=${entry.debut.boxSide}`}>初出場の試合 →</Link>
+            <Link to={`/NPB/players/${player.playerId}/seasons?season=${draftEntrySource.firstSeason}&role=${entry.debut.role}`}>{draftEntrySource.firstSeason}年の成績 →</Link>
+          </div>
+        </li>
+      </>}
       {!!f.affiliations?.length && <li><h3>所属履歴</h3>{f.affiliations.map((a,i) => <p key={i}>{a.name}{a.from || a.to ? ` · ${a.from ?? "開始未確認"}〜${a.to ?? "終了未確認"}` : " · 期間未確認"}</p>)}</li>}
       <li><h3>{date.slice(0,4)} シーズン</h3><p>情報基準日 {date}</p><Link to={`/NPB/players/${player.playerId}/stats`}>シーズン成績 →</Link></li>
     </ol>{storyLink&&<p><Link to={`/NPB/players/${player.playerId}/seasons?story=1&role=${storyRole}`}>経歴と年度成績をたどる →</Link></p>}<LifecycleLinks /><ProfileCredits player={player} />
@@ -103,7 +131,7 @@ export function LifecycleWorkspace({catalog}:{catalog:NpbCatalog}) {
         <small>指名球団：{p.profile.draftTeamId?teamNames.get(p.profile.draftTeamId):p.profile.draftTeamName?`${p.profile.draftTeamName}（球団照合未確認）`:"未確認"}</small>
         {playerSchools(p).length>0&&<details><summary>出身校 {playerSchools(p).length}件</summary>{playerSchools(p).map(name=><Link className="lifecycle-school" key={name} to={`/NPB/talent?view=school&school=${encodeURIComponent(name)}`}>{name}</Link>)}</details>}
         {query.role!=="all"&&<dl className="explorer-metrics">{keys.map(k=>{const value=ready?readableMetric(values?.[k]):null;return <div key={k}><dt><MetricLabel metric={k} /></dt><dd>{value===null?"—":k==="outsRecorded"?`${Math.floor(value/3)}.${value%3}`:["OPS","ERA"].includes(k)?value.toFixed(k==="OPS"?3:2):value}{values?.[k]?.status==="partial"&&<small> 一部</small>}</dd></div>;})}</dl>}
-        <div className="lifecycle-actions"><Link to={`/NPB/players/${p.playerId}/more`}>選手経歴 →</Link>{query.role!=="all"&&<label><input type="checkbox" aria-label={`${p.displayName}を同期比較に選択`} checked={compare.includes(p.playerId)} disabled={!compare.includes(p.playerId)&&compare.length>=4} onChange={()=>update("compare",(compare.includes(p.playerId)?compare.filter(id=>id!==p.playerId):[...compare,p.playerId]).join(","))} />比較</label>}</div>
+        <div className="lifecycle-actions"><Link to={`/NPB/players/${p.playerId}/more`}>{verifiedDraftEntry(p.playerId) ? "入団・初出場を見る →" : "選手経歴 →"}</Link>{query.role!=="all"&&<label><input type="checkbox" aria-label={`${p.displayName}を同期比較に選択`} checked={compare.includes(p.playerId)} disabled={!compare.includes(p.playerId)&&compare.length>=4} onChange={()=>update("compare",(compare.includes(p.playerId)?compare.filter(id=>id!==p.playerId):[...compare,p.playerId]).join(","))} />比較</label>}</div>
       </article>;
     })}</div>
     {!players.length&&!query.errors.length&&(query.minimum===0 || ready)&&<DataState kind="no-data" title="条件に合う選手がいません" detail="未確認の情報を条件に一致したものとして扱いません。" />}
