@@ -5,7 +5,9 @@ import { MemoryRouter, Route, Routes, useLocation, useNavigate } from "react-rou
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { buildNpbCatalog } from "../src/application/npb-product-payload";
 import { npbTeams } from "../src/data/npb-nf3";
-import { lifecycleCoverage, lifecyclePlayers, lifecycleQuery, playerSchools, validateLifecycleStats } from "../src/domain/npb-lifecycle";
+import { draftEntries, verifiedDraftEntry } from "../src/data/npb-verified-draft-entry";
+import profileIdentities from "../src/data/npb-free-profile-identities.json";
+import { lifecycleCoverage, lifecyclePlayers, lifecycleQuery, playerSchools, validateLifecycleStats, type LifecyclePlayer } from "../src/domain/npb-lifecycle";
 import type { ExplorerRow } from "../src/domain/data-explorer";
 import { LifecycleWorkspace, PlayerLifecycle } from "../src/ui/npb-lifecycle";
 import { NpbRoutes } from "../src/ui/npb-routes";
@@ -83,6 +85,49 @@ beforeEach(()=>{vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);readers.season.mo
 afterEach(async()=>{await act(async()=>{root.unmount();});element.remove();vi.unstubAllGlobals();});
 async function mount(path="/NPB/talent",lifecycle=false){await act(async()=>root.render(<MemoryRouter initialEntries={[path]}>{lifecycle?<PlayerLifecycle player={catalog.players[0]!}/>:<LifecycleWorkspace catalog={catalog}/>}<Location/></MemoryRouter>));}
 describe("Draft discovery integration and recovery",()=>{
+  it("requires existing independent NPB and Wikidata identifiers for the adopted entries", () => {
+    expect(draftEntries).toHaveLength(6);
+    expect(new Set(draftEntries.map(entry => entry.playerId)).size).toBe(draftEntries.length);
+    expect(new Set(draftEntries.map(entry => entry.debut.gameId)).size).toBe(draftEntries.length);
+    for (const entry of draftEntries) {
+      const identity = profileIdentities.find(row => row.playerId === entry.playerId);
+      expect(identity).toMatchObject({
+        npbId: entry.npbId, wikidataId: entry.wikidataId, verificationStatus: "source_verified",
+        chadwick: { identityMethod: "exact_npb_id_and_consistent_wikidata_cross_reference" },
+      });
+    }
+    expect(verifiedDraftEntry(id(42))).toBeUndefined();
+  });
+
+  it.each([
+    [draftEntries[0], "立石正広", "阪神", "創価大学", "2026年5月19日"],
+    [draftEntries[5], "竹丸和幸", "巨人", "鷺宮製作所", "2026年3月27日"],
+  ])("links a named player to independently confirmed entry and debut records", async (entry, name, teamName, affiliation, debut) => {
+    const player: LifecyclePlayer = { ...catalog.players[0]!, playerId: entry.playerId, displayName: name,
+      profile: { ...catalog.players[0]!.profile, draftYear: 2025, draftTeamName: null } };
+    const render = async (data: typeof player) => act(async () => {
+      root.render(<MemoryRouter><PlayerLifecycle player={data}/></MemoryRouter>);
+    });
+    await render(player);
+    const timeline = element.querySelector(".lifecycle-timeline")!;
+    expect(timeline.textContent).toContain(`支配下1位 · ${teamName}`);
+    expect(timeline.textContent).toContain(`指名時の所属 · ${affiliation}`);
+    expect(timeline.textContent).toContain("2026年シーズンに入団");
+    expect(timeline.querySelector("time")?.textContent).toBe(debut);
+    const game = [...timeline.querySelectorAll("a")].find(link => link.textContent?.includes("初出場の試合"))!;
+    expect(decodeURIComponent(game.getAttribute("href")!)).toBe(
+      `/NPB/games/${entry.debut.gameId}?date=${entry.debut.date}&boxSide=${entry.debut.boxSide}`,
+    );
+    const season = [...timeline.querySelectorAll("a")].find(link => link.textContent?.includes("2026年の成績"))!;
+    expect(season.getAttribute("href")).toBe(`/NPB/players/${entry.playerId}/seasons?season=2026&role=${entry.debut.role}`);
+    const evidence = [...element.querySelectorAll("a")].find(link => link.href === entry.entryVerification)!;
+    expect(evidence.closest("details")?.open).toBe(false);
+
+    await render({ ...player, playerId: id(42) });
+    expect(element.querySelector(".lifecycle-timeline")?.textContent).not.toContain("2026年シーズンに入団");
+    expect(element.querySelector(".lifecycle-timeline time")).toBeNull();
+  });
+
   it("shows the Season Fact cutoff separately from the age reference date",async()=>{
     readers.season.mockResolvedValue({...payload,period:{from:"2026-03-27",to:"2026-10-04"}});
     await mount("/NPB/talent?role=batting");

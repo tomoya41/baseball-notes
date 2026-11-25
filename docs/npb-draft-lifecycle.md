@@ -48,6 +48,23 @@ Metadata availability, statistic loading/error, minimum-sample empty results, pa
 
 ## Integration and validation
 
+### 2025年ドラフトから入団・一軍初出場へ
+
+2025年の支配下1位指名のうち、立石正広、小島大河、中西聖輝、松下歩叶、石垣元気、竹丸和幸の6人を確認。ドラフト同期の選手一覧から、指名時の所属、最初の所属シーズン、一軍公式戦の初出場、収録済みの試合詳細と2026年の年度成績をたどれる。2026年ドラフトの予想・指名結果は従来の保存版を保持する。
+
+指名・入団の採用元は日本語版Wikipediaの[固定版111790323](https://ja.wikipedia.org/w/index.php?curid=5129630&oldid=111790323)（CC BY-SA 4.0）。各選手記事の固定版から初出場日と最初の所属シーズンを抜粋した。指名球団・順位・当時の所属をNPBの指名一覧、入団を球団または当時の所属先の発表、初出場をNPBの投打成績で照合した。公式資料は照合とリンクに使用し、表や記事本文は収録していない。
+
+| 選手 | 採用した選手記事 | 初出場の公式記録 |
+| --- | --- | --- |
+| 立石正広 | [固定版111543816](https://ja.wikipedia.org/w/index.php?oldid=111543816) | [2026年5月19日](https://npb.jp/scores/2026/0519/t-d-10/box.html) |
+| 小島大河 | [固定版111898458](https://ja.wikipedia.org/w/index.php?oldid=111898458) | [2026年3月27日](https://npb.jp/scores/2026/0327/m-l-01/box.html) |
+| 中西聖輝 | [固定版111651013](https://ja.wikipedia.org/w/index.php?oldid=111651013) | [2026年4月1日](https://npb.jp/scores/2026/0401/d-g-02/box.html) |
+| 松下歩叶 | [固定版111889979](https://ja.wikipedia.org/w/index.php?oldid=111889979) | [2026年5月29日](https://npb.jp/scores/2026/0529/e-s-01/box.html) |
+| 石垣元気 | [固定版111655585](https://ja.wikipedia.org/w/index.php?oldid=111655585) | [2026年9月17日](https://npb.jp/scores/2026/0917/m-e-22/box.html) |
+| 竹丸和幸 | [固定版111901926](https://ja.wikipedia.org/w/index.php?oldid=111901926) | [2026年3月27日](https://npb.jp/scores/2026/0327/g-t-01/box.html) |
+
+選手記事のWikidata IDとNPB ID、公式試合記録からリンクされるNPB ID、既存のChadwick照合を同じ選手IDに確認した。石垣は試合記録の登録名「石垣元」と選手記事のNPB IDが一致。試合リンクは既存の日別索引の収録済み試合IDと日付を参照する。入団は2026年シーズンの事実として扱う。契約日、支配下登録日、現在の所属、二軍成績、新人資格は追加していない。
+
 Entry points: Players/Search, Discovery's data tools, Home's existing Explorer links, Team Hub (saved team filter), Data Explorer, Compare and Player profile. Five primary destinations are retained. Detailed conditions are disclosed progressively for 360px.
 
 35 targeted tests cover nullable Draft/DOB, canonical team matching, age boundaries, year ranges, role, samples, exact school-label preservation, invalid URLs, generation/identity rejection, master immutability, bounded rows, bulk requests, error preservation, loading versus empty, all four Coverage states, legacy unavailable Prospects routes, existing Compare handoff, reuse after temporary filter errors, explicit retry and successful-period restoration after another period fails, including retry isolation across periods. Full test/build, visual and delivery results are recorded in the PR.
