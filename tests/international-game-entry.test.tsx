@@ -109,7 +109,9 @@ it("opens real official tournament links alongside the domestic Games route with
     await openTournament("international:tournament:apbc:2023");
     expect(entry.querySelectorAll("ol.row-list > li")).toHaveLength(4);
     expect(entry.textContent).toContain("韓国 3 − 4 日本");
-    expect(entry.textContent).toContain("日本の登板と投球回を収録");
+    expect(entry.textContent).toContain("日本の本塁打・勝利投手・投球回を収録");
+    expect(entry.textContent).toContain("大会MVP 門脇誠");
+    expect(entry.textContent).toContain("日本の本塁打 0本");
     const apbc2023Pitching = [...entry.querySelectorAll("details")].find(panel =>
       panel.querySelector("summary")?.textContent === "登板・投球回 · 12人")!;
     expect(apbc2023Pitching.open).toBe(false);
@@ -123,8 +125,18 @@ it("opens real official tournament links alongside the domestic Games route with
     expect(rowWithName("今井達也").querySelector("a")).toBeNull();
     expect(rowWithName("根本悠楓").querySelector("a")).toBeNull();
     expect(apbc2023Pitching.querySelectorAll("a")).toHaveLength(10);
-    expect(entry.textContent).not.toContain("出場を確認した選手");
-    expect(entry.textContent).not.toContain("代表に選ばれた選手");
+    const apbcRoster = [...entry.querySelectorAll("details")].find(panel =>
+      panel.querySelector("summary")?.textContent === "代表に選ばれた選手 · 26人")!;
+    expect(apbcRoster.open).toBe(false);
+    expect(apbcRoster.textContent).toContain("11月6日時点の発表");
+    expect(apbcRoster.textContent).toContain("野村佑希");
+    expect(apbcRoster.textContent).not.toContain("紅林弘太郎");
+    const apbcAppearances = [...entry.querySelectorAll("details")].find(panel =>
+      panel.querySelector("summary")?.textContent === "出場を確認した選手 · 26人")!;
+    expect(apbcAppearances.open).toBe(false);
+    expect(apbcAppearances.querySelectorAll("a")).toHaveLength(23);
+    expect(apbcAppearances.querySelector('a[href="/NPB/players/1581526b-5601-4a6b-8b4e-021709be1e47"]')?.textContent)
+      .toContain("11月16日、11月17日、11月18日、11月19日");
     expect(entry.querySelector('.source-note a[href$="oldid=111760584"]')?.textContent).toContain("日本語版の試合結果・投球回");
     expect(entry.querySelector('.source-note a[href$="/20231119_2/table.html"]')).not.toBeNull();
     expect(entry.querySelector('.hub-links a[href$="/apbc2023/"]')).not.toBeNull();
