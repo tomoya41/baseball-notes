@@ -109,8 +109,24 @@ it("opens real official tournament links alongside the domestic Games route with
     await openTournament("international:tournament:apbc:2023");
     expect(entry.querySelectorAll("ol.row-list > li")).toHaveLength(4);
     expect(entry.textContent).toContain("韓国 3 − 4 日本");
-    expect(entry.textContent).toContain("代表選手・個人成績は未収録");
-    expect(entry.querySelector('.source-note a[href$="oldid=111760584"]')?.textContent).toContain("日本語版の試合結果");
+    expect(entry.textContent).toContain("日本の登板と投球回を収録");
+    const apbc2023Pitching = [...entry.querySelectorAll("details")].find(panel =>
+      panel.querySelector("summary")?.textContent === "登板・投球回 · 12人")!;
+    expect(apbc2023Pitching.open).toBe(false);
+    expect(apbc2023Pitching.textContent).toContain("日本戦4試合 · チーム計36回");
+    const selectedPitchers = [...apbc2023Pitching.querySelectorAll("li")];
+    const rowWithName = (name: string) => selectedPitchers.find(row => row.querySelector("strong")?.textContent === name)!;
+    expect(rowWithName("田口麗斗").querySelector("a")?.getAttribute("href"))
+      .toBe("/NPB/players/d1a2f152-f77d-4bc8-8f56-73c60e395458");
+    expect(rowWithName("田口麗斗").textContent).toContain("3登板 · 3回");
+    expect(rowWithName("吉村貢司郎").textContent).toContain("2登板 · 2回 2/3");
+    expect(rowWithName("今井達也").querySelector("a")).toBeNull();
+    expect(rowWithName("根本悠楓").querySelector("a")).toBeNull();
+    expect(apbc2023Pitching.querySelectorAll("a")).toHaveLength(10);
+    expect(entry.textContent).not.toContain("出場を確認した選手");
+    expect(entry.textContent).not.toContain("代表に選ばれた選手");
+    expect(entry.querySelector('.source-note a[href$="oldid=111760584"]')?.textContent).toContain("日本語版の試合結果・投球回");
+    expect(entry.querySelector('.source-note a[href$="/20231119_2/table.html"]')).not.toBeNull();
     expect(entry.querySelector('.hub-links a[href$="/apbc2023/"]')).not.toBeNull();
     expect(container.querySelector("output")?.textContent)
       .toBe(`${currentUrl}&view=international&tournament=international%3Atournament%3Aapbc%3A2023`);

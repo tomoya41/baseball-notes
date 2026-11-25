@@ -170,7 +170,7 @@ it("keeps international games out of existing NPB scopes, indexes, domestic Fact
   expect(savedGameMvpInputs(index, [{ ...domesticGame, gameId: game.id }])).toEqual([]);
 });
 
-it("admits the four APBC 2023 final results with venue dates, sides and no assumed starts or appearances", () => {
+it("preserves the four APBC 2023 final results and admits independently reconciled pitching outs", () => {
   const apbc = japanResultsByTournament.get("international:tournament:apbc:2023")!;
   expect(apbc.games.map(row => [row.localDate, row.awayTeamId, row.result?.awayRuns, row.homeTeamId, row.result?.homeRuns, row.round]))
     .toEqual([
@@ -183,15 +183,30 @@ it("admits the four APBC 2023 final results with venue dates, sides and no assum
     expect(row).toMatchObject({ competition: "international", status: "final", scheduledAt: null, timeZone: "Asia/Tokyo",
       source: { sourceRevisionId: "111760584" } });
   }
-  expect(apbc.sources).toEqual([expect.objectContaining({
+  expect(apbc.sources).toContainEqual(expect.objectContaining({
     sourceId: "jawiki", url: "https://ja.wikipedia.org/w/index.php?oldid=111760584",
-  })]);
+  }));
+  expect(apbc.editionRevision).toBe(2);
   expect(apbc.coverage).toMatchObject({
     results: { status: "partial", scope: { kind: "team", teamId: "international:team:jpn" } },
-    schedule: { status: "uncollected" }, appearances: { status: "uncollected" }, playerStats: { status: "uncollected" },
+    schedule: { status: "uncollected" }, appearances: { status: "partial" }, playerStats: { status: "uncollected" },
+    selections: { status: "uncollected" }, registrations: { status: "uncollected" },
   });
-  expect(apbc.participation).toEqual([]);
-  expect(apbc.identities).toEqual([]);
+  expect(apbc.gamePitching.map(game => game.teamOuts)).toEqual([27, 27, 24, 30]);
+  expect(apbc.gamePitching.map(game => game.pitchers.map(pitcher => pitcher.outs))).toEqual([
+    [14, 1, 6, 3, 3], [21, 3, 3], [15, 5, 1, 3], [12, 9, 3, 3, 3],
+  ]);
+  expect(apbc.participation.filter(row => row.kind === "appeared")).toHaveLength(17);
+  expect(new Set(apbc.participation.map(row => row.playerId)).size).toBe(12);
+  expect(apbc.identities).toHaveLength(10);
+  expect(apbc.identities.some(row =>
+    ["international:player:jawiki:3508043", "international:player:jawiki:4283150"].includes(row.playerId))).toBe(false);
+  expect(japanGameAppearances("d1a2f152-f77d-4bc8-8f56-73c60e395458")).toContainEqual({
+    tournamentId: apbc.tournamentId, confirmedGames: 3,
+  });
+  expect(japanPlayerTournamentStats("d1a2f152-f77d-4bc8-8f56-73c60e395458").some(row => row.tournamentId === apbc.tournamentId)).toBe(false);
+  expect(internationalTournamentEvidenceSchema.safeParse({ ...apbc, participation: apbc.participation.slice(1) }).success)
+    .toBe(false);
 });
 
 it("admits separate WBC batting and pitching totals, with exact counts and missing values preserved", () => {
@@ -470,7 +485,7 @@ it("admits APBC innings for the four completed Japanese games, including a zero-
   expect(apbc.coverage.playerStats.status).toBe("uncollected");
   expect(apbc.coverage.appearances.status).toBe("partial");
   for (const [id, edition] of japanResultsByTournament) {
-    if (id !== tournamentId) expect(edition.gamePitching).toEqual([]);
+    if (id !== tournamentId && id !== "international:tournament:apbc:2023") expect(edition.gamePitching).toEqual([]);
   }
   const game = apbc.gamePitching[0]!;
   const pitcher = game.pitchers[0]!;
