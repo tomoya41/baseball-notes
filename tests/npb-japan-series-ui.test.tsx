@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 import {act}from"react";import{createRoot}from"react-dom/client";import{MemoryRouter,Routes,Route}from"react-router-dom";import{afterEach,expect,it,vi}from"vitest";
 import{NpbJapanSeriesScreen}from"../src/ui/npb-japan-series";import{NpbDiscovery}from"../src/ui/discovery";import{readNpbJapanSeries}from"../src/application/npb-japan-series-reader";import{readNpbCs}from"../src/application/npb-cs-reader";import{readNpbSeries}from"../src/application/npb-series-reader";import{japanFixture}from"./fixtures/npb-japan-series";import{buildWikipediaJapanSeries}from"../src/infrastructure/providers/wikipedia-npb-japan-series";import{portableRoute}from"../src/domain/product-sharing";import{canonicalDeepLink,parentNativeRoute}from"../src/domain/native-navigation";import type{Services}from"../src/app/services";
+import seriesBoxScores from "../src/data/npb-japan-series-box-scores.json";
+import { japanCompletedFixture } from "./fixtures/npb-japan-completed";
 import {seriesFixture} from "./fixtures/npb-series";
 import {japanResultFixture} from "./fixtures/npb-japan-series";
 vi.mock("../src/application/npb-japan-series-reader",()=>({readNpbJapanSeries:vi.fn()}));vi.mock("../src/application/npb-cs-reader",()=>({readNpbCs:vi.fn()}));vi.mock("../src/application/npb-series-reader",()=>({readNpbSeries:vi.fn()}));
@@ -18,6 +20,21 @@ it("shows scheduled null scores, conditional dates, unavailable statistics and b
     await act(async()=>f.host.querySelector<HTMLAnchorElement>(".scoreboard-row")!.dispatchEvent(new MouseEvent("click",{bubbles:true,button:0,cancelable:true})));
     expect(f.host.textContent).toContain("第1戦 · ソフトバンク対DeNA");expect(f.host.textContent).toContain("結果・打撃・投球成績はまだ収録していません");expect(f.host.querySelectorAll("h1")).toHaveLength(1);expect(f.host.querySelectorAll("table")).toHaveLength(0);expect(f.host.textContent).toContain("横浜スタジアム");
   }finally{await f.close();}
+});
+it("shows the published box score without describing it as missing from the app MVP", async () => {
+  const box = seriesBoxScores.boxes[1]!;
+  const data = japanCompletedFixture().build();
+  const result = data.results.find(row => row.gameId === box.gameId)!;
+  const game = data.series.games.find(row => row.gameId === box.gameId)!;
+  result.evidenceSha256 = box.resultEvidenceSha256;
+  game.awayRuns = box.awayRuns;
+  game.homeRuns = box.homeRuns;
+  const f = await mount(`/NPB/games/${box.gameId}?competition=postseason&stage=japan_series`,false,state=>Object.assign(state,data));
+  try {
+    expect(f.host.querySelector(".game-mvp")?.textContent).toContain("日本シリーズはアプリ独自MVPの選出対象外です。");
+    expect(f.host.textContent).not.toContain("選手成績未収録のため");
+    expect(f.host.textContent).toContain("正木智也");
+  } finally { await f.close(); }
 });
 it.each(["?season=2025","?competition=regular","?stage=npb_cs_final"])("rejects wrong scope without a fetch: %s",async q=>{const f=await mount("/NPB/postseason"+q);try{expect(readNpbJapanSeries).not.toHaveBeenCalled();expect(f.host.textContent).toContain("未対応");}finally{await f.close();}});
 it("retries errors, retains CS fallback, and treats unknown Games as uncollected",async()=>{
