@@ -1,4 +1,6 @@
 import { buildNpbInternationalIdentityEvidence, kanemaruNpbIdentityReview } from "./international-npb-player-identities";
+import { premier122024IdentityEvidence, wbc2023IdentityEvidence } from "./historical-japan-player-identities";
+import { wbc2026Selections } from "./wbc-2026-selections";
 
 // Japanese Wikipedia contributors (CC BY-SA 4.0) and the Chadwick Register (ODC-BY 1.0).
 // Only reviewed matches to the existing NPB Directory are included.
@@ -21,7 +23,28 @@ const reviewedPlayers = [
 ] as const;
 const reviewDate = "2026-11-24T13:06:00Z";
 
-export const wbc2026IdentityEvidence = buildNpbInternationalIdentityEvidence([
+const reviewedEvidence = buildNpbInternationalIdentityEvidence([
   ...reviewedPlayers.map(row => ({ row, reviewDate })),
   kanemaruNpbIdentityReview,
 ]);
+
+// Reuse matches reviewed for other editions when their fixed Japanese article ID is on this roster.
+const rosterIds = new Set(wbc2026Selections.map(player => player.id));
+const identities = new Map(reviewedEvidence.identities.map(row => [row.playerId, row]));
+const sources = new Map(reviewedEvidence.sources.map(row => [row.id, row]));
+for (const edition of [premier122024IdentityEvidence, wbc2023IdentityEvidence]) {
+  for (const row of edition.identities) {
+    if (!rosterIds.has(row.playerId)) continue;
+    const prior = identities.get(row.playerId);
+    if (prior) {
+      if (prior.canonicalPlayerId !== row.canonicalPlayerId) throw new Error(`Conflicting NPB identity for ${row.playerId}`);
+      continue;
+    }
+    identities.set(row.playerId, row);
+    const sourceIds = [row.evidence.international.sourceRevisionId, row.evidence.canonical.sourceRevisionId];
+    for (const source of edition.sources) {
+      if (sourceIds.includes(source.id) && !sources.has(source.id)) sources.set(source.id, source);
+    }
+  }
+}
+export const wbc2026IdentityEvidence = { identities: [...identities.values()], sources: [...sources.values()] };

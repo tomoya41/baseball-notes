@@ -8,6 +8,7 @@ import { premier122024IdentityEvidence, wbc2023IdentityEvidence } from "./histor
 import { premier122024JapanStats, premier122024JapanStatsRevision } from "./premier12-2024-japan-stats";
 import { wbc2023JapanStats, wbc2023JapanStatsRevision } from "./wbc-2023-japan-stats";
 import { wbc2026JapanHighlights } from "./wbc-2026-japan-highlights";
+import { wbc2026Id, wbc2026LineupAppearances, wbc2026LineupRevision } from "./wbc-2026-japan-lineups";
 import { wbc2026IdentityEvidence } from "./wbc-2026-player-identities";
 import { wbc2026Selections } from "./wbc-2026-selections";
 
@@ -36,7 +37,7 @@ type JapanStats = { revision: string; verifiedAt: string; players: readonly Japa
 export const japanSelectionsByTournament = new Map<string, JapanSelections>([
   [apbc2026Id, { revision: "111791999", verifiedAt: "2026-11-19T21:48:00Z",
     announcedAsOf: "2026-10-07", players: apbcSelections.map(player => ({ ...player, date: "2026-10-07" })) }],
-  ["international:tournament:wbc:2026", { revision: "110704201", verifiedAt: "2026-11-21T10:25:00Z",
+  [wbc2026Id, { revision: wbc2026LineupRevision, verifiedAt: "2026-11-21T10:25:00Z",
     announcedAsOf: "2026-02-26", players: wbc2026Selections }],
 ]);
 
@@ -70,7 +71,7 @@ function edition(tournamentId: string, rows: readonly ResultRow[], stats?: Japan
     ...sources[0]!, id: apbc2026BatteryRevision, sourceId: "jawiki", publisherId: "japanese-wikipedia",
     version: apbc2026BatteryRevision, url: `https://ja.wikipedia.org/w/index.php?oldid=${apbc2026BatteryRevision}`, verifiedAt: "2026-11-24T12:27:00Z",
   });
-  const wbc2026 = tournamentId === "international:tournament:wbc:2026";
+  const wbc2026 = tournamentId === wbc2026Id;
   const historicalIdentity = tournamentId === premier122024Id ? premier122024IdentityEvidence
     : tournamentId === wbc2023Id ? wbc2023IdentityEvidence : undefined;
   if (wbc2026) sources.push(...wbc2026IdentityEvidence.sources);
@@ -91,17 +92,17 @@ function edition(tournamentId: string, rows: readonly ResultRow[], stats?: Japan
     return [...players].map(playerId => ({ kind: "appeared", competition: "international", tournamentId, teamId: japan,
       playerId, gameId: highlight.gameId, date: gameDates.get(highlight.gameId), source: highlight.source }));
   });
-  if (apbc) {
-    const present = new Set(appearances.map(row => `${row.gameId}|${row.playerId}`));
-    appearances.push(...apbc2026BatteryAppearances.filter(row => !present.has(`${row.gameId}|${row.playerId}`)));
-  }
+  const lineupAppearances = apbc ? apbc2026BatteryAppearances : wbc2026 ? wbc2026LineupAppearances : [];
+  const present = new Set(appearances.map(row => `${row.gameId}|${row.playerId}`));
+  appearances.push(...lineupAppearances.filter(row => !present.has(`${row.gameId}|${row.playerId}`)));
+  const appearanceSource = wbc2026 ? { sourceRevisionId: wbc2026LineupRevision, sourceRecordId: "試合結果/先発・バッテリー" } : highlightSource;
   return internationalTournamentEvidenceSchema.parse({ tournamentId,
-    editionRevision: apbc ? 6 : wbc2026 ? 5 : historicalIdentity ? 3 : stats ? 2 : 1, sources, games, playerStats,
+    editionRevision: apbc ? 6 : wbc2026 ? 6 : historicalIdentity ? 3 : stats ? 2 : 1, sources, games, playerStats,
     gameHighlights, gamePitching: apbc ? apbc2026GamePitching : [], tournamentMvp: apbc ? apbc2026Mvp : undefined,
     identities: apbc ? apbcIdentities : wbc2026 ? wbc2026IdentityEvidence.identities : historicalIdentity?.identities ?? [],
     participation: [...selections, ...appearances], corrections, coverage: { results: partial, schedule: empty,
       selections: roster ? { ...partial, source: { sourceRevisionId: roster.revision, sourceRecordId: "代表選手" } } : empty,
-      registrations: empty, appearances: highlightSource ? { ...partial, source: highlightSource } : empty,
+      registrations: empty, appearances: appearanceSource ? { ...partial, source: appearanceSource } : empty,
       gameHighlights: highlightSource ? { ...partial, source: highlightSource } : empty,
       playerStats: stats
         ? { ...partial, source: { sourceRevisionId: stats.revision, sourceRecordId: "成績" } } : empty } });
@@ -114,7 +115,7 @@ const editions = [
     ["2026-11-14", tokyo, "pool", "JPN", 16, "AUS", 1, 1385998229],
     ["2026-11-15", tokyo, "final", "KOR", 1, "JPN", 5, 1385998229],
   ]),
-  edition("international:tournament:wbc:2026", [
+  edition(wbc2026Id, [
     ["2026-03-06", tokyo, "pool", "JPN", 13, "TPE", 0, 1370352167],
     ["2026-03-07", tokyo, "pool", "KOR", 6, "JPN", 8, 1370352167],
     ["2026-03-08", tokyo, "pool", "AUS", 3, "JPN", 4, 1370352167],

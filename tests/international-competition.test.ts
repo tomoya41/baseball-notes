@@ -2,6 +2,7 @@ import { expect, it } from "vitest";
 import { internationalOfficialTournaments } from "../src/data/international-official-links";
 import { japanGameAppearances, japanPlayerTournamentStats, japanResultsByTournament, japanSelectionsByTournament } from "../src/data/international-japan-results";
 import { apbc2026Batteries, apbc2026BatteryRevision } from "../src/data/apbc-2026-battery-appearances";
+import { wbc2026LineupRevision } from "../src/data/wbc-2026-japan-lineups";
 import npbProfileIdentities from "../src/data/npb-free-profile-identities.json";
 import { savedGameMvpInputs } from "../src/domain/daily-mvp";
 import { playerGameBattingSchema, playerGamePitchingSchema } from "../src/domain/game-facts";
@@ -207,23 +208,26 @@ it("keeps the WBC selection snapshot separate from game appearances and registra
   expect(roster.players).toContainEqual(expect.objectContaining({ name: "大谷翔平", position: "指名打者" }));
   expect(roster.players.map(player => player.name)).not.toContain("松井裕樹");
   expect(wbc.games).toHaveLength(5);
-  expect(wbc.editionRevision).toBe(5);
+  expect(wbc.editionRevision).toBe(6);
   expect(wbc.participation.filter(player => player.kind === "selected")).toHaveLength(30);
   expect(wbc.participation.filter(player => player.kind === "registered")).toEqual([]);
   expect(wbc.coverage.registrations.status).toBe("uncollected");
   expect(wbc.coverage.appearances.status).toBe("partial");
   expect(wbc.playerStats).toEqual([]);
-  expect(wbc.identities).toHaveLength(6);
+  expect(wbc.identities).toHaveLength(17);
   expect(japanResultsByTournament.has("international:tournament:exhibition:2027:taipei")).toBe(false);
 });
 
-it("links only six independently matched WBC 2026 participants to the existing NPB Directory", () => {
+it("links independently matched WBC 2026 participants to the existing NPB Directory", () => {
   const id = "international:tournament:wbc:2026";
   const edition = japanResultsByTournament.get(id)!;
   const appeared = new Set(edition.participation.filter(row => row.kind === "appeared").map(row => row.playerId));
-  expect(appeared.size).toBe(11);
-  expect(edition.identities.map(row => row.playerId)).toEqual(
-    [3692477, 3700545, 4037204, 4237529, 4463322, 4977707].map(pageId => `international:player:jawiki:${pageId}`));
+  expect(appeared.size).toBe(30);
+  expect(new Set(edition.identities.map(row => row.playerId))).toEqual(new Set(
+    [1610194, 2231674, 2459898, 3514754, 3520387, 3692477, 3700545, 3858983, 4029818,
+      4037204, 4237529, 4240485, 4251765, 4463322, 4475539, 4490620, 4977707]
+      .map(pageId => `international:player:jawiki:${pageId}`),
+  ));
   for (const row of edition.identities) {
     expect(appeared.has(row.playerId)).toBe(true);
     const existing = npbProfileIdentities.find(player => player.playerId === row.canonicalPlayerId);
@@ -234,6 +238,22 @@ it("links only six independently matched WBC 2026 participants to the existing N
   expect(japanGameAppearances("7bbeda89-5b15-4e15-90d7-3c862c9a30b9")).toEqual([
     { tournamentId, confirmedGames: 1 }, { tournamentId: id, confirmedGames: 1 },
   ]);
+});
+
+it("combines the five WBC lineups and batteries with prior highlights while retaining the local game date", () => {
+  const edition = japanResultsByTournament.get("international:tournament:wbc:2026")!;
+  const appeared = edition.participation.filter(row => row.kind === "appeared");
+  expect(appeared).toHaveLength(73);
+  expect(new Set(appeared.map(row => `${row.gameId}|${row.playerId}`)).size).toBe(73);
+  expect(appeared.filter(row => row.source.sourceRevisionId === wbc2026LineupRevision)).toHaveLength(59);
+  expect(edition.games.map(game => appeared.filter(row => row.gameId === game.id).length)).toEqual([15, 15, 14, 13, 16]);
+  const quarterfinal = edition.games.find(game => game.round === "quarterfinal")!;
+  const catcher = appeared.find(row => row.gameId === quarterfinal.id && row.playerId === "international:player:jawiki:2959833");
+  expect(catcher).toMatchObject({ date: "2026-03-14", source: { sourceRevisionId: wbc2026LineupRevision } });
+  expect(edition.coverage.appearances.status).toBe("partial");
+  expect(japanGameAppearances("92a02594-a4f7-498c-bb83-8a41855b4645")).toContainEqual({
+    tournamentId: edition.tournamentId, confirmedGames: 2,
+  });
 });
 
 it("admits WBC Japan home runs and only the pitcher decision supported by each final score", () => {
@@ -264,7 +284,7 @@ it.each([
 ])("preserves game appearances supported by a home run or decision in %s", (id, playerCount) => {
   const snapshot = japanResultsByTournament.get(id)!;
   const appearances = snapshot.participation.filter(record => record.kind === "appeared")
-    .filter(record => record.source.sourceRevisionId !== apbc2026BatteryRevision);
+    .filter(record => snapshot.gameHighlights.some(highlight => highlight.source.sourceRevisionId === record.source.sourceRevisionId));
   expect(appearances).toHaveLength(14);
   expect(new Set(appearances.map(row => row.playerId)).size).toBe(playerCount);
   for (const row of appearances) {
