@@ -6,13 +6,6 @@ export const apbc2023Revision = 111760584;
 const japan = "international:team:jpn";
 const playerId = (pageId: number) => `international:player:jawiki:${pageId}`;
 const source = (sourceRecordId: string) => ({ sourceRevisionId: String(apbc2023Revision), sourceRecordId });
-export const apbc2023PitcherNames = new Map([
-  [playerId(4472177), "赤星優志"], [playerId(4012741), "及川雅貴"], [playerId(4283150), "根本悠楓"],
-  [playerId(4468993), "桐敷拓馬"], [playerId(2868818), "田口麗斗"], [playerId(4463322), "隅田知一郎"],
-  [playerId(4050017), "横山陸人"], [playerId(4236478), "早川隆久"], [playerId(4655368), "吉村貢司郎"],
-  [playerId(4486288), "佐藤隼輔"], [playerId(3750723), "清水達也"], [playerId(3508043), "今井達也"],
-]);
-
 const games = [
   { date: "2023-11-16", sides: "jpn-tpe", record: "GAME2", side: "RSP", teamOuts: 27, box: "20231116_2",
     pitchers: [[4472177, 14], [4012741, 1], [4283150, 6], [4468993, 3], [2868818, 3]] },

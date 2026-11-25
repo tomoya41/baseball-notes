@@ -169,8 +169,39 @@ const apbc2023PitcherReviews = [
     "ce44fced-8167-48d8-8a8e-be9b1759bdb4", "c0aa2c1eb3f0e8a58768b52e0cc8f945d9d004facad91d63a8dff0c4ced4c88b"],
 ] as const;
 
-const alreadyReviewedApbcPitchers = new Set([3750723, 4050017, 4236478, 4463322]);
+const apbc2023PositionPlayerReviews = [
+  // 石橋康太
+  [3870792, 111504779, "91195138", "29a6df7c-310a-492a-b999-b7375c3370d6",
+    "caf2db5e-068e-43b6-9a0e-914868876b7f", "ac1b83e67dd4f481d26bb04527fa1ea606b8ca01fe9269d624fce443ded1ed81"],
+  // 野村佑希
+  [3886550, 111898884, "31435138", "0d64e3f6-56bb-4a1a-bafe-c36a227608f4",
+    "e8d86645-3fa0-4779-bd16-e1aa3754209a", "3b51937a9c3b4a3269c54a4e94271a8e15e8adee95a625df75a3208ed1aaa74e"],
+  // 佐藤輝明
+  [4237419, 111898302, "41045153", "a1ca7cac-f9be-4993-a78c-bcd1e1ae3399",
+    "8fdcd710-2127-4b95-9bbe-678d87dc67ed", "7dbd2e1f1820e451e8c4d4f5f9c0f1577cd8c41057a7b860068b053ac610fc78"],
+  // 野口智哉
+  [4524575, 111880673, "81485155", "b6d6bb3f-ff18-4418-a1b2-9e90de66907f",
+    "7f8ea611-8342-4ef2-be8a-6a7dcf9ee36f", "1383c73ebf996dbd6fb5b2b8e2261bf7416ec4c638e310e72c346fbe30ab01fa"],
+  // 門脇誠
+  [4741578, 111862540, "11515157", "1581526b-5601-4a6b-8b4e-021709be1e47",
+    "8e927006-97be-414b-a30e-b721c83a367e", "49f4ae9c5abc25610d3be63e67c87859ad12ed4dce8a6fdb2f35ad65f7b7e230"],
+  // 藤原恭大
+  [3858954, 111730922, "31635138", "f2f6d5b2-603d-4952-9d1d-59a8f5b1eb75",
+    "6de77b99-016a-4c9c-a7f1-96f6218a65e4", "cc248eaccd9764d7810da47652e22965ff4af962627ad414ef3e78ea3567e19f"],
+  // 岡林勇希
+  [4044268, 111859072, "81585151", "bb59956a-99ed-47d8-b1f9-5e2c229e87a3",
+    "c678903e-cc06-41ec-a01f-71033f606133", "29d50c90b57f81f1c62e53c603be0a7a6b5ee73d26eac0edaff50c68034d90c0"],
+  // 万波中正
+  [3886554, 111866669, "11815138", "23d326cb-8152-4745-9f75-e1f81c9a0657",
+    "4a78311c-3fec-4cf6-b955-761964b43e0a", "88076d07e536816e0a65b74ea9866d9c4d11be9e36f603e556662f4f5a9cbb2b"],
+] as const;
+
+const alreadyReviewedApbcPlayers = new Set([
+  3750723, 4050017, 4236478, 4463322,
+  3586306, 3858983, 4037204, 4240485, 4490453,
+]);
 export const apbc2023IdentityEvidence = buildNpbInternationalIdentityEvidence([
-  ...reviewedPlayers.filter(([pageId]) => alreadyReviewedApbcPitchers.has(pageId)).map(row => ({ row, reviewDate })),
+  ...reviewedPlayers.filter(([pageId]) => alreadyReviewedApbcPlayers.has(pageId)).map(row => ({ row, reviewDate })),
   ...apbc2023PitcherReviews.map(row => ({ row, reviewDate: "2026-11-25T05:31:00Z" })),
+  ...apbc2023PositionPlayerReviews.map(row => ({ row, reviewDate: "2026-11-25T12:25:40Z" })),
 ]);

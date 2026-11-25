@@ -186,26 +186,40 @@ it("preserves the four APBC 2023 final results and admits independently reconcil
   expect(apbc.sources).toContainEqual(expect.objectContaining({
     sourceId: "jawiki", url: "https://ja.wikipedia.org/w/index.php?oldid=111760584",
   }));
-  expect(apbc.editionRevision).toBe(2);
+  expect(apbc.editionRevision).toBe(3);
   expect(apbc.coverage).toMatchObject({
     results: { status: "partial", scope: { kind: "team", teamId: "international:team:jpn" } },
     schedule: { status: "uncollected" }, appearances: { status: "partial" }, playerStats: { status: "uncollected" },
-    selections: { status: "uncollected" }, registrations: { status: "uncollected" },
+    selections: { status: "partial", source: { sourceRevisionId: "111407169" } }, registrations: { status: "uncollected" },
   });
   expect(apbc.gamePitching.map(game => game.teamOuts)).toEqual([27, 27, 24, 30]);
   expect(apbc.gamePitching.map(game => game.pitchers.map(pitcher => pitcher.outs))).toEqual([
     [14, 1, 6, 3, 3], [21, 3, 3], [15, 5, 1, 3], [12, 9, 3, 3, 3],
   ]);
-  expect(apbc.participation.filter(row => row.kind === "appeared")).toHaveLength(17);
-  expect(new Set(apbc.participation.map(row => row.playerId)).size).toBe(12);
-  expect(apbc.identities).toHaveLength(10);
+  const appearances=apbc.participation.filter(row => row.kind === "appeared");
+  const selections=apbc.participation.filter(row => row.kind === "selected");
+  expect(selections).toHaveLength(26);
+  expect(selections.filter(row => row.date === "2023-11-06")).toEqual([expect.objectContaining({ playerId: "international:player:jawiki:3886550" })]);
+  expect(selections.some(row => row.playerId === "international:player:jawiki:4029832")).toBe(false);
+  expect(apbc.games.map(game => appearances.filter(row => row.gameId === game.id).length)).toEqual([14, 12, 14, 14]);
+  expect(new Set(appearances.map(row => row.playerId))).toEqual(new Set(selections.map(row => row.playerId)));
+  expect(apbc.gameHighlights.map(row => row.homeRuns.length)).toEqual([1, 1, 0, 1]);
+  expect(apbc.gameHighlights[2]?.noHomeRuns).toBe(true);
+  const gameHighlights=apbc.gameHighlights.map(row => ({ ...row, noHomeRuns: undefined }));
+  expect(internationalTournamentEvidenceSchema.safeParse({ ...apbc, gameHighlights }).success).toBe(false);
+  expect(apbc.tournamentMvp?.playerId).toBe("international:player:jawiki:4741578");
+  expect(apbc.identities).toHaveLength(23);
   expect(apbc.identities.some(row =>
     ["international:player:jawiki:3508043", "international:player:jawiki:4283150"].includes(row.playerId))).toBe(false);
   expect(japanGameAppearances("d1a2f152-f77d-4bc8-8f56-73c60e395458")).toContainEqual({
     tournamentId: apbc.tournamentId, confirmedGames: 3,
   });
+  expect(japanGameAppearances("1581526b-5601-4a6b-8b4e-021709be1e47")).toContainEqual({
+    tournamentId: apbc.tournamentId, confirmedGames: 4,
+  });
   expect(japanPlayerTournamentStats("d1a2f152-f77d-4bc8-8f56-73c60e395458").some(row => row.tournamentId === apbc.tournamentId)).toBe(false);
-  expect(internationalTournamentEvidenceSchema.safeParse({ ...apbc, participation: apbc.participation.slice(1) }).success)
+  expect(internationalTournamentEvidenceSchema.safeParse({ ...apbc,
+    participation: apbc.participation.filter(row => row !== appearances[0]) }).success)
     .toBe(false);
 });
 

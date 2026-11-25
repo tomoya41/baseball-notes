@@ -1,6 +1,8 @@
 import type { z } from "zod";
 import { internationalTournamentEvidenceSchema } from "../domain/international-competition";
 import { apbc2023GamePitching, apbc2023Id, apbc2023PitcherAppearances, apbc2023Revision } from "./apbc-2023-pitching";
+import { apbc2023AdditionalAppearances, apbc2023Highlights, apbc2023Mvp, apbc2023SelectionRevision,
+  apbc2023Selections, apbc2023SelectionVerifiedAt } from "./apbc-2023-japan-selections";
 import { apbc2026BatteryAppearances, apbc2026BatteryRevision, apbc2026GamePitching } from "./apbc-2026-battery-appearances";
 import { apbc2026Id, apbcIdentities, apbcIdentitySources } from "./apbc-2026-player-identities";
 import { apbcSelections } from "./apbc-2026-selections";
@@ -36,6 +38,8 @@ type JapanStat = { pageId: number; name: string; gamesPlayed: number } & (
 );
 type JapanStats = { revision: string; verifiedAt: string; players: readonly JapanStat[] };
 export const japanSelectionsByTournament = new Map<string, JapanSelections>([
+  [apbc2023Id, { revision: apbc2023SelectionRevision, verifiedAt: apbc2023SelectionVerifiedAt,
+    announcedAsOf: "2023-11-06", players: apbc2023Selections }],
   [apbc2026Id, { revision: "111791999", verifiedAt: "2026-11-19T21:48:00Z",
     announcedAsOf: "2026-10-07", players: apbcSelections.map(player => ({ ...player, date: "2026-10-07" })) }],
   [wbc2026Id, { revision: wbc2026LineupRevision, verifiedAt: "2026-11-21T10:25:00Z",
@@ -87,10 +91,10 @@ function edition(tournamentId: string, rows: readonly ResultRow[], stats?: Japan
     reason: "Corrected Tatsuya Shimizu’s tournament person ID to the pitcher’s article linked in the original results table (3750787 → 3750723). Statistics unchanged.",
     source: { sourceRevisionId: premier122024JapanStatsRevision, sourceRecordId: "投手成績/清水達也 (投手)" },
   }] : [];
-  const gameHighlights = apbc ? apbc2026Highlights : wbc2026 ? wbc2026JapanHighlights : [];
+  const gameHighlights = apbc ? apbc2026Highlights : wbc2026 ? wbc2026JapanHighlights : apbc2023 ? apbc2023Highlights : [];
   const highlightSource = gameHighlights[0]?.source;
   const gameDates = new Map(games.map(game => [game.id, game.localDate]));
-  const appearances = gameHighlights.flatMap(highlight => {
+  const appearances = apbc2023 ? [...apbc2023PitcherAppearances, ...apbc2023AdditionalAppearances] : gameHighlights.flatMap(highlight => {
     // A scored home run or an official pitcher decision proves this game appearance.
     const players = new Set(highlight.homeRuns.map(row => row.playerId));
     if ("winningPitcherId" in highlight && highlight.winningPitcherId) players.add(highlight.winningPitcherId);
@@ -98,16 +102,15 @@ function edition(tournamentId: string, rows: readonly ResultRow[], stats?: Japan
     return [...players].map(playerId => ({ kind: "appeared", competition: "international", tournamentId, teamId: japan,
       playerId, gameId: highlight.gameId, date: gameDates.get(highlight.gameId), source: highlight.source }));
   });
-  const lineupAppearances = apbc ? apbc2026BatteryAppearances
-    : wbc2026 ? wbc2026LineupAppearances : apbc2023 ? apbc2023PitcherAppearances : [];
+  const lineupAppearances = apbc ? apbc2026BatteryAppearances : wbc2026 ? wbc2026LineupAppearances : [];
   const present = new Set(appearances.map(row => `${row.gameId}|${row.playerId}`));
   appearances.push(...lineupAppearances.filter(row => !present.has(`${row.gameId}|${row.playerId}`)));
   const appearanceSource = wbc2026 ? { sourceRevisionId: wbc2026LineupRevision, sourceRecordId: "試合結果/先発・バッテリー" }
-    : apbc2023 ? { sourceRevisionId: String(apbc2023Revision), sourceRecordId: "試合結果/登板" } : highlightSource;
+    : apbc2023 ? { sourceRevisionId: apbc2023SelectionRevision, sourceRecordId: "試合結果/打順・バッテリー" } : highlightSource;
   return internationalTournamentEvidenceSchema.parse({ tournamentId,
-    editionRevision: apbc ? 6 : wbc2026 ? 7 : apbc2023 ? 2 : historicalIdentity ? 3 : stats ? 2 : 1, sources, games, playerStats,
+    editionRevision: apbc ? 6 : wbc2026 ? 7 : historicalIdentity ? 3 : stats ? 2 : 1, sources, games, playerStats,
     gameHighlights, gamePitching: apbc ? apbc2026GamePitching : apbc2023 ? apbc2023GamePitching : [],
-    tournamentMvp: apbc ? apbc2026Mvp : undefined,
+    tournamentMvp: apbc ? apbc2026Mvp : apbc2023 ? apbc2023Mvp : undefined,
     identities: apbc ? apbcIdentities : wbc2026 ? wbc2026IdentityEvidence.identities : historicalIdentity?.identities ?? [],
     participation: [...selections, ...appearances], corrections, coverage: { results: partial, schedule: empty,
       selections: roster ? { ...partial, source: { sourceRevisionId: roster.revision, sourceRecordId: "代表選手" } } : empty,

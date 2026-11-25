@@ -94,7 +94,8 @@ const tournamentPlayerStat = z.discriminatedUnion("role", [
 ]);
 const gameHighlights = z.strictObject({
   gameId, teamId, source: sourceReference, winningPitcherId: playerId.optional(), losingPitcherId: playerId.optional(),
-  homeRuns: z.array(z.strictObject({ playerId, count: z.number().int().positive() })).min(1),
+  homeRuns: z.array(z.strictObject({ playerId, count: z.number().int().positive() })),
+  noHomeRuns: z.literal(true).optional(),
 });
 const gamePitching = z.strictObject({
   gameId, teamId, source: sourceReference,
@@ -228,7 +229,7 @@ export const internationalTournamentEvidenceSchema = z.strictObject({
     const decision = sides && (sides[0] > sides[1] && !row.losingPitcherId ? row.winningPitcherId :
       sides[0] < sides[1] && !row.winningPitcherId ? row.losingPitcherId : undefined);
     const hitters = new Set(row.homeRuns.map(record => record.playerId));
-    if (!sides || !decision || highlightedGames.has(row.gameId) ||
+    if (!sides || !decision || highlightedGames.has(row.gameId) || (row.homeRuns.length === 0) !== (row.noHomeRuns === true) ||
       highlightsCoverage.status !== "partial" || !inScope(highlightsCoverage.scope, row.teamId) ||
       !approved.has(row.source.sourceRevisionId) || !affiliatedPlayers.has(`${row.teamId}|${decision}`) ||
       hitters.size !== row.homeRuns.length || row.homeRuns.reduce((count, record) => count + record.count, 0) > sides[0] ||
