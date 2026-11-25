@@ -67,6 +67,14 @@ APBCの第6版では、同じ固定版から日本代表13投手の登板16件�
 
 WBC 2026の第5版では、出場を収録した11人のうち、種市篤暉・周東佑京・森下翔太・伊藤大海・隅田知一郎・金丸夢斗の6人を公開済みのNPBプロフィールへ接続した。日本語版Wikipediaの選手記事とChadwick Registerから同じNPB選手IDを確認し、既存Directoryに一意に対応する行だけを採用。金丸夢斗はAPBCとWBCの両方を表示する。公開NPB Directoryとの照合が成立しない5人の出場記録は大会側IDで保持した。
 
+### WBC 2026 日本戦5試合の出場記録（第6版）
+
+[日本語版Wikipediaの固定版110704201](https://ja.wikipedia.org/w/index.php?oldid=110704201)の先発とバッテリーから、日本の出場記録を59件追加した。固定版を取得したMediaWiki API応答のSHA-256は `bbe9ce6227bdd61e5afbbac3c7c52f9b0d75e28f76567bd2d10320a8287d956a`。従来の本塁打・勝敗投手の14件と合わせ、5試合で30人・73件を収録。各試合における確認人数は15、15、14、13、16人。途中出場を含む全件ではないため、出場のCoverageは一部収録のまま。打撃・投球の大会通算成績は公式ページへ案内する。
+
+3月8日は照合先と一部選手の打順が異なる。両資料で確認できる出場の事実を採用し、打順は収録しない。準々決勝の出場日は開催地の3月14日で保持し、公式記録は日本時間3月15日のページを参照する。[3月6日](https://www.japan-baseball.jp/jp/team/topteam/score/20260306_1/table.html)・[3月7日](https://www.japan-baseball.jp/jp/team/topteam/score/20260307_1/table.html)・[3月8日](https://www.japan-baseball.jp/jp/team/topteam/score/20260308_1/table.html)・[3月10日](https://www.japan-baseball.jp/jp/team/topteam/score/20260310_1/table.html)・[準々決勝](https://www.japan-baseball.jp/jp/team/topteam/score/20260315_1/table.html)
+
+以前にWBC 2023またはプレミア12 2024で本人照合を済ませた選手から、同じ選手記事IDをもつ11人を追加で接続した。既存の6人を含めた17人はNPBプロフィールから出場日を確認できる。
+
 ## 過去大会の成績とNPB選手プロフィール
 
 両大会の第3版で、プレミア12 2024の全28人とWBC 2023の18人、重複を除いて41人について、収録済みの大会通算成績を既存のNPB選手プロフィールへ接続した。原資料の成績表にある選手記事リンクを確認し、日本語版Wikipediaの選手記事とChadwick RegisterのNPB IDを公開済みDirectoryのIDに一意に照合した。既存のNPBプロフィールと照合できなかったWBCの11人は、大会成績を表示したままリンクを保留する。NPB公式戦の成績・各試合の出場・代表登録の収録範囲は変更しない。

@@ -17,6 +17,8 @@ export const internationalOfficialTournaments = internationalTournamentSchema.ar
     links: [
       { label: "日本代表の公式大会ページ", url: "https://www.japan-baseball.jp/jp/games/wbc2026/" },
       { label: "日本代表の公式選手一覧", url: "https://www.japan-baseball.jp/jp/team/topteam/2026/wbc/player.html" },
+      { label: "日本の打撃成績（WBC公式）", url: "https://www.mlb.com/world-baseball-classic/stats/japan/2026" },
+      { label: "日本の投球成績（WBC公式）", url: "https://www.mlb.com/world-baseball-classic/stats/pitching/japan" },
     ],
   },
   {
