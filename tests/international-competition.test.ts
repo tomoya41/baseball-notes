@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import { internationalOfficialTournaments } from "../src/data/international-official-links";
-import { japanGameAppearances, japanPlayerTournamentStats, japanResultsByTournament, japanSelectionsByTournament } from "../src/data/international-japan-results";
+import { japanPlayerTournamentRecords, japanResultsByTournament, japanSelectionsByTournament } from "../src/data/international-japan-results";
 import { apbc2026Batteries, apbc2026BatteryRevision } from "../src/data/apbc-2026-battery-appearances";
 import { wbc2026LineupRevision } from "../src/data/wbc-2026-japan-lineups";
 import npbProfileIdentities from "../src/data/npb-free-profile-identities.json";
@@ -11,6 +11,10 @@ import { internationalGameSchema, internationalParticipationSchema, internationa
 import { npbCompetitionScopeSchema } from "../src/domain/npb-competition";
 import { gameDateIndexSchema } from "../src/domain/npb-game-index";
 import { mvpFixture } from "./fixtures/daily-mvp";
+
+const japanGameAppearances = (id: string) => japanPlayerTournamentRecords(id)
+  .filter(row => row.confirmedGames > 0).map(({ tournamentId, confirmedGames }) => ({ tournamentId, confirmedGames }));
+const japanPlayerTournamentStats = (id: string) => japanPlayerTournamentRecords(id).flatMap(row => row.stats);
 
 const tournamentId = "international:tournament:apbc:2026";
 const teamId = "international:team:jpn";
@@ -275,6 +279,18 @@ it("admits the verified Japanese award selections separately from stats and cove
   expect(internationalTournamentEvidenceSchema.safeParse({ ...recentWbc,
     participation: recentWbc.participation.filter(row => row.kind !== "appeared" || row.playerId !== award.playerId),
   }).success).toBe(false);
+});
+
+it("groups Japan records by the same canonical player and keeps awards, appearance and totals separate", () => {
+  const kadowaki = japanPlayerTournamentRecords("1581526b-5601-4a6b-8b4e-021709be1e47");
+  expect(kadowaki.find(row => row.tournamentId === "international:tournament:apbc:2023")).toMatchObject({
+    selected: true, confirmedGames: 4, stats: [], mvp: true, awards: [{ position: "second_base" }],
+  });
+  const shimizu = japanPlayerTournamentRecords("64c9071f-f9df-4227-afb5-faee4fc73d0d");
+  expect(shimizu.find(row => row.tournamentId === "international:tournament:premier12:2024")).toMatchObject({
+    selected: false, confirmedGames: 0, stats: [{ role: "pitching" }], mvp: false, awards: [],
+  });
+  expect(japanPlayerTournamentRecords("international:player:jawiki:5145471")).toEqual([]);
 });
 
 it("keeps the WBC selection snapshot separate from game appearances and registration", () => {

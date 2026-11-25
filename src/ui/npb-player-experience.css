@@ -186,8 +186,38 @@
   font-weight: 400;
 }
 
-.player-background .player-honors {
+.player-background .player-honors,
+.player-international {
   margin-block: .75rem 0;
+}
+
+.player-international-edition {
+  padding: .625rem 0;
+}
+
+.player-international-edition h3 {
+  margin: 0;
+  font-size: .875rem;
+  overflow-wrap: anywhere;
+}
+
+.player-international-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .25rem .5rem;
+}
+
+.player-international-actions a {
+  display: flex;
+  align-items: center;
+  min-width: 44px;
+  min-height: 44px;
+  max-width: 100%;
+  font-size: .8125rem;
+  padding-inline: .5rem;
+  text-decoration: underline;
+  text-underline-offset: .17em;
+  overflow-wrap: anywhere;
 }
 
 .player-progression .progression-summary {

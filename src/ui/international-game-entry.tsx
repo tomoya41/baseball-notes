@@ -1,6 +1,6 @@
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { internationalOfficialTournaments as tournaments } from "../data/international-official-links";
+import { internationalOfficialTournaments as tournaments, type InternationalDetail } from "../data/international-official-links";
 import { apbc2023Id, apbc2023OfficialBoxes, apbc2023Revision } from "../data/apbc-2023-pitching";
 import { apbc2026BatteryRevision } from "../data/apbc-2026-battery-appearances";
 import { internationalTeamNames, internationalRoundNames, japanResultsByTournament, japanSelectionsByTournament, resultLicense } from "../data/international-japan-results";
@@ -12,12 +12,9 @@ import { wbc2026LineupRevision } from "../data/wbc-2026-japan-lineups";
 import { wbc2026OfficialBoxes } from "../data/wbc-2026-japan-highlights";
 import { metrics, ratio } from "../domain/metrics";
 import { formatDate, formatMetric } from "../presentation/formatters";
+import { tournamentAwardName, tournamentAwardPositions } from "../presentation/international-awards";
 
 const innings = (outs: number) => formatMetric(ratio(outs, 1), metrics.outs!);
-const awardPositions = {
-  pitcher: "投手", catcher: "捕手", first_base: "一塁手", second_base: "二塁手",
-  third_base: "三塁手", shortstop: "遊撃手", outfield: "外野手", designated_hitter: "指名打者",
-};
 
 function InternationalPlayerRow({ name, npbPlayerId, children }: { name: string | undefined; npbPlayerId: string | undefined; children: ReactNode }) {
   const player = <><strong>{name}</strong>{children}</>;
@@ -28,14 +25,24 @@ function InternationalPlayerRow({ name, npbPlayerId, children }: { name: string 
   </li>;
 }
 
-export function InternationalGameEntry({ expanded, onToggle, selected, onSelect, statRole }: {
+export function InternationalGameEntry({ expanded, onToggle, selected, onSelect, detail }: {
   expanded: boolean;
   onToggle: (open: boolean) => void;
   selected: (typeof tournaments)[number] | undefined;
   onSelect: (id: string) => void;
-  statRole: "batting" | "pitching" | undefined;
+  detail: InternationalDetail | undefined;
 }) {
   const tournament = selected ?? tournaments[0]!;
+  const entry = useRef<HTMLDetailsElement>(null);
+  useEffect(() => {
+    if (!expanded || !detail) return;
+    const frame = requestAnimationFrame(() => {
+      const summary = entry.current?.querySelector<HTMLElement>(`[data-international-detail="${detail}"] > summary`);
+      summary?.focus({ preventScroll: true });
+      summary?.scrollIntoView?.({ block: "center", behavior: "instant" });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [expanded, detail, tournament.id]);
   const edition = japanResultsByTournament.get(tournament.id);
   const roster = japanSelectionsByTournament.get(tournament.id);
   const positions = new Set(roster?.players.map(player => player.position));
@@ -77,7 +84,7 @@ export function InternationalGameEntry({ expanded, onToggle, selected, onSelect,
   }
   for (const dates of appearances.values()) dates.sort();
 
-  return <details className="advanced-disclosure" id="international-game-entry" data-international-entry open={expanded} onToggle={event => onToggle(event.currentTarget.open)}>
+  return <details className="advanced-disclosure" id="international-game-entry" ref={entry} data-international-entry open={expanded} onToggle={event => onToggle(event.currentTarget.open)}>
     <summary>侍ジャパン・国際試合</summary>
     <label className="weekly-stage">大会 <select value={tournament.id} onChange={event => onSelect(event.target.value)}>
       {tournaments.map(item => <option key={item.id} value={item.id}>{item.kind === "apbc" ? `APBC ${item.year}` : item.name}</option>)}
@@ -107,21 +114,21 @@ export function InternationalGameEntry({ expanded, onToggle, selected, onSelect,
             </span>
           </li>;
         })}</ol>
-        {edition.allTournamentTeam.length > 0 && <details className="advanced-disclosure">
-          <summary>{tournament.kind === "wbc" ? "オールWBCチーム" : "大会ベストナイン"} · 日本代表</summary>
+        {edition.allTournamentTeam.length > 0 && <details className="advanced-disclosure" data-international-detail="awards" open={detail === "awards"}>
+          <summary>{tournamentAwardName(tournament.kind)} · 日本代表</summary>
           <ul className="row-list">{edition.allTournamentTeam.map(({ playerId, position }) => <InternationalPlayerRow
             key={`${playerId}:${position}`} name={playerNames.get(playerId)} npbPlayerId={npbPlayers.get(playerId)}>
-            <small>{awardPositions[position]}</small>
+            <small>{tournamentAwardPositions[position]}</small>
           </InternationalPlayerRow>)}</ul>
         </details>}
-        {batting.length > 0 && <details className="advanced-disclosure" open={statRole === "batting"}>
+        {batting.length > 0 && <details className="advanced-disclosure" data-international-detail="batting" open={detail === "batting"}>
           <summary>打撃成績 · {batting.length}人</summary>
           <ul className="row-list">{batting.map(row => <InternationalPlayerRow key={row.playerId} name={row.name} npbPlayerId={npbPlayers.get(row.playerId)}>
               <small>打率 {formatMetric(ratio(row.hits, row.atBats), metrics.avg!)} · {row.atBats}打数{row.hits}安打</small>
               <small>{row.gamesPlayed}試合 · {row.homeRuns}本塁打 · {row.runsBattedIn}打点</small>
           </InternationalPlayerRow>)}</ul>
         </details>}
-        {pitching.length > 0 && <details className="advanced-disclosure" open={statRole === "pitching"}>
+        {pitching.length > 0 && <details className="advanced-disclosure" data-international-detail="pitching" open={detail === "pitching"}>
           <summary>投球成績 · {pitching.length}人</summary>
           <ul className="row-list">{pitching.map(row => <InternationalPlayerRow key={row.playerId} name={row.name} npbPlayerId={npbPlayers.get(row.playerId)}>
               <small>防御率 {formatMetric(ratio(row.earnedRuns * 27, row.outs), metrics.era!)} · {innings(row.outs)}</small>
@@ -138,12 +145,12 @@ export function InternationalGameEntry({ expanded, onToggle, selected, onSelect,
               `${formatDate(pitchDates.get(gameId) ?? null, true)} ${innings(outs)}${outs === 0 ? "（アウトなし）" : ""}`).join("、")}</small>
           </InternationalPlayerRow>)}</ul>
         </details>}
-        {roster && <details className="advanced-disclosure"><summary>代表に選ばれた選手 · {roster.players.length}人</summary>
+        {roster && <details className="advanced-disclosure" data-international-detail="selections" open={detail === "selections"}><summary>代表に選ばれた選手 · {roster.players.length}人</summary>
           <p className="inline-note">{formatDate(roster.announcedAsOf, true)}時点の発表。登録名簿は未収録です。</p>
           {[...positions].map(position => <div key={position}><h4>{position}</h4>
             <p>{roster.players.filter(player => player.position === position).map(player => player.name).join("、")}</p></div>)}
         </details>}
-        {appearances.size > 0 && <details className="advanced-disclosure">
+        {appearances.size > 0 && <details className="advanced-disclosure" data-international-detail="appearances" open={detail === "appearances"}>
           <summary>出場を確認した選手 · {appearances.size}人</summary>
           <p className="inline-note">{apbc2023 ? "打順・バッテリーの記録" : apbc ? "本塁打・登板・捕手の記録" : "先発・バッテリー、本塁打・勝敗投手の記録"}で確認できた試合を掲載。日付は現地時間です。</p>
           <ul className="row-list">{[...appearances].map(([id, dates]) => <InternationalPlayerRow key={id}

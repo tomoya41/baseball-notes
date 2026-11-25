@@ -53,3 +53,18 @@ export function internationalTournamentIn(params: URLSearchParams) {
   const ids = params.getAll("tournament");
   return ids.length === 1 ? internationalOfficialTournaments.find(tournament => tournament.id === ids[0]) : undefined;
 }
+
+export function internationalDetailIn(params: URLSearchParams) {
+  const sections = params.getAll("section");
+  const roles = params.getAll("statRole");
+  if (sections.length === 1 && roles.length === 0) {
+    const section = sections[0];
+    if (section === "awards" || section === "appearances" || section === "selections") return section;
+  }
+  if (roles.length === 1 && sections.length === 0) {
+    const role = roles[0];
+    if (role === "batting" || role === "pitching") return role;
+  }
+}
+
+export type InternationalDetail = NonNullable<ReturnType<typeof internationalDetailIn>>;
