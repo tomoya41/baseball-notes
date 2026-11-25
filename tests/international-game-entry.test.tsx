@@ -8,6 +8,37 @@ import { NpbTeamActivity } from "../src/ui/team-hub";
 import { services } from "../src/app/services";
 import { mvpFixture } from "./fixtures/daily-mvp";
 
+it.each([
+  ["apbc:2023", "section=awards", "awards"],
+  ["apbc:2023", "section=appearances", "appearances"],
+  ["apbc:2023", "section=selections", "selections"],
+  ["wbc:2023", "statRole=batting", "batting"],
+  ["premier12:2024", "statRole=pitching", "pitching"],
+])("opens only the requested detail from a profile or shared link for %s (%s)", async (tournament, selection, detail) => {
+  const { index } = mvpFixture();
+  const repository = {
+    manifest: vi.fn(async () => ({ schemaVersion: 1 as const, league: "NPB" as const, from: index.date, to: index.date,
+      effectiveDate: index.date, generatedAt: index.generatedAt })),
+    date: vi.fn(async () => index), recent: vi.fn(), records: vi.fn(),
+  };
+  const route = `/NPB/schedule?date=${index.date}&view=international&tournament=${encodeURIComponent(`international:tournament:${tournament}`)}&${selection}`;
+  const container = document.createElement("div");
+  const root = createRoot(container);
+  try {
+    await act(async () => root.render(<MemoryRouter initialEntries={[route]}><NpbScheduleScreen repository={repository}/></MemoryRouter>));
+    expect(container.querySelector<HTMLDetailsElement>("[data-international-entry]")?.open).toBe(true);
+    expect([...container.querySelectorAll<HTMLDetailsElement>("[data-international-detail][open]")].map(panel =>
+      panel.dataset.internationalDetail)).toEqual([detail]);
+
+    const select = container.querySelector("select")!;
+    await act(async () => {
+      select.value = "international:tournament:apbc:2026";
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    expect(container.querySelector("[data-international-detail][open]")).toBeNull();
+  } finally { await act(async () => root.unmount()); }
+});
+
 it("opens real official tournament links alongside the domestic Games route without extra data requests", async () => {
   const { index } = mvpFixture(), date = index.date;
   const repository = {

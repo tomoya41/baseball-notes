@@ -21,6 +21,19 @@ it("preserves the selected Japan tournament in share links and Android deep link
     .toBe(`${path}?${query.split("&tournament=")[0]}`);
 });
 
+it("keeps only a valid, unambiguous detail of the selected Japan tournament", () => {
+  const path = "/NPB/schedule";
+  const query = "season=2026&view=international&tournament=international%3Atournament%3Awbc%3A2023";
+  for (const selection of ["statRole=batting", "statRole=pitching", "section=awards", "section=appearances", "section=selections"]) {
+    expect(portableRoute(path, `${query}&${selection}&local=private`)).toBe(`${path}?${query}&${selection}`);
+    expect(canonicalDeepLink(`baseballnotes://NPB/schedule?${query}&${selection}`)).toBe(`${path}?${query}&${selection}`);
+  }
+  for (const selection of ["section=private", "section=awards&section=appearances", "statRole=batting&section=awards"]) {
+    expect(portableRoute(path, `${query}&${selection}`)).toBe(`${path}?${query}`);
+  }
+  expect(portableRoute(path, "view=international&tournament=unknown&section=awards")).toBe(`${path}?view=international`);
+});
+
 it("preserves a single canonical club on shared NPB schedules, games and returns", () => {
   const query = "date=2026-10-08&team=npb%3Ateam%3Atigers";
   const schedule = `/NPB/schedule?${query}`;

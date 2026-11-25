@@ -6,7 +6,7 @@ import { readGameDateForManifest, readLatestSavedResultDay, type GameSurfaceRead
 import { type GameDateIndex,type GameManifest,type GameIndexRow } from "../domain/npb-game-index";
 import { outsideReviewedNpbRegularCalendar } from "../data/npb-season-metadata";
 import { npbScheduleTeam } from "../domain/npb-game-navigation";
-import { internationalTournamentIn } from "../data/international-official-links";
+import { internationalDetailIn, internationalTournamentIn } from "../data/international-official-links";
 import { npbTeamShortName } from "../presentation/npb-team-names";
 import { DataState,LoadingSkeleton,PageHeading } from "./components";
 import { DateRibbon, ScoreboardRow } from "./design-system";
@@ -56,7 +56,7 @@ export function NpbScheduleScreen({repository,favorites=[],toggle,saving=false}:
   const [attempt,setAttempt]=useState(0);
   const internationalOpen = params.get("view") === "international";
   const internationalTournament = internationalOpen ? internationalTournamentIn(params) : undefined;
-  const statRole = params.get("statRole");
+  const internationalDetail = internationalTournament ? internationalDetailIn(params) : undefined;
   const setInternationalOpen = (open: boolean) => {
     if (open === internationalOpen) return;
     const next = new URLSearchParams(params);
@@ -65,6 +65,7 @@ export function NpbScheduleScreen({repository,favorites=[],toggle,saving=false}:
       next.delete("view");
       next.delete("tournament");
       next.delete("statRole");
+      next.delete("section");
     }
     setParams(next);
   };
@@ -73,6 +74,7 @@ export function NpbScheduleScreen({repository,favorites=[],toggle,saving=false}:
     next.set("view", "international");
     next.set("tournament", id);
     next.delete("statRole");
+    next.delete("section");
     setParams(next);
   };
   const revision = usePublicDataRevalidation();
@@ -143,7 +145,7 @@ export function NpbScheduleScreen({repository,favorites=[],toggle,saving=false}:
     </nav>
     <InternationalGameEntry expanded={internationalOpen} onToggle={setInternationalOpen}
       selected={internationalTournament} onSelect={selectInternationalTournament}
-      statRole={internationalTournament && (statRole === "batting" || statRole === "pitching") ? statRole : undefined}/>
+      detail={internationalDetail}/>
     <p className="game-collection-scope">{manifest ? <span>公開基準日 <time dateTime={manifest.effectiveDate}>{manifest.effectiveDate}</time></span> : "保存済みの公式戦を確認"}<Link to="/NPB/preseason">オープン戦 · 未収録</Link></p>
     {savedResultDay && <p className="game-collection-scope"><span>直近の収録結果 <time dateTime={savedResultDay}>{savedResultDay}</time></span>
       <Link to={`?${effectiveDateParams}`}>基準日の収録状況 →</Link></p>}

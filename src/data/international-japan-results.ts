@@ -171,19 +171,17 @@ const editions = [
 ];
 export const japanResultsByTournament = new Map(editions.map(value => [value.tournamentId, value]));
 
-export function japanGameAppearances(canonicalPlayerId: string) {
+export function japanPlayerTournamentRecords(canonicalPlayerId: string) {
   return editions.flatMap(edition => {
     const identity = edition.identities.find(row => row.league === "NPB" && row.canonicalPlayerId === canonicalPlayerId);
     if (!identity) return [];
-    const gameIds = new Set(edition.participation.flatMap(row =>
-      row.kind === "appeared" && row.playerId === identity.playerId ? [row.gameId] : []));
-    return gameIds.size ? [{ tournamentId: edition.tournamentId, confirmedGames: gameIds.size }] : [];
-  });
-}
-
-export function japanPlayerTournamentStats(canonicalPlayerId: string) {
-  return editions.flatMap(edition => {
-    const identity = edition.identities.find(row => row.league === "NPB" && row.canonicalPlayerId === canonicalPlayerId);
-    return identity ? edition.playerStats.filter(row => row.playerId === identity.playerId && row.teamId === japan) : [];
+    const participation = edition.participation.filter(row => row.playerId === identity.playerId && row.teamId === japan);
+    const selected = participation.some(row => row.kind === "selected");
+    const confirmedGames = new Set(participation.flatMap(row => row.kind === "appeared" ? [row.gameId] : [])).size;
+    const stats = edition.playerStats.filter(row => row.playerId === identity.playerId && row.teamId === japan);
+    const mvp = edition.tournamentMvp?.playerId === identity.playerId && edition.tournamentMvp.teamId === japan;
+    const awards = edition.allTournamentTeam.filter(row => row.playerId === identity.playerId && row.teamId === japan);
+    if (!selected && !confirmedGames && !stats.length && !mvp && !awards.length) return [];
+    return [{ tournamentId: edition.tournamentId, selected, confirmedGames, stats, mvp, awards }];
   });
 }
