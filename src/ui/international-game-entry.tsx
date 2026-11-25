@@ -4,6 +4,7 @@ import { internationalOfficialTournaments as tournaments } from "../data/interna
 import { apbc2023Id, apbc2023OfficialBoxes, apbc2023Revision } from "../data/apbc-2023-pitching";
 import { apbc2026BatteryRevision } from "../data/apbc-2026-battery-appearances";
 import { internationalTeamNames, internationalRoundNames, japanResultsByTournament, japanSelectionsByTournament, resultLicense } from "../data/international-japan-results";
+import { japanTournamentHonors } from "../data/international-japan-honors";
 import { apbc2026OfficialBoxes } from "../data/apbc-2026-highlights";
 import { premier122024JapanStatsRevision, premier122024JapanStatsVerification } from "../data/premier12-2024-japan-stats";
 import { wbc2023JapanStatsRevision, wbc2023JapanStatsVerification } from "../data/wbc-2023-japan-stats";
@@ -13,6 +14,10 @@ import { metrics, ratio } from "../domain/metrics";
 import { formatDate, formatMetric } from "../presentation/formatters";
 
 const innings = (outs: number) => formatMetric(ratio(outs, 1), metrics.outs!);
+const awardPositions = {
+  pitcher: "投手", catcher: "捕手", first_base: "一塁手", second_base: "二塁手",
+  third_base: "三塁手", shortstop: "遊撃手", outfield: "外野手", designated_hitter: "指名打者",
+};
 
 function InternationalPlayerRow({ name, npbPlayerId, children }: { name: string | undefined; npbPlayerId: string | undefined; children: ReactNode }) {
   const player = <><strong>{name}</strong>{children}</>;
@@ -35,7 +40,11 @@ export function InternationalGameEntry({ expanded, onToggle, selected, onSelect,
   const roster = japanSelectionsByTournament.get(tournament.id);
   const positions = new Set(roster?.players.map(player => player.position));
   const apbc2023 = tournament.id === apbc2023Id;
-  const playerNames = new Map(roster?.players.map(player => [player.id, player.name]));
+  const playerNames = new Map([
+    ...(roster?.players.map(player => [player.id, player.name] as const) ?? []),
+    ...(edition?.playerStats.map(player => [player.playerId, player.name] as const) ?? []),
+  ]);
+  const honors = japanTournamentHonors.get(tournament.id);
   const highlights = new Map(edition?.gameHighlights.map(game => [game.gameId, game]));
   const apbc = tournament.kind === "apbc";
   const wbc2026 = tournament.kind === "wbc" && tournament.year === 2026;
@@ -98,6 +107,13 @@ export function InternationalGameEntry({ expanded, onToggle, selected, onSelect,
             </span>
           </li>;
         })}</ol>
+        {edition.allTournamentTeam.length > 0 && <details className="advanced-disclosure">
+          <summary>{tournament.kind === "wbc" ? "オールWBCチーム" : "大会ベストナイン"} · 日本代表</summary>
+          <ul className="row-list">{edition.allTournamentTeam.map(({ playerId, position }) => <InternationalPlayerRow
+            key={`${playerId}:${position}`} name={playerNames.get(playerId)} npbPlayerId={npbPlayers.get(playerId)}>
+            <small>{awardPositions[position]}</small>
+          </InternationalPlayerRow>)}</ul>
+        </details>}
         {batting.length > 0 && <details className="advanced-disclosure" open={statRole === "batting"}>
           <summary>打撃成績 · {batting.length}人</summary>
           <ul className="row-list">{batting.map(row => <InternationalPlayerRow key={row.playerId} name={row.name} npbPlayerId={npbPlayers.get(row.playerId)}>
@@ -137,6 +153,7 @@ export function InternationalGameEntry({ expanded, onToggle, selected, onSelect,
         </details>}
         <details className="source-note"><summary>収録範囲・出典</summary><p>日本戦の確定スコアを抜粋。左がビジター、右がホームです。
           Wikipediaの執筆者による記録を抜粋・翻訳・整形し、<a href={resultLicense}>CC BY-SA 4.0</a>で提供しています。</p>
+          {honors && <p><a href={honors.official}>大会表彰の公式発表</a></p>}
           {officialBoxes && (highlights.size > 0 || outings.size > 0) && <>
             <p>{outings.size ? "登板と投球回を収録。防御率や奪三振、打撃の大会通算成績は未収録です。" :
               "大会通算の打撃・投球成績は未収録です。"}{wbc2026 && "準々決勝は現地3月14日、日本時間3月15日です。"}</p>
@@ -155,6 +172,7 @@ export function InternationalGameEntry({ expanded, onToggle, selected, onSelect,
               source.id === apbc2026BatteryRevision ? "日本語版の登板・投球回・捕手の記録" :
               source.id === String(apbc2023Revision) ? "日本語版の試合結果・投球回・表彰" :
               source.id === wbc2026LineupRevision ? "日本語版の代表選手・先発・バッテリー" :
+              honors?.revision === source.id ? "英語版の大会記録" :
               roster?.revision === source.id ? apbc2023 ? "日本語版の代表選手・打順・バッテリー" : "日本語版の代表選手" :
               source.sourceId === "jawiki" ? "日本語版の試合結果" : "英語版の試合結果"
           }（版 {source.version}）</a></p>)}

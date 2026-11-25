@@ -186,7 +186,7 @@ it("preserves the four APBC 2023 final results and admits independently reconcil
   expect(apbc.sources).toContainEqual(expect.objectContaining({
     sourceId: "jawiki", url: "https://ja.wikipedia.org/w/index.php?oldid=111760584",
   }));
-  expect(apbc.editionRevision).toBe(3);
+  expect(apbc.editionRevision).toBe(4);
   expect(apbc.coverage).toMatchObject({
     results: { status: "partial", scope: { kind: "team", teamId: "international:team:jpn" } },
     schedule: { status: "uncollected" }, appearances: { status: "partial" }, playerStats: { status: "uncollected" },
@@ -251,6 +251,32 @@ it("admits separate WBC batting and pitching totals, with exact counts and missi
   ]) expect(internationalTournamentEvidenceSchema.safeParse({ ...wbc, ...change }).success).toBe(false);
 });
 
+it("admits the verified Japanese award selections separately from stats and coverage", () => {
+  const apbc = japanResultsByTournament.get("international:tournament:apbc:2023")!;
+  const wbc = japanResultsByTournament.get("international:tournament:wbc:2023")!;
+  const recentWbc = japanResultsByTournament.get("international:tournament:wbc:2026")!;
+  const premier = japanResultsByTournament.get("international:tournament:premier12:2024")!;
+  expect([apbc, wbc, recentWbc, premier].map(edition => edition.allTournamentTeam.length)).toEqual([5, 3, 1, 3]);
+  expect(wbc.tournamentMvp?.playerId).toBe("international:player:jawiki:5145471");
+  expect(wbc.allTournamentTeam.filter(row => row.playerId === wbc.tournamentMvp?.playerId).map(row => row.position))
+    .toEqual(["pitcher", "designated_hitter"]);
+  expect(recentWbc.allTournamentTeam.map(row => [row.playerId, row.position]))
+    .toEqual([["international:player:jawiki:5145471", "designated_hitter"]]);
+  expect(recentWbc.coverage.playerStats.status).toBe("uncollected");
+  expect(japanResultsByTournament.get("international:tournament:apbc:2026")?.allTournamentTeam).toEqual([]);
+
+  const award = recentWbc.allTournamentTeam[0]!;
+  for (const entries of [
+    [award, award],
+    [{ ...award, source: { ...award.source, sourceRevisionId: "unadmitted" } }],
+    [{ ...award, playerId: "international:player:unverified" }],
+    [{ ...award, teamId: opponentId }],
+  ]) expect(internationalTournamentEvidenceSchema.safeParse({ ...recentWbc, allTournamentTeam: entries }).success).toBe(false);
+  expect(internationalTournamentEvidenceSchema.safeParse({ ...recentWbc,
+    participation: recentWbc.participation.filter(row => row.kind !== "appeared" || row.playerId !== award.playerId),
+  }).success).toBe(false);
+});
+
 it("keeps the WBC selection snapshot separate from game appearances and registration", () => {
   const id = "international:tournament:wbc:2026";
   const wbc = japanResultsByTournament.get(id)!;
@@ -261,7 +287,7 @@ it("keeps the WBC selection snapshot separate from game appearances and registra
   expect(roster.players).toContainEqual(expect.objectContaining({ name: "大谷翔平", position: "指名打者" }));
   expect(roster.players.map(player => player.name)).not.toContain("松井裕樹");
   expect(wbc.games).toHaveLength(5);
-  expect(wbc.editionRevision).toBe(7);
+  expect(wbc.editionRevision).toBe(8);
   expect(wbc.participation.filter(player => player.kind === "selected")).toHaveLength(30);
   expect(wbc.participation.filter(player => player.kind === "registered")).toEqual([]);
   expect(wbc.coverage.registrations.status).toBe("uncollected");
@@ -368,7 +394,7 @@ it("admits Premier12 Japan totals with the final included and preserves the evid
   const batting = premier.playerStats.filter(row => row.role === "batting");
   const pitching = premier.playerStats.filter(row => row.role === "pitching");
   expect(premier.games).toHaveLength(9);
-  expect(premier.editionRevision).toBe(3);
+  expect(premier.editionRevision).toBe(4);
   expect(batting).toHaveLength(15);
   expect(pitching).toHaveLength(13);
   expect(batting.reduce((sum, row) => sum + row.atBats, 0)).toBe(302);

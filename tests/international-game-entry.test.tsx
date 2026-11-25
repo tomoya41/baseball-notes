@@ -32,6 +32,10 @@ it("opens real official tournament links alongside the domestic Games route with
     const domesticLink = container.querySelector('.scoreboard-list a')?.getAttribute("href");
     expect(domesticLink).toBe(`/NPB/games/${encodeURIComponent(index.games[0]!.gameId)}?date=${date}`);
     const internationalButton = [...container.querySelectorAll("button")].find(button => button.textContent === "侍ジャパン")!;
+    const awards = (title: string) => [...entry.querySelectorAll("details")].find(panel =>
+      panel.querySelector("summary")?.textContent === title)!;
+    const wbcAwards = () => awards("オールWBCチーム · 日本代表");
+    const bestNine = () => awards("大会ベストナイン · 日本代表");
     await act(async () => internationalButton.click());
     expect(entry.open).toBe(true);
     expect(entry.textContent).toContain("日本代表の結果 · 4試合");
@@ -85,6 +89,11 @@ it("opens real official tournament links alongside the domestic Games route with
     expect(formerWbcLinks.some(link => link.textContent?.includes("大谷翔平"))).toBe(false);
     expect(entry.textContent).toContain("打撃成績 · 16人");
     expect(entry.textContent).toContain("投球成績 · 14人");
+    expect(entry.textContent).toContain("大会MVP 大谷翔平");
+    expect(wbcAwards().open).toBe(false);
+    expect([...wbcAwards().querySelectorAll("li")].map(row => row.textContent))
+      .toEqual(["大谷翔平投手", "吉田正尚外野手", "大谷翔平指名打者"]);
+    expect(wbcAwards().querySelector("a")).toBeNull();
     expect(entry.textContent).toContain("防御率 1.86 · 9回 2/3");
     expect(entry.textContent).toContain("奪三振は未収録");
     expect(entry.querySelector('.source-note a[href$="oldid=109739294"]')).not.toBeNull();
@@ -111,6 +120,10 @@ it("opens real official tournament links alongside the domestic Games route with
     expect(entry.textContent).toContain("韓国 3 − 4 日本");
     expect(entry.textContent).toContain("日本の本塁打・勝利投手・投球回を収録");
     expect(entry.textContent).toContain("大会MVP 門脇誠");
+    expect(bestNine().open).toBe(false);
+    expect(bestNine().querySelectorAll("li")).toHaveLength(5);
+    expect(bestNine().querySelector('a[href="/NPB/players/1581526b-5601-4a6b-8b4e-021709be1e47"]')?.textContent)
+      .toContain("門脇誠二塁手");
     expect(entry.textContent).toContain("日本の本塁打 0本");
     const apbc2023Pitching = [...entry.querySelectorAll("details")].find(panel =>
       panel.querySelector("summary")?.textContent === "登板・投球回 · 12人")!;
@@ -168,6 +181,8 @@ it("opens real official tournament links alongside the domestic Games route with
     expect(wbcProfileLinks.find(link => link.textContent?.includes("伊藤大海"))?.getAttribute("href"))
       .toBe("/NPB/players/e894c7ec-cf2d-4000-98d4-4211c1a4b345");
     expect(wbcProfileLinks.some(link => link.textContent?.includes("大谷翔平"))).toBe(false);
+    expect([...wbcAwards().querySelectorAll("li")].map(row => row.textContent)).toEqual(["大谷翔平指名打者"]);
+    expect(entry.querySelector('.source-note a[href$="2026-world-baseball-classic-all-tournament-team"]')).not.toBeNull();
     expect(wbcProfileLinks.find(link => link.textContent?.includes("若月健矢"))?.getAttribute("href"))
       .toBe("/NPB/players/0849d339-1434-46b4-9382-a748c1c797a0");
     expect(wbcProfileLinks.find(link => link.textContent?.includes("源田壮亮"))?.textContent).toContain("3月6日、3月7日、3月8日、3月14日");
@@ -185,7 +200,8 @@ it("opens real official tournament links alongside the domestic Games route with
     expect(entry.querySelector('.source-note a[href$="oldid=111780580"]')).not.toBeNull();
     expect(entry.querySelector('.source-note a[href$="20241124_1/table.html"]')).not.toBeNull();
     const premierLinks = [...entry.querySelectorAll('a[href*="/NPB/players/"]')];
-    expect(premierLinks).toHaveLength(28);
+    expect(premierLinks).toHaveLength(31);
+    expect([...bestNine().querySelectorAll("li strong")].map(row => row.textContent)).toEqual(["坂倉将吾", "小園海斗", "森下翔太"]);
     expect(premierLinks.find(link => link.textContent?.includes("清水達也"))?.getAttribute("href"))
       .toBe("/NPB/players/64c9071f-f9df-4227-afb5-faee4fc73d0d");
     await act(async () => internationalButton.click());

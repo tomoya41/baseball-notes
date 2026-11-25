@@ -103,6 +103,9 @@ const gamePitching = z.strictObject({
   pitchers: z.array(z.strictObject({ playerId, outs: runs })).min(1),
 });
 const tournamentMvp = z.strictObject({ teamId, playerId, source: sourceReference });
+const allTournamentSelection = tournamentMvp.extend({
+  position: z.enum(["pitcher", "catcher", "first_base", "second_base", "third_base", "shortstop", "outfield", "designated_hitter"]),
+});
 const personIdentifier = z.discriminatedUnion("method", [
   z.strictObject({ method: z.literal("shared_player_identifier"), authorityId: organizationId, value: label }),
   z.strictObject({ method: z.literal("birth_date_and_affiliation"), birthDate: z.iso.date(), affiliationId: label }),
@@ -138,6 +141,7 @@ export const internationalTournamentEvidenceSchema = z.strictObject({
   gameHighlights: z.array(gameHighlights).default([]),
   gamePitching: z.array(gamePitching).default([]),
   tournamentMvp: tournamentMvp.optional(),
+  allTournamentTeam: z.array(allTournamentSelection).default([]),
   coverage: z.strictObject({ schedule: coverage, results: coverage, selections: coverage,
     registrations: coverage, appearances: coverage, playerStats: z.discriminatedUnion("status", [uncollected, partialCoverage]),
     gameHighlights: z.discriminatedUnion("status", [uncollected, partialCoverage]).default({ status: "uncollected" }) }),
@@ -239,10 +243,24 @@ export const internationalTournamentEvidenceSchema = z.strictObject({
     highlightedGames.add(row.gameId);
   }
   const mvp = edition.tournamentMvp;
+  const honorParticipants = new Set([
+    ...edition.participation.filter(row => row.kind === "appeared").map(row => `${row.teamId}|${row.playerId}`),
+    ...edition.playerStats.filter(row => row.gamesPlayed > 0).map(row => `${row.teamId}|${row.playerId}`),
+  ]);
   if (mvp && (!approved.has(mvp.source.sourceRevisionId) ||
-    !affiliatedPlayers.has(`${mvp.teamId}|${mvp.playerId}`) || !edition.games.some(game =>
+    !honorParticipants.has(`${mvp.teamId}|${mvp.playerId}`) || !edition.games.some(game =>
       game.round === "final" && game.status === "final" && (game.homeTeamId === mvp.teamId || game.awayTeamId === mvp.teamId)))) {
     context.addIssue({ code: "custom", path: ["tournamentMvp"], message: "Tournament MVP requires admitted evidence for a player on a finalist team" });
+  }
+  const awardKeys = new Set<string>();
+  for (const [index, row] of edition.allTournamentTeam.entries()) {
+    const participant = `${row.teamId}|${row.playerId}`;
+    const key = `${participant}|${row.position}`;
+    if (awardKeys.has(key) || !approved.has(row.source.sourceRevisionId) || !honorParticipants.has(participant) || !finalCounts.has(row.teamId)) {
+      context.addIssue({ code: "custom", path: ["allTournamentTeam", index],
+        message: "All-tournament selections require unique player positions, admitted evidence and a played tournament" });
+    }
+    awardKeys.add(key);
   }
   const coverageUnits = { schedule: "scheduled_game", results: "final_game", selections: "selected_player",
     registrations: "registered_player", appearances: "player_game_appearance" } as const;

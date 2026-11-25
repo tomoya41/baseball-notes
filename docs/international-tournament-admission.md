@@ -99,6 +99,14 @@ WBC 2026の第7版では、若月健矢、松本裕樹、坂本誠志郎、佐�
 
 選手記事から確認したNPB IDと、固定版Chadwick Registerの `key_npb`・`key_uuid` を再照合し、既存10人に野手13人を追加して23人のNPBプロフィールから出場試合数を確認できる。今井達也・根本悠楓・秋広優人は大会内IDで表示する。試合結果、投球アウト、国内のFacts・ランキングは保持する。大会通算の打撃・防御率・奪三振は未収録で、出場範囲は一部収録のまま。
 
+## 日本代表選手の大会表彰
+
+日本代表から選ばれた大会ベストナイン・オールWBCチームを、APBC 2023は5枠、WBC 2023は3枠、プレミア12 2024は3枠、WBC 2026は1枠収録した。WBC 2023の大谷翔平は投手・指名打者の2枠と大会MVPを別の記録として扱う。WBC 2026は指名打者のみ。
+
+保存元はCC BY-SA 4.0の固定版。[APBC 2023](https://ja.wikipedia.org/w/index.php?oldid=111760584)・[WBC 2023](https://en.wikipedia.org/w/index.php?oldid=1380039596)・[プレミア12 2024](https://en.wikipedia.org/w/index.php?oldid=1378187154)・[WBC 2026](https://en.wikipedia.org/w/index.php?oldid=1380043139)
+
+大会主催者の発表で国・選手・選出部門を全件照合した。選手IDは同じ大会の確認済み出場または大会通算成績に接続し、既存の独立した照合がある場合のみNPBプロフィールへリンクする。出場、選手成績、国内ランキングの収録範囲は変わらない。[侍ジャパン](https://www.japan-baseball.jp/jp/games/apbc2023/)・[WBC 2023](https://www.mlb.com/world-baseball-classic/history/2023)・[プレミア12 2024](https://www.wbsc.org/en/events/2024-premier12/news/chieh-hsien-chen-is-the-wbsc-premier12-2024-mvp)・[WBC 2026](https://www.mlb.com/news/2026-world-baseball-classic-all-tournament-team)
+
 ## データ採用の再開条件
 
 - 大会ごとに取得、保存、加工、Web表示、Android表示、再配布を認める根拠とSourceの版を確認する。訂正時は旧版と出典を保持する。

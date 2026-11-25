@@ -14,6 +14,7 @@ import { wbc2026JapanHighlights } from "./wbc-2026-japan-highlights";
 import { wbc2026Id, wbc2026LineupAppearances, wbc2026LineupRevision } from "./wbc-2026-japan-lineups";
 import { wbc2026IdentityEvidence } from "./wbc-2026-player-identities";
 import { wbc2026Selections } from "./wbc-2026-selections";
+import { japanTournamentHonors } from "./international-japan-honors";
 
 // Adapted from the Wikipedia article revisions below, CC BY-SA 4.0.
 // Dates are local to the venue. Only final totals and confirmed team sides are admitted.
@@ -67,10 +68,15 @@ function edition(tournamentId: string, rows: readonly ResultRow[], stats?: Japan
   const partial = { status: "partial", scope: { kind: "team", teamId: japan }, source: games[0]!.source };
   const empty = { status: "uncollected" };
   const roster = japanSelectionsByTournament.get(tournamentId);
+  const honors = japanTournamentHonors.get(tournamentId);
   if (roster) sources.push({ ...sources[0]!, id: roster.revision, sourceId: "jawiki", publisherId: "japanese-wikipedia",
     version: roster.revision, url: `https://ja.wikipedia.org/w/index.php?oldid=${roster.revision}`, verifiedAt: roster.verifiedAt });
   if (stats) sources.push({ ...sources[0]!, id: stats.revision, sourceId: "jawiki", publisherId: "japanese-wikipedia",
     version: stats.revision, url: `https://ja.wikipedia.org/w/index.php?oldid=${stats.revision}`, verifiedAt: stats.verifiedAt });
+  if (honors && !sources.some(source => source.id === honors.revision)) sources.push({
+    ...sources[0]!, id: honors.revision, sourceId: "enwiki", publisherId: "english-wikipedia",
+    version: honors.revision, url: `https://en.wikipedia.org/w/index.php?oldid=${honors.revision}`, verifiedAt: "2026-11-25T21:38:00Z",
+  });
   const selections = roster?.players.map(player => ({ kind: "selected", competition: "international", tournamentId, teamId: japan,
     playerId: player.id, date: player.date, source: { sourceRevisionId: roster.revision, sourceRecordId: `代表選手/${player.name}` } })) ?? [];
   const playerStats = stats?.players.map(({ pageId, ...row }) => ({ ...row, tournamentId, teamId: japan,
@@ -107,10 +113,12 @@ function edition(tournamentId: string, rows: readonly ResultRow[], stats?: Japan
   appearances.push(...lineupAppearances.filter(row => !present.has(`${row.gameId}|${row.playerId}`)));
   const appearanceSource = wbc2026 ? { sourceRevisionId: wbc2026LineupRevision, sourceRecordId: "試合結果/先発・バッテリー" }
     : apbc2023 ? { sourceRevisionId: apbc2023SelectionRevision, sourceRecordId: "試合結果/打順・バッテリー" } : highlightSource;
+  const editionRevision = apbc ? 6 : wbc2026 ? 7 : historicalIdentity ? 3 : stats ? 2 : 1;
   return internationalTournamentEvidenceSchema.parse({ tournamentId,
-    editionRevision: apbc ? 6 : wbc2026 ? 7 : historicalIdentity ? 3 : stats ? 2 : 1, sources, games, playerStats,
+    editionRevision: editionRevision + Number(Boolean(honors)), sources, games, playerStats,
     gameHighlights, gamePitching: apbc ? apbc2026GamePitching : apbc2023 ? apbc2023GamePitching : [],
-    tournamentMvp: apbc ? apbc2026Mvp : apbc2023 ? apbc2023Mvp : undefined,
+    tournamentMvp: honors?.mvp ?? (apbc ? apbc2026Mvp : apbc2023 ? apbc2023Mvp : undefined),
+    allTournamentTeam: honors?.players ?? [],
     identities: apbc ? apbcIdentities : wbc2026 ? wbc2026IdentityEvidence.identities : historicalIdentity?.identities ?? [],
     participation: [...selections, ...appearances], corrections, coverage: { results: partial, schedule: empty,
       selections: roster ? { ...partial, source: { sourceRevisionId: roster.revision, sourceRecordId: "代表選手" } } : empty,
