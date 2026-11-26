@@ -1,6 +1,12 @@
 import { internationalTournamentSchema } from "../domain/international-competition";
 import { samurai2025KoreaId, samurai2025NetherlandsId } from "./samurai-2025-exhibitions";
 
+export const samurai2026ExhibitionIds = {
+  miyazaki: "international:tournament:exhibition:2026:miyazaki",
+  nagoya: "international:tournament:exhibition:2026:nagoya",
+  osaka: "international:tournament:exhibition:2026:wbc-osaka",
+} as const;
+
 // Editorial links only. Game, roster and statistics data require separate admission.
 export const internationalOfficialTournaments = internationalTournamentSchema.array().parse([
   {
@@ -40,8 +46,16 @@ export const internationalOfficialTournaments = internationalTournamentSchema.ar
     links: [{ label: "WBSCの開催方針（PDF）", url: "https://static.wbsc.org/uploads/federations/0/cms/documents/b5b2592b-3a2b-515b-a001-1e72e5a80911.pdf" }],
   },
   {
-    competition: "international", id: "international:tournament:exhibition:2026:nagoya", kind: "exhibition", year: 2026, name: "侍ジャパンシリーズ2026 名古屋",
+    competition: "international", id: samurai2026ExhibitionIds.nagoya, kind: "exhibition", year: 2026, name: "侍ジャパンシリーズ2026 名古屋",
     links: [{ label: "日本代表の公式大会ページ", url: "https://www.japan-baseball.jp/jp/games/nagoya2026/" }],
+  },
+  {
+    competition: "international", id: samurai2026ExhibitionIds.miyazaki, kind: "exhibition", year: 2026, name: "侍ジャパンシリーズ2026 宮崎",
+    links: [{ label: "日本代表の公式大会ページ", url: "https://www.japan-baseball.jp/jp/games/miyazaki2026/" }],
+  },
+  {
+    competition: "international", id: samurai2026ExhibitionIds.osaka, kind: "exhibition", year: 2026, name: "WBC 2026 強化試合",
+    links: [{ label: "強化試合の公式情報", url: "https://npb.jp/japan/2026spr2/" }],
   },
   {
     competition: "international", id: samurai2025KoreaId, kind: "exhibition", year: 2025,

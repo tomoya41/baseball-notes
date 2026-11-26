@@ -72,6 +72,21 @@ it("preserves unassigned finalists and date-only games without inventing outcome
   expect(internationalGameSchema.safeParse({ ...game, homeTeamId: teamId, awayTeamId: teamId }).success).toBe(false);
 });
 
+it("allows an isolated NPB club opponent only in an international exhibition", () => {
+  const club = "international:club:npb:dragons";
+  const match = { ...final, homeTeamId: club, awayTeamId: teamId, round: "exhibition",
+    tournamentId: "international:tournament:exhibition:2026:nagoya" };
+  expect(internationalGameSchema.parse(match)).toEqual(match);
+  for (const change of [
+    { round: "pool" },
+    { tournamentId: "international:tournament:wbc:2026" },
+    { homeTeamId: "npb:team:dragons" },
+    { awayTeamId: "international:club:npb:hawks" },
+  ]) expect(internationalGameSchema.safeParse({ ...match, ...change }).success).toBe(false);
+  expect(internationalParticipationSchema.safeParse({ ...selection, teamId: club }).success).toBe(false);
+  expect(npbCompetitionScopeSchema.safeParse(match).success).toBe(false);
+});
+
 it("requires appearance evidence for a played game and keeps selection and registration separate", () => {
   const registered = { ...selection, kind: "registered" };
   const appeared = { ...selection, kind: "appeared", gameId: game.id };
@@ -584,4 +599,40 @@ it.each([
   for (const field of ["schedule", "selections", "registrations", "appearances", "playerStats"] as const) {
     expect(edition.coverage[field].status).toBe("uncollected");
   }
+});
+
+it.each([
+  ["miyazaki", [
+    ["2026-02-22", "international:club:npb:hawks", 3, teamId, 13],
+    ["2026-02-23", teamId, 0, "international:club:npb:hawks", 4],
+  ]],
+  ["nagoya", [
+    ["2026-02-27", "international:club:npb:dragons", 3, teamId, 5],
+    ["2026-02-28", teamId, 7, "international:club:npb:dragons", 3],
+  ]],
+  ["wbc-osaka", [
+    ["2026-03-02", teamId, 3, "international:club:npb:buffaloes", 4],
+    ["2026-03-03", teamId, 5, "international:club:npb:tigers", 4],
+  ]],
+] as const)("admits only confirmed results for the 2026 %s exhibition", (venue, expected) => {
+  const id = `international:tournament:exhibition:2026:${venue}`;
+  const evidence = japanResultsByTournament.get(id)!;
+  expect(evidence.games.map(game => [game.localDate, game.awayTeamId, game.result?.awayRuns, game.homeTeamId, game.result?.homeRuns]))
+    .toEqual(expected);
+  for (const game of evidence.games) {
+    expect(game).toMatchObject({
+      competition: "international", tournamentId: id, round: "exhibition", status: "final", timeZone: "Asia/Tokyo",
+      scheduledAt: null, source: { sourceRevisionId: "111634786" },
+    });
+  }
+  expect(evidence.sources[0]?.url).toBe("https://ja.wikipedia.org/w/index.php?oldid=111634786");
+  expect(evidence.participation).toHaveLength(0);
+  expect(evidence.playerStats).toHaveLength(0);
+  expect(evidence.coverage.results).toMatchObject({ status: "partial", scope: { kind: "team", teamId } });
+  for (const field of ["schedule", "selections", "registrations", "appearances", "playerStats"] as const) {
+    expect(evidence.coverage[field].status).toBe("uncollected");
+  }
+  const wbc = japanResultsByTournament.get("international:tournament:wbc:2026")!;
+  expect(wbc.games).toHaveLength(5);
+  expect(wbc.games.every(game => !game.homeTeamId?.includes(":club:") && !game.awayTeamId?.includes(":club:"))).toBe(true);
 });

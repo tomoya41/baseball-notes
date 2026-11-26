@@ -2,6 +2,8 @@ import { z } from "zod";
 
 const tournamentId = z.string().regex(/^international:tournament:(?:apbc|wbc|premier12|exhibition):\d{4}(?::[a-z0-9-]+)?$/);
 const teamId = z.string().regex(/^international:team:[a-z0-9-]+$/);
+const npbClubPrefix = "international:club:npb:";
+const gameTeamId = z.union([teamId, z.string().regex(/^international:club:npb:[a-z0-9-]+$/)]);
 const gameId = z.string().regex(/^international:game:[a-z0-9:-]+$/);
 const playerId = z.string().regex(/^international:player:[a-z0-9:-]+$/);
 const label = z.string().trim().min(1);
@@ -31,7 +33,7 @@ const runs = z.number().int().nonnegative();
 export const internationalGameSchema = z.strictObject({
   competition: z.literal("international"), tournamentId, id: gameId,
   round: z.enum(["qualifier", "pool", "super_round", "quarterfinal", "semifinal", "third_place", "final", "exhibition"]),
-  homeTeamId: teamId.nullable(), awayTeamId: teamId.nullable(),
+  homeTeamId: gameTeamId.nullable(), awayTeamId: gameTeamId.nullable(),
   localDate: z.iso.date().nullable(), scheduledAt: z.iso.datetime({ offset: true }).nullable(), timeZone,
   status: z.enum(["scheduled", "in_progress", "suspended", "postponed", "canceled", "final", "unknown"]),
   result: z.strictObject({ homeRuns: runs, awayRuns: runs }).nullable(),
@@ -42,6 +44,13 @@ export const internationalGameSchema = z.strictObject({
   if (game.status === "final") return teamsKnown && game.result !== null;
   return game.result === null;
 }, "Final results require both confirmed teams; other statuses have no final result")
+  .refine(game => {
+    const homeClub = game.homeTeamId?.startsWith(npbClubPrefix);
+    const awayClub = game.awayTeamId?.startsWith(npbClubPrefix);
+    if (!homeClub && !awayClub) return true;
+    return game.round === "exhibition" && game.tournamentId.startsWith("international:tournament:exhibition:") &&
+      !(homeClub && awayClub);
+  }, "NPB clubs can face a representative team in an international exhibition only")
   .refine(game => {
     if (!game.localDate || !game.scheduledAt || !timeZone.safeParse(game.timeZone).success) return true;
     const instant = Date.parse(game.scheduledAt);

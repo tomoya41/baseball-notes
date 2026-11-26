@@ -11,11 +11,13 @@ import { wbc2023JapanStatsRevision, wbc2023JapanStatsVerification } from "../dat
 import { wbc2026LineupRevision } from "../data/wbc-2026-japan-lineups";
 import { wbc2026OfficialBoxes } from "../data/wbc-2026-japan-highlights";
 import { samurai2025OfficialBoxes } from "../data/samurai-2025-exhibitions";
+import { samurai2026OfficialBoxes } from "../data/samurai-2026-club-exhibitions";
 import { metrics, ratio } from "../domain/metrics";
 import { formatDate, formatMetric } from "../presentation/formatters";
 import { tournamentAwardName, tournamentAwardPositions } from "../presentation/international-awards";
 
 const innings = (outs: number) => formatMetric(ratio(outs, 1), metrics.outs!);
+const exhibitionBoxes = new Map([...samurai2025OfficialBoxes, ...samurai2026OfficialBoxes]);
 
 function InternationalPlayerRow({ name, npbPlayerId, children }: { name: string | undefined; npbPlayerId: string | undefined; children: ReactNode }) {
   const player = <><strong>{name}</strong>{children}</>;
@@ -164,8 +166,8 @@ export function InternationalGameEntry({ expanded, onToggle, selected, onSelect,
         </details>}
         <details className="source-note"><summary>収録範囲・出典</summary><p>日本戦の確定スコアを抜粋。左がビジター、右がホームです。
           Wikipediaの執筆者による記録を抜粋・翻訳・整形し、<a href={resultLicense}>CC BY-SA 4.0</a>で提供しています。</p>
-          {tournament.kind === "exhibition" && tournament.year === 2025 && <div className="hub-links">{edition.games.map(game => {
-            const officialBox = samurai2025OfficialBoxes.get(game.localDate!);
+          {tournament.kind === "exhibition" && <div className="hub-links">{edition.games.map(game => {
+            const officialBox = exhibitionBoxes.get(game.localDate!);
             return officialBox && <a key={game.id} href={officialBox}>{formatDate(game.localDate, true)}の公式試合記録</a>;
           })}</div>}
           {honors && <p><a href={honors.official}>大会表彰の公式発表</a></p>}
