@@ -1,4 +1,5 @@
 import { internationalTournamentSchema } from "../domain/international-competition";
+import { samurai2025KoreaId, samurai2025NetherlandsId } from "./samurai-2025-exhibitions";
 
 // Editorial links only. Game, roster and statistics data require separate admission.
 export const internationalOfficialTournaments = internationalTournamentSchema.array().parse([
@@ -41,6 +42,16 @@ export const internationalOfficialTournaments = internationalTournamentSchema.ar
   {
     competition: "international", id: "international:tournament:exhibition:2026:nagoya", kind: "exhibition", year: 2026, name: "侍ジャパンシリーズ2026 名古屋",
     links: [{ label: "日本代表の公式大会ページ", url: "https://www.japan-baseball.jp/jp/games/nagoya2026/" }],
+  },
+  {
+    competition: "international", id: samurai2025KoreaId, kind: "exhibition", year: 2025,
+    name: "侍ジャパンシリーズ2025 韓国戦",
+    links: [{ label: "シリーズの公式情報", url: "https://www.japan-baseball.jp/jp/games/jpnkor2025/" }],
+  },
+  {
+    competition: "international", id: samurai2025NetherlandsId, kind: "exhibition", year: 2025,
+    name: "侍ジャパンシリーズ2025 オランダ戦",
+    links: [{ label: "シリーズの公式情報", url: "https://www.japan-baseball.jp/jp/games/jpnned2025/" }],
   },
   {
     competition: "international", id: "international:tournament:exhibition:2027:taipei", kind: "exhibition", year: 2027, name: "2027年 台日交流試合",

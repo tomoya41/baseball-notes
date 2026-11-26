@@ -15,6 +15,7 @@ import { wbc2026Id, wbc2026LineupAppearances, wbc2026LineupRevision } from "./wb
 import { wbc2026IdentityEvidence } from "./wbc-2026-player-identities";
 import { wbc2026Selections } from "./wbc-2026-selections";
 import { japanTournamentHonors } from "./international-japan-honors";
+import { samurai2025KoreaId, samurai2025NetherlandsId, samurai2025ResultsRevision, samurai2025ResultsVerifiedAt } from "./samurai-2025-exhibitions";
 
 // Adapted from the Wikipedia article revisions below, CC BY-SA 4.0.
 // Dates are local to the venue. Only final totals and confirmed team sides are admitted.
@@ -23,7 +24,8 @@ const japan = "international:team:jpn";
 const premier122024Id = "international:tournament:premier12:2024";
 const wbc2023Id = "international:tournament:wbc:2023";
 const teams = { CHN: "中国", KOR: "韓国", CZE: "チェコ", AUS: "オーストラリア", ITA: "イタリア",
-  MEX: "メキシコ", USA: "アメリカ", TPE: "チャイニーズ・タイペイ", VEN: "ベネズエラ", CUB: "キューバ", DOM: "ドミニカ共和国", JPN: "日本" };
+  MEX: "メキシコ", USA: "アメリカ", TPE: "チャイニーズ・タイペイ", VEN: "ベネズエラ", CUB: "キューバ", DOM: "ドミニカ共和国",
+  NED: "オランダ", JPN: "日本" };
 export const internationalTeamNames = new Map(Object.entries(teams).map(([code, name]) => [`international:team:${code.toLowerCase()}`, name]));
 export const internationalRoundNames = { pool: "1次ラウンド", qualifier: "予選", super_round: "スーパーラウンド",
   quarterfinal: "準々決勝", semifinal: "準決勝", final: "決勝", third_place: "3位決定戦", exhibition: "強化試合" };
@@ -50,9 +52,11 @@ export const japanSelectionsByTournament = new Map<string, JapanSelections>([
 function edition(tournamentId: string, rows: readonly ResultRow[], stats?: JapanStats) {
   const revisions = [...new Set(rows.map(row => row[7]))];
   const apbc2023 = tournamentId === apbc2023Id;
+  const samurai2025 = tournamentId === samurai2025KoreaId || tournamentId === samurai2025NetherlandsId;
   const resultSource = apbc2023
     ? { sourceId: "jawiki", publisherId: "japanese-wikipedia", language: "ja", verifiedAt: "2026-11-25T05:31:00Z" }
-    : { sourceId: "enwiki", publisherId: "english-wikipedia", language: "en", verifiedAt: "2026-11-19T21:41:00Z" };
+    : { sourceId: "enwiki", publisherId: "english-wikipedia", language: "en",
+      verifiedAt: samurai2025 ? samurai2025ResultsVerifiedAt : "2026-11-19T21:41:00Z" };
   const { language, ...provenance } = resultSource;
   const sources: z.infer<typeof internationalTournamentEvidenceSchema>["sources"] = revisions.map(revision => ({
     ...provenance, id: String(revision), version: String(revision), termsEvidenceUrl: resultLicense,
@@ -168,6 +172,14 @@ const editions = [
     ["2024-11-23", tokyo, "super_round", "TPE", 6, "JPN", 9, 1378187154],
     ["2024-11-24", tokyo, "final", "TPE", 4, "JPN", 0, 1378187154],
   ], { revision: premier122024JapanStatsRevision, verifiedAt: "2026-11-21T11:09:00Z", players: premier122024JapanStats }),
+  edition(samurai2025NetherlandsId, [
+    ["2025-03-05", tokyo, "exhibition", "NED", 0, "JPN", 5, samurai2025ResultsRevision],
+    ["2025-03-06", tokyo, "exhibition", "JPN", 9, "NED", 0, samurai2025ResultsRevision],
+  ]),
+  edition(samurai2025KoreaId, [
+    ["2025-11-15", tokyo, "exhibition", "KOR", 4, "JPN", 11, samurai2025ResultsRevision],
+    ["2025-11-16", tokyo, "exhibition", "JPN", 7, "KOR", 7, samurai2025ResultsRevision],
+  ]),
 ];
 export const japanResultsByTournament = new Map(editions.map(value => [value.tournamentId, value]));
 

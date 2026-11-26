@@ -556,3 +556,32 @@ it("admits APBC innings for the four completed Japanese games, including a zero-
     [{ ...game, teamId: "international:team:aus" }],
   ]) expect(internationalTournamentEvidenceSchema.safeParse({ ...apbc, gamePitching }).success).toBe(false);
 });
+
+it.each([
+  ["netherlands", [
+    ["2025-03-05", "international:team:ned", 0, "international:team:jpn", 5],
+    ["2025-03-06", "international:team:jpn", 9, "international:team:ned", 0],
+  ]],
+  ["korea", [
+    ["2025-11-15", "international:team:kor", 4, "international:team:jpn", 11],
+    ["2025-11-16", "international:team:jpn", 7, "international:team:kor", 7],
+  ]],
+] as const)("keeps the 2025 %s exhibition results in their own competition and source revision", (opponent, expected) => {
+  const id = `international:tournament:exhibition:2025:${opponent}`;
+  const edition = japanResultsByTournament.get(id)!;
+  expect(edition.games.map(game => [game.localDate, game.awayTeamId, game.result?.awayRuns, game.homeTeamId, game.result?.homeRuns]))
+    .toEqual(expected);
+  for (const game of edition.games) {
+    expect(game).toMatchObject({
+      competition: "international", tournamentId: id, round: "exhibition", status: "final", timeZone: "Asia/Tokyo",
+      scheduledAt: null, source: { sourceRevisionId: "1384703135" },
+    });
+  }
+  expect(edition.sources[0]?.url).toBe("https://en.wikipedia.org/w/index.php?oldid=1384703135");
+  expect(edition.participation).toHaveLength(0);
+  expect(edition.playerStats).toHaveLength(0);
+  expect(edition.coverage.results.status).toBe("partial");
+  for (const field of ["schedule", "selections", "registrations", "appearances", "playerStats"] as const) {
+    expect(edition.coverage[field].status).toBe("uncollected");
+  }
+});
