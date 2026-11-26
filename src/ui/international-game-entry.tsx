@@ -10,6 +10,7 @@ import { premier122024JapanStatsRevision, premier122024JapanStatsVerification } 
 import { wbc2023JapanStatsRevision, wbc2023JapanStatsVerification } from "../data/wbc-2023-japan-stats";
 import { wbc2026LineupRevision } from "../data/wbc-2026-japan-lineups";
 import { wbc2026OfficialBoxes } from "../data/wbc-2026-japan-highlights";
+import { samurai2025OfficialBoxes } from "../data/samurai-2025-exhibitions";
 import { metrics, ratio } from "../domain/metrics";
 import { formatDate, formatMetric } from "../presentation/formatters";
 import { tournamentAwardName, tournamentAwardPositions } from "../presentation/international-awards";
@@ -103,7 +104,8 @@ export function InternationalGameEntry({ expanded, onToggle, selected, onSelect,
         <ol className="row-list">{edition.games.map(game => {
           const detail = highlights.get(game.id);
           return <li key={game.id} className="player-row">
-            <span className="player-row__body"><small><time dateTime={game.localDate!}>{game.localDate}</time> · {internationalRoundNames[game.round]}</small>
+            <span className="player-row__body"><small><time dateTime={game.localDate!}>{game.localDate}</time> · {internationalRoundNames[game.round]}
+              {game.result!.awayRuns === game.result!.homeRuns && " · 引き分け"}</small>
               <strong>{internationalTeamNames.get(game.awayTeamId!)} {game.result!.awayRuns} − {game.result!.homeRuns} {internationalTeamNames.get(game.homeTeamId!)}</strong>
               {detail && <>
                 <small>日本の本塁打 {detail.noHomeRuns ? "0本" : detail.homeRuns.map(({ playerId, count }, index) =>
@@ -160,6 +162,10 @@ export function InternationalGameEntry({ expanded, onToggle, selected, onSelect,
         </details>}
         <details className="source-note"><summary>収録範囲・出典</summary><p>日本戦の確定スコアを抜粋。左がビジター、右がホームです。
           Wikipediaの執筆者による記録を抜粋・翻訳・整形し、<a href={resultLicense}>CC BY-SA 4.0</a>で提供しています。</p>
+          {tournament.kind === "exhibition" && tournament.year === 2025 && <div className="hub-links">{edition.games.map(game => {
+            const officialBox = samurai2025OfficialBoxes.get(game.localDate!);
+            return officialBox && <a key={game.id} href={officialBox}>{formatDate(game.localDate, true)}の公式試合記録</a>;
+          })}</div>}
           {honors && <p><a href={honors.official}>大会表彰の公式発表</a></p>}
           {officialBoxes && (highlights.size > 0 || outings.size > 0) && <>
             <p>{outings.size ? "登板と投球回を収録。防御率や奪三振、打撃の大会通算成績は未収録です。" :

@@ -7,6 +7,8 @@ import { NpbScheduleScreen } from "../src/ui/npb-game-surface";
 import { NpbTeamActivity } from "../src/ui/team-hub";
 import { services } from "../src/app/services";
 import { mvpFixture } from "./fixtures/daily-mvp";
+import { canonicalDeepLink } from "../src/domain/native-navigation";
+import { portableRoute } from "../src/domain/product-sharing";
 
 it.each([
   ["apbc:2023", "section=awards", "awards"],
@@ -36,6 +38,48 @@ it.each([
       select.dispatchEvent(new Event("change", { bubbles: true }));
     });
     expect(container.querySelector("[data-international-detail][open]")).toBeNull();
+  } finally { await act(async () => root.unmount()); }
+});
+
+it("opens the 2025 exhibition draw directly and keeps its official box scores under the source disclosure", async () => {
+  const { index } = mvpFixture(), date = index.date;
+  const repository = {
+    manifest: vi.fn(async () => ({ schemaVersion: 1 as const, league: "NPB" as const, from: date, to: date,
+      effectiveDate: date, generatedAt: index.generatedAt })),
+    date: vi.fn(async () => index), recent: vi.fn(), records: vi.fn(),
+  };
+  const path = "/NPB/schedule";
+  const query = `season=2026&date=${date}&view=international&tournament=international%3Atournament%3Aexhibition%3A2025%3Akorea`;
+  const route = `${path}?${query}`;
+  expect(portableRoute(path, query)).toBe(route);
+  expect(canonicalDeepLink(`baseballnotes://NPB/schedule?${query}`)).toBe(route);
+  const container = document.createElement("div");
+  const root = createRoot(container);
+  try {
+    await act(async () => root.render(<MemoryRouter initialEntries={[route]}><NpbScheduleScreen repository={repository}/></MemoryRouter>));
+    const entry = container.querySelector<HTMLDetailsElement>("[data-international-entry]")!;
+    expect(entry.open).toBe(true);
+    expect(entry.querySelector("h2")?.textContent).toBe("侍ジャパンシリーズ2025 韓国戦");
+    expect(entry.querySelector("li:last-child strong")?.textContent).toBe("日本 7 − 7 韓国");
+    expect(entry.querySelector("li:last-child small")?.textContent).toContain("引き分け");
+    expect(entry.textContent).toContain("代表選手・個人成績は未収録です");
+    const sources = entry.querySelector<HTMLDetailsElement>(".source-note")!;
+    expect(sources.open).toBe(false);
+    expect([...sources.querySelectorAll(".hub-links a")].map(link => link.getAttribute("href")))
+      .toEqual([
+        "https://www.japan-baseball.jp/jp/team/topteam/score/20251115_1/",
+        "https://www.japan-baseball.jp/jp/team/topteam/score/20251116_1/",
+      ]);
+    const select = entry.querySelector("select")!;
+    await act(async () => {
+      select.value = "international:tournament:exhibition:2025:netherlands";
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    expect(entry.textContent).toContain("オランダ 0 − 5 日本");
+    expect(entry.textContent).toContain("日本 9 − 0 オランダ");
+    expect(entry.textContent).not.toContain("引き分け");
+    expect(container.querySelector(".scoreboard-list a")?.getAttribute("href"))
+      .toBe(`/NPB/games/${encodeURIComponent(index.games[0]!.gameId)}?date=${date}`);
   } finally { await act(async () => root.unmount()); }
 });
 

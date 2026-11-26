@@ -107,6 +107,12 @@ WBC 2026の第7版では、若月健矢、松本裕樹、坂本誠志郎、佐�
 
 大会主催者の発表で国・選手・選出部門を全件照合した。選手IDは同じ大会の確認済み出場または大会通算成績に接続し、既存の独立した照合がある場合のみNPBプロフィールへリンクする。出場、選手成績、国内ランキングの収録範囲は変わらない。[侍ジャパン](https://www.japan-baseball.jp/jp/games/apbc2023/)・[WBC 2023](https://www.mlb.com/world-baseball-classic/history/2023)・[プレミア12 2024](https://www.wbsc.org/en/events/2024-premier12/news/chieh-hsien-chen-is-the-wbsc-premier12-2024-mvp)・[WBC 2026](https://www.mlb.com/news/2026-world-baseball-classic-all-tournament-team)
 
+## 侍ジャパンシリーズ2025の強化試合
+
+英語版Wikipediaの[日本代表試合一覧の固定版1384703135](https://en.wikipedia.org/w/index.php?oldid=1384703135)から、2025年3月のオランダ戦と11月の韓国戦、各2試合の開催日・先攻後攻・確定得点を採用した。固定版からの抜粋と日本語表記はCC BY-SA 4.0。公式のイニングスコアですべての組み合わせと得点を照合した。11月16日は7–7で終了した引き分け。 [オランダ戦の照合資料](https://npb.jp/bis/scores/japan/linescore2025a.html)・[韓国戦の照合資料](https://npb.jp/bis/scores/japan/linescore2025b.html)
+
+実際の開始時刻を予定時刻へ転用しない。結果を日本戦に限定し、選出・登録・出場・個人成績は未収録。2026年の日程画面から大会を切り替えて閲覧できる。既存大会・国内の試合成績・選手IDには反映しない。試合別の公式リンクは「収録範囲・出典」にまとめた。
+
 ## データ採用の再開条件
 
 - 大会ごとに取得、保存、加工、Web表示、Android表示、再配布を認める根拠とSourceの版を確認する。訂正時は旧版と出典を保持する。
