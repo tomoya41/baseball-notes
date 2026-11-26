@@ -16,6 +16,8 @@ import { wbc2026IdentityEvidence } from "./wbc-2026-player-identities";
 import { wbc2026Selections } from "./wbc-2026-selections";
 import { japanTournamentHonors } from "./international-japan-honors";
 import { samurai2025KoreaId, samurai2025NetherlandsId, samurai2025ResultsRevision, samurai2025ResultsVerifiedAt } from "./samurai-2025-exhibitions";
+import { samurai2026ExhibitionIds } from "./international-official-links";
+import { samurai2026ClubNames, samurai2026ClubResultsRevision, samurai2026ClubResultsVerifiedAt } from "./samurai-2026-club-exhibitions";
 
 // Adapted from the Wikipedia article revisions below, CC BY-SA 4.0.
 // Dates are local to the venue. Only final totals and confirmed team sides are admitted.
@@ -26,12 +28,18 @@ const wbc2023Id = "international:tournament:wbc:2023";
 const teams = { CHN: "中国", KOR: "韓国", CZE: "チェコ", AUS: "オーストラリア", ITA: "イタリア",
   MEX: "メキシコ", USA: "アメリカ", TPE: "チャイニーズ・タイペイ", VEN: "ベネズエラ", CUB: "キューバ", DOM: "ドミニカ共和国",
   NED: "オランダ", JPN: "日本" };
-export const internationalTeamNames = new Map(Object.entries(teams).map(([code, name]) => [`international:team:${code.toLowerCase()}`, name]));
+type TeamCode = keyof typeof teams | keyof typeof samurai2026ClubNames;
+function resultTeamId(code: TeamCode) {
+  const prefix = Object.hasOwn(samurai2026ClubNames, code) ? "international:club:npb:" : "international:team:";
+  return prefix + code.toLowerCase();
+}
+export const internationalTeamNames = new Map(Object.entries({ ...teams, ...samurai2026ClubNames })
+  .map(([code, name]) => [resultTeamId(code as TeamCode), name]));
 export const internationalRoundNames = { pool: "1次ラウンド", qualifier: "予選", super_round: "スーパーラウンド",
   quarterfinal: "準々決勝", semifinal: "準決勝", final: "決勝", third_place: "3位決定戦", exhibition: "強化試合" };
 const tokyo = "Asia/Tokyo", taipei = "Asia/Taipei", miami = "America/New_York";
 type ResultRow = readonly [localDate: string, zone: string, round: keyof typeof internationalRoundNames,
-  away: keyof typeof teams, awayRuns: number, home: keyof typeof teams, homeRuns: number, revision: number];
+  away: TeamCode, awayRuns: number, home: TeamCode, homeRuns: number, revision: number];
 
 type JapanSelection = { id: string; name: string; position: string; date: string };
 type JapanSelections = { revision: string; verifiedAt: string; announcedAsOf: string; players: readonly JapanSelection[] };
@@ -57,15 +65,18 @@ function edition(tournamentId: string, rows: readonly ResultRow[], stats?: Japan
     ? { sourceId: "jawiki", publisherId: "japanese-wikipedia", language: "ja", verifiedAt: "2026-11-25T05:31:00Z" }
     : { sourceId: "enwiki", publisherId: "english-wikipedia", language: "en",
       verifiedAt: samurai2025 ? samurai2025ResultsVerifiedAt : "2026-11-19T21:41:00Z" };
-  const { language, ...provenance } = resultSource;
-  const sources: z.infer<typeof internationalTournamentEvidenceSchema>["sources"] = revisions.map(revision => ({
-    ...provenance, id: String(revision), version: String(revision), termsEvidenceUrl: resultLicense,
-    url: `https://${language}.wikipedia.org/w/index.php?oldid=${revision}`,
-    permissions: { acquisition: "approved", storage: "approved", transformation: "approved",
-      webDisplay: "approved", androidDisplay: "approved", redistribution: "approved" } }));
+  const sources: z.infer<typeof internationalTournamentEvidenceSchema>["sources"] = revisions.map(revision => {
+    const { language, ...provenance } = revision === samurai2026ClubResultsRevision
+      ? { sourceId: "jawiki", publisherId: "japanese-wikipedia", language: "ja", verifiedAt: samurai2026ClubResultsVerifiedAt }
+      : resultSource;
+    return { ...provenance, id: String(revision), version: String(revision), termsEvidenceUrl: resultLicense,
+      url: `https://${language}.wikipedia.org/w/index.php?oldid=${revision}`,
+      permissions: { acquisition: "approved", storage: "approved", transformation: "approved",
+        webDisplay: "approved", androidDisplay: "approved", redistribution: "approved" } };
+  });
   const games = rows.map(([localDate, timeZone, round, away, awayRuns, home, homeRuns, revision]) => ({
     competition: "international", tournamentId, id: `${tournamentId.replace(":tournament:", ":game:")}:${localDate}:${away.toLowerCase()}-${home.toLowerCase()}`,
-    round, homeTeamId: `international:team:${home.toLowerCase()}`, awayTeamId: `international:team:${away.toLowerCase()}`,
+    round, homeTeamId: resultTeamId(home), awayTeamId: resultTeamId(away),
     localDate, timeZone, scheduledAt: null, status: "final", result: { homeRuns, awayRuns },
     source: { sourceRevisionId: String(revision), sourceRecordId: `${localDate} ${away} at ${home}` },
   }));
@@ -179,6 +190,18 @@ const editions = [
   edition(samurai2025KoreaId, [
     ["2025-11-15", tokyo, "exhibition", "KOR", 4, "JPN", 11, samurai2025ResultsRevision],
     ["2025-11-16", tokyo, "exhibition", "JPN", 7, "KOR", 7, samurai2025ResultsRevision],
+  ]),
+  edition(samurai2026ExhibitionIds.miyazaki, [
+    ["2026-02-22", tokyo, "exhibition", "HAWKS", 3, "JPN", 13, samurai2026ClubResultsRevision],
+    ["2026-02-23", tokyo, "exhibition", "JPN", 0, "HAWKS", 4, samurai2026ClubResultsRevision],
+  ]),
+  edition(samurai2026ExhibitionIds.nagoya, [
+    ["2026-02-27", tokyo, "exhibition", "DRAGONS", 3, "JPN", 5, samurai2026ClubResultsRevision],
+    ["2026-02-28", tokyo, "exhibition", "JPN", 7, "DRAGONS", 3, samurai2026ClubResultsRevision],
+  ]),
+  edition(samurai2026ExhibitionIds.osaka, [
+    ["2026-03-02", tokyo, "exhibition", "JPN", 3, "BUFFALOES", 4, samurai2026ClubResultsRevision],
+    ["2026-03-03", tokyo, "exhibition", "JPN", 5, "TIGERS", 4, samurai2026ClubResultsRevision],
   ]),
 ];
 export const japanResultsByTournament = new Map(editions.map(value => [value.tournamentId, value]));

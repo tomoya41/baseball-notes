@@ -85,6 +85,50 @@ it("opens the 2025 exhibition draw directly and keeps its official box scores un
   } finally { await act(async () => root.unmount()); }
 });
 
+it("keeps the Nagoya URL and shows WBC warm-ups separately from WBC tournament results", async () => {
+  const { index } = mvpFixture(), date = index.date;
+  const repository = {
+    manifest: vi.fn(async () => ({ schemaVersion: 1 as const, league: "NPB" as const, from: date, to: date,
+      effectiveDate: date, generatedAt: index.generatedAt })),
+    date: vi.fn(async () => index), recent: vi.fn(), records: vi.fn(),
+  };
+  const path = "/NPB/schedule";
+  const query = `season=2026&date=${date}&view=international&tournament=international%3Atournament%3Aexhibition%3A2026%3Anagoya`;
+  const route = `${path}?${query}`;
+  expect(portableRoute(path, query)).toBe(route);
+  expect(canonicalDeepLink(`baseballnotes://NPB/schedule?${query}`)).toBe(route);
+  const container = document.createElement("div");
+  const root = createRoot(container);
+  try {
+    await act(async () => root.render(<MemoryRouter initialEntries={[route]}><NpbScheduleScreen repository={repository}/></MemoryRouter>));
+    const entry = container.querySelector<HTMLDetailsElement>("[data-international-entry]")!;
+    expect(entry.open).toBe(true);
+    expect(entry.querySelector("h2")?.textContent).toBe("侍ジャパンシリーズ2026 名古屋");
+    expect(entry.textContent).toContain("中日 3 − 5 日本");
+    expect(entry.textContent).toContain("日本 7 − 3 中日");
+    const sources = entry.querySelector<HTMLDetailsElement>(".source-note")!;
+    expect(sources.open).toBe(false);
+    expect(sources.querySelector(".hub-links a")?.getAttribute("href")).toBe("https://npb.jp/bis/scores/japan/boxscore2026b_1.html");
+    const select = entry.querySelector("select")!;
+    await act(async () => {
+      select.value = "international:tournament:exhibition:2026:wbc-osaka";
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    expect(entry.querySelector("h2")?.textContent).toBe("WBC 2026 強化試合");
+    expect(entry.textContent).toContain("日本 3 − 4 オリックス");
+    expect(entry.textContent).toContain("日本 5 − 4 阪神");
+    expect(entry.textContent).toContain("代表選手・個人成績は未収録です");
+    await act(async () => {
+      select.value = "international:tournament:wbc:2026";
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    expect(entry.querySelector("h3")?.textContent).toBe("日本代表の結果 · 5試合");
+    expect(entry.textContent).not.toContain("日本 5 − 4 阪神");
+    expect(container.querySelector(".scoreboard-list a")?.getAttribute("href"))
+      .toBe(`/NPB/games/${encodeURIComponent(index.games[0]!.gameId)}?date=${date}`);
+  } finally { await act(async () => root.unmount()); }
+});
+
 it("opens real official tournament links alongside the domestic Games route without extra data requests", async () => {
   const { index } = mvpFixture(), date = index.date;
   const repository = {
