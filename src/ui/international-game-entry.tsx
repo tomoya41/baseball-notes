@@ -88,7 +88,9 @@ export function InternationalGameEntry({ expanded, onToggle, selected, onSelect,
   return <details className="advanced-disclosure" id="international-game-entry" ref={entry} data-international-entry open={expanded} onToggle={event => onToggle(event.currentTarget.open)}>
     <summary>侍ジャパン・国際試合</summary>
     <label className="weekly-stage">大会 <select value={tournament.id} onChange={event => onSelect(event.target.value)}>
-      {tournaments.map(item => <option key={item.id} value={item.id}>{item.kind === "apbc" ? `APBC ${item.year}` : item.name}</option>)}
+      {tournaments.map(item => <option key={item.id} value={item.id}>{
+        item.kind === "apbc" ? `APBC ${item.year}` : item.name.replace(/^侍ジャパンシリーズ(\d{4}) /, "$1年 ")
+      }</option>)}
     </select></label>
     <div aria-live="polite">
       <h2>{tournament.name}</h2>

@@ -60,6 +60,7 @@ it("opens the 2025 exhibition draw directly and keeps its official box scores un
     const entry = container.querySelector<HTMLDetailsElement>("[data-international-entry]")!;
     expect(entry.open).toBe(true);
     expect(entry.querySelector("h2")?.textContent).toBe("侍ジャパンシリーズ2025 韓国戦");
+    expect(entry.querySelector("option:checked")?.textContent).toBe("2025年 韓国戦");
     expect(entry.querySelector("li:last-child strong")?.textContent).toBe("日本 7 − 7 韓国");
     expect(entry.querySelector("li:last-child small")?.textContent).toContain("引き分け");
     expect(entry.textContent).toContain("代表選手・個人成績は未収録です");
@@ -77,6 +78,7 @@ it("opens the 2025 exhibition draw directly and keeps its official box scores un
     });
     expect(entry.textContent).toContain("オランダ 0 − 5 日本");
     expect(entry.textContent).toContain("日本 9 − 0 オランダ");
+    expect(entry.querySelector("option:checked")?.textContent).toBe("2025年 オランダ戦");
     expect(entry.textContent).not.toContain("引き分け");
     expect(container.querySelector(".scoreboard-list a")?.getAttribute("href"))
       .toBe(`/NPB/games/${encodeURIComponent(index.games[0]!.gameId)}?date=${date}`);
