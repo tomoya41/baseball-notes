@@ -87,7 +87,7 @@ export function portableRoute(path: string, search = ""): string | null {
   }
   if(league==="NPB"&&resource==="talent"&&parts.length===3&&parts[2]==="2026"){
     if(!draftEventQuery(source).valid)return null;
-    for(const key of ["view","team","type","q","page","group","forecast"]){const value=source.get(key);if(value)clean.set(key,value);}
+    for(const key of ["view","team","type","q","page","group","forecast","followup"]){const value=source.get(key);if(value)clean.set(key,value);}
     return `${path}${clean.size?`?${clean}`:""}`;
   }
   if (league === "NPB" && resource === "postseason" && parts[2] === "series" && parts.length === 4) {
