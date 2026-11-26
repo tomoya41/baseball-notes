@@ -9,6 +9,7 @@ import { draftFixture,expandedDraftFixture,researchedDraftFixture } from "./fixt
 import { draftEventQuery } from "../src/domain/npb-draft-query";
 import { portableRoute } from "../src/domain/product-sharing";
 import { canonicalDeepLink,parentNativeRoute } from "../src/domain/native-navigation";
+import { draftAgreements, reviewedDraftAgreements } from "../src/data/npb-draft-2026-agreements";
 vi.mock("../src/application/npb-draft-event-reader",()=>({readNpbDraftEvent:vi.fn()}));
 // Synthetic navigation fixtures have no real application evidence. Real admission has separate tests.
 vi.mock("../src/domain/npb-draft-eligibility",async original=>{
@@ -22,6 +23,70 @@ async function mount(query="",fail=false,modify?:(data:ReturnType<typeof draftFi
   await act(async()=>root.render(<MemoryRouter initialEntries={["/NPB/talent/2026"+query]}><NpbDraftEventScreen/></MemoryRouter>));
   return {host,data,close:async()=>{await act(async()=>root.unmount());host.remove();}};
 }
+
+function agreementFixture(data: ReturnType<typeof draftFixture>) {
+  const record = reviewedDraftAgreements[0];
+  const candidate = { ...data.candidates[0]!, id: record.candidateId, article: record.article, name: record.article };
+  data.eventState = "ended";
+  data.coverage = "partial";
+  data.candidates.push(candidate);
+  data.selections = [
+    { candidateId: candidate.id, teamId: record.teamId, round: record.round, type: "regular", status: "confirmed", sourcePageId: candidate.sourcePageId, evidenceSha256: record.selectionSha256 },
+    { candidateId: data.candidates[0]!.id, teamId: record.teamId, round: 1, type: "developmental", status: "confirmed", sourcePageId: candidate.sourcePageId, evidenceSha256: "c".repeat(64) },
+  ];
+}
+
+it("keeps verified provisional agreements separate from draft selections and filters without a new fetch", async () => {
+  const record = reviewedDraftAgreements[0];
+  const f = await mount(`?view=results&team=${record.teamId}`, false, agreementFixture);
+  try {
+    const filter = f.host.querySelector<HTMLButtonElement>("[data-draft-agreement-filter]")!;
+    expect(filter.getAttribute("aria-pressed")).toBe("false");
+    expect(f.host.querySelectorAll("article")).toHaveLength(2);
+    expect(f.host.querySelector("[data-draft-agreement] time")?.getAttribute("datetime")).toBe(record.date);
+    await act(async () => filter.click());
+    expect(filter.getAttribute("aria-pressed")).toBe("true");
+    expect(f.host.querySelectorAll("article")).toHaveLength(1);
+    const previewUrl = f.host.querySelector('a[href*="view=preview"]')?.getAttribute("href");
+    expect(new URLSearchParams(previewUrl?.split("?")[1]).get("team")).toBe(record.teamId);
+    expect(previewUrl).not.toContain("followup");
+    const sourceSection = f.host.querySelector('section[aria-label="仮契約記録の出典"]')!;
+    expect(sourceSection.closest("details")?.open).toBe(false);
+    expect(sourceSection.querySelector(`a[href*="oldid=${record.source.revision}"]`)).not.toBeNull();
+    expect(sourceSection.querySelector(`a[href="${record.verification.url}"]`)).not.toBeNull();
+    await act(async () => filter.click());
+    expect(f.host.querySelectorAll("article")).toHaveLength(2);
+    expect(readNpbDraftEvent).toHaveBeenCalledTimes(1);
+  } finally { await f.close(); }
+});
+
+it("withholds an agreement if its draft slot, evidence or article no longer matches", () => {
+  const data = draftFixture();
+  agreementFixture(data);
+  expect(draftAgreements(data).size).toBe(1);
+  const [selection, other] = data.selections;
+  for (const change of [{ evidenceSha256: "e".repeat(64) }, { round: 99 }, { teamId: "npb:team:carp" }, { type: "developmental" as const }]) {
+    expect(draftAgreements({ ...data, selections: [{ ...selection!, ...change }, other!] }).size).toBe(0);
+  }
+  expect(draftAgreements({ ...data, eventState: "in_progress" }).size).toBe(0);
+  data.candidates.at(-1)!.article = "別の選手記事";
+  expect(draftAgreements(data).size).toBe(0);
+});
+
+it("preserves the agreement filter in shared and native links and distinguishes missing records", async () => {
+  const path = "/NPB/talent/2026";
+  const query = "view=results&team=npb%3Ateam%3Agiants&type=developmental&followup=agreement";
+  expect(portableRoute(path, query + "&private=never")).toBe(path + "?" + query);
+  expect(canonicalDeepLink(`baseballnotes://NPB/talent/2026?${query}`)).toBe(path + "?" + query);
+  for (const invalid of ["view=preview&followup=agreement", "view=results&followup=signed", query + "&followup=agreement"]) {
+    expect(portableRoute(path, invalid)).toBeNull();
+  }
+  const f = await mount("?" + query, false, agreementFixture);
+  try {
+    expect(f.host.querySelectorAll("article")).toHaveLength(0);
+    expect(f.host.textContent).toContain("この条件の仮契約記録は未収録です");
+  } finally { await f.close(); }
+});
 it("shows 12 hypotheses, source/time and no fabricated results",async()=>{const f=await mount();try{expect(f.host.querySelectorAll("article")).toHaveLength(12);expect(f.host.textContent).toContain("志望届・指名資格は未確認");expect(f.host.textContent).toContain("Baseball Notesの独自予想");expect(f.host.textContent).not.toMatch(/AIで作成|作り方|アプリコード/);expect(f.host.textContent).toContain("答え合わせ待ち");expect(f.host.querySelectorAll('a[href*="oldid="]')).toHaveLength(1);expect(readNpbDraftEvent).toHaveBeenCalledTimes(1);}finally{await f.close();}});
 it("links supplemental results to their exact new revision while legacy rows and all source credits remain old",async()=>{
   const f=await mount("?view=results",false,d=>{
